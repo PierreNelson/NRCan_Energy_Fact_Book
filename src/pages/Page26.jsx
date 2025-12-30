@@ -8,17 +8,25 @@ const Page26 = () => {
     const [year, setYear] = useState(null); // Will be set to maxYear once data loads
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     // Load data on mount
     useEffect(() => {
-        getEconomicContributionsData().then(data => {
-            setPageData(data);
-            // Set initial year to the latest year in the data
-            if (data.length > 0) {
-                setYear(data[data.length - 1].year);
-            }
-            setLoading(false);
-        });
+        getEconomicContributionsData()
+            .then(data => {
+                setPageData(data);
+                // Set initial year to the latest year in the data
+                if (data && data.length > 0) {
+                    setYear(data[data.length - 1].year);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to load economic contributions data:", err);
+                setError(err.message || 'Failed to load data');
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     }, []);
 
     const minYear = pageData.length > 0 ? pageData[0].year : 2007;
@@ -65,8 +73,16 @@ const Page26 = () => {
         return `${b} ${text} ${lang === 'en' ? 'dollars' : 'dollars'}`;
     };
 
-    if (loading || !currentYearData || year === null) {
+    if (loading) {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
+    }
+
+    if (error) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'red' }}>Error: {error}. Please refresh the page.</div>;
+    }
+
+    if (!currentYearData || year === null) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>No data available. Please refresh the page.</div>;
     }
 
     // Investment value comes from the pre-calculated data
@@ -384,7 +400,7 @@ const Page26 = () => {
                     {/* Background Image - decorative */}
                     <div className="page26-bg-image" aria-hidden="true" style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundImage: 'url(/assets/page26image.png)',
+                        backgroundImage: `url(${import.meta.env.BASE_URL}assets/page26image.png)`,
                         backgroundSize: '100% 100%',
                         backgroundPosition: 'center center',
                         backgroundRepeat: 'no-repeat',

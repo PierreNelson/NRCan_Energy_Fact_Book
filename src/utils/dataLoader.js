@@ -54,15 +54,18 @@ function parseCSV(csvText) {
 
 /**
  * Load all data from data.csv (cached)
+ * Uses import.meta.env.BASE_URL to work correctly on GitHub Pages
  */
 async function loadAllData() {
     if (dataCache !== null) {
         return dataCache;
     }
     
-    const response = await fetch('/statcan_data/data.csv');
+    // Use Vite's BASE_URL to handle GitHub Pages subdirectory hosting
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const response = await fetch(`${baseUrl}statcan_data/data.csv`);
     if (!response.ok) {
-        throw new Error('Failed to load data.csv');
+        throw new Error(`Failed to load data.csv: ${response.status} ${response.statusText}`);
     }
     
     const csvText = await response.text();

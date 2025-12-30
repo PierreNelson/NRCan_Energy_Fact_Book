@@ -9,6 +9,7 @@ const Page24 = () => {
     const { lang } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
     // Track window width for responsive chart settings
@@ -20,10 +21,17 @@ const Page24 = () => {
 
     // Load data on mount + prefetch next page
     useEffect(() => {
-        getCapitalExpendituresData().then(data => {
-            setPageData(data);
-            setLoading(false);
-        });
+        getCapitalExpendituresData()
+            .then(data => {
+                setPageData(data);
+            })
+            .catch(err => {
+                console.error("Failed to load capital expenditures data:", err);
+                setError(err.message || 'Failed to load data');
+            })
+            .finally(() => {
+                setLoading(false);
+            });
         
         // Preload the next page while user reads this one
         import('./Page25');
@@ -38,8 +46,16 @@ const Page24 = () => {
         return { latestRow: latest, peakRow: peak, row2020: r2020 };
     }, [pageData]);
 
-    if (loading || !latestRow) {
+    if (loading) {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
+    }
+
+    if (error) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'red' }}>Error: {error}. Please refresh the page.</div>;
+    }
+
+    if (!latestRow) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>No data available. Please refresh the page.</div>;
     }
 
     // Calculations

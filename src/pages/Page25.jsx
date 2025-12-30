@@ -9,6 +9,7 @@ const Page25 = () => {
     const [year, setYear] = useState(null); // Will be set to maxYear once data loads
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
     const minYear = useMemo(() => pageData.length > 0 ? pageData[0].year : 2007, [pageData]);
@@ -27,13 +28,20 @@ const Page25 = () => {
     }, []);
 
     useEffect(() => {
-        getInfrastructureData().then(data => {
-            setPageData(data);
-            if (data.length > 0) {
-                setYear(data[data.length - 1].year);
-            }
-            setLoading(false);
-        });
+        getInfrastructureData()
+            .then(data => {
+                setPageData(data);
+                if (data && data.length > 0) {
+                    setYear(data[data.length - 1].year);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to load infrastructure data:", err);
+                setError(err.message || 'Failed to load data');
+            })
+            .finally(() => {
+                setLoading(false);
+            });
         import('./Page26');
     }, []);
 
@@ -125,7 +133,17 @@ const Page25 = () => {
     }, [chartData, lang, windowWidth]);
 
 
-    if (loading || !currentYearData) return <div>Loading...</div>;
+    if (loading) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
+    }
+
+    if (error) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'red' }}>Error: {error}. Please refresh the page.</div>;
+    }
+
+    if (!currentYearData) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>No data available. Please refresh the page.</div>;
+    }
 
     // Build the full subtitle text for screen readers
     // Format numbers so screen readers read them naturally
