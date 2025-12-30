@@ -1,0 +1,20 @@
+vector,title,uom,scalar_factor
+page24_oil_gas,Capital expenditures - Oil and gas extraction,Millions of dollars,millions
+page24_electricity,Capital expenditures - Electric power,Millions of dollars,millions
+page24_other,Capital expenditures - Other energy,Millions of dollars,millions
+page24_total,Capital expenditures - Total energy sector,Millions of dollars,millions
+page25_fuel_energy_pipelines,"Infrastructure - Fuel, energy and pipelines",Millions of dollars,millions
+page25_transport,Infrastructure - Transport (less pipelines),Millions of dollars,millions
+page25_health_housing,Infrastructure - Health and housing,Millions of dollars,millions
+page25_education,Infrastructure - Education,Millions of dollars,millions
+page25_public_safety,Infrastructure - Public safety and other,Millions of dollars,millions
+page25_environmental,Infrastructure - Environmental protection,Millions of dollars,millions
+page25_total,Infrastructure - Total net stock,Millions of dollars,millions
+page26_jobs,Economic contributions - Jobs (direct + indirect),Number,units
+page26_employment_income,Economic contributions - Employment income,Millions of dollars,millions
+page26_gdp,Economic contributions - GDP,Millions of dollars,millions
+page26_investment_value,"Annual investment - Fuel, energy and pipelines",Millions of dollars,millions
+
+
+
+
