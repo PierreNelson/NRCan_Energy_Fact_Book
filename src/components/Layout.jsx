@@ -44,7 +44,8 @@ const Layout = () => {
         { path: '/', labelKey: 'nav_section2_title' },
         { path: '/page-24', labelKey: 'nav_capital_expenditure' },
         { path: '/page-25', labelKey: 'nav_infrastructure' },
-        { path: '/page-26', labelKey: 'nav_economic_contributions' }
+        { path: '/page-26', labelKey: 'nav_economic_contributions' },
+        { path: '/page-27', labelKey: 'nav_investment_detail' }
     ];
 
     const currentIndex = pages.findIndex(p => p.path === location.pathname);
@@ -66,11 +67,12 @@ const Layout = () => {
                     min-height: 100vh;
                 }
                 
-                /* Viewport section - fills exactly 100vh */
+                /* Viewport section - allows content to grow beyond 100vh */
                 .layout-viewport {
                     min-height: 100vh;
                     display: flex;
                     flex-direction: column;
+                    overflow: visible;
                 }
                 
                 /* Header area - flex-shrink 0 to maintain size */
@@ -84,6 +86,7 @@ const Layout = () => {
                     display: flex;
                     flex-direction: column;
                     min-height: 0;
+                    overflow: visible;
                 }
                 
                 /* Content wrapper */
@@ -92,6 +95,7 @@ const Layout = () => {
                     display: flex;
                     flex-direction: column;
                     min-height: 0;
+                    overflow: visible;
                 }
                 
                 /* Page content - no internal scroll */
@@ -100,6 +104,7 @@ const Layout = () => {
                     min-height: 0;
                     display: flex;
                     flex-direction: column;
+                    overflow: visible;
                 }
                 
                 /* Navigation buttons - always visible at bottom of viewport */

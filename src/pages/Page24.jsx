@@ -11,6 +11,7 @@ const Page24 = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const [isTableOpen, setIsTableOpen] = useState(false); // Track if data table is expanded
 
     // Track window width for responsive chart settings
     useEffect(() => {
@@ -153,6 +154,141 @@ const Page24 = () => {
         return `${bullet1} ${bullet2} ${bullet3}`;
     };
 
+    // Format number for screen readers using locale
+    const formatNumberTable = (val) => {
+        return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
+            minimumFractionDigits: 1, 
+            maximumFractionDigits: 1 
+        });
+    };
+
+    // Helper to strip HTML tags from text
+    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+
+    // Generate accessible data table with details/summary pattern
+    const getAccessibleDataTable = () => {
+        if (!pageData || pageData.length === 0) return null;
+        
+        // Strip HTML tags from labels
+        const oilGasLabel = stripHtml(getText('page24_legend_oil_gas', lang));
+        const electricityLabel = stripHtml(getText('page24_legend_electricity', lang));
+        const otherLabel = stripHtml(getText('page24_legend_other', lang));
+        const unitText = lang === 'en' ? ', in billions of dollars' : ', en milliards de dollars';
+        const captionId = 'page24-table-caption';
+        
+        return (
+            <details 
+                onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
+                style={{ 
+                    marginTop: '10px', 
+                    marginBottom: '10px', 
+                    width: '95%',
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                    fontFamily: 'Arial, sans-serif'
+                }}
+            >
+                <summary 
+                    role="button"
+                    aria-expanded={isTableOpen}
+                    style={{ 
+                        cursor: 'pointer', 
+                        color: '#333', 
+                        fontWeight: 'bold', 
+                        padding: '10px',
+                        border: '1px solid #ccc',
+                        backgroundColor: '#f9f9f9',
+                        borderRadius: '4px',
+                        listStyle: 'none'
+                    }}
+                >
+                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
+                    {lang === 'en' ? 'View Data Table (press Enter to open or close)' : 'Voir le tableau de données (appuyez sur Entrée pour ouvrir ou fermer)'}
+                </summary>
+
+                <div 
+                    role="region"
+                    aria-labelledby={captionId}
+                    tabIndex="0"
+                    style={{ 
+                        overflowX: 'auto',
+                        overflowY: 'visible', 
+                        border: '1px solid #ccc', 
+                        borderTop: 'none',
+                        padding: '10px',
+                        maxHeight: 'none'
+                    }}
+                >
+                    <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                        <caption 
+                            id={captionId}
+                            style={{ 
+                                textAlign: 'left', 
+                                padding: '8px', 
+                                fontWeight: 'bold',
+                                backgroundColor: '#f0f0f0'
+                            }}
+                        >
+                            {lang === 'en' 
+                                ? 'Capital expenditures on construction in the energy sector (billions of dollars)'
+                                : 'Dépenses en immobilisations pour la construction dans le secteur de l\'énergie (milliards de dollars)'}
+                        </caption>
+                        <thead>
+                            <tr style={{ backgroundColor: '#eee' }}>
+                                <th scope="col" style={{ 
+                                    padding: '8px', 
+                                    borderBottom: '2px solid #ddd',
+                                    position: 'sticky',
+                                    left: 0,
+                                    backgroundColor: '#eee',
+                                    zIndex: 2
+                                }}>
+                                    {lang === 'en' ? 'Year' : 'Année'}
+                                </th>
+                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd', whiteSpace: 'nowrap' }}>
+                                    {oilGasLabel}
+                                    <span className="sr-only"> {unitText}</span>
+                                </th>
+                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd', whiteSpace: 'nowrap' }}>
+                                    {electricityLabel}
+                                    <span className="sr-only"> {unitText}</span>
+                                </th>
+                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd', whiteSpace: 'nowrap' }}>
+                                    {otherLabel}
+                                    <span className="sr-only"> {unitText}</span>
+                                </th>
+                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
+                                    {lang === 'en' ? 'Total' : 'Total'}
+                                    <span className="sr-only"> {unitText}</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pageData.map(yearData => (
+                                <tr key={yearData.year} style={{ borderBottom: '1px solid #eee' }}>
+                                    <th scope="row" style={{ 
+                                        padding: '8px', 
+                                        fontWeight: 'normal',
+                                        position: 'sticky',
+                                        left: 0,
+                                        backgroundColor: '#f9f9f9',
+                                        zIndex: 1
+                                    }}>
+                                        {yearData.year}
+                                    </th>
+                                    <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{formatNumberTable(yearData.oil_gas / 1000)}</td>
+                                    <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{formatNumberTable(yearData.electricity / 1000)}</td>
+                                    <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{formatNumberTable(yearData.other / 1000)}</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold' }}>{formatNumberTable(yearData.total / 1000)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        );
+    };
+
     return (
         <main 
             id="main-content"
@@ -202,6 +338,32 @@ const Page24 = () => {
                     width: 100%;
                     height: calc(100vh - 480px);
                     min-height: 300px;
+                }
+
+                /* Forced Stacked Layout when Table is Open */
+                .layout-stacked {
+                    flex-direction: column !important;
+                    height: auto !important;
+                    align-items: stretch !important;
+                    flex: 0 0 auto !important;
+                }
+
+                .layout-stacked .page24-chart-column {
+                    width: 100% !important;
+                    margin-bottom: 30px !important;
+                    overflow: visible !important;
+                }
+
+                .layout-stacked .page24-text-column {
+                    width: 100% !important;
+                    padding-left: 20px !important;
+                    padding-right: 20px !important;
+                    margin-top: 20px !important;
+                }
+                
+                .layout-stacked .page24-chart {
+                    height: 400px !important;
+                    min-height: 350px !important;
                 }
 
                 /* MEDIA QUERY: When zoomed in (125%+), switch to stacked layout */
@@ -291,6 +453,37 @@ const Page24 = () => {
                         font-size: 0.8rem !important;
                     }
                 }
+                
+                /* Hide default disclosure triangle */
+                details summary::-webkit-details-marker,
+                details summary::marker {
+                    display: none;
+                }
+
+                /* Screen reader only table - visually hidden but accessible */
+                .sr-only-table {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    padding: 0;
+                    margin: -1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border: 0;
+                }
+                
+                .sr-only {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    padding: 0;
+                    margin: -1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border: 0;
+                }
             `}</style>
 
             {/* Container */}
@@ -313,14 +506,17 @@ const Page24 = () => {
                     </h1>
                 </header>
 
-                {/* Main Content - switches from row to column when zoomed */}
-                <div className="page24-content-row">
+                {/* Main Content - switches from row to column when zoomed OR when table is open */}
+                <div className={`page24-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
                     {/* REGION 2: Chart - all data read as one block */}
                     <div 
                         className="page24-chart-column"
                         role="region"
                         aria-label={getChartDataSummary()}
                     >
+                {/* Accessible data table for screen readers */}
+                {getAccessibleDataTable()}
+                
                 <figure aria-hidden="true" style={{ margin: 0 }}>
                 <Plot
     data={[
@@ -372,15 +568,15 @@ const Page24 = () => {
     ]}
     layout={{
         barmode: 'stack',
-        hoverlabel: {
-            bgcolor: '#ffffff',  
-            bordercolor: '#000000', 
-            font: { 
-                color: '#000000',
-                size: 14,
-                family: 'Arial, sans-serif'
-            }
-        },
+                        hoverlabel: {
+                            bgcolor: '#ffffff',  
+                            bordercolor: '#000000', 
+                            font: { 
+                                color: '#000000',
+                                size: windowWidth <= 480 ? 16 : windowWidth <= 768 ? 15 : 14,
+                                family: 'Arial, sans-serif'
+                            }
+                        },
                             title: {
                                 // Wrap title at 400%+ zoom (480px and below)
                                 text: windowWidth <= 480 

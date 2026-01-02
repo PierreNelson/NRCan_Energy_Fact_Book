@@ -1,0 +1,60 @@
+
+Accessibility statement
+Accessibility Standards Canada aims to meet the highest standard of accessibility. We follow the Government of Canada’s Standard on Web Accessibility. This standard follows the World Wide Web Consortium (W3C) Web Content Accessibility Guidelines (WCAG) 2.0. 
+
+This site will work to meet the guidelines from Web Content Accessibility Guidelines 2.1 AA. This sets a higher standard. 
+
+This statement highlights our efforts to improve accessibility.  We know it is important to have an inclusive website that is accessible to everyone.
+
+Standards compliance
+All pages on this site meet WCAG 2.0 or higher.
+We use the Canada.ca Beta template.
+All pages on this site use structured semantic mark-up. We use H1 tags for the content area of the page, H2 tags for main titles, and H3 tags for subtitles.
+Structural mark-up
+Web pages include 3 different areas when Cascading Styles Sheets (CSS) are not applied to a document. These 3 areas are also used when using a screen reader. Read the 3 areas in order:
+
+A header bar
+A main content area
+A footer
+ARIA Landmarks
+ARIA stands for Accessible Rich Internet Applications Suite. It defines a way to make Web content and Web applications more accessible to people with disabilities.
+
+This website makes use of ARIA mark-up that makes it easier to identify the major sections and roles on each page. A screen reader will choose major landmarks on the page such as:
+
+the content area, 
+navigation mechanisms, and 
+the search area. 
+The ARIA landmarks used include:
+
+Search
+Navigation
+Main
+Content info
+Images
+All images on this web site have alternative text descriptions.
+Our content is usable or accessible without images.
+Links
+We do our best to have links written so that they make sense out of context. If this is not possible, we add a title attribute or other type of search aid to create context.
+The first link in every document is the default "Skip to main content" link. This allows the user to skip directly to the main section of the page (the content).
+Forms
+All form controls are appropriately and clearly labelled.
+Users do not need JavaScript to be able to benefit from form validation.
+Scripts
+Content of this web site is usable without JavaScript.
+Visual design
+This site uses only relative font sizes. These are compatible with the user-chosen "text size" option in visual browsers.
+If your browser does not support custom CSS at all, the content of each page is still readable.
+Any information conveyed with colour is also available without colour (i.e. text based). 
+This site does not have a “resize” widget. However, all the tools and functions provided by a widget like this is already built into all major browsers. Here are key options :
+Press Ctrl & + to increase the page size.
+Press Ctrl & - to decrease the page size.
+Press Ctrl & 0 (zero) to reset the page size to the web page's default size.
+Accessibility tools
+NVDA a free, open-source screen reader (Windows)
+System Access (Windows)
+JAWS (Windows)
+VoiceOver (Mac)
+Orca (Linux)
+Accessibility guidelines and related resources
+WebAIM
+W3 accessibility guidelines

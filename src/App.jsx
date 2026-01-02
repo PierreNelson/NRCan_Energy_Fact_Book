@@ -9,6 +9,7 @@ const Page23 = React.lazy(() => import('./pages/Page23'));
 const Page24 = React.lazy(() => import('./pages/Page24'));
 const Page25 = React.lazy(() => import('./pages/Page25'));
 const Page26 = React.lazy(() => import('./pages/Page26'));
+const Page27 = React.lazy(() => import('./pages/Page27'));
 
 // Loading component for Suspense fallback
 const LoadingSpinner = () => (
@@ -68,6 +69,11 @@ function App() {
           <Route path="page-26" element={
             <Suspense fallback={<LoadingSpinner />}>
               <Page26 />
+            </Suspense>
+          } />
+          <Route path="page-27" element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <Page27 />
             </Suspense>
           } />
         </Route>

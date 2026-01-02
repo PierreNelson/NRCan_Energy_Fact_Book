@@ -318,6 +318,41 @@ const Page26 = () => {
                     .page26-container h1 {
                         font-size: 1.5rem !important;
                     }
+                    
+                    /* Ensure slider is large enough to interact with at high zoom */
+                    input[type=range] {
+                        height: 44px !important;
+                        padding: 10px 0 !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-thumb {
+                        height: 28px !important;
+                        width: 28px !important;
+                        margin-top: -10px !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-runnable-track {
+                        height: 12px !important;
+                    }
+                }
+                
+                /* REFLOW: At 500% zoom */
+                @media (max-width: 384px) {
+                    /* Even larger touch target for very high zoom */
+                    input[type=range] {
+                        height: 50px !important;
+                        padding: 12px 0 !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-thumb {
+                        height: 32px !important;
+                        width: 32px !important;
+                        margin-top: -12px !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-runnable-track {
+                        height: 14px !important;
+                    }
                 }
 
             `}</style>

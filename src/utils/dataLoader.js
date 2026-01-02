@@ -145,3 +145,28 @@ export async function getEconomicContributionsData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get investment by asset type data for Page 27
+ * Returns array of objects with breakdown by asset type:
+ * { year, transmission_distribution, pipelines, nuclear, other_electric, hydraulic, wind_solar, steam_thermal, total }
+ */
+export async function getInvestmentByAssetData() {
+    const allData = await loadAllData();
+    
+    // Filter for page27 vectors
+    const page27Data = allData.filter(row => row.vector && row.vector.startsWith('page27_'));
+    
+    // Group by year
+    const yearMap = {};
+    page27Data.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('page27_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

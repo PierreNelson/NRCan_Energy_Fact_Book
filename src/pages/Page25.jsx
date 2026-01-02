@@ -11,6 +11,7 @@ const Page25 = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const [isTableOpen, setIsTableOpen] = useState(false); // Track if data table is expanded
 
     const minYear = useMemo(() => pageData.length > 0 ? pageData[0].year : 2007, [pageData]);
     const maxYear = useMemo(() => pageData.length > 0 ? pageData[pageData.length - 1].year : 2024, [pageData]);
@@ -126,7 +127,7 @@ const Page25 = () => {
         }
 
         return [{
-            text: centerText, x: 0.5, y: 0.5,
+            text: centerText, x: 0.5, y: 0.54,
             font: { size: 22, color: '#424243', family: 'Arial Black, sans-serif' },
             showarrow: false,
         }];
@@ -218,6 +219,143 @@ const Page25 = () => {
         return `${title} "${quote}" ${description}`;
     };
 
+    // Format number for screen readers using locale
+    const formatNumberTable = (val) => {
+        return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
+            minimumFractionDigits: 1, 
+            maximumFractionDigits: 1 
+        });
+    };
+
+    // Helper to strip HTML tags from text
+    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+
+    // Generate accessible data table with details/summary pattern (all years)
+    const getAccessibleDataTable = () => {
+        if (!pageData || pageData.length === 0) return null;
+        
+        // Strip HTML tags from category labels
+        const categoryLabels = {
+            'environmental': stripHtml(getText('infra_environmental', lang)),
+            'fuel_energy_pipelines': stripHtml(getText('infra_fuel_energy', lang)),
+            'transport': stripHtml(getText('infra_transport', lang)),
+            'education': stripHtml(getText('infra_education', lang)),
+            'health_housing': stripHtml(getText('infra_health_housing', lang)),
+            'public_safety': stripHtml(getText('infra_public_safety', lang)),
+        };
+
+        const unitText = lang === 'en' ? ', in billions of dollars' : ', en milliards de dollars';
+        const captionId = 'page25-table-caption';
+        
+        return (
+            <details 
+                onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
+                style={{ 
+                    marginTop: '10px', 
+                    marginBottom: '10px', 
+                    width: '95%',
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                    fontFamily: 'Arial, sans-serif'
+                }}
+            >
+                <summary 
+                    role="button"
+                    aria-expanded={isTableOpen}
+                    style={{ 
+                        cursor: 'pointer', 
+                        color: '#333', 
+                        fontWeight: 'bold', 
+                        padding: '10px',
+                        border: '1px solid #ccc',
+                        backgroundColor: '#f9f9f9',
+                        borderRadius: '4px',
+                        listStyle: 'none'
+                    }}
+                >
+                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
+                    {lang === 'en' ? 'View Data Table (press Enter to open or close)' : 'Voir le tableau de données (appuyez sur Entrée pour ouvrir ou fermer)'}
+                </summary>
+
+                <div 
+                    role="region"
+                    aria-labelledby={captionId}
+                    tabIndex="0"
+                    style={{ 
+                        overflowX: 'auto',
+                        overflowY: 'visible',
+                        border: '1px solid #ccc', 
+                        borderTop: 'none',
+                        padding: '10px',
+                        maxHeight: 'none'
+                    }}
+                >
+                    <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                        <caption 
+                            id={captionId}
+                            style={{ 
+                                textAlign: 'left', 
+                                padding: '8px', 
+                                fontWeight: 'bold',
+                                backgroundColor: '#f0f0f0'
+                            }}
+                        >
+                            {lang === 'en' 
+                                ? 'Capital expenditures on construction in infrastructure (billions of dollars)'
+                                : 'Dépenses en immobilisations pour la construction d\'infrastructures (milliards de dollars)'}
+                        </caption>
+                        <thead>
+                            <tr style={{ backgroundColor: '#eee' }}>
+                                <th scope="col" style={{ 
+                                    padding: '8px', 
+                                    borderBottom: '2px solid #ddd',
+                                    position: 'sticky',
+                                    left: 0,
+                                    backgroundColor: '#eee',
+                                    zIndex: 2
+                                }}>
+                                    {lang === 'en' ? 'Year' : 'Année'}
+                                </th>
+                                {CATEGORY_ORDER.map(cat => (
+                                    <th key={cat} scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd', whiteSpace: 'nowrap' }}>
+                                        {categoryLabels[cat]}
+                                        <span className="sr-only"> {unitText}</span>
+                                    </th>
+                                ))}
+                                <th scope="col" style={{ padding: '8px', borderBottom: '2px solid #ddd' }}>
+                                    {lang === 'en' ? 'Total' : 'Total'}
+                                    <span className="sr-only"> {unitText}</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pageData.map(yearData => (
+                                <tr key={yearData.year} style={{ borderBottom: '1px solid #eee' }}>
+                                    <th scope="row" style={{ 
+                                        padding: '8px', 
+                                        fontWeight: 'normal',
+                                        position: 'sticky',
+                                        left: 0,
+                                        backgroundColor: '#f9f9f9',
+                                        zIndex: 1
+                                    }}>
+                                        {yearData.year}
+                                    </th>
+                                    {CATEGORY_ORDER.map(cat => (
+                                        <td key={cat} style={{ padding: '8px', whiteSpace: 'nowrap' }}>
+                                            {formatNumberTable((yearData[cat] || 0) / 1000)}
+                                        </td>
+                                    ))}
+                                    <td style={{ padding: '8px', fontWeight: 'bold' }}>{formatNumberTable((yearData.total || 0) / 1000)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        );
+    };
+
     return (
         <main 
             id="main-content"
@@ -276,10 +414,12 @@ const Page25 = () => {
                 
                 .page25-chart-column {
                     width: 55%;
-                    height: calc(100vh - 480px);
-                    min-height: 350px;
+                    height: calc(100vh - 520px);
+                    min-height: 300px;
+                    max-height: 400px;
                     padding-left: 80px;
                     position: relative;
+                    margin-bottom: 20px;
                 }
                 
                 .page25-text-column {
@@ -287,6 +427,7 @@ const Page25 = () => {
                     padding-left: 25px;
                     padding-right: 20px;
                     padding-top: 0;
+                    margin-top: 0px;
                 }
                 
                 .page25-slider-track {
@@ -300,7 +441,42 @@ const Page25 = () => {
                     border-radius: 3px;
                     width: 100%;
                     margin-left: 0;
-                    margin-top: 50px;
+                    margin-top: 10px;
+                }
+
+                /* Forced Stacked Layout when Table is Open */
+                .layout-stacked {
+                    flex-direction: column !important;
+                    height: auto !important;
+                    align-items: center !important;
+                    flex: 0 0 auto !important;
+                }
+
+                .layout-stacked .page25-chart-column {
+                    width: 100% !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    padding-left: 0 !important;
+                    margin-bottom: 30px !important;
+                    overflow: visible !important;
+                }
+
+                .layout-stacked .page25-text-column {
+                    width: 100% !important;
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                    margin-top: 20px !important;
+                }
+                
+                .layout-stacked .page25-definition-box {
+                    width: 90% !important;
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                }
+                
+                .layout-stacked figure {
+                    height: 450px !important;
+                    min-height: 350px !important;
                 }
 
                 /* MEDIA QUERY: When zoomed in (125%+), switch to stacked layout */
@@ -312,22 +488,24 @@ const Page25 = () => {
                     }
 
                     h1 {
-                margin-top: 40px !important; 
-                padding-top: 20px !important;
-                }
+                        margin-top: 20px !important; 
+                        padding-top: 10px !important;
+                    }
                     
                     .page25-chart-column {
                         width: 100%;
-                        height: 500px;
+                        height: 400px;
+                        max-height: 400px;
                         padding-left: 0;
                         margin-top: 0;
-                        margin-bottom: 20px;
+                        margin-bottom: 30px;
                     }
                     
                     .page25-text-column {
                         width: 100%;
                         padding-left: 0;
                         padding-right: 0;
+                        margin-top: 20px;
                         margin-bottom: 40px;
                     }
                     
@@ -335,6 +513,7 @@ const Page25 = () => {
                         width: 90% !important;
                         margin-left: auto !important;
                         margin-right: auto !important;
+                        margin-top: 40px !important;
                     }
                 }
                 
@@ -346,7 +525,7 @@ const Page25 = () => {
                 }
                 
 
-                /* REFLOW: At 250%+ zoom 
+                /* REFLOW: At 250%+ zoom */
                 @media (max-width: 768px) {
                     .page-25 {
                         margin-left: 0 !important;
@@ -385,16 +564,19 @@ const Page25 = () => {
                     .page25-chart-column {
                         height: 450px !important;
                     }
-                    
-                    .page25-definition-box .decorative-quote {
-                        display: none !important;
-                    }
                 }
                 
                 /* REFLOW: At 400% zoom (320px width) */
                 @media (max-width: 480px) {
                     .page25-chart-column {
-                        height: 400px !important;
+                        width: 100% !important;
+                        height: 350px !important;
+                    }
+                    
+                    .page25-slider-region {
+                        position: relative !important;
+                        z-index: 10 !important;
+                        margin-bottom: 10px !important;
                     }
                     
                     .page25-definition-box {
@@ -404,6 +586,88 @@ const Page25 = () => {
                     .page25-container h1 {
                         font-size: 1.5rem !important;
                     }
+
+                    .decorative-quote {
+                        display: none !important;
+                    }
+                    
+                    /* Ensure slider is large enough to interact with at high zoom */
+                    input[type=range] {
+                        height: 44px !important;
+                        padding: 10px 0 !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-thumb {
+                        height: 28px !important;
+                        width: 28px !important;
+                        margin-top: -10px !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-runnable-track {
+                        height: 12px !important;
+                    }
+                }
+                
+                /* REFLOW: At 500% zoom (384px width) */
+                @media (max-width: 384px) {
+                    .page25-chart-column {
+                        height: 350px !important;
+                        width: 110% !important;
+                        margin-left: 7px !important;
+                    }
+                    
+                    .page25-slider-region {
+                        position: relative !important;
+                        z-index: 10 !important;
+                        margin-bottom: 10px !important;
+                    }
+                    
+                    /* Even larger touch target for very high zoom */
+                    input[type=range] {
+                        height: 50px !important;
+                        padding: 12px 0 !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-thumb {
+                        height: 32px !important;
+                        width: 32px !important;
+                        margin-top: -12px !important;
+                    }
+                    
+                    input[type=range]::-webkit-slider-runnable-track {
+                        height: 14px !important;
+                    }
+                }
+                
+                /* Hide default disclosure triangle */
+                details summary::-webkit-details-marker,
+                details summary::marker {
+                    display: none;
+                }
+
+                /* Screen reader only table - visually hidden but accessible */
+                .sr-only-table {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    padding: 0;
+                    margin: -1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border: 0;
+                }
+                
+                .sr-only {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    padding: 0;
+                    margin: -1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border: 0;
                 }
             `}</style>
 
@@ -471,14 +735,17 @@ const Page25 = () => {
                     {chartData && `${year}`}
                 </div>
 
-                {/* Content Row - switches from row to column when zoomed */}
-                <div className="page25-content-row">
+                {/* Content Row - switches from row to column when zoomed OR when table is open */}
+                <div className={`page25-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
                     {/* REGION 3: Chart with all data read as one block */}
                     <div 
                         className="page25-chart-column"
                         role="region"
-                        aria-label={`${lang === 'en' ? 'Infrastructure pie chart for' : 'Graphique circulaire des infrastructures pour'} ${year}. ${getChartDataSummary()}`}
+                        aria-label={`${lang === 'en' ? 'Infrastructure pie chart for' : 'Graphique circulaire des infrastructures pour'} ${year}. ${getChartDataSummary()}. ${lang === 'en' ? 'Expand the data table below for detailed values.' : 'Développez le tableau de données ci-dessous pour les valeurs détaillées.'}`}
                     >
+                        {/* Accessible data table for screen readers */}
+                        {getAccessibleDataTable()}
+                        
                         {chartData && (
                             <figure aria-hidden="true" style={{ width: '100%', height: '100%', margin: 0 }}>
                                 <Plot
@@ -486,7 +753,7 @@ const Page25 = () => {
                                         values: chartData.values,
                                         labels: pieLabels,
                                         // Responsive hole size - larger at narrower viewports to fit center text
-                                        hole: windowWidth <= 768 ? 0.75 : windowWidth <= 1400 ? 0.73 : 0.70,
+                                        hole: windowWidth <= 480 ? 0.80 : windowWidth <= 768 ? 0.75 : windowWidth <= 1400 ? 0.73 : 0.70,
                                         type: 'pie',
                                         marker: { colors: chartData.colors, line: { color: 'black', width: 3 } },
                                         // Responsive labels: use legend at narrow widths, outside labels at wider widths
@@ -520,7 +787,7 @@ const Page25 = () => {
                                         } : undefined,
                                         margin: windowWidth <= 768 
                                             ? { l: 10, r: 120, t: 10, b: 10 }
-                                            : { l: 80, r: 80, t: 40, b: 40 },
+                                            : { l: 20, r: 20, t: 20, b: 20 },
                                         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
                                         autosize: true, 
                                         annotations: annotations

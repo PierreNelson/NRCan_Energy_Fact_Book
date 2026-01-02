@@ -245,6 +245,100 @@ def process_page25_data():
 
 
 # =============================================================================
+# PAGE 27: INVESTMENT BY ASSET TYPE (Fuel, Energy and Pipeline Infrastructure)
+# =============================================================================
+
+def get_investment_by_asset_url():
+    """Get investment by asset type URL (Table 36-10-0608-01) with detailed asset breakdown."""
+    # This URL fetches investment data with detailed asset type breakdown
+    # Asset indices: 40=Wind/Solar, 41=Steam, 42=Nuclear, 43=Hydraulic, 44=Other electric, 
+    # 45=Transmission lines, 46=Distribution lines, 48=Pipelines, 57=Transformers
+    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610060801&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%5D%2C%5B2%5D%2C%5B%5D%2C%5B40%2C41%2C42%2C43%2C44%2C45%2C46%2C48%2C57%5D%2C%5B%5D%5D&checkedLevels=0D1%2C3D1%2C5D1"
+
+
+def process_page27_data():
+    """
+    Fetch investment by asset type data from StatCan and process for Page 27.
+    This breaks down fuel, energy and pipeline infrastructure by specific asset types.
+    
+    Returns list of tuples for data.csv and metadata.csv
+    """
+    print("Processing Page 27: Investment by Asset Type...")
+    
+    df = fetch_csv_from_url(get_investment_by_asset_url())
+    
+    # Get the asset column name
+    asset_col = 'Asset'
+    
+    # Filter data and convert year
+    df['year'] = pd.to_numeric(df['REF_DATE'], errors='coerce')
+    
+    # Filter for years 2009 onwards
+    df = df[df['year'] >= 2009].copy()
+    
+    years = sorted(df['year'].dropna().unique())
+    data_rows = []
+    
+    # Exact asset names from StatCan Table 36-10-0608-01
+    # Based on the actual data structure
+    asset_exact_names = {
+        'wind_solar': 'Wind and solar power plants',
+        'steam_thermal': 'Steam production plants',
+        'nuclear': 'Nuclear production plants',
+        'hydraulic': 'Hydraulic production plants',
+        'other_electric': 'Other electric power construction',
+        'transmission_networks': 'Power transmission networks',
+        'distribution_networks': 'Power distribution networks',
+        'pipelines': 'Pipelines',
+        'transformers': 'Power and distribution transformers',
+    }
+    
+    for year in years:
+        year_df = df[df['year'] == year]
+        year_int = int(year)
+        
+        values = {}
+        for key, exact_name in asset_exact_names.items():
+            mask = year_df[asset_col] == exact_name
+            values[key] = year_df.loc[mask, 'VALUE'].sum()
+        
+        # Combine transmission networks + distribution networks + transformers into one category
+        transmission_distribution = values.get('transmission_networks', 0) + values.get('distribution_networks', 0) + values.get('transformers', 0)
+        
+        # Calculate total
+        total = (transmission_distribution + values.get('pipelines', 0) + values.get('nuclear', 0) + 
+                 values.get('other_electric', 0) + values.get('hydraulic', 0) + 
+                 values.get('wind_solar', 0) + values.get('steam_thermal', 0))
+        
+        if total > 0:
+            data_rows.extend([
+                ('page27_transmission_distribution', year_int, round(transmission_distribution, 1)),
+                ('page27_pipelines', year_int, round(values.get('pipelines', 0), 1)),
+                ('page27_nuclear', year_int, round(values.get('nuclear', 0), 1)),
+                ('page27_other_electric', year_int, round(values.get('other_electric', 0), 1)),
+                ('page27_hydraulic', year_int, round(values.get('hydraulic', 0), 1)),
+                ('page27_wind_solar', year_int, round(values.get('wind_solar', 0), 1)),
+                ('page27_steam_thermal', year_int, round(values.get('steam_thermal', 0), 1)),
+                ('page27_total', year_int, round(total, 1)),
+            ])
+    
+    # Metadata
+    metadata_rows = [
+        ('page27_transmission_distribution', 'Investment - Transmission, distribution and transformers', 'Millions of dollars', 'millions'),
+        ('page27_pipelines', 'Investment - Pipelines', 'Millions of dollars', 'millions'),
+        ('page27_nuclear', 'Investment - Nuclear production plants', 'Millions of dollars', 'millions'),
+        ('page27_other_electric', 'Investment - Other electric power construction', 'Millions of dollars', 'millions'),
+        ('page27_hydraulic', 'Investment - Hydraulic production plants', 'Millions of dollars', 'millions'),
+        ('page27_wind_solar', 'Investment - Wind and solar power plants', 'Millions of dollars', 'millions'),
+        ('page27_steam_thermal', 'Investment - Steam production plants', 'Millions of dollars', 'millions'),
+        ('page27_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions'),
+    ]
+    
+    print(f"  Page 27: {len(data_rows)} data rows")
+    return data_rows, metadata_rows
+
+
+# =============================================================================
 # PAGE 26: ECONOMIC CONTRIBUTIONS
 # =============================================================================
 
@@ -350,6 +444,10 @@ def refresh_all_data():
     data26, meta26 = process_page26_data()
     all_data.extend(data26)
     all_metadata.extend(meta26)
+    
+    data27, meta27 = process_page27_data()
+    all_data.extend(data27)
+    all_metadata.extend(meta27)
     
     # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])

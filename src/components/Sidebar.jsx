@@ -83,6 +83,14 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_economic_contributions', lang)}
                             </NavLink>
+
+                            {/* Page 27 */}
+                            <NavLink
+                                to="/page-27"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_investment_detail', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>

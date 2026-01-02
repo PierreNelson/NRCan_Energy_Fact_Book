@@ -99,6 +99,27 @@ export const TRANSLATIONS = {
         'page26_footer_part1': 'Public and private investment in fuel, energy and pipeline infrastructure in',
         'page26_footer_part2': 'was',
         'page26_footer_part3': '(nominal).',
+
+        // Page 27
+        'page27_title': 'Public and private investment in fuel, energy and pipeline infrastructure, 2009–2024',
+        'page27_yaxis': '$ billion (constant 2012 dollars)',
+        'page27_legend_transmission': 'Transmission, distribution, and transformers',
+        'page27_legend_pipelines': 'Pipelines',
+        'page27_legend_nuclear': 'Nuclear production plants',
+        'page27_legend_other': 'Other electric power construction',
+        'page27_legend_hydraulic': 'Hydraulic production plants',
+        'page27_legend_wind_solar': 'Wind and solar power plants',
+        'page27_legend_steam': 'Steam production plants',
+        'page27_hover_transmission': 'Transmission, distribution, and transformers',
+        'page27_hover_pipelines': 'Pipelines',
+        'page27_hover_nuclear': 'Nuclear production plants',
+        'page27_hover_other': 'Other electric power construction',
+        'page27_hover_hydraulic': 'Hydraulic production plants',
+        'page27_hover_wind_solar': 'Wind and solar power plants',
+        'page27_hover_steam': 'Steam production plants',
+        'page27_hover_total': 'Total',
+        'page27_chart_title_prefix': 'Public and private investment in fuel, energy and pipeline infrastructure, ',
+        'nav_investment_detail': 'Public and Private Investment',
     },
     'fr': {
         // Navigation
@@ -176,7 +197,7 @@ export const TRANSLATIONS = {
         'hover_environmental': 'Protection environnementale',
 
         'infra_definition_title': 'Statistique Canada définit\n l\'infrastructure en tant que:',
-        'infra_definition_text': 'Les systèmes et les structures\n physiques qui soutiennent\n la production de biens et\n de services, la fourniture\n de ces biens et services\n aux gouvernements, aux\n entreprises et aux citoyens\n ainsi que leur utilisation par\n ceux-ci.',
+        'infra_definition_text': 'Les systèmes et les structures physiques \n qui soutiennent la production\n de biens et de services,\n la fourniture de ces biens\n et services aux gouvernements, aux\n entreprises et aux citoyens\n ainsi que leur utilisation par\n ceux-ci.',
         'infra_description': 'L\'infrastructure de carburant, d\'énergie et\n de pipelines comprennent les infrastructures\n d’énergie électrique telles que la production\n éolienne et solaire, hydroélectrique, nucléaire et\n thermique, les lignes de transport et de distribution\n d\'électricité et oléoducs et gazoducs.',
 
         'year_slider_label': 'Sélectionner l\'année:',
@@ -197,6 +218,27 @@ export const TRANSLATIONS = {
         'page26_footer_part1': 'L\'investissement public et privé dans les infrastructures de carburant, d\'énergie et de pipelines en',
         'page26_footer_part2': 'était de',
         'page26_footer_part3': '(nominal).',
+
+        // Page 27
+        'page27_title': 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline, 2009-2024',
+        'page27_yaxis': 'En milliards de $ (dollars constants de 2012)',
+        'page27_legend_transmission': 'Réseaux de transport et de distribution d\'électricité',
+        'page27_legend_pipelines': 'Pipelines',
+        'page27_legend_nuclear': 'Centrale énergétique nucléaire',
+        'page27_legend_other': 'Autres constructions de l\'énergie électrique',
+        'page27_legend_hydraulic': 'Centrale énergétique hydraulique',
+        'page27_legend_wind_solar': 'Centrales éoliennes et panneaux solaires',
+        'page27_legend_steam': 'Centrale énergétique thermale',
+        'page27_hover_transmission': 'Réseaux de transport et de distribution d\'électricité',
+        'page27_hover_pipelines': 'Pipelines',
+        'page27_hover_nuclear': 'Centrale énergétique nucléaire',
+        'page27_hover_other': 'Autres constructions de l\'énergie électrique',
+        'page27_hover_hydraulic': 'Centrale énergétique hydraulique',
+        'page27_hover_wind_solar': 'Centrales éoliennes et panneaux solaires',
+        'page27_hover_steam': 'Centrale énergétique thermale',
+        'page27_hover_total': 'Total',
+        'page27_chart_title_prefix': 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline, ',
+        'nav_investment_detail': 'Investissements publics et privés',
     }
 };
 
