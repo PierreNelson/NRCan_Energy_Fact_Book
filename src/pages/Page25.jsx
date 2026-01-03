@@ -274,7 +274,8 @@ const Page25 = () => {
                     }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'View Data Table (press Enter to open or close)' : 'Voir le tableau de données (appuyez sur Entrée pour ouvrir ou fermer)'}
+                    {lang === 'en' ? 'View Data Table' : 'Voir le tableau de données'}
+                    <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
                 </summary>
 
                 <div 
@@ -787,7 +788,7 @@ const Page25 = () => {
                                         } : undefined,
                                         margin: windowWidth <= 768 
                                             ? { l: 10, r: 120, t: 10, b: 10 }
-                                            : { l: 20, r: 20, t: 20, b: 20 },
+                                            : { l: 80, r: 80, t: 40, b: 40 },
                                         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
                                         autosize: true, 
                                         annotations: annotations

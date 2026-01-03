@@ -203,7 +203,8 @@ const Page24 = () => {
                     }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'View Data Table (press Enter to open or close)' : 'Voir le tableau de données (appuyez sur Entrée pour ouvrir ou fermer)'}
+                    {lang === 'en' ? 'View Data Table' : 'Voir le tableau de données'}
+                    <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
                 </summary>
 
                 <div 

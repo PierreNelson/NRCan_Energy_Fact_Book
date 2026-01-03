@@ -120,6 +120,19 @@ export const TRANSLATIONS = {
         'page27_hover_total': 'Total',
         'page27_chart_title_prefix': 'Public and private investment in fuel, energy and pipeline infrastructure, ',
         'nav_investment_detail': 'Public and Private Investment',
+
+        // Page 31
+        'nav_international_investment': 'International Investments and Investors',
+        'page31_title': 'INTERNATIONAL INVESTMENTS AND INVESTORS',
+        'page31_subtitle': "Canada's energy industries operate in free markets, where investments by both Canadian and foreign companies ensure an efficient, competitive and innovative energy system.",
+        'page31_chart_title': 'Stock of foreign direct investment (FDI)* in Canada and Canadian direct investment abroad (CDIA) in the energy industry',
+        'page31_yaxis': '$ billion',
+        'page31_legend_cdia': 'CDIA',
+        'page31_legend_fdi': 'FDI',
+        'page31_hover_cdia': 'Canadian direct investment abroad (CDIA)',
+        'page31_hover_fdi': 'Foreign direct investment in Canada (FDI)',
+        'page31_footnote1': '* Direct investment is defined as a company owning a minimum of 10% of voting equity interest in a foreign enterprise and is measured as the total equity value at the time of acquisition. Excludes residential expenditures and intellectual property investments such as exploration expenses.',
+        'page31_footnote2': 'FDI and CDIA include investments in renewable electricity, do not capture other forms of renewable energy.',
     },
     'fr': {
         // Navigation
@@ -239,6 +252,19 @@ export const TRANSLATIONS = {
         'page27_hover_total': 'Total',
         'page27_chart_title_prefix': 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline, ',
         'nav_investment_detail': 'Investissements publics et privés',
+
+        // Page 31
+        'nav_international_investment': 'Investissements et investisseurs internationaux',
+        'page31_title': 'INVESTISSEMENTS ET INVESTISSEURS INTERNATIONAUX',
+        'page31_subtitle': "Les industries de l’énergie du Canada opèrent sur des marchés ouverts où les investissements des sociétés canadiennes et étrangères assurent ainsi l’efficacité, la compétitivité et l’innovation du système énergétique.",
+        'page31_chart_title': "Stock d’investissement direct étranger (IDE)* au Canada et d’investissement direct canadien à l’étranger (IDCE) dans l’industrie de l’énergie",
+        'page31_yaxis': 'En milliards de $',
+        'page31_legend_cdia': 'IDCE',
+        'page31_legend_fdi': 'IDE',
+        'page31_hover_cdia': "Investissement direct canadien à l'étranger (IDCE)",
+        'page31_hover_fdi': "Investissement direct étranger au Canada (IDE)",
+        'page31_footnote1': "* L’investissement direct est défini comme une société détenant au moins 10 % des actions avec droit de vote dans une entreprise étrangère et est mesuré comme la valeur totale des capitaux propres au moment de l’acquisition. Exclut les dépenses résidentielles et les investissements en propriété intellectuelle tels que les dépenses d’exploration.",
+        'page31_footnote2': "L’IDE et l’IDCE incluent les investissements dans l’électricité renouvelable, ne comprennent pas d’autres formes d’énergie renouvelable.",
     }
 };
 

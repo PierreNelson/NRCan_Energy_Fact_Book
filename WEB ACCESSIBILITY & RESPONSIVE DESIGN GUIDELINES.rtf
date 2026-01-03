@@ -1,0 +1,215 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\f0\fs22\lang9 ==============================================================================\par
+WEB ACCESSIBILITY & RESPONSIVE DESIGN GUIDELINES (WCAG 2.1 AA/AAA)\par
+==============================================================================\par
+\par
+PURPOSE:\par
+This document defines the standard coding patterns, media queries, and accessibility \par
+structures to be used for all new web pages. Adherence to these guidelines ensures \par
+compliance with WCAG "Reflow" (1.4.10) and "Non-text Content" (1.1.1).\par
+\par
+------------------------------------------------------------------------------\par
+1. STANDARD MEDIA QUERIES (ZOOM LEVELS)\par
+------------------------------------------------------------------------------\par
+All pages must strictly support the following breakpoints. Layouts must adapt \par
+fluidly without requiring horizontal scrolling (except for data tables).\par
+\par
+/* BASE: 100% Zoom (>1745px) */\par
+.page-container \{\par
+    width: 100%;\par
+    padding: 20px;\par
+    display: flex;\par
+    flex-direction: row; /* Side-by-side layout default */\par
+    min-height: 100vh;\par
+\}\par
+.chart-container \{\par
+    width: 70%;\par
+    height: calc(100vh - 250px); /* Fill available vertical space */\par
+    min-height: 500px;\par
+\}\par
+\par
+/* 110% Zoom (~1745px) */\par
+@media (max-width: 1745px) \{\par
+    .chart-container \{\par
+        height: calc(100vh - 280px);\par
+    \}\par
+\}\par
+\par
+/* 125% Zoom (~1536px) */\par
+@media (max-width: 1536px) \{\par
+    /* Font sizes typically increase here */\par
+    .page-title \{ font-size: 2.5rem; \}\par
+\}\par
+\par
+/* 150% Zoom (~1280px) */\par
+@media (max-width: 1280px) \{\par
+    .chart-container \{\par
+        /* Switch to fixed height if vh becomes too small */\par
+        height: 600px !important; \par
+    \}\par
+\}\par
+\par
+/* 175% Zoom (~1097px) */\par
+@media (max-width: 1097px) \{\par
+    /* Critical break point for complex legends */\par
+    /* Often forces font size reduction in charts */\par
+\}\par
+\par
+/* 200% Zoom (~960px) - WCAG REFOW THRESHOLD */\par
+@media (max-width: 960px) \{\par
+    .page-container \{\par
+        padding: 10px;\par
+    \}\par
+\}\par
+\par
+/* 250% Zoom (~768px) - TABLET / MOBILE LAYOUT */\par
+@media (max-width: 768px) \{\par
+    .page-container \{\par
+        flex-direction: column; /* STACK CONTENT VERTICALLY */\par
+    \}\par
+    .chart-container \{\par
+        width: 100%;\par
+        height: 700px !important; /* Taller fixed height for vertical stacking */\par
+        margin-bottom: 30px;\par
+    \}\par
+    .text-column \{\par
+        width: 100%;\par
+        padding-left: 0;\par
+    \}\par
+\}\par
+\par
+/* 300% Zoom (~640px) */\par
+@media (max-width: 640px) \{\par
+    /* Adjust internal chart text/ticks */\par
+    /* Rotate X-axis labels to -45 degrees if crowded */\par
+\}\par
+\par
+/* 400% Zoom (~480px) */\par
+@media (max-width: 480px) \{\par
+    .chart-container \{\par
+        height: 800px !important; /* Maximize height for readability */\par
+    \}\par
+    h1 \{ font-size: 1.5rem !important; \}\par
+\}\par
+\par
+/* 500% Zoom (~384px) */\par
+@media (max-width: 384px) \{\par
+    /* Minimal padding to maximize content width */\par
+    .page-container \{ padding: 5px; \}\par
+    /* Hide decorative elements */\par
+\}\par
+\par
+\par
+------------------------------------------------------------------------------\par
+2. ACCESSIBILITY REQUIREMENTS (SCREEN READERS)\par
+------------------------------------------------------------------------------\par
+\par
+A. ARIA LABELS & REGIONS\par
+   - Every major section must have `role="region"` and a descriptive `aria-label`.\par
+   - Charts must NOT be read automatically. Instead, provide a summary string.\par
+   \par
+   EXAMPLE (Chart Container):\par
+   <div role="region" aria-label="Stacked bar chart showing investment trends from 2007 to 2024. Total investment peaked in 2024 at 30 billion dollars.">...</div>\par
+\par
+B. DATA TABLES (THE "GOLD STANDARD")\par
+   - Every chart MUST be accompanied by a semantic HTML `<table>`.\par
+   - Use the `<details>` pattern to hide it by default but keep it accessible.\par
+   - Include a "Skip Link" for keyboard users to bypass large tables.\par
+\par
+   CODE PATTERN:\par
+   <details>\par
+       <summary>View Data Table</summary>\par
+       <div tabIndex="0" role="region" aria-label="Data Table">\par
+           <table>\par
+               <caption>Descriptive Title</caption>\par
+               <thead>\par
+                   <tr>\par
+                       <th scope="col" style="position: sticky; left: 0">Year</th>\par
+                       <th scope="col">Category A <span class="sr-only">(billions)</span></th>\par
+                   </tr>\par
+               </thead>\par
+               <tbody>...</tbody>\par
+           </table>\par
+       </div>\par
+   </details>\par
+\par
+C. NUMBER FORMATTING\par
+   - Visual: "$5.2B" (Concise)\par
+   - Screen Reader: "5.2 billion dollars" (Verbose & Natural)\par
+   - Decimals: \par
+     * If Value < 1.0: Use 2 decimal places (0.45)\par
+     * If Value >= 1.0: Use 1 decimal place (5.2)\par
+\par
+------------------------------------------------------------------------------\par
+3. CHART GUIDELINES (PLOTLY)\par
+------------------------------------------------------------------------------\par
+\par
+A. DYNAMIC LEGENDS\par
+   - Legends must reflow based on window width (`windowWidth` state).\par
+   \par
+B. RESPONSIVE HEIGHTS\par
+   - NEVER use static `height="500px"` in the JS Layout object.\par
+   - Use CSS classes to control height (vh units for desktop, fixed pixels for zoom).\par
+   - Set `autosize: true` and `useResizeHandler=\{true\}` on the <Plot /> component.\par
+\par
+C. HOVER LABELS\par
+   - Custom hover templates are required.\par
+   - Must include: Category Name, X-value (Year), Y-value (formatted), and Totals.\par
+   - Font size in hovers should scale (12px mobile -> 16px desktop).\par
+\par
+\par
+------------------------------------------------------------------------------\par
+4. REACT COMPONENT STRUCTURE (TEMPLATE)\par
+------------------------------------------------------------------------------\par
+\par
+import React, \{ useState, useEffect, useMemo \} from 'react';\par
+import \{ useOutletContext \} from 'react-router-dom';\par
+import Plot from 'react-plotly.js';\par
+\par
+const PageTemplate = () => \{\par
+    const \{ lang \} = useOutletContext();\par
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);\par
+    const [isTableOpen, setIsTableOpen] = useState(false); // CRITICAL for layout switching\par
+\par
+    // 1. Window Resize Listener\par
+    useEffect(() => \{ ... \}, []);\par
+\par
+    // 2. Data Loading & Calculations\par
+    // ...\par
+\par
+    // 3. Dynamic Styles (Stacked Layout Trigger)\par
+    // Applies 'column' layout immediately when table opens to prevent overflow\par
+    const layoutClass = isTableOpen ? 'layout-stacked' : '';\par
+\par
+    return (\par
+        <main>\par
+            <style>\{`\par
+                /* Paste Standard CSS Here */\par
+                .layout-stacked \{ flex-direction: column !important; \}\par
+            `\}</style>\par
+\par
+            <header>\par
+                <h1>\{Title\}</h1>\par
+            </header>\par
+\par
+            \{/* Accessible Table */\}\par
+            <details onToggle=\{(e) => setIsTableOpen(e.currentTarget.open)\}>...</details>\par
+\par
+            \{/* Content Area */\}\par
+            <div className=\{`page-content-row $\{layoutClass\}`\}>\par
+                <div className="chart-container">\par
+                    <Plot ... />\par
+                </div>\par
+                <aside className="text-column">\par
+                    <p>Analysis text...</p>\par
+                </aside>\par
+            </div>\par
+        </main>\par
+    );\par
+\};\par
+\par
+export default PageTemplate;\par
+==============================================================================\par
+}
+ 

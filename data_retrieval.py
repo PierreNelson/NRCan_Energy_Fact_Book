@@ -45,6 +45,14 @@ def get_economic_contributions_url():
     """Get economic contributions URL (Table 36-10-0610-01)."""
     return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610061001&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B39%2C48%2C54%2C55%2C57%5D%2C%5B%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C5D1"
 
+def get_international_investment_url():
+    """Get international investment URL (Table 36-10-0009-01).
+    
+    Returns FDI (Foreign Direct Investment) and CDIA (Canadian Direct Investment Abroad)
+    for energy-related industries.
+    """
+    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610000901&latestN=0&startDate=20070101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%2C16%2C18%2C19%2C30%5D%2C%5B%5D%2C%5B%5D%5D&checkedLevels=0D1%2C2D1%2C3D1"
+
 # =============================================================================
 # VECTOR MAPPINGS
 # =============================================================================
@@ -420,6 +428,106 @@ def process_page26_data():
 
 
 # =============================================================================
+# PAGE 31: INTERNATIONAL INVESTMENTS (FDI and CDIA)
+# =============================================================================
+
+def process_page31_data():
+    """
+    Fetch international investment data from StatCan and process for Page 31.
+    
+    FDI = Foreign Direct Investment in Canada
+    CDIA = Canadian Direct Investment Abroad
+    
+    Energy industries include:
+    - Mining and oil and gas extraction [21]
+    - Utilities [22]
+    - Pipeline transportation [486]
+    - Petroleum and coal products manufacturing [324]
+    
+    Returns list of tuples for data.csv and metadata.csv
+    """
+    print("Processing Page 31: International Investments...")
+    
+    df = fetch_csv_from_url(get_international_investment_url())
+    
+    print(f"  Total rows fetched: {len(df)}")
+    print(f"  Columns: {df.columns.tolist()}")
+    
+    # Column names
+    naics_col = 'North American Industry Classification System (NAICS)'
+    investment_col = 'Canadian and foreign direct investment'
+    
+    # Check if columns exist
+    if naics_col not in df.columns:
+        print(f"  WARNING: Column '{naics_col}' not found!")
+        print(f"  Available columns: {df.columns.tolist()}")
+        return [], []
+    
+    # Print unique industry names for debugging
+    unique_industries = df[naics_col].unique().tolist()
+    print(f"  Found {len(unique_industries)} unique industries:")
+    for ind in unique_industries:
+        print(f"    - {ind}")
+    
+    # Energy industries to sum for FDI/CDIA totals
+    # The URL returns child categories [211], [213] instead of parent [21]
+    energy_industries = [
+        'Oil and gas extraction [211]',
+        'Support activities for mining and oil and gas extraction [213]',
+        'Utilities [22]',
+        'Petroleum and coal products manufacturing [324]'
+    ]
+    
+    # Find which energy industries are in the data
+    found_industries = [ind for ind in unique_industries if ind in energy_industries]
+    for ind in found_industries:
+        print(f"    Using: {ind}")
+    
+    # Convert year
+    df['year'] = pd.to_numeric(df['REF_DATE'], errors='coerce')
+    
+    # Filter for years 2007 onwards (matching factbook chart)
+    df = df[df['year'] >= 2007].copy()
+    
+    years = sorted(df['year'].dropna().unique())
+    data_rows = []
+    
+    for year in years:
+        year_df = df[df['year'] == year]
+        year_int = int(year)
+        
+        # Filter for energy industries
+        year_energy = year_df[year_df[naics_col].isin(found_industries)]
+        
+        # Sum CDIA for all energy industries
+        cdia_mask = year_energy[investment_col].str.contains('Canadian direct investment abroad', case=False, na=False)
+        cdia_total = year_energy.loc[cdia_mask, 'VALUE'].sum()
+        
+        # Sum FDI for all energy industries
+        fdi_mask = year_energy[investment_col].str.contains('Foreign direct investment in Canada', case=False, na=False)
+        fdi_total = year_energy.loc[fdi_mask, 'VALUE'].sum()
+        
+        if cdia_total > 0 or fdi_total > 0:
+            # Values are in millions
+            data_rows.extend([
+                ('page31_cdia', year_int, round(cdia_total, 1)),
+                ('page31_fdi', year_int, round(fdi_total, 1)),
+            ])
+            # Debug print for first and last years
+            if year_int == 2007 or year_int == max(years):
+                print(f"    {year_int}: CDIA={cdia_total}M, FDI={fdi_total}M")
+    
+    # Metadata
+    metadata_rows = [
+        ('page31_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions'),
+        ('page31_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions'),
+    ]
+    
+    print(f"  Page 31: {len(data_rows)} data rows")
+    return data_rows, metadata_rows
+
+
+# =============================================================================
 # MAIN FUNCTION
 # =============================================================================
 
@@ -448,6 +556,10 @@ def refresh_all_data():
     data27, meta27 = process_page27_data()
     all_data.extend(data27)
     all_metadata.extend(meta27)
+    
+    data31, meta31 = process_page31_data()
+    all_data.extend(data31)
+    all_metadata.extend(meta31)
     
     # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])

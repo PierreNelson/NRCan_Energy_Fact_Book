@@ -170,3 +170,30 @@ export async function getInvestmentByAssetData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get international investment data for Page 31
+ * Returns array of objects: { year, cdia, fdi }
+ * CDIA = Canadian Direct Investment Abroad
+ * FDI = Foreign Direct Investment in Canada
+ * Values are in millions of dollars
+ */
+export async function getInternationalInvestmentData() {
+    const allData = await loadAllData();
+    
+    // Filter for page31 vectors
+    const page31Data = allData.filter(row => row.vector && row.vector.startsWith('page31_'));
+    
+    // Group by year
+    const yearMap = {};
+    page31Data.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('page31_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

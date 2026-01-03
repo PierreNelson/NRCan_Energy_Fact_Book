@@ -22,3 +22,5 @@ page27_hydraulic,Investment - Hydraulic production plants,Millions of dollars,mi
 page27_wind_solar,Investment - Wind and solar power plants,Millions of dollars,millions
 page27_steam_thermal,Investment - Steam production plants,Millions of dollars,millions
 page27_total,"Investment - Total fuel, energy and pipeline",Millions of dollars,millions
+page31_cdia,Canadian direct investment abroad (CDIA) - Energy industry,Millions of dollars,millions
+page31_fdi,Foreign direct investment in Canada (FDI) - Energy industry,Millions of dollars,millions
