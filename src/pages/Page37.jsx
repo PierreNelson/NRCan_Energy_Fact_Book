@@ -23,14 +23,15 @@ const Page37 = () => {
         }
     }, [isTableOpen]);
 
-    useEffect(() => {
-        if (!loading && mainRef.current) {
-            const timer = setTimeout(() => {
-                mainRef.current.focus();
-            }, 100);
-            return () => clearTimeout(timer);
-        }
-    }, [loading]);
+    // Auto-focus disabled - was causing issues with stacked section layout
+    // useEffect(() => {
+    //     if (!loading && mainRef.current) {
+    //         const timer = setTimeout(() => {
+    //             mainRef.current.focus();
+    //         }, 100);
+    //         return () => clearTimeout(timer);
+    //     }
+    // }, [loading]);
 
     const minYear = useMemo(() => pageData.length > 0 ? pageData[0].year : 2018, [pageData]);
     const maxYear = useMemo(() => pageData.length > 0 ? pageData[pageData.length - 1].year : 2022, [pageData]);

@@ -179,7 +179,7 @@ const Sidebar = ({ lang }) => {
                         >
                             {/* Investment (Section 2 Intro - Page 23) */}
                             <NavLink
-                                to="/page-23"
+                                to="/section-2#page-23"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section2_title', lang)}
@@ -187,7 +187,7 @@ const Sidebar = ({ lang }) => {
 
                             {/* Page 24 */}
                             <NavLink
-                                to="/page-24"
+                                to="/section-2#page-24"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_capital_expenditure', lang)}
@@ -195,7 +195,7 @@ const Sidebar = ({ lang }) => {
 
                             {/* Page 25 */}
                             <NavLink
-                                to="/page-25"
+                                to="/section-2#page-25"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_infrastructure', lang)}
@@ -203,7 +203,7 @@ const Sidebar = ({ lang }) => {
 
                             {/* Page 26 */}
                             <NavLink
-                                to="/page-26"
+                                to="/section-2#page-26"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_economic_contributions', lang)}
@@ -211,7 +211,7 @@ const Sidebar = ({ lang }) => {
 
                             {/* Page 27 */}
                             <NavLink
-                                to="/page-27"
+                                to="/section-2#page-27"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_investment_detail', lang)}
@@ -219,7 +219,7 @@ const Sidebar = ({ lang }) => {
 
                             {/* Page 31 */}
                             <NavLink
-                                to="/page-31"
+                                to="/section-2#page-31"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_international_investment', lang)}
@@ -227,7 +227,7 @@ const Sidebar = ({ lang }) => {
 
                             {/* Page 32 */}
                             <NavLink
-                                to="/page-32"
+                                to="/section-2#page-32"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_fdi_stock', lang)}
@@ -235,7 +235,7 @@ const Sidebar = ({ lang }) => {
 
                             {/* Page 37 */}
                             <NavLink
-                                to="/page-37"
+                                to="/section-2#page-37"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_environmental_protection', lang)}

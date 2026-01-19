@@ -532,3 +532,42 @@ html {
   white-space: nowrap;
   border: 0;
 }
+
+/* ===============================================
+   STACKED SECTIONS LAYOUT
+   Forces individual page components to expand fully 
+   instead of trying to fit 100vh and scroll internally.
+   Minimal overrides to preserve page alignment.
+   =============================================== */
+
+.stacked-section-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Target the <main> element inside page components */
+.stacked-page-wrapper main {
+  /* Allow content to flow naturally - remove internal scroll */
+  overflow-y: visible !important;
+  
+  /* Allow height to grow with content */
+  height: auto !important;
+  min-height: auto !important;
+}
+
+/* Individual page wrappers */
+.stacked-page-wrapper {
+  width: 100%;
+  /* Add a subtle separator between stacked pages */
+  border-bottom: 3px solid #e0e0e0;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+/* Remove border from last page in section */
+.stacked-page-wrapper:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}

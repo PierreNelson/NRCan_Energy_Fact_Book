@@ -32,20 +32,15 @@ const Layout = () => {
         return () => clearTimeout(focusTimer);
     }, [location.pathname]);
 
-    // Footer Navigation Logic
+    // Section Navigation Logic - Users navigate between sections, not individual pages
     const pages = [
         { path: '/', labelKey: 'nav_section1_title' },
-        { path: '/page-23', labelKey: 'nav_section2_title' },
-        { path: '/page-24', labelKey: 'nav_capital_expenditure' },
-        { path: '/page-25', labelKey: 'nav_infrastructure' },
-        { path: '/page-26', labelKey: 'nav_economic_contributions' },
-        { path: '/page-27', labelKey: 'nav_investment_detail' },
-        { path: '/page-31', labelKey: 'nav_international_investment' },
-        { path: '/page-32', labelKey: 'nav_fdi_stock' },
-        { path: '/page-37', labelKey: 'nav_environmental_protection' }
+        { path: '/section-2', labelKey: 'nav_section2_title' }
     ];
 
-    const currentIndex = pages.findIndex(p => p.path === location.pathname);
+    // Handle both / and /section-1 as the same section
+    const normalizedPath = location.pathname === '/section-1' ? '/' : location.pathname;
+    const currentIndex = pages.findIndex(p => p.path === normalizedPath);
     const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
     const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
 

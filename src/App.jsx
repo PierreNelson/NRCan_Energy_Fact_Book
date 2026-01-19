@@ -3,17 +3,10 @@ import React, { Suspense } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 
-// Lazy load pages for code splitting
+// Lazy load section wrappers for code splitting
 // These files are NOT downloaded initially - only when user navigates to them
-const Page1 = React.lazy(() => import('./pages/Page1'));
-const Page23 = React.lazy(() => import('./pages/Page23'));
-const Page24 = React.lazy(() => import('./pages/Page24'));
-const Page25 = React.lazy(() => import('./pages/Page25'));
-const Page26 = React.lazy(() => import('./pages/Page26'));
-const Page27 = React.lazy(() => import('./pages/Page27'));
-const Page31 = React.lazy(() => import('./pages/Page31'));
-const Page32 = React.lazy(() => import('./pages/Page32'));
-const Page37 = React.lazy(() => import('./pages/Page37'));
+const SectionOne = React.lazy(() => import('./components/SectionOne'));
+const SectionTwo = React.lazy(() => import('./components/SectionTwo'));
 
 // Loading component for Suspense fallback
 const LoadingSpinner = () => (
@@ -54,55 +47,22 @@ function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          {/* Wrap routes in Suspense for lazy loading */}
+          {/* Section 1: Energy Factbook Introduction (Page 1) */}
           <Route index element={
             <Suspense fallback={<LoadingSpinner />}>
-              <Page1 />
+              <SectionOne />
             </Suspense>
           } />
-          <Route path="page-1" element={
+          <Route path="section-1" element={
             <Suspense fallback={<LoadingSpinner />}>
-              <Page1 />
+              <SectionOne />
             </Suspense>
           } />
-          <Route path="page-23" element={
+          
+          {/* Section 2: Energy & Infrastructure (Pages 23, 24, 25, 26, 27, 31, 32, 37) */}
+          <Route path="section-2" element={
             <Suspense fallback={<LoadingSpinner />}>
-              <Page23 />
-            </Suspense>
-          } />
-          <Route path="page-24" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Page24 />
-            </Suspense>
-          } />
-          <Route path="page-25" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Page25 />
-            </Suspense>
-          } />
-          <Route path="page-26" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Page26 />
-            </Suspense>
-          } />
-          <Route path="page-27" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Page27 />
-            </Suspense>
-          } />
-          <Route path="page-31" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Page31 />
-            </Suspense>
-          } />
-          <Route path="page-32" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Page32 />
-            </Suspense>
-          } />
-          <Route path="page-37" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Page37 />
+              <SectionTwo />
             </Suspense>
           } />
         </Route>
