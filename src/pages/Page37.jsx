@@ -282,8 +282,8 @@ const getAccessibleStrings = () => {
 const accessibleStrings = getAccessibleStrings();
 
 // Accessible data table
-    const getAccessibleDataTable = () => {
-        if (!pageData || pageData.length ===0) return null;
+const getAccessibleDataTable = () => {
+    if (!pageData || pageData.length === 0) return null;
         
         const categoryLabels = {
             'wastewater': stripHtml(getText('page37_cat_wastewater', lang)),
@@ -307,14 +307,8 @@ const accessibleStrings = getAccessibleStrings();
             <details 
                 open={isTableOpen}
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                style={{ 
-                    marginTop: '10px', 
-                    marginBottom: '10px', 
-                    width: '95%',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    fontFamily: 'Arial, sans-serif'
-                }}
+                className="page37-data-table"
+                style={{ position: 'relative', zIndex: 10 }} 
             >
                 <summary
                     ref={tableSummaryRef}
@@ -336,7 +330,7 @@ const accessibleStrings = getAccessibleStrings();
                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div className="table-responsive" style={{ marginTop: '10px' }}>
+                <div className="table-responsive" style={{ marginTop: '10px' }} role="region" aria-labelledby={captionId}>
                     <table className="table table-striped table-hover">
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
@@ -345,29 +339,43 @@ const accessibleStrings = getAccessibleStrings();
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <th key={cat} scope="col">
-                                        {categoryLabels[cat]}
-                                        <span className="wb-inv">{lang === 'en' ? ', millions of dollars' : ', millions de dollars'}</span>
-                                    </th>
+                                    <td key={cat} className="text-center fw-bold">
+                                        {categoryLabels[cat]}<br/>
+                                        <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
+                                        <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
+                                    </td>
                                 ))}
-                                <th scope="col">
-                                    {getText('total', lang)}
-                                    <span className="wb-inv">{lang === 'en' ? ', millions of dollars' : ', millions de dollars'}</span>
-                                </th>
+                                <td className="text-center fw-bold">
+                                    {getText('total', lang)}<br/>
+                                    <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
+                                    <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
+                                </td>
                             </tr>
                         </thead>
                         <tbody>
-                            {pageData.map(yearData => (
-                                <tr key={yearData.year}>
-                                    <th scope="row">{yearData.year}</th>
-                                    {CATEGORY_ORDER.map(cat => (
-                                        <td key={cat}>{formatNumberTable(yearData[catMapping[cat]] || 0)}</td>
-                                    ))}
-                                    <td><strong>{formatNumberTable(yearData.oil_gas_total || 0)}</strong></td>
-                                </tr>
-                            ))}
+                            {pageData.map(yearData => {
+                                const yearHeaderId = `year-${yearData.year}`;
+                                const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
+                                return (
+                                    <tr key={yearData.year}>
+                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
+                                        {CATEGORY_ORDER.map(cat => (
+                                            <td key={cat} headers={yearHeaderId}>
+                                                <span className="wb-inv">{yearData.year}, {categoryLabels[cat]}: </span>
+                                                {formatNumberTable(yearData[catMapping[cat]] || 0)}
+                                                <span className="wb-inv">{cellUnitSR}</span>
+                                            </td>
+                                        ))}
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {getText('total', lang)}: </span>
+                                            <strong>{formatNumberTable(yearData.oil_gas_total || 0)}</strong>
+                                            <span className="wb-inv">{cellUnitSR}</span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -400,8 +408,8 @@ const accessibleStrings = getAccessibleStrings();
                 flex: '1 1 auto', 
                 display: 'flex', 
                 flexDirection: 'column',
-                overflowY: 'auto',
-                overflowX: 'hidden',
+                overflowY: 'visible',
+                overflowX: 'visible',
                 borderRight: '18px solid #8e7e52',
                 boxSizing: 'border-box',
                 position: 'relative',
@@ -430,6 +438,27 @@ const accessibleStrings = getAccessibleStrings();
                 input[type=range]:focus { outline: 2px solid #005fcc; outline-offset: 2px; }
                 input[type=range]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(0,123,255,0.5); }
             
+                .page37-slider-track {
+                    flex: 1; 
+                    width: auto;
+                    margin-left: 0px;
+                    margin-right: -20px;
+                }
+
+                .page37-slider-input {
+                    width: 100%;
+                    margin: 0;
+                    display: block;
+                }
+
+                .page37-slider-label {
+                    font-weight: bold;
+                    margin-right: 15px;
+                    font-size: 18px;
+                    font-family: Arial, sans-serif;
+                    white-space: nowrap;
+                    margin-left: -5px; 
+                }
 
                 .page37-container {
                     width: 100%;
@@ -487,8 +516,18 @@ const accessibleStrings = getAccessibleStrings();
 
                 .page37-chart-column {
                     width: 55%;
-                    height: calc(100vh - 490px);
+                    height: auto !important; /* Changed from fixed calc */
+                    min-height: auto;
                     position: relative;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .page37-chart-area {
+                    width: 100%;
+                    /* Adjusted height to leave room for the button */
+                    height: calc(100vh - 550px); 
+                    min-height: 400px;
                 }
 
                 .page37-text-column {
@@ -501,8 +540,9 @@ const accessibleStrings = getAccessibleStrings();
                     font-weight: bold;
                     color: #333;
                     font-size: 1rem;
-                    text-align: center;
+                    text-align: center !important;
                     margin-bottom: 5px;
+                    margin-left: -50px;
                 }
 
                 .page37-bullets {
@@ -520,6 +560,15 @@ const accessibleStrings = getAccessibleStrings();
 
                 .visual-bold {
                     font-weight: bold;
+                }
+
+                 .page37-data-table {
+                    margin-top: 10px;
+                    margin-bottom: 10px;
+                    font-family: Arial, sans-serif;
+                    width: calc(100% - 45px);
+                    margin-left: 0px; 
+                    margin-right: 0px;
                 }
 
                 /* Forced Stacked Layout when Table is Open */
@@ -541,6 +590,12 @@ const accessibleStrings = getAccessibleStrings();
                     padding-top: 0 !important;
                 }
 
+                .layout-stacked .page37-data-table {
+                    width: calc(100% + 10px);
+                    margin-right: 0px;
+                    margin-bottom: -50px;
+                }
+
 
                 /* 110% zoom (~1745px) - Switch to Stacked Layout */
                 @media (max-width: 1745px) {
@@ -551,14 +606,27 @@ const accessibleStrings = getAccessibleStrings();
 
                     .page37-chart-column {
                         width: 100%;
-                        height: 500px;
-                        max-height: 500px;
                         margin-bottom: 50px;
+                    }
+
+                   .page37-chart-area {
+                        height: 500px !important;
                     }
 
                     .page37-text-column {
                         width: 100%;
                         padding-top: 10px;
+                    }
+
+                    .layout-stacked .page37-data-table {
+                        width: calc(100% + 16px);
+                        margin-left: 0px;
+                        margin-right: 0px;
+                    }
+
+                    .page37-data-table {
+                        width: calc(100% + 16px);
+                        margin-bottom: -80px;
                     }
                 }
 
@@ -573,6 +641,7 @@ const accessibleStrings = getAccessibleStrings();
                         height: 540px;
                         max-height: 540px;
                     }
+                    
                     .page37-text-column {
                         width: 100%;
                         padding-top: 0;
@@ -587,6 +656,9 @@ const accessibleStrings = getAccessibleStrings();
                     .page37-chart-column {
                         height: 550px;
                     }
+                    .page37-chart-area {
+                        height: 550px !important;
+                    }
                 }
 
                 /* 200% zoom */
@@ -596,6 +668,35 @@ const accessibleStrings = getAccessibleStrings();
                     }
                     .page37-year-ticks {
                         display: none !important;
+                    }
+
+                    .page37-title {
+                     margin-left: 32px !important;
+                    }
+
+                    .page37-subtitle {
+                        margin-left: 32px !important;
+                        }
+
+                    .page37-text {
+                       margin-left: 32px !important;
+                    }
+
+                    .page37-slider-label {
+                        margin-left: 30px !important;
+                    }
+
+                    .page37-slider-track {
+                        margin-right: -10px !important;
+                    }
+
+                    .page37-bullets {
+                        margin-left: 30px !important;
+                    }
+
+                    .page37-data-table {
+                        width: calc(100% - 25px) !important;
+                        margin-left: 30px !important; 
                     }
                 }
 
@@ -624,6 +725,34 @@ const accessibleStrings = getAccessibleStrings();
                     .page37-chart-column {
                         height: 400px !important;
                     }
+                    .page37-chart-area {
+                        height: 400px !important;
+                    }
+
+                    .page37-title, .page37-subtitle, .page37-text, .page37-slider-track, .page37-data-table {
+                        margin-left: -24px !important;
+                    }
+
+                    .page37-slider-label {
+                        margin-left: -30px !important;
+                    }
+
+                    .page37-data-table {
+                        width: calc(100% + 24px) !important;
+                    }
+
+                    .page37-bullets {
+                        margin-top: 50px !important;
+                        margin-left: -26px !important;
+                    }
+
+                    .layout-stacked .page37-bullets {
+                        margin-top: 0px !important;
+                    }
+
+                     .page37-slider-track {
+                        margin-right: -4px !important;
+                    }
                 }
 
                 /* 300% zoom */
@@ -631,12 +760,22 @@ const accessibleStrings = getAccessibleStrings();
                     .page37-chart-column {
                         height: 360px !important;
                     }
+                    .page37-chart-area {
+                        height: 360px !important;
+                    }
+
+                     .page37-bullets {
+                        margin-top: 100px !important;
+                        margin-left: -28px !important;
+                    }
                 }
 
                 /* 400% zoom */
                 @media (max-width: 480px) {
-                    .page37-chart-column {
+                    .page37-chart-area {
                         height: 460px !important;
+                    }
+                    .page37-chart-column {
                         margin-right: 25px !important;
                     }
                     .page37-title {
@@ -646,11 +785,24 @@ const accessibleStrings = getAccessibleStrings();
                         height: 44px !important;
                     }
 
+                    .page37-chart-title {
+                        padding-left: 50px !important;
+                        padding-right: 50px !important;
+                        margin-left: 30px !important;
+                    }
+
+                    .page37-data-table {
+                        margin-left: -12px !important;
+                    }
+
                 }
 
                 /* 500% zoom */
                 @media (max-width: 384px) {
                     .page37-chart-column {
+                        height: 460px !important;
+                    }
+                    .page37-chart-area {
                         height: 460px !important;
                     }
                     input[type=range] {
@@ -721,20 +873,19 @@ const accessibleStrings = getAccessibleStrings();
                         className="page37-slider-label"
                         htmlFor="year-slider-37" 
                         aria-hidden="true"
-                        style={{ fontWeight: 'bold', marginRight: '15px', fontSize: '18px', fontFamily: 'Arial, sans-serif', whiteSpace: 'nowrap' }}
                     >
                         {getText('year_slider_label', lang)} {year}
                     </label>
-                    <div className="page37-slider-track" style={{ flex: 1 }}>
+                    <div className="page37-slider-track">
                         <input
                             id="year-slider-37"
+                            className="page37-slider-input" 
                             type="range"
                             min={minYear}
                             max={maxYear}
                             step={1}
                             value={year || maxYear}
                             onChange={(e) => setYear(parseInt(e.target.value))}
-                            style={{ width: '100%' }}
                             aria-valuemin={minYear}
                             aria-valuemax={maxYear}
                             aria-valuenow={year}
@@ -771,8 +922,9 @@ const accessibleStrings = getAccessibleStrings();
                         {chartData && (
                             <div 
                                 role="region"
+                                className="page37-chart-area" 
                                 aria-label={`${lang === 'en' ? 'Environmental protection expenditures pie chart for' : 'Graphique circulaire des dépenses de protection de l\'environnement pour'} ${year}. ${getChartDataSummary()}`}
-                                style={{ width: '100%', height: 'calc(100% - 50px)' }}
+                                style={{ width: '100%' }} 
                             >
                                 <figure aria-hidden="true" style={{ width: '100%', height: '100%', margin: 0 }}>
                                     <Plot

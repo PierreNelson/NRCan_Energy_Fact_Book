@@ -234,7 +234,9 @@ const Page27 = () => {
             'other_electric': stripHtml(getText('page27_legend_other', lang)),
         };
 
-        const unitText = lang === 'en' ? ', in billions of dollars' : ', en milliards de dollars';
+        const cellUnitSR = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
+        const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
+        const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
         const captionId = 'page27-table-caption';
         
         return (
@@ -276,29 +278,43 @@ const Page27 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <th key={cat} scope="col">
-                                        {categoryLabels[cat]}
-                                        <span className="wb-inv">{unitText}</span>
-                                    </th>
+                                    <td key={cat} className="text-center fw-bold">
+                                        {categoryLabels[cat]}<br/>
+                                        <span aria-hidden="true">{headerUnitVisual}</span>
+                                        <span className="wb-inv">{headerUnitSR}</span>
+                                    </td>
                                 ))}
-                                <th scope="col">{lang === 'en' ? 'Total' : 'Total'}<span className="wb-inv">{unitText}</span></th>
+                                <td className="text-center fw-bold">
+                                    {lang === 'en' ? 'Total' : 'Total'}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </td>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
+                                const yearHeaderId = `year-${yearData.year}`;
                                 let total = 0;
                                 CATEGORY_ORDER.forEach(cat => {
                                     total += (yearData[cat] || 0) / 1000;
                                 });
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row">{yearData.year}</th>
+                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
                                         {CATEGORY_ORDER.map(cat => (
-                                            <td key={cat}>{formatNumber((yearData[cat] || 0) / 1000)}</td>
+                                            <td key={cat} headers={yearHeaderId}>
+                                                <span className="wb-inv">{yearData.year}, {categoryLabels[cat]}: </span>
+                                                {formatNumber((yearData[cat] || 0) / 1000)}
+                                                <span className="wb-inv">{cellUnitSR}</span>
+                                            </td>
                                         ))}
-                                        <td><strong>{formatNumber(total)}</strong></td>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {lang === 'en' ? 'Total' : 'Total'}: </span>
+                                            <strong>{formatNumber(total)}</strong>
+                                            <span className="wb-inv">{cellUnitSR}</span>
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -466,7 +482,7 @@ const Page27 = () => {
                     }
                     .page27-chart {
                         height: calc(100vh + 200px) !important;
-                        min-height: 240px;
+                        min-height: 200px;
                         width: calc(100% - 50px) !important;
                     }
 
@@ -486,8 +502,8 @@ const Page27 = () => {
                         font-size: 1.1rem !important;
                     }
                     .page27-chart {
-                        height: calc(100vh + 225px) !important;
-                        min-height: 220px;
+                        height: calc(100% + 160px) !important;
+                        min-height: 400px;
                         width: calc(100% - 55px) !important;
                     }
 
@@ -600,26 +616,7 @@ const Page27 = () => {
                             </div>
                         )}
                         {isChartInteractive && (
-                            <button
-                                onClick={() => setIsChartInteractive(false)}
-                                style={{
-                                    position: 'absolute',
-                                    top: 5,
-                                    right: 5,
-                                    zIndex: 20,
-                                    background: 'rgba(0,0,0,0.7)',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '5px 10px',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontSize: '12px',
-                                    fontFamily: 'Arial, sans-serif'
-                                }}
-                                aria-label={lang === 'en' ? 'Exit chart interaction mode' : 'Quitter le mode d\'interaction'}
-                            >
-                                {lang === 'en' ? 'Done' : 'Terminé'}
-                            </button>
+                            <button onClick={() => setIsChartInteractive(false)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
                         )}
                         <Plot
                             data={chartData.traces}

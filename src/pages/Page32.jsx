@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getForeignControlData, getInternationalInvestmentData } from '../utils/dataLoader';
@@ -12,6 +12,18 @@ const Page32 = () => {
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
+    const [isChartInteractive, setIsChartInteractive] = useState(false);
+    const chartRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isChartInteractive && chartRef.current && !chartRef.current.contains(event.target)) {
+                setIsChartInteractive(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isChartInteractive]);
 
     // Track window width for responsive chart settings
     useEffect(() => {
@@ -191,23 +203,25 @@ const Page32 = () => {
     };
 
     // Generate accessible data table
+    // Generate accessible data table
     const getAccessibleDataTable = () => {
         if (!chartData || chartData.length === 0) return null;
         
         const unitText = lang === 'en' ? ', in percent' : ', en pourcentage';
         const captionId = 'page32-table-caption';
         
+        const utilitiesLabel = getText('page32_legend_utilities', lang);
+        const oilGasLabel = getText('page32_legend_oil_gas', lang);
+        const allIndustriesLabel = getText('page32_legend_all_industries', lang);
+        const cellUnitSR = lang === 'en' ? ' percent' : ' pour cent';
+        const headerUnitVisual = '(%)';
+        const headerUnitSR = lang === 'en' ? '(percentage)' : '(pourcentage)';
+        
         return (
             <details 
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                style={{ 
-                    marginTop: '10px', 
-                    marginBottom: '10px', 
-                    width: '95%',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    fontFamily: 'Arial, sans-serif'
-                }}
+                className="page32-data-table"
+                style={{ cursor: 'pointer' }} 
             >
                 <summary 
                     role="button"
@@ -216,7 +230,7 @@ const Page32 = () => {
                         cursor: 'pointer', 
                         color: '#333', 
                         fontWeight: 'bold', 
-                        padding: '10px',
+                        padding: '10px', 
                         border: '1px solid #ccc',
                         backgroundColor: '#f9f9f9',
                         borderRadius: '4px',
@@ -228,7 +242,7 @@ const Page32 = () => {
                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div className="table-responsive" style={{ marginTop: '10px' }}>
+                <div className="table-responsive" style={{ marginTop: '10px' }} role="region" aria-labelledby={captionId}>
                     <table className="table table-striped table-hover">
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
@@ -237,21 +251,48 @@ const Page32 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
-                                <th scope="col">{getText('page32_legend_utilities', lang)}<span className="wb-inv">{unitText}</span></th>
-                                <th scope="col">{getText('page32_legend_oil_gas', lang)}<span className="wb-inv">{unitText}</span></th>
-                                <th scope="col">{getText('page32_legend_all_industries', lang)}<span className="wb-inv">{unitText}</span></th>
+                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
+                                <td className="text-center fw-bold">
+                                    {utilitiesLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </td>
+                                <td className="text-center fw-bold">
+                                    {oilGasLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </td>
+                                <td className="text-center fw-bold">
+                                    {allIndustriesLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </td>
                             </tr>
                         </thead>
                         <tbody>
-                            {chartData.map(yearData => (
-                                <tr key={yearData.year}>
-                                    <th scope="row">{yearData.year}</th>
-                                    <td>{formatNumber(yearData.utilities || 0)}%</td>
-                                    <td>{formatNumber(yearData.oil_gas || 0)}%</td>
-                                    <td>{formatNumber(yearData.all_non_financial || 0)}%</td>
-                                </tr>
-                            ))}
+                            {chartData.map(yearData => {
+                                const yearHeaderId = `year-${yearData.year}`;
+                                return (
+                                    <tr key={yearData.year}>
+                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {utilitiesLabel}: </span>
+                                            <span aria-hidden="true">{formatNumber(yearData.utilities || 0)}%</span>
+                                            <span className="wb-inv">{formatNumber(yearData.utilities || 0)}{cellUnitSR}</span>
+                                        </td>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {oilGasLabel}: </span>
+                                            <span aria-hidden="true">{formatNumber(yearData.oil_gas || 0)}%</span>
+                                            <span className="wb-inv">{formatNumber(yearData.oil_gas || 0)}{cellUnitSR}</span>
+                                        </td>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {allIndustriesLabel}: </span>
+                                            <span aria-hidden="true">{formatNumber(yearData.all_non_financial || 0)}%</span>
+                                            <span className="wb-inv">{formatNumber(yearData.all_non_financial || 0)}{cellUnitSR}</span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -320,7 +361,7 @@ const Page32 = () => {
                     font-size: 2.2rem;
                     font-weight: bold;
                     font-style: italic;
-                    margin-bottom: 0px;
+                    margin-left: -19px;
                     margin-top: 5px;
                     line-height: 1.3;
                 }
@@ -331,12 +372,13 @@ const Page32 = () => {
                     font-size: 1rem;
                     margin-bottom: 10px;
                     line-height: 1.6;
-                    padding-left: 20px;
+                    margin-left: -21px;
                     list-style-type: disc;
                 }
 
                 .page32-bullets li {
                     margin-bottom: 8px;
+                    margin-left: -21px;
                 }
 
                 .page32-bullets li::marker {
@@ -354,6 +396,7 @@ const Page32 = () => {
                     font-weight: bold;
                     margin-bottom: 0px;
                     margin-top: 15px;
+                    margin-left: -19px;
                 }
 
                 .page32-section-text {
@@ -362,7 +405,8 @@ const Page32 = () => {
                     font-size: 1rem;
                     margin-bottom: 0px;
                     line-height: 1.5;
-                    position: relative; /* Ensure absolute positioning works inside if needed */
+                    position: relative;
+                    margin-left: -19px;
                 }
 
                 .page32-chart-title {
@@ -372,6 +416,7 @@ const Page32 = () => {
                     font-weight: bold;
                     text-align: center;
                     margin-bottom: 5px;
+                    margin-left: -19px;
                 }
 
                 .page32-chart-wrapper {
@@ -381,6 +426,7 @@ const Page32 = () => {
                     justify-content: flex-start;
                     gap: 20px;
                     width: 100%;
+                    margin-left: -39px;
                 }
 
                 .page32-chart {
@@ -389,6 +435,11 @@ const Page32 = () => {
                     width: 100%;
                     height: calc(100vh - 680px);
                     min-height: 260px;
+                }
+
+                .page32-data-table {
+                    margin-left: -21px !important;
+                    width: calc(100% - 400px) !important;
                 }
 
                 /* 110% zoom (~1745px) */
@@ -406,10 +457,40 @@ const Page32 = () => {
                     }
                     .page32-title {
                         font-size: 1.8rem;
+                        margin-left: 10px !important;
                     }
                     .page32-chart {
                         height: calc(100vh - 640px);
                         min-height: 268px;
+                    }
+
+                    .page32-bullets {
+                        margin-left: -6px !important;
+                    }
+
+                    .page32-bullets li {
+                        margin-left: -6px !important;
+                    }
+
+                    .page32-section-title {
+                        margin-left: 10px !important;
+                    }
+
+                    .page32-section-text {
+                        margin-left: 10px !important;
+                    }
+
+                    .page32-chart-title {
+                        margin-left: 10px !important;
+                    }
+
+                    .page32-chart-wrapper {
+                        margin-left: -8px !important;
+                    }
+
+                    .page32-data-table {
+                        margin-left: 10px !important;
+                        width: calc(100% - 400px) !important;
                     }
                 }
 
@@ -426,7 +507,11 @@ const Page32 = () => {
                         flex: 0 0 auto;
                         height: calc(100vh - 620px);
                         min-height: 272px;
-                        width: 100%;
+                        width: calc(100% + 20px) !important;
+                    }
+
+                     .page32-data-table {
+                        width: calc(100% - 18px) !important;
                     }
                 }
 
@@ -434,10 +519,53 @@ const Page32 = () => {
                 @media (max-width: 1097px) {
                     .page32-title {
                         font-size: 1.5rem;
+                        margin-left: 16px !important;
+                        padding-right: 10px !important; 
+                        box-sizing: border-box !important;
                     }
                     .page32-chart {
                         height: calc(100vh - 600px);
                         min-height: 276px;
+                        width: calc(100% + 10px) !important;
+                    }
+
+                    .page32-bullets {
+                        margin-left: -4px !important;
+                        padding-right: 10px !important; 
+                        box-sizing: border-box !important;
+                    }
+
+                    .page32-bullets li {
+                        margin-left: -4px !important;
+                        padding-right: 10px !important; 
+                        box-sizing: border-box !important;
+                    }
+
+                    .page32-section-title {
+                        margin-left: 16px !important;
+                        padding-right: 10px !important; 
+                        box-sizing: border-box !important;
+                    }
+
+                    .page32-section-text {
+                        margin-left: 16px !important;
+                        padding-right: 10px !important; 
+                        box-sizing: border-box !important;
+                    }
+
+                    .page32-chart-title {
+                        margin-left: 16px !important;
+                        padding-right: 10px !important; 
+                        box-sizing: border-box !important;
+                    }
+
+                    .page32-chart-wrapper {
+                        margin-left: 0px !important;
+                    }
+
+                    .page32-data-table {
+                        margin-left: 16px !important;
+                        width: calc(100% - 25px) !important;
                     }
                 }
 
@@ -446,12 +574,42 @@ const Page32 = () => {
                     .page32-container {
                         padding: 8px 15px 8px 15px;
                     }
+                      
                     .page32-title {
                         font-size: 1.4rem;
+                        margin-left: 14px !important;
                     }
                     .page32-chart {
-                        height: calc(100vh - 580px);
+                        height: calc(100% - 0px);
                         min-height: 280px;
+                    }
+
+                    .page32-bullets {
+                        margin-left: -6px !important;
+                    }
+
+                    .page32-bullets li {
+                        margin-left: -6px !important;
+                    }
+
+                    .page32-section-title {
+                        margin-left: 14px !important;
+                    }
+
+                    .page32-section-text {
+                        margin-left: 14px !important;
+                    }
+
+                    .page32-chart-title {
+                        margin-left: 14px !important;
+                    }
+
+                      .page32-chart-wrapper {
+                        margin-left: -6px !important;
+                    }
+
+                    .page32-data-table {
+                        width: calc(100% - 28px) !important;
                     }
                 }
 
@@ -468,10 +626,41 @@ const Page32 = () => {
                     }
                     .page32-title {
                         font-size: 1.3rem;
+                        margin-left: -24px !important;
                     }
                     .page32-chart {
                         height: calc(100vh - 550px);
                         min-height: 285px;
+                        width: calc(100% + 55px) !important;
+                    }
+
+                    .page32-bullets {
+                        margin-left: -25px !important;
+                    }
+
+                    .page32-bullets li {
+                        margin-left: -25px !important;
+                    }
+
+                    .page32-section-title {
+                        margin-left: -24px !important;
+                    }
+
+                    .page32-section-text {
+                        margin-left: -24px !important;
+                    }
+
+                    .page32-chart-title {
+                        margin-left: -24px !important;
+                    }
+
+                      .page32-chart-wrapper {
+                        margin-left: -36px !important;
+                    }
+
+                    .page32-data-table {
+                        width: calc(100% + 28px) !important;
+                        margin-left: -26px !important;
                     }
                 }
                 
@@ -483,6 +672,18 @@ const Page32 = () => {
                     .page32-chart {
                         height: calc(100vh - 520px);
                         min-height: 290px;
+                    }
+
+                    .page32-bullets {
+                        margin-left: -30px !important;
+                    }
+
+                    .page32-bullets li {
+                        margin-left: -22px !important;
+                    }
+
+                    .page32-section-title {
+                        margin-left: -22px !important;
                     }
                 }
 
@@ -497,6 +698,8 @@ const Page32 = () => {
                     .page32-chart {
                         height: calc(100vh - 500px);
                         min-height: 295px;
+                        margin-left: 4px !important;
+                        width: calc(100% + 50px) !important;
                     }
                 }
 
@@ -647,7 +850,14 @@ const Page32 = () => {
 
                         <div role="region" aria-label={getChartDataSummary()}>
                         <div className="page32-chart-wrapper">
-                            <figure aria-hidden="true" className="page32-chart" style={{ margin: 0 }}>
+                            <figure ref={chartRef} aria-hidden="true" className="page32-chart" style={{ margin: 0, position: 'relative' }}>
+                                {!isChartInteractive && (
+                                    <div onClick={() => setIsChartInteractive(true)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10, cursor: 'pointer' }} title={lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'} role="button" tabIndex={0} />
+                                )}
+                                
+                                {isChartInteractive && (
+                                    <button onClick={() => setIsChartInteractive(false)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+                                )}
                                 <Plot
                                     data={processedChartData.traces}
                                     layout={{
@@ -702,7 +912,7 @@ const Page32 = () => {
                                     }}
                                     style={{ width: '100%', height: '100%' }}
                                     useResizeHandler={true}
-                                    config={{ displayModeBar: false, responsive: true }}
+                                    config={{ displayModeBar: isChartInteractive, responsive: true }}
                                 />
                             </figure>
                         </div>

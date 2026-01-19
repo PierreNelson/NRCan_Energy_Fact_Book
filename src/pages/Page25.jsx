@@ -442,6 +442,7 @@ const Page25 = () => {
                 }
                 .layout-stacked .page25-definition-box {
                     margin-left: 55px !important;
+                    margin-top: -20px !important;
                     width: calc(100% - 68px) !important;
                 }
 
@@ -524,11 +525,12 @@ const Page25 = () => {
                         margin-left: 55px !important;
                         width: calc(100% - 65px) !important;
                         margin-right: auto !important;
+                        margin-top: -20px !important;
                     }
 
                     .page25-chart-column details {
                         margin-left: -25px !important;
-                        margin-top: 50px !important; 
+                        margin-top: 0px !important; 
                         width: calc(100% + 190px) !important;
                     }
                         
@@ -573,6 +575,7 @@ const Page25 = () => {
                         text-align: center !important;
                         margin-left: 45px !important;
                         width: calc(100% - 58px) !important;
+                        margin-top: -30px !important;
                     }
 
                 }
@@ -587,8 +590,8 @@ const Page25 = () => {
 
                     .page25-chart-column figure { 
                         margin-left: 50px !important;
-                        height: 600px !important; 
-                        min-height: 600px !important; 
+                        height: 320px !important; 
+                        min-height: 320px !important; 
                     }
                     
                     .page25-container > header,
@@ -599,15 +602,16 @@ const Page25 = () => {
                     }
                     
                     .page25-chart-column {
-                        margin-top: -100px !important;
+                        margin-top: 0 !important;
                         padding-left: 0 !important;
                         height: auto !important; 
-                        min-height: 600px !important; 
+                        min-height: 340px !important; 
+                        margin-bottom: 20px !important;
                     }
                     
                     .page25-chart-column details { 
                         margin-left: 45px !important;
-                        margin-top: -50px !important;
+                        margin-top: 0px !important;
                         width: calc(100% + 112px) !important; 
                     } 
 
@@ -638,66 +642,6 @@ const Page25 = () => {
                         margin-left: 0 !important; 
                         margin-right: 0 !important; 
                         width: auto !important;
-                        padding-left: 0px; 
-                        padding-right: 10px;
-                    }
-
-                    .page25-container > header,
-                    .page25-chart-column details {
-                        margin-left: 0px !important;
-                        padding-left: 0px !important; 
-                        width: 100% !important;
-                    }
-                    
-                    .page25-container > header h1,
-                    .page25-container > header p {
-                        padding-left: 0px !important; 
-                    }
-
-
-                    .layout-stacked .page25-chart-column {
-                        padding-left: 0px !important;
-                    }
-
-                    .page25-slider-region {
-                    flex-direction: column !important;
-                    align-items: stretch !important;
-                    padding-right: 0px !important; 
-                    margin-right: -10px !important;
-                    width: calc(100% + 8px) !important;
-                    margin-left: 0px !important;
-                    padding-left: 0px !important;
-                }
-
-                    .page25-chart-column details, .layout-stacked .page25-chart-column details {
-                        margin-left: 0px !important;
-                        margin-top: -60px !important;
-                        width: calc(100% + 185px) !important; 
-                    }
-
-                    .page25-definition-box, .layout-stacked .page25-definition-box {
-                        width: calc(100% + 185px) !important;
-                        margin-left: -100px !important;
-                        padding-left: 115px !important; 
-                        padding-right: 100px !important; 
-                        box-sizing: border-box !important;
-                        margin-top: -40px !important;
-                    }
-
-                    .page25-chart-column { width: 100% !important; height: auto !important; min-height: 580px !important; padding-left: 0 !important; margin-top: -300px !important; }
-                    .page25-chart-column figure { height: 1000px !important; min-height: 650px !important; }
-                    .decorative-quote { display: none !important; }
-                    
-                    input[type=range] { height: 44px !important; padding: 10px 0 !important; }
-                    input[type=range]::-webkit-slider-thumb { height: 28px !important; width: 28px !important; margin-top: -10px !important; }
-                }
-                }
-                
-                @media (max-width: 640px) {
-                     .page-25 { 
-                        margin-left: 0 !important; 
-                        margin-right: 0 !important; 
-                        width: auto !important;
                         padding-left: 10px;
                         padding-right: 10px;
                     }
@@ -706,13 +650,43 @@ const Page25 = () => {
                     .page25-slider-region,
                     .page25-definition-box,
                     .page25-chart-column details {
-                        margin-left: 0px !important;
-                        padding-left: 10px !important;
+                        margin-left: -10px !important;
+                        padding-left: 0px !important;
                         width: 100% !important;
                     }
+                    .page25-slider-region {
+                        flex-direction: column !important;
+                        align-items: stretch !important;
+                        
+                        padding-right: 0px !important; 
+                        padding-left: 0px !important;
+                        margin-left: -10px !important;
+                        width: calc(100% + 18px) !important;
+                    }
+                    .page25-definition-box, .layout-stacked .page25-definition-box {
+                        width: calc(100% + 215px) !important;
+                        margin-left: -100px !important;
+                        padding-left: 115px !important; 
+                        padding-right: 100px !important; 
+                        box-sizing: border-box !important;
+                        margin-top: -30px !important;
+                    }
                     
-                    .page25-chart-column { width: 100% !important; height: auto !important; min-height: 650px !important; padding-left: 0 !important; }
-                    .page25-chart-column figure { height: 650px !important; min-height: 650px !important; }
+                    .page25-chart-column,
+                    .layout-stacked .page25-chart-column { 
+                        width: 100% !important; 
+                        height: auto !important; 
+                        min-height: 500px !important; 
+                        padding-left: 40px !important; 
+                        margin-top: 0 !important;
+                        margin-bottom: 20px !important;
+                    }
+                    .page25-chart-column figure { height: 480px !important; min-height: 480px !important; }
+                    .page25-chart-column details, .layout-stacked .page25-chart-column details { 
+                        margin-left: -50px !important;
+                        margin-top: 0px !important;
+                        width: calc(100% + 235px) !important; 
+                    }
                     .decorative-quote { display: none !important; }
                     
                     input[type=range] { height: 44px !important; padding: 10px 0 !important; }
@@ -720,45 +694,38 @@ const Page25 = () => {
                 }
 
                 @media (max-width: 480px) {
-                    .page25-chart-column { min-height: 700px !important; }
-                    .page25-chart-column figure { height: 1000px !important; min-height: 700px !important; width: calc(100vh + 100px) !important; }
-                    .page25-chart-column details, layout-stacked .page25-chart-column details {margin-top: -20px !important;}
+                    .page25-chart-column { min-height: 480px !important; margin-bottom: 20px !important; }
+                    .page25-chart-column figure { height: 480px !important; min-height: 480px !important; }
+                    .page25-chart-column details, .layout-stacked .page25-chart-column details { margin-top: 10px !important; }
                 }
 
                 @media (max-width: 384px) {
                     .page25-chart-column,
                     .layout-stacked .page25-chart-column {
-                        width: 110% !important; 
-                        margin-left: 7px !important;
+                        width: 100% !important; 
+                        margin-left: 0 !important;
                         padding-left: 0px !important;
                         padding-right: 0px !important;
                         height: auto !important; 
-                        min-height: 750px !important; 
-                        margin-bottom: 30px !important;
-                        
+                        min-height: 400px !important; 
+                        margin-bottom: 20px !important;
+                        margin-top: 0 !important;
                         align-items: flex-start !important; 
                     }
 
                     .page25-chart-column figure { 
-                        height: 925px !important; 
-                        min-height: 750px !important; 
+                        height: 420px !important; 
+                        min-height: 420px !important; 
+                        margin-left: 0px !important;
                     }
 
                     .page25-chart-column details, 
                     .layout-stacked .page25-chart-column details {
-                        margin-top: -20px !important; 
-                        
-                        margin-left: 14px !important; 
-                        
+                        margin-top: 0px !important; 
+                        margin-left: -10px !important; 
                         width: 94vw !important; 
-                        
                         box-sizing: border-box !important;
                     }
-                }
-                }
-                    
-                    input[type=range] { height: 50px !important; padding: 12px 0 !important; }
-                    input[type=range]::-webkit-slider-thumb { height: 32px !important; width: 32px !important; margin-top: -12px !important; }
                 }
                 
                 details summary::-webkit-details-marker, details summary::marker { display: none; }
@@ -859,13 +826,31 @@ const Page25 = () => {
                                     layout={{
                                         showlegend: windowWidth <= 768,
                                         legend: windowWidth <= 768 ? (
-                                            windowWidth <= 640 ? {
+                                            windowWidth <= 384 ? {
                                                 orientation: 'h',
-                                                y: 0.3,
-                                                x: 0.55,
+                                                y: -0.50,
+                                                x: 0.5,
                                                 xanchor: 'center',
                                                 yanchor: 'top',
-                                                font: { size: windowWidth <= 480 ? 10 : 11 },
+                                                font: { size: 9 },
+                                                itemclick: false,
+                                                itemdoubleclick: false
+                                            } : windowWidth <= 480 ? {
+                                                orientation: 'h',
+                                                y: -0.15, 
+                                                x: 0.5,
+                                                xanchor: 'center',
+                                                yanchor: 'top',
+                                                font: { size: 9 },
+                                                itemclick: false,
+                                                itemdoubleclick: false
+                                            } : windowWidth <= 640 ? {
+                                                orientation: 'h',
+                                                y: -0.15,
+                                                x: 0.6,
+                                                xanchor: 'center',
+                                                yanchor: 'top',
+                                                font: { size: 10 },
                                                 itemclick: false,
                                                 itemdoubleclick: false
                                             } : {
@@ -879,11 +864,15 @@ const Page25 = () => {
                                                 itemdoubleclick: false
                                             }
                                         ) : undefined,
-                                        margin: windowWidth <= 640
-                                            ? { l: 10, r: 10, t: 10, b: 10 }
-                                            : windowWidth <= 768 
-                                                ? { l: 10, r: 120, t: 10, b: 10 }
-                                                : { l: 80, r: 80, t: 40, b: 40 },
+                                        margin: windowWidth <= 384
+                                            ? { l: 10, r: 10, t: 10, b: 80 }
+                                            : windowWidth <= 480
+                                                ? { l: 10, r: 10, t: 10, b: 70 }
+                                                : windowWidth <= 640
+                                                    ? { l: 10, r: 10, t: 10, b: 60 }
+                                                    : windowWidth <= 768 
+                                                        ? { l: 10, r: 120, t: 10, b: 10 }
+                                                        : { l: 80, r: 80, t: 40, b: 40 },
                                         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
                                         autosize: true, 
                                         annotations: annotations

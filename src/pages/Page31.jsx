@@ -158,20 +158,17 @@ const Page31 = () => {
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
         
-        const unitText = lang === 'en' ? ', in billions of dollars' : ', en milliards de dollars';
+        const cellUnitSR = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
+        const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
+        const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
         const captionId = 'page31-table-caption';
+        const cdiaLabel = getText('page31_legend_cdia', lang);
+        const fdiLabel = getText('page31_legend_fdi', lang);
         
         return (
             <details 
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                style={{ 
-                    marginTop: '10px', 
-                    marginBottom: '10px', 
-                    width: '95%',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    fontFamily: 'Arial, sans-serif'
-                }}
+                className="page31-data-table"
             >
                 <summary 
                     role="button"
@@ -201,20 +198,37 @@ const Page31 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
-                                <th scope="col">{getText('page31_legend_cdia', lang)}<span className="wb-inv">{unitText}</span></th>
-                                <th scope="col">{getText('page31_legend_fdi', lang)}<span className="wb-inv">{unitText}</span></th>
+                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
+                                <td className="text-center fw-bold">
+                                    {cdiaLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </td>
+                                <td className="text-center fw-bold">
+                                    {fdiLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </td>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
+                                const yearHeaderId = `year-${yearData.year}`;
                                 const cdiaVal = (yearData.cdia || 0) / 1000;
                                 const fdiVal = (yearData.fdi || 0) / 1000;
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row">{yearData.year}</th>
-                                        <td>{formatNumber(cdiaVal)}</td>
-                                        <td>{formatNumber(fdiVal)}</td>
+                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {cdiaLabel}: </span>
+                                            {formatNumber(cdiaVal)}
+                                            <span className="wb-inv">{cellUnitSR}</span>
+                                        </td>
+                                        <td headers={yearHeaderId}>
+                                            <span className="wb-inv">{yearData.year}, {fdiLabel}: </span>
+                                            {formatNumber(fdiVal)}
+                                            <span className="wb-inv">{cellUnitSR}</span>
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -264,7 +278,7 @@ const Page31 = () => {
                 
                 .page31-container {
                     width: 100%;
-                    padding: 15px 12px 0 55px;
+                    padding: 15px 12px 0 0px; 
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -273,8 +287,9 @@ const Page31 = () => {
                 }
                 
                 .page31-chart {
-                    width: 100%;
-                    height: calc(100vh - 300px); 
+                    height: calc(100vh - 700px);
+                    width: calc(100% - 24px);
+                    margin-left: 40px !important;
                     min-height: 500px;
                 }
 
@@ -285,6 +300,7 @@ const Page31 = () => {
                     font-weight: bold;
                     margin-bottom: 10px;
                     margin-top: 5px;
+                    margin-left: 54px !important;
                 }
 
                 .page31-subtitle {
@@ -293,6 +309,7 @@ const Page31 = () => {
                     font-size: 1.125rem;
                     margin-bottom: 15px;
                     line-height: 1.5;
+                    margin-left: 54px !important;
                 }
 
                 .page31-chart-title {
@@ -302,6 +319,17 @@ const Page31 = () => {
                     font-weight: bold;
                     text-align: center;
                     margin-bottom: 5px;
+                    margin-left: 54px !important;
+                }
+
+                .page31-data-table {
+                    margin-top: 10px;
+                    margin-bottom: 10px;
+                    font-family: Arial, sans-serif;
+                    width: calc(100% - 52px) !important;
+                    margin-left: 0;
+                    margin-right: 0;
+                    margin-left: 54px !important;
                 }
 
                 .page31-footnotes {
@@ -310,13 +338,13 @@ const Page31 = () => {
                     color: #555;
                     margin-top: 10px;
                     line-height: 1.4;
+                    margin-left: 54px !important;
                 }
 
                 @media (max-width: 1745px) {
                     .page31-chart {
                         height: calc(100vh - 450px);
-                        min-height: 260px;
-                        max-height: 450px;
+                        min-height: 480px;
                     }
                 }
 
@@ -329,8 +357,17 @@ const Page31 = () => {
                     }
                     .page31-chart {
                         height: calc(100vh - 420px);
-                        min-height: 240px;
-                        max-height: 400px;
+                        min-height: 460px;
+                        width: calc(100% + 10px) !important;
+                        margin-left: 16px !important;
+                    }
+                    .page31-data-table {
+                        width: calc(100% - 14px) !important;
+                        margin-left: 28px !important;
+                    }
+
+                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes {
+                        margin-left: 30px !important;
                     }
                 }
 
@@ -343,8 +380,17 @@ const Page31 = () => {
                     }
                     .page31-chart {
                         height: calc(100vh - 380px);
-                        min-height: 220px;
-                        max-height: 380px;
+                        min-height: 440px;
+                        width: 100% !important;
+                        margin-left: 24px !important;
+                    }
+
+                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
+                        margin-left: 37px !important;
+                    }
+
+                    .page31-data-table {
+                        width: calc(100% - 28px) !important;
                     }
                 }
 
@@ -357,8 +403,17 @@ const Page31 = () => {
                     }
                     .page31-chart {
                         height: calc(100vh - 340px);
-                        min-height: 200px;
-                        max-height: 350px;
+                        min-height: 420px;
+                        margin-left: 20px !important;
+                        width: calc(100% + 6px) !important;
+                    }
+
+                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
+                        margin-left: 33px !important;
+                    }
+
+                    .page31-data-table {
+                        width: calc(100% - 24px) !important;
                     }
                 }
 
@@ -374,8 +429,12 @@ const Page31 = () => {
                     }
                     .page31-chart {
                         height: calc(100vh - 280px);
-                        min-height: 180px;
-                        max-height: 320px;
+                        min-height: 400px;
+                        margin-left: 16px !important;
+                    }
+
+                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
+                        margin-left: 31px !important;
                     }
                 }
 
@@ -398,12 +457,21 @@ const Page31 = () => {
                         text-align: left !important;
                     }
                     .page31-chart {
-                        height: 400px;
-                        min-height: 200px;
-                        max-height: none;
+                        height: calc(100vh - 280px);
+                        min-height: 350px;
+                        width: calc(100% + 50px) !important;
+                        margin-left: -34px !important;
                     }
                     .page31-footnotes {
                         font-size: 0.9rem;
+                    }
+
+                     .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
+                        margin-left: -26px !important;
+                    }
+
+                    .page31-data-table {
+                        width: calc(100% + 26px) !important;
                     }
                 }
                 
@@ -415,8 +483,8 @@ const Page31 = () => {
                         font-size: 1.2rem;
                     }
                     .page31-chart {
-                        height: 450px;
-                        min-height: 180px;
+                        height: calc(100vh - 260px);
+                        min-height: 320px;
                     }
                 }
 
@@ -431,8 +499,8 @@ const Page31 = () => {
                         font-size: 1.2rem;
                     }
                     .page31-chart {
-                        height: 500px;
-                        min-height: 160px;
+                        height: calc(100vh - 240px);
+                        min-height: 280px;
                     }
                 }
 
@@ -447,8 +515,8 @@ const Page31 = () => {
                         font-size: 1.2rem;
                     }
                     .page31-chart {
-                        height: 550px;
-                        min-height: 140px;
+                        height: calc(100vh - 220px);
+                        min-height: 250px;
                     }
                 }
                 
@@ -493,7 +561,12 @@ const Page31 = () => {
                         role="region"
                         aria-label={getChartDataSummary()}
                     >
-                        <figure ref={chartRef} aria-hidden="true" style={{ margin: 0, position: 'relative' }}>
+                        <figure 
+                            ref={chartRef} 
+                            className="page31-chart"
+                            aria-hidden="true" 
+                            style={{ margin: 0, position: 'relative' }}
+                        >
                             {!isChartInteractive && (
                                 <div
                                     onClick={() => setIsChartInteractive(true)}
@@ -543,26 +616,7 @@ const Page31 = () => {
                                 </div>
                             )}
                             {isChartInteractive && (
-                                <button
-                                    onClick={() => setIsChartInteractive(false)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 5,
-                                        right: 5,
-                                        zIndex: 20,
-                                        background: 'rgba(0,0,0,0.7)',
-                                        color: 'white',
-                                        border: 'none',
-                                        padding: '5px 10px',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontSize: '12px',
-                                        fontFamily: 'Arial, sans-serif'
-                                    }}
-                                    aria-label={lang === 'en' ? 'Exit chart interaction mode' : 'Quitter le mode d\'interaction'}
-                                >
-                                    {lang === 'en' ? 'Done' : 'Terminé'}
-                                </button>
+                                <button onClick={() => setIsChartInteractive(false)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
                             )}
                             <Plot
                             data={chartData.traces}
@@ -594,9 +648,9 @@ const Page31 = () => {
                                 },
                                 legend: {
                                     orientation: 'h',
-                                    x: windowWidth <= 384 ? 0.17 : windowWidth <= 480 ? 0.13 : windowWidth <= 640 ? 0.12 : windowWidth <= 768 ? 0.094 : windowWidth <= 960 ? 0.074 : windowWidth <= 1097 ? 0.064 : windowWidth <= 1280 ? 0.052 : windowWidth <= 1536 ? 0.044 : windowWidth <= 1745 ? 0.038 : 0.035,
+                                    x: windowWidth <= 384 ? 0.17 : windowWidth <= 480 ? 0.13 : windowWidth <= 640 ? 0.12 : windowWidth <= 768 ? 0.094 : windowWidth <= 960 ? 0.074 : windowWidth <= 1097 ? 0.064 : windowWidth <= 1280 ? 0.052 : windowWidth <= 1536 ? 0.044 : windowWidth <= 1745 ? 0.044 : 0.045,
                                     xanchor: 'center',
-                                    y: -0.34,
+                                    y: windowWidth <= 384 ? -0.40 : windowWidth <= 480 ? -0.34 : windowWidth <= 640 ? -0.34 : windowWidth <= 768 ? -0.24 : windowWidth <= 960 ? -0.18 : windowWidth <= 1097 ? -0.16 :windowWidth <= 1280 ? -0.16 : windowWidth <= 1536 ? -0.16 : windowWidth <= 1745 ? -0.16 : -0.16,
                                     yanchor: 'bottom',
                                     font: { size: windowWidth <= 480 ? 11 : 18, family: 'Arial, sans-serif' },
                                     traceorder: 'normal'
@@ -611,7 +665,7 @@ const Page31 = () => {
                                 bargap: 0.15,
                                 bargroupgap: 0.1
                             }}
-                            style={{ width: '100%', height: windowWidth <= 768 ? '320px' : '340px' }}
+                            style={{ width: '100%', height: '100%' }} 
                             useResizeHandler={true}
                             config={{ 
                                 displayModeBar: isChartInteractive, 
