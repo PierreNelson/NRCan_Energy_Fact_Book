@@ -109,6 +109,11 @@ const Page23 = () => {
     text-align: left;
 }
 
+@media (max-width: 1745px) { .page23-title-text { font-size: 4.2rem; } }
+@media (max-width: 1536px) { .page23-title-text { font-size: 4.0rem; } }
+@media (max-width: 1280px) { .page23-title-text { font-size: 3.8rem; } }
+@media (max-width: 1100px) { .page23-title-text { font-size: 3.5rem; } }
+
 @media (max-width: 960px) {
     .page23-main {
         margin-left: -45px;
@@ -118,7 +123,6 @@ const Page23 = () => {
     .page23-title-box, .page23-list {
         padding: 20px 30px 20px 55px;
     }
-
     .page23-image-title-wrapper { min-height: 240px; }
     .page23-title-text { font-size: 3.2rem; }
     .page23-list-item { font-size: 1.7rem; }
@@ -136,18 +140,21 @@ const Page23 = () => {
     }
 }
 
+@media (max-width: 640px) {
+    .page23-title-text { font-size: 2.5rem; }
+    .page23-list-item { font-size: 1.5rem; }
+}
+
 @media (max-width: 480px) {
     .page23-main {
         margin-left: -10px;
         margin-right: -10px;
         width: calc(100% + 20px);
     }
-    
     .page23-title-box, .page23-list {
         padding-left: 10px;
         padding-right: 10px;
     }
-
     .page23-image-title-wrapper { min-height: 180px; }
     .page23-title-text { font-size: 2.0rem; }
     .page23-list-item { font-size: 1.3rem; }
@@ -157,15 +164,6 @@ const Page23 = () => {
     .page23-image-title-wrapper { min-height: 160px; }
     .page23-title-text { font-size: 1.8rem; }
     .page23-list-item { font-size: 1.2rem; }
-}
-
-@media (max-width: 1745px) { .page23-title-text { font-size: 4.2rem; } }
-@media (max-width: 1536px) { .page23-title-text { font-size: 4.0rem; } }
-@media (max-width: 1280px) { .page23-title-text { font-size: 3.8rem; } }
-@media (max-width: 1100px) { .page23-title-text { font-size: 3.5rem; } }
-@media (max-width: 640px) {
-    .page23-title-text { font-size: 2.5rem; }
-    .page23-list-item { font-size: 1.5rem; }
 }
             `}</style>
 

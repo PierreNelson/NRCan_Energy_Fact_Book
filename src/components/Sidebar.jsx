@@ -54,32 +54,29 @@ const Sidebar = ({ lang }) => {
     return (
         <>
         <style>{`
-
-               @media (max-width: 768px) {
-                    /* Make the collapsed strip even wider at high zoom */
+                /* 250% zoom (768px) */
+                @media (max-width: 768px) {
                     .sidebar {
                         width: 10px; 
                     }
-                    
-                    /* Force full menu width when opened */
                     .sidebar:hover, 
                     .sidebar.sidebar-mobile-open {
                         width: 300px !important; 
                     }
+                }
 
+                /* 300% zoom (640px) */
                 @media (max-width: 640px) {
                     .sidebar {
                         width: 30px; 
                     }
-                    
-                    /* Force full menu width when opened */
                     .sidebar:hover, 
                     .sidebar.sidebar-mobile-open {
                         width: 300px !important; 
                     }
                 }
                 
-                /* 400% - 500% Zoom (Mobile) Overrides */
+                /* 400% - 500% zoom (480px) */
                 @media (max-width: 480px) {
                     .sidebar-mobile-toggle {
                         width: 50px !important; 

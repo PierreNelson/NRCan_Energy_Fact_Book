@@ -208,50 +208,49 @@ const Layout = () => {
                     .layout-content-container {
                         padding: 15px 10px;
                     }
-                    
                     .nav-arrow {
                         font-size: 0.9rem;
                         padding: 10px;
                     }
                 }
 
-                    /* GHOST NAVIGATION STYLES */
-/* 1. Hides the link visually but keeps it in the DOM for Screen Readers */
-.sr-only-focusable {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
+                /* ===============================================
+                   GHOST NAVIGATION STYLES
+                   Hides links visually but keeps them in DOM for 
+                   screen readers. Appears when focused via Tab.
+                   =============================================== */
+                .sr-only-focusable {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    padding: 0;
+                    margin: -1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border: 0;
+                }
 
-/* 2. When focused (via Tab key), it pops into view */
-.sr-only-focusable:focus {
-    position: static;
-    width: auto;
-    height: auto;
-    clip: auto;
-    white-space: normal;
-    overflow: visible;
-    
-    /* Visual styling to look like a button */
-    display: inline-block;
-    margin-top: 20px;
-    margin-right: 15px;
-    padding: 10px 20px;
-    background-color: #284162; /* Matches your top nav color */
-    color: #ffffff;
-    font-weight: bold;
-    text-decoration: none;
-    border-radius: 4px;
-    outline: 3px solid #ffcc00; /* High visibility focus ring */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    z-index: 9999;
-}
+                .sr-only-focusable:focus {
+                    position: static;
+                    width: auto;
+                    height: auto;
+                    clip: auto;
+                    white-space: normal;
+                    overflow: visible;
+                    display: inline-block;
+                    margin-top: 20px;
+                    margin-right: 15px;
+                    padding: 10px 20px;
+                    background-color: #284162;
+                    color: #ffffff;
+                    font-weight: bold;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    outline: 3px solid #ffcc00;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                    z-index: 9999;
+                }
             `}</style>
             
             <div className="layout-wrapper">

@@ -111,23 +111,12 @@ const Page25 = () => {
             ? `<b>TOTAL</b><br><b>$${totalBillions.toFixed(0)}</b><br><b>BILLION</b>`
             : `<b>TOTAL</b><br><b>${totalBillions.toFixed(0)} $</b><br><b>MILLIARDS</b>`;
 
-        let fontSize;
-        if (windowWidth <= 480) {
-            fontSize = 12;
-        } else if (windowWidth <= 768) {
-            fontSize = 14;
-        } else if (windowWidth <= 1400) {
-            fontSize = 16;
-        } else {
-            fontSize = 30;
-        }
-
         return [{
             text: centerText, x: 0.5, y: 0.54,
             font: { size: 22, color: '#424243', family: 'Arial Black, sans-serif' },
             showarrow: false,
         }];
-    }, [chartData, lang, windowWidth]);
+    }, [chartData, lang]);
 
 
     if (loading) {
