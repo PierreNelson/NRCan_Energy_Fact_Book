@@ -5,7 +5,7 @@ import { getInfrastructureData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const Page25 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -231,9 +231,9 @@ const Page25 = () => {
                 style={{ 
                     marginTop: '10px', 
                     marginBottom: '10px', 
-                    width: '95%',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
+                    width: '100%',
+                    marginLeft: 0,
+                    marginRight: 0,
                     fontFamily: 'Arial, sans-serif'
                 }}
             >
@@ -327,6 +327,11 @@ const Page25 = () => {
             }}
         >
            <style>{`
+                /* =====================================================
+                   PAGE 25 - BORDER PAGE STYLES
+                   Border extends past container, content aligns with anchors.
+                   ===================================================== */
+
                 .wb-inv {
                     clip: rect(1px, 1px, 1px, 1px);
                     height: 1px;
@@ -337,13 +342,12 @@ const Page25 = () => {
                     white-space: nowrap;
                 }
   
+                /* Extend right for border, content padded to align with anchors */
                 .page-25 {
-                    margin-left: -37px;
-                    margin-right: -30px;
-                    width: calc(100% + 67px);
+                    margin-right: -${layoutPadding?.right || 15}px;
+                    width: calc(100% + ${layoutPadding?.right || 15}px);
+                    padding-right: ${(layoutPadding?.right || 15) - 18}px; /* 18px is border width */
                 }
-
-                .page25-slider-region
 
                 .page25-container {
                     width: 100%;
@@ -362,43 +366,25 @@ const Page25 = () => {
                     align-items: flex-start;
                 }
 
-                .page25-container > header {
-                    padding-left: 0px !important; 
-                    padding-right: 48px;
-                    box-sizing: border-box;
-                }
-                .page25-container > header h1,
-                .page25-container > header p {
-                    padding-left: 54px !important;
-                }
-
                 .page25-slider-region {
-                    padding-left: 54px !important; 
-                    padding-right: 48px !important;
-                    width: calc(100% + 35px) !important;
-                    margin-left: 0px !important;
-                    margin-right: 0 !important;
-                    position: relative !important;
-                    z-index: 50 !important; 
+                    width: 100%;
+                    position: relative;
+                    z-index: 50;
                 }
                 .page25-slider-track { flex: 1; }
 
                 .page25-chart-column {
-                    width: 90%;
-                    height: auto !important; 
+                    width: 60%;
+                    height: auto;
                     min-height: 500px;
-                    max-height: none !important;
-                    padding-right: 175px;
                     position: relative;
                     margin-bottom: 20px;
                 }
 
                 .page25-chart-column details {
-                    margin-left: 55px !important;
-                    margin-top: 0px !important;
-                    width: calc(100% - 100px) !important;
-                    position: relative !important;
-                    z-index: 50 !important;;
+                    width: 100%;
+                    position: relative;
+                    z-index: 50;
                 }
 
                 .layout-stacked {
@@ -411,7 +397,6 @@ const Page25 = () => {
                     width: 100% !important;
                     height: auto !important;
                     max-height: none !important;
-                    padding-left: 80px !important;
                     margin-bottom: 30px !important;
                     overflow: visible !important;
                 }
@@ -425,15 +410,6 @@ const Page25 = () => {
                     height: 500px !important;
                     min-height: 500px !important;
                 }
-                .layout-stacked .page25-chart-column details {
-                    margin-left: -28px !important;
-                    width: calc(100% + 194px) !important;
-                }
-                .layout-stacked .page25-definition-box {
-                    margin-left: 55px !important;
-                    margin-top: -20px !important;
-                    width: calc(100% - 68px) !important;
-                }
 
                 .page25-chart-column figure {
                     height: 450px;
@@ -441,20 +417,19 @@ const Page25 = () => {
                 }
 
                 .page25-text-column {
-                    width: 42%;
+                    width: 40%;
                     padding-left: 25px;
-                    padding-right: 20px;
+                    padding-right: 0;
                     padding-top: 0;
-                    margin-top: 0px;
+                    margin-top: 0;
                 }
 
                 .page25-definition-box {
                     position: relative;
                     background-color: #aa9c7a;
-                    padding: 20px 50px;
+                    padding: 20px 30px;
                     border-radius: 3px;
                     width: 100%;
-                    margin-left: 8px;
                     margin-top: 10px;
                 }
                 .page25-definition-box h2 {
@@ -470,30 +445,20 @@ const Page25 = () => {
 
                 .js-plotly-plot .plotly .slice path.textline { display: none !important; }
                 .js-plotly-plot .plotly g.slice path[class*="textline"] { display: none !important; }
-                .js-plotly-plot .plotly .pielayer text {
-                    paint-order: stroke fill;
-                    stroke: #000000;
-                    stroke-width: 5px;
-                    stroke-linecap: round;
-                    stroke-linejoin: round;
-                }
 
-
+                /* Layout breakpoints only */
                 @media (max-width: 1800px) {
                     .page25-content-row {
                         flex-direction: column;
                         height: auto;
                         align-items: center;
                     }
-
-                    h1 { margin-top: 20px !important; }
                     
                     .page25-chart-column {
                         width: 100%;
                         height: auto;
                         min-height: 500px;
                         max-height: none;
-                        padding-left: 80px;
                         margin-bottom: 30px;
                     }
                     
@@ -509,20 +474,6 @@ const Page25 = () => {
                         margin-top: 20px;
                         margin-bottom: 40px;
                     }
-
-                    .page25-definition-box {
-                        margin-left: 55px !important;
-                        width: calc(100% - 65px) !important;
-                        margin-right: auto !important;
-                        margin-top: -20px !important;
-                    }
-
-                    .page25-chart-column details {
-                        margin-left: -25px !important;
-                        margin-top: 0px !important; 
-                        width: calc(100% + 190px) !important;
-                    }
-                        
                 }
                 
                 @media (max-width: 960px) {
@@ -532,133 +483,33 @@ const Page25 = () => {
                         height: 520px !important;
                         min-height: 520px !important;
                     }
-
-                     .page25-container > header {
-                        padding-left: 45px !important; 
-                        padding-right: 30px;
-                        box-sizing: border-box;
-                    }
-                    .page25-container > header h1,
-                    .page25-container > header p {
-                        padding-left: 0px !important;
-                    }
-
-                    .page25-slider-region {
-                        padding-left: 45px !important; 
-                        padding-right: 50px !important;
-                    }
-
-                    .page25-chart-column details {
-                        margin-left: -35px !important;
-                        margin-top: -10px !important;
-                        width: calc(100% + 198px) !important;
-                    }
-
-                    .layout-stacked .page25-chart-column details {
-                        margin-left: -35px !important;
-                        width: calc(100% + 198px) !important;
-                    }
-
-                    .page25-definition-box,
-                    .layout-stacked .page25-definition-box {
-                        text-align: center !important;
-                        margin-left: 45px !important;
-                        width: calc(100% - 58px) !important;
-                        margin-top: -30px !important;
-                    }
-
                 }
 
                 @media (max-width: 768px) {
-                    .page-25 {
-                        margin-left: -45px !important;
-                        margin-right: -20px !important;
-                        width: calc(100% + 65px) !important;
-                        border-right: none !important;
-                    }
+                    .page-25 { border-right: none !important; }
 
                     .page25-chart-column figure { 
-                        margin-left: 50px !important;
                         height: 320px !important; 
                         min-height: 320px !important; 
                     }
                     
-                    .page25-container > header,
-                    .page25-slider-region,
-                    .page25-chart-column details {
-                        padding-left: 0;
-                        margin-left: 0px !important; 
-                    }
-                    
                     .page25-chart-column {
-                        margin-top: 0 !important;
-                        padding-left: 0 !important;
                         height: auto !important; 
                         min-height: 340px !important; 
                         margin-bottom: 20px !important;
                     }
-                    
-                    .page25-chart-column details { 
-                        margin-left: 45px !important;
-                        margin-top: 0px !important;
-                        width: calc(100% + 112px) !important; 
-                    } 
 
                     .page25-slider-region {
                         flex-direction: column !important;
                         align-items: stretch !important;
-                        padding-right: 20px !important;
-                        width: calc(100% + 0px) !important;
                     }
                     .page25-slider-label { margin-bottom: 10px; margin-right: 0 !important; }
-
-                    .layout-stacked .page25-chart-column details {
-                        margin-left: -34px !important;
-                        width: calc(100% + 190px) !important;
-                        box-sizing: border-box !important;
-                    }
-
-                     .page25-definition-box,
-                    .layout-stacked .page25-definition-box {
-                        text-align: center !important;
-                        margin-left: 45px !important;
-                        width: calc(100% - 64px) !important;
-                    }
                 }
                 
                 @media (max-width: 640px) {
-                     .page-25 { 
-                        margin-left: 0 !important; 
-                        margin-right: 0 !important; 
-                        width: auto !important;
-                        padding-left: 10px;
-                        padding-right: 10px;
-                    }
-
-                    .page25-container > header,
-                    .page25-slider-region,
-                    .page25-definition-box,
-                    .page25-chart-column details {
-                        margin-left: -10px !important;
-                        padding-left: 0px !important;
-                        width: 100% !important;
-                    }
                     .page25-slider-region {
                         flex-direction: column !important;
                         align-items: stretch !important;
-                        
-                        padding-right: 0px !important; 
-                        padding-left: 0px !important;
-                        margin-left: -10px !important;
-                        width: calc(100% + 18px) !important;
-                    }
-                    .page25-definition-box, .layout-stacked .page25-definition-box {
-                        width: calc(100% + 215px) !important;
-                        margin-left: -100px !important;
-                        padding-left: 115px !important; 
-                        padding-right: 100px !important; 
-                        box-sizing: border-box !important;
-                        margin-top: -30px !important;
                     }
                     
                     .page25-chart-column,
@@ -666,16 +517,9 @@ const Page25 = () => {
                         width: 100% !important; 
                         height: auto !important; 
                         min-height: 500px !important; 
-                        padding-left: 40px !important; 
-                        margin-top: 0 !important;
                         margin-bottom: 20px !important;
                     }
                     .page25-chart-column figure { height: 480px !important; min-height: 480px !important; }
-                    .page25-chart-column details, .layout-stacked .page25-chart-column details { 
-                        margin-left: -50px !important;
-                        margin-top: 0px !important;
-                        width: calc(100% + 235px) !important; 
-                    }
                     .decorative-quote { display: none !important; }
                     
                     input[type=range] { height: 44px !important; padding: 10px 0 !important; }
@@ -685,35 +529,20 @@ const Page25 = () => {
                 @media (max-width: 480px) {
                     .page25-chart-column { min-height: 480px !important; margin-bottom: 20px !important; }
                     .page25-chart-column figure { height: 480px !important; min-height: 480px !important; }
-                    .page25-chart-column details, .layout-stacked .page25-chart-column details { margin-top: 10px !important; }
                 }
 
                 @media (max-width: 384px) {
                     .page25-chart-column,
                     .layout-stacked .page25-chart-column {
                         width: 100% !important; 
-                        margin-left: 0 !important;
-                        padding-left: 0px !important;
-                        padding-right: 0px !important;
                         height: auto !important; 
                         min-height: 400px !important; 
                         margin-bottom: 20px !important;
-                        margin-top: 0 !important;
-                        align-items: flex-start !important; 
                     }
 
                     .page25-chart-column figure { 
                         height: 420px !important; 
                         min-height: 420px !important; 
-                        margin-left: 0px !important;
-                    }
-
-                    .page25-chart-column details, 
-                    .layout-stacked .page25-chart-column details {
-                        margin-top: 0px !important; 
-                        margin-left: -10px !important; 
-                        width: 94vw !important; 
-                        box-sizing: border-box !important;
                     }
                 }
                 
@@ -727,11 +556,11 @@ const Page25 = () => {
                     role="region" 
                     aria-label={`${getText('page25_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
                 >
-                    <h1 aria-hidden="true" style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: '0 0 3px 0', paddingLeft: '10px' }}>
+                    <h1 aria-hidden="true" style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: '0 0 3px 0' }}>
                         {getText('page25_title', lang)}
                     </h1>
 
-                    <p aria-hidden="true" style={{ fontSize: '1.4rem', color: '#333', marginBottom: '5px', paddingLeft: '10px', whiteSpace: 'pre-line' }}>
+                    <p aria-hidden="true" style={{ fontSize: '1.4rem', color: '#333', marginBottom: '5px', whiteSpace: 'pre-line' }}>
                         {getSubtitle()}
                     </p>
                 </header>
@@ -796,7 +625,7 @@ const Page25 = () => {
                                         labels: pieLabels,
                                         hole: windowWidth <= 480 ? 0.80 : windowWidth <= 768 ? 0.75 : windowWidth <= 1400 ? 0.73 : 0.70,
                                         type: 'pie',
-                                        marker: { colors: chartData.colors, line: { color: 'black', width: 3 } },
+                                        marker: { colors: chartData.colors, line: { color: 'white', width: 2 } },
                                         texttemplate: windowWidth <= 768 ? '%{percent:.0%}' : '%{label}<br>%{percent:.0%}',
                                         textinfo: windowWidth <= 768 ? 'percent' : 'label+percent',
                                         textposition: windowWidth <= 768 ? 'inside' : 'outside',
@@ -854,14 +683,14 @@ const Page25 = () => {
                                             }
                                         ) : undefined,
                                         margin: windowWidth <= 384
-                                            ? { l: 10, r: 10, t: 10, b: 80 }
+                                            ? { l: 0, r: 0, t: 10, b: 80 }
                                             : windowWidth <= 480
-                                                ? { l: 10, r: 10, t: 10, b: 70 }
+                                                ? { l: 0, r: 0, t: 10, b: 70 }
                                                 : windowWidth <= 640
-                                                    ? { l: 10, r: 10, t: 10, b: 60 }
+                                                    ? { l: 0, r: 0, t: 10, b: 60 }
                                                     : windowWidth <= 768 
-                                                        ? { l: 10, r: 120, t: 10, b: 10 }
-                                                        : { l: 80, r: 80, t: 40, b: 40 },
+                                                        ? { l: 0, r: 0, t: 10, b: 10 }
+                                                        : { l: 0, r: 0, t: 40, b: 40 },
                                         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
                                         autosize: true, 
                                         annotations: annotations

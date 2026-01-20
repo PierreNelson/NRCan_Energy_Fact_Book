@@ -5,7 +5,7 @@ import { getInternationalInvestmentData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const Page31 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -270,15 +270,21 @@ const Page31 = () => {
             }}
         >
             <style>{`
+                /* =====================================================
+                   PAGE 31 - BORDER PAGE STYLES
+                   Border extends past container, content aligns with anchors.
+                   ===================================================== */
+
+                /* Extend right for border, content padded to align with anchors */
                 .page-31 {
-                    margin-left: -37px;
-                    margin-right: -30px;
-                    width: calc(100% + 67px);
+                    margin-right: -${layoutPadding?.right || 15}px;
+                    width: calc(100% + ${layoutPadding?.right || 15}px);
+                    padding-right: ${(layoutPadding?.right || 15) - 18}px; /* 18px is border width */
                 }
                 
                 .page31-container {
                     width: 100%;
-                    padding: 15px 12px 0 0px; 
+                    padding: 15px 0 0 0; 
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -288,8 +294,7 @@ const Page31 = () => {
                 
                 .page31-chart {
                     height: calc(100vh - 700px);
-                    width: calc(100% - 24px);
-                    margin-left: 40px !important;
+                    width: 100%;
                     min-height: 500px;
                 }
 
@@ -300,7 +305,6 @@ const Page31 = () => {
                     font-weight: bold;
                     margin-bottom: 10px;
                     margin-top: 5px;
-                    margin-left: 54px !important;
                 }
 
                 .page31-subtitle {
@@ -309,7 +313,6 @@ const Page31 = () => {
                     font-size: 1.125rem;
                     margin-bottom: 15px;
                     line-height: 1.5;
-                    margin-left: 54px !important;
                 }
 
                 .page31-chart-title {
@@ -319,17 +322,15 @@ const Page31 = () => {
                     font-weight: bold;
                     text-align: center;
                     margin-bottom: 5px;
-                    margin-left: 54px !important;
                 }
 
                 .page31-data-table {
                     margin-top: 10px;
                     margin-bottom: 10px;
-                    font-family: Arial, sans-serif;
-                    width: calc(100% - 52px) !important;
                     margin-left: 0;
                     margin-right: 0;
-                    margin-left: 54px !important;
+                    font-family: Arial, sans-serif;
+                    width: 100%;
                 }
 
                 .page31-footnotes {
@@ -338,9 +339,9 @@ const Page31 = () => {
                     color: #555;
                     margin-top: 10px;
                     line-height: 1.4;
-                    margin-left: 54px !important;
                 }
 
+                /* Chart height and font size breakpoints only */
                 @media (max-width: 1745px) {
                     .page31-chart {
                         height: calc(100vh - 450px);
@@ -349,48 +350,22 @@ const Page31 = () => {
                 }
 
                 @media (max-width: 1536px) {
-                    .page31-container {
-                        padding: 10px 25px 10px 25px;
-                    }
                     .page31-title {
                         font-size: 1.8rem;
                     }
                     .page31-chart {
                         height: calc(100vh - 420px);
                         min-height: 460px;
-                        width: calc(100% + 10px) !important;
-                        margin-left: 16px !important;
-                    }
-                    .page31-data-table {
-                        width: calc(100% - 14px) !important;
-                        margin-left: 28px !important;
-                    }
-
-                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes {
-                        margin-left: 30px !important;
                     }
                 }
 
                 @media (max-width: 1280px) {
-                    .page31-container {
-                        padding: 10px 20px 10px 20px;
-                    }
                     .page31-title {
                         font-size: 1.6rem;
                     }
                     .page31-chart {
                         height: calc(100vh - 380px);
                         min-height: 440px;
-                        width: 100% !important;
-                        margin-left: 24px !important;
-                    }
-
-                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
-                        margin-left: 37px !important;
-                    }
-
-                    .page31-data-table {
-                        width: calc(100% - 28px) !important;
                     }
                 }
 
@@ -404,23 +379,10 @@ const Page31 = () => {
                     .page31-chart {
                         height: calc(100vh - 340px);
                         min-height: 420px;
-                        margin-left: 20px !important;
-                        width: calc(100% + 6px) !important;
-                    }
-
-                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
-                        margin-left: 33px !important;
-                    }
-
-                    .page31-data-table {
-                        width: calc(100% - 24px) !important;
                     }
                 }
 
                 @media (max-width: 960px) {
-                    .page31-container {
-                        padding: 8px 15px 8px 15px;
-                    }
                     .page31-title {
                         font-size: 1.4rem;
                     }
@@ -430,24 +392,11 @@ const Page31 = () => {
                     .page31-chart {
                         height: calc(100vh - 280px);
                         min-height: 400px;
-                        margin-left: 16px !important;
-                    }
-
-                    .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
-                        margin-left: 31px !important;
                     }
                 }
 
                 @media (max-width: 768px) {
-                    .page-31 {
-                        margin-left: -20px !important;
-                        margin-right: -20px !important;
-                        width: calc(100% + 40px) !important;
-                        border-right: none !important;
-                    }
-                    .page31-container {
-                        padding: 8px 20px 8px 45px !important;
-                    }
+                    .page-31 { border-right: none !important; }
                     .page31-title {
                         font-size: 1.3rem;
                         text-align: left !important;
@@ -459,19 +408,9 @@ const Page31 = () => {
                     .page31-chart {
                         height: calc(100vh - 280px);
                         min-height: 350px;
-                        width: calc(100% + 50px) !important;
-                        margin-left: -34px !important;
                     }
                     .page31-footnotes {
                         font-size: 0.9rem;
-                    }
-
-                     .page31-title, .page31-subtitle, .page31-chart-title, .page31-footnotes, .page31-data-table {
-                        margin-left: -26px !important;
-                    }
-
-                    .page31-data-table {
-                        width: calc(100% + 26px) !important;
                     }
                 }
                 
@@ -489,9 +428,6 @@ const Page31 = () => {
                 }
 
                 @media (max-width: 480px) {
-                    .page31-container {
-                        padding: 5px 10px;
-                    }
                     .page31-title {
                         font-size: 1.1rem;
                     }
@@ -505,9 +441,6 @@ const Page31 = () => {
                 }
 
                 @media (max-width: 384px) {
-                    .page31-container {
-                        padding: 5px 8px;
-                    }
                     .page31-title {
                         font-size: 1rem;
                     }
@@ -656,8 +589,8 @@ const Page31 = () => {
                                     traceorder: 'normal'
                                 },
                                 margin: { 
-                                    l: windowWidth <= 480 ? 45 : windowWidth <= 768 ? 55 : 65, 
-                                    r: 15,
+                                    l: 0, 
+                                    r: 0,
                                     t: 40, 
                                     b: 50
                                 },

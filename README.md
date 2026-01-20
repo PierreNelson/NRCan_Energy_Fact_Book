@@ -6,34 +6,53 @@ An interactive web application presenting the Natural Resources Canada Energy Fa
 
 ```
 NRCan_Energy_Factbook/
-├── docs/                    # Documentation files
-│   ├── ACCESSIBILITY_GUIDELINES.md
-│   ├── Accessibility statement.txt
-│   ├── NRCAN Energy Factbook 2025-2026.pdf
+├── .github/
+│   └── workflows/
+│       └── deploy.yml          # GitHub Pages deployment
+├── docs/                       # Documentation files
 │   ├── Cahier d'information sur l'énergie 2025-2026.pdf
-│   ├── WEB ACCESSIBILITY & RESPONSIVE DESIGN GUIDELINES.rtf
-│   └── Web Experience Toolkit Guidelines.docx
-├── public/                  # Static assets served by Vite
-│   ├── assets/              # Images
-│   └── statcan_data/        # Data files for the web app
-├── scripts/                 # Utility scripts
-│   ├── data_retrieval.py    # Fetches data from StatCan API
-│   ├── start_dev.bat        # Starts development server
-│   └── update_data.bat      # Updates data from StatCan
-├── src/                     # React source code
-│   ├── assets/              # App assets (backgrounds, etc.)
-│   ├── components/          # Reusable React components
-│   ├── pages/               # Page components
-│   ├── utils/               # Utility functions
-│   ├── App.jsx              # Main app component
-│   ├── App.css              # App-level styles
-│   ├── index.css            # Global styles
-│   └── main.jsx             # App entry point
-├── statcan_data/            # Raw data from StatCan API
-├── index.html               # Vite entry HTML
-├── package.json             # NPM dependencies
-├── vite.config.js           # Vite configuration
-└── eslint.config.js         # ESLint configuration
+│   ├── MASTER PAGE BUILDING GUIDE & TEMPLATE.docx
+│   └── NRCAN Energy Factbook 2025-2026.pdf
+├── public/                     # Static assets served by Vite
+│   └── data/                   # Data files for the web app
+│       ├── data.csv
+│       └── metadata.csv
+├── scripts/
+│   └── data_retrieval.py       # Fetches data from StatCan API
+├── src/                        # React source code
+│   ├── assets/                 # App assets (backgrounds)
+│   │   ├── page1_bg.jpg
+│   │   ├── page23_bg.jpg
+│   │   └── page26_bg.png
+│   ├── components/             # Reusable React components
+│   │   ├── GCFooter.jsx
+│   │   ├── GCHeader.jsx
+│   │   ├── Layout.jsx
+│   │   ├── SectionOne.jsx
+│   │   ├── SectionTwo.jsx
+│   │   └── Sidebar.jsx
+│   ├── pages/                  # Page components
+│   │   ├── Page1.jsx
+│   │   ├── Page23.jsx
+│   │   ├── Page24.jsx
+│   │   ├── Page25.jsx
+│   │   ├── Page26.jsx
+│   │   ├── Page27.jsx
+│   │   ├── Page31.jsx
+│   │   ├── Page32.jsx
+│   │   └── Page37.jsx
+│   ├── utils/                  # Utility functions
+│   │   ├── dataLoader.js
+│   │   └── translations.js
+│   ├── App.jsx                 # Main app component
+│   ├── index.css               # Global styles
+│   └── main.jsx                # App entry point
+├── .gitignore
+├── eslint.config.js            # ESLint configuration
+├── index.html                  # Vite entry HTML
+├── package.json                # NPM dependencies
+├── package-lock.json
+└── vite.config.js              # Vite configuration
 ```
 
 ## Getting Started
@@ -56,34 +75,19 @@ Start the development server:
 npm run dev
 ```
 
-Or use the batch script (Windows):
-```bash
-scripts\start_dev.bat
-```
-
 ### Update Data from StatCan
 
 To fetch the latest data from Statistics Canada:
 
 ```bash
-cd scripts
-python data_retrieval.py
+python scripts/data_retrieval.py
 ```
 
-Or use the batch script (Windows):
-```bash
-scripts\update_data.bat
-```
-
-### Build for Production
-
-```bash
-npm run build
-```
+This will download fresh data from the StatCan API and save it directly to `public/data/`.
 
 ## Accessibility
 
-This application follows WCAG 2.1 AA guidelines and Web Experience Toolkit (WET) standards. See the `docs/` folder for detailed accessibility guidelines.
+This application follows WCAG 2.1 AA guidelines and Web Experience Toolkit (WET) standards.
 
 ## License
 

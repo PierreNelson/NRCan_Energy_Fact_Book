@@ -22,8 +22,8 @@ import pandas as pd
 import io
 import os
 
-# Data directory (one level up from scripts folder)
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "statcan_data")
+# Data directory - outputs directly to public/data/ where the app reads from
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "data")
 
 # =============================================================================
 # STATCAN URLS

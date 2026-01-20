@@ -5,7 +5,7 @@ import { getInvestmentByAssetData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const Page27 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -245,8 +245,8 @@ const Page27 = () => {
                 style={{ 
                     marginTop: '10px', 
                     marginBottom: '10px', 
-                    marginLeft: windowWidth <= 384 ? '30px' : windowWidth <= 480 ? '35px' : windowWidth <= 640 ? '40px' : windowWidth <= 768 ? '45px' : '55px',
-                    marginRight: windowWidth <= 384 ? '35px' : windowWidth <= 480 ? '30px' : windowWidth <= 640 ? '25px' : windowWidth <= 768 ? '20px' : '9px',
+                    marginLeft: 0,
+                    marginRight: 0,
                     fontFamily: 'Arial, sans-serif'
                 }}
             >
@@ -355,25 +355,26 @@ const Page27 = () => {
             }}
         >
             <style>{`
+                /* =====================================================
+                   PAGE 27 - BORDER PAGE STYLES
+                   Border extends past container, content aligns with anchors.
+                   ===================================================== */
+
+                /* Extend right for border, content padded to align with anchors */
                 .page-27 {
-                    margin-left: -37px !important;
-                    margin-right: -30px !important;
-                    width: calc(100% + 67px) !important;
+                    margin-right: -${layoutPadding?.right || 15}px;
+                    width: calc(100% + ${layoutPadding?.right || 15}px);
+                    padding-right: ${(layoutPadding?.right || 15) - 18}px; /* 18px is border width */
                 }
                 
                 .page27-container {
                     width: 100%;
-                    padding: 10px 0px 0px 0px;
+                    padding: 10px 0 0 0;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
                     flex: 1;
                     overflow: visible;
-                }
-                
-                .page27-container header {
-                    padding-left: 55px;
-                    padding-right: 48px;
                 }
                 
                 .page27-container .chart-region {
@@ -386,6 +387,7 @@ const Page27 = () => {
                     min-height: 350px;
                 }
 
+                /* Chart height breakpoints only */
                 @media (max-width: 1745px) {
                     .page27-chart {
                         height: calc(100vh - 280px);
@@ -404,8 +406,6 @@ const Page27 = () => {
                     .page27-chart {
                         height: calc(100vh - 160px);
                         min-height: 340px;
-                        width: calc(100% - 40px) !important;
-                        margin-left: 35px !important;
                     }
                 }
 
@@ -413,8 +413,6 @@ const Page27 = () => {
                     .page27-chart {
                         height: calc(100vh - 120px);
                         min-height: 320px;
-                        width: calc(100% - 40px) !important;
-                        margin-left: 30px !important;
                     }
                 }
 
@@ -423,25 +421,10 @@ const Page27 = () => {
                         height: calc(100vh - 80px);
                         min-height: 300px;
                     }
-
-                    .page-27 {
-                        margin-left: -47px !important;
-                        margin-right: -30px !important;
-                        width: calc(100% + 67px) !important;
-                    }
                 }
 
                 @media (max-width: 768px) {
-                    .page-27 {
-                        margin-left: -47px !important;
-                        margin-right: -30px !important;
-                        width: calc(100% + 67px) !important;
-                        border-right: none !important;
-                    }
-                    .page27-container header {
-                        padding-left: 45px;
-                        padding-right: 20px;
-                    }
+                    .page-27 { border-right: none !important; }
                     .page27-container h1 {
                         font-size: 1.4rem !important;
                         text-align: left !important;
@@ -453,10 +436,6 @@ const Page27 = () => {
                 }
                 
                 @media (max-width: 640px) {
-                    .page27-container header {
-                        padding-left: 40px;
-                        padding-right: 15px;
-                    }
                     .page27-container h1 {
                         font-size: 1.3rem !important;
                     }
@@ -464,53 +443,25 @@ const Page27 = () => {
                         height: calc(100vh + 100px);
                         min-height: 260px;
                     }
-
-                    .page-27 {
-                        margin-left: -41px !important;
-                        margin-right: -30px !important;
-                        width: calc(100% + 67px) !important;
-                    }
                 }
 
                 @media (max-width: 480px) {
-                    .page27-container header {
-                        padding-left: 35px;
-                        padding-right: 10px;
-                    }
                     .page27-container h1 {
                         font-size: 1.2rem !important;
                     }
                     .page27-chart {
                         height: calc(100vh + 200px) !important;
                         min-height: 200px;
-                        width: calc(100% - 50px) !important;
-                    }
-
-                     .page-27 {
-                        margin-left: -36px !important;
-                        margin-right: -30px !important;
-                        width: calc(100% + 67px) !important;
                     }
                 }
 
                 @media (max-width: 384px) {
-                    .page27-container header {
-                        padding-left: 30px;
-                        padding-right: 24px;
-                    }
                     .page27-container h1 {
                         font-size: 1.1rem !important;
                     }
                     .page27-chart {
                         height: calc(100% + 160px) !important;
                         min-height: 400px;
-                        width: calc(100% - 55px) !important;
-                    }
-
-                    .page-27 {
-                        margin-left: -31px !important;
-                        margin-right: -30px !important;
-                        width: calc(100% + 67px) !important;
                     }
                 }
                 
@@ -663,8 +614,8 @@ const Page27 = () => {
                                     traceorder: 'normal'
                                 },
                                 margin: { 
-                                    l: windowWidth <= 384 ? 30 : windowWidth <= 480 ? 35 : windowWidth <= 640 ? 40 : windowWidth <= 768 ? 45 : 55, 
-                                    r: windowWidth <= 384 ? 8 : windowWidth <= 480 ? 10 : windowWidth <= 640 ? 15 : windowWidth <= 768 ? 20 : 48,
+                                    l: 0, 
+                                    r: 0,
                                     t: 10, 
                                     b: legendSettings.margin
                                 },

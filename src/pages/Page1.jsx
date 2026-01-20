@@ -4,7 +4,7 @@ import { getText } from '../utils/translations';
 import page1Image from '../assets/page1_bg.jpg';
 
 const Page1 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
 
     useEffect(() => {
         import('./Page23');
@@ -24,11 +24,16 @@ const Page1 = () => {
             }}
         >
             <style>{`
+                /* =====================================================
+                   PAGE 1 - TITLE PAGE STYLES
+                   Background extends past container, text aligns with anchors.
+                   ===================================================== */
+
                 .page1-main {
-                    overflow: visible;
-                    margin-left: -37px;
-                    margin-right: -30px;
-                    width: calc(100% + 67px);
+                    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
+                    margin-left: -${layoutPadding?.left || 55}px;
+                    margin-right: -${layoutPadding?.right || 15}px;
+                    padding: 0;
                 }
 
                 .page1-container {
@@ -76,7 +81,7 @@ const Page1 = () => {
 
                 .page1-title-box {
                     background-color: rgba(255, 255, 255, 0.7); 
-                    padding: 20px 30px 20px 55px;
+                    padding: 20px ${layoutPadding?.right || 15}px 20px ${layoutPadding?.left || 55}px;
                     width: 100%;
                     box-sizing: border-box;
                 }
@@ -84,7 +89,7 @@ const Page1 = () => {
                 .page1-list {
                     width: 100%;
                     background-color: #245e7f;
-                    padding: 30px 30px 30px 55px;
+                    padding: 30px ${layoutPadding?.right || 15}px 30px ${layoutPadding?.left || 55}px;
                     box-sizing: border-box;
                     flex: 1;
                 }
@@ -102,36 +107,17 @@ const Page1 = () => {
                     margin-bottom: 8px;
                     font-size: 2.2rem; 
                 }
-                    
+
+                /* Font size breakpoints only */
                 @media (max-width: 1745px) { .page1-title-text { font-size: 4.2rem; } }
                 @media (max-width: 1536px) { .page1-title-text { font-size: 4.0rem; } }
                 @media (max-width: 1280px) { .page1-title-text { font-size: 3.8rem; } }
                 @media (max-width: 1100px) { .page1-title-text { font-size: 3.5rem; } }
 
                 @media (max-width: 960px) {
-                    .page1-main {
-                        margin-left: -45px;
-                        margin-right: -30px;
-                        width: calc(100% + 75px);
-                    }
-                    .page1-title-box, .page1-list { 
-                        padding: 20px 30px 20px 55px; 
-                    }
                     .page1-image-title-wrapper { min-height: 350px; }
                     .page1-title-text { font-size: 3.2rem; }
                     .page1-list-item { font-size: 1.7rem; }
-                }
-
-                @media (max-width: 768px) {
-                    .page1-main {
-                        margin-left: -45px;
-                        margin-right: -20px;
-                        width: calc(100% + 65px);
-                    }
-                    .page1-title-box, .page1-list {
-                        padding-left: 45px; 
-                        padding-right: 20px;
-                    }
                 }
 
                 @media (max-width: 640px) {
@@ -140,15 +126,6 @@ const Page1 = () => {
                 }
 
                 @media (max-width: 480px) {
-                    .page1-main {
-                        margin-left: -10px;
-                        margin-right: -10px;
-                        width: calc(100% + 20px);
-                    }
-                    .page1-title-box, .page1-list { 
-                        padding-left: 10px; 
-                        padding-right: 10px;
-                    }
                     .page1-image-title-wrapper { min-height: 250px; }
                     .page1-title-text { font-size: 2.0rem; }
                     .page1-list-item { font-size: 1.3rem; }

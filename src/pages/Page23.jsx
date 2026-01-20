@@ -5,7 +5,7 @@ import { getCapitalExpendituresData, getInfrastructureData, getEconomicContribut
 import page23Image from '../assets/page23_bg.jpg';
 
 const Page23 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
 
     useEffect(() => {
         getCapitalExpendituresData();
@@ -28,11 +28,16 @@ const Page23 = () => {
             }}
         >
             <style>{`
+/* =====================================================
+   PAGE 23 - TITLE PAGE STYLES
+   Background extends past container, text aligns with anchors.
+   ===================================================== */
+
 .page23-main {
-    overflow: visible;
-    margin-left: -37px;
-    margin-right: -30px;
-    width: calc(100% + 67px);
+    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
+    margin-left: -${layoutPadding?.left || 55}px;
+    margin-right: -${layoutPadding?.right || 15}px;
+    padding: 0;
 }
 
 .page23-container {
@@ -80,7 +85,7 @@ const Page23 = () => {
 
 .page23-title-box {
     background-color: rgba(255, 255, 255, 0.7); 
-    padding: 20px 30px 20px 55px;
+    padding: 20px ${layoutPadding?.right || 15}px 20px ${layoutPadding?.left || 55}px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -88,7 +93,7 @@ const Page23 = () => {
 .page23-list {
     width: 100%;
     background-color: #8a7d5a;
-    padding: 30px 30px 30px 55px;
+    padding: 30px ${layoutPadding?.right || 15}px 30px ${layoutPadding?.left || 55}px;
     box-sizing: border-box;
     flex: 1;
 }
@@ -109,35 +114,16 @@ const Page23 = () => {
     text-align: left;
 }
 
+/* Font size breakpoints only */
 @media (max-width: 1745px) { .page23-title-text { font-size: 4.2rem; } }
 @media (max-width: 1536px) { .page23-title-text { font-size: 4.0rem; } }
 @media (max-width: 1280px) { .page23-title-text { font-size: 3.8rem; } }
 @media (max-width: 1100px) { .page23-title-text { font-size: 3.5rem; } }
 
 @media (max-width: 960px) {
-    .page23-main {
-        margin-left: -45px;
-        margin-right: -30px;
-        width: calc(100% + 75px);
-    }
-    .page23-title-box, .page23-list {
-        padding: 20px 30px 20px 55px;
-    }
     .page23-image-title-wrapper { min-height: 240px; }
     .page23-title-text { font-size: 3.2rem; }
     .page23-list-item { font-size: 1.7rem; }
-}
-
-@media (max-width: 768px) {
-    .page23-main {
-        margin-left: -45px;
-        margin-right: -20px;
-        width: calc(100% + 65px);
-    }
-    .page23-title-box, .page23-list {
-        padding-left: 45px;
-        padding-right: 20px;
-    }
 }
 
 @media (max-width: 640px) {
@@ -146,15 +132,6 @@ const Page23 = () => {
 }
 
 @media (max-width: 480px) {
-    .page23-main {
-        margin-left: -10px;
-        margin-right: -10px;
-        width: calc(100% + 20px);
-    }
-    .page23-title-box, .page23-list {
-        padding-left: 10px;
-        padding-right: 10px;
-    }
     .page23-image-title-wrapper { min-height: 180px; }
     .page23-title-text { font-size: 2.0rem; }
     .page23-list-item { font-size: 1.3rem; }

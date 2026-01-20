@@ -5,7 +5,7 @@ import { getForeignControlData, getInternationalInvestmentData } from '../utils/
 import { getText } from '../utils/translations';
 
 const Page32 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
     const [chartData, setChartData] = useState([]);
     const [investmentData, setInvestmentData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -180,7 +180,7 @@ const Page32 = () => {
         }
     };
 
-    // Screen reader summary
+    // Screen reader summary - simplified to just describe the chart without specific data values
     const getChartDataSummary = () => {
         if (!chartData || chartData.length === 0) return '';
         
@@ -188,9 +188,9 @@ const Page32 = () => {
         const latestYearNum = latestYear.year;
 
         if (lang === 'en') {
-            return `Grouped bar chart showing foreign control of Canadian assets from ${processedChartData?.minYear} to ${latestYearNum}. In ${latestYearNum}, Utilities were at ${formatPercentSR(latestYear.utilities || 0)}, Oil and gas extraction at ${formatPercentSR(latestYear.oil_gas || 0)}, and All non-financial industries at ${formatPercentSR(latestYear.all_non_financial || 0)}. Expand the data table below for detailed values.`;
+            return `Grouped bar chart showing foreign control of Canadian assets from ${processedChartData?.minYear} to ${latestYearNum}. Expand the data table below for detailed values.`;
         } else {
-            return `Graphique à barres groupées montrant le contrôle étranger des actifs canadiens de ${processedChartData?.minYear} à ${latestYearNum}. En ${latestYearNum}, les Services publics étaient à ${formatPercentSR(latestYear.utilities || 0)}, l'Extraction de pétrole et de gaz à ${formatPercentSR(latestYear.oil_gas || 0)}, et le Total des industries non financières à ${formatPercentSR(latestYear.all_non_financial || 0)}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
+            return `Graphique à barres groupées montrant le contrôle étranger des actifs canadiens de ${processedChartData?.minYear} à ${latestYearNum}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
         }
     };
 
@@ -330,10 +330,16 @@ const Page32 = () => {
             }}
         >
             <style>{`
+                /* =====================================================
+                   PAGE 32 - BORDER PAGE STYLES
+                   Border extends past container, content aligns with anchors.
+                   ===================================================== */
+
+                /* Extend left for border, content padded to align with anchors */
                 .page-32 {
-                    margin-left: -37px;
-                    margin-right: -30px;
-                    width: calc(100% + 67px);
+                    margin-left: -${layoutPadding?.left || 55}px;
+                    width: calc(100% + ${layoutPadding?.left || 55}px);
+                    padding-left: ${(layoutPadding?.left || 55) - 18}px; /* 18px is border width */
                 }
 
                 .wb-inv {
@@ -347,7 +353,7 @@ const Page32 = () => {
 
                 .page32-container {
                     width: 100%;
-                    padding: 15px 30px 20px 55px;
+                    padding: 15px 0 20px 0;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -361,7 +367,6 @@ const Page32 = () => {
                     font-size: 2.2rem;
                     font-weight: bold;
                     font-style: italic;
-                    margin-left: -19px;
                     margin-top: 5px;
                     line-height: 1.3;
                 }
@@ -372,13 +377,12 @@ const Page32 = () => {
                     font-size: 1rem;
                     margin-bottom: 10px;
                     line-height: 1.6;
-                    margin-left: -21px;
                     list-style-type: disc;
+                    padding-left: 20px;
                 }
 
                 .page32-bullets li {
                     margin-bottom: 8px;
-                    margin-left: -21px;
                 }
 
                 .page32-bullets li::marker {
@@ -394,19 +398,17 @@ const Page32 = () => {
                     color: #333;
                     font-size: 1.2rem;
                     font-weight: bold;
-                    margin-bottom: 0px;
+                    margin-bottom: 0;
                     margin-top: 15px;
-                    margin-left: -19px;
                 }
 
                 .page32-section-text {
                     font-family: Arial, sans-serif;
                     color: #333;
                     font-size: 1rem;
-                    margin-bottom: 0px;
+                    margin-bottom: 0;
                     line-height: 1.5;
                     position: relative;
-                    margin-left: -19px;
                 }
 
                 .page32-chart-title {
@@ -416,7 +418,6 @@ const Page32 = () => {
                     font-weight: bold;
                     text-align: center;
                     margin-bottom: 5px;
-                    margin-left: -19px;
                 }
 
                 .page32-chart-wrapper {
@@ -426,7 +427,6 @@ const Page32 = () => {
                     justify-content: flex-start;
                     gap: 20px;
                     width: 100%;
-                    margin-left: -39px;
                 }
 
                 .page32-chart {
@@ -438,11 +438,12 @@ const Page32 = () => {
                 }
 
                 .page32-data-table {
-                    margin-left: -21px !important;
-                    width: calc(100% - 400px) !important;
+                    width: 100%;
+                    margin-left: 0;
+                    margin-right: 0;
                 }
 
-                /* 110% zoom (~1745px) */
+                /* Chart height and font size breakpoints only */
                 @media (max-width: 1745px) {
                     .page32-chart {
                         height: calc(100vh - 660px);
@@ -450,221 +451,56 @@ const Page32 = () => {
                     }
                 }
 
-                /* 125% zoom (~1536px) */
                 @media (max-width: 1536px) {
-                    .page32-container {
-                        padding: 10px 25px 10px 25px;
-                    }
                     .page32-title {
                         font-size: 1.8rem;
-                        margin-left: 10px !important;
                     }
                     .page32-chart {
                         height: calc(100vh - 640px);
                         min-height: 268px;
                     }
-
-                    .page32-bullets {
-                        margin-left: -6px !important;
-                    }
-
-                    .page32-bullets li {
-                        margin-left: -6px !important;
-                    }
-
-                    .page32-section-title {
-                        margin-left: 10px !important;
-                    }
-
-                    .page32-section-text {
-                        margin-left: 10px !important;
-                    }
-
-                    .page32-chart-title {
-                        margin-left: 10px !important;
-                    }
-
-                    .page32-chart-wrapper {
-                        margin-left: -8px !important;
-                    }
-
-                    .page32-data-table {
-                        margin-left: 10px !important;
-                        width: calc(100% - 400px) !important;
-                    }
                 }
 
-                /* 150% zoom (~1280px) */
                 @media (max-width: 1280px) {
-                    .page32-container {
-                        padding: 10px 20px 10px 20px;
-                    }
                     .page32-title {
                         font-size: 1.6rem;
                     }
-                    
                     .page32-chart {
-                        flex: 0 0 auto;
                         height: calc(100vh - 620px);
                         min-height: 272px;
-                        width: calc(100% + 20px) !important;
-                    }
-
-                     .page32-data-table {
-                        width: calc(100% - 18px) !important;
                     }
                 }
 
-                /* 175% zoom (~1097px) */
                 @media (max-width: 1097px) {
                     .page32-title {
                         font-size: 1.5rem;
-                        margin-left: 16px !important;
-                        padding-right: 10px !important; 
-                        box-sizing: border-box !important;
                     }
                     .page32-chart {
                         height: calc(100vh - 600px);
                         min-height: 276px;
-                        width: calc(100% + 10px) !important;
-                    }
-
-                    .page32-bullets {
-                        margin-left: -4px !important;
-                        padding-right: 10px !important; 
-                        box-sizing: border-box !important;
-                    }
-
-                    .page32-bullets li {
-                        margin-left: -4px !important;
-                        padding-right: 10px !important; 
-                        box-sizing: border-box !important;
-                    }
-
-                    .page32-section-title {
-                        margin-left: 16px !important;
-                        padding-right: 10px !important; 
-                        box-sizing: border-box !important;
-                    }
-
-                    .page32-section-text {
-                        margin-left: 16px !important;
-                        padding-right: 10px !important; 
-                        box-sizing: border-box !important;
-                    }
-
-                    .page32-chart-title {
-                        margin-left: 16px !important;
-                        padding-right: 10px !important; 
-                        box-sizing: border-box !important;
-                    }
-
-                    .page32-chart-wrapper {
-                        margin-left: 0px !important;
-                    }
-
-                    .page32-data-table {
-                        margin-left: 16px !important;
-                        width: calc(100% - 25px) !important;
                     }
                 }
 
-                /* 200% zoom (~960px) */
                 @media (max-width: 960px) {
-                    .page32-container {
-                        padding: 8px 15px 8px 15px;
-                    }
-                      
                     .page32-title {
                         font-size: 1.4rem;
-                        margin-left: 14px !important;
                     }
                     .page32-chart {
-                        height: calc(100% - 0px);
                         min-height: 280px;
-                    }
-
-                    .page32-bullets {
-                        margin-left: -6px !important;
-                    }
-
-                    .page32-bullets li {
-                        margin-left: -6px !important;
-                    }
-
-                    .page32-section-title {
-                        margin-left: 14px !important;
-                    }
-
-                    .page32-section-text {
-                        margin-left: 14px !important;
-                    }
-
-                    .page32-chart-title {
-                        margin-left: 14px !important;
-                    }
-
-                      .page32-chart-wrapper {
-                        margin-left: -6px !important;
-                    }
-
-                    .page32-data-table {
-                        width: calc(100% - 28px) !important;
                     }
                 }
 
-                /* 250% zoom (~768px) */
                 @media (max-width: 768px) {
-                    .page-32 {
-                        margin-left: -20px !important;
-                        margin-right: -20px !important;
-                        width: calc(100% + 40px) !important;
-                        border-left: none !important;
-                    }
-                    .page32-container {
-                        padding: 8px 20px 8px 45px !important;
-                    }
+                    .page-32 { border-left: none !important; }
                     .page32-title {
                         font-size: 1.3rem;
-                        margin-left: -24px !important;
                     }
                     .page32-chart {
                         height: calc(100vh - 550px);
                         min-height: 285px;
-                        width: calc(100% + 55px) !important;
-                    }
-
-                    .page32-bullets {
-                        margin-left: -25px !important;
-                    }
-
-                    .page32-bullets li {
-                        margin-left: -25px !important;
-                    }
-
-                    .page32-section-title {
-                        margin-left: -24px !important;
-                    }
-
-                    .page32-section-text {
-                        margin-left: -24px !important;
-                    }
-
-                    .page32-chart-title {
-                        margin-left: -24px !important;
-                    }
-
-                      .page32-chart-wrapper {
-                        margin-left: -36px !important;
-                    }
-
-                    .page32-data-table {
-                        width: calc(100% + 28px) !important;
-                        margin-left: -26px !important;
                     }
                 }
                 
-                /* 300% zoom (~640px) */
                 @media (max-width: 640px) {
                     .page32-title {
                         font-size: 1.2rem;
@@ -673,41 +509,19 @@ const Page32 = () => {
                         height: calc(100vh - 520px);
                         min-height: 290px;
                     }
-
-                    .page32-bullets {
-                        margin-left: -30px !important;
-                    }
-
-                    .page32-bullets li {
-                        margin-left: -22px !important;
-                    }
-
-                    .page32-section-title {
-                        margin-left: -22px !important;
-                    }
                 }
 
-                /* 400% zoom (~480px) */
                 @media (max-width: 480px) {
-                    .page32-container {
-                        padding: 5px 10px;
-                    }
                     .page32-title {
                         font-size: 1.1rem;
                     }
                     .page32-chart {
                         height: calc(100vh - 500px);
                         min-height: 295px;
-                        margin-left: 4px !important;
-                        width: calc(100% + 50px) !important;
                     }
                 }
 
-                /* 500% zoom (~384px) */
                 @media (max-width: 384px) {
-                    .page32-container {
-                        padding: 5px 8px;
-                    }
                     .page32-title {
                         font-size: 1rem;
                     }
@@ -852,7 +666,46 @@ const Page32 = () => {
                         <div className="page32-chart-wrapper">
                             <figure ref={chartRef} aria-hidden="true" className="page32-chart" style={{ margin: 0, position: 'relative' }}>
                                 {!isChartInteractive && (
-                                    <div onClick={() => setIsChartInteractive(true)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10, cursor: 'pointer' }} title={lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'} role="button" tabIndex={0} />
+                                    <div 
+                                        onClick={() => setIsChartInteractive(true)} 
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setIsChartInteractive(true);
+                                            }
+                                        }}
+                                        style={{ 
+                                            position: 'absolute', 
+                                            top: 0, 
+                                            left: 0, 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            zIndex: 10, 
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            paddingRight: windowWidth > 1280 ? '350px' : '0px',
+                                            boxSizing: 'border-box',
+                                            backgroundColor: 'rgba(255,255,255,0.01)'
+                                        }} 
+                                        title={lang === 'en' ? 'Click to interact with chart' : 'Cliquez pour interagir avec le graphique'} 
+                                        role="button" 
+                                        aria-label={lang === 'en' ? 'Click to enable chart interaction' : 'Cliquez pour activer l\'interaction avec le graphique'}
+                                        tabIndex={0}
+                                    >
+                                        <span style={{
+                                            background: 'rgba(0,0,0,0.7)',
+                                            color: 'white',
+                                            padding: '8px 16px',
+                                            borderRadius: '4px',
+                                            pointerEvents: 'none',
+                                            fontSize: '14px',
+                                            fontFamily: 'Arial, sans-serif'
+                                        }}>
+                                            {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
+                                        </span>
+                                    </div>
                                 )}
                                 
                                 {isChartInteractive && (
@@ -901,8 +754,8 @@ const Page32 = () => {
                                             tickfont: { size: windowWidth <= 480 ? 11 : 12, family: 'Arial, sans-serif' }
                                         },
                                         margin: { 
-                                            l: windowWidth <= 480 ? 50 : windowWidth <= 768 ? 60 : 70, 
-                                            r: windowWidth <= 1280 ? 15 : 180,
+                                            l: 0, 
+                                            r: 0,
                                             t: 20, 
                                             b: windowWidth <= 1280 ? 80 : 50
                                         },

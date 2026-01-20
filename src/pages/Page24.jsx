@@ -6,7 +6,7 @@ import { getCapitalExpendituresData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const Page24 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -255,12 +255,11 @@ const Page24 = () => {
         setHiddenSeries(isIsolated ? [] : others);
     };
 
-    const getChartMarginLeft = () => {
-        if (windowWidth <= 640) return 50; 
-        return 75; 
-    };
-    
-    const chartMarginLeft = getChartMarginLeft();
+    // Chart margins - in column format (stacked), use 0 margins for full width alignment with anchors
+    // In two-column format, use margins for proper spacing
+    const isColumnFormat = windowWidth <= 1400;
+    const chartMarginLeft = isColumnFormat ? 0 : 50;
+    const chartMarginRight = isColumnFormat ? 0 : 15;
 
     return (
         <main 
@@ -280,6 +279,11 @@ const Page24 = () => {
             }}
         >
             <style>{`
+                /* =====================================================
+                   PAGE 24 - BORDER PAGE STYLES
+                   Border extends past container, content aligns with anchors.
+                   ===================================================== */
+
                 .wb-inv {
                     clip: rect(1px, 1px, 1px, 1px);
                     height: 1px;
@@ -295,19 +299,24 @@ const Page24 = () => {
                     display: none;
                 }
 
+                /* Extend left for border, content padded to align with anchors */
                 .page-24 {
-                    margin-left: -37px;
-                    margin-right: -30px;
-                    width: calc(100% + 67px);
+                    margin-left: -${layoutPadding?.left || 55}px;
+                    width: calc(100% + ${layoutPadding?.left || 55}px);
+                    padding-left: ${(layoutPadding?.left || 55) - 18}px; /* 18px is border width */
                 }
-                
-                .align-flag-text { padding-left: 37px; }
-                .align-right-edge { padding-right: 30px; }
 
                 .page24-chart-wrapper {
                     position: relative;
-                    margin-left:-15px; 
-                    width: calc(100% + 37px);
+                    width: calc(100% + 50px);
+                    margin-left: -5px; /* Pull chart left so y-axis labels align with title */
+                }
+                
+                @media (max-width: 1400px) {
+                    .page24-chart-wrapper {
+                        width: 100%;
+                        margin-left: 0;
+                    }
                 }
 
                 .page24-chart-wrapper div[role="button"]:focus {
@@ -321,10 +330,7 @@ const Page24 = () => {
                     align-items: center;
                     justify-content: center;
                     text-align: center;
-                    width: calc(100% + 37px);
-                    margin-left: -37px;
-                    padding-left: 75px; 
-                    padding-right: 15px;
+                    width: 100%;
                     box-sizing: border-box;
                     margin-bottom: 10px;
                 }
@@ -336,17 +342,12 @@ const Page24 = () => {
                     margin-top: 10px;
                     cursor: default;
                     justify-content: center;
-                    width: calc(100% + 37px);
-                    margin-left: -37px;
-                    padding-left: 75px; 
-                    padding-right: 15px;
+                    width: 100%;
                     box-sizing: border-box;
                 }
 
                 .page24-table-btn-wrapper {
-                    margin-left: 37px; 
-                    margin-right: 15px; 
-                    width: calc(100% - 32px); 
+                    width: 100%;
                 }
 
                 .page24-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; }
@@ -362,14 +363,13 @@ const Page24 = () => {
 
                 .page24-chart-column { 
                     width: 55%; 
-                    margin-left: 0;
                 }
 
                 .page24-text-column {
                     width: 45%;
                     padding-top: 30px;
                     padding-left: 30px; 
-                    padding-right: 30px;
+                    padding-right: 0;
                     box-sizing: border-box;
                     min-width: 300px; 
                 }
@@ -400,99 +400,40 @@ const Page24 = () => {
                 }
 
                 .page24-chart-wrapper button:focus,
-                    .js-plotly-plot .plotly .modebar-btn:focus {
+                .js-plotly-plot .plotly .modebar-btn:focus {
                     outline: none !important;
                     box-shadow: none !important;
                 }
 
+                .page24-chart { width: 100%; height: 300px; }
+
+                /* Layout breakpoints only */
                 @media (max-width: 1400px) {
                     .page24-content-row { flex-direction: column; }
                     .page24-chart-column { width: 100%; margin-bottom: 30px; }
-                    .page24-text-column { width: 100%; padding-top: 0; padding-left: 37px; }
-                    .page24-chart-wrapper {
-                        margin-left: -15px !important;
-                        width: calc(100% + 15px) !important; 
-                        padding-right: 10px;
-                        box-sizing: border-box;
-                    }
+                    .page24-text-column { width: 100%; padding-top: 0; padding-left: 0; }
                 }
 
-                @media (max-width: 1280px) {
-                    .page24-table-btn-wrapper { margin-left: 37px; width: calc(100% - 66px); }
-                }
-
-                @media (max-width: 980px) {
-                    .page-24 { margin-left: -45px; margin-right: -30px; width: calc(100% + 75px); }
-                    .align-flag-text { padding-left: 37px; } 
-                    .page24-text-column { padding-left: 35px; }
-                    .page24-table-btn-wrapper { margin-left: 37px; width: calc(100% - 66px) !important; }
-                }
-
-                @media (max-width: 768px) {
-                    .page-24 { margin-left: -45px; margin-right: -20px; width: calc(100% + 65px); }
-                    .align-flag-text { padding-left: 27px; } 
-                    .align-right-edge { padding-right: 20px; }
-                    .page24-text-column { padding-left: 25px; }
-                    .page24-table-btn-wrapper { margin-left: 27px; width: calc(100% - 46px) !important; }
-                    .page24-chart-wrapper { margin-left: -24px; width: calc(100% + 24px) !important; }
-                }
-
-               @media (max-width: 640px) {
+                @media (max-width: 640px) {
                     .page-24 { 
                         border-left: none !important; 
-                        margin-left: 0; 
-                        margin-right: 0; 
-                        width: auto;
-                        padding-left: 10px;
-                        padding-right: 10px;
-                    }
-
-                    .page24-header h1 { transform: translateX(-10px); }
-                    .wb-fnote { transform: translateX(-9px); }
-                    .page24-table-btn-wrapper { transform: translateX(-9px); }
-
-                    .align-flag-text { padding-left: 0; } 
-                    .align-right-edge { padding-right: 0; }
-                    
-                    .page24-text-column { padding-left: 0px; }
-                    .page24-text-column ul {
-                        padding-left: 8px !important;
-                    }
-
-                    .page24-chart-wrapper { margin-left: -20px; width: calc(100% + 53px) !important; }
-                    .chart-title-wrapper { 
-                        margin-left: 0; 
-                        width: 100%; 
+                        margin-left: 0;
+                        width: 100%;
                         padding-left: 0;
-                        align-items: center !important; 
-                        text-align: center !important;
                     }
-                    
-                    .page24-chart-title {
-                        text-align: center !important;
-                        padding-left: 50px; 
-                        padding-right: 10px;
-                    }
-                    .page24-legend { margin-left: -8px; width: 100%; padding-left: 0; justify-content: flex-start; }
-                    
-                    .page24-table-btn-wrapper { margin-left: 0px; width: calc(100% + 20px) !important; }
-                    
                     .page24-legend {
                         flex-direction: column !important;
                         align-items: flex-start !important;
                     }
-                    
                 }
 
-                .page24-chart { width: 100%; height: 300px; }
-
                 @media (max-width: 480px) {
-                .page24-chart {width: 100%; height: 275px;}
+                    .page24-chart { height: 275px; }
                 }
             `}</style>
 
             <div className="page24-container">
-                <header className="page24-header align-flag-text">
+                <header className="page24-header">
                     <h1 style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: 0, lineHeight: 1.1 }}>
                         {renderTextWithHiddenAsterisk(getText('page24_title', lang))}
                     </h1>
@@ -509,7 +450,44 @@ const Page24 = () => {
 
                         <figure ref={chartRef} aria-hidden="true" className="page24-chart-wrapper">
                             {!isChartInteractive && (
-                                <div onClick={() => setIsChartInteractive(true)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10, cursor: 'pointer' }} title={lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'} role="button" tabIndex={0} />
+                                <div 
+                                    onClick={() => setIsChartInteractive(true)} 
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setIsChartInteractive(true);
+                                        }
+                                    }}
+                                    style={{ 
+                                        position: 'absolute', 
+                                        top: 0, 
+                                        left: 0, 
+                                        width: '100%', 
+                                        height: '100%', 
+                                        zIndex: 10, 
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: 'rgba(255,255,255,0.01)'
+                                    }} 
+                                    title={lang === 'en' ? 'Click to interact with chart' : 'Cliquez pour interagir avec le graphique'} 
+                                    role="button" 
+                                    aria-label={lang === 'en' ? 'Click to enable chart interaction' : 'Cliquez pour activer l\'interaction avec le graphique'}
+                                    tabIndex={0}
+                                >
+                                    <span style={{
+                                        background: 'rgba(0,0,0,0.7)',
+                                        color: 'white',
+                                        padding: '8px 16px',
+                                        borderRadius: '4px',
+                                        pointerEvents: 'none',
+                                        fontSize: '14px',
+                                        fontFamily: 'Arial, sans-serif'
+                                    }}>
+                                        {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
+                                    </span>
+                                </div>
                             )}
                             
                             {isChartInteractive && (
@@ -553,7 +531,7 @@ const Page24 = () => {
                                         title: { text: getText('page24_yaxis', lang) }, 
                                         automargin: true,
                                     }, 
-                                    margin: { l: chartMarginLeft, r: 15, t: 30, b: 10 }, 
+                                    margin: { l: chartMarginLeft, r: chartMarginRight, t: 30, b: 10 }, 
                                     autosize: true, 
                                     bargap: 0.2,
                                     paper_bgcolor: 'rgba(0,0,0,0)',
@@ -631,7 +609,7 @@ const Page24 = () => {
                     </aside>
                 </div>
 
-                <aside className="wb-fnote align-flag-text" role="note" style={{ marginTop: 'auto', paddingTop: '10px', paddingBottom: '15px' }}>
+                <aside className="wb-fnote" role="note" style={{ marginTop: 'auto', paddingTop: '10px', paddingBottom: '15px' }}>
                     <h2 id="fn-page24" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl style={{ margin: 0 }}>
                         <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getEconomicContributionsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import page26BgImage from '../assets/page26_bg.png';
 
 const Page26 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -95,8 +96,8 @@ const Page26 = () => {
                     marginBottom: '10px', 
                     width: '100%', 
                     minWidth: '300px',
-                    marginLeft: '0',
-                    marginRight: 'auto',
+                    marginLeft: 0,
+                    marginRight: 0,
                     fontFamily: 'Arial, sans-serif',
                     position: 'relative',
                     zIndex: 2,
@@ -263,6 +264,11 @@ const Page26 = () => {
             }}
         >
             <style>{`
+                /* =====================================================
+                   PAGE 26 - BORDER PAGE STYLES
+                   Border extends past container, content aligns with anchors.
+                   ===================================================== */
+
                 .wb-inv {
                     clip: rect(1px, 1px, 1px, 1px);
                     height: 1px;
@@ -273,10 +279,11 @@ const Page26 = () => {
                     white-space: nowrap;
                 }
 
+                /* Extend left for border, content padded to align with anchors */
                 .page-26 {
-                    margin-left: -37px;
-                    margin-right: -30px;
-                    width: calc(100% + 67px);
+                    margin-left: -${layoutPadding?.left || 55}px;
+                    width: calc(100% + ${layoutPadding?.left || 55}px);
+                    padding-left: ${(layoutPadding?.left || 55) - 18}px; /* 18px is border width */
                 }
                 
                 input[type=range] {
@@ -311,7 +318,7 @@ const Page26 = () => {
                 .page26-container {
                     width: 100%;
                     min-height: calc(100vh - 300px);
-                    padding: 0 30px 0 37px;
+                    padding: 0;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -336,7 +343,7 @@ const Page26 = () => {
                     flex-direction: row;
                     justify-content: space-between;
                     margin-top: 10px;
-                    padding: 0 25px;
+                    padding: 0;
                 }
                 
                 .page26-stat-col {
@@ -347,7 +354,7 @@ const Page26 = () => {
                     border-radius: 6px;
                 }
                 
-                .page26-stat-col-1 { margin-left: -40px; }
+                .page26-stat-col-1 { margin-left: 0; }
                 .page26-stat-col-2 { margin-left: 360px; }
                 .page26-stat-col-3 { margin-left: 360px; }
                 
@@ -361,14 +368,11 @@ const Page26 = () => {
                     font-size: 20px;
                 }
 
+                /* Layout breakpoints only */
                 @media (max-width: 1800px) {
                     .page26-container {
                         height: auto;
                     }
-                    h1 {
-                        margin-top: 20px !important; 
-                        padding-top: 20px !important;
-                        }
                     
                     .page26-stats-row {
                         flex-direction: column;
@@ -376,7 +380,7 @@ const Page26 = () => {
                     }
                     
                     .page26-stat-col {
-                        margin-left: -40px !important;
+                        margin-left: 0 !important;
                         padding: 12px 16px;
                         background: rgba(255, 255, 255, 0.95);
                         border-radius: 6px;
@@ -395,7 +399,6 @@ const Page26 = () => {
                 @media (max-width: 1280px) {
                     .page-26 {
                         border-left: none !important;
-                        padding-left: 18px !important;
                     }
                 }            
                 
@@ -405,49 +408,8 @@ const Page26 = () => {
                         background-position: right !important;
                     }
                 }
-
-                @media (max-width: 960px) {
-                    .page26-container {
-                        padding-left: 27px !important;
-                    }
-                }
                 
                 @media (max-width: 768px) {
-                    .page-26 {
-                        margin-left: -20px !important;
-                        margin-right: 0px !important; 
-                        width: calc(100% + 36px) !important;
-                        border-left-width: 10px !important;
-                    }
-                    
-                    .page26-container {
-                        padding-left: 15px !important; 
-                        padding-right: 15px !important;
-                    }
-                    
-                    .page26-container > header {
-                        margin-left: 0px !important;
-                        padding-left: 0px !important;
-                    }
-
-                    .page26-stats-row {
-                        padding-left: 0px !important;
-                        margin-left: 0px !important;
-                    }
-                    
-                    .page26-stat-col {
-                        margin-left: 0px !important;
-                    }
-
-                    .page26-content > div[style*="padding"] {
-                        padding-left: 0px !important;
-                    }
-
-                    footer {
-                        padding-left: 0px !important;
-                        margin-left: 0px !important;
-                    }
-
                     .page26-year-ticks { display: none !important; }
 
                     .page26-bg-image {
@@ -460,61 +422,6 @@ const Page26 = () => {
                         align-items: stretch !important;
                     }
                     
-                    .page26-slider-label {
-                        white-space: normal !important;
-                        margin-bottom: 10px;
-                        margin-right: 0 !important;
-                    }
-                }
-
-                @media (max-width: 640px) {
-                    .page-26 {
-                        margin-left: -34px !important;
-                        margin-right: 0px !important;
-                        width: calc(100% + 50px) !important;
-                        
-                        border-left-width: 10px !important;
-                    }
-
-                    .page26-container {
-                        padding-left: 15px !important;
-                        padding-right: 15px !important;
-                    }
-
-                    .page26-container > header {
-                        margin-left: 0px !important;
-                        padding-left: 0px !important;
-                    }
-
-                    .page26-stats-row {
-                        padding-left: 0px !important;
-                        margin-left: -15px !important;
-                    }
-                    .page26-stat-col {
-                        margin-left: 0px !important;
-                    }
-
-                    .page26-content > div[style*="padding"] {
-                        padding-left: 0px !important;
-                    }
-
-                    footer {
-                        padding-left: 0px !important;
-                        margin-left: 0px !important;
-                    }
-
-                    .page26-year-ticks { display: none !important; }
-
-                    .page26-bg-image {
-                        background-size: 70% 100% !important;
-                        background-position: right !important;
-                    }
-
-                    .page26-slider-region {
-                        flex-direction: column !important;
-                        align-items: stretch !important;
-                    }
-
                     .page26-slider-label {
                         white-space: normal !important;
                         margin-bottom: 10px;
@@ -525,11 +432,6 @@ const Page26 = () => {
                 @media (max-width: 480px) {
                     .page26-bg-image {
                         display: none !important;
-                    }
-                    
-                    .page26-container {
-                        width: 100%;
-                        padding: 5px;
                     }
                     
                     .page26-stat-value {
@@ -567,7 +469,6 @@ const Page26 = () => {
                     input[type=range]::-webkit-slider-runnable-track {
                         height: 12px !important;
                     }
-
                 }
                 
                 @media (max-width: 384px) {
@@ -677,7 +578,7 @@ const Page26 = () => {
                 <div className="page26-content">
                     <div className="page26-bg-image" aria-hidden="true" style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundImage: `url(${import.meta.env.BASE_URL}assets/page26image.png)`,
+                        backgroundImage: `url(${page26BgImage})`,
                         backgroundSize: '100% 100%',
                         backgroundPosition: 'center center',
                         backgroundRepeat: 'no-repeat',

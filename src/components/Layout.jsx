@@ -1,18 +1,57 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import GCHeader from './GCHeader';
 import GCFooter from './GCFooter';
-import { getText } from '../utils/translations';
 
 const Layout = () => {
     const [lang, setLang] = useState('en');
+    const [layoutPadding, setLayoutPadding] = useState({ left: 55, right: 15 }); // Defaults
     const location = useLocation();
     const isFirstRender = useRef(true);
 
     const toggleLanguage = () => {
         setLang(prev => prev === 'en' ? 'fr' : 'en');
     };
+
+    // --- ALIGNMENT AUTOMATION ENGINE ---
+    // This calculates alignment perfectly at ANY zoom level by measuring
+    // the actual positions of the header anchors
+    useLayoutEffect(() => {
+        const updateAlignment = () => {
+            const leftAnchor = document.getElementById('alignment-anchor-left');
+            const rightAnchor = document.getElementById('alignment-anchor-right');
+            const mainContainer = document.getElementById('main-content-container');
+
+            if (leftAnchor && rightAnchor && mainContainer) {
+                // Get positions relative to viewport
+                const leftRect = leftAnchor.getBoundingClientRect();
+                const rightRect = rightAnchor.getBoundingClientRect();
+                const containerRect = mainContainer.getBoundingClientRect();
+
+                // Calculate the exact padding needed to match header elements
+                // "How far is the flag from the container left edge?"
+                const newLeft = Math.max(0, leftRect.left - containerRect.left);
+                
+                // "How far is the container right edge from the lang button right edge?"
+                const newRight = Math.max(0, containerRect.right - rightRect.right);
+
+                setLayoutPadding({ left: newLeft, right: newRight });
+            }
+        };
+
+        // Run on load, resize, and zoom
+        window.addEventListener('resize', updateAlignment);
+        updateAlignment(); // Initial run
+        
+        // Slight delay to catch layout shifts (common with custom fonts/images)
+        const delayedUpdate = setTimeout(updateAlignment, 100);
+
+        return () => {
+            window.removeEventListener('resize', updateAlignment);
+            clearTimeout(delayedUpdate);
+        };
+    }, [location.pathname]); // Re-check when changing pages
 
     // Focus Management
     useEffect(() => {
@@ -32,10 +71,10 @@ const Layout = () => {
         return () => clearTimeout(focusTimer);
     }, [location.pathname]);
 
-    // Section Navigation Logic - Users navigate between sections, not individual pages
+    // Section Navigation Logic - Used for ghost navigation (screen readers)
     const pages = [
-        { path: '/', labelKey: 'nav_section1_title' },
-        { path: '/section-2', labelKey: 'nav_section2_title' }
+        { path: '/' },
+        { path: '/section-2' }
     ];
 
     // Handle both / and /section-1 as the same section
@@ -66,26 +105,6 @@ const Layout = () => {
                 
                 .gc-header { flex-shrink: 0; }
                 
-                /* Navigation Bar - Top */
-                .layout-nav-header {
-                    flex-shrink: 0;
-                    background: none;
-                    padding: 10px 0; 
-                    z-index: 10;
-                    width: 100%;
-                }
-                
-                .page-navigation {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    width: 100%;
-                    max-width: 1400px;
-                    margin: 0 auto;
-                    /* DESKTOP (Default): 55px Left (Aligns with Flag), 30px Right (Aligns with Lang) */
-                    padding: 0 30px 0 55px; 
-                }
-                
                 /* Main Content Area */
                 .layout-main-area {
                     flex: 1 1 auto;
@@ -110,108 +129,21 @@ const Layout = () => {
                     position: relative;
                 }
                 
-                /* Strict Alignment Container */
+                /* Strict Alignment Container - Padding is now set dynamically via JS */
                 .layout-content-container {
                     width: 100%;
                     max-width: 1400px;
                     margin: 0 auto;
-                    padding: 20px 30px 20px 37px;
+                    /* Padding is applied via inline styles from alignment automation */
                     text-align: left;
                     position: relative;
                     overflow: visible;
+                    box-sizing: border-box;
+                    transition: padding 0.1s ease-out; /* Smooth adjustment during zoom */
                 }
                 
                 h1, h2, h3, h4, h5, h6 { 
                     text-align: left !important; 
-                }
-                
-                /* Nav Buttons */
-                .nav-arrow {
-                    display: inline-flex;
-                    align-items: center;
-                    color: #ffffff;
-                    background-color: #284162;
-                    text-decoration: none;
-                    font-size: 1rem;
-                    font-weight: bold;
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    transition: background-color 0.2s;
-                    
-                    /* Desktop Wrapping Settings */
-                    white-space: normal; 
-                    max-width: 400px;
-                    text-align: left;
-                    line-height: 1.3;
-                }
-                
-                .nav-arrow:hover { background-color: #444444; }
-                
-                .nav-arrow.disabled {
-                    color: #a0a0a0;
-                    pointer-events: none;
-                    background-color: transparent;
-                }
-                
-                .nav-arrow:focus {
-                    outline: 2px solid #005fcc;
-                    outline-offset: 2px;
-                }
-
-                /* --- BREAKPOINTS --- */
-
-                /* 1. Intermediate Zoom (200% / 960px) 
-                   Issue: Buttons need to stack, BUT padding must remain desktop-like (55px)
-                   because Header flag is still at 55px until 768px.
-                */
-                @media (max-width: 960px) {
-                    .page-navigation {
-                        flex-direction: column; /* Stack buttons */
-                        gap: 10px;
-                        /* KEEP 55px LEFT to match header flag */
-                        padding: 0 30px 0 55px !important; 
-                    }
-                    
-                    .nav-arrow {
-                        width: 100%;
-                        max-width: none;
-                        justify-content: center;
-                    }
-                    
-                    /* Update Layout Container padding for Page 1 calculations */
-                    .layout-content-container {
-                        padding: 15px 30px 15px 45px; 
-                    }
-                }
-
-                /* 2. Tablet Mode (<= 768px)
-                   Header flag moves to 45px left. Nav must match.
-                */
-                @media (max-width: 768px) {
-                    .page-navigation {
-                        /* Switch to 45px Left to match Header mobile state */
-                        padding: 0 20px 0 45px !important;
-                    }
-
-                    .layout-content-container {
-                        padding: 15px 20px 15px 45px; 
-                    }
-                }
-
-                /* 3. Mobile Mode (<= 480px)
-                   Header flag moves to 10px left. Nav must match.
-                */
-                @media (max-width: 480px) {
-                    .page-navigation {
-                        padding: 0 10px !important;
-                    }
-                    .layout-content-container {
-                        padding: 15px 10px;
-                    }
-                    .nav-arrow {
-                        font-size: 0.9rem;
-                        padding: 10px;
-                    }
                 }
 
                 /* ===============================================
@@ -257,51 +189,21 @@ const Layout = () => {
                 <div className="layout-viewport">
                     <GCHeader lang={lang} onToggleLanguage={toggleLanguage} />
 
-                    {/* Navigation Buttons */}
-                    <div className="layout-nav-header">
-                        <nav id="page-navigation-top" className="page-navigation" aria-label={lang === 'en' ? 'Page navigation' : 'Navigation de page'}>
-                            {prevPage ? (
-                                <Link 
-                                    to={prevPage.path} 
-                                    className="nav-arrow"
-                                    aria-label={lang === 'en' 
-                                        ? `Previous page: ${getText(prevPage.labelKey, lang)}` 
-                                        : `Page précédente: ${getText(prevPage.labelKey, lang)}`}
-                                >
-                                    <span aria-hidden="true">← </span>
-                                    {getText(prevPage.labelKey, lang)}
-                                </Link>
-                            ) : (
-                                <span className="nav-arrow disabled" aria-hidden="true">
-                                    ← {getText('previous', lang)}
-                                </span>
-                            )}
-
-                            {nextPage ? (
-                                <Link 
-                                    to={nextPage.path} 
-                                    className="nav-arrow"
-                                    aria-label={lang === 'en' 
-                                        ? `Next page: ${getText(nextPage.labelKey, lang)}` 
-                                        : `Page suivante: ${getText(nextPage.labelKey, lang)}`}
-                                >
-                                    {getText(nextPage.labelKey, lang)}
-                                    <span aria-hidden="true"> →</span>
-                                </Link>
-                            ) : (
-                                <span className="nav-arrow disabled" aria-hidden="true">
-                                    {getText('next', lang)} →
-                                </span>
-                            )}
-                        </nav>
-                    </div>
-
                     <div className="layout-main-area">
                         <Sidebar lang={lang} />
                         <div className="content layout-content-wrapper">
                             <div className="layout-page-content">
-                                <div className="layout-content-container">
-                                <Outlet context={{ lang }} />
+                                <div 
+                                    id="main-content-container"
+                                    className="layout-content-container"
+                                    style={{
+                                        paddingLeft: `${layoutPadding.left}px`,
+                                        paddingRight: `${layoutPadding.right}px`,
+                                        paddingTop: '20px',
+                                        paddingBottom: '20px'
+                                    }}
+                                >
+                                <Outlet context={{ lang, layoutPadding }} />
 
 {/* --- START GHOST NAVIGATION --- 
     These links are invisible to mouse users.
@@ -313,8 +215,8 @@ const Layout = () => {
             to={prevPage.path} 
             className="sr-only-focusable"
         >
-            {/* Screen Reader hears: "Previous page" */}
-            {lang === 'en' ? 'Previous page' : 'Page précédente'}
+            {/* Screen Reader hears: "Previous section" */}
+            {lang === 'en' ? 'Previous section' : 'Section précédente'}
         </Link>
     )}
 
@@ -323,8 +225,8 @@ const Layout = () => {
             to={nextPage.path} 
             className="sr-only-focusable"
         >
-            {/* Screen Reader hears: "Next page" */}
-            {lang === 'en' ? 'Next page' : 'Page suivante'}
+            {/* Screen Reader hears: "Next section" */}
+            {lang === 'en' ? 'Next section' : 'Section suivante'}
         </Link>
     )}
 </div>

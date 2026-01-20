@@ -1272,7 +1272,11 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
 
             {/* Main row - Logo on left, Language + Search on right */}
             <div className="gc-header-main">
-                <a href={lang === 'en' ? 'https://canada.ca/en.html' : 'https://canada.ca/fr.html'} className="gc-brand">
+                <a 
+                    id="alignment-anchor-left"
+                    href={lang === 'en' ? 'https://canada.ca/en.html' : 'https://canada.ca/fr.html'} 
+                    className="gc-brand"
+                >
                     <img 
                         src={lang === 'en' 
                             ? 'https://www.canada.ca/etc/designs/canada/wet-boew/assets/sig-blk-en.svg'
@@ -1281,7 +1285,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         alt={lang === 'en' ? 'Government of Canada' : 'Gouvernement du Canada'}
                     />
                 </a>
-                <div className="gc-search-lang-wrapper">
+                <div id="alignment-anchor-right" className="gc-search-lang-wrapper">
                     <button className="gc-lang-link" onClick={onToggleLanguage} lang={lang === 'en' ? 'fr' : 'en'}>
                         {isCompactMode 
                             ? (lang === 'en' ? 'FR' : 'EN')

@@ -5,7 +5,7 @@ import { getEnvironmentalProtectionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const Page37 = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
     const mainRef = useRef(null);
     const tableSummaryRef = useRef(null);
     
@@ -409,19 +409,21 @@ const getAccessibleDataTable = () => {
                 flex: '1 1 auto', 
                 display: 'flex', 
                 flexDirection: 'column',
-                overflowY: 'visible',
-                overflowX: 'visible',
                 borderRight: '18px solid #8e7e52',
-                boxSizing: 'border-box',
-                position: 'relative',
-                zIndex: 0
+                boxSizing: 'border-box'
             }}
         >
             <style>{`
+                /* =====================================================
+                   PAGE 37 - BORDER PAGE STYLES
+                   Border extends past container, content aligns with anchors.
+                   ===================================================== */
+
+                /* Extend right for border, content padded to align with anchors */
                 .page-37 {
-                    margin-left: -37px;
-                    margin-right: -30px;
-                    width: calc(100% + 67px);
+                    margin-right: -${layoutPadding?.right || 15}px;
+                    width: calc(100% + ${layoutPadding?.right || 15}px);
+                    padding-right: ${(layoutPadding?.right || 15) - 18}px; /* 18px is border width */
                 }
 
                 .wb-inv {
@@ -433,17 +435,20 @@ const getAccessibleDataTable = () => {
                     width: 1px;
                 }
 
+                /* Slider styles */
                 input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
                 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #007bff; cursor: pointer; margin-top: -6px; }
                 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #007bff; border-radius: 4px; }
                 input[type=range]:focus { outline: 2px solid #005fcc; outline-offset: 2px; }
                 input[type=range]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(0,123,255,0.5); }
+
+                /* Hide pie chart connector lines */
+                .js-plotly-plot .plotly .slice path.textline { display: none !important; }
+                .js-plotly-plot .plotly g.slice path[class*="textline"] { display: none !important; }
             
                 .page37-slider-track {
                     flex: 1; 
-                    width: auto;
-                    margin-left: 0px;
-                    margin-right: -20px;
+                    width: 100%;
                 }
 
                 .page37-slider-input {
@@ -458,12 +463,11 @@ const getAccessibleDataTable = () => {
                     font-size: 18px;
                     font-family: Arial, sans-serif;
                     white-space: nowrap;
-                    margin-left: -5px; 
                 }
 
                 .page37-container {
                     width: 100%;
-                    padding: 15px 30px 20px 55px;
+                    padding: 15px 0;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -486,12 +490,11 @@ const getAccessibleDataTable = () => {
                     font-size: 1.1rem;
                     margin-bottom: 10px;
                     line-height: 1.5;
-
                 }
 
-                .page37-subtitle:focus {
+                .page37-subtitle:focus,
+                .page37-text:focus {
                     outline: none;
-
                 }
 
                 .page37-text {
@@ -500,10 +503,6 @@ const getAccessibleDataTable = () => {
                     font-size: 1.1rem;
                     margin-bottom: 15px;
                     line-height: 1.5;
-                }
-
-                .page37-text:focus {
-                    outline: none;
                 }
 
                 .page37-content-row {
@@ -517,7 +516,7 @@ const getAccessibleDataTable = () => {
 
                 .page37-chart-column {
                     width: 55%;
-                    height: auto !important; /* Changed from fixed calc */
+                    height: auto;
                     min-height: auto;
                     position: relative;
                     display: flex;
@@ -526,7 +525,6 @@ const getAccessibleDataTable = () => {
 
                 .page37-chart-area {
                     width: 100%;
-                    /* Adjusted height to leave room for the button */
                     height: calc(100vh - 550px); 
                     min-height: 400px;
                 }
@@ -541,9 +539,8 @@ const getAccessibleDataTable = () => {
                     font-weight: bold;
                     color: #333;
                     font-size: 1rem;
-                    text-align: center !important;
+                    text-align: center;
                     margin-bottom: 5px;
-                    margin-left: -50px;
                 }
 
                 .page37-bullets {
@@ -563,74 +560,78 @@ const getAccessibleDataTable = () => {
                     font-weight: bold;
                 }
 
-                 .page37-data-table {
+                .page37-data-table {
                     margin-top: 10px;
                     margin-bottom: 10px;
+                    margin-left: 0;
+                    margin-right: 0;
                     font-family: Arial, sans-serif;
-                    width: calc(100% - 45px);
-                    margin-left: 0px; 
-                    margin-right: 0px;
+                    width: 100%;
                 }
 
                 /* Forced Stacked Layout when Table is Open */
                 .layout-stacked {
                     flex-direction: column !important;
                     height: auto !important;
-                    align-items: center !important;
+                    align-items: stretch !important;
+                }
+
+                .layout-stacked .page37-chart-column,
+                .layout-stacked .page37-text-column {
+                    width: 100% !important;
                 }
 
                 .layout-stacked .page37-chart-column {
-                    width: 100% !important;
                     height: auto !important;
                     max-height: none !important;
                     margin-bottom: 30px !important;
                 }
 
                 .layout-stacked .page37-text-column {
-                    width: 100% !important;
                     padding-top: 0 !important;
                 }
 
                 .layout-stacked .page37-data-table {
-                    width: calc(100% + 10px);
-                    margin-right: 0px;
-                    margin-bottom: -50px;
+                    margin-top: 80px;
                 }
 
+                /* =====================================================
+                   BREAKPOINTS - Layout changes only (no alignment)
+                   ===================================================== */
 
                 /* 110% zoom (~1745px) - Switch to Stacked Layout */
                 @media (max-width: 1745px) {
                     .page37-content-row {
                         flex-direction: column; 
-                        align-items: center;
+                        align-items: stretch;
                     }
 
-                    .page37-chart-column {
-                        width: 100%;
-                        margin-bottom: 50px;
-                    }
-
-                   .page37-chart-area {
-                        height: 500px !important;
-                    }
-
+                    .page37-chart-column,
                     .page37-text-column {
                         width: 100%;
-                        padding-top: 10px;
-                    }
-
-                    .layout-stacked .page37-data-table {
-                        width: calc(100% + 16px);
-                        margin-left: 0px;
-                        margin-right: 0px;
                     }
 
                     .page37-data-table {
-                        width: calc(100% + 16px);
-                        margin-bottom: -80px;
+                        margin-bottom: -70px !important;
+                    }
+
+                    .page37-chart-column {
+                        margin-bottom: 50px;
+                    }
+
+                    .page37-chart-area {
+                        height: 500px;
+                    }
+
+                    .page37-text-column {
+                        padding-top: 10px;
+                    }
+                
+
+                    .layout-stacked .page37-data-table {
+                        margin-top: 10px !important;
                     }
                 }
-
                 /* 125% zoom */
                 @media (max-width: 1536px) {
                     .page37-title {
@@ -638,13 +639,11 @@ const getAccessibleDataTable = () => {
                     }
 
                     .page37-chart-column {
-                        width: 100%;
                         height: 540px;
                         max-height: 540px;
                     }
                     
                     .page37-text-column {
-                        width: 100%;
                         padding-top: 0;
                     }
                 }
@@ -658,62 +657,24 @@ const getAccessibleDataTable = () => {
                         height: 550px;
                     }
                     .page37-chart-area {
-                        height: 550px !important;
+                        height: 550px;
                     }
                 }
 
                 /* 200% zoom */
                 @media (max-width: 960px) {
-                    .page37-container {
-                        padding: 10px 15px;
-                    }
                     .page37-year-ticks {
                         display: none !important;
-                    }
-
-                    .page37-title {
-                     margin-left: 32px !important;
-                    }
-
-                    .page37-subtitle {
-                        margin-left: 32px !important;
-                        }
-
-                    .page37-text {
-                       margin-left: 32px !important;
-                    }
-
-                    .page37-slider-label {
-                        margin-left: 30px !important;
-                    }
-
-                    .page37-slider-track {
-                        margin-right: -10px !important;
-                    }
-
-                    .page37-bullets {
-                        margin-left: 30px !important;
-                    }
-
-                    .page37-data-table {
-                        width: calc(100% - 25px) !important;
-                        margin-left: 30px !important; 
                     }
                 }
 
                 /* 250% zoom */
                 @media (max-width: 768px) {
                     .page-37 {
-                        margin-left: -20px !important;
-                        margin-right: -20px !important;
-                        width: calc(100% + 40px) !important;
                         border-right: none !important;
                     }
-                    .page37-container {
-                        padding: 8px 20px 8px 45px !important;
-                    }
                     .page37-title {
-                        font-size: 1.5rem !important;
+                        font-size: 1.5rem;
                     }
                     .page37-slider-region {
                         flex-direction: column !important;
@@ -721,93 +682,43 @@ const getAccessibleDataTable = () => {
                     }
                     .page37-slider-label {
                         margin-bottom: 10px;
-                        margin-right: 0 !important;
+                        margin-right: 0;
                     }
-                    .page37-chart-column {
-                        height: 400px !important;
-                    }
+                    .page37-chart-column,
                     .page37-chart-area {
-                        height: 400px !important;
-                    }
-
-                    .page37-title, .page37-subtitle, .page37-text, .page37-slider-track, .page37-data-table {
-                        margin-left: -24px !important;
-                    }
-
-                    .page37-slider-label {
-                        margin-left: -30px !important;
-                    }
-
-                    .page37-data-table {
-                        width: calc(100% + 24px) !important;
-                    }
-
-                    .page37-bullets {
-                        margin-top: 50px !important;
-                        margin-left: -26px !important;
-                    }
-
-                    .layout-stacked .page37-bullets {
-                        margin-top: 0px !important;
-                    }
-
-                     .page37-slider-track {
-                        margin-right: -4px !important;
+                        height: 400px;
                     }
                 }
 
                 /* 300% zoom */
                 @media (max-width: 640px) {
-                    .page37-chart-column {
-                        height: 360px !important;
-                    }
+                    .page37-chart-column,
                     .page37-chart-area {
-                        height: 360px !important;
-                    }
-
-                     .page37-bullets {
-                        margin-top: 100px !important;
-                        margin-left: -28px !important;
+                        height: 360px;
                     }
                 }
 
                 /* 400% zoom */
                 @media (max-width: 480px) {
                     .page37-chart-area {
-                        height: 460px !important;
-                    }
-                    .page37-chart-column {
-                        margin-right: 25px !important;
+                        height: 460px;
                     }
                     .page37-title {
-                        font-size: 1.3rem !important;
+                        font-size: 1.3rem;
                     }
                     input[type=range] {
-                        height: 44px !important;
+                        height: 44px;
                     }
-
-                    .page37-chart-title {
-                        padding-left: 50px !important;
-                        padding-right: 50px !important;
-                        margin-left: 30px !important;
-                    }
-
-                    .page37-data-table {
-                        margin-left: -12px !important;
-                    }
-
                 }
 
                 /* 500% zoom */
                 @media (max-width: 384px) {
-                    .page37-chart-column {
-                        height: 460px !important;
-                    }
+                    .page37-chart-column,
                     .page37-chart-area {
-                        height: 460px !important;
+                        height: 460px;
                     }
                     input[type=range] {
-                        height: 50px !important;
+                        height: 50px;
                     }
                 }
 
@@ -867,7 +778,7 @@ const getAccessibleDataTable = () => {
                     className="page37-slider-region"
                     role="region" 
                     aria-label={`${getText('year_slider_label', lang)} ${year}. ${lang === 'en' ? 'Use arrow keys to change year from' : 'Utilisez les touches fléchées pour changer l\'année de'} ${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}.`}
-                    style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', padding: '2px 5px' }}
+                    style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', padding: '2px 0' }}
                 >
                     <label 
                         id="slider-label-37"
@@ -980,10 +891,10 @@ const getAccessibleDataTable = () => {
                                                 }
                                             ) : undefined,
                                             margin: windowWidth <= 480
-                                                ? { l: 5, r: 5, t: 5, b: 140 }
+                                                ? { l: 0, r: 0, t: 5, b: 140 }
                                                 : windowWidth <= 768 
-                                                    ? { l: 10, r: 100, t: 10, b: 10 }
-                                                    : { l: 40, r: 40, t: 30, b: 30 },
+                                                    ? { l: 0, r: 0, t: 10, b: 10 }
+                                                    : { l: 0, r: 0, t: 30, b: 30 },
                                             paper_bgcolor: 'rgba(0,0,0,0)', 
                                             plot_bgcolor: 'rgba(0,0,0,0)',
                                             autosize: true, 

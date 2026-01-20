@@ -1,7 +1,7 @@
 /**
  * Data Loader Utility
  * 
- * Loads pre-calculated data from data.csv stored in public/statcan_data/
+ * Loads pre-calculated data from data.csv stored in public/data/
  * All calculations are done in data_retrieval.py - this module just loads and parses.
  * 
  * Data is stored with virtual vectors like:
@@ -63,7 +63,7 @@ async function loadAllData() {
     
     // Use Vite's BASE_URL to handle GitHub Pages subdirectory hosting
     const baseUrl = import.meta.env.BASE_URL || '/';
-    const response = await fetch(`${baseUrl}statcan_data/data.csv`);
+    const response = await fetch(`${baseUrl}data/data.csv`);
     if (!response.ok) {
         throw new Error(`Failed to load data.csv: ${response.status} ${response.statusText}`);
     }
