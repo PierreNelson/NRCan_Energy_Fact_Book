@@ -24,10 +24,6 @@ const Page1 = () => {
             }}
         >
             <style>{`
-                /* =====================================================
-                   PAGE 1 - TITLE PAGE STYLES
-                   Background extends past container, text aligns with anchors.
-                   ===================================================== */
 
                 .page1-main {
                     width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
@@ -108,7 +104,6 @@ const Page1 = () => {
                     font-size: 2.2rem; 
                 }
 
-                /* Font size breakpoints only */
                 @media (max-width: 1745px) { .page1-title-text { font-size: 4.2rem; } }
                 @media (max-width: 1536px) { .page1-title-text { font-size: 4.0rem; } }
                 @media (max-width: 1280px) { .page1-title-text { font-size: 3.8rem; } }

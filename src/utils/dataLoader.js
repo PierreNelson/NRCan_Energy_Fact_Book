@@ -251,3 +251,28 @@ export async function getEnvironmentalProtectionData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get provincial GDP data for Page 8
+ * Returns array of objects: { year, nl, pe, ns, nb, qc, on, mb, sk, ab, bc, yt, nt, nu, national_total }
+ * Values are in millions of dollars
+ */
+export async function getProvincialGdpData() {
+    const allData = await loadAllData();
+    
+    // Filter for page8 vectors
+    const page8Data = allData.filter(row => row.vector && row.vector.startsWith('page8_'));
+    
+    // Group by year
+    const yearMap = {};
+    page8Data.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('page8_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

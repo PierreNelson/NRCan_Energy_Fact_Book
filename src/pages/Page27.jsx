@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getInvestmentByAssetData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
 
 const Page27 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -11,7 +13,8 @@ const Page27 = () => {
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
-    const [isChartInteractive, setIsChartInteractive] = useState(false);
+    const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
+    const [selectedPoints, setSelectedPoints] = useState(null);
     const chartRef = useRef(null);
 
     useEffect(() => {
@@ -26,7 +29,13 @@ const Page27 = () => {
     }, [isChartInteractive]);
 
     useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
+        const handleResize = () => {
+            const newWidth = window.innerWidth;
+            setWindowWidth(newWidth);
+            if (newWidth > 768) {
+                setIsChartInteractive(true);
+            }
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -112,7 +121,7 @@ const Page27 = () => {
         const years = pageData.map(d => d.year);
         const minYear = Math.min(...years);
         const maxYear = Math.max(...years);
-        
+
         const tickVals = [];
         for (let y = minYear; y <= maxYear; y++) {
             tickVals.push(y);
@@ -135,7 +144,7 @@ const Page27 = () => {
             'steam_thermal',
             'other_electric'
         ];
-        
+
         const LEGEND_ORDER_DEFAULT = [
             'transmission_distribution',
             'pipelines',
@@ -145,12 +154,12 @@ const Page27 = () => {
             'wind_solar',
             'steam_thermal'              
         ];
-        
+
         const LEGEND_ORDER = windowWidth <= 1536 ? LEGEND_ORDER_ZOOMED : LEGEND_ORDER_DEFAULT;
 
         const traces = CATEGORY_ORDER.map((cat) => {
             const values = pageData.map(d => (d[cat] || 0) / 1000);
-            
+
             const hoverTexts = values.map((v, i) => {
                 const y = years[i];
                 const tot = totalValues[i];
@@ -162,12 +171,16 @@ const Page27 = () => {
 
             const legendRank = LEGEND_ORDER.indexOf(cat) + 2;
 
+            const traceIndex = CATEGORY_ORDER.indexOf(cat);
             return {
                 name: getText(LEGEND_KEYS[cat], lang),
                 x: years,
                 y: values,
                 type: 'bar',
-                marker: { color: COLORS[cat] },
+                marker: { 
+                    color: COLORS[cat],
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[traceIndex]?.includes(i) ? 1 : 0.3)
+                },
                 hovertext: hoverTexts,
                 hoverinfo: 'text',
                 hoverlabel: {
@@ -179,10 +192,10 @@ const Page27 = () => {
             };
         });
 
-        const chartTitle = `${getText('page27_chart_title_prefix', lang)}${minYear}–${maxYear}`;
+        const chartTitle = `${getText('page27_chart_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
 
-        return { traces, years, tickVals, minYear, maxYear, chartTitle };
-    }, [pageData, lang, windowWidth]);
+        return { traces, years, tickVals, minYear, maxYear, chartTitle, numTraces: CATEGORY_ORDER.length };
+    }, [pageData, lang, windowWidth, selectedPoints]);
 
     const formatBillionSR = (val) => {
         const decimals = val < 1 ? 2 : 1;
@@ -193,12 +206,12 @@ const Page27 = () => {
 
     const getChartDataSummary = () => {
         if (!pageData || pageData.length === 0) return '';
-        
+
         const firstYear = pageData[0];
         const latestYear = pageData[pageData.length - 1];
         const firstYearNum = firstYear.year;
         const latestYearNum = latestYear.year;
-        
+
         let total = 0;
         CATEGORY_ORDER.forEach(cat => {
             total += (latestYear[cat] || 0) / 1000;
@@ -223,7 +236,7 @@ const Page27 = () => {
 
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
-        
+
         const categoryLabels = {
             'transmission_distribution': stripHtml(getText('page27_legend_transmission', lang)),
             'hydraulic': stripHtml(getText('page27_legend_hydraulic', lang)),
@@ -238,7 +251,7 @@ const Page27 = () => {
         const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
         const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
         const captionId = 'page27-table-caption';
-        
+
         return (
             <details 
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
@@ -321,8 +334,206 @@ const Page27 = () => {
                         </tbody>
                     </table>
                 </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <button
+                        onClick={() => downloadTableAsCSV()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                    </button>
+                    <button
+                        onClick={() => downloadTableAsDocx()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
+                    </button>
+                </div>
             </details>
         );
+    };
+    const downloadTableAsCSV = () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const categoryLabels = {
+            'transmission_distribution': stripHtml(getText('page27_legend_transmission', lang)),
+            'hydraulic': stripHtml(getText('page27_legend_hydraulic', lang)),
+            'pipelines': stripHtml(getText('page27_legend_pipelines', lang)),
+            'wind_solar': stripHtml(getText('page27_legend_wind_solar', lang)),
+            'nuclear': stripHtml(getText('page27_legend_nuclear', lang)),
+            'steam_thermal': stripHtml(getText('page27_legend_steam', lang)),
+            'other_electric': stripHtml(getText('page27_legend_other', lang)),
+        };
+
+        const unitHeader = lang === 'en' ? '($ billions constant 2012)' : '(milliards $ constants 2012)';
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année', 
+            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`), 
+            `Total ${unitHeader}`
+        ];
+        const rows = pageData.map(yearData => {
+            let total = 0;
+            const values = CATEGORY_ORDER.map(cat => {
+                const val = (yearData[cat] || 0) / 1000;
+                total += val;
+                return val.toFixed(2);
+            });
+            return [yearData.year, ...values, total.toFixed(2)];
+        });
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = lang === 'en' ? 'capital_expenditures_data.csv' : 'depenses_en_capital_donnees.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    const downloadTableAsDocx = async () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const categoryLabels = {
+            'transmission_distribution': stripHtml(getText('page27_legend_transmission', lang)),
+            'hydraulic': stripHtml(getText('page27_legend_hydraulic', lang)),
+            'pipelines': stripHtml(getText('page27_legend_pipelines', lang)),
+            'wind_solar': stripHtml(getText('page27_legend_wind_solar', lang)),
+            'nuclear': stripHtml(getText('page27_legend_nuclear', lang)),
+            'steam_thermal': stripHtml(getText('page27_legend_steam', lang)),
+            'other_electric': stripHtml(getText('page27_legend_other', lang)),
+        };
+
+        const unitHeader = lang === 'en' ? '($ billions constant 2012)' : '(milliards $ constants 2012)';
+        const title = stripHtml(getText('page27_title', lang));
+
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
+            `Total ${unitHeader}`
+        ];
+
+        const headerRow = new TableRow({
+            children: headers.map(header => new TableCell({
+                children: [new Paragraph({
+                    children: [new TextRun({ text: header, bold: true, size: 18 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                shading: { fill: 'E6E6E6' }
+            }))
+        });
+
+        const dataRows = pageData.map(yearData => {
+            let total = 0;
+            const values = CATEGORY_ORDER.map(cat => {
+                const val = (yearData[cat] || 0) / 1000;
+                total += val;
+                return val.toFixed(2);
+            });
+            return new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 20 })], alignment: AlignmentType.CENTER })] }),
+                    ...values.map(val => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: val, size: 20 })], alignment: AlignmentType.RIGHT })] })),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: total.toFixed(2), bold: true, size: 20 })], alignment: AlignmentType.RIGHT })] })
+                ]
+            });
+        });
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1100, 1150, 1150, 1150, 1150, 1150, 1150, 1150],
+                        rows: [headerRow, ...dataRows]
+                    })
+                ]
+            }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, lang === 'en' ? 'capital_expenditures_table.docx' : 'depenses_en_capital_tableau.docx');
+    };
+    const downloadChartWithTitle = async (plotEl = null) => {
+        const plotElement = plotEl || document.querySelector('.page27-chart.js-plotly-plot') || document.querySelector('.page27-chart-wrapper .js-plotly-plot');
+        if (!plotElement) {
+            console.error('Plot element not found');
+            alert('Could not find chart element. Please try again.');
+            return;
+        }
+
+        const title = stripHtml(getText('page27_title', lang));
+
+        try {
+            if (!window.Plotly) {
+                console.error('Plotly not available on window');
+                alert('Plotly library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
+            const imgData = await window.Plotly.toImage(plotElement, {
+                format: 'png',
+                width: 1200,
+                height: 600,
+                scale: 2
+            });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                const titleHeight = 80;
+                canvas.width = img.width;
+                canvas.height = img.height + titleHeight;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#333333';
+                ctx.font = 'bold 36px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(title, canvas.width / 2, 50);
+
+                ctx.drawImage(img, 0, titleHeight);
+
+                const link = document.createElement('a');
+                link.download = lang === 'en' ? 'capital_expenditures_chart.png' : 'depenses_en_capital_graphique.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            img.onerror = () => {
+                console.error('Failed to load chart image');
+                alert('Failed to generate chart image. Please try again.');
+            };
+
+            img.src = imgData;
+        } catch (error) {
+            console.error('Error downloading chart:', error);
+            alert('Error downloading chart: ' + error.message);
+        }
     };
 
     if (loading) {
@@ -351,22 +562,16 @@ const Page27 = () => {
                 flexDirection: 'column',
                 overflow: 'visible',
                 boxSizing: 'border-box',
-                borderRight: '18px solid #8e7e52',
             }}
         >
             <style>{`
-                /* =====================================================
-                   PAGE 27 - BORDER PAGE STYLES
-                   Border extends past container, content aligns with anchors.
-                   ===================================================== */
 
-                /* Extend right for border, content padded to align with anchors */
                 .page-27 {
                     margin-right: -${layoutPadding?.right || 15}px;
                     width: calc(100% + ${layoutPadding?.right || 15}px);
-                    padding-right: ${(layoutPadding?.right || 15) - 18}px; /* 18px is border width */
+                    padding-right: ${(layoutPadding?.right || 15) - 18}px; 
                 }
-                
+
                 .page27-container {
                     width: 100%;
                     padding: 10px 0 0 0;
@@ -376,18 +581,17 @@ const Page27 = () => {
                     flex: 1;
                     overflow: visible;
                 }
-                
+
                 .page27-container .chart-region {
                     width: 100%;
                 }
-                
+
                 .page27-chart {
                     width: 100%;
                     height: calc(100vh - 380px);
                     min-height: 350px;
                 }
 
-                /* Chart height breakpoints only */
                 @media (max-width: 1745px) {
                     .page27-chart {
                         height: calc(100vh - 280px);
@@ -434,7 +638,7 @@ const Page27 = () => {
                         min-height: 280px;
                     }
                 }
-                
+
                 @media (max-width: 640px) {
                     .page27-container h1 {
                         font-size: 1.3rem !important;
@@ -464,7 +668,7 @@ const Page27 = () => {
                         min-height: 400px;
                     }
                 }
-                
+
                 details summary::-webkit-details-marker,
                 details summary::marker {
                     display: none;
@@ -481,7 +685,7 @@ const Page27 = () => {
                     white-space: nowrap;
                     border: 0;
                 }
-                
+
                 .sr-only {
                     position: absolute;
                     width: 1px;
@@ -518,7 +722,7 @@ const Page27 = () => {
                     aria-label={getChartDataSummary()}
                 >
                     <figure ref={chartRef} aria-hidden="true" style={{ margin: 0, position: 'relative' }}>
-                        {!isChartInteractive && (
+                        {windowWidth <= 768 && !isChartInteractive && (
                             <div
                                 onClick={() => setIsChartInteractive(true)}
                                 onDoubleClick={() => setIsChartInteractive(true)}
@@ -566,8 +770,11 @@ const Page27 = () => {
                                 </span>
                             </div>
                         )}
-                        {isChartInteractive && (
-                            <button onClick={() => setIsChartInteractive(false)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+                        {windowWidth <= 768 && isChartInteractive && (
+                            <button onClick={() => { setIsChartInteractive(false); setSelectedPoints(null); }} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+                        )}
+                        {selectedPoints !== null && (
+                            <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 360 : 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                         )}
                         <Plot
                             data={chartData.traces}
@@ -611,7 +818,9 @@ const Page27 = () => {
                                     entrywidth: legendSettings.width,
                                     entrywidthmode: 'fraction',
                                     font: { size: legendSettings.fontSize, family: 'Arial, sans-serif' },
-                                    traceorder: 'normal'
+                                    traceorder: 'normal',
+                                    itemclick: false,
+                                    itemdoubleclick: false
                                 },
                                 margin: { 
                                     l: 0, 
@@ -624,14 +833,57 @@ const Page27 = () => {
                             }}
                             className="page27-chart"
                             useResizeHandler={true}
+                            onClick={(data) => {
+                                if (!data.points || data.points.length === 0) return;
+                                const clickedPoint = data.points[0];
+                                const traceIndex = clickedPoint.curveNumber;
+                                const pointIndex = clickedPoint.pointIndex;
+                                const numTraces = chartData.numTraces;
+
+                                setSelectedPoints(prev => {
+                                    if (prev === null) {
+                                        const newSelection = Array(numTraces).fill(null).map(() => []);
+                                        newSelection[traceIndex].push(pointIndex);
+                                        return newSelection;
+                                    }
+
+                                    const isSelected = prev[traceIndex]?.includes(pointIndex);
+
+                                    if (isSelected) {
+                                        const newSelection = prev.map((tracePoints, idx) => 
+                                            idx === traceIndex ? tracePoints.filter(p => p !== pointIndex) : [...tracePoints]
+                                        );
+                                        if (newSelection.every(arr => arr.length === 0)) {
+                                            return null;
+                                        }
+                                        return newSelection;
+                                    } else {
+                                        const newSelection = prev.map((tracePoints, idx) => 
+                                            idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
+                                        );
+                                        return newSelection;
+                                    }
+                                });
+                            }}
                             config={{ 
-                                displayModeBar: isChartInteractive, 
+                                displayModeBar: windowWidth > 768 || isChartInteractive, 
                                 responsive: true,
-                                scrollZoom: isChartInteractive
+                                scrollZoom: windowWidth > 768 || isChartInteractive,
+                                modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
+                                modeBarButtonsToAdd: [{
+                                    name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+                                    icon: {
+                                        width: 1000,
+                                        height: 1000,
+                                        path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
+                                        transform: 'matrix(1 0 0 -1 0 850)'
+                                    },
+                                    click: (gd) => downloadChartWithTitle(gd)
+                                }]
                             }}
                         />
                     </figure>
-                    
+
                     {getAccessibleDataTable()}
                 </div>
             </div>

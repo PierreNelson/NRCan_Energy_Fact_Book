@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getInternationalInvestmentData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
 
 const Page31 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -11,8 +13,10 @@ const Page31 = () => {
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
-    const [isChartInteractive, setIsChartInteractive] = useState(false);
+    const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
+    const [selectedPoints, setSelectedPoints] = useState(null);
     const chartRef = useRef(null);
+    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -26,7 +30,13 @@ const Page31 = () => {
     }, [isChartInteractive]);
 
     useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
+        const handleResize = () => {
+            const newWidth = window.innerWidth;
+            setWindowWidth(newWidth);
+            if (newWidth > 768) {
+                setIsChartInteractive(true);
+            }
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -56,7 +66,7 @@ const Page31 = () => {
         const years = pageData.map(d => d.year);
         const minYear = Math.min(...years);
         const maxYear = Math.max(...years);
-        
+
         const tickVals = [];
         for (let y = 2008; y <= maxYear; y += 2) {
             tickVals.push(y);
@@ -81,33 +91,39 @@ const Page31 = () => {
                 x: years,
                 y: cdiaValues,
                 type: 'bar',
-                marker: { color: COLORS.cdia },
+                marker: { 
+                    color: COLORS.cdia,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[0]?.includes(i) ? 1 : 0.3)
+                },
                 hovertext: cdiaHoverText,
                 hoverinfo: 'text',
                 hoverlabel: {
                     bgcolor: '#ffffff',
                     bordercolor: '#000000',
                     font: { color: '#000000', size: windowWidth <= 480 ? 12 : 14, family: 'Arial, sans-serif' }
-                },
+                }
             },
             {
                 name: getText('page31_legend_fdi', lang),
                 x: years,
                 y: fdiValues,
                 type: 'bar',
-                marker: { color: COLORS.fdi },
+                marker: { 
+                    color: COLORS.fdi,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[1]?.includes(i) ? 1 : 0.3)
+                },
                 hovertext: fdiHoverText,
                 hoverinfo: 'text',
                 hoverlabel: {
                     bgcolor: '#ffffff',
                     bordercolor: '#000000',
                     font: { color: '#000000', size: windowWidth <= 480 ? 12 : 14, family: 'Arial, sans-serif' }
-                },
+                }
             }
         ];
 
         return { traces, years, tickVals, minYear, maxYear, cdiaValues, fdiValues };
-    }, [pageData, lang, windowWidth]);
+    }, [pageData, lang, windowWidth, selectedPoints]);
 
     const formatBillionSR = (val) => {
         const decimals = val < 1 ? 2 : 1;
@@ -118,7 +134,7 @@ const Page31 = () => {
 
     const getChartDataSummary = () => {
         if (!pageData || pageData.length === 0) return '';
-        
+
         const latestYear = pageData[pageData.length - 1];
         const latestYearNum = latestYear.year;
         const latestCDIA = (latestYear.cdia || 0) / 1000;
@@ -157,14 +173,14 @@ const Page31 = () => {
 
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
-        
+
         const cellUnitSR = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
         const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
         const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
         const captionId = 'page31-table-caption';
         const cdiaLabel = getText('page31_legend_cdia', lang);
         const fdiLabel = getText('page31_legend_fdi', lang);
-        
+
         return (
             <details 
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
@@ -235,8 +251,178 @@ const Page31 = () => {
                         </tbody>
                     </table>
                 </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <button
+                        onClick={() => downloadTableAsCSV()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                    </button>
+                    <button
+                        onClick={() => downloadTableAsDocx()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
+                    </button>
+                </div>
             </details>
         );
+    };
+    const downloadTableAsCSV = () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const cdiaLabel = getText('page31_legend_cdia', lang);
+        const fdiLabel = getText('page31_legend_fdi', lang);
+        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${cdiaLabel} ${unitHeader}`,
+            `${fdiLabel} ${unitHeader}`
+        ];
+        const rows = pageData.map(yearData => [
+            yearData.year,
+            ((yearData.cdia || 0) / 1000).toFixed(2),
+            ((yearData.fdi || 0) / 1000).toFixed(2)
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = lang === 'en' ? 'fdi_investment_data.csv' : 'ide_investissement_donnees.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    const downloadTableAsDocx = async () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const cdiaLabel = getText('page31_legend_cdia', lang);
+        const fdiLabel = getText('page31_legend_fdi', lang);
+        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
+        const title = stripHtml(getText('page31_title', lang));
+
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${cdiaLabel} ${unitHeader}`,
+            `${fdiLabel} ${unitHeader}`
+        ];
+
+        const headerRow = new TableRow({
+            children: headers.map(header => new TableCell({
+                children: [new Paragraph({
+                    children: [new TextRun({ text: header, bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                shading: { fill: 'E6E6E6' }
+            }))
+        });
+
+        const dataRows = pageData.map(yearData => new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((yearData.cdia || 0) / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((yearData.fdi || 0) / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] })
+            ]
+        }));
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1800, 3700, 3700],
+                        rows: [headerRow, ...dataRows]
+                    })
+                ]
+            }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, lang === 'en' ? 'fdi_investment_table.docx' : 'ide_investissement_tableau.docx');
+    };
+    const downloadChartWithTitle = async (plotEl = null) => {
+        const plotElement = plotEl || document.querySelector('.page31-chart .js-plotly-plot') || document.querySelector('#page-31 .js-plotly-plot');
+        if (!plotElement) {
+            console.error('Plot element not found');
+            alert('Could not find chart element. Please try again.');
+            return;
+        }
+
+        const title = stripHtml(getText('page31_title', lang));
+
+        try {
+            if (!window.Plotly) {
+                console.error('Plotly not available on window');
+                alert('Plotly library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
+            const imgData = await window.Plotly.toImage(plotElement, {
+                format: 'png',
+                width: 1200,
+                height: 600,
+                scale: 2
+            });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                const titleHeight = 80;
+                canvas.width = img.width;
+                canvas.height = img.height + titleHeight;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#333333';
+                ctx.font = 'bold 36px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(title, canvas.width / 2, 50);
+
+                ctx.drawImage(img, 0, titleHeight);
+
+                const link = document.createElement('a');
+                link.download = lang === 'en' ? 'fdi_investment_chart.png' : 'ide_investissement_graphique.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            img.onerror = () => {
+                console.error('Failed to load chart image');
+                alert('Failed to generate chart image. Please try again.');
+            };
+
+            img.src = imgData;
+        } catch (error) {
+            console.error('Error downloading chart:', error);
+            alert('Error downloading chart: ' + error.message);
+        }
     };
 
     if (loading) {
@@ -266,22 +452,16 @@ const Page31 = () => {
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 boxSizing: 'border-box',
-                borderRight: '18px solid #8e7e52',
             }}
         >
             <style>{`
-                /* =====================================================
-                   PAGE 31 - BORDER PAGE STYLES
-                   Border extends past container, content aligns with anchors.
-                   ===================================================== */
 
-                /* Extend right for border, content padded to align with anchors */
                 .page-31 {
                     margin-right: -${layoutPadding?.right || 15}px;
                     width: calc(100% + ${layoutPadding?.right || 15}px);
-                    padding-right: ${(layoutPadding?.right || 15) - 18}px; /* 18px is border width */
+                    padding-right: ${(layoutPadding?.right || 15) - 18}px; 
                 }
-                
+
                 .page31-container {
                     width: 100%;
                     padding: 15px 0 0 0; 
@@ -291,7 +471,7 @@ const Page31 = () => {
                     flex: 1;
                     overflow: visible;
                 }
-                
+
                 .page31-chart {
                     height: calc(100vh - 700px);
                     width: 100%;
@@ -341,7 +521,6 @@ const Page31 = () => {
                     line-height: 1.4;
                 }
 
-                /* Chart height and font size breakpoints only */
                 @media (max-width: 1745px) {
                     .page31-chart {
                         height: calc(100vh - 450px);
@@ -413,7 +592,7 @@ const Page31 = () => {
                         font-size: 0.9rem;
                     }
                 }
-                
+
                 @media (max-width: 640px) {
                     .page31-title {
                         font-size: 1.2rem;
@@ -452,7 +631,7 @@ const Page31 = () => {
                         min-height: 250px;
                     }
                 }
-                
+
                 details summary::-webkit-details-marker,
                 details summary::marker {
                     display: none;
@@ -485,9 +664,9 @@ const Page31 = () => {
                     <h2 className="page31-chart-title" aria-hidden="true">
                         {getText('page31_chart_title', lang)}
                     </h2>
-                    
+
                     <h2 className="sr-only">{getChartTitleSR()}</h2>
-                    
+
                     <p className="sr-only">{getFootnotesSR()}</p>
 
                     <div 
@@ -500,7 +679,7 @@ const Page31 = () => {
                             aria-hidden="true" 
                             style={{ margin: 0, position: 'relative' }}
                         >
-                            {!isChartInteractive && (
+                            {windowWidth <= 768 && !isChartInteractive && (
                                 <div
                                     onClick={() => setIsChartInteractive(true)}
                                     onDoubleClick={() => setIsChartInteractive(true)}
@@ -548,8 +727,11 @@ const Page31 = () => {
                                     </span>
                                 </div>
                             )}
-                            {isChartInteractive && (
-                                <button onClick={() => setIsChartInteractive(false)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+                            {windowWidth <= 768 && isChartInteractive && (
+                                <button onClick={() => { setIsChartInteractive(false); setSelectedPoints(null); }} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+                            )}
+                            {selectedPoints !== null && (
+                                <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 360 : 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                             )}
                             <Plot
                             data={chartData.traces}
@@ -586,7 +768,9 @@ const Page31 = () => {
                                     y: windowWidth <= 384 ? -0.40 : windowWidth <= 480 ? -0.34 : windowWidth <= 640 ? -0.34 : windowWidth <= 768 ? -0.24 : windowWidth <= 960 ? -0.18 : windowWidth <= 1097 ? -0.16 :windowWidth <= 1280 ? -0.16 : windowWidth <= 1536 ? -0.16 : windowWidth <= 1745 ? -0.16 : -0.16,
                                     yanchor: 'bottom',
                                     font: { size: windowWidth <= 480 ? 11 : 18, family: 'Arial, sans-serif' },
-                                    traceorder: 'normal'
+                                    traceorder: 'normal',
+                                    itemclick: false,
+                                    itemdoubleclick: false
                                 },
                                 margin: { 
                                     l: 0, 
@@ -600,14 +784,56 @@ const Page31 = () => {
                             }}
                             style={{ width: '100%', height: '100%' }} 
                             useResizeHandler={true}
+                            onClick={(data) => {
+                                if (!data.points || data.points.length === 0) return;
+                                const clickedPoint = data.points[0];
+                                const traceIndex = clickedPoint.curveNumber;
+                                const pointIndex = clickedPoint.pointIndex;
+
+                                setSelectedPoints(prev => {
+                                    if (prev === null) {
+                                        const newSelection = [[], []];
+                                        newSelection[traceIndex].push(pointIndex);
+                                        return newSelection;
+                                    }
+
+                                    const isSelected = prev[traceIndex]?.includes(pointIndex);
+
+                                    if (isSelected) {
+                                        const newSelection = prev.map((tracePoints, idx) => 
+                                            idx === traceIndex ? tracePoints.filter(p => p !== pointIndex) : [...tracePoints]
+                                        );
+                                        if (newSelection.every(arr => arr.length === 0)) {
+                                            return null;
+                                        }
+                                        return newSelection;
+                                    } else {
+                                        const newSelection = prev.map((tracePoints, idx) => 
+                                            idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
+                                        );
+                                        return newSelection;
+                                    }
+                                });
+                            }}
                             config={{ 
-                                displayModeBar: isChartInteractive, 
+                                displayModeBar: windowWidth > 768 || isChartInteractive, 
                                 responsive: true,
-                                scrollZoom: isChartInteractive
+                                scrollZoom: windowWidth > 768 || isChartInteractive,
+                                modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
+                                modeBarButtonsToAdd: [{
+                                    name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+                                    icon: {
+                                        width: 1000,
+                                        height: 1000,
+                                        path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
+                                        transform: 'matrix(1 0 0 -1 0 850)'
+                                    },
+                                    click: (gd) => downloadChartWithTitle(gd)
+                                }]
                             }}
                             />
                         </figure>
-                        
+
                         {getAccessibleDataTable()}
                     </div>
                 </div>

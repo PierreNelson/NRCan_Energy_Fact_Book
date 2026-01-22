@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import { getCapitalExpendituresData, getInfrastructureData, getEconomicContributionsData } from '../utils/dataLoader';
 import page23Image from '../assets/page23_bg.jpg';
@@ -28,10 +28,6 @@ const Page23 = () => {
             }}
         >
             <style>{`
-/* =====================================================
-   PAGE 23 - TITLE PAGE STYLES
-   Background extends past container, text aligns with anchors.
-   ===================================================== */
 
 .page23-main {
     width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
@@ -114,7 +110,23 @@ const Page23 = () => {
     text-align: left;
 }
 
-/* Font size breakpoints only */
+.page23-list-item a {
+    color: #ebe8e1;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.page23-list-item a:hover,
+.page23-list-item a:focus {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.page23-list-item a:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
 @media (max-width: 1745px) { .page23-title-text { font-size: 4.2rem; } }
 @media (max-width: 1536px) { .page23-title-text { font-size: 4.0rem; } }
 @media (max-width: 1280px) { .page23-title-text { font-size: 3.8rem; } }
@@ -175,11 +187,32 @@ const Page23 = () => {
                         color: '#ebe8e1',
                         fontFamily: 'Arial, sans-serif'
                     }}>
-                        {[1, 2, 3, 4, 5, 6].map(num => (
-                            <li key={num} className="page23-list-item">
-                                {getText(`page23_item${num}`, lang)}
-                            </li>
-                        ))}
+                        <li className="page23-list-item">
+                            <Link to="/section-2#page-24">
+                                {getText('page23_item1', lang)}
+                            </Link>
+                        </li>
+                        <li className="page23-list-item">
+                            <Link to="/section-2#page-25">
+                                {getText('page23_item2', lang)}
+                            </Link>
+                        </li>
+                        <li className="page23-list-item">
+                            <Link to="/section-2#page-31">
+                                {getText('page23_item3', lang)}
+                            </Link>
+                        </li>
+                        <li className="page23-list-item">
+                            {getText('page23_item4', lang)}
+                        </li>
+                        <li className="page23-list-item">
+                            {getText('page23_item5', lang)}
+                        </li>
+                        <li className="page23-list-item">
+                            <Link to="/section-2#page-37">
+                                {getText('page23_item6', lang)}
+                            </Link>
+                        </li>
                     </ul>
                 </nav>
             </div>

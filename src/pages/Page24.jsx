@@ -4,6 +4,8 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getCapitalExpendituresData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType, BorderStyle } from 'docx';
+import { saveAs } from 'file-saver';
 
 const Page24 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -12,10 +14,11 @@ const Page24 = () => {
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
-    const [isChartInteractive, setIsChartInteractive] = useState(false);
-    
+    const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
+
     const [hiddenSeries, setHiddenSeries] = useState([]); 
-    
+    const [selectedPoints, setSelectedPoints] = useState(null);
+
     const chartRef = useRef(null);
 
     useEffect(() => {
@@ -29,7 +32,13 @@ const Page24 = () => {
     }, [isChartInteractive]);
 
     useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
+        const handleResize = () => {
+            const newWidth = window.innerWidth;
+            setWindowWidth(newWidth);
+            if (newWidth > 768) {
+                setIsChartInteractive(true);
+            }
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -82,7 +91,7 @@ const Page24 = () => {
     for (let y = minYear + 1; y <= maxYear + 1; y += 2) {
         tickVals.push(y);
     }
-    
+
     const oilGasValues = pageData.map(d => d.oil_gas / 1000);
     const electricValues = pageData.map(d => d.electricity / 1000);
     const otherValues = pageData.map(d => d.other / 1000);
@@ -118,17 +127,17 @@ const Page24 = () => {
 
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
-        
+
         const oilGasLabel = stripHtml(getText('page24_legend_oil_gas', lang));
         const electricityLabel = stripHtml(getText('page24_legend_electricity', lang));
         const otherLabel = stripHtml(getText('page24_legend_other', lang));
         const totalLabel = getText('page24_hover_total', lang);
-        
+
         const cellUnitText = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
         const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
         const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
         const captionId = 'page24-table-caption';
-        
+
         return (
             <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)} className="page24-table-btn-wrapper" style={{ marginTop: '20px', marginBottom: '10px' }}>
                 <summary 
@@ -154,9 +163,9 @@ const Page24 = () => {
                     >
                         <path d="M4 2 L10 6 L4 10 Z" fill="#333" />
                     </svg>
-                    
+
                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                    
+
                     <span className="wb-inv">
                         {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
                     </span>
@@ -204,7 +213,7 @@ const Page24 = () => {
                 <th scope="row" id={yearHeaderId}>
                     {yearData.year}
                 </th>
-                
+
                 <td headers={yearHeaderId}>
                     <span className="wb-inv">{yearData.year}, {oilGasLabel}: </span>
                     {formatNumberTable(yearData.oil_gas / 1000)}
@@ -234,8 +243,203 @@ const Page24 = () => {
 </tbody>
                     </table>
                 </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <button
+                        onClick={() => downloadTableAsCSV()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                    </button>
+                    <button
+                        onClick={() => downloadTableAsDocx()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
+                    </button>
+                </div>
             </details>
         );
+    };
+    const downloadTableAsCSV = () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const oilGasLabel = stripHtml(getText('page24_legend_oil_gas', lang));
+        const electricityLabel = stripHtml(getText('page24_legend_electricity', lang));
+        const otherLabel = stripHtml(getText('page24_legend_other', lang));
+        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${oilGasLabel} ${unitHeader}`,
+            `${electricityLabel} ${unitHeader}`,
+            `${otherLabel} ${unitHeader}`,
+            `Total ${unitHeader}`
+        ];
+        const rows = pageData.map(yearData => [
+            yearData.year,
+            (yearData.oil_gas / 1000).toFixed(2),
+            (yearData.electricity / 1000).toFixed(2),
+            (yearData.other / 1000).toFixed(2),
+            (yearData.total / 1000).toFixed(2)
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = lang === 'en' ? 'capital_expenditures_energy_data.csv' : 'depenses_en_capital_energie_donnees.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    const downloadTableAsDocx = async () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const oilGasLabel = stripHtml(getText('page24_legend_oil_gas', lang));
+        const electricityLabel = stripHtml(getText('page24_legend_electricity', lang));
+        const otherLabel = stripHtml(getText('page24_legend_other', lang));
+        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
+        const title = stripHtml(getText('page24_title', lang));
+
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${oilGasLabel} ${unitHeader}`,
+            `${electricityLabel} ${unitHeader}`,
+            `${otherLabel} ${unitHeader}`,
+            `Total ${unitHeader}`
+        ];
+        const headerRow = new TableRow({
+            children: headers.map(header => new TableCell({
+                children: [new Paragraph({
+                    children: [new TextRun({ text: header, bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                shading: { fill: 'E6E6E6' }
+            }))
+        });
+        const dataRows = pageData.map(yearData => new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.oil_gas / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.electricity / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.other / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.total / 1000).toFixed(2), bold: true, size: 22 })], alignment: AlignmentType.RIGHT })] })
+            ]
+        }));
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1200, 2000, 2000, 2000, 1800],
+                        rows: [headerRow, ...dataRows]
+                    })
+                ]
+            }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, lang === 'en' ? 'capital_expenditures_energy_table.docx' : 'depenses_en_capital_energie_tableau.docx');
+    };
+    const downloadChartWithTitle = async (plotEl = null) => {
+        const plotElement = plotEl || document.querySelector('.page24-chart.js-plotly-plot') || document.querySelector('.page24-chart-wrapper .js-plotly-plot');
+        if (!plotElement) {
+            console.error('Plot element not found');
+            alert('Could not find chart element. Please try again.');
+            return;
+        }
+
+        const title = stripHtml(getText('page24_title', lang));
+        const oilGasLabel = stripHtml(getText('page24_legend_oil_gas', lang));
+        const electricityLabel = stripHtml(getText('page24_legend_electricity', lang));
+        const otherLabel = stripHtml(getText('page24_legend_other', lang));
+
+        try {
+            if (!window.Plotly) {
+                console.error('Plotly not available on window');
+                alert('Plotly library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
+            const imgData = await window.Plotly.toImage(plotElement, {
+                format: 'png',
+                width: 1200,
+                height: 600,
+                scale: 2
+            });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                const titleHeight = 80;
+                const legendHeight = 60;
+                canvas.width = img.width;
+                canvas.height = img.height + titleHeight + legendHeight;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#333333';
+                ctx.font = 'bold 36px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(title, canvas.width / 2, 50);
+                ctx.drawImage(img, 0, titleHeight);
+                const legendY = titleHeight + img.height + 30;
+                const legendItemsData = [
+                    { label: oilGasLabel, color: colors.oil_gas },
+                    { label: electricityLabel, color: colors.electricity },
+                    { label: otherLabel, color: colors.other }
+                ];
+
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'left';
+                let xPos = (canvas.width - 800) / 2;
+
+                legendItemsData.forEach(item => {
+                    ctx.fillStyle = item.color;
+                    ctx.fillRect(xPos, legendY - 18, 24, 24);
+                    ctx.fillStyle = '#333333';
+                    ctx.fillText(item.label, xPos + 32, legendY);
+                    xPos += ctx.measureText(item.label).width + 80;
+                });
+                const link = document.createElement('a');
+                link.download = lang === 'en' ? 'capital_expenditures_energy_chart.png' : 'depenses_en_capital_energie_graphique.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            img.onerror = () => {
+                console.error('Failed to load chart image');
+                alert('Failed to generate chart image. Please try again.');
+            };
+
+            img.src = imgData;
+        } catch (error) {
+            console.error('Error downloading chart:', error);
+            alert('Error downloading chart: ' + error.message);
+        }
     };
 
     const legendItems = [
@@ -254,11 +458,8 @@ const Page24 = () => {
         const isIsolated = others.every(o => hiddenSeries.includes(o)) && !hiddenSeries.includes(id);
         setHiddenSeries(isIsolated ? [] : others);
     };
-
-    // Chart margins - in column format (stacked), use 0 margins for full width alignment with anchors
-    // In two-column format, use margins for proper spacing
     const isColumnFormat = windowWidth <= 1400;
-    const chartMarginLeft = isColumnFormat ? 0 : 50;
+    const chartMarginLeft = 50;
     const chartMarginRight = isColumnFormat ? 0 : 15;
 
     return (
@@ -275,14 +476,9 @@ const Page24 = () => {
                 flexDirection: 'column',
                 overflow: 'visible',
                 boxSizing: 'border-box',
-                borderLeft: '18px solid #8e7e52',
             }}
         >
             <style>{`
-                /* =====================================================
-                   PAGE 24 - BORDER PAGE STYLES
-                   Border extends past container, content aligns with anchors.
-                   ===================================================== */
 
                 .wb-inv {
                     clip: rect(1px, 1px, 1px, 1px);
@@ -299,19 +495,18 @@ const Page24 = () => {
                     display: none;
                 }
 
-                /* Extend left for border, content padded to align with anchors */
                 .page-24 {
                     margin-left: -${layoutPadding?.left || 55}px;
                     width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${(layoutPadding?.left || 55) - 18}px; /* 18px is border width */
+                    padding-left: ${(layoutPadding?.left || 55) - 18}px; 
                 }
 
                 .page24-chart-wrapper {
                     position: relative;
-                    width: calc(100% + 50px);
-                    margin-left: -5px; /* Pull chart left so y-axis labels align with title */
+                    width: calc(100% + 30px);
+                    margin-left: 0px;
                 }
-                
+
                 @media (max-width: 1400px) {
                     .page24-chart-wrapper {
                         width: 100%;
@@ -359,6 +554,7 @@ const Page24 = () => {
                     flex: 1; 
                     width: 100%; 
                     overflow: visible;
+                    gap: 40px;
                 }
 
                 .page24-chart-column { 
@@ -407,7 +603,6 @@ const Page24 = () => {
 
                 .page24-chart { width: 100%; height: 300px; }
 
-                /* Layout breakpoints only */
                 @media (max-width: 1400px) {
                     .page24-content-row { flex-direction: column; }
                     .page24-chart-column { width: 100%; margin-bottom: 30px; }
@@ -441,7 +636,7 @@ const Page24 = () => {
 
                 <div className={`page24-content-row`}>
                     <div className="page24-chart-column">
-                        
+
                         <div className="chart-title-wrapper">
                             <h2 className="page24-chart-title">
                                 {renderTextWithHiddenAsterisk(getText('page24_chart_title', lang))}
@@ -449,7 +644,7 @@ const Page24 = () => {
                         </div>
 
                         <figure ref={chartRef} aria-hidden="true" className="page24-chart-wrapper">
-                            {!isChartInteractive && (
+                            {windowWidth <= 768 && !isChartInteractive && (
                                 <div 
                                     onClick={() => setIsChartInteractive(true)} 
                                     onKeyDown={(e) => {
@@ -489,39 +684,51 @@ const Page24 = () => {
                                     </span>
                                 </div>
                             )}
-                            
-                            {isChartInteractive && (
-                                <button onClick={() => setIsChartInteractive(false)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+
+                            {windowWidth <= 768 && isChartInteractive && (
+                                <button onClick={() => { setIsChartInteractive(false); setSelectedPoints(null); }} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
                             )}
-                            
+                            {selectedPoints !== null && (
+                                <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 360 : 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                            )}
+
                             <Plot
                                 data={[
                                     { 
                                         name: getText('page24_legend_oil_gas', lang), 
                                         x: years, y: oilGasValues, type: 'bar', 
-                                        marker: { color: colors.oil_gas }, 
+                                        marker: { 
+                                            color: colors.oil_gas,
+                                            opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[0]?.includes(i) ? 1 : 0.3)
+                                        }, 
                                         hovertext: hoverTemplate('page24_hover_oil_gas', oilGasValues), hoverinfo: 'text',
-                                        visible: hiddenSeries.includes('oil_gas') ? 'legendonly' : true 
+                                        visible: hiddenSeries.includes('oil_gas') ? 'legendonly' : true
                                     },
                                     { 
                                         name: getText('page24_legend_electricity', lang), 
                                         x: years, y: electricValues, type: 'bar', 
-                                        marker: { color: colors.electricity }, 
+                                        marker: { 
+                                            color: colors.electricity,
+                                            opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[1]?.includes(i) ? 1 : 0.3)
+                                        }, 
                                         hovertext: hoverTemplate('page24_hover_electricity', electricValues), hoverinfo: 'text',
-                                        visible: hiddenSeries.includes('electricity') ? 'legendonly' : true 
+                                        visible: hiddenSeries.includes('electricity') ? 'legendonly' : true
                                     },
                                     { 
                                         name: getText('page24_legend_other', lang), 
                                         x: years, y: otherValues, type: 'bar', 
-                                        marker: { color: colors.other }, 
+                                        marker: { 
+                                            color: colors.other,
+                                            opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[2]?.includes(i) ? 1 : 0.3)
+                                        }, 
                                         hovertext: hoverTemplate('page24_hover_other', otherValues), hoverinfo: 'text',
-                                        visible: hiddenSeries.includes('other') ? 'legendonly' : true 
+                                        visible: hiddenSeries.includes('other') ? 'legendonly' : true
                                     }
                                 ]}
                                 layout={{ 
                                     barmode: 'stack', 
                                     hoverlabel: { bgcolor: '#ffffff' }, 
-                                    showlegend: false, 
+                                    showlegend: false,
                                     xaxis: { 
                                         tickvals: tickVals, 
                                         automargin: true,
@@ -539,27 +746,65 @@ const Page24 = () => {
                                 }}
                                 className="page24-chart" 
                                 useResizeHandler={true} 
-                                config={{ displayModeBar: isChartInteractive, responsive: true }}
+                                onClick={(data) => {
+                                    if (!data.points || data.points.length === 0) return;
+                                    const clickedPoint = data.points[0];
+                                    const traceIndex = clickedPoint.curveNumber;
+                                    const pointIndex = clickedPoint.pointIndex;
+
+                                    setSelectedPoints(prev => {
+                                        if (prev === null) {
+                                            const newSelection = [[], [], []];
+                                            newSelection[traceIndex].push(pointIndex);
+                                            return newSelection;
+                                        }
+                                        const isSelected = prev[traceIndex]?.includes(pointIndex);
+
+                                        if (isSelected) {
+                                            const newSelection = prev.map((tracePoints, idx) => 
+                                                idx === traceIndex ? tracePoints.filter(p => p !== pointIndex) : [...tracePoints]
+                                            );
+                                            if (newSelection.every(arr => arr.length === 0)) {
+                                                return null;
+                                            }
+                                            return newSelection;
+                                        } else {
+                                            const newSelection = prev.map((tracePoints, idx) => 
+                                                idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
+                                            );
+                                            return newSelection;
+                                        }
+                                    });
+                                }}
+                                config={{ 
+                                    displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                    responsive: true,
+                                    modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
+                                    modeBarButtonsToAdd: [{
+                                        name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+                                        icon: {
+                                            width: 1000,
+                                            height: 1000,
+                                            path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
+                                            transform: 'matrix(1 0 0 -1 0 850)'
+                                        },
+                                        click: (gd) => downloadChartWithTitle(gd)
+                                    }]
+                                }}
                             />
                         </figure>
 
                         <div className="page24-legend" aria-hidden="true">
-                            {legendItems.map((item) => {
-                                const isHidden = hiddenSeries.includes(item.id);
-                                return (
-                                    <div 
-                                        key={item.id} 
-                                        className="page24-legend-item"
-                                        onClick={() => handleLegendClick(item.id)}
-                                        onDoubleClick={() => handleLegendDoubleClick(item.id)}
-                                        style={{ opacity: isHidden ? 0.5 : 1 }}
-                                        title={lang === 'en' ? 'Click to toggle, double-click to isolate' : 'Cliquez pour basculer, double-cliquez pour isoler'}
-                                    >
-                                        <span className="page24-legend-color" style={{ backgroundColor: item.color }}></span>
-                                        <span style={{ textDecoration: isHidden ? 'line-through' : 'none' }}>{item.label}</span>
-                                    </div>
-                                );
-                            })}
+                            {legendItems.map((item) => (
+                                <div 
+                                    key={item.id} 
+                                    className="page24-legend-item"
+                                    style={{ cursor: 'default' }}
+                                >
+                                    <span className="page24-legend-color" style={{ backgroundColor: item.color }}></span>
+                                    <span>{item.label}</span>
+                                </div>
+                            ))}
                         </div>
 
                         {getAccessibleDataTable()}

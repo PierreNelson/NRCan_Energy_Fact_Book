@@ -143,6 +143,13 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_section1_title', lang)}
                             </NavLink>
+                            {/* Provincial GDP (Page 8) */}
+                            <NavLink
+                                to="/#page-8"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_provincial_gdp', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>

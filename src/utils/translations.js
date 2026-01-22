@@ -16,6 +16,14 @@ export const TRANSLATIONS = {
         'page1_item1': 'Energy production and supply',
         'page1_item2': 'Economic contributions',
         'page1_item3': 'Energy and GHG emissions',
+
+        // Page 8
+        'page8_title': "Energy's nominal GDP contribution by province/territory",
+        'page8_subtitle': 'Energy sector direct nominal GDP*\n($ millions)',
+        'page8_footnote': '*Provincial/territorial figures do not sum precisely to the national total, due to rounding.',
+        'page8_footnote_2024': ' Distribution is based on 2023 proportions.',
+        'nav_provincial_gdp': "Energy's nominal GDP contribution by province/territory",
+
         'nav_capital_expenditure': 'Capital expenditures',
         'nav_infrastructure': "Energy infrastructure",
         'nav_economic_contributions': 'Economic contributions',
@@ -110,7 +118,7 @@ export const TRANSLATIONS = {
         'page26_footer_part3': '(nominal).',
 
         // Page 27
-        'page27_title': 'Public and private investment in fuel, energy and pipeline infrastructure, 2009–2024',
+        'page27_title': 'Public and private investment in fuel, energy and pipeline infrastructure, 2009 to 2024',
         'page27_yaxis': '$ billion (constant 2012 dollars)',
         'page27_legend_transmission': 'Transmission, distribution, and transformers',
         'page27_legend_pipelines': 'Pipelines',
@@ -232,6 +240,14 @@ export const TRANSLATIONS = {
         'page1_item1': "Production d'énergie et approvisionnement",
         'page1_item2': 'Contributions économiques',
         'page1_item3': 'Énergie et émissions de GES',
+
+        // Page 8
+        'page8_title': "Contribution de l'énergie au PIB nominal par province ou territoire",
+        'page8_subtitle': 'PIB nominal direct du secteur de l\'énergie*\n(millions de $)',
+        'page8_footnote': '*La somme des données provinciales et territoriales n\'est pas tout à fait exacte en raison de l\'arrondissement.',
+        'page8_footnote_2024': ' La distribution est basée sur les proportions de 2023.',
+        'nav_provincial_gdp': "Contribution de l'énergie au PIB nominal par province ou territoire",
+
         'nav_capital_expenditure': 'Dépenses en capital',
         'nav_infrastructure': "Infrastructure énergétique",
         'nav_economic_contributions': 'Contributions économiques',
@@ -324,7 +340,7 @@ export const TRANSLATIONS = {
         'page26_footer_part3': '(nominal).',
 
         // Page 27
-        'page27_title': 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline, 2009-2024',
+        'page27_title': 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline, 2009 à 2024',
         'page27_yaxis': 'En milliards de $ (dollars constants de 2012)',
         'page27_legend_transmission': 'Réseaux de transport et de distribution d\'électricité',
         'page27_legend_pipelines': 'Pipelines',

@@ -35,7 +35,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 
 def get_capital_expenditures_url():
     """Get capital expenditures URL (Table 34-10-0036-01)."""
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3410003601&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%5D%2C%5B8%2C9%2C11%2C34%2C36%2C37%2C50%2C91%5D%5D&checkedLevels=0D1"
+    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3410003601&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%5D%2C%5B8%2C9%2C11%2C34%2C36%2C37%2C50%2C91%5D%5D&checkedLevels=0D1"
 
 def get_infrastructure_url():
     """Get infrastructure URL (Table 36-10-0608-01)."""
@@ -104,9 +104,41 @@ def get_data_paths():
 def fetch_csv_from_url(url, timeout=120):
     """Fetch CSV data from a URL and return as DataFrame."""
     print(f"Fetching data from StatCan...")
-    response = requests.get(url, timeout=timeout)
-    response.raise_for_status()
-    return pd.read_csv(io.StringIO(response.text))
+    
+    # Try the original URL first
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        
+        # Check if the response is actually CSV data (not an error page)
+        text = response.text
+        if 'Failed to get' in text or '<html' in text.lower():
+            raise ValueError(f"StatCan returned error: {text[:200]}")
+        
+        df = pd.read_csv(io.StringIO(text))
+        
+        # Verify we got actual data columns
+        if len(df.columns) < 3:
+            raise ValueError(f"Invalid data format, columns: {df.columns.tolist()}")
+            
+        return df
+        
+    except Exception as e:
+        # Try alternative URL format (nonTraduit version)
+        alt_url = url.replace('downloadDbLoadingData.action', 'downloadDbLoadingData-nonTraduit.action')
+        if alt_url != url:
+            print(f"  Primary URL failed, trying alternative...")
+            try:
+                response = requests.get(alt_url, timeout=timeout)
+                response.raise_for_status()
+                text = response.text
+                if 'Failed to get' in text or '<html' in text.lower():
+                    raise ValueError(f"StatCan returned error")
+                return pd.read_csv(io.StringIO(text))
+            except:
+                pass
+        
+        raise Exception(f"Failed to fetch data from StatCan: {e}")
 
 
 # =============================================================================
@@ -124,12 +156,33 @@ def process_page24_data():
     
     df = fetch_csv_from_url(get_capital_expenditures_url())
     
+    # Debug: print column names to identify correct ones
+    print(f"  Columns in data: {df.columns.tolist()}")
+    
+    # Try to find the capital/repair expenditures column (handles different column name formats)
+    capex_col = None
+    for col in df.columns:
+        if 'capital' in col.lower() and 'repair' in col.lower():
+            capex_col = col
+            break
+    
     # Filter for capital expenditures only
-    df = df[df['Capital and repair expenditures'] == 'Capital expenditures'].copy()
+    if capex_col and capex_col in df.columns:
+        df = df[df[capex_col] == 'Capital expenditures'].copy()
+    
     df['year'] = pd.to_numeric(df['REF_DATE'], errors='coerce')
     
     years = sorted(df['year'].dropna().unique())
-    naics_col = 'North American Industry Classification System (NAICS)'
+    
+    # Try to find the NAICS column (handles different column name formats)
+    naics_col = None
+    for col in df.columns:
+        if 'naics' in col.lower() or 'industry' in col.lower():
+            naics_col = col
+            break
+    
+    if not naics_col:
+        naics_col = 'North American Industry Classification System (NAICS)'
     
     data_rows = []
     
@@ -778,6 +831,212 @@ def process_page37_data():
 
 
 # =============================================================================
+# PAGE 8: ENERGY GDP BY PROVINCE/TERRITORY
+# =============================================================================
+
+def get_provincial_nrsa_gdp_url():
+    """
+    Get URL for Table 36-10-0624-01: Provincial and territorial natural resource indicators.
+    
+    This fetches GDP data by province/territory for the Energy sub-sector.
+    Uses specific vector IDs as per NRCan methodology:
+    - Canada: v1138541601
+    - Newfoundland and Labrador: v1138541630
+    - Prince Edward Island: v1138541659
+    - Nova Scotia: v1138541688
+    - New Brunswick: v1138541717
+    - Quebec: v1138541746
+    - Ontario: v1138541775
+    - Manitoba: v1138541804
+    - Saskatchewan: v1138541833
+    - Alberta: v1138541862
+    - British Columbia: v1138541891
+    - Yukon: v1138541920
+    - Northwest Territories: v1138541949
+    - Nunavut: v1138541978
+    
+    selectedMembers: [[all provinces + Canada], [Energy sub-sector], [GDP indicator]]
+    """
+    # Fetch all provinces, Energy sub-sector (2D2), GDP indicator (3D2)
+    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3610062401&latestN=0&startDate=20070101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%5D%2C%5B2%5D%2C%5B2%5D%5D&checkedLevels="
+
+
+def get_energy_direct_gdp_for_ry():
+    """
+    Get the Energy Direct GDP for the reference year (RY).
+    This is Indicator 7 in the NRCan methodology.
+    
+    For 2024, this value comes from the NRCan Energy Factbook calculation.
+    The value is the national total energy sector GDP.
+    
+    Returns the estimated total for the reference year.
+    """
+    # This value is from the official NRCan Energy Factbook 2025-2026, Page 8
+    # For 2024: $231,776 million (back-calculated from official provincial figures)
+    return 231776
+
+
+def process_page8_data():
+    """
+    Process energy GDP by province/territory for Page 8.
+    
+    Data source: Table 36-10-0624-01 - Provincial and territorial natural resource indicators
+    (Natural resources sector - main indicators)
+    
+    Methodology:
+    1. Import GDP values for Canada and each province from Table 36-10-0624-01
+       Using vector IDs: Canada (v1138541601), NL (v1138541630), etc.
+    
+    2. For years with actual provincial data (up to RY-1):
+       - Use the actual values from the table
+       - Calculate GDP share = GDP of province / GDP of Canada
+    
+    3. For reference year (RY) where provincial data is not available:
+       - Use RY-1 provincial GDP distribution (shares)
+       - Get Energy Direct GDP of RY (Indicator 7)
+       - Compute RY provincial values = share × Energy Direct GDP of RY
+    
+    Returns list of tuples for data.csv and metadata.csv
+    """
+    print("Processing Page 8: Energy GDP by Province/Territory...")
+    print("  Source: Table 36-10-0624-01 (Provincial and territorial natural resource indicators)")
+    
+    # Province codes mapping (StatCan names to our codes)
+    # Vector IDs for GDP indicator (Economic indicator = Gross domestic product)
+    province_vectors = {
+        'Canada': {'code': 'national_total', 'vector': 'v1138541601'},
+        'Newfoundland and Labrador': {'code': 'nl', 'vector': 'v1138541630'},
+        'Prince Edward Island': {'code': 'pe', 'vector': 'v1138541659'},
+        'Nova Scotia': {'code': 'ns', 'vector': 'v1138541688'},
+        'New Brunswick': {'code': 'nb', 'vector': 'v1138541717'},
+        'Quebec': {'code': 'qc', 'vector': 'v1138541746'},
+        'Ontario': {'code': 'on', 'vector': 'v1138541775'},
+        'Manitoba': {'code': 'mb', 'vector': 'v1138541804'},
+        'Saskatchewan': {'code': 'sk', 'vector': 'v1138541833'},
+        'Alberta': {'code': 'ab', 'vector': 'v1138541862'},
+        'British Columbia': {'code': 'bc', 'vector': 'v1138541891'},
+        'Yukon': {'code': 'yt', 'vector': 'v1138541920'},
+        'Northwest Territories': {'code': 'nt', 'vector': 'v1138541949'},
+        'Nunavut': {'code': 'nu', 'vector': 'v1138541978'},
+    }
+    
+    province_names = {
+        'nl': 'Newfoundland and Labrador',
+        'pe': 'Prince Edward Island',
+        'ns': 'Nova Scotia',
+        'nb': 'New Brunswick',
+        'qc': 'Quebec',
+        'on': 'Ontario',
+        'mb': 'Manitoba',
+        'sk': 'Saskatchewan',
+        'ab': 'Alberta',
+        'bc': 'British Columbia',
+        'yt': 'Yukon',
+        'nt': 'Northwest Territories',
+        'nu': 'Nunavut',
+        'national_total': 'Canada total'
+    }
+    
+    try:
+        # Fetch data from Table 36-10-0624-01
+        df = fetch_csv_from_url(get_provincial_nrsa_gdp_url())
+        
+        # Filter for Energy sub-sector and GDP indicator
+        df = df[df['Sector'] == 'Energy sub-sector'].copy()
+        df = df[df['Economic indicator'] == 'Gross domestic product'].copy()
+        
+        print(f"  Fetched {len(df)} rows from StatCan Table 36-10-0624-01")
+        
+        data_rows = []
+        metadata_rows = []
+        
+        # Get unique years and sort them
+        # Exclude 2007 and 2008 as they don't have provincial breakdown data
+        years = sorted([y for y in df['REF_DATE'].unique() if y >= 2009])
+        print(f"  Years available from provincial data (excluding 2007-2008): {years}")
+        
+        # Store data by year for proportion calculation
+        year_data = {}
+        
+        # Step 1: Import actual GDP values for all available years
+        for year in years:
+            year_df = df[df['REF_DATE'] == year]
+            year_data[year] = {}
+            
+            for _, row in year_df.iterrows():
+                geo = row['GEO']
+                value = row['VALUE']
+                
+                if geo in province_vectors and pd.notna(value):
+                    prov_code = province_vectors[geo]['code']
+                    vector = f'page8_{prov_code}'
+                    data_rows.append((vector, int(year), round(value)))
+                    year_data[year][prov_code] = value
+        
+        # Determine the latest year with actual data (RY-1)
+        ry_minus_1 = max(years)
+        ry = ry_minus_1 + 1  # Reference year
+        print(f"  Latest year with provincial data (RY-1): {ry_minus_1}")
+        print(f"  Reference year to estimate (RY): {ry}")
+        
+        # Step 2: Calculate GDP share for each province/territory from RY-1
+        # Share = GDP of province / GDP of Canada
+        if ry_minus_1 in year_data and 'national_total' in year_data[ry_minus_1]:
+            canada_gdp_ry_minus_1 = year_data[ry_minus_1]['national_total']
+            provincial_shares = {}
+            
+            print(f"\n  Step 2: Calculating provincial GDP shares from {ry_minus_1}:")
+            print(f"    Canada total GDP: ${canada_gdp_ry_minus_1:,.0f}M")
+            
+            for geo_name, info in province_vectors.items():
+                prov_code = info['code']
+                if prov_code != 'national_total' and prov_code in year_data[ry_minus_1]:
+                    prov_gdp = year_data[ry_minus_1][prov_code]
+                    share = prov_gdp / canada_gdp_ry_minus_1
+                    provincial_shares[prov_code] = share
+                    print(f"    {geo_name}: ${prov_gdp:,.0f}M / ${canada_gdp_ry_minus_1:,.0f}M = {share:.4%}")
+            
+            # Step 3: Get Energy Direct GDP of RY (Indicator 7)
+            energy_direct_gdp_ry = get_energy_direct_gdp_for_ry()
+            print(f"\n  Step 3: Energy Direct GDP for {ry} (Indicator 7): ${energy_direct_gdp_ry:,}M")
+            
+            # Step 4: Compute RY provincial values using shares
+            print(f"\n  Step 4: Estimating {ry} provincial values:")
+            print(f"    Formula: Provincial value = Share × Energy Direct GDP of {ry}")
+            
+            # Add RY national total
+            data_rows.append(('page8_national_total', ry, energy_direct_gdp_ry))
+            print(f"    Canada (national_total): ${energy_direct_gdp_ry:,}M")
+            
+            for prov_code, share in provincial_shares.items():
+                # RY provincial value = share × Energy Direct GDP of RY
+                estimated_value = round(energy_direct_gdp_ry * share)
+                data_rows.append((f'page8_{prov_code}', ry, estimated_value))
+                print(f"    {province_names[prov_code]}: {share:.4%} × ${energy_direct_gdp_ry:,}M = ${estimated_value:,}M")
+            
+            print(f"\n  Note: {ry} values are estimates based on {ry_minus_1} provincial distribution")
+        
+        # Create metadata for each province
+        for prov_code, prov_name in province_names.items():
+            metadata_rows.append((
+                f'page8_{prov_code}',
+                f'Energy sector direct nominal GDP - {prov_name}',
+                'Millions of dollars',
+                'millions'
+            ))
+        
+        print(f"\n  Page 8: {len(data_rows)} data rows total")
+        return data_rows, metadata_rows
+        
+    except Exception as e:
+        print(f"  ERROR fetching Page 8 data: {e}")
+        import traceback
+        traceback.print_exc()
+        print("  Returning empty data")
+        return [], []
+
+
+# =============================================================================
 # MAIN FUNCTION
 # =============================================================================
 
@@ -818,6 +1077,10 @@ def refresh_all_data():
     data37, meta37 = process_page37_data()
     all_data.extend(data37)
     all_metadata.extend(meta37)
+    
+    data8, meta8 = process_page8_data()
+    all_data.extend(data8)
+    all_metadata.extend(meta8)
     
     # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])

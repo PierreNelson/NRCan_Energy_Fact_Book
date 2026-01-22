@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import { getEconomicContributionsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import page26BgImage from '../assets/page26_bg.png';
+import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
 
 const Page26 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -31,7 +33,7 @@ const Page26 = () => {
 
     const minYear = pageData.length > 0 ? pageData[0].year : 2007;
     const maxYear = pageData.length > 0 ? pageData[pageData.length - 1].year : 2024;
-    
+
     const yearsList = Array.from(
         { length: maxYear - minYear + 1 }, 
         (_, i) => minYear + i
@@ -85,9 +87,9 @@ const Page26 = () => {
 
     const getAccessibleDataTable = () => {
         if (!pageData || pageData.length === 0) return null;
-        
+
         const captionId = 'page26-table-caption';
-        
+
         return (
             <details 
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
@@ -165,11 +167,11 @@ const Page26 = () => {
                                 const investLabel = lang === 'en' ? 'Investment' : 'Investissement';
                                 const jobsUnit = lang === 'en' ? ' thousand jobs' : ' mille emplois';
                                 const billionUnit = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
-                                
+
                                 return (
                                     <tr key={yearData.year}>
                                         <th scope="row" id={yearHeaderId}>{yearData.year}</th>
-                                        
+
                                         <td headers={yearHeaderId}>
                                             <span className="wb-inv">{yearData.year}, {jobsLabel}: </span>
                                             {formatJobsTable(yearData.jobs)}
@@ -196,8 +198,119 @@ const Page26 = () => {
                         </tbody>
                     </table>
                 </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <button
+                        onClick={() => downloadTableAsCSV()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                    </button>
+                    <button
+                        onClick={() => downloadTableAsDocx()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
+                    </button>
+                </div>
             </details>
         );
+    };
+    const downloadTableAsCSV = () => {
+        if (!pageData || pageData.length === 0) return;
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            lang === 'en' ? 'Jobs (thousands)' : 'Emplois (milliers)',
+            lang === 'en' ? 'Employment income ($ billions)' : 'Revenu d\'emploi (milliards $)',
+            lang === 'en' ? 'GDP ($ billions)' : 'PIB (milliards $)',
+            lang === 'en' ? 'Investment ($ billions)' : 'Investissement (milliards $)'
+        ];
+        const rows = pageData.map(yearData => [
+            yearData.year,
+            (yearData.jobs || 0).toFixed(1),
+            (yearData.employment_income || 0).toFixed(1),
+            (yearData.gdp || 0).toFixed(1),
+            (yearData.investment_value || 0).toFixed(1)
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = lang === 'en' ? 'economic_contributions_data.csv' : 'contributions_economiques_donnees.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    const downloadTableAsDocx = async () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const title = lang === 'en' 
+            ? 'Economic contributions of fuel, energy and pipeline infrastructure'
+            : 'Contributions économiques des infrastructures de carburant, d\'énergie et de pipelines';
+
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            lang === 'en' ? 'Jobs (thousands)' : 'Emplois (milliers)',
+            lang === 'en' ? 'Employment income ($ billions)' : 'Revenu d\'emploi (milliards $)',
+            lang === 'en' ? 'GDP ($ billions)' : 'PIB (milliards $)',
+            lang === 'en' ? 'Investment ($ billions)' : 'Investissement (milliards $)'
+        ];
+
+        const headerRow = new TableRow({
+            children: headers.map(header => new TableCell({
+                children: [new Paragraph({
+                    children: [new TextRun({ text: header, bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                shading: { fill: 'E6E6E6' }
+            }))
+        });
+
+        const dataRows = pageData.map(yearData => new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.jobs || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.employment_income || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.gdp || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.investment_value || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] })
+            ]
+        }));
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1400, 1900, 1900, 1900, 1900],
+                        rows: [headerRow, ...dataRows]
+                    })
+                ]
+            }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, lang === 'en' ? 'economic_contributions_table.docx' : 'contributions_economiques_tableau.docx');
     };
 
     if (loading) {
@@ -230,7 +343,7 @@ const Page26 = () => {
         const jobsText = formatJobsSR(currentYearData.jobs);
         const incomeText = formatBillionsSR(currentYearData.employment_income);
         const gdpText = formatBillionsSR(currentYearData.gdp);
-        
+
         if (lang === 'en') {
             return `Economic contributions in ${year}. Fuel, energy and pipeline infrastructure supported ${jobsText}, generated ${incomeText} in employment income, and ${gdpText} in GDP. These are direct and indirect contributions.`;
         } else {
@@ -260,14 +373,9 @@ const Page26 = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'visible',
-                borderLeft: `18px solid ${COLORS.border}`,
             }}
         >
             <style>{`
-                /* =====================================================
-                   PAGE 26 - BORDER PAGE STYLES
-                   Border extends past container, content aligns with anchors.
-                   ===================================================== */
 
                 .wb-inv {
                     clip: rect(1px, 1px, 1px, 1px);
@@ -279,40 +387,46 @@ const Page26 = () => {
                     white-space: nowrap;
                 }
 
-                /* Extend left for border, content padded to align with anchors */
                 .page-26 {
                     margin-left: -${layoutPadding?.left || 55}px;
                     width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${(layoutPadding?.left || 55) - 18}px; /* 18px is border width */
+                    padding-left: ${(layoutPadding?.left || 55) - 18}px; 
                 }
-                
-                input[type=range] {
-                    -webkit-appearance: none;
-                    width: 100%;
-                    background: transparent;
+
+                .page26-year-selector {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 10px;
+                    padding: 10px 0;
                 }
-                input[type=range]::-webkit-slider-thumb {
-                    -webkit-appearance: none;
-                    height: 20px;
-                    width: 20px;
-                    border-radius: 50%;
-                    background: #007bff;
-                    cursor: pointer;
-                    margin-top: -6px;
+
+                .page26-year-label {
+                    font-weight: bold;
+                    margin-right: 15px;
+                    font-size: 18px;
+                    font-family: Arial, sans-serif;
+                    white-space: nowrap;
                 }
-                input[type=range]::-webkit-slider-runnable-track {
-                    width: 100%;
-                    height: 8px;
-                    cursor: pointer;
-                    background: #007bff;
+
+                .page26-year-select {
+                    padding: 8px 12px;
+                    font-size: 16px;
+                    font-family: Arial, sans-serif;
+                    border: 1px solid #ccc;
                     border-radius: 4px;
+                    background-color: #fff;
+                    cursor: pointer;
+                    min-width: 100px;
                 }
-                input[type=range]:focus {
+
+                .page26-year-select:hover {
+                    border-color: #007bff;
+                }
+
+                .page26-year-select:focus {
                     outline: 2px solid #005fcc;
                     outline-offset: 2px;
-                }
-                input[type=range]:focus::-webkit-slider-thumb {
-                    box-shadow: 0 0 0 3px rgba(0,123,255,0.5);
+                    border-color: #007bff;
                 }
 
                 .page26-container {
@@ -323,11 +437,11 @@ const Page26 = () => {
                     flex-direction: column;
                     box-sizing: border-box;
                 }
-                
+
                 .page26-slider-track {
                     flex: 1;
                 }
-                
+
                 .page26-content {
                     position: relative;
                     display: flex;
@@ -335,7 +449,7 @@ const Page26 = () => {
                     min-height: 450px;
                     width: 100%;
                 }
-                
+
                 .page26-stats-row {
                     position: relative;
                     z-index: 1;
@@ -345,7 +459,7 @@ const Page26 = () => {
                     margin-top: 10px;
                     padding: 0;
                 }
-                
+
                 .page26-stat-col {
                     flex: none;
                     width: fit-content;
@@ -353,32 +467,31 @@ const Page26 = () => {
                     padding: 12px 16px;
                     border-radius: 6px;
                 }
-                
+
                 .page26-stat-col-1 { margin-left: 0; }
                 .page26-stat-col-2 { margin-left: 360px; }
                 .page26-stat-col-3 { margin-left: 360px; }
-                
+
                 .page26-stat-value {
                     font-size: 36px;
                     font-weight: bold;
                     line-height: 1;
                 }
-                
+
                 .page26-stat-label {
                     font-size: 20px;
                 }
 
-                /* Layout breakpoints only */
                 @media (max-width: 1800px) {
                     .page26-container {
                         height: auto;
                     }
-                    
+
                     .page26-stats-row {
                         flex-direction: column;
                         gap: 30px;
                     }
-                    
+
                     .page26-stat-col {
                         margin-left: 0 !important;
                         padding: 12px 16px;
@@ -386,11 +499,11 @@ const Page26 = () => {
                         border-radius: 6px;
                         width: fit-content;
                     }
-                    
+
                     .page26-stat-value {
                         font-size: 28px;
                     }
-                    
+
                     .page26-stat-label {
                         font-size: 16px;
                     }
@@ -401,14 +514,14 @@ const Page26 = () => {
                         border-left: none !important;
                     }
                 }            
-                
+
                 @media (max-width: 1097px) {
                     .page26-bg-image {
                         background-size: 80% 100% !important;
                         background-position: right !important;
                     }
                 }
-                
+
                 @media (max-width: 768px) {
                     .page26-year-ticks { display: none !important; }
 
@@ -416,36 +529,36 @@ const Page26 = () => {
                         background-size: 70% 100% !important;
                         background-position: right !important;
                     }
-                    
+
                     .page26-slider-region {
                         flex-direction: column !important;
                         align-items: stretch !important;
                     }
-                    
+
                     .page26-slider-label {
                         white-space: normal !important;
                         margin-bottom: 10px;
                         margin-right: 0 !important;
                     }
                 }
-                
+
                 @media (max-width: 480px) {
                     .page26-bg-image {
                         display: none !important;
                     }
-                    
+
                     .page26-stat-value {
                         font-size: 20px !important;
                     }
-                    
+
                     .page26-stat-label {
                         font-size: 14px !important;
                     }
-                    
+
                     .page26-container h1 {
                         font-size: 1.5rem !important;
                     }
-                    
+
                     .page26-content {
                         display: block !important;
                         min-height: auto !important;
@@ -453,38 +566,6 @@ const Page26 = () => {
 
                     .page26-data-table-wrapper {
                         margin-top: 20px !important;
-                    }
-
-                    input[type=range] {
-                        height: 44px !important;
-                        padding: 10px 0 !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-thumb {
-                        height: 28px !important;
-                        width: 28px !important;
-                        margin-top: -10px !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-runnable-track {
-                        height: 12px !important;
-                    }
-                }
-                
-                @media (max-width: 384px) {
-                    input[type=range] {
-                        height: 50px !important;
-                        padding: 12px 0 !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-thumb {
-                        height: 32px !important;
-                        width: 32px !important;
-                        margin-top: -12px !important;
-                    }
-                    
-                    input[type=range]::-webkit-slider-runnable-track {
-                        height: 14px !important;
                     }
                 }
 
@@ -523,55 +604,27 @@ const Page26 = () => {
                     }}>
                         {getText('page26_title', lang)}
                     </h1>
-
-                    <div 
-                        className="page26-slider-region"
-                        role="region"
-                        aria-label={getSliderText()}
-                        style={{
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            marginBottom: '10px',
-                            padding: '10px 0'
-                        }}
-                    >
-                        <label className="page26-slider-label" aria-hidden="true" style={{ 
-                            fontWeight: 'bold', 
-                            marginRight: '15px', 
-                            fontSize: '18px', 
-                            fontFamily: 'Arial, sans-serif',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            {getText('year_slider_label', lang)} {year}
+                    <div className="page26-year-selector">
+                        <label 
+                            id="year-label-26"
+                            className="page26-year-label"
+                            htmlFor="year-select-26"
+                        >
+                            {getText('year_slider_label', lang)}
                         </label>
-                        <div className="page26-slider-track">
-                            <input
-                                type="range"
-                                min={minYear}
-                                max={maxYear}
-                                step={1}
-                                value={year}
-                                onChange={(e) => setYear(parseInt(e.target.value))}
-                                aria-valuemin={minYear}
-                                aria-valuemax={maxYear}
-                                aria-valuenow={year}
-                                aria-valuetext={`${year}`}
-                            />
-                            <div className="page26-year-ticks" aria-hidden="true" style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                fontSize: '10px', 
-                                marginTop: '5px',
-                                color: '#666',
-                                width: '100%'
-                            }}>
-                                {yearsList.map(y => (
-                                    <span key={y} style={{ textAlign: 'center', minWidth: '15px' }}>
-                                        {y}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
+                        <select
+                            id="year-select-26"
+                            className="page26-year-select"
+                            value={year}
+                            onChange={(e) => setYear(parseInt(e.target.value))}
+                            aria-labelledby="year-label-26"
+                        >
+                            {yearsList.map(y => (
+                                <option key={y} value={y}>
+                                    {y}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </header>
 

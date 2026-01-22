@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getForeignControlData, getInternationalInvestmentData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
 
 const Page32 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -12,8 +14,10 @@ const Page32 = () => {
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
-    const [isChartInteractive, setIsChartInteractive] = useState(false);
+    const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
+    const [selectedPoints, setSelectedPoints] = useState(null);
     const chartRef = useRef(null);
+    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -24,15 +28,17 @@ const Page32 = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isChartInteractive]);
-
-    // Track window width for responsive chart settings
     useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
+        const handleResize = () => {
+            const newWidth = window.innerWidth;
+            setWindowWidth(newWidth);
+            if (newWidth > 768) {
+                setIsChartInteractive(true);
+            }
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
-
-    // Load data on mount
     useEffect(() => {
         Promise.all([
             getForeignControlData(),
@@ -50,36 +56,27 @@ const Page32 = () => {
                 setLoading(false);
             });
     }, []);
-
-    // Colors matching the NRCan Factbook chart
     const COLORS = {
-        'utilities': '#284162',      // Dark blue
-        'oil_gas': '#419563',        // Green
-        'all_non_financial': '#8B7355', // Olive/brown
+        'utilities': '#284162',
+        'oil_gas': '#419563',
+        'all_non_financial': '#8B7355',
     };
-
-    // Calculate bullet point values from investment data
     const bulletValues = useMemo(() => {
         if (investmentData.length < 2) return null;
-        
+
         const latestYear = investmentData[investmentData.length - 1];
         const prevYear = investmentData[investmentData.length - 2];
-        
-        const fdiLatest = (latestYear.fdi || 0) / 1000; // Convert to billions
+
+        const fdiLatest = (latestYear.fdi || 0) / 1000;
         const fdiPrev = (prevYear.fdi || 0) / 1000;
         const cdiaLatest = (latestYear.cdia || 0) / 1000;
         const cdiaPrev = (prevYear.cdia || 0) / 1000;
-        
+
         const fdiGrowth = fdiPrev > 0 ? ((fdiLatest - fdiPrev) / fdiPrev * 100) : 0;
         const cdiaGrowth = cdiaPrev > 0 ? ((cdiaLatest - cdiaPrev) / cdiaPrev * 100) : 0;
-        
-        // Energy industry share of overall FDI - approximately 10%
         const energyShare = 10;
-        
-        // Oil and gas extraction as portion of CDIA - approximately $36B
-        // This is roughly 17% of total CDIA based on the factbook
         const oilGasCdia = Math.round(cdiaLatest * 0.168);
-        
+
         return {
             year: latestYear.year,
             prevYear: prevYear.year,
@@ -91,16 +88,12 @@ const Page32 = () => {
             oilGasCdia
         };
     }, [investmentData]);
-
-    // Process chart data
     const processedChartData = useMemo(() => {
         if (chartData.length === 0) return null;
 
         const years = chartData.map(d => d.year);
         const minYear = Math.min(...years);
         const maxYear = Math.max(...years);
-        
-        // Generate tick values: start at 2010, every 2 years up to maxYear
         const tickVals = [];
         for (let y = 2010; y <= maxYear; y += 2) {
             tickVals.push(y);
@@ -109,20 +102,19 @@ const Page32 = () => {
         const utilitiesValues = chartData.map(d => d.utilities || 0);
         const oilGasValues = chartData.map(d => d.oil_gas || 0);
         const allIndustriesValues = chartData.map(d => d.all_non_financial || 0);
-
-        // Build hover text
         const buildHoverText = (values, labelKey) => values.map((v, i) => {
             return `${getText(labelKey, lang)}<br>${years[i]}: ${v.toFixed(1)}%`;
         });
-
-        // Order: All non-financial, Oil/gas, Utilities (left to right in chart)
         const traces = [
             {
                 name: getText('page32_legend_all_industries', lang),
                 x: years,
                 y: allIndustriesValues,
                 type: 'bar',
-                marker: { color: COLORS.all_non_financial },
+                marker: { 
+                    color: COLORS.all_non_financial,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[0]?.includes(i) ? 1 : 0.3)
+                },
                 hovertext: buildHoverText(allIndustriesValues, 'page32_hover_all_industries'),
                 hoverinfo: 'text',
                 hoverlabel: {
@@ -136,7 +128,10 @@ const Page32 = () => {
                 x: years,
                 y: oilGasValues,
                 type: 'bar',
-                marker: { color: COLORS.oil_gas },
+                marker: { 
+                    color: COLORS.oil_gas,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[1]?.includes(i) ? 1 : 0.3)
+                },
                 hovertext: buildHoverText(oilGasValues, 'page32_hover_oil_gas'),
                 hoverinfo: 'text',
                 hoverlabel: {
@@ -150,7 +145,10 @@ const Page32 = () => {
                 x: years,
                 y: utilitiesValues,
                 type: 'bar',
-                marker: { color: COLORS.utilities },
+                marker: { 
+                    color: COLORS.utilities,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[2]?.includes(i) ? 1 : 0.3)
+                },
                 hovertext: buildHoverText(utilitiesValues, 'page32_hover_utilities'),
                 hoverinfo: 'text',
                 hoverlabel: {
@@ -162,16 +160,12 @@ const Page32 = () => {
         ];
 
         return { traces, years, tickVals, minYear, maxYear, utilitiesValues, oilGasValues, allIndustriesValues };
-    }, [chartData, lang, windowWidth]);
-
-    // Format value for screen readers
+    }, [chartData, lang, windowWidth, selectedPoints]);
     const formatPercentSR = (val) => {
         return lang === 'en' 
             ? `${val.toFixed(1)} percent` 
             : `${val.toFixed(1)} pour cent`;
     };
-
-    // Screen reader version of chart title
     const getChartTitleSR = () => {
         if (lang === 'en') {
             return 'Foreign control of Canadian assets';
@@ -179,11 +173,9 @@ const Page32 = () => {
             return "Contrôle étranger d'actifs canadiens";
         }
     };
-
-    // Screen reader summary - simplified to just describe the chart without specific data values
     const getChartDataSummary = () => {
         if (!chartData || chartData.length === 0) return '';
-        
+
         const latestYear = chartData[chartData.length - 1];
         const latestYearNum = latestYear.year;
 
@@ -193,30 +185,25 @@ const Page32 = () => {
             return `Graphique à barres groupées montrant le contrôle étranger des actifs canadiens de ${processedChartData?.minYear} à ${latestYearNum}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
         }
     };
-
-    // Format number for table display
     const formatNumber = (val) => {
         return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
             minimumFractionDigits: 1, 
             maximumFractionDigits: 1 
         });
     };
-
-    // Generate accessible data table
-    // Generate accessible data table
     const getAccessibleDataTable = () => {
         if (!chartData || chartData.length === 0) return null;
-        
+
         const unitText = lang === 'en' ? ', in percent' : ', en pourcentage';
         const captionId = 'page32-table-caption';
-        
+
         const utilitiesLabel = getText('page32_legend_utilities', lang);
         const oilGasLabel = getText('page32_legend_oil_gas', lang);
         const allIndustriesLabel = getText('page32_legend_all_industries', lang);
         const cellUnitSR = lang === 'en' ? ' percent' : ' pour cent';
         const headerUnitVisual = '(%)';
         const headerUnitSR = lang === 'en' ? '(percentage)' : '(pourcentage)';
-        
+
         return (
             <details 
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
@@ -296,8 +283,184 @@ const Page32 = () => {
                         </tbody>
                     </table>
                 </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <button
+                        onClick={() => downloadTableAsCSV()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                    </button>
+                    <button
+                        onClick={() => downloadTableAsDocx()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#333'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
+                    </button>
+                </div>
             </details>
         );
+    };
+    const downloadTableAsCSV = () => {
+        if (!chartData || chartData.length === 0) return;
+
+        const utilitiesLabel = getText('page32_legend_utilities', lang);
+        const oilGasLabel = getText('page32_legend_oil_gas', lang);
+        const allIndustriesLabel = getText('page32_legend_all_industries', lang);
+        const unitHeader = '(%)';
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${utilitiesLabel} ${unitHeader}`,
+            `${oilGasLabel} ${unitHeader}`,
+            `${allIndustriesLabel} ${unitHeader}`
+        ];
+        const rows = chartData.map(yearData => [
+            yearData.year,
+            (yearData.utilities || 0).toFixed(1),
+            (yearData.oil_gas || 0).toFixed(1),
+            (yearData.all_non_financial || 0).toFixed(1)
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = lang === 'en' ? 'environmental_protection_data.csv' : 'protection_environnement_donnees.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    const downloadTableAsDocx = async () => {
+        if (!chartData || chartData.length === 0) return;
+
+        const utilitiesLabel = getText('page32_legend_utilities', lang);
+        const oilGasLabel = getText('page32_legend_oil_gas', lang);
+        const allIndustriesLabel = getText('page32_legend_all_industries', lang);
+        const unitHeader = '(%)';
+        const title = stripHtml(getText('page32_title', lang));
+
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${utilitiesLabel} ${unitHeader}`,
+            `${oilGasLabel} ${unitHeader}`,
+            `${allIndustriesLabel} ${unitHeader}`
+        ];
+
+        const headerRow = new TableRow({
+            children: headers.map(header => new TableCell({
+                children: [new Paragraph({
+                    children: [new TextRun({ text: header, bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                shading: { fill: 'E6E6E6' }
+            }))
+        });
+
+        const dataRows = chartData.map(yearData => new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.utilities || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.oil_gas || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.all_non_financial || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] })
+            ]
+        }));
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1800, 2200, 2200, 3000],
+                        rows: [headerRow, ...dataRows]
+                    })
+                ]
+            }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, lang === 'en' ? 'environmental_protection_table.docx' : 'protection_environnement_tableau.docx');
+    };
+    const downloadChartWithTitle = async (plotEl = null) => {
+        const plotElement = plotEl || document.querySelector('.page32-chart .js-plotly-plot') || document.querySelector('#page-32 .js-plotly-plot');
+        if (!plotElement) {
+            console.error('Plot element not found');
+            alert('Could not find chart element. Please try again.');
+            return;
+        }
+
+        const title = stripHtml(getText('page32_title', lang));
+
+        try {
+            if (!window.Plotly) {
+                console.error('Plotly not available on window');
+                alert('Plotly library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
+            const imgData = await window.Plotly.toImage(plotElement, {
+                format: 'png',
+                width: 1200,
+                height: 600,
+                scale: 2
+            });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                const titleHeight = 80;
+                canvas.width = img.width;
+                canvas.height = img.height + titleHeight;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#333333';
+                ctx.font = 'bold 36px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(title, canvas.width / 2, 50);
+
+                ctx.drawImage(img, 0, titleHeight);
+
+                const link = document.createElement('a');
+                link.download = lang === 'en' ? 'environmental_protection_chart.png' : 'protection_environnement_graphique.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            img.onerror = () => {
+                console.error('Failed to load chart image');
+                alert('Failed to generate chart image. Please try again.');
+            };
+
+            img.src = imgData;
+        } catch (error) {
+            console.error('Error downloading chart:', error);
+            alert('Error downloading chart: ' + error.message);
+        }
     };
 
     if (loading) {
@@ -325,21 +488,15 @@ const Page32 = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                borderLeft: '18px solid #8e7e52',
                 boxSizing: 'border-box',
             }}
         >
             <style>{`
-                /* =====================================================
-                   PAGE 32 - BORDER PAGE STYLES
-                   Border extends past container, content aligns with anchors.
-                   ===================================================== */
 
-                /* Extend left for border, content padded to align with anchors */
                 .page-32 {
                     margin-left: -${layoutPadding?.left || 55}px;
                     width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${(layoutPadding?.left || 55) - 18}px; /* 18px is border width */
+                    padding-left: ${(layoutPadding?.left || 55) - 18}px; 
                 }
 
                 .wb-inv {
@@ -425,7 +582,7 @@ const Page32 = () => {
                     flex-direction: row;
                     align-items: flex-start;
                     justify-content: flex-start;
-                    gap: 20px;
+                    gap: 40px;
                     width: 100%;
                 }
 
@@ -443,7 +600,6 @@ const Page32 = () => {
                     margin-right: 0;
                 }
 
-                /* Chart height and font size breakpoints only */
                 @media (max-width: 1745px) {
                     .page32-chart {
                         height: calc(100vh - 660px);
@@ -500,7 +656,7 @@ const Page32 = () => {
                         min-height: 285px;
                     }
                 }
-                
+
                 @media (max-width: 640px) {
                     .page32-title {
                         font-size: 1.2rem;
@@ -530,7 +686,7 @@ const Page32 = () => {
                         min-height: 300px;
                     }
                 }
-                
+
                 details summary::-webkit-details-marker,
                 details summary::marker {
                     display: none;
@@ -538,15 +694,11 @@ const Page32 = () => {
             `}</style>
 
             <div className="page32-container">
-                {/* Title */}
                 <h1 className="page32-title">
                     {getText('page32_title', lang)}
                 </h1>
-
-                {/* Bullet Points with Dynamic Values */}
                 {bulletValues && (
                     <ul className="page32-bullets" role="list">
-                        {/* Bullet 1 - FIXED: Removed trailing period from aria-label to stop "Dot" reading */}
                         <li role="listitem" aria-label={lang === 'en' 
                             ? `${getText('page32_bullet1_part1', lang)}${getText('page32_bullet1_part2', lang)}${getText('page32_bullet1_part3', lang)}${bulletValues.year}${getText('page32_bullet1_part4', lang)}${bulletValues.fdi}${getText('page32_bullet1_part5', lang)} (+${bulletValues.fdiGrowth}% over the previous year)`
                             : `${getText('page32_bullet1_part1', lang)}${getText('page32_bullet1_part2', lang)}${getText('page32_bullet1_part3', lang)}${bulletValues.fdi}${getText('page32_bullet1_part4', lang)}${getText('page32_bullet1_part5', lang)}${bulletValues.year} (+${bulletValues.fdiGrowth}% par rapport à l'année précédente)`
@@ -579,8 +731,6 @@ const Page32 = () => {
                                 )}
                             </span>
                         </li>
-
-                        {/* Bullet 2 */}
                         <li role="listitem" aria-label={`${getText('page32_bullet2_part1', lang)} ${bulletValues.energyShare}${getText('page32_bullet2_part2', lang)}${bulletValues.year}${getText('page32_bullet2_part3', lang)}${bulletValues.prevYear}${getText('page32_bullet2_part4', lang)}`}>
                             <span aria-hidden="true">
                                 {getText('page32_bullet2_part1', lang)}
@@ -592,8 +742,6 @@ const Page32 = () => {
                                 {getText('page32_bullet2_part4', lang)}
                             </span>
                         </li>
-
-                        {/* Bullet 3 */}
                         <li role="listitem" aria-label={lang === 'en'
                             ? `${getText('page32_bullet3_part1', lang)}${getText('page32_bullet3_part2', lang)}${getText('page32_bullet3_part3', lang)}${bulletValues.cdia}${getText('page32_bullet3_part4', lang)}${getText('page32_bullet3_part5', lang)}${bulletValues.year}${getText('page32_bullet3_part6', lang)}${bulletValues.cdiaGrowth}${getText('page32_bullet3_part7', lang)}${bulletValues.prevYear}${getText('page32_bullet3_part8', lang)}`
                             : `${getText('page32_bullet3_part1', lang)}${getText('page32_bullet3_part2', lang)}${getText('page32_bullet3_part3', lang)}${bulletValues.cdia}${getText('page32_bullet3_part4', lang)}${getText('page32_bullet3_part5', lang)}${bulletValues.year}${getText('page32_bullet3_part6', lang)}${bulletValues.cdiaGrowth}${getText('page32_bullet3_part7', lang)}${bulletValues.prevYear}${getText('page32_bullet3_part8', lang)}`
@@ -612,8 +760,6 @@ const Page32 = () => {
                                 {getText('page32_bullet3_part8', lang)}
                             </span>
                         </li>
-
-                        {/* Bullet 4 */}
                         <li role="listitem" aria-label={lang === 'en'
                             ? `${getText('page32_bullet4_part1', lang)}${bulletValues.oilGasCdia}${getText('page32_bullet4_part2', lang)}${getText('page32_bullet4_part3', lang)}${bulletValues.year}${getText('page32_bullet4_part4', lang)}`
                             : `${getText('page32_bullet4_part1', lang)}${bulletValues.oilGasCdia}${getText('page32_bullet4_part2', lang)}${getText('page32_bullet4_part3', lang)}${bulletValues.year}${getText('page32_bullet4_part4', lang)}`
@@ -628,20 +774,13 @@ const Page32 = () => {
                         </li>
                     </ul>
                 )}
-
-                {/* Section Title */}
                 <h2 className="page32-section-title">
                     {getText('page32_section_title', lang)}
                 </h2>
-
-                {/* Section Text - FIXED: Use SR-only span to ensure reading */}
                 <p className="page32-section-text">
-                    {/* 1. Screen Reader sees this simple block */}
                     <span className="wb-inv">
                         {getText('page32_section_text', lang)}
                     </span>
-                    
-                    {/* 2. Sighted user sees this HTML with bolding, hidden from SR */}
                     <span 
                         aria-hidden="true"
                         dangerouslySetInnerHTML={{
@@ -652,8 +791,6 @@ const Page32 = () => {
                         }}
                     />
                 </p>
-
-                {/* Chart Section */}
                 <div>
                     <h3 
                         className="page32-chart-title" 
@@ -665,7 +802,7 @@ const Page32 = () => {
                         <div role="region" aria-label={getChartDataSummary()}>
                         <div className="page32-chart-wrapper">
                             <figure ref={chartRef} aria-hidden="true" className="page32-chart" style={{ margin: 0, position: 'relative' }}>
-                                {!isChartInteractive && (
+                                {windowWidth <= 768 && !isChartInteractive && (
                                     <div 
                                         onClick={() => setIsChartInteractive(true)} 
                                         onKeyDown={(e) => {
@@ -707,9 +844,12 @@ const Page32 = () => {
                                         </span>
                                     </div>
                                 )}
-                                
-                                {isChartInteractive && (
-                                    <button onClick={() => setIsChartInteractive(false)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+
+                                {windowWidth <= 768 && isChartInteractive && (
+                                    <button onClick={() => { setIsChartInteractive(false); setSelectedPoints(null); }} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
+                                )}
+                                {selectedPoints !== null && (
+                                    <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 360 : 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                 )}
                                 <Plot
                                     data={processedChartData.traces}
@@ -724,8 +864,8 @@ const Page32 = () => {
                                             y: windowWidth <= 1280 ? -0.25 : 0.1,
                                             yanchor: windowWidth <= 1280 ? 'top' : 'middle',
                                             font: { size: windowWidth <= 480 ? 13 : 16, family: 'Arial, sans-serif' },
-                                            itemclick: 'toggle',
-                                            itemdoubleclick: 'toggleothers'
+                                            itemclick: false,
+                                            itemdoubleclick: false
                                         },
                                         xaxis: {
                                             tickvals: processedChartData.tickVals,
@@ -765,11 +905,56 @@ const Page32 = () => {
                                     }}
                                     style={{ width: '100%', height: '100%' }}
                                     useResizeHandler={true}
-                                    config={{ displayModeBar: isChartInteractive, responsive: true }}
+                                    onClick={(data) => {
+                                        if (!data.points || data.points.length === 0) return;
+                                        const clickedPoint = data.points[0];
+                                        const traceIndex = clickedPoint.curveNumber;
+                                        const pointIndex = clickedPoint.pointIndex;
+
+                                        setSelectedPoints(prev => {
+                                            if (prev === null) {
+                                                const newSelection = [[], [], []];
+                                                newSelection[traceIndex].push(pointIndex);
+                                                return newSelection;
+                                            }
+
+                                            const isSelected = prev[traceIndex]?.includes(pointIndex);
+
+                                            if (isSelected) {
+                                                const newSelection = prev.map((tracePoints, idx) => 
+                                                    idx === traceIndex ? tracePoints.filter(p => p !== pointIndex) : [...tracePoints]
+                                                );
+                                                if (newSelection.every(arr => arr.length === 0)) {
+                                                    return null;
+                                                }
+                                                return newSelection;
+                                            } else {
+                                                const newSelection = prev.map((tracePoints, idx) => 
+                                                    idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
+                                                );
+                                                return newSelection;
+                                            }
+                                        });
+                                    }}
+                                    config={{ 
+                                        displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                        responsive: true,
+                                        modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
+                                        modeBarButtonsToAdd: [{
+                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+                                            icon: {
+                                                width: 1000,
+                                                height: 1000,
+                                                path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
+                                                transform: 'matrix(1 0 0 -1 0 850)'
+                                            },
+                                            click: (gd) => downloadChartWithTitle(gd)
+                                        }]
+                                    }}
                                 />
                             </figure>
                         </div>
-                        
+
                         {getAccessibleDataTable()}
                     </div>
                 </div>
