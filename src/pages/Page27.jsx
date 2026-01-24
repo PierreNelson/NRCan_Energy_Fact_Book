@@ -75,6 +75,46 @@ const Page27 = () => {
             });
     }, []);
 
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        const timer = setTimeout(setupChartAccessibility, 500);
+        
+        const observer = new MutationObserver(setupChartAccessibility);
+        if (chartRef.current) {
+            observer.observe(chartRef.current, { childList: true, subtree: true });
+        }
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [pageData, lang]);
+
     const COLORS = {
         'transmission_distribution': '#224397',  
         'pipelines': '#857550',                  
@@ -166,7 +206,7 @@ const Page27 = () => {
                 const catName = getText(HOVER_KEYS[cat], lang);
                 const vFormatted = v < 1 ? v.toFixed(2) : v.toFixed(1);
                 const totFormatted = tot < 1 ? tot.toFixed(2) : tot.toFixed(1);
-                return `${catName}<br>${y}: $${vFormatted}B<br><b>${getText('page27_hover_total', lang)}: $${totFormatted}B</b>`;
+                return `<b>${catName}</b><br>${y}: $${vFormatted}B<br>${getText('page27_hover_total', lang)}: $${totFormatted}B`;
             });
 
             const legendRank = LEGEND_ORDER.indexOf(cat) + 2;
@@ -291,42 +331,44 @@ const Page27 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <td key={cat} className="text-center fw-bold">
+                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                         {categoryLabels[cat]}<br/>
                                         <span aria-hidden="true">{headerUnitVisual}</span>
                                         <span className="wb-inv">{headerUnitSR}</span>
-                                    </td>
+                                    </th>
                                 ))}
-                                <td className="text-center fw-bold">
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {lang === 'en' ? 'Total' : 'Total'}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
-                                const yearHeaderId = `year-${yearData.year}`;
                                 let total = 0;
                                 CATEGORY_ORDER.forEach(cat => {
                                     total += (yearData[cat] || 0) / 1000;
                                 });
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
+                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
                                         {CATEGORY_ORDER.map(cat => (
-                                            <td key={cat} headers={yearHeaderId}>
-                                                <span className="wb-inv">{yearData.year}, {categoryLabels[cat]}: </span>
+                                            <td 
+                                                key={cat} 
+                                                style={{ textAlign: 'right' }}
+                                                aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumber((yearData[cat] || 0) / 1000)}${cellUnitSR}`}
+                                            >
                                                 {formatNumber((yearData[cat] || 0) / 1000)}
-                                                <span className="wb-inv">{cellUnitSR}</span>
                                             </td>
                                         ))}
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {lang === 'en' ? 'Total' : 'Total'}: </span>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${formatNumber(total)}${cellUnitSR}`}
+                                        >
                                             <strong>{formatNumber(total)}</strong>
-                                            <span className="wb-inv">{cellUnitSR}</span>
                                         </td>
                                     </tr>
                                 );
@@ -721,7 +763,7 @@ const Page27 = () => {
                     role="region"
                     aria-label={getChartDataSummary()}
                 >
-                    <figure ref={chartRef} aria-hidden="true" style={{ margin: 0, position: 'relative' }}>
+                    <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                         {windowWidth <= 768 && !isChartInteractive && (
                             <div
                                 onClick={() => setIsChartInteractive(true)}

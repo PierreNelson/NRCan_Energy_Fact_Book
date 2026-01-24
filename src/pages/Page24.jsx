@@ -54,6 +54,46 @@ const Page24 = () => {
         import('./Page25');
     }, []);
 
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        const timer = setTimeout(setupChartAccessibility, 500);
+        
+        const observer = new MutationObserver(setupChartAccessibility);
+        if (chartRef.current) {
+            observer.observe(chartRef.current, { childList: true, subtree: true });
+        }
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [pageData, lang]);
+
     const { latestRow, peakRow, row2020 } = useMemo(() => {
         if (pageData.length === 0) return { latestRow: null, peakRow: null, row2020: null };
         const latest = pageData[pageData.length - 1];
@@ -87,6 +127,7 @@ const Page24 = () => {
     const years = pageData.map(d => d.year);
     const minYear = years.length > 0 ? Math.min(...years) : 2007;
     const maxYear = years.length > 0 ? Math.max(...years) : 2024;
+    const chartTitle = `${getText('page24_chart_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
     const tickVals = [];
     for (let y = minYear + 1; y <= maxYear + 1; y += 2) {
         tickVals.push(y);
@@ -103,7 +144,7 @@ const Page24 = () => {
         return vals.map((v, i) => {
             const y = years[i];
             const tot = totalValues[i];
-            return `${getText(name, lang)}<br>${y}: $${v.toFixed(1)}B<br><b>${getText('page24_hover_total', lang)}: $${tot.toFixed(1)}B</b>`;
+            return `<b>${getText(name, lang)}</b><br>${y}: $${v.toFixed(1)}B<br>${getText('page24_hover_total', lang)}: $${tot.toFixed(1)}B`;
         });
     };
 
@@ -179,68 +220,64 @@ const Page24 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <td className="text-center fw-bold">
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {lang === 'en' ? 'Year' : 'Année'}
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {oilGasLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {electricityLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {otherLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {totalLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-    {pageData.map(yearData => {
-        const yearHeaderId = `year-${yearData.year}`;
-
-        return (
-            <tr key={yearData.year}>
-                <th scope="row" id={yearHeaderId}>
-                    {yearData.year}
-                </th>
-
-                <td headers={yearHeaderId}>
-                    <span className="wb-inv">{yearData.year}, {oilGasLabel}: </span>
-                    {formatNumberTable(yearData.oil_gas / 1000)}
-                    <span className="wb-inv">{cellUnitText}</span>
-                </td>
-
-                <td headers={yearHeaderId}>
-                    <span className="wb-inv">{yearData.year}, {electricityLabel}: </span>
-                    {formatNumberTable(yearData.electricity / 1000)}
-                    <span className="wb-inv">{cellUnitText}</span>
-                </td>
-
-                <td headers={yearHeaderId}>
-                    <span className="wb-inv">{yearData.year}, {otherLabel}: </span>
-                    {formatNumberTable(yearData.other / 1000)}
-                    <span className="wb-inv">{cellUnitText}</span>
-                </td>
-
-                <td headers={yearHeaderId}>
-                    <span className="wb-inv">{yearData.year}, {getText('page24_hover_total', lang)}: </span>
-                    {formatNumberTable(yearData.total / 1000)}
-                    <span className="wb-inv">{cellUnitText}</span>
-                </td>
-            </tr>
-        );
-    })}
-</tbody>
+                            {pageData.map(yearData => (
+                                <tr key={yearData.year}>
+                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>
+                                        {yearData.year}
+                                    </th>
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumberTable(yearData.oil_gas / 1000)}${cellUnitText}`}
+                                    >
+                                        {formatNumberTable(yearData.oil_gas / 1000)}
+                                    </td>
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${electricityLabel}: ${formatNumberTable(yearData.electricity / 1000)}${cellUnitText}`}
+                                    >
+                                        {formatNumberTable(yearData.electricity / 1000)}
+                                    </td>
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${otherLabel}: ${formatNumberTable(yearData.other / 1000)}${cellUnitText}`}
+                                    >
+                                        {formatNumberTable(yearData.other / 1000)}
+                                    </td>
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${getText('page24_hover_total', lang)}: ${formatNumberTable(yearData.total / 1000)}${cellUnitText}`}
+                                    >
+                                        {formatNumberTable(yearData.total / 1000)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
                     </table>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
@@ -639,11 +676,11 @@ const Page24 = () => {
 
                         <div className="chart-title-wrapper">
                             <h2 className="page24-chart-title">
-                                {renderTextWithHiddenAsterisk(getText('page24_chart_title', lang))}
+                                {renderTextWithHiddenAsterisk(chartTitle)}
                             </h2>
                         </div>
 
-                        <figure ref={chartRef} aria-hidden="true" className="page24-chart-wrapper">
+                        <figure ref={chartRef} className="page24-chart-wrapper">
                             {windowWidth <= 768 && !isChartInteractive && (
                                 <div 
                                     onClick={() => setIsChartInteractive(true)} 

@@ -135,32 +135,31 @@ const Page26 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
-                                <td className="text-center fw-bold">
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {lang === 'en' ? 'Jobs' : 'Emplois'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '(thousands)' : '(milliers)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(thousands)' : '(milliers)'}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {lang === 'en' ? 'Employment income' : 'Revenu d\'emploi'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {lang === 'en' ? 'GDP' : 'PIB'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {lang === 'en' ? 'Investment' : 'Investissement'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
-                                </td>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
-                                const yearHeaderId = `year-${yearData.year}`;
                                 const jobsLabel = lang === 'en' ? 'Jobs' : 'Emplois';
                                 const incomeLabel = lang === 'en' ? 'Employment income' : 'Revenu d\'emploi';
                                 const gdpLabel = lang === 'en' ? 'GDP' : 'PIB';
@@ -170,27 +169,30 @@ const Page26 = () => {
 
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
-
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {jobsLabel}: </span>
+                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${jobsLabel}: ${formatJobsTable(yearData.jobs)}${jobsUnit}`}
+                                        >
                                             {formatJobsTable(yearData.jobs)}
-                                            <span className="wb-inv">{jobsUnit}</span>
                                         </td>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {incomeLabel}: </span>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${incomeLabel}: ${formatNumberTable(yearData.employment_income)}${billionUnit}`}
+                                        >
                                             {formatNumberTable(yearData.employment_income)}
-                                            <span className="wb-inv">{billionUnit}</span>
                                         </td>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {gdpLabel}: </span>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${gdpLabel}: ${formatNumberTable(yearData.gdp)}${billionUnit}`}
+                                        >
                                             {formatNumberTable(yearData.gdp)}
-                                            <span className="wb-inv">{billionUnit}</span>
                                         </td>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {investLabel}: </span>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${investLabel}: ${formatNumberTable(yearData.investment_value)}${billionUnit}`}
+                                        >
                                             {formatNumberTable(yearData.investment_value)}
-                                            <span className="wb-inv">{billionUnit}</span>
                                         </td>
                                     </tr>
                                 );

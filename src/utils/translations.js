@@ -48,7 +48,7 @@ export const TRANSLATIONS = {
 
 
         // Page 24
-        'page24_chart_title': 'Capital expenditures* in the energy industry, 2007 to 2025',
+        'page24_chart_title_prefix': 'Capital expenditures* in the energy industry, ',
         'page24_title': 'Capital expenditures',
         'page24_yaxis':'$ billion',
         'page24_legend_other': 'Other',
@@ -223,6 +223,33 @@ export const TRANSLATIONS = {
         'page37_bullet2_part2': ' in environmental protection activities, with the largest percentage of spending (',
         'page37_bullet2_part3': '%) in pollution abatement and control.',
         'page37_million': 'million',
+
+        // Page 28
+        'nav_major_projects': "Canada's major energy projects",
+        'page28_title': "Canada's major energy projects",
+        'page28_chart_title_prefix': 'Trends in Major Energy Projects, ',
+        'page28_yaxis_left': 'Project value (billion $)',
+        'page28_yaxis_right': 'Number of projects',
+        'page28_legend_oil_gas': 'Oil and gas',
+        'page28_legend_electricity': 'Electricity',
+        'page28_legend_other': 'Other',
+        'page28_legend_value': 'Project value',
+        'page28_legend_projects': 'Number of projects',
+        'page28_bullet1_part1': 'In ',
+        'page28_bullet1_part2': ', there were ',
+        'page28_bullet1_part3': ' planned (announced, under review, or approved) energy projects worth ',
+        'page28_bullet1_part4': ', and ',
+        'page28_bullet1_part5': ' energy projects under construction worth ',
+        'page28_bullet1_part6': '.',
+        'page28_bullet2_part1': 'Oil and gas sector projects accounted for the largest portion of project value (',
+        'page28_bullet2_part2': '), while there were more electricity projects overall (',
+        'page28_bullet2_part3': ').',
+        'page28_bullet3_part1': 'There were ',
+        'page28_bullet3_part2': ' clean technology projects valued at ',
+        'page28_bullet3_part3': '.',
+        'page28_sidebar_title': "Natural Resources Canada's Major Projects Inventory",
+        'page28_sidebar_content': "Natural Resources Canada's Major Projects Inventory captures information on major natural resource projects in Canada that are either currently under construction or planned in the next 10 years.<br/><br/>Minimum capital thresholds for inclusion are: $50 million for oil and gas, $20 million for electricity, and $10 million for other clean energy or technology projects.<br/><br/>Projects that are either announced, under review, approved and under construction are included.",
+        'page28_billion': ' B',
     },
     'fr': {
         // Navigation
@@ -271,7 +298,7 @@ export const TRANSLATIONS = {
 
 
         // Page 24
-        'page24_chart_title': 'Dépenses en immobilisations* de l’industrie de l’énergie, 2007-2025',
+        'page24_chart_title_prefix': 'Dépenses en immobilisations* de l’industrie de l’énergie, ',
         'page24_title': 'Dépenses en immobilisations',
         'page24_yaxis':'milliards $',
         'page24_legend_other': 'Autre',
@@ -445,6 +472,33 @@ export const TRANSLATIONS = {
         'page37_bullet2_part2': " dans des activités de protection de l'environnement, dont le pourcentage le plus élevé des dépenses (",
         'page37_bullet2_part3': ' %) a été consacré à la réduction et au contrôle de la pollution.',
         'page37_million': 'millions de dollars',
+
+        // Page 28
+        'nav_major_projects': 'Les grands projets énergétiques au Canada',
+        'page28_title': 'Les grands projets énergétiques au Canada',
+        'page28_chart_title_prefix': 'Tendances des grands projets énergétiques, ',
+        'page28_yaxis_left': 'Valeur (milliards de dollars)',
+        'page28_yaxis_right': 'Nombre de projets',
+        'page28_legend_oil_gas': 'Pétrole et gaz',
+        'page28_legend_electricity': 'Électricité',
+        'page28_legend_other': 'Autres',
+        'page28_legend_value': 'Valeur',
+        'page28_legend_projects': 'Nombre de projets',
+        'page28_bullet1_part1': 'En ',
+        'page28_bullet1_part2': ', il y avait ',
+        'page28_bullet1_part3': ' projets énergétiques prévus (annoncés, en cours d\'examen ou approuvés) d\'une valeur de ',
+        'page28_bullet1_part4': ' et ',
+        'page28_bullet1_part5': ' projets énergétiques en construction d\'une valeur de ',
+        'page28_bullet1_part6': '.',
+        'page28_bullet2_part1': 'Les projets du secteur pétrolier et gazier représentaient la plus grande partie de la valeur des projets (',
+        'page28_bullet2_part2': '), alors qu\'il y avait plus de projets d\'électricité dans l\'ensemble (',
+        'page28_bullet2_part3': ').',
+        'page28_bullet3_part1': 'Il y avait ',
+        'page28_bullet3_part2': ' projets de technologies propres évalués à ',
+        'page28_bullet3_part3': '.',
+        'page28_sidebar_title': "L'Inventaire des grands projets de Ressources naturelles Canada",
+        'page28_sidebar_content': "L'Inventaire des grands projets de Ressources naturelles Canada saisit des informations sur les grands projets de ressources naturelles au Canada qui sont actuellement en construction ou prévus au cours des 10 prochaines années.<br/><br/>Les seuils de capital minimum pour l'inclusion sont : 50 millions de dollars pour le pétrole et le gaz, 20 millions de dollars pour l'électricité et 10 millions de dollars pour d'autres projets d'énergie ou de technologie propre.<br/><br/>Les projets qui sont soit annoncés, en cours d'examen, approuvés et en construction sont inclus.",
+        'page28_billion': ' G$',
     }
 };
 

@@ -52,3 +52,17 @@ page8_yt,Energy sector direct nominal GDP - Yukon,Millions of dollars,millions
 page8_nt,Energy sector direct nominal GDP - Northwest Territories,Millions of dollars,millions
 page8_nu,Energy sector direct nominal GDP - Nunavut,Millions of dollars,millions
 page8_national_total,Energy sector direct nominal GDP - Canada total,Millions of dollars,millions
+page28_oil_gas_value,Oil and gas - Project value,Billions of dollars,billions
+page28_oil_gas_projects,Oil and gas - Number of projects,Number,units
+page28_electricity_value,Electricity - Project value,Billions of dollars,billions
+page28_electricity_projects,Electricity - Number of projects,Number,units
+page28_other_value,Other - Project value,Billions of dollars,billions
+page28_other_projects,Other - Number of projects,Number,units
+page28_total_value,Total - Project value,Billions of dollars,billions
+page28_total_projects,Total - Number of projects,Number,units
+page28_planned_projects,"Planned projects (announced, under review, approved)",Number,units
+page28_planned_value,Planned projects value,Billions of dollars,billions
+page28_construction_projects,Projects under construction,Number,units
+page28_construction_value,Construction projects value,Billions of dollars,billions
+page28_clean_tech_projects,Clean technology projects,Number,units
+page28_clean_tech_value,Clean technology projects value,Billions of dollars,billions

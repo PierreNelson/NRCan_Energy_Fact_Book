@@ -56,6 +56,47 @@ const Page32 = () => {
                 setLoading(false);
             });
     }, []);
+
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        const timer = setTimeout(setupChartAccessibility, 500);
+        
+        const observer = new MutationObserver(setupChartAccessibility);
+        if (chartRef.current) {
+            observer.observe(chartRef.current, { childList: true, subtree: true });
+        }
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [chartData, lang]);
+
     const COLORS = {
         'utilities': '#284162',
         'oil_gas': '#419563',
@@ -103,7 +144,7 @@ const Page32 = () => {
         const oilGasValues = chartData.map(d => d.oil_gas || 0);
         const allIndustriesValues = chartData.map(d => d.all_non_financial || 0);
         const buildHoverText = (values, labelKey) => values.map((v, i) => {
-            return `${getText(labelKey, lang)}<br>${years[i]}: ${v.toFixed(1)}%`;
+            return `<b>${getText(labelKey, lang)}</b><br>${years[i]}: ${v.toFixed(1)}%`;
         });
         const traces = [
             {
@@ -238,48 +279,48 @@ const Page32 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
-                                <td className="text-center fw-bold">
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {utilitiesLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {oilGasLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {allIndustriesLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {chartData.map(yearData => {
-                                const yearHeaderId = `year-${yearData.year}`;
-                                return (
-                                    <tr key={yearData.year}>
-                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {utilitiesLabel}: </span>
-                                            <span aria-hidden="true">{formatNumber(yearData.utilities || 0)}%</span>
-                                            <span className="wb-inv">{formatNumber(yearData.utilities || 0)}{cellUnitSR}</span>
-                                        </td>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {oilGasLabel}: </span>
-                                            <span aria-hidden="true">{formatNumber(yearData.oil_gas || 0)}%</span>
-                                            <span className="wb-inv">{formatNumber(yearData.oil_gas || 0)}{cellUnitSR}</span>
-                                        </td>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {allIndustriesLabel}: </span>
-                                            <span aria-hidden="true">{formatNumber(yearData.all_non_financial || 0)}%</span>
-                                            <span className="wb-inv">{formatNumber(yearData.all_non_financial || 0)}{cellUnitSR}</span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                            {chartData.map(yearData => (
+                                <tr key={yearData.year}>
+                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${utilitiesLabel}: ${formatNumber(yearData.utilities || 0)}${cellUnitSR}`}
+                                    >
+                                        {formatNumber(yearData.utilities || 0)}%
+                                    </td>
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumber(yearData.oil_gas || 0)}${cellUnitSR}`}
+                                    >
+                                        {formatNumber(yearData.oil_gas || 0)}%
+                                    </td>
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${allIndustriesLabel}: ${formatNumber(yearData.all_non_financial || 0)}${cellUnitSR}`}
+                                    >
+                                        {formatNumber(yearData.all_non_financial || 0)}%
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -801,7 +842,7 @@ const Page32 = () => {
 
                         <div role="region" aria-label={getChartDataSummary()}>
                         <div className="page32-chart-wrapper">
-                            <figure ref={chartRef} aria-hidden="true" className="page32-chart" style={{ margin: 0, position: 'relative' }}>
+                            <figure ref={chartRef} className="page32-chart" style={{ margin: 0, position: 'relative' }}>
                                 {windowWidth <= 768 && !isChartInteractive && (
                                     <div 
                                         onClick={() => setIsChartInteractive(true)} 

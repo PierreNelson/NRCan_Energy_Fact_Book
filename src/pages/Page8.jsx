@@ -161,6 +161,47 @@ const Page8 = () => {
                 setLoading(false);
             });
     }, []);
+
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        const timer = setTimeout(setupChartAccessibility, 500);
+        
+        const observer = new MutationObserver(setupChartAccessibility);
+        if (chartRef.current) {
+            observer.observe(chartRef.current, { childList: true, subtree: true });
+        }
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [allData, lang]);
+
     const minYear = useMemo(() => allData.length > 0 ? allData[0].year : 2019, [allData]);
     const maxYear = useMemo(() => allData.length > 0 ? allData[allData.length - 1].year : 2024, [allData]);
     const currentYearData = useMemo(() => {
@@ -802,6 +843,7 @@ const Page8 = () => {
                         />
                     )}
                 </div>
+
                 <details 
                     className="page8-data-table"
                     onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
@@ -821,14 +863,18 @@ const Page8 = () => {
                             </caption>
                             <thead>
                                 <tr>
-                                    <th scope="col" rowSpan={2}>{lang === 'en' ? 'Province/Territory' : 'Province/Territoire'}</th>
-                                    <th scope="col" colSpan={allData.length} style={{ textAlign: 'center', borderBottom: 'none' }}>
-                                        {lang === 'en' ? '($ millions)' : '(millions $)'}
+                                    <td style={{ borderBottom: 'none' }} aria-hidden="true"></td>
+                                    <th scope="colgroup" colSpan={allData.length} style={{ textAlign: 'center', borderBottom: 'none' }}>
+                                        <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
+                                        <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
                                     </th>
                                 </tr>
                                 <tr>
+                                    <th scope="col" style={{ fontWeight: 'bold', borderTop: 'none' }}>
+                                        {lang === 'en' ? 'Province/Territory' : 'Province/Territoire'}
+                                    </th>
                                     {allData.map(yearData => (
-                                        <th key={yearData.year} scope="col" style={{ textAlign: 'right' }}>
+                                        <th key={yearData.year} scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
                                             {yearData.year}
                                         </th>
                                     ))}
@@ -838,11 +884,16 @@ const Page8 = () => {
                                 {provinceCodes.map(code => {
                                     const info = provinceInfo[code];
                                     const name = lang === 'en' ? info.nameEn : info.nameFr;
+                                    const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
                                     return (
                                         <tr key={code}>
-                                            <th scope="row">{name}</th>
+                                            <th scope="row" style={{ fontWeight: 'bold' }}>{name}</th>
                                             {allData.map(yearData => (
-                                                <td key={yearData.year} style={{ textAlign: 'right' }}>
+                                                <td 
+                                                    key={yearData.year} 
+                                                    style={{ textAlign: 'right' }}
+                                                    aria-label={`${name}, ${yearData.year}: ${formatNumber(yearData[code])}${cellUnitSR}`}
+                                                >
                                                     {formatNumber(yearData[code])}
                                                 </td>
                                             ))}
@@ -851,11 +902,19 @@ const Page8 = () => {
                                 })}
                                 <tr style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
                                     <th scope="row">{lang === 'en' ? 'Canada Total' : 'Total Canada'}</th>
-                                    {allData.map(yearData => (
-                                        <td key={yearData.year} style={{ textAlign: 'right' }}>
-                                            {formatNumber(yearData.national_total)}
-                                        </td>
-                                    ))}
+                                    {allData.map(yearData => {
+                                        const totalLabel = lang === 'en' ? 'Canada Total' : 'Total Canada';
+                                        const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
+                                        return (
+                                            <td 
+                                                key={yearData.year} 
+                                                style={{ textAlign: 'right' }}
+                                                aria-label={`${totalLabel}, ${yearData.year}: ${formatNumber(yearData.national_total)}${cellUnitSR}`}
+                                            >
+                                                {formatNumber(yearData.national_total)}
+                                            </td>
+                                        );
+                                    })}
                                 </tr>
                             </tbody>
                         </table>

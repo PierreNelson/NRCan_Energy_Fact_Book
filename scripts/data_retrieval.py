@@ -1037,6 +1037,83 @@ def process_page8_data():
 
 
 # =============================================================================
+# PAGE 28: CANADA'S MAJOR ENERGY PROJECTS
+# =============================================================================
+
+def process_page28_data():
+    """
+    Process major energy projects data for Page 28.
+    
+    Data source: NRCan Major Projects Inventory (Table 1)
+    https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
+    
+    This data is from annual NRCan reports and is hardcoded since it's not available
+    as a direct StatCan CSV download.
+    
+    Returns list of tuples for data.csv and metadata.csv
+    """
+    print("Processing Page 28: Canada's Major Energy Projects...")
+    print("  Source: NRCan Major Projects Inventory (Table 1)")
+    
+    major_projects_data = {
+        2021: {'oil_gas_value': 339, 'oil_gas_projects': 106, 'electricity_value': 102, 'electricity_projects': 176, 'other_value': 8.9, 'other_projects': 23},
+        2022: {'oil_gas_value': 294, 'oil_gas_projects': 96, 'electricity_value': 106, 'electricity_projects': 179, 'other_value': 26.6, 'other_projects': 45},
+        2023: {'oil_gas_value': 318.6, 'oil_gas_projects': 87, 'electricity_value': 97.4, 'electricity_projects': 182, 'other_value': 56.2, 'other_projects': 74},
+        2024: {'oil_gas_value': 296.2, 'oil_gas_projects': 67, 'electricity_value': 118.9, 'electricity_projects': 188, 'other_value': 94.9, 'other_projects': 85},
+    }
+    
+    summary_2024 = {
+        'planned_projects': 231,
+        'planned_value': 351,
+        'construction_projects': 109,
+        'construction_value': 159,
+        'clean_tech_projects': 215,
+        'clean_tech_value': 194,
+    }
+    
+    data_rows = []
+    
+    for year, values in major_projects_data.items():
+        data_rows.append(('page28_oil_gas_value', year, values['oil_gas_value']))
+        data_rows.append(('page28_oil_gas_projects', year, values['oil_gas_projects']))
+        data_rows.append(('page28_electricity_value', year, values['electricity_value']))
+        data_rows.append(('page28_electricity_projects', year, values['electricity_projects']))
+        data_rows.append(('page28_other_value', year, values['other_value']))
+        data_rows.append(('page28_other_projects', year, values['other_projects']))
+        total_value = values['oil_gas_value'] + values['electricity_value'] + values['other_value']
+        total_projects = values['oil_gas_projects'] + values['electricity_projects'] + values['other_projects']
+        data_rows.append(('page28_total_value', year, round(total_value, 1)))
+        data_rows.append(('page28_total_projects', year, total_projects))
+    
+    data_rows.append(('page28_planned_projects', 2024, summary_2024['planned_projects']))
+    data_rows.append(('page28_planned_value', 2024, summary_2024['planned_value']))
+    data_rows.append(('page28_construction_projects', 2024, summary_2024['construction_projects']))
+    data_rows.append(('page28_construction_value', 2024, summary_2024['construction_value']))
+    data_rows.append(('page28_clean_tech_projects', 2024, summary_2024['clean_tech_projects']))
+    data_rows.append(('page28_clean_tech_value', 2024, summary_2024['clean_tech_value']))
+    
+    metadata_rows = [
+        ('page28_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions'),
+        ('page28_oil_gas_projects', 'Oil and gas - Number of projects', 'Number', 'units'),
+        ('page28_electricity_value', 'Electricity - Project value', 'Billions of dollars', 'billions'),
+        ('page28_electricity_projects', 'Electricity - Number of projects', 'Number', 'units'),
+        ('page28_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
+        ('page28_other_projects', 'Other - Number of projects', 'Number', 'units'),
+        ('page28_total_value', 'Total - Project value', 'Billions of dollars', 'billions'),
+        ('page28_total_projects', 'Total - Number of projects', 'Number', 'units'),
+        ('page28_planned_projects', 'Planned projects (announced, under review, approved)', 'Number', 'units'),
+        ('page28_planned_value', 'Planned projects value', 'Billions of dollars', 'billions'),
+        ('page28_construction_projects', 'Projects under construction', 'Number', 'units'),
+        ('page28_construction_value', 'Construction projects value', 'Billions of dollars', 'billions'),
+        ('page28_clean_tech_projects', 'Clean technology projects', 'Number', 'units'),
+        ('page28_clean_tech_value', 'Clean technology projects value', 'Billions of dollars', 'billions'),
+    ]
+    
+    print(f"  Page 28: {len(data_rows)} data rows")
+    return data_rows, metadata_rows
+
+
+# =============================================================================
 # MAIN FUNCTION
 # =============================================================================
 
@@ -1081,6 +1158,10 @@ def refresh_all_data():
     data8, meta8 = process_page8_data()
     all_data.extend(data8)
     all_metadata.extend(meta8)
+    
+    data28, meta28 = process_page28_data()
+    all_data.extend(data28)
+    all_metadata.extend(meta28)
     
     # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])

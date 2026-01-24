@@ -61,7 +61,6 @@ async function loadAllData() {
         return dataCache;
     }
     
-    // Use Vite's BASE_URL to handle GitHub Pages subdirectory hosting
     const baseUrl = import.meta.env.BASE_URL || '/';
     const response = await fetch(`${baseUrl}data/data.csv`);
     if (!response.ok) {
@@ -275,4 +274,42 @@ export async function getProvincialGdpData() {
     });
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}
+
+/**
+ * Get major energy projects data for Page 28
+ * Returns object with:
+ * - yearlyData: array of { year, oil_gas_value, oil_gas_projects, electricity_value, electricity_projects, other_value, other_projects, total_value, total_projects }
+ * - summary: { planned_projects, planned_value, construction_projects, construction_value, clean_tech_projects, clean_tech_value }
+ * Values in billions of dollars
+ */
+export async function getMajorProjectsData() {
+    const allData = await loadAllData();
+    
+    const page28Data = allData.filter(row => row.vector && row.vector.startsWith('page28_'));
+    
+    const yearlyFields = ['oil_gas_value', 'oil_gas_projects', 'electricity_value', 'electricity_projects', 'other_value', 'other_projects', 'total_value', 'total_projects'];
+    const summaryFields = ['planned_projects', 'planned_value', 'construction_projects', 'construction_value', 'clean_tech_projects', 'clean_tech_value'];
+    
+    const yearMap = {};
+    const summary = {};
+    
+    page28Data.forEach(row => {
+        const year = row.ref_date;
+        const field = row.vector.replace('page28_', '');
+        
+        if (summaryFields.includes(field)) {
+            summary[field] = row.value;
+        } else if (yearlyFields.includes(field)) {
+            if (!yearMap[year]) {
+                yearMap[year] = { year };
+            }
+            yearMap[year][field] = row.value;
+        }
+    });
+    
+    return {
+        yearlyData: Object.values(yearMap).sort((a, b) => a.year - b.year),
+        summary
+    };
 }

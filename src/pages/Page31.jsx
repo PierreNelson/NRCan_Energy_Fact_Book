@@ -55,6 +55,46 @@ const Page31 = () => {
             });
     }, []);
 
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        const timer = setTimeout(setupChartAccessibility, 500);
+        
+        const observer = new MutationObserver(setupChartAccessibility);
+        if (chartRef.current) {
+            observer.observe(chartRef.current, { childList: true, subtree: true });
+        }
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [pageData, lang]);
+
     const COLORS = {
         'cdia': '#419563',  
         'fdi': '#2EA3AD',  
@@ -77,12 +117,12 @@ const Page31 = () => {
 
         const cdiaHoverText = cdiaValues.map((v, i) => {
             const vFormatted = v < 1 ? v.toFixed(2) : v.toFixed(1);
-            return `${getText('page31_hover_cdia', lang)}<br>${years[i]}: $${vFormatted}B`;
+            return `<b>${getText('page31_hover_cdia', lang)}</b><br>${years[i]}: $${vFormatted}B`;
         });
 
         const fdiHoverText = fdiValues.map((v, i) => {
             const vFormatted = v < 1 ? v.toFixed(2) : v.toFixed(1);
-            return `${getText('page31_hover_fdi', lang)}<br>${years[i]}: $${vFormatted}B`;
+            return `<b>${getText('page31_hover_fdi', lang)}</b><br>${years[i]}: $${vFormatted}B`;
         });
 
         const traces = [
@@ -155,14 +195,6 @@ const Page31 = () => {
         }
     };
 
-    const getFootnotesSR = () => {
-        if (lang === 'en') {
-            return 'Direct investment is defined as a company owning a minimum of 10% of voting equity interest in a foreign enterprise and is measured as the total equity value at the time of acquisition. Excludes residential expenditures and intellectual property investments such as exploration expenses. Foreign direct investment and Canadian direct investment abroad include investments in renewable electricity, do not capture other forms of renewable energy.';
-        } else {
-            return "L'investissement direct est défini comme une société détenant au moins 10 % des actions avec droit de vote dans une entreprise étrangère et est mesuré comme la valeur totale des capitaux propres au moment de l'acquisition. Exclut les dépenses résidentielles et les investissements en propriété intellectuelle tels que les dépenses d'exploration. L'investissement direct étranger et l'investissement direct canadien à l'étranger incluent les investissements dans l'électricité renouvelable, ne comprennent pas d'autres formes d'énergie renouvelable.";
-        }
-    };
-
     const formatNumber = (val) => {
         const decimals = val < 1 ? 2 : 1;
         return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
@@ -214,36 +246,37 @@ const Page31 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
-                                <td className="text-center fw-bold">
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {cdiaLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
-                                <td className="text-center fw-bold">
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {fdiLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
-                                const yearHeaderId = `year-${yearData.year}`;
                                 const cdiaVal = (yearData.cdia || 0) / 1000;
                                 const fdiVal = (yearData.fdi || 0) / 1000;
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {cdiaLabel}: </span>
+                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${cdiaLabel}: ${formatNumber(cdiaVal)}${cellUnitSR}`}
+                                        >
                                             {formatNumber(cdiaVal)}
-                                            <span className="wb-inv">{cellUnitSR}</span>
                                         </td>
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {fdiLabel}: </span>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${fdiLabel}: ${formatNumber(fdiVal)}${cellUnitSR}`}
+                                        >
                                             {formatNumber(fdiVal)}
-                                            <span className="wb-inv">{cellUnitSR}</span>
                                         </td>
                                     </tr>
                                 );
@@ -667,8 +700,6 @@ const Page31 = () => {
 
                     <h2 className="sr-only">{getChartTitleSR()}</h2>
 
-                    <p className="sr-only">{getFootnotesSR()}</p>
-
                     <div 
                         role="region"
                         aria-label={getChartDataSummary()}
@@ -676,7 +707,6 @@ const Page31 = () => {
                         <figure 
                             ref={chartRef} 
                             className="page31-chart"
-                            aria-hidden="true" 
                             style={{ margin: 0, position: 'relative' }}
                         >
                             {windowWidth <= 768 && !isChartInteractive && (

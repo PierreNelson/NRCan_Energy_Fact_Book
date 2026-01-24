@@ -79,6 +79,47 @@ const Page37 = () => {
                 setLoading(false);
             });
     }, []);
+
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        const timer = setTimeout(setupChartAccessibility, 500);
+        
+        const observer = new MutationObserver(setupChartAccessibility);
+        if (chartRef.current) {
+            observer.observe(chartRef.current, { childList: true, subtree: true });
+        }
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [pageData, lang]);
+
     const COLORS = {
         'wastewater': '#857550',  
         'soil': '#224397',        
@@ -382,39 +423,41 @@ const getAccessibleDataTable = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <td key={cat} className="text-center fw-bold">
+                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                         {categoryLabels[cat]}<br/>
                                         <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
                                         <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
-                                    </td>
+                                    </th>
                                 ))}
-                                <td className="text-center fw-bold">
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {getText('total', lang)}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
-                                </td>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
-                                const yearHeaderId = `year-${yearData.year}`;
                                 const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
+                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
                                         {CATEGORY_ORDER.map(cat => (
-                                            <td key={cat} headers={yearHeaderId}>
-                                                <span className="wb-inv">{yearData.year}, {categoryLabels[cat]}: </span>
+                                            <td 
+                                                key={cat} 
+                                                style={{ textAlign: 'right' }}
+                                                aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumberTable(yearData[catMapping[cat]] || 0)}${cellUnitSR}`}
+                                            >
                                                 {formatNumberTable(yearData[catMapping[cat]] || 0)}
-                                                <span className="wb-inv">{cellUnitSR}</span>
                                             </td>
                                         ))}
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {getText('total', lang)}: </span>
+                                        <td 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${getText('total', lang)}: ${formatNumberTable(yearData.oil_gas_total || 0)}${cellUnitSR}`}
+                                        >
                                             <strong>{formatNumberTable(yearData.oil_gas_total || 0)}</strong>
-                                            <span className="wb-inv">{cellUnitSR}</span>
                                         </td>
                                     </tr>
                                 );
@@ -975,7 +1018,7 @@ const getAccessibleDataTable = () => {
                                 aria-label={`${lang === 'en' ? 'Environmental protection expenditures pie chart for' : 'Graphique circulaire des dépenses de protection de l\'environnement pour'} ${year}. ${getChartDataSummary()}`}
                                 style={{ width: '100%' }} 
                             >
-                                <figure ref={chartRef} aria-hidden="true" className="page37-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
+                                <figure ref={chartRef} className="page37-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
                                     {windowWidth <= 768 && !isChartInteractive && (
                                         <div 
                                             onClick={() => setIsChartInteractive(true)} 

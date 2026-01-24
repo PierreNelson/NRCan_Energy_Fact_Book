@@ -419,6 +419,17 @@ const downloadTableAsCSV = () => {
 ```
 
 ### DOCX Download
+
+**Important Configuration:**
+- **Text size:** Use `size: 22` for all cell text (11pt in Word)
+- **Title size:** Use `size: 28` for the document title (14pt in Word)
+- **Header shading:** Add `shading: { fill: 'E6E6E6' }` to header cells for visual distinction
+- **Column widths:** Always specify `columnWidths` array in twips (1440 twips = 1 inch). Common patterns:
+  - 3 columns: `[1800, 3700, 3700]`
+  - 5 columns: `[1200, 2000, 2000, 2000, 1800]`
+  - 7 columns: `[1200, 1300, 1300, 1300, 1300, 1300, 1300]`
+  - 8 columns: `[1100, 1150, 1150, 1150, 1150, 1150, 1150, 1150]`
+
 ```javascript
 const downloadTableAsDocx = async () => {
     if (!pageData || pageData.length === 0) return;
@@ -432,20 +443,23 @@ const downloadTableAsDocx = async () => {
         `Category 2 ${unitHeader}`
     ];
 
+    // Header row with shading for visual distinction
     const headerRow = new TableRow({
         children: headers.map(header => new TableCell({
             children: [new Paragraph({
-                children: [new TextRun({ text: header, bold: true, size: 20 })],
+                children: [new TextRun({ text: header, bold: true, size: 22 })],
                 alignment: AlignmentType.CENTER
-            })]
+            })],
+            shading: { fill: 'E6E6E6' }
         }))
     });
 
+    // Data rows
     const dataRows = pageData.map(yearData => new TableRow({
         children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 20 })], alignment: AlignmentType.CENTER })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.value1 / 1000).toFixed(2), size: 20 })], alignment: AlignmentType.RIGHT })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.value2 / 1000).toFixed(2), size: 20 })], alignment: AlignmentType.RIGHT })] })
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.value1 / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.value2 / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] })
         ]
     }));
 
@@ -459,6 +473,7 @@ const downloadTableAsDocx = async () => {
                 }),
                 new Table({
                     width: { size: 100, type: WidthType.PERCENTAGE },
+                    columnWidths: [1800, 3700, 3700], // Adjust based on number of columns
                     rows: [headerRow, ...dataRows]
                 })
             ]
@@ -510,6 +525,12 @@ const downloadTableAsDocx = async () => {
 
 ## 10. Data Table Structure (WET Compliant)
 
+**IMPORTANT:** WET guidelines advise against merged cells (`rowSpan`/`colSpan` spanning data) as they cause accessibility issues like double-reading. Use the pattern below to avoid merged cells while maintaining a clean visual layout.
+
+### 10.1 Table Structure for Multi-Level Headers
+
+For tables with grouped columns (e.g., categories with sub-columns for value/count):
+
 ```jsx
 <details 
     className="data-table-wrapper"
@@ -523,21 +544,61 @@ const downloadTableAsDocx = async () => {
     <div className="table-responsive" role="region" style={{ overflowX: 'auto' }}>
         <table className="table table-striped table-hover">
             <caption className="wb-inv">
-                {lang === 'en' ? 'Data table description' : 'Description du tableau de données'}
+                {lang === 'en' 
+                    ? 'Data by year (values in billions of dollars, project counts)' 
+                    : 'Données par année (valeurs en milliards de dollars, nombre de projets)'}
             </caption>
             <thead>
+                {/* ROW 1: Category group headers + Empty spacer for Year column */}
                 <tr>
-                    <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
-                    <th scope="col" style={{ textAlign: 'right' }}>
-                        {lang === 'en' ? 'Value ($ billions)' : 'Valeur (milliards $)'}
+                    {/* Empty cell instead of rowSpan - avoids merged cell issues */}
+                    <td style={{ borderBottom: 'none' }} aria-hidden="true"></td>
+                    <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>
+                        {category1Label}
                     </th>
+                    <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>
+                        {category2Label}
+                    </th>
+                </tr>
+                {/* ROW 2: Sub-headers + Year header */}
+                <tr>
+                    <th scope="col" className="text-center" style={{ fontWeight: 'bold', borderTop: 'none' }}>
+                        {lang === 'en' ? 'Year' : 'Année'}
+                    </th>
+                    <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                        <span aria-hidden="true">{headerUnitValueVisual}</span>
+                        <span className="wb-inv">{headerUnitValueSR}</span>
+                    </th>
+                    <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                        <span aria-hidden="true">{headerUnitProjectsVisual}</span>
+                        <span className="wb-inv">{headerUnitProjectsSR}</span>
+                    </th>
+                    {/* Repeat for other categories... */}
                 </tr>
             </thead>
             <tbody>
-                {pageData.map(row => (
-                    <tr key={row.year}>
-                        <td>{row.year}</td>
-                        <td style={{ textAlign: 'right' }}>{formatNumber(row.value)}</td>
+                {pageData.map(d => (
+                    <tr key={d.year}>
+                        {/* Row header for year */}
+                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>
+                            {d.year}
+                        </th>
+                        {/* Data cells with aria-label for controlled reading */}
+                        <td 
+                            className="text-right" 
+                            style={{ textAlign: 'right' }} 
+                            aria-label={`${d.year}, ${category1Label}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.cat1_value} ${cellUnitValueSR}`}
+                        >
+                            {d.cat1_value}
+                        </td>
+                        <td 
+                            className="text-right" 
+                            style={{ textAlign: 'right' }} 
+                            aria-label={`${d.year}, ${category1Label}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.cat1_count} ${cellUnitCountSR}`}
+                        >
+                            {d.cat1_count}
+                        </td>
+                        {/* Repeat for other categories... */}
                     </tr>
                 ))}
             </tbody>
@@ -545,6 +606,43 @@ const downloadTableAsDocx = async () => {
     </div>
     {/* Download buttons here */}
 </details>
+```
+
+### 10.2 Simple Table Structure (Single-Level Headers)
+
+For simpler tables without grouped columns:
+
+```jsx
+<table className="table table-striped table-hover">
+    <caption className="wb-inv">
+        {lang === 'en' ? 'Data table description' : 'Description du tableau de données'}
+    </caption>
+    <thead>
+        <tr>
+            <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                {lang === 'en' ? 'Year' : 'Année'}
+            </th>
+            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                <span aria-hidden="true">{headerUnitVisual}</span>
+                <span className="wb-inv">{headerUnitSR}</span>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {pageData.map(d => (
+            <tr key={d.year}>
+                <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{d.year}</th>
+                <td 
+                    className="text-right" 
+                    style={{ textAlign: 'right' }}
+                    aria-label={`${d.year}, ${categoryLabel}: ${d.value} ${cellUnitSR}`}
+                >
+                    {d.value}
+                </td>
+            </tr>
+        ))}
+    </tbody>
+</table>
 ```
 
 ---
@@ -580,14 +678,349 @@ layout={{
 
 ---
 
-## 12. Accessibility Standards
+## 12. Accessibility Standards (WCAG 2.1 AA Compliance)
 
-1. **Main Container:** Must have `role="main"`, `id="main-content"`, and `tabIndex="-1"`
-2. **Screen Reader Text:** Format currency as text ("4.5 billion dollars") not symbols
-3. **Aria-Hidden:** Decorative elements must have `aria-hidden="true"`
-4. **Language:** All text must be dynamic based on `lang` prop
-5. **Table Captions:** Use `className="wb-inv"` for screen-reader-only captions
-6. **Keyboard Navigation:** All interactive elements must be keyboard accessible
+### 12.1 Main Container Requirements
+```jsx
+<main id="main-content" tabIndex="-1" className="page-content page-main" role="main">
+```
+- `role="main"` - identifies the main content area
+- `id="main-content"` - allows skip-to-content links
+- `tabIndex="-1"` - allows programmatic focus
+
+### 12.2 Currency Formatting for Screen Readers
+
+Screen readers may mispronounce currency symbols (e.g., "$159B" reads as "dollar 159 b"). Always provide screen-reader-friendly alternatives.
+
+```javascript
+// Helper function for screen-reader currency formatting
+const formatBillionSR = (num) => {
+    if (num === undefined || num === null) return '';
+    const rounded = Math.round(num);
+    return lang === 'en' 
+        ? `${rounded} billion dollars` 
+        : `${rounded} milliards de dollars`;
+};
+
+// Visual display helper (keeps $ symbol)
+const formatBillion = (num) => {
+    if (num === undefined || num === null) return '—';
+    return `$${Math.round(num)}B`;
+};
+```
+
+### 12.3 Hiding Visual Elements from Screen Readers
+
+Use `aria-hidden="true"` on decorative or redundant visual content that shouldn't be read by screen readers.
+
+**When to use:**
+- Decorative icons or images
+- Visual legends (provide text alternatives)
+- Bold/styled text that duplicates content in aria-label
+- Chart visual elements (provide summary instead)
+
+### 12.4 Screen Reader-Only Text (`wb-inv` class)
+
+The WET `wb-inv` class makes content invisible to sighted users but accessible to screen readers.
+
+```jsx
+// Screen reader-only chart title
+<h2 className="wb-inv">{stripHtml(getText('chart_title', lang))}</h2>
+
+// Screen reader-only table caption
+<caption className="wb-inv">
+    {lang === 'en' ? 'Data table description' : 'Description du tableau'}
+</caption>
+
+// Screen reader-only instructions
+<span className="wb-inv">
+    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
+</span>
+```
+
+### 12.5 Chart Accessibility Pattern
+
+Charts need special handling to:
+1. Hide the complex SVG graphics from screen readers (prevent reading individual shapes)
+2. Provide an accessible summary of the chart data
+3. Make the modebar download button focusable and accessible to screen readers
+
+#### Required useEffect for Chart Accessibility
+
+Add this useEffect to make the Plotly modebar button accessible while hiding chart graphics:
+
+```javascript
+// Make Plotly modebar accessible while hiding chart graphics from screen readers
+useEffect(() => {
+    if (!chartRef.current) return;
+    
+    const setupChartAccessibility = () => {
+        const plotContainer = chartRef.current;
+        if (!plotContainer) return;
+
+        // Hide the chart SVG graphics from screen readers
+        const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+        svgElements.forEach(svg => {
+            svg.setAttribute('aria-hidden', 'true');
+        });
+
+            // Process modebar buttons - hide all except download button
+            // Other buttons (zoom, pan, etc.) aren't useful for screen reader users
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    // Make download button accessible
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    // Hide other buttons from screen readers (zoom, pan, etc. aren't useful without vision)
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+    // Run after a short delay to ensure Plotly has rendered
+    const timer = setTimeout(setupChartAccessibility, 500);
+    
+    // Also set up a MutationObserver to handle dynamic changes
+    const observer = new MutationObserver(setupChartAccessibility);
+    if (chartRef.current) {
+        observer.observe(chartRef.current, { childList: true, subtree: true });
+    }
+
+    return () => {
+        clearTimeout(timer);
+        observer.disconnect();
+    };
+}, [pageData, lang]);
+```
+
+#### Chart HTML Structure
+
+```jsx
+// Provide accessible summary of chart data
+const getChartSummary = () => {
+    const dataPoints = pageData.map(d => `${d.year}: ${formatNumber(d.value)}`).join(', ');
+    return lang === 'en'
+        ? `Chart showing trends from ${minYear} to ${maxYear}. Data points: ${dataPoints}.`
+        : `Graphique montrant les tendances de ${minYear} à ${maxYear}. Données: ${dataPoints}.`;
+};
+
+// Chart structure - DO NOT use aria-hidden on figure (handled by useEffect)
+<div className="chart-wrapper">
+    {/* Visual title (hidden from SR) */}
+    <h2 className="chart-title" aria-hidden="true">{getText('chart_title', lang)}</h2>
+    
+    {/* SR-only title */}
+    <h2 className="wb-inv">{stripHtml(getText('chart_title', lang))}</h2>
+    
+    {/* Accessible region with chart summary */}
+    <div role="region" aria-label={getChartSummary()}>
+        {/* Figure without aria-hidden - useEffect handles SVG hiding */}
+        <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
+            <Plot ... />
+        </figure>
+    </div>
+</div>
+```
+
+**Important:** 
+- Do NOT add `aria-hidden="true"` to the `<figure>` element - the useEffect selectively hides only the SVG graphics
+- This allows the Plotly modebar (including the PNG download button) to remain accessible
+- The screen reader will focus the actual Plotly modebar button when users Tab through the page
+
+### 12.6 Dynamic Chart Titles with Year Ranges
+
+Chart titles that include year ranges **MUST** be computed dynamically from the data rather than hardcoded in translation strings. This ensures titles automatically update when new data is added.
+
+**Translation String Pattern:**
+Use a `_prefix` suffix for the translation key and store only the text before the year range:
+
+```javascript
+// translations.js - English
+'page_chart_title_prefix': 'Trends in Major Energy Projects, ',
+
+// translations.js - French  
+'page_chart_title_prefix': 'Tendances des grands projets énergétiques, ',
+```
+
+**Component Implementation:**
+Construct the full title by appending the year range from the data:
+
+```javascript
+const years = pageData.map(d => d.year);
+const minYear = years.length > 0 ? Math.min(...years) : 2021;
+const maxYear = years.length > 0 ? Math.max(...years) : 2024;
+
+// Dynamic chart title
+const chartTitle = `${getText('page_chart_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
+
+// Use chartTitle in JSX and downloads
+<h2>{chartTitle}</h2>
+```
+
+**Why This Matters:**
+- Hardcoded years like "2007-2025" become outdated when new data is added
+- Dynamic titles automatically reflect the actual data range
+- Consistent pattern across all pages ensures maintainability
+
+### 12.7 Bullet Point Accessibility Pattern
+
+For narrative text with bolded values, use `aria-label` on the list item and `aria-hidden` on visual content to prevent duplicate reading.
+
+```jsx
+<ul className="page-bullets">
+    <li aria-label={lang === 'en' 
+        ? `In 2024, there were 300 major energy projects worth 159 billion dollars announced, under review, or approved.`
+        : `En 2024, il y avait 300 grands projets énergétiques d'une valeur de 159 milliards de dollars annoncés, à l'étude ou approuvés.`
+    }>
+        <span aria-hidden="true">
+            In 2024, there were <strong>300</strong> major energy projects 
+            (announced, under review, or approved) worth <strong>$159B</strong>.
+        </span>
+    </li>
+</ul>
+```
+
+**Key points:**
+- `aria-label` contains the full text with screen-reader-friendly number formatting
+- Visual `<span aria-hidden="true">` wraps content with `<strong>` tags
+- Screen readers read the `aria-label`, not the visual content
+- Include ALL text in aria-label (parenthetical content is often skipped otherwise)
+
+### 12.7 Data Table Accessibility Pattern
+
+Tables must use the correct header pattern for WET/WCAG compliance while providing clear screen reader output.
+
+**Key Principles:**
+
+1. **Use proper `<th>` tags with `scope` attributes** - Required for WCAG 1.3.1 compliance
+2. **Avoid merged cells (`rowSpan`)** - WET advises against merged cells as they cause double-reading issues
+3. **Use `aria-label` on data cells** - Provides complete control over what the screen reader says for each cell
+
+**The Solution:**
+
+For tables with grouped column headers (e.g., categories with value/count sub-columns):
+
+```jsx
+<table className="table table-striped table-hover">
+    <caption className="wb-inv">
+        {lang === 'en' 
+            ? 'Data by year (values in billions of dollars, project counts)' 
+            : 'Données par année (valeurs en milliards de dollars, nombre de projets)'}
+    </caption>
+    <thead>
+        {/* ROW 1: Category headers + Empty spacer (instead of rowSpan) */}
+        <tr>
+            <td style={{ borderBottom: 'none' }} aria-hidden="true"></td>
+            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>
+                {category1Label}
+            </th>
+            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>
+                {category2Label}
+            </th>
+        </tr>
+        {/* ROW 2: Sub-headers + Year header */}
+        <tr>
+            <th scope="col" className="text-center" style={{ fontWeight: 'bold', borderTop: 'none' }}>
+                {lang === 'en' ? 'Year' : 'Année'}
+            </th>
+            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                <span aria-hidden="true">{headerUnitValueVisual}</span>
+                <span className="wb-inv">{headerUnitValueSR}</span>
+            </th>
+            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                <span aria-hidden="true">{headerUnitCountVisual}</span>
+                <span className="wb-inv">{headerUnitCountSR}</span>
+            </th>
+            {/* Repeat for category2... */}
+        </tr>
+    </thead>
+    <tbody>
+        {pageData.map(d => (
+            <tr key={d.year}>
+                {/* Row header */}
+                <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{d.year}</th>
+                
+                {/* Data cells with aria-label for controlled reading */}
+                <td 
+                    className="text-right" 
+                    style={{ textAlign: 'right' }}
+                    aria-label={`${d.year}, ${category1Label}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.cat1_value} ${cellUnitValueSR}`}
+                >
+                    {d.cat1_value}
+                </td>
+                <td 
+                    className="text-right" 
+                    style={{ textAlign: 'right' }}
+                    aria-label={`${d.year}, ${category1Label}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.cat1_count} ${cellUnitCountSR}`}
+                >
+                    {d.cat1_count}
+                </td>
+                {/* Repeat for category2... */}
+            </tr>
+        ))}
+    </tbody>
+</table>
+```
+
+**Why this works:**
+
+1. **No merged cells** - The Year column uses an empty `<td aria-hidden="true">` in row 1 with `borderBottom: 'none'`, and the actual `<th>` in row 2 with `borderTop: 'none'`. This looks like a merged cell visually but screen readers see simple unmerged cells.
+
+2. **Proper `<th>` with `scope`** - Satisfies WCAG 1.3.1 requirement that headers be programmatically identified:
+   - `scope="colgroup"` for category group headers
+   - `scope="col"` for sub-column headers  
+   - `scope="row"` for year row headers
+
+3. **`aria-label` on data cells** - Completely overrides the screen reader's default reading behavior. Each cell announces exactly: "Year, Category, type: value unit" (e.g., "2024, Oil and gas, value: 296 billion dollars")
+
+**Key points:**
+- Do NOT use `rowSpan` on the Year header - use the empty cell + border trick instead
+- `aria-label` takes precedence over cell content for screen readers
+- Header sub-columns should have visual units (`aria-hidden`) and SR-friendly units (`wb-inv`)
+
+### 12.8 Custom Legend Accessibility
+
+Custom HTML legends should be hidden from screen readers (chart summary provides the information).
+
+```jsx
+<div className="custom-legend" aria-hidden="true">
+    <div className="legend-group">
+        <div className="legend-group-title">Category A</div>
+        <div className="legend-items">
+            <div className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: '#1f77b4' }}></span>
+                <span>Item 1</span>
+            </div>
+            {/* More items... */}
+        </div>
+    </div>
+</div>
+```
+
+### 12.9 Sidebar/Definition Box Accessibility
+
+Content in sidebars that provides important context MUST be readable by screen readers.
+
+```jsx
+<div className="sidebar">
+    <div className="sidebar-title">{getText('sidebar_title', lang)}</div>
+    {/* This paragraph must NOT have aria-hidden */}
+    <p>{getText('sidebar_important_text', lang)}</p>
+    <p>
+        Minimum capital thresholds: 
+        <strong>$50M</strong> for oil and gas,
+        <strong>$25M</strong> for electricity.
+    </p>
+</div>
+```
+
+**Warning:** Do not accidentally add `aria-hidden="true"` to important informational content like threshold values or definitions.
 
 ---
 

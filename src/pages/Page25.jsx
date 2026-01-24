@@ -74,6 +74,46 @@ const Page25 = () => {
         import('./Page26');
     }, []);
 
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
+            modebarButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-label', dataTitle);
+                    btn.setAttribute('role', 'button');
+                    btn.setAttribute('tabindex', '0');
+                    btn.removeAttribute('aria-hidden');
+                } else {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        const timer = setTimeout(setupChartAccessibility, 500);
+        
+        const observer = new MutationObserver(setupChartAccessibility);
+        if (chartRef.current) {
+            observer.observe(chartRef.current, { childList: true, subtree: true });
+        }
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
+    }, [pageData, lang]);
+
     const COLORS = {
         'environmental': '#e9d259', 'fuel_energy_pipelines': '#6cbe8d',
         'transport': '#2DA6B4', 'education': '#597DD9',
@@ -353,42 +393,42 @@ const Page25 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <td className="text-center fw-bold">{lang === 'en' ? 'Year' : 'Année'}</td>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <td key={cat} className="text-center fw-bold">
+                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                         {categoryLabels[cat]}<br/>
                                         <span aria-hidden="true">{headerUnitVisual}</span>
                                         <span className="wb-inv">{headerUnitSR}</span>
-                                    </td>
+                                    </th>
                                 ))}
-                                <td className="text-center fw-bold">
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
                                     {lang === 'en' ? 'Total' : 'Total'}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
-                                </td>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {pageData.map(yearData => {
-                                const yearHeaderId = `year-${yearData.year}`;
-                                return (
-                                    <tr key={yearData.year}>
-                                        <th scope="row" id={yearHeaderId}>{yearData.year}</th>
-                                        {CATEGORY_ORDER.map(cat => (
-                                            <td key={cat} headers={yearHeaderId}>
-                                                <span className="wb-inv">{yearData.year}, {categoryLabels[cat]}: </span>
-                                                {formatNumberTable((yearData[cat] || 0) / 1000)}
-                                                <span className="wb-inv">{cellUnitSR}</span>
-                                            </td>
-                                        ))}
-                                        <td headers={yearHeaderId}>
-                                            <span className="wb-inv">{yearData.year}, {lang === 'en' ? 'Total' : 'Total'}: </span>
-                                            <strong>{formatNumberTable((yearData.total || 0) / 1000)}</strong>
-                                            <span className="wb-inv">{cellUnitSR}</span>
+                            {pageData.map(yearData => (
+                                <tr key={yearData.year}>
+                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                    {CATEGORY_ORDER.map(cat => (
+                                        <td 
+                                            key={cat} 
+                                            style={{ textAlign: 'right' }}
+                                            aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumberTable((yearData[cat] || 0) / 1000)}${cellUnitSR}`}
+                                        >
+                                            {formatNumberTable((yearData[cat] || 0) / 1000)}
                                         </td>
-                                    </tr>
-                                );
-                            })}
+                                    ))}
+                                    <td 
+                                        style={{ textAlign: 'right' }}
+                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${formatNumberTable((yearData.total || 0) / 1000)}${cellUnitSR}`}
+                                    >
+                                        <strong>{formatNumberTable((yearData.total || 0) / 1000)}</strong>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -843,7 +883,7 @@ const Page25 = () => {
                         aria-label={`${lang === 'en' ? 'Infrastructure pie chart for' : 'Graphique circulaire des infrastructures pour'} ${year}. ${getChartDataSummary()}. ${lang === 'en' ? 'Expand the data table below for detailed values.' : 'Développez le tableau de données ci-dessous pour les valeurs détaillées.'}`}
                     >
                         {chartData && (
-                            <figure ref={chartRef} aria-hidden="true" className="page25-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
+                            <figure ref={chartRef} className="page25-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
                                 {windowWidth <= 768 && !isChartInteractive && (
                                     <div 
                                         onClick={() => setIsChartInteractive(true)} 
