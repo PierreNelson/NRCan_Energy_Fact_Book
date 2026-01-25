@@ -1114,6 +1114,117 @@ def process_page28_data():
 
 
 # =============================================================================
+# PAGE 29: CLEAN TECHNOLOGY PROJECT TRENDS
+# =============================================================================
+
+def process_page29_data():
+    """
+    Process clean technology project trends data for Page 29.
+    
+    Data source: NRCan Major Projects Inventory (Table 4)
+    https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
+    
+    This data is from annual NRCan reports and is hardcoded since it's not available
+    as a direct StatCan CSV download.
+    
+    Returns list of tuples for data.csv and metadata.csv
+    """
+    print("Processing Page 29: Clean Technology Project Trends...")
+    print("  Source: NRCan Major Projects Inventory (Table 4)")
+    
+    clean_tech_data = {
+        2021: {
+            'total_projects': 178, 'total_value': 104,
+            'hydro_projects': 58, 'hydro_value': 39.2,
+            'wind_projects': 41, 'wind_value': 14.6,
+            'biomass_projects': 31, 'biomass_value': 8.0,
+            'solar_projects': 22, 'solar_value': 2.2,
+            'nuclear_projects': 4, 'nuclear_value': 27.4,
+            'ccs_projects': 2, 'ccs_value': 11.3,
+            'geothermal_projects': 5, 'geothermal_value': 0.4,
+            'tidal_projects': 6, 'tidal_value': 0.3,
+            'multiple_projects': 1, 'multiple_value': 0.03,
+            'other_projects': 8, 'other_value': 0.5,
+        },
+        2022: {
+            'total_projects': 197, 'total_value': 118,
+            'hydro_projects': 63, 'hydro_value': 44.8,
+            'wind_projects': 35, 'wind_value': 13.4,
+            'biomass_projects': 35, 'biomass_value': 9.4,
+            'solar_projects': 30, 'solar_value': 3.0,
+            'nuclear_projects': 3, 'nuclear_value': 26.1,
+            'ccs_projects': 6, 'ccs_value': 15.5,
+            'geothermal_projects': 4, 'geothermal_value': 0.4,
+            'tidal_projects': 7, 'tidal_value': 0.4,
+            'multiple_projects': 1, 'multiple_value': 0.03,
+            'other_projects': 13, 'other_value': 5.3,
+        },
+        2023: {
+            'total_projects': 233, 'total_value': 157.4,
+            'hydro_projects': 78, 'hydro_value': 37.4,
+            'wind_projects': 32, 'wind_value': 12.4,
+            'biomass_projects': 47, 'biomass_value': 14.3,
+            'solar_projects': 31, 'solar_value': 6.2,
+            'nuclear_projects': 2, 'nuclear_value': 25.8,
+            'ccs_projects': 9, 'ccs_value': 38.3,
+            'geothermal_projects': 4, 'geothermal_value': 0.4,
+            'tidal_projects': 7, 'tidal_value': 0.4,
+            'multiple_projects': 1, 'multiple_value': 0.03,
+            'other_projects': 22, 'other_value': 22.1,
+        },
+        2024: {
+            'total_projects': 215, 'total_value': 194.2,
+            'hydro_projects': 58, 'hydro_value': 30.4,
+            'wind_projects': 33, 'wind_value': 26.8,
+            'biomass_projects': 41, 'biomass_value': 12.6,
+            'solar_projects': 36, 'solar_value': 8.8,
+            'nuclear_projects': 3, 'nuclear_value': 51.8,
+            'ccs_projects': 8, 'ccs_value': 38.3,
+            'geothermal_projects': 4, 'geothermal_value': 0.4,
+            'tidal_projects': 4, 'tidal_value': 0.2,
+            'multiple_projects': 1, 'multiple_value': 0.03,
+            'other_projects': 25, 'other_value': 23.8,
+        },
+    }
+    
+    data_rows = []
+    categories = ['total', 'hydro', 'wind', 'biomass', 'solar', 'nuclear', 'ccs', 'geothermal', 'tidal', 'multiple', 'other']
+    
+    for year, values in clean_tech_data.items():
+        for cat in categories:
+            data_rows.append((f'page29_{cat}_projects', year, values[f'{cat}_projects']))
+            data_rows.append((f'page29_{cat}_value', year, values[f'{cat}_value']))
+    
+    metadata_rows = [
+        ('page29_total_projects', 'Total clean technology - Number of projects', 'Number', 'units'),
+        ('page29_total_value', 'Total clean technology - Project value', 'Billions of dollars', 'billions'),
+        ('page29_hydro_projects', 'Hydro - Number of projects', 'Number', 'units'),
+        ('page29_hydro_value', 'Hydro - Project value', 'Billions of dollars', 'billions'),
+        ('page29_wind_projects', 'Wind - Number of projects', 'Number', 'units'),
+        ('page29_wind_value', 'Wind - Project value', 'Billions of dollars', 'billions'),
+        ('page29_biomass_projects', 'Biomass/Biofuels - Number of projects', 'Number', 'units'),
+        ('page29_biomass_value', 'Biomass/Biofuels - Project value', 'Billions of dollars', 'billions'),
+        ('page29_solar_projects', 'Solar - Number of projects', 'Number', 'units'),
+        ('page29_solar_value', 'Solar - Project value', 'Billions of dollars', 'billions'),
+        ('page29_nuclear_projects', 'Nuclear - Number of projects', 'Number', 'units'),
+        ('page29_nuclear_value', 'Nuclear - Project value', 'Billions of dollars', 'billions'),
+        ('page29_ccs_projects', 'Carbon Capture and Storage - Number of projects', 'Number', 'units'),
+        ('page29_ccs_value', 'Carbon Capture and Storage - Project value', 'Billions of dollars', 'billions'),
+        ('page29_geothermal_projects', 'Geothermal - Number of projects', 'Number', 'units'),
+        ('page29_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions'),
+        ('page29_tidal_projects', 'Tidal - Number of projects', 'Number', 'units'),
+        ('page29_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions'),
+        ('page29_multiple_projects', 'Multiple - Number of projects', 'Number', 'units'),
+        ('page29_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions'),
+        ('page29_other_projects', 'Other - Number of projects', 'Number', 'units'),
+        ('page29_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
+    ]
+    
+    print(f"  Page 29: {len(data_rows)} data rows")
+    return data_rows, metadata_rows
+
+
+# =============================================================================
 # MAIN FUNCTION
 # =============================================================================
 
@@ -1162,6 +1273,10 @@ def refresh_all_data():
     data28, meta28 = process_page28_data()
     all_data.extend(data28)
     all_metadata.extend(meta28)
+    
+    data29, meta29 = process_page29_data()
+    all_data.extend(data29)
+    all_metadata.extend(meta29)
     
     # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])

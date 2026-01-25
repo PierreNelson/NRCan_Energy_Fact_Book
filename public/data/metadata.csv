@@ -66,3 +66,25 @@ page28_construction_projects,Projects under construction,Number,units
 page28_construction_value,Construction projects value,Billions of dollars,billions
 page28_clean_tech_projects,Clean technology projects,Number,units
 page28_clean_tech_value,Clean technology projects value,Billions of dollars,billions
+page29_total_projects,Total clean technology - Number of projects,Number,units
+page29_total_value,Total clean technology - Project value,Billions of dollars,billions
+page29_hydro_projects,Hydro - Number of projects,Number,units
+page29_hydro_value,Hydro - Project value,Billions of dollars,billions
+page29_wind_projects,Wind - Number of projects,Number,units
+page29_wind_value,Wind - Project value,Billions of dollars,billions
+page29_biomass_projects,Biomass/Biofuels - Number of projects,Number,units
+page29_biomass_value,Biomass/Biofuels - Project value,Billions of dollars,billions
+page29_solar_projects,Solar - Number of projects,Number,units
+page29_solar_value,Solar - Project value,Billions of dollars,billions
+page29_nuclear_projects,Nuclear - Number of projects,Number,units
+page29_nuclear_value,Nuclear - Project value,Billions of dollars,billions
+page29_ccs_projects,Carbon Capture and Storage - Number of projects,Number,units
+page29_ccs_value,Carbon Capture and Storage - Project value,Billions of dollars,billions
+page29_geothermal_projects,Geothermal - Number of projects,Number,units
+page29_geothermal_value,Geothermal - Project value,Billions of dollars,billions
+page29_tidal_projects,Tidal - Number of projects,Number,units
+page29_tidal_value,Tidal - Project value,Billions of dollars,billions
+page29_multiple_projects,Multiple - Number of projects,Number,units
+page29_multiple_value,Multiple - Project value,Billions of dollars,billions
+page29_other_projects,Other - Number of projects,Number,units
+page29_other_value,Other - Project value,Billions of dollars,billions

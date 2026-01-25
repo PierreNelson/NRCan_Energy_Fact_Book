@@ -313,3 +313,29 @@ export async function getMajorProjectsData() {
         summary
     };
 }
+
+/**
+ * Get clean technology project trends data for Page 29
+ * Returns array of objects with yearly data for each technology category:
+ * { year, total_projects, total_value, hydro_projects, hydro_value, wind_projects, wind_value, ... }
+ * Values in billions of dollars
+ */
+export async function getCleanTechTrendsData() {
+    const allData = await loadAllData();
+    
+    const page29Data = allData.filter(row => row.vector && row.vector.startsWith('page29_'));
+    
+    const yearMap = {};
+    
+    page29Data.forEach(row => {
+        const year = row.ref_date;
+        const field = row.vector.replace('page29_', '');
+        
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

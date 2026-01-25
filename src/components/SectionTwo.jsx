@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-// Import all pages for this section
 import Page23 from '../pages/Page23';
 import Page24 from '../pages/Page24';
 import Page25 from '../pages/Page25';
 import Page26 from '../pages/Page26';
 import Page27 from '../pages/Page27';
 import Page28 from '../pages/Page28';
+import Page29 from '../pages/Page29';
 import Page31 from '../pages/Page31';
 import Page32 from '../pages/Page32';
 import Page37 from '../pages/Page37';
@@ -67,6 +67,10 @@ const SectionTwo = () => {
 
             <div id="page-28" className="stacked-page-wrapper">
                 <Page28 />
+            </div>
+
+            <div id="page-29" className="stacked-page-wrapper">
+                <Page29 />
             </div>
 
             <div id="page-31" className="stacked-page-wrapper">

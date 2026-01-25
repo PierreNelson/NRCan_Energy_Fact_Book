@@ -229,6 +229,14 @@ const Sidebar = ({ lang }) => {
                                 {getText('nav_major_projects', lang)}
                             </NavLink>
 
+                            {/* Page 29 */}
+                            <NavLink
+                                to="/section-2#page-29"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_clean_tech_trends', lang)}
+                            </NavLink>
+
                             {/* Page 31 */}
                             <NavLink
                                 to="/section-2#page-31"
