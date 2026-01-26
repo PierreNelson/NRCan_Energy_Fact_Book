@@ -809,7 +809,7 @@ const Page31 = () => {
                                 });
                             }}
                             config={{ 
-                                displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                displayModeBar: true, 
                                 displaylogo: false,
                                 responsive: true,
                                 scrollZoom: false,

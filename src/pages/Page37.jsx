@@ -1152,7 +1152,7 @@ const getAccessibleDataTable = () => {
                                             });
                                         }}
                                         config={{ 
-                                            displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                            displayModeBar: true, 
                                             displaylogo: false,
                                             responsive: true, 
                                             staticPlot: false,

@@ -1035,7 +1035,7 @@ const Page25 = () => {
                                         });
                                     }}
                                     config={{ 
-                                        displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                        displayModeBar: true, 
                                         displaylogo: false,
                                         responsive: true, 
                                         staticPlot: false,

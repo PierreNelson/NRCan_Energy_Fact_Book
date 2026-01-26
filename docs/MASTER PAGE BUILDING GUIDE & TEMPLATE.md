@@ -74,6 +74,7 @@
 | `gdp_prov_` | Provincial GDP | `gdp_prov_ab`, `gdp_prov_on`, `gdp_prov_qc` |
 | `projects_` | Major energy projects | `projects_oil_gas_value`, `projects_total_count` |
 | `cleantech_` | Clean technology trends | `cleantech_hydro_value`, `cleantech_wind_count` |
+| `projectsmap_` | Projects map (static) | Used for static map visualization data |
 
 **Function Naming in `data_retrieval.py`:**
 ```python
@@ -285,6 +286,9 @@ useEffect(() => {
 ```
 
 ### Clear Selection Button
+
+The Clear button must be positioned at `right: 295` to avoid overlapping with the Plotly modebar buttons (zoom controls, download PNG button). This ensures both the Clear button and modebar remain accessible and usable.
+
 ```jsx
 <div ref={chartRef} className="chart-container" style={{ position: 'relative' }}>
     {selectedPoints !== null && (
@@ -779,7 +783,7 @@ For simpler tables without grouped columns:
 ### Standard Config Object
 ```javascript
 config={{
-    displayModeBar: windowWidth > 768 || isChartInteractive,
+    displayModeBar: true,
     displaylogo: false,
     responsive: true,
     scrollZoom: false,
@@ -1328,12 +1332,12 @@ const PageTemplate = () => {
 
                 {/* Chart with interaction controls */}
                 <div ref={chartRef} className="chart-container" style={{ position: 'relative' }}>
-                    {/* Mobile overlay, Done button, Clear button */}
+                    {/* Clear button positioned at right: 295 to avoid modebar overlap */}
                     <Plot
                         data={[/* chart data */]}
                         layout={{/* layout config */}}
                         config={{
-                            displayModeBar: windowWidth > 768 || isChartInteractive,
+                            displayModeBar: true,
                             displaylogo: false,
                             responsive: true
                         }}

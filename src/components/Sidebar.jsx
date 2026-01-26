@@ -235,6 +235,13 @@ const Sidebar = ({ lang }) => {
                                 {getText('nav_clean_tech_trends', lang)}
                             </NavLink>
 
+                            <NavLink
+                                to="/section-2#projects-map"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_projects_map', lang)}
+                            </NavLink>
+
                             {/* International Investment */}
                             <NavLink
                                 to="/section-2#international-investment"

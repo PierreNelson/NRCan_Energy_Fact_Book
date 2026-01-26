@@ -21,6 +21,7 @@ import requests
 import pandas as pd
 import io
 import os
+import json
 from datetime import datetime, timedelta
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "data")
@@ -33,7 +34,6 @@ def get_future_end_date(years_ahead=2):
     The API returns whatever data exists up to the current date, regardless of 
     the end date specified. Using a dynamic future date (today + N years) ensures:
     - New data is automatically included when StatCan publishes it
-    - The script doesn't stop working after a hardcoded date passes
     
     Args:
         years_ahead: Number of years into the future (default: 2)
@@ -920,57 +920,296 @@ def process_provincial_gdp_data():
         return [], []
 
 
+def get_nrcan_mpi_url():
+    return "https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034"
+
+
+def parse_table_cell(cell_text):
+    import re
+    cell_text = cell_text.strip()
+    count_match = re.search(r'^(\d+)', cell_text)
+    value_match = re.search(r'\$?([\d.]+)([BM])\)?', cell_text)
+    
+    count = int(count_match.group(1)) if count_match else None
+    value = None
+    if value_match:
+        value = float(value_match.group(1))
+        if value_match.group(2) == 'M':
+            value = value / 1000
+    
+    return count, value
+
+
+def fetch_nrcan_mpi_tables():
+    from bs4 import BeautifulSoup
+    
+    print("  Fetching NRCan Major Projects Inventory page...")
+    url = get_nrcan_mpi_url()
+    
+    try:
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        tables = soup.find_all('table')
+        print(f"  Found {len(tables)} tables on page")
+        
+        energy_table = None
+        cleantech_table = None
+        
+        for table in tables:
+            header_text = ""
+            thead = table.find('thead')
+            if thead:
+                header_text = thead.get_text()
+            first_row = table.find('tr')
+            if first_row:
+                header_text += first_row.get_text()
+            
+            if 'Total Energy Projects' in table.get_text() or 'Oil and Gas' in table.get_text():
+                if energy_table is None:
+                    energy_table = table
+                    print("  Found Energy Projects table (Table 1)")
+            
+            if 'Total Clean Technology' in table.get_text() or 'Hydro' in table.get_text():
+                if 'Carbon Capture' in table.get_text() and cleantech_table is None:
+                    cleantech_table = table
+                    print("  Found Clean Technology table (Table 4)")
+        
+        return energy_table, cleantech_table, soup
+        
+    except Exception as e:
+        print(f"  ERROR fetching NRCan MPI page: {e}")
+        return None, None, None
+
+
+def extract_years_from_table(table):
+    import re
+    
+    if table is None:
+        return []
+    
+    years = []
+    rows = table.find_all('tr')
+    
+    for row in rows[:3]:
+        cells = row.find_all(['th', 'td'])
+        for cell in cells:
+            cell_text = cell.get_text().strip()
+            year_matches = re.findall(r'\b(20\d{2})\b', cell_text)
+            for year_str in year_matches:
+                year = int(year_str)
+                if 2015 <= year <= 2050 and year not in years:
+                    years.append(year)
+    
+    if not years:
+        table_text = table.get_text()
+        year_matches = re.findall(r'\b(20\d{2})\b', table_text)
+        seen = set()
+        for year_str in year_matches:
+            year = int(year_str)
+            if 2015 <= year <= 2050 and year not in seen:
+                years.append(year)
+                seen.add(year)
+                if len(years) >= 10:
+                    break
+    
+    years.sort()
+    return years
+
+
+def parse_energy_table(table):
+    if table is None:
+        return None
+    
+    import re
+    
+    years = extract_years_from_table(table)
+    if not years:
+        print("  WARNING: Could not extract years from energy table")
+        return None
+    
+    print(f"  Detected years in energy table: {years}")
+    
+    rows = table.find_all('tr')
+    data = {}
+    
+    header_row_idx = -1
+    for idx, row in enumerate(rows):
+        row_text = row.get_text()
+        year_count = sum(1 for y in years if str(y) in row_text)
+        if year_count >= len(years) - 1:
+            header_row_idx = idx
+            break
+    
+    year_positions = []
+    if header_row_idx >= 0:
+        header_cells = rows[header_row_idx].find_all(['th', 'td'])
+        for i, cell in enumerate(header_cells):
+            cell_text = cell.get_text().strip()
+            for year in years:
+                if str(year) in cell_text and year not in [yp[1] for yp in year_positions]:
+                    year_positions.append((i, year))
+                    break
+    
+    if not year_positions:
+        year_positions = [(i + 1, year) for i, year in enumerate(years)]
+    
+    for row in rows:
+        cells = row.find_all(['th', 'td'])
+        if len(cells) >= 2:
+            row_label = cells[0].get_text().strip().lower()
+            
+            category = None
+            if 'total energy' in row_label:
+                category = 'total'
+            elif 'oil and gas' in row_label:
+                category = 'oil_gas'
+            elif 'electricity' in row_label:
+                category = 'electricity'
+            elif 'other' in row_label:
+                category = 'other'
+            
+            if category:
+                for col_idx, year in year_positions:
+                    if col_idx < len(cells):
+                        count, value = parse_table_cell(cells[col_idx].get_text())
+                        if year not in data:
+                            data[year] = {}
+                        if count is not None:
+                            data[year][f'{category}_projects'] = count
+                        if value is not None:
+                            data[year][f'{category}_value'] = value
+    
+    return data
+
+
+def parse_cleantech_table(table):
+    if table is None:
+        return None
+    
+    import re
+    
+    years = extract_years_from_table(table)
+    if not years:
+        print("  WARNING: Could not extract years from clean tech table")
+        return None
+    
+    print(f"  Detected years in clean tech table: {years}")
+    
+    rows = table.find_all('tr')
+    data = {}
+    
+    category_map = {
+        'total clean technology': 'total',
+        'hydro': 'hydro',
+        'bioenergy': 'biomass',
+        'biomass': 'biomass',
+        'solar': 'solar',
+        'wind': 'wind',
+        'carbon capture': 'ccs',
+        'tidal': 'tidal',
+        'geothermal': 'geothermal',
+        'nuclear': 'nuclear',
+        'energy storage': 'storage',
+        'multiple': 'multiple',
+        'other': 'other',
+    }
+    
+    header_row_idx = -1
+    for idx, row in enumerate(rows):
+        row_text = row.get_text()
+        year_count = sum(1 for y in years if str(y) in row_text)
+        if year_count >= len(years) - 1:
+            header_row_idx = idx
+            break
+    
+    year_positions = []
+    if header_row_idx >= 0:
+        header_cells = rows[header_row_idx].find_all(['th', 'td'])
+        for i, cell in enumerate(header_cells):
+            cell_text = cell.get_text().strip()
+            for year in years:
+                if str(year) in cell_text and year not in [yp[1] for yp in year_positions]:
+                    year_positions.append((i, year))
+                    break
+    
+    if not year_positions:
+        year_positions = [(i + 1, year) for i, year in enumerate(years)]
+    
+    for row in rows:
+        cells = row.find_all(['th', 'td'])
+        if len(cells) >= 2:
+            row_label = cells[0].get_text().strip().lower()
+            
+            category = None
+            for key, cat in category_map.items():
+                if key in row_label:
+                    category = cat
+                    break
+            
+            if category:
+                for col_idx, year in year_positions:
+                    if col_idx < len(cells):
+                        count, value = parse_table_cell(cells[col_idx].get_text())
+                        if year not in data:
+                            data[year] = {}
+                        if count is not None:
+                            data[year][f'{category}_projects'] = count
+                        if value is not None:
+                            data[year][f'{category}_value'] = value
+    
+    return data
+
+
 def process_major_projects_data():
-    """
-    Process major energy projects data.
-    
-    Data source: NRCan Major Projects Inventory (Table 1)
-    https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
-    
-    This data is from annual NRCan reports and is hardcoded since it's not available
-    as a direct StatCan CSV download.
-    
-    Returns list of tuples for data.csv and metadata.csv
-    """
     print("Processing Major Projects data...")
     print("  Source: NRCan Major Projects Inventory (Table 1)")
+    print(f"  URL: {get_nrcan_mpi_url()}")
     
-    major_projects_data = {
-        2021: {'oil_gas_value': 339, 'oil_gas_projects': 106, 'electricity_value': 102, 'electricity_projects': 176, 'other_value': 8.9, 'other_projects': 23},
-        2022: {'oil_gas_value': 294, 'oil_gas_projects': 96, 'electricity_value': 106, 'electricity_projects': 179, 'other_value': 26.6, 'other_projects': 45},
-        2023: {'oil_gas_value': 318.6, 'oil_gas_projects': 87, 'electricity_value': 97.4, 'electricity_projects': 182, 'other_value': 56.2, 'other_projects': 74},
-        2024: {'oil_gas_value': 296.2, 'oil_gas_projects': 67, 'electricity_value': 118.9, 'electricity_projects': 188, 'other_value': 94.9, 'other_projects': 85},
-    }
+    energy_table, cleantech_table, soup = fetch_nrcan_mpi_tables()
     
-    summary_2024 = {
-        'planned_projects': 231,
-        'planned_value': 351,
-        'construction_projects': 109,
-        'construction_value': 159,
-        'clean_tech_projects': 215,
-        'clean_tech_value': 194,
-    }
+    major_projects_data = parse_energy_table(energy_table)
+    
+    if not major_projects_data or len(major_projects_data) == 0:
+        print("  WARNING: Could not parse energy table, using fallback extraction...")
+        major_projects_data = extract_energy_data_from_text(soup)
+    
+    if not major_projects_data or len(major_projects_data) == 0:
+        print("  ERROR: Could not retrieve energy projects data")
+        return [], []
+    
+    print(f"  Parsed energy data for years: {sorted(major_projects_data.keys())}")
+    for year, values in sorted(major_projects_data.items()):
+        print(f"    {year}: {values}")
     
     data_rows = []
     
     for year, values in major_projects_data.items():
-        data_rows.append(('projects_oil_gas_value', year, values['oil_gas_value']))
-        data_rows.append(('projects_oil_gas_count', year, values['oil_gas_projects']))
-        data_rows.append(('projects_electricity_value', year, values['electricity_value']))
-        data_rows.append(('projects_electricity_count', year, values['electricity_projects']))
-        data_rows.append(('projects_other_value', year, values['other_value']))
-        data_rows.append(('projects_other_count', year, values['other_projects']))
-        total_value = values['oil_gas_value'] + values['electricity_value'] + values['other_value']
-        total_projects = values['oil_gas_projects'] + values['electricity_projects'] + values['other_projects']
-        data_rows.append(('projects_total_value', year, round(total_value, 1)))
-        data_rows.append(('projects_total_count', year, total_projects))
-    
-    data_rows.append(('projects_planned_count', 2024, summary_2024['planned_projects']))
-    data_rows.append(('projects_planned_value', 2024, summary_2024['planned_value']))
-    data_rows.append(('projects_construction_count', 2024, summary_2024['construction_projects']))
-    data_rows.append(('projects_construction_value', 2024, summary_2024['construction_value']))
-    data_rows.append(('projects_cleantech_count', 2024, summary_2024['clean_tech_projects']))
-    data_rows.append(('projects_cleantech_value', 2024, summary_2024['clean_tech_value']))
+        if 'oil_gas_value' in values:
+            data_rows.append(('projects_oil_gas_value', year, values['oil_gas_value']))
+        if 'oil_gas_projects' in values:
+            data_rows.append(('projects_oil_gas_count', year, values['oil_gas_projects']))
+        if 'electricity_value' in values:
+            data_rows.append(('projects_electricity_value', year, values['electricity_value']))
+        if 'electricity_projects' in values:
+            data_rows.append(('projects_electricity_count', year, values['electricity_projects']))
+        if 'other_value' in values:
+            data_rows.append(('projects_other_value', year, values['other_value']))
+        if 'other_projects' in values:
+            data_rows.append(('projects_other_count', year, values['other_projects']))
+        
+        if 'total_value' in values:
+            data_rows.append(('projects_total_value', year, values['total_value']))
+        elif all(k in values for k in ['oil_gas_value', 'electricity_value', 'other_value']):
+            total_value = values['oil_gas_value'] + values['electricity_value'] + values['other_value']
+            data_rows.append(('projects_total_value', year, round(total_value, 1)))
+        
+        if 'total_projects' in values:
+            data_rows.append(('projects_total_count', year, values['total_projects']))
+        elif all(k in values for k in ['oil_gas_projects', 'electricity_projects', 'other_projects']):
+            total_projects = values['oil_gas_projects'] + values['electricity_projects'] + values['other_projects']
+            data_rows.append(('projects_total_count', year, total_projects))
     
     metadata_rows = [
         ('projects_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions'),
@@ -981,95 +1220,94 @@ def process_major_projects_data():
         ('projects_other_count', 'Other - Number of projects', 'Number', 'units'),
         ('projects_total_value', 'Total - Project value', 'Billions of dollars', 'billions'),
         ('projects_total_count', 'Total - Number of projects', 'Number', 'units'),
-        ('projects_planned_count', 'Planned projects (announced, under review, approved)', 'Number', 'units'),
-        ('projects_planned_value', 'Planned projects value', 'Billions of dollars', 'billions'),
-        ('projects_construction_count', 'Projects under construction', 'Number', 'units'),
-        ('projects_construction_value', 'Construction projects value', 'Billions of dollars', 'billions'),
-        ('projects_cleantech_count', 'Clean technology projects', 'Number', 'units'),
-        ('projects_cleantech_value', 'Clean technology projects value', 'Billions of dollars', 'billions'),
     ]
     
     print(f"  Major Projects: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-def process_clean_tech_data():
-    """
-    Process clean technology project trends data.
+def extract_energy_data_from_text(soup):
+    import re
     
-    Data source: NRCan Major Projects Inventory (Table 4)
-    https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
+    if soup is None:
+        return {}
     
-    This data is from annual NRCan reports and is hardcoded since it's not available
-    as a direct StatCan CSV download.
+    text = soup.get_text()
+    data = {}
     
-    Returns list of tuples for data.csv and metadata.csv
-    """
-    print("Processing Clean Tech Trends data...")
-    print("  Source: NRCan Major Projects Inventory (Table 4)")
+    year_matches = re.findall(r'\b(20\d{2})\b', text)
+    years = []
+    seen = set()
+    for year_str in year_matches:
+        year = int(year_str)
+        if 2015 <= year <= 2050 and year not in seen:
+            years.append(year)
+            seen.add(year)
+            if len(years) >= 10:
+                break
+    years.sort()
     
-    clean_tech_data = {
-        2021: {
-            'total_projects': 178, 'total_value': 104,
-            'hydro_projects': 58, 'hydro_value': 39.2,
-            'wind_projects': 41, 'wind_value': 14.6,
-            'biomass_projects': 31, 'biomass_value': 8.0,
-            'solar_projects': 22, 'solar_value': 2.2,
-            'nuclear_projects': 4, 'nuclear_value': 27.4,
-            'ccs_projects': 2, 'ccs_value': 11.3,
-            'geothermal_projects': 5, 'geothermal_value': 0.4,
-            'tidal_projects': 6, 'tidal_value': 0.3,
-            'multiple_projects': 1, 'multiple_value': 0.03,
-            'other_projects': 8, 'other_value': 0.5,
-        },
-        2022: {
-            'total_projects': 197, 'total_value': 118,
-            'hydro_projects': 63, 'hydro_value': 44.8,
-            'wind_projects': 35, 'wind_value': 13.4,
-            'biomass_projects': 35, 'biomass_value': 9.4,
-            'solar_projects': 30, 'solar_value': 3.0,
-            'nuclear_projects': 3, 'nuclear_value': 26.1,
-            'ccs_projects': 6, 'ccs_value': 15.5,
-            'geothermal_projects': 4, 'geothermal_value': 0.4,
-            'tidal_projects': 7, 'tidal_value': 0.4,
-            'multiple_projects': 1, 'multiple_value': 0.03,
-            'other_projects': 13, 'other_value': 5.3,
-        },
-        2023: {
-            'total_projects': 233, 'total_value': 157.4,
-            'hydro_projects': 78, 'hydro_value': 37.4,
-            'wind_projects': 32, 'wind_value': 12.4,
-            'biomass_projects': 47, 'biomass_value': 14.3,
-            'solar_projects': 31, 'solar_value': 6.2,
-            'nuclear_projects': 2, 'nuclear_value': 25.8,
-            'ccs_projects': 9, 'ccs_value': 38.3,
-            'geothermal_projects': 4, 'geothermal_value': 0.4,
-            'tidal_projects': 7, 'tidal_value': 0.4,
-            'multiple_projects': 1, 'multiple_value': 0.03,
-            'other_projects': 22, 'other_value': 22.1,
-        },
-        2024: {
-            'total_projects': 215, 'total_value': 194.2,
-            'hydro_projects': 58, 'hydro_value': 30.4,
-            'wind_projects': 33, 'wind_value': 26.8,
-            'biomass_projects': 41, 'biomass_value': 12.6,
-            'solar_projects': 36, 'solar_value': 8.8,
-            'nuclear_projects': 3, 'nuclear_value': 51.8,
-            'ccs_projects': 8, 'ccs_value': 38.3,
-            'geothermal_projects': 4, 'geothermal_value': 0.4,
-            'tidal_projects': 4, 'tidal_value': 0.2,
-            'multiple_projects': 1, 'multiple_value': 0.03,
-            'other_projects': 25, 'other_value': 23.8,
-        },
+    if not years:
+        print("  WARNING: Could not detect years in fallback extraction")
+        return {}
+    
+    print(f"  Fallback extraction detected years: {years}")
+    
+    cell_pattern = r'(\d+)\s*\(\$?([\d.]+)B\)'
+    
+    categories = {
+        'total': r'Total Energy Projects[^\n]*',
+        'oil_gas': r'Oil and Gas[^\n]*',
+        'electricity': r'Electricity Generation[^\n]*',
+        'other': r'Other[^\n]*\$[\d.]+B',
     }
     
+    for category, pattern in categories.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            line = match.group(0)
+            cells = re.findall(cell_pattern, line)
+            for i, (count, value) in enumerate(cells):
+                if i < len(years):
+                    year = years[i]
+                    if year not in data:
+                        data[year] = {}
+                    data[year][f'{category}_projects'] = int(count)
+                    data[year][f'{category}_value'] = float(value)
+    
+    return data
+
+
+def process_clean_tech_data():
+    print("Processing Clean Tech Trends data...")
+    print("  Source: NRCan Major Projects Inventory (Table 4)")
+    print(f"  URL: {get_nrcan_mpi_url()}")
+    
+    energy_table, cleantech_table, soup = fetch_nrcan_mpi_tables()
+    
+    clean_tech_data = parse_cleantech_table(cleantech_table)
+    
+    if not clean_tech_data or len(clean_tech_data) == 0:
+        print("  WARNING: Could not parse clean tech table, using fallback extraction...")
+        clean_tech_data = extract_cleantech_data_from_text(soup)
+    
+    if not clean_tech_data or len(clean_tech_data) == 0:
+        print("  ERROR: Could not retrieve clean tech data")
+        return [], []
+    
+    print(f"  Parsed clean tech data for years: {sorted(clean_tech_data.keys())}")
+    for year, values in sorted(clean_tech_data.items()):
+        print(f"    {year}: {values}")
+    
     data_rows = []
-    categories = ['total', 'hydro', 'wind', 'biomass', 'solar', 'nuclear', 'ccs', 'geothermal', 'tidal', 'multiple', 'other']
+    categories = ['total', 'hydro', 'wind', 'biomass', 'solar', 'nuclear', 'ccs', 'geothermal', 'tidal', 'storage', 'multiple', 'other']
     
     for year, values in clean_tech_data.items():
         for cat in categories:
-            data_rows.append((f'cleantech_{cat}_count', year, values[f'{cat}_projects']))
-            data_rows.append((f'cleantech_{cat}_value', year, values[f'{cat}_value']))
+            if f'{cat}_projects' in values:
+                data_rows.append((f'cleantech_{cat}_count', year, values[f'{cat}_projects']))
+            if f'{cat}_value' in values:
+                data_rows.append((f'cleantech_{cat}_value', year, values[f'{cat}_value']))
     
     metadata_rows = [
         ('cleantech_total_count', 'Total clean technology - Number of projects', 'Number', 'units'),
@@ -1090,6 +1328,8 @@ def process_clean_tech_data():
         ('cleantech_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions'),
         ('cleantech_tidal_count', 'Tidal - Number of projects', 'Number', 'units'),
         ('cleantech_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_storage_count', 'Energy Storage - Number of projects', 'Number', 'units'),
+        ('cleantech_storage_value', 'Energy Storage - Project value', 'Billions of dollars', 'billions'),
         ('cleantech_multiple_count', 'Multiple - Number of projects', 'Number', 'units'),
         ('cleantech_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions'),
         ('cleantech_other_count', 'Other - Number of projects', 'Number', 'units'),
@@ -1098,6 +1338,216 @@ def process_clean_tech_data():
     
     print(f"  Clean Tech Trends: {len(data_rows)} data rows")
     return data_rows, metadata_rows
+
+
+def extract_cleantech_data_from_text(soup):
+    import re
+    
+    if soup is None:
+        return {}
+    
+    text = soup.get_text()
+    data = {}
+    
+    year_matches = re.findall(r'\b(20\d{2})\b', text)
+    years = []
+    seen = set()
+    for year_str in year_matches:
+        year = int(year_str)
+        if 2015 <= year <= 2050 and year not in seen:
+            years.append(year)
+            seen.add(year)
+            if len(years) >= 10:
+                break
+    years.sort()
+    
+    if not years:
+        print("  WARNING: Could not detect years in cleantech fallback extraction")
+        return {}
+    
+    print(f"  Cleantech fallback extraction detected years: {years}")
+    
+    cell_pattern = r'(\d+)\s*\(\$?([\d.]+)B\)'
+    
+    categories = {
+        'total': r'Total Clean Technology[^\n]*',
+        'hydro': r'\bHydro[^\n]*\$[\d.]+B',
+        'wind': r'\bWind[^\n]*\$[\d.]+B',
+        'solar': r'\bSolar[^\n]*\$[\d.]+B',
+        'nuclear': r'\bNuclear[^\n]*\$[\d.]+B',
+        'ccs': r'Carbon Capture[^\n]*\$[\d.]+B',
+        'biomass': r'\bBioenergy[^\n]*\$[\d.]+B',
+        'tidal': r'\bTidal[^\n]*\$[\d.]+B',
+        'geothermal': r'\bGeothermal[^\n]*\$[\d.]+B',
+        'storage': r'Energy Storage[^\n]*\$[\d.]+B',
+        'multiple': r'\bMultiple[^\n]*\$[\d.]+B',
+        'other': r'\bOther1?[^\n]*\$[\d.]+B',
+    }
+    
+    for category, pattern in categories.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            line = match.group(0)
+            cells = re.findall(cell_pattern, line)
+            for i, (count, value) in enumerate(cells):
+                if i < len(years):
+                    year = years[i]
+                    if year not in data:
+                        data[year] = {}
+                    data[year][f'{category}_projects'] = int(count)
+                    data[year][f'{category}_value'] = float(value)
+    
+    return data
+
+
+def process_major_projects_map_data():
+    """
+    Fetch major energy projects data from NRCan's ArcGIS Feature Server.
+    
+    Data sources:
+    - English: https://nrcan-rncan.maps.arcgis.com/apps/dashboards/5ab61c54487e4d05a4ff83c84e018cde
+    - French: https://geo.ca/fr/economie/grands-projets-de-ressources-naturelles-au-canada/
+    
+    This fetches both English and French versions:
+    - Point features (projects): energy projects with lat/lon coordinates
+    - Line features (transmission lines/pipelines): with polyline geometries
+    
+    Returns data as JSON saved to public/data/major_projects_map.json
+    """
+    print("\nFetching Major Projects Map data from NRCan ArcGIS...")
+    
+    base_url_en = "https://maps-cartes.services.geo.ca/server_serveur/rest/services/NRCan/major_projects_inventory_en/MapServer"
+    base_url_fr = "https://maps-cartes.services.geo.ca/server_serveur/rest/services/NRCan/major_projects_inventory_fr/MapServer"
+    
+    def fetch_data(base_url, lang, sector_filter):
+        """Fetch point and line data for a specific language."""
+        point_url = f"{base_url}/0/query"
+        line_url = f"{base_url}/1/query"
+        
+        params = {
+            "where": f"sector='{sector_filter}'",
+            "outFields": "*",
+            "f": "json",
+            "returnGeometry": "true",
+            "outSR": "4326",
+            "resultRecordCount": "2000"
+        }
+        
+        points = []
+        lines = []
+        
+        try:
+            print(f"  Fetching {lang} point features...")
+            response = requests.get(point_url, params=params, timeout=60)
+            response.raise_for_status()
+            point_data = response.json()
+            
+            if "features" in point_data:
+                for feature in point_data["features"]:
+                    attrs = feature.get("attributes", {})
+                    geom = feature.get("geometry", {})
+                    
+                    project = {
+                        "id": attrs.get("id"),
+                        "company": attrs.get("company"),
+                        "project_name": attrs.get("project_name"),
+                        "province": attrs.get("province"),
+                        "location": attrs.get("location"),
+                        "capital_cost": attrs.get("capital_cost"),
+                        "capital_cost_range": attrs.get("capital_cost_range"),
+                        "status": attrs.get("status"),
+                        "clean_technology": attrs.get("clean_technology"),
+                        "clean_technology_type": attrs.get("clean_technology_type"),
+                        "lat": geom.get("y"),
+                        "lon": geom.get("x"),
+                        "type": "point"
+                    }
+                    points.append(project)
+                
+                print(f"    Found {len(points)} {lang} point features")
+            else:
+                print(f"    Warning: No {lang} point features found. Response: {point_data.get('error', 'Unknown error')}")
+        
+        except Exception as e:
+            print(f"    Error fetching {lang} point features: {e}")
+        
+        try:
+            print(f"  Fetching {lang} line features...")
+            response = requests.get(line_url, params=params, timeout=60)
+            response.raise_for_status()
+            line_data = response.json()
+            
+            if "features" in line_data:
+                for feature in line_data["features"]:
+                    attrs = feature.get("attributes", {})
+                    geom = feature.get("geometry", {})
+                    
+                    paths = geom.get("paths", [])
+                    coordinates = []
+                    for path in paths:
+                        path_coords = []
+                        for coord in path:
+                            if len(coord) >= 2:
+                                path_coords.append({"lon": coord[0], "lat": coord[1]})
+                        if path_coords:
+                            coordinates.append(path_coords)
+                    
+                    line_project = {
+                        "id": attrs.get("id"),
+                        "company": attrs.get("company"),
+                        "project_name": attrs.get("project_name"),
+                        "province": attrs.get("province"),
+                        "location": attrs.get("location"),
+                        "capital_cost": attrs.get("capital_cost"),
+                        "capital_cost_range": attrs.get("capital_cost_range"),
+                        "status": attrs.get("status"),
+                        "clean_technology": attrs.get("clean_technology"),
+                        "clean_technology_type": attrs.get("clean_technology_type"),
+                        "line_type": attrs.get("type"),
+                        "paths": coordinates,
+                        "type": "line"
+                    }
+                    lines.append(line_project)
+                
+                print(f"    Found {len(lines)} {lang} line features")
+            else:
+                print(f"    Warning: No {lang} line features found. Response: {line_data.get('error', 'Unknown error')}")
+        
+        except Exception as e:
+            print(f"    Error fetching {lang} line features: {e}")
+        
+        return points, lines
+    
+    en_points, en_lines = fetch_data(base_url_en, "English", "Energy")
+    fr_points, fr_lines = fetch_data(base_url_fr, "French", "Énergie")
+    
+    map_data = {
+        "en": {
+            "points": en_points,
+            "lines": en_lines
+        },
+        "fr": {
+            "points": fr_points,
+            "lines": fr_lines
+        },
+        "metadata": {
+            "en_total_points": len(en_points),
+            "en_total_lines": len(en_lines),
+            "fr_total_points": len(fr_points),
+            "fr_total_lines": len(fr_lines),
+            "retrieved_at": datetime.now().isoformat(),
+            "source_en": "https://nrcan-rncan.maps.arcgis.com/apps/dashboards/5ab61c54487e4d05a4ff83c84e018cde",
+            "source_fr": "https://geo.ca/fr/economie/grands-projets-de-ressources-naturelles-au-canada/"
+        }
+    }
+    
+    json_path = os.path.join(DATA_DIR, "major_projects_map.json")
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(map_data, f, indent=2, ensure_ascii=False)
+    
+    print(f"  Major Projects Map: saved EN({len(en_points)} points, {len(en_lines)} lines) FR({len(fr_points)} points, {len(fr_lines)} lines) to {json_path}")
+    
+    return map_data
 
 
 def refresh_all_data():
@@ -1148,6 +1598,8 @@ def refresh_all_data():
     cleantech_data, cleantech_meta = process_clean_tech_data()
     all_data.extend(cleantech_data)
     all_metadata.extend(cleantech_meta)
+    
+    process_major_projects_map_data()
     
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])
     metadata_df = pd.DataFrame(all_metadata, columns=['vector', 'title', 'uom', 'scalar_factor'])

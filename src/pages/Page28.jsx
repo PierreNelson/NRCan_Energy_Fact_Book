@@ -661,9 +661,7 @@ const Page28 = () => {
                             <div role="region" aria-label={getChartSummary()}>
                                 <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                                     {selectedPoints !== null && (
-                                        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 10, zIndex: 20 }}>
-                                            {lang === 'en' ? 'Clear' : 'Effacer'}
-                                        </button>
+                                        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                     )}
 
                                     <Plot
@@ -790,7 +788,7 @@ const Page28 = () => {
                                             font: { family: 'Arial, sans-serif' }
                                         }}
                                         config={{
-                                            displayModeBar: windowWidth > 768 || isChartInteractive,
+                                            displayModeBar: true,
                                             displaylogo: false,
                                             responsive: true,
                                             modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],

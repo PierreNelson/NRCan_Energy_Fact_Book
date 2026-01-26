@@ -560,3 +560,56 @@ html {
   padding-bottom: 0;
   margin-bottom: 0;
 }
+
+/* ==============================================
+   PLOTLY MODEBAR - MOBILE VISIBILITY
+   Ensure modebar is always visible on all devices
+   =============================================== */
+
+.js-plotly-plot .plotly .modebar {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+}
+
+.js-plotly-plot .plotly .modebar-container {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.js-plotly-plot .plotly .modebar-group {
+  display: flex !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn {
+  display: inline-flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  cursor: pointer !important;
+  padding: 3px !important;
+}
+
+@media (max-width: 768px) {
+  .js-plotly-plot .plotly .modebar {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 4px !important;
+    padding: 2px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+  }
+  
+  .js-plotly-plot .plotly .modebar-btn {
+    padding: 5px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+  }
+  
+  .js-plotly-plot .plotly .modebar-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}

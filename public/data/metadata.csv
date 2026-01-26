@@ -60,12 +60,6 @@ projects_other_value,Other - Project value,Billions of dollars,billions
 projects_other_count,Other - Number of projects,Number,units
 projects_total_value,Total - Project value,Billions of dollars,billions
 projects_total_count,Total - Number of projects,Number,units
-projects_planned_count,"Planned projects (announced, under review, approved)",Number,units
-projects_planned_value,Planned projects value,Billions of dollars,billions
-projects_construction_count,Projects under construction,Number,units
-projects_construction_value,Construction projects value,Billions of dollars,billions
-projects_cleantech_count,Clean technology projects,Number,units
-projects_cleantech_value,Clean technology projects value,Billions of dollars,billions
 cleantech_total_count,Total clean technology - Number of projects,Number,units
 cleantech_total_value,Total clean technology - Project value,Billions of dollars,billions
 cleantech_hydro_count,Hydro - Number of projects,Number,units
@@ -84,6 +78,8 @@ cleantech_geothermal_count,Geothermal - Number of projects,Number,units
 cleantech_geothermal_value,Geothermal - Project value,Billions of dollars,billions
 cleantech_tidal_count,Tidal - Number of projects,Number,units
 cleantech_tidal_value,Tidal - Project value,Billions of dollars,billions
+cleantech_storage_count,Energy Storage - Number of projects,Number,units
+cleantech_storage_value,Energy Storage - Project value,Billions of dollars,billions
 cleantech_multiple_count,Multiple - Number of projects,Number,units
 cleantech_multiple_value,Multiple - Project value,Billions of dollars,billions
 cleantech_other_count,Other - Number of projects,Number,units

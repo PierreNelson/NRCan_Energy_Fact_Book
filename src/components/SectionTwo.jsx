@@ -7,6 +7,7 @@ import Page26 from '../pages/Page26';
 import Page27 from '../pages/Page27';
 import Page28 from '../pages/Page28';
 import Page29 from '../pages/Page29';
+import Page30 from '../pages/Page30';
 import Page31 from '../pages/Page31';
 import Page32 from '../pages/Page32';
 import Page37 from '../pages/Page37';
@@ -71,6 +72,10 @@ const SectionTwo = () => {
 
             <div id="clean-tech-trends" className="stacked-page-wrapper">
                 <Page29 />
+            </div>
+
+            <div id="projects-map" className="stacked-page-wrapper">
+                <Page30 />
             </div>
 
             <div id="international-investment" className="stacked-page-wrapper">

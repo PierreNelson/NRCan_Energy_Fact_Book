@@ -764,7 +764,7 @@ projects_electricity_value,2021,102.0
 projects_electricity_count,2021,176.0
 projects_other_value,2021,8.9
 projects_other_count,2021,23.0
-projects_total_value,2021,449.9
+projects_total_value,2021,450.0
 projects_total_count,2021,305.0
 projects_oil_gas_value,2022,294.0
 projects_oil_gas_count,2022,96.0
@@ -772,7 +772,7 @@ projects_electricity_value,2022,106.0
 projects_electricity_count,2022,179.0
 projects_other_value,2022,26.6
 projects_other_count,2022,45.0
-projects_total_value,2022,426.6
+projects_total_value,2022,427.0
 projects_total_count,2022,320.0
 projects_oil_gas_value,2023,318.6
 projects_oil_gas_count,2023,87.0
@@ -780,7 +780,7 @@ projects_electricity_value,2023,97.4
 projects_electricity_count,2023,182.0
 projects_other_value,2023,56.2
 projects_other_count,2023,74.0
-projects_total_value,2023,472.2
+projects_total_value,2023,472.3
 projects_total_count,2023,343.0
 projects_oil_gas_value,2024,296.2
 projects_oil_gas_count,2024,67.0
@@ -790,12 +790,6 @@ projects_other_value,2024,94.9
 projects_other_count,2024,85.0
 projects_total_value,2024,510.0
 projects_total_count,2024,340.0
-projects_planned_count,2024,231.0
-projects_planned_value,2024,351.0
-projects_construction_count,2024,109.0
-projects_construction_value,2024,159.0
-projects_cleantech_count,2024,215.0
-projects_cleantech_value,2024,194.0
 cleantech_total_count,2021,178.0
 cleantech_total_value,2021,104.0
 cleantech_hydro_count,2021,58.0
@@ -814,6 +808,7 @@ cleantech_geothermal_count,2021,5.0
 cleantech_geothermal_value,2021,0.4
 cleantech_tidal_count,2021,6.0
 cleantech_tidal_value,2021,0.3
+cleantech_storage_count,2021,0.0
 cleantech_multiple_count,2021,1.0
 cleantech_multiple_value,2021,0.03
 cleantech_other_count,2021,8.0
@@ -836,6 +831,7 @@ cleantech_geothermal_count,2022,4.0
 cleantech_geothermal_value,2022,0.4
 cleantech_tidal_count,2022,7.0
 cleantech_tidal_value,2022,0.4
+cleantech_storage_count,2022,0.0
 cleantech_multiple_count,2022,1.0
 cleantech_multiple_value,2022,0.03
 cleantech_other_count,2022,13.0
@@ -858,6 +854,7 @@ cleantech_geothermal_count,2023,4.0
 cleantech_geothermal_value,2023,0.4
 cleantech_tidal_count,2023,7.0
 cleantech_tidal_value,2023,0.4
+cleantech_storage_count,2023,0.0
 cleantech_multiple_count,2023,1.0
 cleantech_multiple_value,2023,0.03
 cleantech_other_count,2023,22.0
@@ -880,6 +877,8 @@ cleantech_geothermal_count,2024,4.0
 cleantech_geothermal_value,2024,0.4
 cleantech_tidal_count,2024,4.0
 cleantech_tidal_value,2024,0.2
+cleantech_storage_count,2024,2.0
+cleantech_storage_value,2024,1.1
 cleantech_multiple_count,2024,1.0
 cleantech_multiple_value,2024,0.03
 cleantech_other_count,2024,25.0

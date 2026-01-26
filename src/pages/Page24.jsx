@@ -784,7 +784,7 @@ const Page24 = () => {
                                     });
                                 }}
                                 config={{ 
-                                    displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                    displayModeBar: true, 
                                     displaylogo: false,
                                     responsive: true,
                                     modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
