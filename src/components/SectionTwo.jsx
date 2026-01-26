@@ -29,11 +29,11 @@ const SectionTwo = () => {
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             } else {
-                // No hash - scroll to top and focus on page-23 (title screen)
+                // No hash - scroll to top and focus on investment overview (title screen)
                 window.scrollTo({ top: 0, behavior: 'instant' });
-                const page23 = document.getElementById('page-23');
-                if (page23) {
-                    page23.scrollIntoView({ behavior: 'instant', block: 'start' });
+                const overviewPage = document.getElementById('investment-overview');
+                if (overviewPage) {
+                    overviewPage.scrollIntoView({ behavior: 'instant', block: 'start' });
                 }
             }
         }, 300); // Run after Page37's 100ms auto-focus effect
@@ -43,45 +43,45 @@ const SectionTwo = () => {
 
     return (
         <div className="stacked-section-container">
-            {/* Each page wrapper has an ID for potential anchor links */}
+            {/* Each page wrapper has a semantic ID for anchor links */}
             
-            <div id="page-23" className="stacked-page-wrapper">
+            <div id="investment-overview" className="stacked-page-wrapper">
                 <Page23 />
             </div>
 
-            <div id="page-24" className="stacked-page-wrapper">
+            <div id="capital-expenditure" className="stacked-page-wrapper">
                 <Page24 />
             </div>
 
-            <div id="page-25" className="stacked-page-wrapper">
+            <div id="infrastructure-stock" className="stacked-page-wrapper">
                 <Page25 />
             </div>
 
-            <div id="page-26" className="stacked-page-wrapper">
+            <div id="economic-contributions" className="stacked-page-wrapper">
                 <Page26 />
             </div>
 
-            <div id="page-27" className="stacked-page-wrapper">
+            <div id="investment-by-asset" className="stacked-page-wrapper">
                 <Page27 />
             </div>
 
-            <div id="page-28" className="stacked-page-wrapper">
+            <div id="major-projects" className="stacked-page-wrapper">
                 <Page28 />
             </div>
 
-            <div id="page-29" className="stacked-page-wrapper">
+            <div id="clean-tech-trends" className="stacked-page-wrapper">
                 <Page29 />
             </div>
 
-            <div id="page-31" className="stacked-page-wrapper">
+            <div id="international-investment" className="stacked-page-wrapper">
                 <Page31 />
             </div>
 
-            <div id="page-32" className="stacked-page-wrapper">
+            <div id="foreign-control" className="stacked-page-wrapper">
                 <Page32 />
             </div>
 
-            <div id="page-37" className="stacked-page-wrapper">
+            <div id="environmental-protection" className="stacked-page-wrapper">
                 <Page37 />
             </div>
         </div>

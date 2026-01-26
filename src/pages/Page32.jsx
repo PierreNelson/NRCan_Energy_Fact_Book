@@ -17,6 +17,7 @@ const Page32 = () => {
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
     const [selectedPoints, setSelectedPoints] = useState(null);
     const chartRef = useRef(null);
+    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     useEffect(() => {
@@ -448,8 +449,7 @@ const Page32 = () => {
             alert('Could not find chart element. Please try again.');
             return;
         }
-
-        const title = stripHtml(getText('page32_title', lang));
+        const title = stripHtml(getText('page32_chart_title', lang));
 
         try {
             if (!window.Plotly) {
@@ -537,7 +537,7 @@ const Page32 = () => {
                 .page-32 {
                     margin-left: -${layoutPadding?.left || 55}px;
                     width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${(layoutPadding?.left || 55) - 18}px; 
+                    padding-left: ${layoutPadding?.left || 55}px; 
                 }
 
                 .wb-inv {
@@ -843,54 +843,8 @@ const Page32 = () => {
                         <div role="region" aria-label={getChartDataSummary()}>
                         <div className="page32-chart-wrapper">
                             <figure ref={chartRef} className="page32-chart" style={{ margin: 0, position: 'relative' }}>
-                                {windowWidth <= 768 && !isChartInteractive && (
-                                    <div 
-                                        onClick={() => setIsChartInteractive(true)} 
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                setIsChartInteractive(true);
-                                            }
-                                        }}
-                                        style={{ 
-                                            position: 'absolute', 
-                                            top: 0, 
-                                            left: 0, 
-                                            width: '100%', 
-                                            height: '100%', 
-                                            zIndex: 10, 
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            paddingRight: windowWidth > 1280 ? '350px' : '0px',
-                                            boxSizing: 'border-box',
-                                            backgroundColor: 'rgba(255,255,255,0.01)'
-                                        }} 
-                                        title={lang === 'en' ? 'Click to interact with chart' : 'Cliquez pour interagir avec le graphique'} 
-                                        role="button" 
-                                        aria-label={lang === 'en' ? 'Click to enable chart interaction' : 'Cliquez pour activer l\'interaction avec le graphique'}
-                                        tabIndex={0}
-                                    >
-                                        <span style={{
-                                            background: 'rgba(0,0,0,0.7)',
-                                            color: 'white',
-                                            padding: '8px 16px',
-                                            borderRadius: '4px',
-                                            pointerEvents: 'none',
-                                            fontSize: '14px',
-                                            fontFamily: 'Arial, sans-serif'
-                                        }}>
-                                            {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {windowWidth <= 768 && isChartInteractive && (
-                                    <button onClick={() => { setIsChartInteractive(false); setSelectedPoints(null); }} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
-                                )}
                                 {selectedPoints !== null && (
-                                    <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 360 : 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                                    <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                 )}
                                 <Plot
                                     data={processedChartData.traces}
@@ -951,6 +905,18 @@ const Page32 = () => {
                                         const clickedPoint = data.points[0];
                                         const traceIndex = clickedPoint.curveNumber;
                                         const pointIndex = clickedPoint.pointIndex;
+                                        if (windowWidth <= 768) {
+                                            const currentTime = new Date().getTime();
+                                            const lastClick = lastClickRef.current;
+                                            const isSamePoint = (traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex);
+                                            const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
+                                            
+                                            lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
+                                            
+                                            if (!isDoubleTap) {
+                                                return; // Single tap: show hover label only
+                                            }
+                                        }
 
                                         setSelectedPoints(prev => {
                                             if (prev === null) {
@@ -979,6 +945,7 @@ const Page32 = () => {
                                     }}
                                     config={{ 
                                         displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                        displaylogo: false,
                                         responsive: true,
                                         modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
                                         modeBarButtonsToAdd: [{

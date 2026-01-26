@@ -392,7 +392,7 @@ const Page26 = () => {
                 .page-26 {
                     margin-left: -${layoutPadding?.left || 55}px;
                     width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${(layoutPadding?.left || 55) - 18}px; 
+                    padding-left: ${layoutPadding?.left || 55}px; 
                 }
 
                 .page26-year-selector {

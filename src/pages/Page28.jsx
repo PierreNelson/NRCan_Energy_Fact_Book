@@ -16,6 +16,7 @@ const Page28 = () => {
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
     const [selectedPoints, setSelectedPoints] = useState(null);
     const chartRef = useRef(null);
+    const lastClickRef = useRef({ time: 0, seriesIndex: null, pointIndex: null });
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
@@ -659,32 +660,8 @@ const Page28 = () => {
 
                             <div role="region" aria-label={getChartSummary()}>
                                 <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
-                                    {windowWidth <= 768 && !isChartInteractive && (
-                                        <div
-                                            onClick={() => setIsChartInteractive(true)}
-                                            style={{
-                                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                                                zIndex: 10, cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                                justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
-                                            }}
-                                            role="button"
-                                            tabIndex={0}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsChartInteractive(true); } }}
-                                        >
-                                            <span style={{ background: 'rgba(0,0,0,0.7)', color: 'white', padding: '8px 16px', borderRadius: '4px', fontSize: '14px' }}>
-                                                {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {windowWidth <= 768 && isChartInteractive && (
-                                        <button onClick={() => { setIsChartInteractive(false); setSelectedPoints(null); }} style={{ position: 'absolute', top: 0, right: 10, zIndex: 20 }}>
-                                            {lang === 'en' ? 'Done' : 'Terminé'}
-                                        </button>
-                                    )}
-
                                     {selectedPoints !== null && (
-                                        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 70 : 10, zIndex: 20 }}>
+                                        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 10, zIndex: 20 }}>
                                             {lang === 'en' ? 'Clear' : 'Effacer'}
                                         </button>
                                     )}
@@ -832,6 +809,19 @@ const Page28 = () => {
                                                 const clickedPoint = data.points[0];
                                                 const seriesIndex = clickedPoint.curveNumber;
                                                 const pointIndex = clickedPoint.pointIndex;
+
+                                                if (windowWidth <= 768) {
+                                                    const currentTime = new Date().getTime();
+                                                    const lastClick = lastClickRef.current;
+                                                    const isSamePoint = (seriesIndex === lastClick.seriesIndex && pointIndex === lastClick.pointIndex);
+                                                    const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
+                                                    
+                                                    lastClickRef.current = { time: currentTime, seriesIndex, pointIndex };
+                                                    
+                                                    if (!isDoubleTap) {
+                                                        return; // Single tap: show hover label only
+                                                    }
+                                                }
 
                                                 if (seriesIndex < 3) {
                                                     setSelectedPoints(prev => {

@@ -6,8 +6,8 @@
   --text-color: #333333;
   --font-family: 'Helvetica', 'Arial', sans-serif;
   --sidebar-width: 340px;
-  --sidebar-width-collapsed: 28px;
-  /* Wider collapsed area for indicator */
+  --sidebar-width-collapsed: 40px;
+  /* Wider collapsed area for hamburger button look */
   --transition-speed: 0.3s;
 }
 
@@ -84,25 +84,29 @@ html {
   width: var(--sidebar-width-collapsed);
   background-color: var(--primary-color);
   padding: 20px 10px;
-  transition: width var(--transition-speed) ease-in-out, background-color var(--transition-speed);
+  transition: width var(--transition-speed) ease-in-out, background-color var(--transition-speed), border-radius var(--transition-speed);
   z-index: 1000;
   overflow: hidden;
   white-space: nowrap;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
+  /* Rounded corners on right side when collapsed - looks like a button */
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
-/* Collapse indicator arrow - visible when sidebar is collapsed */
+/* Collapse indicator - hamburger icon matching mobile toggle style */
 .sidebar::before {
-  content: "◂";
+  content: "☰";
   position: absolute;
   top: 50%;
-  left: 8px;
-  transform: translateY(-50%);
-  font-size: 1.2rem;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.4rem;
   color: white;
-  opacity: 0.9;
+  opacity: 1;
   transition: opacity var(--transition-speed);
   z-index: 1001;
+  cursor: pointer;
 }
 
 .sidebar:hover::before {
@@ -116,6 +120,8 @@ html {
   /* Allow text to wrap when expanded */
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25);
   overflow-y: auto; /* Only show scrollbar when expanded */
+  /* Remove rounded corners when expanded */
+  border-radius: 0;
 }
 
 /* Mobile opened state via JavaScript */

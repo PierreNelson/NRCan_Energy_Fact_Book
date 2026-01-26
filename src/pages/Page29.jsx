@@ -93,7 +93,6 @@ const Page29 = () => {
 
         const title = stripHtml(pageTitle);
 
-        // Colors matching the HTML table
         const headerBgColor = '8e7e52';  // Olive/tan for header and category column
         const totalRowBgColor = '48494a'; // Dark gray for total row data cells
         const zebraStripeBgColor = 'd4cbba'; // Light beige for even rows
@@ -120,7 +119,6 @@ const Page29 = () => {
             
             return new TableRow({
                 children: [
-                    // Category cell (left column) - always olive/tan with white text
                     new TableCell({
                         children: [new Paragraph({
                             children: [new TextRun({ 
@@ -133,7 +131,6 @@ const Page29 = () => {
                         })],
                         shading: { fill: headerBgColor }
                     }),
-                    // Data cells
                     ...years.map(y => {
                         const yearData = pageData.find(d => d.year === y);
                         const projects = yearData ? yearData[`${cat.key}_projects`] : 0;
@@ -145,7 +142,6 @@ const Page29 = () => {
                             ? (value < 1 ? `$${value.toFixed(2)}B` : `$${value.toFixed(1)}B`)
                             : (value < 1 ? `${value.toFixed(2).replace('.', ',')} G$` : `${value.toFixed(1).replace('.', ',')} G$`);
                         
-                        // Determine cell background and text color
                         let cellBgColor = undefined;
                         let textColor = '333333'; // Default dark text
                         

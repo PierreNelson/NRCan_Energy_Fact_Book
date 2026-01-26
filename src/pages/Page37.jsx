@@ -19,6 +19,7 @@ const Page37 = () => {
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
     const [selectedSlices, setSelectedSlices] = useState(null);
     const chartRef = useRef(null);
+    const lastClickRef = useRef({ time: 0, index: null });
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
     const hexToRgba = (hex, opacity = 1) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -136,8 +137,9 @@ const Page37 = () => {
             alert('Could not find chart element. Please try again.');
             return;
         }
-
-        const title = stripHtml(getText('page37_title', lang));
+        const chartTitleText = getText('page37_chart_title', lang);
+        const subtitle = getText('page37_chart_subtitle', lang);
+        const title = `${stripHtml(chartTitleText)} (${year}, ${stripHtml(subtitle)})`;
 
         try {
             if (!window.Plotly) {
@@ -640,7 +642,7 @@ const getAccessibleDataTable = () => {
                 .page-37 {
                     margin-right: -${layoutPadding?.right || 15}px;
                     width: calc(100% + ${layoutPadding?.right || 15}px);
-                    padding-right: ${(layoutPadding?.right || 15) - 18}px; 
+                    padding-right: ${layoutPadding?.right || 15}px; 
                 }
 
                 .wb-inv {
@@ -1019,29 +1021,8 @@ const getAccessibleDataTable = () => {
                                 style={{ width: '100%' }} 
                             >
                                 <figure ref={chartRef} className="page37-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
-                                    {windowWidth <= 768 && !isChartInteractive && (
-                                        <div 
-                                            onClick={() => setIsChartInteractive(true)} 
-                                            style={{ 
-                                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                                                zIndex: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', 
-                                                justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
-                                            }} 
-                                            title={lang === 'en' ? 'Click to interact with chart' : 'Cliquez pour interagir avec le graphique'} 
-                                            role="button" 
-                                            tabIndex={0}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsChartInteractive(true); } }}
-                                        >
-                                            <span style={{ background: 'rgba(0,0,0,0.7)', color: 'white', padding: '8px 16px', borderRadius: '4px', fontSize: '14px' }}>
-                                                {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
-                                            </span>
-                                        </div>
-                                    )}
-                                    {windowWidth <= 768 && isChartInteractive && (
-                                        <button onClick={() => { setIsChartInteractive(false); setSelectedSlices(null); }} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Done' : 'Terminé'}</button>
-                                    )}
                                     {selectedSlices !== null && (
-                                        <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 360 : 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                                        <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                     )}
                                     <Plot
                                         key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}
@@ -1139,6 +1120,18 @@ const getAccessibleDataTable = () => {
                                             const sliceIndex = clickedPoint.pointNumber !== undefined ? clickedPoint.pointNumber : clickedPoint.pointIndex;
 
                                             if (sliceIndex === undefined) return;
+                                            if (windowWidth <= 768) {
+                                                const currentTime = new Date().getTime();
+                                                const lastClick = lastClickRef.current;
+                                                const isSamePoint = (sliceIndex === lastClick.index);
+                                                const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
+                                                
+                                                lastClickRef.current = { time: currentTime, index: sliceIndex };
+                                                
+                                                if (!isDoubleTap) {
+                                                    return; // Single tap: show hover label only
+                                                }
+                                            }
 
                                             setSelectedSlices(prev => {
                                                 if (prev === null) {
@@ -1160,6 +1153,7 @@ const getAccessibleDataTable = () => {
                                         }}
                                         config={{ 
                                             displayModeBar: windowWidth > 768 || isChartInteractive, 
+                                            displaylogo: false,
                                             responsive: true, 
                                             staticPlot: false,
                                             modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],

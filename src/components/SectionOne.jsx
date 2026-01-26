@@ -31,10 +31,10 @@ const SectionOne = () => {
 
     return (
         <div className="stacked-section-container">
-            <div id="page-1" className="stacked-page-wrapper">
+            <div id="energy-overview" className="stacked-page-wrapper">
                 <Page1 />
             </div>
-            <div id="page-8" className="stacked-page-wrapper">
+            <div id="provincial-gdp" className="stacked-page-wrapper">
                 <Page8 />
             </div>
         </div>

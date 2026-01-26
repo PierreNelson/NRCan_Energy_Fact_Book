@@ -136,16 +136,14 @@ const Sidebar = ({ lang }) => {
                             role="group"
                             aria-label={getText('nav_section1', lang)}
                         >
-                            {/* Section 1 Intro (Page 1) */}
                             <NavLink
-                                to="/"
+                                to="/section-1#energy-overview"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section1_title', lang)}
                             </NavLink>
-                            {/* Provincial GDP (Page 8) */}
                             <NavLink
-                                to="/#page-8"
+                                to="/section-1#provincial-gdp"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_provincial_gdp', lang)}
@@ -181,81 +179,81 @@ const Sidebar = ({ lang }) => {
                             role="group"
                             aria-label={getText('nav_section2', lang)}
                         >
-                            {/* Investment (Section 2 Intro - Page 23) */}
+                            {/* Investment Overview */}
                             <NavLink
-                                to="/section-2#page-23"
+                                to="/section-2#investment-overview"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section2_title', lang)}
                             </NavLink>
 
-                            {/* Page 24 */}
+                            {/* Capital Expenditure */}
                             <NavLink
-                                to="/section-2#page-24"
+                                to="/section-2#capital-expenditure"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_capital_expenditure', lang)}
                             </NavLink>
 
-                            {/* Page 25 */}
+                            {/* Infrastructure Stock */}
                             <NavLink
-                                to="/section-2#page-25"
+                                to="/section-2#infrastructure-stock"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_infrastructure', lang)}
                             </NavLink>
 
-                            {/* Page 26 */}
+                            {/* Economic Contributions */}
                             <NavLink
-                                to="/section-2#page-26"
+                                to="/section-2#economic-contributions"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_economic_contributions', lang)}
                             </NavLink>
 
-                            {/* Page 27 */}
+                            {/* Investment by Asset */}
                             <NavLink
-                                to="/section-2#page-27"
+                                to="/section-2#investment-by-asset"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_investment_detail', lang)}
                             </NavLink>
 
-                            {/* Page 28 */}
+                            {/* Major Projects */}
                             <NavLink
-                                to="/section-2#page-28"
+                                to="/section-2#major-projects"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_major_projects', lang)}
                             </NavLink>
 
-                            {/* Page 29 */}
+                            {/* Clean Tech Trends */}
                             <NavLink
-                                to="/section-2#page-29"
+                                to="/section-2#clean-tech-trends"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_clean_tech_trends', lang)}
                             </NavLink>
 
-                            {/* Page 31 */}
+                            {/* International Investment */}
                             <NavLink
-                                to="/section-2#page-31"
+                                to="/section-2#international-investment"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_international_investment', lang)}
                             </NavLink>
 
-                            {/* Page 32 */}
+                            {/* Foreign Control */}
                             <NavLink
-                                to="/section-2#page-32"
+                                to="/section-2#foreign-control"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_fdi_stock', lang)}
                             </NavLink>
 
-                            {/* Page 37 */}
+                            {/* Environmental Protection */}
                             <NavLink
-                                to="/section-2#page-37"
+                                to="/section-2#environmental-protection"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_environmental_protection', lang)}

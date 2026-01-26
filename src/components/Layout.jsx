@@ -71,14 +71,12 @@ const Layout = () => {
         return () => clearTimeout(focusTimer);
     }, [location.pathname]);
 
-    // Section Navigation Logic - Used for ghost navigation (screen readers)
     const pages = [
-        { path: '/' },
+        { path: '/section-1' },
         { path: '/section-2' }
     ];
 
-    // Handle both / and /section-1 as the same section
-    const normalizedPath = location.pathname === '/section-1' ? '/' : location.pathname;
+    const normalizedPath = location.pathname === '/' ? '/section-1' : location.pathname;
     const currentIndex = pages.findIndex(p => p.path === normalizedPath);
     const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
     const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;

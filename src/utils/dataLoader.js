@@ -4,13 +4,19 @@
  * Loads pre-calculated data from data.csv stored in public/data/
  * All calculations are done in data_retrieval.py - this module just loads and parses.
  * 
- * Data is stored with virtual vectors like:
- * - page24_oil_gas, page24_electricity, page24_other, page24_total
- * - page25_fuel_energy_pipelines, page25_transport, etc.
- * - page26_jobs, page26_employment_income, page26_gdp, page26_investment_value
+ * Data is stored with semantic vector prefixes:
+ * - capex_*: Capital expenditure data
+ * - infra_*: Infrastructure stock data
+ * - econ_*: Economic contributions data
+ * - asset_*: Investment by asset type data
+ * - projects_*: Major energy projects data
+ * - cleantech_*: Clean technology trends data
+ * - intl_*: International investment data
+ * - foreign_*: Foreign control data
+ * - enviro_*: Environmental protection data
+ * - gdp_prov_*: Provincial GDP data
  */
 
-// Cache for loaded data
 let dataCache = null;
 
 /**
@@ -73,24 +79,21 @@ async function loadAllData() {
 }
 
 /**
- * Get capital expenditures data for Page 24
+ * Get capital expenditures data
  * Returns array of objects: { year, oil_gas, electricity, other, total }
  */
 export async function getCapitalExpendituresData() {
     const allData = await loadAllData();
     
-    // Filter for page24 vectors
-    const page24Data = allData.filter(row => row.vector && row.vector.startsWith('page24_'));
+    const capexData = allData.filter(row => row.vector && row.vector.startsWith('capex_'));
     
-    // Group by year
     const yearMap = {};
-    page24Data.forEach(row => {
+    capexData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        // Extract field name from vector (e.g., 'page24_oil_gas' -> 'oil_gas')
-        const field = row.vector.replace('page24_', '');
+        const field = row.vector.replace('capex_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -98,23 +101,21 @@ export async function getCapitalExpendituresData() {
 }
 
 /**
- * Get infrastructure data for Page 25
+ * Get infrastructure data
  * Returns array of objects: { year, fuel_energy_pipelines, transport, health_housing, education, public_safety, environmental, total }
  */
 export async function getInfrastructureData() {
     const allData = await loadAllData();
     
-    // Filter for page25 vectors
-    const page25Data = allData.filter(row => row.vector && row.vector.startsWith('page25_'));
+    const infraData = allData.filter(row => row.vector && row.vector.startsWith('infra_'));
     
-    // Group by year
     const yearMap = {};
-    page25Data.forEach(row => {
+    infraData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        const field = row.vector.replace('page25_', '');
+        const field = row.vector.replace('infra_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -122,23 +123,21 @@ export async function getInfrastructureData() {
 }
 
 /**
- * Get economic contributions data for Page 26
+ * Get economic contributions data
  * Returns array of objects: { year, jobs, employment_income, gdp, investment_value }
  */
 export async function getEconomicContributionsData() {
     const allData = await loadAllData();
     
-    // Filter for page26 vectors
-    const page26Data = allData.filter(row => row.vector && row.vector.startsWith('page26_'));
+    const econData = allData.filter(row => row.vector && row.vector.startsWith('econ_'));
     
-    // Group by year
     const yearMap = {};
-    page26Data.forEach(row => {
+    econData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        const field = row.vector.replace('page26_', '');
+        const field = row.vector.replace('econ_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -146,24 +145,22 @@ export async function getEconomicContributionsData() {
 }
 
 /**
- * Get investment by asset type data for Page 27
+ * Get investment by asset type data
  * Returns array of objects with breakdown by asset type:
  * { year, transmission_distribution, pipelines, nuclear, other_electric, hydraulic, wind_solar, steam_thermal, total }
  */
 export async function getInvestmentByAssetData() {
     const allData = await loadAllData();
     
-    // Filter for page27 vectors
-    const page27Data = allData.filter(row => row.vector && row.vector.startsWith('page27_'));
+    const assetData = allData.filter(row => row.vector && row.vector.startsWith('asset_'));
     
-    // Group by year
     const yearMap = {};
-    page27Data.forEach(row => {
+    assetData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        const field = row.vector.replace('page27_', '');
+        const field = row.vector.replace('asset_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -171,7 +168,7 @@ export async function getInvestmentByAssetData() {
 }
 
 /**
- * Get international investment data for Page 31
+ * Get international investment data
  * Returns array of objects: { year, cdia, fdi }
  * CDIA = Canadian Direct Investment Abroad
  * FDI = Foreign Direct Investment in Canada
@@ -180,17 +177,15 @@ export async function getInvestmentByAssetData() {
 export async function getInternationalInvestmentData() {
     const allData = await loadAllData();
     
-    // Filter for page31 vectors
-    const page31Data = allData.filter(row => row.vector && row.vector.startsWith('page31_'));
+    const intlData = allData.filter(row => row.vector && row.vector.startsWith('intl_'));
     
-    // Group by year
     const yearMap = {};
-    page31Data.forEach(row => {
+    intlData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        const field = row.vector.replace('page31_', '');
+        const field = row.vector.replace('intl_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -198,24 +193,22 @@ export async function getInternationalInvestmentData() {
 }
 
 /**
- * Get foreign control data for Page 32
+ * Get foreign control data
  * Returns array of objects: { year, utilities, oil_gas, all_non_financial }
  * Values are percentages
  */
 export async function getForeignControlData() {
     const allData = await loadAllData();
     
-    // Filter for page32 vectors
-    const page32Data = allData.filter(row => row.vector && row.vector.startsWith('page32_'));
+    const foreignData = allData.filter(row => row.vector && row.vector.startsWith('foreign_'));
     
-    // Group by year
     const yearMap = {};
-    page32Data.forEach(row => {
+    foreignData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        const field = row.vector.replace('page32_', '');
+        const field = row.vector.replace('foreign_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -223,7 +216,7 @@ export async function getForeignControlData() {
 }
 
 /**
- * Get environmental protection expenditures data for Page 37
+ * Get environmental protection expenditures data
  * Returns array of objects: { 
  *   year, 
  *   oil_gas_total, oil_gas_wastewater, oil_gas_soil, oil_gas_air, oil_gas_solid_waste, oil_gas_other,
@@ -234,17 +227,15 @@ export async function getForeignControlData() {
 export async function getEnvironmentalProtectionData() {
     const allData = await loadAllData();
     
-    // Filter for page37 vectors
-    const page37Data = allData.filter(row => row.vector && row.vector.startsWith('page37_'));
+    const enviroData = allData.filter(row => row.vector && row.vector.startsWith('enviro_'));
     
-    // Group by year
     const yearMap = {};
-    page37Data.forEach(row => {
+    enviroData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        const field = row.vector.replace('page37_', '');
+        const field = row.vector.replace('enviro_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -252,24 +243,22 @@ export async function getEnvironmentalProtectionData() {
 }
 
 /**
- * Get provincial GDP data for Page 8
+ * Get provincial GDP data
  * Returns array of objects: { year, nl, pe, ns, nb, qc, on, mb, sk, ab, bc, yt, nt, nu, national_total }
  * Values are in millions of dollars
  */
 export async function getProvincialGdpData() {
     const allData = await loadAllData();
     
-    // Filter for page8 vectors
-    const page8Data = allData.filter(row => row.vector && row.vector.startsWith('page8_'));
+    const gdpData = allData.filter(row => row.vector && row.vector.startsWith('gdp_prov_'));
     
-    // Group by year
     const yearMap = {};
-    page8Data.forEach(row => {
+    gdpData.forEach(row => {
         const year = row.ref_date;
         if (!yearMap[year]) {
             yearMap[year] = { year };
         }
-        const field = row.vector.replace('page8_', '');
+        const field = row.vector.replace('gdp_prov_', '');
         yearMap[year][field] = row.value;
     });
     
@@ -277,7 +266,7 @@ export async function getProvincialGdpData() {
 }
 
 /**
- * Get major energy projects data for Page 28
+ * Get major energy projects data
  * Returns object with:
  * - yearlyData: array of { year, oil_gas_value, oil_gas_projects, electricity_value, electricity_projects, other_value, other_projects, total_value, total_projects }
  * - summary: { planned_projects, planned_value, construction_projects, construction_value, clean_tech_projects, clean_tech_value }
@@ -286,25 +275,42 @@ export async function getProvincialGdpData() {
 export async function getMajorProjectsData() {
     const allData = await loadAllData();
     
-    const page28Data = allData.filter(row => row.vector && row.vector.startsWith('page28_'));
+    const projectsData = allData.filter(row => row.vector && row.vector.startsWith('projects_'));
     
-    const yearlyFields = ['oil_gas_value', 'oil_gas_projects', 'electricity_value', 'electricity_projects', 'other_value', 'other_projects', 'total_value', 'total_projects'];
-    const summaryFields = ['planned_projects', 'planned_value', 'construction_projects', 'construction_value', 'clean_tech_projects', 'clean_tech_value'];
+    const yearlyFieldMap = {
+        'oil_gas_value': 'oil_gas_value',
+        'oil_gas_count': 'oil_gas_projects',
+        'electricity_value': 'electricity_value',
+        'electricity_count': 'electricity_projects',
+        'other_value': 'other_value',
+        'other_count': 'other_projects',
+        'total_value': 'total_value',
+        'total_count': 'total_projects'
+    };
+    
+    const summaryFieldMap = {
+        'planned_count': 'planned_projects',
+        'planned_value': 'planned_value',
+        'construction_count': 'construction_projects',
+        'construction_value': 'construction_value',
+        'cleantech_count': 'clean_tech_projects',
+        'cleantech_value': 'clean_tech_value'
+    };
     
     const yearMap = {};
     const summary = {};
     
-    page28Data.forEach(row => {
+    projectsData.forEach(row => {
         const year = row.ref_date;
-        const field = row.vector.replace('page28_', '');
+        const rawField = row.vector.replace('projects_', '');
         
-        if (summaryFields.includes(field)) {
-            summary[field] = row.value;
-        } else if (yearlyFields.includes(field)) {
+        if (summaryFieldMap[rawField]) {
+            summary[summaryFieldMap[rawField]] = row.value;
+        } else if (yearlyFieldMap[rawField]) {
             if (!yearMap[year]) {
                 yearMap[year] = { year };
             }
-            yearMap[year][field] = row.value;
+            yearMap[year][yearlyFieldMap[rawField]] = row.value;
         }
     });
     
@@ -315,7 +321,7 @@ export async function getMajorProjectsData() {
 }
 
 /**
- * Get clean technology project trends data for Page 29
+ * Get clean technology project trends data
  * Returns array of objects with yearly data for each technology category:
  * { year, total_projects, total_value, hydro_projects, hydro_value, wind_projects, wind_value, ... }
  * Values in billions of dollars
@@ -323,13 +329,15 @@ export async function getMajorProjectsData() {
 export async function getCleanTechTrendsData() {
     const allData = await loadAllData();
     
-    const page29Data = allData.filter(row => row.vector && row.vector.startsWith('page29_'));
+    const cleantechData = allData.filter(row => row.vector && row.vector.startsWith('cleantech_'));
     
     const yearMap = {};
     
-    page29Data.forEach(row => {
+    cleantechData.forEach(row => {
         const year = row.ref_date;
-        const field = row.vector.replace('page29_', '');
+        const rawField = row.vector.replace('cleantech_', '');
+        
+        const field = rawField.replace('_count', '_projects');
         
         if (!yearMap[year]) {
             yearMap[year] = { year };

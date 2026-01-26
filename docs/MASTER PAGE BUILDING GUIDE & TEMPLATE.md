@@ -5,6 +5,95 @@
 
 ---
 
+## Code Standards
+
+**NO COMMENTS IN CODE:** Do not add comment lines to the codebase. Code should be self-documenting through clear variable names, function names, and structure. This keeps the codebase clean and reduces maintenance overhead.
+
+---
+
+## Naming Conventions
+
+### URL Hash Fragments (Navigation)
+
+**Do NOT use page numbers in URLs.** Use descriptive section titles instead.
+
+**URL Format:** All sections follow the pattern `/section-N#page-name`
+
+```javascript
+// WRONG - Page numbers are not meaningful to users
+<NavLink to="/#page-8">Provincial GDP</NavLink>
+<NavLink to="/section-2#page-24">Capital Expenditure</NavLink>
+
+// CORRECT - Descriptive names with consistent section format
+<NavLink to="/section-1#energy-overview">Energy Overview</NavLink>
+<NavLink to="/section-1#provincial-gdp">Provincial GDP</NavLink>
+<NavLink to="/section-2#capital-expenditure">Capital Expenditure</NavLink>
+<NavLink to="/section-2#infrastructure-stock">Infrastructure Stock</NavLink>
+```
+
+**Section wrapper IDs must match the hash:**
+```jsx
+// SectionOne.jsx
+<div id="energy-overview">
+    <Page1 />
+</div>
+<div id="provincial-gdp">
+    <Page8 />
+</div>
+
+// SectionTwo.jsx
+<div id="capital-expenditure">
+    <Page24 />
+</div>
+```
+
+### Data Vector Naming (`data_retrieval.py` and `dataLoader.js`)
+
+**Do NOT use page numbers in data vector names.** Use descriptive prefixes that represent the data content.
+
+```python
+# WRONG - Page numbers make vectors hard to understand and maintain
+'page24_oil_gas', 'page24_electricity', 'page24_total'
+'page28_total_projects', 'page28_total_value'
+
+# CORRECT - Semantic prefixes describe the data
+'capex_oil_gas', 'capex_electricity', 'capex_total'
+'projects_total_count', 'projects_total_value'
+```
+
+**Standard Vector Prefixes:**
+| Prefix | Data Category | Example Vectors |
+|--------|--------------|-----------------|
+| `capex_` | Capital expenditures | `capex_oil_gas`, `capex_electricity`, `capex_total` |
+| `infra_` | Infrastructure stock | `infra_fuel_energy_pipelines`, `infra_transport` |
+| `econ_` | Economic contributions | `econ_jobs`, `econ_gdp`, `econ_employment_income` |
+| `asset_` | Investment by asset type | `asset_pipelines`, `asset_nuclear`, `asset_wind_solar` |
+| `intl_` | International investment | `intl_cdia`, `intl_fdi` |
+| `foreign_` | Foreign control | `foreign_utilities`, `foreign_oil_gas` |
+| `enviro_` | Environmental protection | `enviro_oil_gas_total`, `enviro_electric_total` |
+| `gdp_prov_` | Provincial GDP | `gdp_prov_ab`, `gdp_prov_on`, `gdp_prov_qc` |
+| `projects_` | Major energy projects | `projects_oil_gas_value`, `projects_total_count` |
+| `cleantech_` | Clean technology trends | `cleantech_hydro_value`, `cleantech_wind_count` |
+
+**Function Naming in `data_retrieval.py`:**
+```python
+# WRONG - Page numbers
+def process_page24_data():
+def process_page28_data():
+
+# CORRECT - Descriptive names
+def process_capital_expenditure_data():
+def process_major_projects_data():
+```
+
+**Why This Matters:**
+- Page numbers can change during reorganization
+- Descriptive names are self-documenting
+- Makes code easier to understand and maintain
+- Improves searchability in the codebase
+
+---
+
 ## 1. The Core Layout Philosophy (The Anchor System)
 
 We use a JavaScript-driven Anchor System instead of media queries for page margins.
@@ -181,7 +270,7 @@ Use a `<select>` dropdown instead of a range slider:
 
 ### Desktop vs Mobile Behavior
 - **Desktop (>768px):** Charts are interactive by default, mode bar visible
-- **Mobile (≤768px):** "Click to interact" overlay, mode bar hidden until activated
+- **Mobile (≤768px):** Charts are interactive by default, mode bar shows on interaction
 
 ### Window Resize Handler
 ```javascript
@@ -189,60 +278,17 @@ useEffect(() => {
     const handleResize = () => {
         const newWidth = window.innerWidth;
         setWindowWidth(newWidth);
-        if (newWidth > 768) {
-            setIsChartInteractive(true);
-        }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
 }, []);
 ```
 
-### Click Outside Handler (Mobile)
-```javascript
-useEffect(() => {
-    const handleClickOutside = (event) => {
-        if (windowWidth <= 768 && isChartInteractive && chartRef.current && !chartRef.current.contains(event.target)) {
-            setIsChartInteractive(false);
-        }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-}, [isChartInteractive, windowWidth]);
-```
-
-### Mobile Overlay Pattern
+### Clear Selection Button
 ```jsx
 <div ref={chartRef} className="chart-container" style={{ position: 'relative' }}>
-    {/* Click to Interact Overlay (Mobile Only) */}
-    {windowWidth <= 768 && !isChartInteractive && (
-        <div 
-            onClick={() => setIsChartInteractive(true)} 
-            style={{ 
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                zIndex: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', 
-                justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.01)'
-            }} 
-            role="button" 
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsChartInteractive(true); } }}
-        >
-            <span style={{ background: 'rgba(0,0,0,0.7)', color: 'white', padding: '8px 16px', borderRadius: '4px', fontSize: '14px' }}>
-                {lang === 'en' ? 'Click to interact' : 'Cliquez pour interagir'}
-            </span>
-        </div>
-    )}
-
-    {/* Done Button (Mobile Only, when interactive) */}
-    {windowWidth <= 768 && isChartInteractive && (
-        <button onClick={() => { setIsChartInteractive(false); setSelectedPoints(null); }} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>
-            {lang === 'en' ? 'Done' : 'Terminé'}
-        </button>
-    )}
-
-    {/* Clear Selection Button */}
     {selectedPoints !== null && (
-        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: windowWidth <= 768 ? 360 : 295, zIndex: 20 }}>
+        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>
             {lang === 'en' ? 'Clear' : 'Effacer'}
         </button>
     )}
@@ -322,9 +368,89 @@ marker: {
 }
 ```
 
+### Mobile Double-Tap Pattern for Hover Labels
+
+On mobile devices, single tap immediately triggers the selection/focus behavior, causing hover labels to disappear instantly. To fix this, implement a "Single Tap to Hover, Double Tap to Select" pattern.
+
+**Required Ref:**
+```javascript
+const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
+// For pie charts/maps: useRef({ time: 0, index: null });
+```
+
+**Updated onClick Handler (Bar Charts):**
+```javascript
+onClick={(data) => {
+    if (!data.points || data.points.length === 0) return;
+    const clickedPoint = data.points[0];
+    const traceIndex = clickedPoint.curveNumber;
+    const pointIndex = clickedPoint.pointIndex;
+
+    // Mobile: require double-tap to select (single tap shows hover only)
+    if (windowWidth <= 768) {
+        const currentTime = new Date().getTime();
+        const lastClick = lastClickRef.current;
+        const isSamePoint = (traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex);
+        const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
+        
+        lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
+        
+        if (!isDoubleTap) {
+            return; // Single tap: show hover label only
+        }
+    }
+
+    // Selection logic continues here...
+    setSelectedPoints(prev => {
+        // ... existing selection logic
+    });
+}}
+```
+
+**Updated onClick Handler (Pie Charts/Maps):**
+```javascript
+onClick={(data) => {
+    if (!data.points || data.points.length === 0) return;
+    const sliceIndex = data.points[0].pointNumber ?? data.points[0].pointIndex;
+    if (sliceIndex === undefined) return;
+
+    // Mobile: require double-tap to select (single tap shows hover only)
+    if (windowWidth <= 768) {
+        const currentTime = new Date().getTime();
+        const lastClick = lastClickRef.current;
+        const isSamePoint = (sliceIndex === lastClick.index);
+        const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
+        
+        lastClickRef.current = { time: currentTime, index: sliceIndex };
+        
+        if (!isDoubleTap) {
+            return; // Single tap: show hover label only
+        }
+    }
+
+    // Selection logic continues here...
+    setSelectedSlices(prev => {
+        // ... existing selection logic
+    });
+}}
+```
+
+**Behavior Summary:**
+- **Desktop**: Single click selects/focuses elements (unchanged)
+- **Mobile (≤768px)**:
+  - **Single tap**: Shows hover label only (no selection)
+  - **Double tap** (same point within 300ms): Triggers selection/focus
+
 ---
 
 ## 8. Custom PNG Download with Title
+
+**IMPORTANT:** The downloaded PNG should use the **chart title**, not the page title. If the chart has a dynamic title (e.g., with year range), construct it the same way as the displayed chart title.
+
+**Chart Title Examples:**
+- Static chart title: `getText('page31_chart_title', lang)`
+- Dynamic with year range: `` `${getText('page27_chart_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}` ``
+- With year and subtitle: `` `${getText('page37_chart_title', lang)} (${year}, ${getText('page37_chart_subtitle', lang)})` ``
 
 ```javascript
 const downloadChartWithTitle = async (plotEl = null) => {
@@ -334,7 +460,8 @@ const downloadChartWithTitle = async (plotEl = null) => {
         return;
     }
 
-    const title = stripHtml(getText('page_title', lang));
+    // Use chart title (not page title) for downloaded image
+    const title = stripHtml(chartTitle); // or getText('pageXX_chart_title', lang)
 
     try {
         if (!window.Plotly) {
@@ -1024,7 +1151,58 @@ Content in sidebars that provides important context MUST be readable by screen r
 
 ---
 
-## 13. Footnotes (WET Style)
+## 13. Data Retrieval Best Practices (`data_retrieval.py`)
+
+### 13.1 Dynamic Future Dates for StatCan API URLs
+
+**IMPORTANT:** Never hardcode future end dates in StatCan API URLs. Hardcoded dates like `endDate=20301231` will cause the script to fail after that date passes.
+
+**Solution:** Use the `get_future_end_date()` helper function to generate dates dynamically:
+
+```python
+from datetime import datetime, timedelta
+
+def get_future_end_date(years_ahead=2):
+    """
+    Generate a future end date for StatCan API requests.
+    
+    StatCan URLs use future end dates to ensure all available data is returned.
+    The API returns whatever data exists up to the current date, regardless of 
+    the end date specified. Using a dynamic future date (today + N years) ensures:
+    - New data is automatically included when StatCan publishes it
+    - The script doesn't stop working after a hardcoded date passes
+    
+    Args:
+        years_ahead: Number of years into the future (default: 2)
+    
+    Returns:
+        Date string in YYYYMMDD format (e.g., "20280125" for 2 years from Jan 25, 2026)
+    """
+    future_date = datetime.now() + timedelta(days=365 * years_ahead)
+    return future_date.strftime("%Y%m%d")
+```
+
+**Usage in URL functions:**
+
+```python
+# WRONG - Hardcoded date will eventually expire
+def get_data_url():
+    return "https://www150.statcan.gc.ca/...&endDate=20301231&..."
+
+# CORRECT - Dynamic date that always works
+def get_data_url():
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/...&endDate={end_date}&..."
+```
+
+**Why this matters:**
+- StatCan API ignores future dates and returns all available data up to today
+- Using `today + 2 years` ensures the URL remains valid indefinitely
+- New data is automatically included without code changes
+
+---
+
+## 14. Footnotes (WET Style)
 
 ```jsx
 <aside className="wb-fnote" role="note">
@@ -1040,7 +1218,7 @@ Content in sidebars that provides important context MUST be readable by screen r
 
 ---
 
-## 14. Page Template Summary
+## 15. Page Template Summary
 
 ```javascript
 import React, { useState, useEffect, useMemo, useRef } from 'react';

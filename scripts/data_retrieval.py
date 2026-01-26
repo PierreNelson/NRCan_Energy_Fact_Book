@@ -21,29 +21,44 @@ import requests
 import pandas as pd
 import io
 import os
+from datetime import datetime, timedelta
 
-# Data directory - outputs directly to public/data/ where the app reads from
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "data")
 
-# =============================================================================
-# STATCAN URLS
-# =============================================================================
-# Note: StatCan URLs use future end dates (e.g., 2030) to ensure all available
-# data is returned. The API returns whatever data exists up to the current date,
-# regardless of the end date specified. This approach ensures new data is
-# automatically included when StatCan publishes it.
+def get_future_end_date(years_ahead=2):
+    """
+    Generate a future end date for StatCan API requests.
+    
+    StatCan URLs use future end dates to ensure all available data is returned.
+    The API returns whatever data exists up to the current date, regardless of 
+    the end date specified. Using a dynamic future date (today + N years) ensures:
+    - New data is automatically included when StatCan publishes it
+    - The script doesn't stop working after a hardcoded date passes
+    
+    Args:
+        years_ahead: Number of years into the future (default: 2)
+    
+    Returns:
+        Date string in YYYYMMDD format (e.g., "20280125" for 2 years from Jan 25, 2026)
+    """
+    future_date = datetime.now() + timedelta(days=365 * years_ahead)
+    return future_date.strftime("%Y%m%d")
+
 
 def get_capital_expenditures_url():
     """Get capital expenditures URL (Table 34-10-0036-01)."""
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3410003601&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%5D%2C%5B8%2C9%2C11%2C34%2C36%2C37%2C50%2C91%5D%5D&checkedLevels=0D1"
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3410003601&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%5D%2C%5B8%2C9%2C11%2C34%2C36%2C37%2C50%2C91%5D%5D&checkedLevels=0D1"
 
 def get_infrastructure_url():
     """Get infrastructure URL (Table 36-10-0608-01)."""
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610060801&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B3%5D%2C%5B1%5D%2C%5B%5D%2C%5B48%5D%2C%5B%5D%5D&checkedLevels=0D1%2C3D1%2C4D1%2C5D1%2C5D2"
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610060801&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B3%5D%2C%5B1%5D%2C%5B%5D%2C%5B48%5D%2C%5B%5D%5D&checkedLevels=0D1%2C3D1%2C4D1%2C5D1%2C5D2"
 
 def get_economic_contributions_url():
     """Get economic contributions URL (Table 36-10-0610-01)."""
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610061001&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B39%2C48%2C54%2C55%2C57%5D%2C%5B%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C5D1"
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610061001&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B39%2C48%2C54%2C55%2C57%5D%2C%5B%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C5D1"
 
 def get_international_investment_url():
     """Get international investment URL (Table 36-10-0009-01).
@@ -51,13 +66,10 @@ def get_international_investment_url():
     Returns FDI (Foreign Direct Investment) and CDIA (Canadian Direct Investment Abroad)
     for energy-related industries.
     """
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610000901&latestN=0&startDate=20070101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%2C16%2C18%2C19%2C30%5D%2C%5B%5D%2C%5B%5D%5D&checkedLevels=0D1%2C2D1%2C3D1"
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610000901&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%2C16%2C18%2C19%2C30%5D%2C%5B%5D%2C%5B%5D%5D&checkedLevels=0D1%2C2D1%2C3D1"
 
-# =============================================================================
-# VECTOR MAPPINGS
-# =============================================================================
 
-# Infrastructure vectors (Table 36-10-0608-01)
 INFRA_VECTORS = {
     'fuel_and_energy': 'v1043878336',
     'transport': 'v1043880016',
@@ -72,7 +84,6 @@ INFRA_VECTORS = {
     'pipeline_transport': 'v1043880063',
 }
 
-# Economic contribution vectors (Table 36-10-0610-01)
 ECON_VECTORS = {
     'jobs_direct': 'v1044855486',
     'jobs_indirect': 'v1044855495',
@@ -82,9 +93,6 @@ ECON_VECTORS = {
     'gdp_indirect': 'v1044578295',
 }
 
-# =============================================================================
-# UTILITY FUNCTIONS
-# =============================================================================
 
 def get_data_dir():
     """Ensure data directory exists and return path."""
@@ -105,26 +113,22 @@ def fetch_csv_from_url(url, timeout=120):
     """Fetch CSV data from a URL and return as DataFrame."""
     print(f"Fetching data from StatCan...")
     
-    # Try the original URL first
     try:
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
         
-        # Check if the response is actually CSV data (not an error page)
         text = response.text
         if 'Failed to get' in text or '<html' in text.lower():
             raise ValueError(f"StatCan returned error: {text[:200]}")
         
         df = pd.read_csv(io.StringIO(text))
         
-        # Verify we got actual data columns
         if len(df.columns) < 3:
             raise ValueError(f"Invalid data format, columns: {df.columns.tolist()}")
             
         return df
         
     except Exception as e:
-        # Try alternative URL format (nonTraduit version)
         alt_url = url.replace('downloadDbLoadingData.action', 'downloadDbLoadingData-nonTraduit.action')
         if alt_url != url:
             print(f"  Primary URL failed, trying alternative...")
@@ -141,32 +145,25 @@ def fetch_csv_from_url(url, timeout=120):
         raise Exception(f"Failed to fetch data from StatCan: {e}")
 
 
-# =============================================================================
-# PAGE 24: CAPITAL EXPENDITURES
-# =============================================================================
-
-def process_page24_data():
+def process_capital_expenditure_data():
     """
-    Fetch capital expenditures data from StatCan and process for Page 24.
+    Fetch capital expenditures data from StatCan.
     
     Returns list of tuples: (vector, year, value) for data.csv
     and list of tuples: (vector, title, uom, scalar_factor) for metadata.csv
     """
-    print("Processing Page 24: Capital Expenditures...")
+    print("Processing Capital Expenditures data...")
     
     df = fetch_csv_from_url(get_capital_expenditures_url())
     
-    # Debug: print column names to identify correct ones
     print(f"  Columns in data: {df.columns.tolist()}")
     
-    # Try to find the capital/repair expenditures column (handles different column name formats)
     capex_col = None
     for col in df.columns:
         if 'capital' in col.lower() and 'repair' in col.lower():
             capex_col = col
             break
     
-    # Filter for capital expenditures only
     if capex_col and capex_col in df.columns:
         df = df[df[capex_col] == 'Capital expenditures'].copy()
     
@@ -174,7 +171,6 @@ def process_page24_data():
     
     years = sorted(df['year'].dropna().unique())
     
-    # Try to find the NAICS column (handles different column name formats)
     naics_col = None
     for col in df.columns:
         if 'naics' in col.lower() or 'industry' in col.lower():
@@ -189,15 +185,12 @@ def process_page24_data():
     for year in years:
         year_df = df[df['year'] == year]
         
-        # Oil and gas extraction [211]
         oil_gas_mask = year_df[naics_col].str.match(r'^Oil and gas extraction \[211\]$', na=False)
         oil_gas = year_df.loc[oil_gas_mask, 'VALUE'].sum()
         
-        # Electric power generation, transmission and distribution [2211]
         elec_mask = year_df[naics_col].str.contains(r'\[2211\]', regex=True, na=False)
         electricity = year_df.loc[elec_mask, 'VALUE'].sum()
         
-        # Other: [213], [2212], [324], [486]
         other_mask = year_df[naics_col].str.contains(r'\[213\]|\[2212\]|\[324\]|\[486\]', regex=True, na=False)
         other = year_df.loc[other_mask, 'VALUE'].sum()
         
@@ -206,42 +199,35 @@ def process_page24_data():
         if total > 0:
             year_int = int(year)
             data_rows.extend([
-                ('page24_oil_gas', year_int, round(oil_gas, 1)),
-                ('page24_electricity', year_int, round(electricity, 1)),
-                ('page24_other', year_int, round(other, 1)),
-                ('page24_total', year_int, round(total, 1)),
+                ('capex_oil_gas', year_int, round(oil_gas, 1)),
+                ('capex_electricity', year_int, round(electricity, 1)),
+                ('capex_other', year_int, round(other, 1)),
+                ('capex_total', year_int, round(total, 1)),
             ])
     
-    # Metadata
     metadata_rows = [
-        ('page24_oil_gas', 'Capital expenditures - Oil and gas extraction', 'Millions of dollars', 'millions'),
-        ('page24_electricity', 'Capital expenditures - Electric power', 'Millions of dollars', 'millions'),
-        ('page24_other', 'Capital expenditures - Other energy', 'Millions of dollars', 'millions'),
-        ('page24_total', 'Capital expenditures - Total energy sector', 'Millions of dollars', 'millions'),
+        ('capex_oil_gas', 'Capital expenditures - Oil and gas extraction', 'Millions of dollars', 'millions'),
+        ('capex_electricity', 'Capital expenditures - Electric power', 'Millions of dollars', 'millions'),
+        ('capex_other', 'Capital expenditures - Other energy', 'Millions of dollars', 'millions'),
+        ('capex_total', 'Capital expenditures - Total energy sector', 'Millions of dollars', 'millions'),
     ]
     
-    print(f"  Page 24: {len(data_rows)} data rows")
+    print(f"  Capital Expenditures: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-# =============================================================================
-# PAGE 25: INFRASTRUCTURE STOCK
-# =============================================================================
-
-def process_page25_data():
+def process_infrastructure_data():
     """
-    Fetch infrastructure stock data from StatCan and process for Page 25.
+    Fetch infrastructure stock data from StatCan.
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 25: Infrastructure Stock...")
+    print("Processing Infrastructure Stock data...")
     
     df = fetch_csv_from_url(get_infrastructure_url())
     
-    # Build vector to value mapping by year
     all_vectors = list(INFRA_VECTORS.values())
     
-    # Filter for our vectors
     df_filtered = df[df['VECTOR'].isin(all_vectors)].copy()
     df_filtered['year'] = pd.to_numeric(df_filtered['REF_DATE'], errors='coerce')
     
@@ -251,13 +237,11 @@ def process_page25_data():
     for year in years:
         year_df = df_filtered[df_filtered['year'] == year]
         
-        # Get values for each vector
         def get_val(vector_key):
             vec = INFRA_VECTORS.get(vector_key)
             row = year_df[year_df['VECTOR'] == vec]
             return row['VALUE'].sum() if not row.empty else 0
         
-        # Get raw values
         fuel_energy = get_val('fuel_and_energy')
         transport_raw = get_val('transport')
         pipeline_transport = get_val('pipeline_transport')
@@ -270,9 +254,8 @@ def process_page25_data():
         communication = get_val('communication')
         recreation = get_val('recreation')
         
-        # Calculate combined categories per NRCAN Factbook
         fuel_energy_pipelines = fuel_energy + pipeline_transport
-        transport = transport_raw - pipeline_transport  # Transport less pipelines
+        transport = transport_raw - pipeline_transport
         health_housing = health + housing
         public_safety = public_order + transit + communication + recreation
         
@@ -281,67 +264,55 @@ def process_page25_data():
         if total > 0:
             year_int = int(year)
             data_rows.extend([
-                ('page25_fuel_energy_pipelines', year_int, round(fuel_energy_pipelines, 1)),
-                ('page25_transport', year_int, round(transport, 1)),
-                ('page25_health_housing', year_int, round(health_housing, 1)),
-                ('page25_education', year_int, round(education, 1)),
-                ('page25_public_safety', year_int, round(public_safety, 1)),
-                ('page25_environmental', year_int, round(environmental, 1)),
-                ('page25_total', year_int, round(total, 1)),
+                ('infra_fuel_energy_pipelines', year_int, round(fuel_energy_pipelines, 1)),
+                ('infra_transport', year_int, round(transport, 1)),
+                ('infra_health_housing', year_int, round(health_housing, 1)),
+                ('infra_education', year_int, round(education, 1)),
+                ('infra_public_safety', year_int, round(public_safety, 1)),
+                ('infra_environmental', year_int, round(environmental, 1)),
+                ('infra_total', year_int, round(total, 1)),
             ])
     
-    # Metadata
     metadata_rows = [
-        ('page25_fuel_energy_pipelines', 'Infrastructure - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
-        ('page25_transport', 'Infrastructure - Transport (less pipelines)', 'Millions of dollars', 'millions'),
-        ('page25_health_housing', 'Infrastructure - Health and housing', 'Millions of dollars', 'millions'),
-        ('page25_education', 'Infrastructure - Education', 'Millions of dollars', 'millions'),
-        ('page25_public_safety', 'Infrastructure - Public safety and other', 'Millions of dollars', 'millions'),
-        ('page25_environmental', 'Infrastructure - Environmental protection', 'Millions of dollars', 'millions'),
-        ('page25_total', 'Infrastructure - Total net stock', 'Millions of dollars', 'millions'),
+        ('infra_fuel_energy_pipelines', 'Infrastructure - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
+        ('infra_transport', 'Infrastructure - Transport (less pipelines)', 'Millions of dollars', 'millions'),
+        ('infra_health_housing', 'Infrastructure - Health and housing', 'Millions of dollars', 'millions'),
+        ('infra_education', 'Infrastructure - Education', 'Millions of dollars', 'millions'),
+        ('infra_public_safety', 'Infrastructure - Public safety and other', 'Millions of dollars', 'millions'),
+        ('infra_environmental', 'Infrastructure - Environmental protection', 'Millions of dollars', 'millions'),
+        ('infra_total', 'Infrastructure - Total net stock', 'Millions of dollars', 'millions'),
     ]
     
-    print(f"  Page 25: {len(data_rows)} data rows")
+    print(f"  Infrastructure: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-# =============================================================================
-# PAGE 27: INVESTMENT BY ASSET TYPE (Fuel, Energy and Pipeline Infrastructure)
-# =============================================================================
-
 def get_investment_by_asset_url():
     """Get investment by asset type URL (Table 36-10-0608-01) with detailed asset breakdown."""
-    # This URL fetches investment data with detailed asset type breakdown
-    # Asset indices: 40=Wind/Solar, 41=Steam, 42=Nuclear, 43=Hydraulic, 44=Other electric, 
-    # 45=Transmission lines, 46=Distribution lines, 48=Pipelines, 57=Transformers
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610060801&latestN=0&startDate=20070101&endDate=20301231&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%5D%2C%5B2%5D%2C%5B%5D%2C%5B40%2C41%2C42%2C43%2C44%2C45%2C46%2C48%2C57%5D%2C%5B%5D%5D&checkedLevels=0D1%2C3D1%2C5D1"
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610060801&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%5D%2C%5B2%5D%2C%5B%5D%2C%5B40%2C41%2C42%2C43%2C44%2C45%2C46%2C48%2C57%5D%2C%5B%5D%5D&checkedLevels=0D1%2C3D1%2C5D1"
 
 
-def process_page27_data():
+def process_investment_by_asset_data():
     """
-    Fetch investment by asset type data from StatCan and process for Page 27.
+    Fetch investment by asset type data from StatCan.
     This breaks down fuel, energy and pipeline infrastructure by specific asset types.
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 27: Investment by Asset Type...")
+    print("Processing Investment by Asset Type data...")
     
     df = fetch_csv_from_url(get_investment_by_asset_url())
     
-    # Get the asset column name
     asset_col = 'Asset'
     
-    # Filter data and convert year
     df['year'] = pd.to_numeric(df['REF_DATE'], errors='coerce')
     
-    # Filter for years 2009 onwards
     df = df[df['year'] >= 2009].copy()
     
     years = sorted(df['year'].dropna().unique())
     data_rows = []
     
-    # Exact asset names from StatCan Table 36-10-0608-01
-    # Based on the actual data structure
     asset_exact_names = {
         'wind_solar': 'Wind and solar power plants',
         'steam_thermal': 'Steam production plants',
@@ -363,63 +334,53 @@ def process_page27_data():
             mask = year_df[asset_col] == exact_name
             values[key] = year_df.loc[mask, 'VALUE'].sum()
         
-        # Combine transmission networks + distribution networks + transformers into one category
         transmission_distribution = values.get('transmission_networks', 0) + values.get('distribution_networks', 0) + values.get('transformers', 0)
         
-        # Calculate total
         total = (transmission_distribution + values.get('pipelines', 0) + values.get('nuclear', 0) + 
                  values.get('other_electric', 0) + values.get('hydraulic', 0) + 
                  values.get('wind_solar', 0) + values.get('steam_thermal', 0))
         
         if total > 0:
             data_rows.extend([
-                ('page27_transmission_distribution', year_int, round(transmission_distribution, 1)),
-                ('page27_pipelines', year_int, round(values.get('pipelines', 0), 1)),
-                ('page27_nuclear', year_int, round(values.get('nuclear', 0), 1)),
-                ('page27_other_electric', year_int, round(values.get('other_electric', 0), 1)),
-                ('page27_hydraulic', year_int, round(values.get('hydraulic', 0), 1)),
-                ('page27_wind_solar', year_int, round(values.get('wind_solar', 0), 1)),
-                ('page27_steam_thermal', year_int, round(values.get('steam_thermal', 0), 1)),
-                ('page27_total', year_int, round(total, 1)),
+                ('asset_transmission_distribution', year_int, round(transmission_distribution, 1)),
+                ('asset_pipelines', year_int, round(values.get('pipelines', 0), 1)),
+                ('asset_nuclear', year_int, round(values.get('nuclear', 0), 1)),
+                ('asset_other_electric', year_int, round(values.get('other_electric', 0), 1)),
+                ('asset_hydraulic', year_int, round(values.get('hydraulic', 0), 1)),
+                ('asset_wind_solar', year_int, round(values.get('wind_solar', 0), 1)),
+                ('asset_steam_thermal', year_int, round(values.get('steam_thermal', 0), 1)),
+                ('asset_total', year_int, round(total, 1)),
             ])
     
-    # Metadata
     metadata_rows = [
-        ('page27_transmission_distribution', 'Investment - Transmission, distribution and transformers', 'Millions of dollars', 'millions'),
-        ('page27_pipelines', 'Investment - Pipelines', 'Millions of dollars', 'millions'),
-        ('page27_nuclear', 'Investment - Nuclear production plants', 'Millions of dollars', 'millions'),
-        ('page27_other_electric', 'Investment - Other electric power construction', 'Millions of dollars', 'millions'),
-        ('page27_hydraulic', 'Investment - Hydraulic production plants', 'Millions of dollars', 'millions'),
-        ('page27_wind_solar', 'Investment - Wind and solar power plants', 'Millions of dollars', 'millions'),
-        ('page27_steam_thermal', 'Investment - Steam production plants', 'Millions of dollars', 'millions'),
-        ('page27_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions'),
+        ('asset_transmission_distribution', 'Investment - Transmission, distribution and transformers', 'Millions of dollars', 'millions'),
+        ('asset_pipelines', 'Investment - Pipelines', 'Millions of dollars', 'millions'),
+        ('asset_nuclear', 'Investment - Nuclear production plants', 'Millions of dollars', 'millions'),
+        ('asset_other_electric', 'Investment - Other electric power construction', 'Millions of dollars', 'millions'),
+        ('asset_hydraulic', 'Investment - Hydraulic production plants', 'Millions of dollars', 'millions'),
+        ('asset_wind_solar', 'Investment - Wind and solar power plants', 'Millions of dollars', 'millions'),
+        ('asset_steam_thermal', 'Investment - Steam production plants', 'Millions of dollars', 'millions'),
+        ('asset_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions'),
     ]
     
-    print(f"  Page 27: {len(data_rows)} data rows")
+    print(f"  Investment by Asset: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-# =============================================================================
-# PAGE 26: ECONOMIC CONTRIBUTIONS
-# =============================================================================
-
-def process_page26_data():
+def process_economic_contributions_data():
     """
-    Fetch economic contributions data from StatCan and process for Page 26.
+    Fetch economic contributions data from StatCan.
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 26: Economic Contributions...")
+    print("Processing Economic Contributions data...")
     
-    # Fetch economic contributions data
     df_econ = fetch_csv_from_url(get_economic_contributions_url())
     
-    # Filter for our vectors
     all_vectors = list(ECON_VECTORS.values())
     df_filtered = df_econ[df_econ['VECTOR'].isin(all_vectors)].copy()
     df_filtered['year'] = pd.to_numeric(df_filtered['REF_DATE'], errors='coerce')
     
-    # Also fetch capital expenditures for investment values
     df_capex = fetch_csv_from_url(get_capital_expenditures_url())
     df_capex = df_capex[df_capex['Capital and repair expenditures'] == 'Capital expenditures'].copy()
     df_capex['year'] = pd.to_numeric(df_capex['REF_DATE'], errors='coerce')
@@ -431,28 +392,23 @@ def process_page26_data():
     for year in years:
         year_df = df_filtered[df_filtered['year'] == year]
         
-        # Get values for each vector
         def get_val(vector_key):
             vec = ECON_VECTORS.get(vector_key)
             row = year_df[year_df['VECTOR'] == vec]
             return row['VALUE'].iloc[0] if not row.empty and pd.notna(row['VALUE'].iloc[0]) else 0
         
-        # Jobs: Direct + Indirect (in thousands from StatCan, convert to actual)
         jobs_direct = get_val('jobs_direct')
         jobs_indirect = get_val('jobs_indirect')
-        jobs = (jobs_direct + jobs_indirect) * 1000  # Convert thousands to actual
+        jobs = (jobs_direct + jobs_indirect) * 1000
         
-        # Employment income: Direct + Indirect (in millions)
         income_direct = get_val('income_direct')
         income_indirect = get_val('income_indirect')
         employment_income = income_direct + income_indirect
         
-        # GDP: Direct + Indirect (in millions)
         gdp_direct = get_val('gdp_direct')
         gdp_indirect = get_val('gdp_indirect')
         gdp = gdp_direct + gdp_indirect
         
-        # Investment value: Sum of fuel/energy/pipeline related capital expenditures
         year_capex = df_capex[df_capex['year'] == year]
         investment_mask = year_capex[naics_col].str.contains(
             r'\[211\]|\[2211\]|\[2212\]|\[486\]|\[324\]', regex=True, na=False
@@ -462,31 +418,26 @@ def process_page26_data():
         if any([jobs, employment_income, gdp]):
             year_int = int(year)
             data_rows.extend([
-                ('page26_jobs', year_int, round(jobs, 0)),
-                ('page26_employment_income', year_int, round(employment_income, 1)),
-                ('page26_gdp', year_int, round(gdp, 1)),
-                ('page26_investment_value', year_int, round(investment_value, 1)),
+                ('econ_jobs', year_int, round(jobs, 0)),
+                ('econ_employment_income', year_int, round(employment_income, 1)),
+                ('econ_gdp', year_int, round(gdp, 1)),
+                ('econ_investment_value', year_int, round(investment_value, 1)),
             ])
     
-    # Metadata
     metadata_rows = [
-        ('page26_jobs', 'Economic contributions - Jobs (direct + indirect)', 'Number', 'units'),
-        ('page26_employment_income', 'Economic contributions - Employment income', 'Millions of dollars', 'millions'),
-        ('page26_gdp', 'Economic contributions - GDP', 'Millions of dollars', 'millions'),
-        ('page26_investment_value', 'Annual investment - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
+        ('econ_jobs', 'Economic contributions - Jobs (direct + indirect)', 'Number', 'units'),
+        ('econ_employment_income', 'Economic contributions - Employment income', 'Millions of dollars', 'millions'),
+        ('econ_gdp', 'Economic contributions - GDP', 'Millions of dollars', 'millions'),
+        ('econ_investment_value', 'Annual investment - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
     ]
     
-    print(f"  Page 26: {len(data_rows)} data rows")
+    print(f"  Economic Contributions: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-# =============================================================================
-# PAGE 31: INTERNATIONAL INVESTMENTS (FDI and CDIA)
-# =============================================================================
-
-def process_page31_data():
+def process_international_investment_data():
     """
-    Fetch international investment data from StatCan and process for Page 31.
+    Fetch international investment data from StatCan.
     
     FDI = Foreign Direct Investment in Canada
     CDIA = Canadian Direct Investment Abroad
@@ -499,31 +450,26 @@ def process_page31_data():
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 31: International Investments...")
+    print("Processing International Investment data...")
     
     df = fetch_csv_from_url(get_international_investment_url())
     
     print(f"  Total rows fetched: {len(df)}")
     print(f"  Columns: {df.columns.tolist()}")
     
-    # Column names
     naics_col = 'North American Industry Classification System (NAICS)'
     investment_col = 'Canadian and foreign direct investment'
     
-    # Check if columns exist
     if naics_col not in df.columns:
         print(f"  WARNING: Column '{naics_col}' not found!")
         print(f"  Available columns: {df.columns.tolist()}")
         return [], []
     
-    # Print unique industry names for debugging
     unique_industries = df[naics_col].unique().tolist()
     print(f"  Found {len(unique_industries)} unique industries:")
     for ind in unique_industries:
         print(f"    - {ind}")
     
-    # Energy industries to sum for FDI/CDIA totals
-    # The URL returns child categories [211], [213] instead of parent [21]
     energy_industries = [
         'Oil and gas extraction [211]',
         'Support activities for mining and oil and gas extraction [213]',
@@ -531,15 +477,12 @@ def process_page31_data():
         'Petroleum and coal products manufacturing [324]'
     ]
     
-    # Find which energy industries are in the data
     found_industries = [ind for ind in unique_industries if ind in energy_industries]
     for ind in found_industries:
         print(f"    Using: {ind}")
     
-    # Convert year
     df['year'] = pd.to_numeric(df['REF_DATE'], errors='coerce')
     
-    # Filter for years 2007 onwards (matching factbook chart)
     df = df[df['year'] >= 2007].copy()
     
     years = sorted(df['year'].dropna().unique())
@@ -549,40 +492,30 @@ def process_page31_data():
         year_df = df[df['year'] == year]
         year_int = int(year)
         
-        # Filter for energy industries
         year_energy = year_df[year_df[naics_col].isin(found_industries)]
         
-        # Sum CDIA for all energy industries
         cdia_mask = year_energy[investment_col].str.contains('Canadian direct investment abroad', case=False, na=False)
         cdia_total = year_energy.loc[cdia_mask, 'VALUE'].sum()
         
-        # Sum FDI for all energy industries
         fdi_mask = year_energy[investment_col].str.contains('Foreign direct investment in Canada', case=False, na=False)
         fdi_total = year_energy.loc[fdi_mask, 'VALUE'].sum()
         
         if cdia_total > 0 or fdi_total > 0:
-            # Values are in millions
             data_rows.extend([
-                ('page31_cdia', year_int, round(cdia_total, 1)),
-                ('page31_fdi', year_int, round(fdi_total, 1)),
+                ('intl_cdia', year_int, round(cdia_total, 1)),
+                ('intl_fdi', year_int, round(fdi_total, 1)),
             ])
-            # Debug print for first and last years
             if year_int == 2007 or year_int == max(years):
                 print(f"    {year_int}: CDIA={cdia_total}M, FDI={fdi_total}M")
     
-    # Metadata
     metadata_rows = [
-        ('page31_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions'),
-        ('page31_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions'),
+        ('intl_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions'),
+        ('intl_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions'),
     ]
     
-    print(f"  Page 31: {len(data_rows)} data rows")
+    print(f"  International Investment: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
-
-# =============================================================================
-# PAGE 32: FOREIGN CONTROL OF CANADIAN ASSETS (Table 33-10-0570-01)
-# =============================================================================
 
 def get_environmental_protection_url():
     """Get environmental protection expenditures URL (Table 38-10-0130-01).
@@ -601,7 +534,8 @@ def get_environmental_protection_url():
     - Protection and remediation of soil, groundwater and surface water
     - Other environmental protection activities
     """
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3810013001&latestN=0&startDate=20070101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B3%2C5%2C6%2C11%5D%2C%5B12%2C13%2C14%2C15%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C3D2"
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3810013001&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B3%2C5%2C6%2C11%5D%2C%5B12%2C13%2C14%2C15%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C3D2"
 
 def get_foreign_control_url():
     """Get foreign control URL (Table 33-10-0570-01).
@@ -611,43 +545,39 @@ def get_foreign_control_url():
     - Oil and gas extraction and support activities [211, 213]
     - Utilities [22]
     """
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3310057001&latestN=0&startDate=20100101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B3%2C9%2C11%5D%2C%5B2%5D%2C%5B2%5D%5D&checkedLevels=0D1"
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3310057001&latestN=0&startDate=20100101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B3%2C9%2C11%5D%2C%5B2%5D%2C%5B2%5D%5D&checkedLevels=0D1"
 
 
-def process_page32_data():
+def process_foreign_control_data():
     """
-    Fetch foreign control data from StatCan and process for Page 32.
+    Fetch foreign control data from StatCan.
     
     Returns percentage of total assets under foreign control for different industries.
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 32: Foreign Control of Canadian Assets...")
+    print("Processing Foreign Control data...")
     
     df = fetch_csv_from_url(get_foreign_control_url())
     
     print(f"  Total rows fetched: {len(df)}")
     
-    # Column names
     naics_col = 'North American Industry Classification System (NAICS)'
     
-    # Print unique industry names for debugging
     unique_industries = df[naics_col].unique().tolist()
     print(f"  Found {len(unique_industries)} unique industries:")
     for ind in unique_industries:
         print(f"    - {ind}")
     
-    # Map industries to keys
     industry_mapping = {
         'Total non-financial industries (excluding management of companies and enterprises)': 'all_non_financial',
         'Oil and gas extraction and support activities [211, 213]': 'oil_gas',
         'Utilities [22]': 'utilities'
     }
     
-    # Convert year
     df['year'] = pd.to_numeric(df['REF_DATE'], errors='coerce')
     
-    # Filter for years 2010 onwards
     df = df[df['year'] >= 2010].copy()
     
     years = sorted(df['year'].dropna().unique())
@@ -662,42 +592,36 @@ def process_page32_data():
             if not industry_row.empty:
                 value = industry_row['VALUE'].values[0]
                 if pd.notna(value):
-                    data_rows.append((f'page32_{key}', year_int, round(value, 1)))
+                    data_rows.append((f'foreign_{key}', year_int, round(value, 1)))
         
-        # Debug print for first and last years
         if year_int == 2010 or year_int == max(years):
             print(f"    {year_int}: Data processed")
     
-    # Metadata
     metadata_rows = [
-        ('page32_utilities', 'Utilities - Percentage of total assets under foreign control', 'Percent', 'units'),
-        ('page32_oil_gas', 'Oil and gas extraction and support activities - Percentage of total assets under foreign control', 'Percent', 'units'),
-        ('page32_all_non_financial', 'Total non-financial industries - Percentage of total assets under foreign control', 'Percent', 'units'),
+        ('foreign_utilities', 'Utilities - Percentage of total assets under foreign control', 'Percent', 'units'),
+        ('foreign_oil_gas', 'Oil and gas extraction and support activities - Percentage of total assets under foreign control', 'Percent', 'units'),
+        ('foreign_all_non_financial', 'Total non-financial industries - Percentage of total assets under foreign control', 'Percent', 'units'),
     ]
     
-    print(f"  Page 32: {len(data_rows)} data rows")
+    print(f"  Foreign Control: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-# =============================================================================
-# PAGE 37: ENVIRONMENTAL PROTECTION EXPENDITURES
-# =============================================================================
-
-def process_page37_data():
+def process_environmental_protection_data():
     """Process environmental protection expenditures data (Table 38-10-0130-01).
     
     Creates virtual vectors:
-    - page37_oil_gas_total: Oil and gas extraction total expenditures
-    - page37_oil_gas_wastewater: Oil and gas - Wastewater management
-    - page37_oil_gas_soil: Oil and gas - Protection and remediation of soil, groundwater and surface water
-    - page37_oil_gas_air: Oil and gas - Air pollution management
-    - page37_oil_gas_solid_waste: Oil and gas - Solid waste management
-    - page37_oil_gas_other: Oil and gas - Other environmental protection activities
-    - page37_electric_total: Electric power generation total expenditures
-    - page37_petroleum_total: Petroleum and coal product manufacturing total expenditures
-    - page37_all_industries_total: Total industries total expenditures
+    - enviro_oil_gas_total: Oil and gas extraction total expenditures
+    - enviro_oil_gas_wastewater: Oil and gas - Wastewater management
+    - enviro_oil_gas_soil: Oil and gas - Protection and remediation of soil, groundwater and surface water
+    - enviro_oil_gas_air: Oil and gas - Air pollution management
+    - enviro_oil_gas_solid_waste: Oil and gas - Solid waste management
+    - enviro_oil_gas_other: Oil and gas - Other environmental protection activities
+    - enviro_electric_total: Electric power generation total expenditures
+    - enviro_petroleum_total: Petroleum and coal product manufacturing total expenditures
+    - enviro_all_industries_total: Total industries total expenditures
     """
-    print("\nProcessing Page 37 data (Environmental Protection Expenditures)...")
+    print("\nProcessing Environmental Protection data...")
     
     url = get_environmental_protection_url()
     response = requests.get(url)
@@ -706,13 +630,10 @@ def process_page37_data():
     df = pd.read_csv(io.StringIO(response.text))
     print(f"  Downloaded {len(df)} rows from StatCan")
     
-    # Filter for Total expenditures only
     df = df[df['Expenditures'] == 'Total, expenditures'].copy()
     
-    # Extract year from REF_DATE (format is just "2018", "2019", etc.)
     df['year'] = df['REF_DATE'].astype(int)
     
-    # Define main activity categories (shown individually in the pie chart)
     main_activities = {
         'wastewater': 'Wastewater management',
         'soil': 'Protection and remediation of soil, groundwater and surface water',
@@ -721,15 +642,12 @@ def process_page37_data():
         'total': 'Total, environmental protection activities'
     }
     
-    # Categories to sum into "Other" (as per the factbook)
-    # Excludes: Noise and vibration abatement, Protection against radiation, Clean vehicles and transportation technologies
     other_activities = [
         'Protection of biodiversity and habitat',
         'Environmental charges',
         'Other environmental protection activities'
     ]
     
-    # Define industries
     industries = {
         'oil_gas': 'Oil and gas extraction [211]',
         'electric': 'Electric power generation, transmission and distribution [2211]',
@@ -740,20 +658,17 @@ def process_page37_data():
     
     data_rows = []
     
-    # Process each year
     for year in df['year'].unique():
         year_df = df[df['year'] == year]
         
-        # Oil and gas extraction - main activities
         for act_key, act_name in main_activities.items():
             oil_gas_df = year_df[(year_df['Industries'] == industries['oil_gas']) & 
                                   (year_df['Environmental protection activities'] == act_name)]
             if len(oil_gas_df) > 0:
                 value = oil_gas_df['VALUE'].values[0]
                 if pd.notna(value):
-                    data_rows.append((f'page37_oil_gas_{act_key}', year, float(value)))
+                    data_rows.append((f'enviro_oil_gas_{act_key}', year, float(value)))
         
-        # Oil and gas extraction - sum "other" categories
         other_sum = 0
         for other_act in other_activities:
             oil_gas_other_df = year_df[(year_df['Industries'] == industries['oil_gas']) & 
@@ -763,34 +678,29 @@ def process_page37_data():
                 if pd.notna(value):
                     other_sum += float(value)
         if other_sum > 0:
-            data_rows.append(('page37_oil_gas_other', year, other_sum))
+            data_rows.append(('enviro_oil_gas_other', year, other_sum))
         
-        # Electric power generation - total only
         electric_df = year_df[(year_df['Industries'] == industries['electric']) & 
                                (year_df['Environmental protection activities'] == main_activities['total'])]
         if len(electric_df) > 0:
             value = electric_df['VALUE'].values[0]
             if pd.notna(value):
-                data_rows.append(('page37_electric_total', year, float(value)))
+                data_rows.append(('enviro_electric_total', year, float(value)))
         
-        # Natural gas distribution - total only
         natural_gas_df = year_df[(year_df['Industries'] == industries['natural_gas']) & 
                                   (year_df['Environmental protection activities'] == main_activities['total'])]
         if len(natural_gas_df) > 0:
             value = natural_gas_df['VALUE'].values[0]
             if pd.notna(value):
-                data_rows.append(('page37_natural_gas_total', year, float(value)))
+                data_rows.append(('enviro_natural_gas_total', year, float(value)))
         
-        # Petroleum and coal products - total only
         petroleum_df = year_df[(year_df['Industries'] == industries['petroleum']) & 
                                 (year_df['Environmental protection activities'] == main_activities['total'])]
         if len(petroleum_df) > 0:
             value = petroleum_df['VALUE'].values[0]
             if pd.notna(value):
-                data_rows.append(('page37_petroleum_total', year, float(value)))
+                data_rows.append(('enviro_petroleum_total', year, float(value)))
         
-        # Petroleum and coal products - pollution abatement categories (air + wastewater + solid waste + soil)
-        # These sum to the "pollution abatement and control" percentage in the factbook
         pollution_categories = ['air', 'wastewater', 'solid_waste', 'soil']
         pollution_sum = 0
         for cat in pollution_categories:
@@ -801,38 +711,32 @@ def process_page37_data():
                 if pd.notna(value):
                     pollution_sum += float(value)
         if pollution_sum > 0:
-            data_rows.append(('page37_petroleum_pollution', year, pollution_sum))
+            data_rows.append(('enviro_petroleum_pollution', year, pollution_sum))
         
-        # All industries - total only
         all_ind_df = year_df[(year_df['Industries'] == industries['all_industries']) & 
                               (year_df['Environmental protection activities'] == main_activities['total'])]
         if len(all_ind_df) > 0:
             value = all_ind_df['VALUE'].values[0]
             if pd.notna(value):
-                data_rows.append(('page37_all_industries_total', year, float(value)))
+                data_rows.append(('enviro_all_industries_total', year, float(value)))
     
-    # Create metadata rows
     metadata_rows = [
-        ('page37_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('page37_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions'),
-        ('page37_oil_gas_soil', 'Oil and gas extraction - Protection and remediation of soil, groundwater and surface water', 'Millions of dollars', 'millions'),
-        ('page37_oil_gas_air', 'Oil and gas extraction - Air pollution management', 'Millions of dollars', 'millions'),
-        ('page37_oil_gas_solid_waste', 'Oil and gas extraction - Solid waste management', 'Millions of dollars', 'millions'),
-        ('page37_oil_gas_other', 'Oil and gas extraction - Other environmental protection activities', 'Millions of dollars', 'millions'),
-        ('page37_electric_total', 'Electric power generation - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('page37_natural_gas_total', 'Natural gas distribution - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('page37_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('page37_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions'),
-        ('page37_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('enviro_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('enviro_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions'),
+        ('enviro_oil_gas_soil', 'Oil and gas extraction - Protection and remediation of soil, groundwater and surface water', 'Millions of dollars', 'millions'),
+        ('enviro_oil_gas_air', 'Oil and gas extraction - Air pollution management', 'Millions of dollars', 'millions'),
+        ('enviro_oil_gas_solid_waste', 'Oil and gas extraction - Solid waste management', 'Millions of dollars', 'millions'),
+        ('enviro_oil_gas_other', 'Oil and gas extraction - Other environmental protection activities', 'Millions of dollars', 'millions'),
+        ('enviro_electric_total', 'Electric power generation - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('enviro_natural_gas_total', 'Natural gas distribution - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('enviro_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('enviro_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions'),
+        ('enviro_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
     ]
     
-    print(f"  Page 37: {len(data_rows)} data rows")
+    print(f"  Environmental Protection: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
-
-# =============================================================================
-# PAGE 8: ENERGY GDP BY PROVINCE/TERRITORY
-# =============================================================================
 
 def get_provincial_nrsa_gdp_url():
     """
@@ -854,11 +758,9 @@ def get_provincial_nrsa_gdp_url():
     - Yukon: v1138541920
     - Northwest Territories: v1138541949
     - Nunavut: v1138541978
-    
-    selectedMembers: [[all provinces + Canada], [Energy sub-sector], [GDP indicator]]
     """
-    # Fetch all provinces, Energy sub-sector (2D2), GDP indicator (3D2)
-    return "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3610062401&latestN=0&startDate=20070101&endDate=20301212&csvLocale=en&selectedMembers=%5B%5B1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%5D%2C%5B2%5D%2C%5B2%5D%5D&checkedLevels="
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3610062401&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B1%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%5D%2C%5B2%5D%2C%5B2%5D%5D&checkedLevels="
 
 
 def get_energy_direct_gdp_for_ry():
@@ -871,14 +773,12 @@ def get_energy_direct_gdp_for_ry():
     
     Returns the estimated total for the reference year.
     """
-    # This value is from the official NRCan Energy Factbook 2025-2026, Page 8
-    # For 2024: $231,776 million (back-calculated from official provincial figures)
     return 231776
 
 
-def process_page8_data():
+def process_provincial_gdp_data():
     """
-    Process energy GDP by province/territory for Page 8.
+    Process energy GDP by province/territory.
     
     Data source: Table 36-10-0624-01 - Provincial and territorial natural resource indicators
     (Natural resources sector - main indicators)
@@ -898,11 +798,9 @@ def process_page8_data():
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 8: Energy GDP by Province/Territory...")
+    print("Processing Provincial GDP data...")
     print("  Source: Table 36-10-0624-01 (Provincial and territorial natural resource indicators)")
     
-    # Province codes mapping (StatCan names to our codes)
-    # Vector IDs for GDP indicator (Economic indicator = Gross domestic product)
     province_vectors = {
         'Canada': {'code': 'national_total', 'vector': 'v1138541601'},
         'Newfoundland and Labrador': {'code': 'nl', 'vector': 'v1138541630'},
@@ -938,10 +836,8 @@ def process_page8_data():
     }
     
     try:
-        # Fetch data from Table 36-10-0624-01
         df = fetch_csv_from_url(get_provincial_nrsa_gdp_url())
         
-        # Filter for Energy sub-sector and GDP indicator
         df = df[df['Sector'] == 'Energy sub-sector'].copy()
         df = df[df['Economic indicator'] == 'Gross domestic product'].copy()
         
@@ -950,15 +846,11 @@ def process_page8_data():
         data_rows = []
         metadata_rows = []
         
-        # Get unique years and sort them
-        # Exclude 2007 and 2008 as they don't have provincial breakdown data
         years = sorted([y for y in df['REF_DATE'].unique() if y >= 2009])
         print(f"  Years available from provincial data (excluding 2007-2008): {years}")
         
-        # Store data by year for proportion calculation
         year_data = {}
         
-        # Step 1: Import actual GDP values for all available years
         for year in years:
             year_df = df[df['REF_DATE'] == year]
             year_data[year] = {}
@@ -969,18 +861,15 @@ def process_page8_data():
                 
                 if geo in province_vectors and pd.notna(value):
                     prov_code = province_vectors[geo]['code']
-                    vector = f'page8_{prov_code}'
+                    vector = f'gdp_prov_{prov_code}'
                     data_rows.append((vector, int(year), round(value)))
                     year_data[year][prov_code] = value
         
-        # Determine the latest year with actual data (RY-1)
         ry_minus_1 = max(years)
         ry = ry_minus_1 + 1  # Reference year
         print(f"  Latest year with provincial data (RY-1): {ry_minus_1}")
         print(f"  Reference year to estimate (RY): {ry}")
         
-        # Step 2: Calculate GDP share for each province/territory from RY-1
-        # Share = GDP of province / GDP of Canada
         if ry_minus_1 in year_data and 'national_total' in year_data[ry_minus_1]:
             canada_gdp_ry_minus_1 = year_data[ry_minus_1]['national_total']
             provincial_shares = {}
@@ -996,36 +885,31 @@ def process_page8_data():
                     provincial_shares[prov_code] = share
                     print(f"    {geo_name}: ${prov_gdp:,.0f}M / ${canada_gdp_ry_minus_1:,.0f}M = {share:.4%}")
             
-            # Step 3: Get Energy Direct GDP of RY (Indicator 7)
             energy_direct_gdp_ry = get_energy_direct_gdp_for_ry()
             print(f"\n  Step 3: Energy Direct GDP for {ry} (Indicator 7): ${energy_direct_gdp_ry:,}M")
             
-            # Step 4: Compute RY provincial values using shares
             print(f"\n  Step 4: Estimating {ry} provincial values:")
             print(f"    Formula: Provincial value = Share × Energy Direct GDP of {ry}")
             
-            # Add RY national total
             data_rows.append(('page8_national_total', ry, energy_direct_gdp_ry))
             print(f"    Canada (national_total): ${energy_direct_gdp_ry:,}M")
             
             for prov_code, share in provincial_shares.items():
-                # RY provincial value = share × Energy Direct GDP of RY
                 estimated_value = round(energy_direct_gdp_ry * share)
                 data_rows.append((f'page8_{prov_code}', ry, estimated_value))
                 print(f"    {province_names[prov_code]}: {share:.4%} × ${energy_direct_gdp_ry:,}M = ${estimated_value:,}M")
             
             print(f"\n  Note: {ry} values are estimates based on {ry_minus_1} provincial distribution")
         
-        # Create metadata for each province
         for prov_code, prov_name in province_names.items():
             metadata_rows.append((
-                f'page8_{prov_code}',
+                f'gdp_prov_{prov_code}',
                 f'Energy sector direct nominal GDP - {prov_name}',
                 'Millions of dollars',
                 'millions'
             ))
         
-        print(f"\n  Page 8: {len(data_rows)} data rows total")
+        print(f"\n  Provincial GDP: {len(data_rows)} data rows total")
         return data_rows, metadata_rows
         
     except Exception as e:
@@ -1036,13 +920,9 @@ def process_page8_data():
         return [], []
 
 
-# =============================================================================
-# PAGE 28: CANADA'S MAJOR ENERGY PROJECTS
-# =============================================================================
-
-def process_page28_data():
+def process_major_projects_data():
     """
-    Process major energy projects data for Page 28.
+    Process major energy projects data.
     
     Data source: NRCan Major Projects Inventory (Table 1)
     https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
@@ -1052,7 +932,7 @@ def process_page28_data():
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 28: Canada's Major Energy Projects...")
+    print("Processing Major Projects data...")
     print("  Source: NRCan Major Projects Inventory (Table 1)")
     
     major_projects_data = {
@@ -1074,52 +954,48 @@ def process_page28_data():
     data_rows = []
     
     for year, values in major_projects_data.items():
-        data_rows.append(('page28_oil_gas_value', year, values['oil_gas_value']))
-        data_rows.append(('page28_oil_gas_projects', year, values['oil_gas_projects']))
-        data_rows.append(('page28_electricity_value', year, values['electricity_value']))
-        data_rows.append(('page28_electricity_projects', year, values['electricity_projects']))
-        data_rows.append(('page28_other_value', year, values['other_value']))
-        data_rows.append(('page28_other_projects', year, values['other_projects']))
+        data_rows.append(('projects_oil_gas_value', year, values['oil_gas_value']))
+        data_rows.append(('projects_oil_gas_count', year, values['oil_gas_projects']))
+        data_rows.append(('projects_electricity_value', year, values['electricity_value']))
+        data_rows.append(('projects_electricity_count', year, values['electricity_projects']))
+        data_rows.append(('projects_other_value', year, values['other_value']))
+        data_rows.append(('projects_other_count', year, values['other_projects']))
         total_value = values['oil_gas_value'] + values['electricity_value'] + values['other_value']
         total_projects = values['oil_gas_projects'] + values['electricity_projects'] + values['other_projects']
-        data_rows.append(('page28_total_value', year, round(total_value, 1)))
-        data_rows.append(('page28_total_projects', year, total_projects))
+        data_rows.append(('projects_total_value', year, round(total_value, 1)))
+        data_rows.append(('projects_total_count', year, total_projects))
     
-    data_rows.append(('page28_planned_projects', 2024, summary_2024['planned_projects']))
-    data_rows.append(('page28_planned_value', 2024, summary_2024['planned_value']))
-    data_rows.append(('page28_construction_projects', 2024, summary_2024['construction_projects']))
-    data_rows.append(('page28_construction_value', 2024, summary_2024['construction_value']))
-    data_rows.append(('page28_clean_tech_projects', 2024, summary_2024['clean_tech_projects']))
-    data_rows.append(('page28_clean_tech_value', 2024, summary_2024['clean_tech_value']))
+    data_rows.append(('projects_planned_count', 2024, summary_2024['planned_projects']))
+    data_rows.append(('projects_planned_value', 2024, summary_2024['planned_value']))
+    data_rows.append(('projects_construction_count', 2024, summary_2024['construction_projects']))
+    data_rows.append(('projects_construction_value', 2024, summary_2024['construction_value']))
+    data_rows.append(('projects_cleantech_count', 2024, summary_2024['clean_tech_projects']))
+    data_rows.append(('projects_cleantech_value', 2024, summary_2024['clean_tech_value']))
     
     metadata_rows = [
-        ('page28_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions'),
-        ('page28_oil_gas_projects', 'Oil and gas - Number of projects', 'Number', 'units'),
-        ('page28_electricity_value', 'Electricity - Project value', 'Billions of dollars', 'billions'),
-        ('page28_electricity_projects', 'Electricity - Number of projects', 'Number', 'units'),
-        ('page28_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
-        ('page28_other_projects', 'Other - Number of projects', 'Number', 'units'),
-        ('page28_total_value', 'Total - Project value', 'Billions of dollars', 'billions'),
-        ('page28_total_projects', 'Total - Number of projects', 'Number', 'units'),
-        ('page28_planned_projects', 'Planned projects (announced, under review, approved)', 'Number', 'units'),
-        ('page28_planned_value', 'Planned projects value', 'Billions of dollars', 'billions'),
-        ('page28_construction_projects', 'Projects under construction', 'Number', 'units'),
-        ('page28_construction_value', 'Construction projects value', 'Billions of dollars', 'billions'),
-        ('page28_clean_tech_projects', 'Clean technology projects', 'Number', 'units'),
-        ('page28_clean_tech_value', 'Clean technology projects value', 'Billions of dollars', 'billions'),
+        ('projects_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions'),
+        ('projects_oil_gas_count', 'Oil and gas - Number of projects', 'Number', 'units'),
+        ('projects_electricity_value', 'Electricity - Project value', 'Billions of dollars', 'billions'),
+        ('projects_electricity_count', 'Electricity - Number of projects', 'Number', 'units'),
+        ('projects_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
+        ('projects_other_count', 'Other - Number of projects', 'Number', 'units'),
+        ('projects_total_value', 'Total - Project value', 'Billions of dollars', 'billions'),
+        ('projects_total_count', 'Total - Number of projects', 'Number', 'units'),
+        ('projects_planned_count', 'Planned projects (announced, under review, approved)', 'Number', 'units'),
+        ('projects_planned_value', 'Planned projects value', 'Billions of dollars', 'billions'),
+        ('projects_construction_count', 'Projects under construction', 'Number', 'units'),
+        ('projects_construction_value', 'Construction projects value', 'Billions of dollars', 'billions'),
+        ('projects_cleantech_count', 'Clean technology projects', 'Number', 'units'),
+        ('projects_cleantech_value', 'Clean technology projects value', 'Billions of dollars', 'billions'),
     ]
     
-    print(f"  Page 28: {len(data_rows)} data rows")
+    print(f"  Major Projects: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-# =============================================================================
-# PAGE 29: CLEAN TECHNOLOGY PROJECT TRENDS
-# =============================================================================
-
-def process_page29_data():
+def process_clean_tech_data():
     """
-    Process clean technology project trends data for Page 29.
+    Process clean technology project trends data.
     
     Data source: NRCan Major Projects Inventory (Table 4)
     https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
@@ -1129,7 +1005,7 @@ def process_page29_data():
     
     Returns list of tuples for data.csv and metadata.csv
     """
-    print("Processing Page 29: Clean Technology Project Trends...")
+    print("Processing Clean Tech Trends data...")
     print("  Source: NRCan Major Projects Inventory (Table 4)")
     
     clean_tech_data = {
@@ -1192,44 +1068,40 @@ def process_page29_data():
     
     for year, values in clean_tech_data.items():
         for cat in categories:
-            data_rows.append((f'page29_{cat}_projects', year, values[f'{cat}_projects']))
-            data_rows.append((f'page29_{cat}_value', year, values[f'{cat}_value']))
+            data_rows.append((f'cleantech_{cat}_count', year, values[f'{cat}_projects']))
+            data_rows.append((f'cleantech_{cat}_value', year, values[f'{cat}_value']))
     
     metadata_rows = [
-        ('page29_total_projects', 'Total clean technology - Number of projects', 'Number', 'units'),
-        ('page29_total_value', 'Total clean technology - Project value', 'Billions of dollars', 'billions'),
-        ('page29_hydro_projects', 'Hydro - Number of projects', 'Number', 'units'),
-        ('page29_hydro_value', 'Hydro - Project value', 'Billions of dollars', 'billions'),
-        ('page29_wind_projects', 'Wind - Number of projects', 'Number', 'units'),
-        ('page29_wind_value', 'Wind - Project value', 'Billions of dollars', 'billions'),
-        ('page29_biomass_projects', 'Biomass/Biofuels - Number of projects', 'Number', 'units'),
-        ('page29_biomass_value', 'Biomass/Biofuels - Project value', 'Billions of dollars', 'billions'),
-        ('page29_solar_projects', 'Solar - Number of projects', 'Number', 'units'),
-        ('page29_solar_value', 'Solar - Project value', 'Billions of dollars', 'billions'),
-        ('page29_nuclear_projects', 'Nuclear - Number of projects', 'Number', 'units'),
-        ('page29_nuclear_value', 'Nuclear - Project value', 'Billions of dollars', 'billions'),
-        ('page29_ccs_projects', 'Carbon Capture and Storage - Number of projects', 'Number', 'units'),
-        ('page29_ccs_value', 'Carbon Capture and Storage - Project value', 'Billions of dollars', 'billions'),
-        ('page29_geothermal_projects', 'Geothermal - Number of projects', 'Number', 'units'),
-        ('page29_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions'),
-        ('page29_tidal_projects', 'Tidal - Number of projects', 'Number', 'units'),
-        ('page29_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions'),
-        ('page29_multiple_projects', 'Multiple - Number of projects', 'Number', 'units'),
-        ('page29_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions'),
-        ('page29_other_projects', 'Other - Number of projects', 'Number', 'units'),
-        ('page29_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_total_count', 'Total clean technology - Number of projects', 'Number', 'units'),
+        ('cleantech_total_value', 'Total clean technology - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_hydro_count', 'Hydro - Number of projects', 'Number', 'units'),
+        ('cleantech_hydro_value', 'Hydro - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_wind_count', 'Wind - Number of projects', 'Number', 'units'),
+        ('cleantech_wind_value', 'Wind - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_biomass_count', 'Biomass/Biofuels - Number of projects', 'Number', 'units'),
+        ('cleantech_biomass_value', 'Biomass/Biofuels - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_solar_count', 'Solar - Number of projects', 'Number', 'units'),
+        ('cleantech_solar_value', 'Solar - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_nuclear_count', 'Nuclear - Number of projects', 'Number', 'units'),
+        ('cleantech_nuclear_value', 'Nuclear - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_ccs_count', 'Carbon Capture and Storage - Number of projects', 'Number', 'units'),
+        ('cleantech_ccs_value', 'Carbon Capture and Storage - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_geothermal_count', 'Geothermal - Number of projects', 'Number', 'units'),
+        ('cleantech_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_tidal_count', 'Tidal - Number of projects', 'Number', 'units'),
+        ('cleantech_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_multiple_count', 'Multiple - Number of projects', 'Number', 'units'),
+        ('cleantech_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_other_count', 'Other - Number of projects', 'Number', 'units'),
+        ('cleantech_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
     ]
     
-    print(f"  Page 29: {len(data_rows)} data rows")
+    print(f"  Clean Tech Trends: {len(data_rows)} data rows")
     return data_rows, metadata_rows
 
 
-# =============================================================================
-# MAIN FUNCTION
-# =============================================================================
-
 def refresh_all_data():
-    """Fetch, process and save all page data from StatCan to data.csv and metadata.csv."""
+    """Fetch, process and save all data from StatCan to data.csv and metadata.csv."""
     print("=" * 60)
     print("Refreshing all data from Statistics Canada...")
     print("=" * 60)
@@ -1237,56 +1109,52 @@ def refresh_all_data():
     all_data = []
     all_metadata = []
     
-    # Process each page
-    data24, meta24 = process_page24_data()
-    all_data.extend(data24)
-    all_metadata.extend(meta24)
+    capex_data, capex_meta = process_capital_expenditure_data()
+    all_data.extend(capex_data)
+    all_metadata.extend(capex_meta)
     
-    data25, meta25 = process_page25_data()
-    all_data.extend(data25)
-    all_metadata.extend(meta25)
+    infra_data, infra_meta = process_infrastructure_data()
+    all_data.extend(infra_data)
+    all_metadata.extend(infra_meta)
     
-    data26, meta26 = process_page26_data()
-    all_data.extend(data26)
-    all_metadata.extend(meta26)
+    econ_data, econ_meta = process_economic_contributions_data()
+    all_data.extend(econ_data)
+    all_metadata.extend(econ_meta)
     
-    data27, meta27 = process_page27_data()
-    all_data.extend(data27)
-    all_metadata.extend(meta27)
+    asset_data, asset_meta = process_investment_by_asset_data()
+    all_data.extend(asset_data)
+    all_metadata.extend(asset_meta)
     
-    data31, meta31 = process_page31_data()
-    all_data.extend(data31)
-    all_metadata.extend(meta31)
+    intl_data, intl_meta = process_international_investment_data()
+    all_data.extend(intl_data)
+    all_metadata.extend(intl_meta)
     
-    data32, meta32 = process_page32_data()
-    all_data.extend(data32)
-    all_metadata.extend(meta32)
+    foreign_data, foreign_meta = process_foreign_control_data()
+    all_data.extend(foreign_data)
+    all_metadata.extend(foreign_meta)
     
-    data37, meta37 = process_page37_data()
-    all_data.extend(data37)
-    all_metadata.extend(meta37)
+    enviro_data, enviro_meta = process_environmental_protection_data()
+    all_data.extend(enviro_data)
+    all_metadata.extend(enviro_meta)
     
-    data8, meta8 = process_page8_data()
-    all_data.extend(data8)
-    all_metadata.extend(meta8)
+    gdp_data, gdp_meta = process_provincial_gdp_data()
+    all_data.extend(gdp_data)
+    all_metadata.extend(gdp_meta)
     
-    data28, meta28 = process_page28_data()
-    all_data.extend(data28)
-    all_metadata.extend(meta28)
+    projects_data, projects_meta = process_major_projects_data()
+    all_data.extend(projects_data)
+    all_metadata.extend(projects_meta)
     
-    data29, meta29 = process_page29_data()
-    all_data.extend(data29)
-    all_metadata.extend(meta29)
+    cleantech_data, cleantech_meta = process_clean_tech_data()
+    all_data.extend(cleantech_data)
+    all_metadata.extend(cleantech_meta)
     
-    # Create DataFrames
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])
     metadata_df = pd.DataFrame(all_metadata, columns=['vector', 'title', 'uom', 'scalar_factor'])
     
-    # Remove duplicates
     data_df = data_df.drop_duplicates(subset=['vector', 'ref_date'], keep='first')
     metadata_df = metadata_df.drop_duplicates(subset=['vector'], keep='first')
     
-    # Save to CSV
     data_path, metadata_path = get_data_paths()
     data_df.to_csv(data_path, index=False)
     metadata_df.to_csv(metadata_path, index=False)
