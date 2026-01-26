@@ -273,6 +273,24 @@ Use a `<select>` dropdown instead of a range slider:
 - **Desktop (>768px):** Charts are interactive by default, mode bar visible
 - **Mobile (≤768px):** Charts are interactive by default, mode bar shows on interaction
 
+### Mobile Page Scrolling (dragmode)
+
+On mobile devices, swiping on a chart can trigger zoom/pan instead of scrolling the page. To fix this, set `dragmode` conditionally in the layout prop:
+
+```javascript
+layout={{
+    // Disable drag-to-zoom on mobile so page scrolling works naturally
+    dragmode: windowWidth <= 768 ? false : 'zoom',
+    // ... other layout settings
+}}
+```
+
+**How it works:**
+- **Desktop (>768px):** `dragmode: 'zoom'` allows click-and-drag to zoom, standard mouse behavior
+- **Mobile (≤768px):** `dragmode: false` disables chart drag handling, allowing swipe gestures to scroll the page naturally
+
+This must be applied to ALL `<Plot />` components in the codebase.
+
 ### Window Resize Handler
 ```javascript
 useEffect(() => {

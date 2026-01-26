@@ -718,6 +718,7 @@ const Page31 = () => {
                             layout={{
                                 barmode: 'group',
                                 hovermode: 'closest',
+                                dragmode: windowWidth <= 768 ? false : 'zoom',
                                 xaxis: {
                                     tickvals: chartData.tickVals,
                                     showgrid: false,

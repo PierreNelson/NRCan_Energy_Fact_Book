@@ -1541,11 +1541,55 @@ def process_major_projects_map_data():
         }
     }
     
-    json_path = os.path.join(DATA_DIR, "major_projects_map.json")
-    with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump(map_data, f, indent=2, ensure_ascii=False)
+    csv_rows = []
+    for lang_code, lang_data in [('en', map_data['en']), ('fr', map_data['fr'])]:
+        for point in lang_data.get('points', []):
+            row = {
+                'lang': lang_code,
+                'id': point.get('id', ''),
+                'company': point.get('company', ''),
+                'project_name': point.get('project_name', ''),
+                'province': point.get('province', ''),
+                'location': point.get('location', ''),
+                'capital_cost': point.get('capital_cost', ''),
+                'capital_cost_range': point.get('capital_cost_range', ''),
+                'status': point.get('status', ''),
+                'clean_technology': point.get('clean_technology', ''),
+                'clean_technology_type': point.get('clean_technology_type', ''),
+                'line_type': '',
+                'lat': point.get('lat', ''),
+                'lon': point.get('lon', ''),
+                'paths': '',
+                'type': 'point'
+            }
+            csv_rows.append(row)
+        
+        for line in lang_data.get('lines', []):
+            row = {
+                'lang': lang_code,
+                'id': line.get('id', ''),
+                'company': line.get('company', ''),
+                'project_name': line.get('project_name', ''),
+                'province': line.get('province', ''),
+                'location': line.get('location', ''),
+                'capital_cost': line.get('capital_cost', ''),
+                'capital_cost_range': line.get('capital_cost_range', ''),
+                'status': line.get('status', ''),
+                'clean_technology': line.get('clean_technology', ''),
+                'clean_technology_type': line.get('clean_technology_type', ''),
+                'line_type': line.get('line_type', ''),
+                'lat': '',
+                'lon': '',
+                'paths': json.dumps(line.get('paths', [])),
+                'type': 'line'
+            }
+            csv_rows.append(row)
     
-    print(f"  Major Projects Map: saved EN({len(en_points)} points, {len(en_lines)} lines) FR({len(fr_points)} points, {len(fr_lines)} lines) to {json_path}")
+    csv_df = pd.DataFrame(csv_rows)
+    csv_path = os.path.join(DATA_DIR, "major_projects_map.csv")
+    csv_df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+    print(f"  Major Projects Map: saved EN({len(en_points)} points, {len(en_lines)} lines) FR({len(fr_points)} points, {len(fr_lines)} lines)")
+    print(f"  Major Projects Map CSV: saved {len(csv_rows)} rows to {csv_path}")
     
     return map_data
 

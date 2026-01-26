@@ -851,6 +851,7 @@ const Page32 = () => {
                                     layout={{
                                         barmode: 'group',
                                         hovermode: 'closest',
+                                        dragmode: windowWidth <= 768 ? false : 'zoom',
                                         showlegend: true,
                                         legend: {
                                             orientation: windowWidth <= 1280 ? 'h' : 'v',

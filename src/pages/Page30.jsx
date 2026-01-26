@@ -68,12 +68,83 @@ const Page30 = () => {
     }, [isChartInteractive, windowWidth]);
 
     useEffect(() => {
-        fetch(`${import.meta.env.BASE_URL}data/major_projects_map.json`)
+        fetch(`${import.meta.env.BASE_URL}data/major_projects_map.csv`)
             .then(response => {
                 if (!response.ok) throw new Error('Failed to load map data');
-                return response.json();
+                return response.text();
             })
-            .then(data => {
+            .then(csvText => {
+                const lines = csvText.split('\n');
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                const parseCSVRow = (row) => {
+                    const values = [];
+                    let current = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < row.length; i++) {
+                        const char = row[i];
+                        if (char === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (char === ',' && !inQuotes) {
+                            values.push(current.trim());
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    values.push(current.trim());
+                    return values;
+                };
+                
+                const data = { en: { points: [], lines: [] }, fr: { points: [], lines: [] } };
+                
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    const values = parseCSVRow(lines[i]);
+                    const row = {};
+                    headers.forEach((header, idx) => {
+                        row[header] = values[idx] || '';
+                    });
+                    
+                    const langKey = row.lang === 'fr' ? 'fr' : 'en';
+                    
+                    if (row.type === 'line') {
+                        const lineObj = {
+                            id: row.id,
+                            company: row.company,
+                            project_name: row.project_name,
+                            province: row.province,
+                            location: row.location,
+                            capital_cost: row.capital_cost,
+                            capital_cost_range: row.capital_cost_range,
+                            status: row.status,
+                            clean_technology: row.clean_technology,
+                            clean_technology_type: row.clean_technology_type,
+                            line_type: row.line_type,
+                            paths: row.paths ? JSON.parse(row.paths) : [],
+                            type: 'line'
+                        };
+                        data[langKey].lines.push(lineObj);
+                    } else {
+                        const pointObj = {
+                            id: row.id,
+                            company: row.company,
+                            project_name: row.project_name,
+                            province: row.province,
+                            location: row.location,
+                            capital_cost: row.capital_cost,
+                            capital_cost_range: row.capital_cost_range,
+                            status: row.status,
+                            clean_technology: row.clean_technology,
+                            clean_technology_type: row.clean_technology_type,
+                            lat: parseFloat(row.lat) || 0,
+                            lon: parseFloat(row.lon) || 0,
+                            type: 'point'
+                        };
+                        data[langKey].points.push(pointObj);
+                    }
+                }
+                
                 setMapData(data);
                 setLoading(false);
             })
@@ -547,7 +618,7 @@ const Page30 = () => {
         });
     };
 
-    const mapScale = windowWidth <= 768 ? 1.8 : 2.5;
+    const mapScale = 2.5;
     const mapHeight = windowWidth <= 768 ? 500 : windowWidth <= 1100 ? 600 : 700;
 
     const LegendItem = ({ color, symbol, label, isLine, isOutline, size = 'medium' }) => {
@@ -758,6 +829,10 @@ const Page30 = () => {
                         flex: 1;
                         min-width: 180px;
                     }
+
+                        .page30-map-wrapper {
+                            margin-left: -150px;
+                        }
                 }
 
                 @media (max-width: 768px) {
@@ -769,7 +844,7 @@ const Page30 = () => {
                     }
                 }
 
-                @media (max-width: 640px) {
+               @media (max-width: 640px) {
                     .page-30 { 
                         border-left: none !important; 
                         margin-left: 0;
@@ -777,6 +852,19 @@ const Page30 = () => {
                         padding-left: 15px;
                         padding-right: 15px;
                     }
+
+                    /* NEW: Force map to ignore the 15px padding and touch the screen edges */
+                    .page30-map-wrapper {
+                        margin-left: -140px;
+                        margin-right: -105px;
+                        width: calc(100% + 140px); /* Compensate for the removed margins */
+                    }
+
+                    /* Ensure the map container inside fills this new space */
+                    .page30-map-container {
+                        width: 100%;
+                    }
+
                     .page30-title {
                         font-size: 1.4rem;
                     }
@@ -788,6 +876,22 @@ const Page30 = () => {
                     }
                     .page30-legend-section {
                         min-width: 100%;
+                    }
+
+                    @media (max-width: 480px) {
+                        .page30-map-wrapper {
+                            margin-left: -70px;
+                            margin-right: -100px;
+                            width: calc(100% + 100px);
+                        }
+                    }
+
+                    @media (max-width: 384px) {
+                        .page30-map-wrapper {
+                            margin-left: -45px;
+                            margin-right: -90px;
+                            width: calc(100% + 70px);
+                        }
                     }
                 }
             `}</style>
@@ -836,7 +940,7 @@ const Page30 = () => {
                                     },
                                     margin: { l: 0, r: 0, t: 0, b: 0 },
                                     height: mapHeight,
-                                    dragmode: false,
+                                    dragmode: windowWidth <= 768 ? false : 'zoom',
                                     paper_bgcolor: 'rgba(0,0,0,0)',
                                     plot_bgcolor: 'rgba(0,0,0,0)',
                                     showlegend: false

@@ -773,6 +773,7 @@ const Page27 = () => {
                             layout={{
                                 barmode: 'stack',
                                 hovermode: 'closest',
+                                dragmode: windowWidth <= 768 ? false : 'zoom',
                                 xaxis: {
                                     tickvals: chartData.tickVals,
                                     showgrid: false,

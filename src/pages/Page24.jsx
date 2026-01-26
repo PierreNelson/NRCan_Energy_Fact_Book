@@ -723,6 +723,7 @@ const Page24 = () => {
                                     barmode: 'stack', 
                                     hoverlabel: { bgcolor: '#ffffff' }, 
                                     showlegend: false,
+                                    dragmode: windowWidth <= 768 ? false : 'zoom',
                                     xaxis: { 
                                         tickvals: tickVals, 
                                         automargin: true,

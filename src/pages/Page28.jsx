@@ -751,6 +751,7 @@ const Page28 = () => {
                                         layout={{
                                             barmode: 'stack',
                                             showlegend: false,
+                                            dragmode: windowWidth <= 768 ? false : 'zoom',
                                             title: {
                                                 text: `<b>${chartTitle}</b>`,
                                                 font: { size: 18, family: 'Arial, sans-serif', color: '#333' },

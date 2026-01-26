@@ -992,7 +992,7 @@ const Page25 = () => {
                                         autosize: true, 
                                         annotations: annotations,
                                         clickmode: 'event',
-                                        dragmode: false
+                                        dragmode: windowWidth <= 768 ? false : 'zoom'
                                     }}
                                     useResizeHandler={true}
                                     style={{ width: '100%', height: '100%' }}
