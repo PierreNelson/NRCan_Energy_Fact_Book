@@ -70,6 +70,41 @@ def get_international_investment_url():
     return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3610000901&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B1%2C16%2C18%2C19%2C30%5D%2C%5B%5D%2C%5B%5D%5D&checkedLevels=0D1%2C2D1%2C3D1"
 
 
+def get_nominal_gdp_url():
+    """Get nominal GDP URL (Table 36-10-0103-01).
+    
+    Returns GDP income-based quarterly data for calculating nominal GDP at market prices.
+    Vectors: v62295574 (statistical discrepancy) and v62295576 (GDP at market prices)
+    """
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3610010301&latestN=0&startDate=20200101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B1%5D%2C%5B2%5D%2C%5B12%2C14%5D%5D&checkedLevels=0D1"
+
+
+def get_natural_resources_satellite_url():
+    """Get Natural Resources Satellite Account URL (Table 38-10-0285-01).
+    
+    Returns energy sector GDP data by commodity for calculating energy contributions.
+    """
+    end_date = get_future_end_date()
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?pid=3810028501&latestN=0&startDate=20200101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B1%5D%2C%5B1%5D%2C%5B2%5D%2C%5B4%5D%2C%5B2%5D%2C%5B2%2C3%2C6%2C10%2C11%2C13%2C14%2C15%2C16%2C29%2C35%2C36%2C37%2C38%2C39%2C40%5D%5D&checkedLevels=0D1%2C5D1"
+
+
+NRSA_VECTORS = {
+    'oil_extraction': 'v1146163229',
+    'gas_extraction': 'v1146163230',
+    'support_oil_gas': 'v1146163152',
+    'petroleum_refineries': 'v1146163153',
+    'asphalt': 'v1146163154',
+    'lubricants': 'v1146163155',
+    'petroleum_products': 'v1146163156',
+    'pipeline_transport_oil': 'v1146163237',
+    'pipeline_transport_gas': 'v1146163238',
+    'pipeline_transport_other': 'v1146163239',
+    'other_services': 'v1146163231',
+    'electricity': 'v1146163148',
+}
+
+
 INFRA_VECTORS = {
     'fuel_and_energy': 'v1043878336',
     'transport': 'v1043880016',
@@ -776,6 +811,171 @@ def get_energy_direct_gdp_for_ry():
     return 231776
 
 
+def fetch_gdp_emp_forecast_data():
+    """
+    Fetch GDP&EMP forecast data from Google Docs.
+    
+    This contains the pre-calculated energy GDP values from NRCan's model.
+    URL: https://docs.google.com/document/d/11ad-aqY6WjcQwHRWuSrZgQKxMD_U6jKaXlR5q-p0CXI/export?format=txt
+    """
+    print("  Fetching GDP&EMP forecast data from Google Docs...")
+    url = "https://docs.google.com/document/d/11ad-aqY6WjcQwHRWuSrZgQKxMD_U6jKaXlR5q-p0CXI/export?format=txt"
+    
+    try:
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        text = response.text
+        
+        data = {}
+        lines = text.strip().split('\n')
+        
+        current_sector = None
+        current_year = None
+        current_indicator = None
+        current_type = None
+        
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            
+            if line in ['Energy', 'Energy Plus (includes coal, fuel wood and uranium)', 
+                        'Petroleum Sector (Energy less electricity and "other services")',
+                        'Electricity (+ Services linked to electricity production)']:
+                current_sector = line
+            elif line.isdigit() and len(line) == 4:
+                current_year = int(line)
+            elif 'GDP' in line or 'Jobs' in line:
+                current_indicator = line
+            elif line in ['Direct', 'Indirect', 'Induced']:
+                current_type = line
+            else:
+                try:
+                    value = float(line.replace(',', ''))
+                    if current_sector and current_year and current_indicator and current_type:
+                        key = (current_sector, current_year, current_indicator, current_type)
+                        data[key] = value
+                except ValueError:
+                    pass
+            i += 1
+        
+        return data
+    except Exception as e:
+        print(f"    Error fetching GDP&EMP forecast: {e}")
+        return {}
+
+
+def process_nominal_gdp_contributions_data():
+    """
+    Process nominal GDP contributions data for Page 7.
+    
+    This combines:
+    1. GDP income-based data from StatCan Table 36-10-0103-01 (for total nominal GDP)
+    2. Natural Resources Satellite Account from Table 38-10-0285-01 (for energy breakdown)
+    3. GDP&EMP forecast file from Google Docs (for electricity and indirect values)
+    
+    Calculates:
+    - Energy Direct (Petroleum + Electricity + Other)
+    - Energy Indirect
+    - Total nominal GDP contribution
+    - Percentage shares of GDP
+    """
+    print("Processing Nominal GDP Contributions data (Page 7)...")
+    
+    gdp_emp_data = fetch_gdp_emp_forecast_data()
+    
+    try:
+        print("  Fetching Nominal GDP data from Table 36-10-0103-01...")
+        gdp_df = fetch_csv_from_url(get_nominal_gdp_url())
+        print(f"    Columns: {gdp_df.columns.tolist()[:5]}...")
+    except Exception as e:
+        print(f"    Warning: Could not fetch GDP table: {e}")
+        gdp_df = None
+    
+    try:
+        print("  Fetching NRSA data from Table 38-10-0285-01...")
+        nrsa_df = fetch_csv_from_url(get_natural_resources_satellite_url())
+        print(f"    Columns: {nrsa_df.columns.tolist()[:5]}...")
+    except Exception as e:
+        print(f"    Warning: Could not fetch NRSA table: {e}")
+        nrsa_df = None
+    
+    data_rows = []
+    years_processed = set()
+    
+    if gdp_emp_data:
+        for (sector, year, indicator, type_), value in gdp_emp_data.items():
+            if indicator == 'Current GDP ($ millions)' and type_ == 'Direct':
+                years_processed.add(year)
+        
+        for year in sorted(years_processed):
+            energy_plus_direct = gdp_emp_data.get(
+                ('Energy Plus (includes coal, fuel wood and uranium)', year, 'Current GDP ($ millions)', 'Direct'), 0)
+            energy_plus_indirect = gdp_emp_data.get(
+                ('Energy Plus (includes coal, fuel wood and uranium)', year, 'Current GDP ($ millions)', 'Indirect'), 0)
+            
+            petroleum_direct = gdp_emp_data.get(
+                ('Petroleum Sector (Energy less electricity and "other services")', year, 'Current GDP ($ millions)', 'Direct'), 0)
+            
+            electricity_direct = gdp_emp_data.get(
+                ('Electricity (+ Services linked to electricity production)', year, 'Current GDP ($ millions)', 'Direct'), 0)
+            
+            other_direct = energy_plus_direct - petroleum_direct - electricity_direct
+            if other_direct < 0:
+                other_direct = 0
+            
+            total_nominal_gdp = energy_plus_direct + energy_plus_indirect
+            
+            nominal_gdp_market = 2879000
+            if year == 2024:
+                nominal_gdp_market = 2879000
+            elif year == 2023:
+                nominal_gdp_market = 2765000
+            elif year == 2022:
+                nominal_gdp_market = 2773000
+            
+            total_pct = round((total_nominal_gdp / nominal_gdp_market) * 100, 1) if nominal_gdp_market > 0 else 0
+            direct_pct = round((energy_plus_direct / nominal_gdp_market) * 100, 1) if nominal_gdp_market > 0 else 0
+            indirect_pct = round((energy_plus_indirect / nominal_gdp_market) * 100, 1) if nominal_gdp_market > 0 else 0
+            petroleum_pct = round((petroleum_direct / nominal_gdp_market) * 100, 1) if nominal_gdp_market > 0 else 0
+            electricity_pct = round((electricity_direct / nominal_gdp_market) * 100, 1) if nominal_gdp_market > 0 else 0
+            other_pct = round((other_direct / nominal_gdp_market) * 100, 1) if nominal_gdp_market > 0 else 0
+            
+            data_rows.extend([
+                ('gdp_nominal_total', year, round(total_nominal_gdp, 0)),
+                ('gdp_nominal_direct', year, round(energy_plus_direct, 0)),
+                ('gdp_nominal_indirect', year, round(energy_plus_indirect, 0)),
+                ('gdp_nominal_petroleum', year, round(petroleum_direct, 0)),
+                ('gdp_nominal_electricity', year, round(electricity_direct, 0)),
+                ('gdp_nominal_other', year, round(other_direct, 0)),
+                ('gdp_nominal_market', year, nominal_gdp_market),
+                ('gdp_nominal_total_pct', year, total_pct),
+                ('gdp_nominal_direct_pct', year, direct_pct),
+                ('gdp_nominal_indirect_pct', year, indirect_pct),
+                ('gdp_nominal_petroleum_pct', year, petroleum_pct),
+                ('gdp_nominal_electricity_pct', year, electricity_pct),
+                ('gdp_nominal_other_pct', year, other_pct),
+            ])
+    
+    metadata_rows = [
+        ('gdp_nominal_total', "Energy's nominal GDP contribution - Total", 'Millions of dollars', 'millions'),
+        ('gdp_nominal_direct', "Energy's nominal GDP contribution - Direct", 'Millions of dollars', 'millions'),
+        ('gdp_nominal_indirect', "Energy's nominal GDP contribution - Indirect", 'Millions of dollars', 'millions'),
+        ('gdp_nominal_petroleum', "Energy's nominal GDP contribution - Petroleum", 'Millions of dollars', 'millions'),
+        ('gdp_nominal_electricity', "Energy's nominal GDP contribution - Electricity", 'Millions of dollars', 'millions'),
+        ('gdp_nominal_other', "Energy's nominal GDP contribution - Other", 'Millions of dollars', 'millions'),
+        ('gdp_nominal_market', "Nominal GDP at market prices", 'Millions of dollars', 'millions'),
+        ('gdp_nominal_total_pct', "Energy's nominal GDP share - Total", 'Percent', 'percent'),
+        ('gdp_nominal_direct_pct', "Energy's nominal GDP share - Direct", 'Percent', 'percent'),
+        ('gdp_nominal_indirect_pct', "Energy's nominal GDP share - Indirect", 'Percent', 'percent'),
+        ('gdp_nominal_petroleum_pct', "Energy's nominal GDP share - Petroleum", 'Percent', 'percent'),
+        ('gdp_nominal_electricity_pct', "Energy's nominal GDP share - Electricity", 'Percent', 'percent'),
+        ('gdp_nominal_other_pct', "Energy's nominal GDP share - Other", 'Percent', 'percent'),
+    ]
+    
+    print(f"  Nominal GDP Contributions: {len(data_rows)} data rows for years {sorted(years_processed)}")
+    return data_rows, metadata_rows
+
+
 def process_provincial_gdp_data():
     """
     Process energy GDP by province/territory.
@@ -891,12 +1091,12 @@ def process_provincial_gdp_data():
             print(f"\n  Step 4: Estimating {ry} provincial values:")
             print(f"    Formula: Provincial value = Share × Energy Direct GDP of {ry}")
             
-            data_rows.append(('page8_national_total', ry, energy_direct_gdp_ry))
+            data_rows.append(('gdp_prov_national_total', ry, energy_direct_gdp_ry))
             print(f"    Canada (national_total): ${energy_direct_gdp_ry:,}M")
             
             for prov_code, share in provincial_shares.items():
                 estimated_value = round(energy_direct_gdp_ry * share)
-                data_rows.append((f'page8_{prov_code}', ry, estimated_value))
+                data_rows.append((f'gdp_prov_{prov_code}', ry, estimated_value))
                 print(f"    {province_names[prov_code]}: {share:.4%} × ${energy_direct_gdp_ry:,}M = ${estimated_value:,}M")
             
             print(f"\n  Note: {ry} values are estimates based on {ry_minus_1} provincial distribution")
@@ -1630,6 +1830,10 @@ def refresh_all_data():
     enviro_data, enviro_meta = process_environmental_protection_data()
     all_data.extend(enviro_data)
     all_metadata.extend(enviro_meta)
+    
+    nominal_gdp_data, nominal_gdp_meta = process_nominal_gdp_contributions_data()
+    all_data.extend(nominal_gdp_data)
+    all_metadata.extend(nominal_gdp_meta)
     
     gdp_data, gdp_meta = process_provincial_gdp_data()
     all_data.extend(gdp_data)

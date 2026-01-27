@@ -17,6 +17,17 @@ const Page30 = () => {
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, index: null });
 
+    const [sortColumn, setSortColumn] = useState('project_name');
+    const [sortDirection, setSortDirection] = useState('asc');
+    const [companyFilter, setCompanyFilter] = useState([]);
+    const [provinceFilter, setProvinceFilter] = useState([]);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [cleanTechFilter, setCleanTechFilter] = useState('all');
+    const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
+    const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false);
+    const companyDropdownRef = useRef(null);
+    const provinceDropdownRef = useRef(null);
+
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     const hexToRgba = (hex, opacity = 1) => {
@@ -62,10 +73,32 @@ const Page30 = () => {
             if (windowWidth <= 768 && isChartInteractive && chartRef.current && !chartRef.current.contains(event.target)) {
                 setIsChartInteractive(false);
             }
+            if (companyDropdownRef.current && !companyDropdownRef.current.contains(event.target)) {
+                setCompanyDropdownOpen(false);
+            }
+            if (provinceDropdownRef.current && !provinceDropdownRef.current.contains(event.target)) {
+                setProvinceDropdownOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isChartInteractive, windowWidth]);
+
+    const toggleCompanyFilter = (company) => {
+        setCompanyFilter(prev => 
+            prev.includes(company) 
+                ? prev.filter(c => c !== company)
+                : [...prev, company]
+        );
+    };
+
+    const toggleProvinceFilter = (province) => {
+        setProvinceFilter(prev => 
+            prev.includes(province) 
+                ? prev.filter(p => p !== province)
+                : [...prev, province]
+        );
+    };
 
     useEffect(() => {
         fetch(`${import.meta.env.BASE_URL}data/major_projects_map.csv`)
@@ -84,7 +117,12 @@ const Page30 = () => {
                     for (let i = 0; i < row.length; i++) {
                         const char = row[i];
                         if (char === '"') {
-                            inQuotes = !inQuotes;
+                            if (inQuotes && row[i + 1] === '"') {
+                                current += '"';
+                                i++;
+                            } else {
+                                inQuotes = !inQuotes;
+                            }
                         } else if (char === ',' && !inQuotes) {
                             values.push(current.trim());
                             current = '';
@@ -262,28 +300,167 @@ const Page30 = () => {
             ...(langData.points || []),
             ...(langData.lines || [])
         ];
-        return allProjects.sort((a, b) => {
-            const nameA = (a.project_name || '').toLowerCase();
-            const nameB = (b.project_name || '').toLowerCase();
-            return nameA.localeCompare(nameB);
-        });
+        return allProjects;
     }, [langData]);
 
+    const uniqueCompanies = useMemo(() => {
+        if (!tableData || tableData.length === 0) return [];
+        const companies = [...new Set(tableData.map(p => p.company).filter(c => c && c.trim()))];
+        return companies.sort((a, b) => a.localeCompare(b));
+    }, [tableData]);
+
+    const uniqueProvinces = useMemo(() => {
+        if (!tableData || tableData.length === 0) return [];
+        const provinces = [...new Set(tableData.map(p => p.province).filter(p => p && p.trim()))];
+        return provinces.sort((a, b) => a.localeCompare(b));
+    }, [tableData]);
+
     const filteredTableData = useMemo(() => {
-        if (selectedProvinces === null || selectedProvinces.length === 0) return tableData;
-        const selectedProvNames = selectedProvinces.map(idx => {
-            const code = provinceCodes[idx];
-            const info = provinceInfo[code];
-            return lang === 'en' ? info.nameEn : info.nameFr;
-        });
-        return tableData.filter(project => {
-            const projectProvince = project.province || '';
-            return selectedProvNames.some(name => 
-                projectProvince.toLowerCase().includes(name.toLowerCase()) ||
-                name.toLowerCase().includes(projectProvince.toLowerCase())
+        let filtered = [...tableData];
+
+        if (selectedProvinces !== null && selectedProvinces.length > 0) {
+            const selectedProvNames = selectedProvinces.map(idx => {
+                const code = provinceCodes[idx];
+                const info = provinceInfo[code];
+                return lang === 'en' ? info.nameEn : info.nameFr;
+            });
+            filtered = filtered.filter(project => {
+                const projectProvince = project.province || '';
+                return selectedProvNames.some(name => 
+                    projectProvince.toLowerCase().includes(name.toLowerCase()) ||
+                    name.toLowerCase().includes(projectProvince.toLowerCase())
+                );
+            });
+        }
+
+        if (companyFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                companyFilter.includes(project.company)
             );
+        }
+
+        if (provinceFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                provinceFilter.includes(project.province)
+            );
+        }
+
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(project => {
+                const status = (project.status || '').toLowerCase();
+                if (statusFilter === 'planned') {
+                    return status.includes('planned') || status.includes('prévu');
+                } else if (statusFilter === 'under_construction') {
+                    return status.includes('construction') || status.includes('en construction');
+                }
+                return true;
+            });
+        }
+
+        if (cleanTechFilter !== 'all') {
+            filtered = filtered.filter(project => {
+                const cleanTech = (project.clean_technology || '').toLowerCase();
+                if (cleanTechFilter === 'yes') {
+                    return cleanTech === 'yes' || cleanTech === 'oui';
+                } else if (cleanTechFilter === 'no') {
+                    return cleanTech === 'no' || cleanTech === 'non' || cleanTech === '';
+                }
+                return true;
+            });
+        }
+
+        filtered.sort((a, b) => {
+            let valA, valB;
+            
+            if (sortColumn === 'capital_cost') {
+                valA = parseFloat((a.capital_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+                valB = parseFloat((b.capital_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+            } else {
+                valA = (a[sortColumn] || '').toLowerCase();
+                valB = (b[sortColumn] || '').toLowerCase();
+            }
+
+            if (sortColumn === 'capital_cost') {
+                return sortDirection === 'asc' ? valA - valB : valB - valA;
+            } else {
+                const comparison = valA.localeCompare(valB);
+                return sortDirection === 'asc' ? comparison : -comparison;
+            }
         });
-    }, [tableData, selectedProvinces, lang]);
+
+        return filtered;
+    }, [tableData, selectedProvinces, lang, companyFilter, provinceFilter, statusFilter, cleanTechFilter, sortColumn, sortDirection]);
+
+    const applyFiltersToData = (data) => {
+        if (!data || data.length === 0) return [];
+        let filtered = [...data];
+
+        if (companyFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                companyFilter.includes(project.company)
+            );
+        }
+
+        if (provinceFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                provinceFilter.includes(project.province)
+            );
+        }
+
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(project => {
+                const status = (project.status || '').toLowerCase();
+                if (statusFilter === 'planned') {
+                    return status.includes('planned') || status.includes('prévu');
+                } else if (statusFilter === 'under_construction') {
+                    return status.includes('construction') || status.includes('en construction');
+                }
+                return true;
+            });
+        }
+
+        if (cleanTechFilter !== 'all') {
+            filtered = filtered.filter(project => {
+                const cleanTech = (project.clean_technology || '').toLowerCase();
+                if (cleanTechFilter === 'yes') {
+                    return cleanTech === 'yes' || cleanTech === 'oui';
+                } else if (cleanTechFilter === 'no') {
+                    return cleanTech === 'no' || cleanTech === 'non' || cleanTech === '';
+                }
+                return true;
+            });
+        }
+
+        return filtered;
+    };
+
+    const filteredMapPoints = useMemo(() => {
+        if (!langData || !langData.points) return [];
+        return applyFiltersToData(langData.points);
+    }, [langData, companyFilter, provinceFilter, statusFilter, cleanTechFilter]);
+
+    const filteredMapLines = useMemo(() => {
+        if (!langData || !langData.lines) return [];
+        return applyFiltersToData(langData.lines);
+    }, [langData, companyFilter, provinceFilter, statusFilter, cleanTechFilter]);
+
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
+    const clearAllFilters = () => {
+        setCompanyFilter([]);
+        setProvinceFilter([]);
+        setStatusFilter('all');
+        setCleanTechFilter('all');
+        setSortColumn('project_name');
+        setSortDirection('asc');
+    };
 
     const downloadTableAsCSV = () => {
         if (!filteredTableData || filteredTableData.length === 0) return;
@@ -498,8 +675,8 @@ const Page30 = () => {
             return project.status === 'Under Construction' || project.status === 'En construction';
         };
         
-        if (langData.lines && langData.lines.length > 0) {
-            langData.lines.forEach((line, idx) => {
+        if (filteredMapLines && filteredMapLines.length > 0) {
+            filteredMapLines.forEach((line, idx) => {
                 if (line.paths && line.paths.length > 0) {
                     const isSelected = isProjectInSelectedProvince(line);
                     line.paths.forEach((path, pathIdx) => {
@@ -530,11 +707,11 @@ const Page30 = () => {
             });
         }
         
-        if (langData.points && langData.points.length > 0) {
-            const cleanConstruction = langData.points.filter(p => isCleanTech(p) && isUnderConstruction(p));
-            const cleanPlanned = langData.points.filter(p => isCleanTech(p) && !isUnderConstruction(p));
-            const regularConstruction = langData.points.filter(p => !isCleanTech(p) && isUnderConstruction(p));
-            const regularPlanned = langData.points.filter(p => !isCleanTech(p) && !isUnderConstruction(p));
+        if (filteredMapPoints && filteredMapPoints.length > 0) {
+            const cleanConstruction = filteredMapPoints.filter(p => isCleanTech(p) && isUnderConstruction(p));
+            const cleanPlanned = filteredMapPoints.filter(p => isCleanTech(p) && !isUnderConstruction(p));
+            const regularConstruction = filteredMapPoints.filter(p => !isCleanTech(p) && isUnderConstruction(p));
+            const regularPlanned = filteredMapPoints.filter(p => !isCleanTech(p) && !isUnderConstruction(p));
             
             const createPointTrace = (points, name) => {
                 if (points.length === 0) return null;
@@ -577,7 +754,7 @@ const Page30 = () => {
         }
         
         return traces;
-    }, [langData, lang, selectedProvinces]);
+    }, [langData, lang, selectedProvinces, filteredMapPoints, filteredMapLines]);
 
     const handleMapClick = (data) => {
         if (!data.points || data.points.length === 0) return;
@@ -853,14 +1030,12 @@ const Page30 = () => {
                         padding-right: 15px;
                     }
 
-                    /* NEW: Force map to ignore the 15px padding and touch the screen edges */
                     .page30-map-wrapper {
                         margin-left: -140px;
                         margin-right: -105px;
-                        width: calc(100% + 140px); /* Compensate for the removed margins */
+                        width: calc(100% + 140px); 
                     }
 
-                    /* Ensure the map container inside fills this new space */
                     .page30-map-container {
                         width: 100%;
                     }
@@ -1009,31 +1184,271 @@ const Page30 = () => {
                         {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                         <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                     </summary>
-                    <div className="table-responsive" role="region" style={{ overflowX: 'auto', marginTop: '10px' }}>
+                    <div style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginTop: '10px', 
+                        marginBottom: '5px',
+                        padding: '8px 10px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '4px'
+                    }}>
+                        <button
+                            onClick={clearAllFilters}
+                            style={{
+                                padding: '6px 12px',
+                                fontSize: '11px',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {lang === 'en' ? 'Clear Filters' : 'Effacer filtres'}
+                        </button>
+                        <span style={{ fontSize: '11px', color: '#666', marginLeft: 'auto' }}>
+                            {lang === 'en' 
+                                ? `Showing ${filteredTableData.length} of ${tableData.length} projects`
+                                : `Affichage de ${filteredTableData.length} sur ${tableData.length} projets`}
+                        </span>
+                    </div>
+
+                    <div className="table-responsive" role="region" style={{ overflowX: 'auto' }}>
                         <table className="table table-striped table-hover" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                             <caption className="wb-inv">
                                 {lang === 'en' 
-                                    ? 'Major energy projects data including project name, company, province, capital cost, status, and clean technology indicator' 
-                                    : 'Données sur les grands projets énergétiques incluant le nom du projet, l\'entreprise, la province, le coût en capital, le statut et l\'indicateur de technologie propre'}
+                                    ? 'Major energy projects data including project name, company, province, capital cost, status, and clean technology indicator. Click column headers to sort.' 
+                                    : 'Données sur les grands projets énergétiques incluant le nom du projet, l\'entreprise, la province, le coût en capital, le statut et l\'indicateur de technologie propre. Cliquez sur les en-têtes de colonne pour trier.'}
                             </caption>
                             <thead>
+                                <tr style={{ backgroundColor: '#f5f5f5' }}>
+                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}></th>
+                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom', position: 'relative' }}>
+                                        <div ref={companyDropdownRef} style={{ position: 'relative' }}>
+                                            <button
+                                                onClick={() => { setCompanyDropdownOpen(!companyDropdownOpen); setProvinceDropdownOpen(false); }}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '6px 8px',
+                                                    fontSize: '11px',
+                                                    border: '1px solid #ccc',
+                                                    borderRadius: '4px',
+                                                    backgroundColor: '#fff',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center'
+                                                }}
+                                            >
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {companyFilter.length === 0 
+                                                        ? (lang === 'en' ? 'All' : 'Tous')
+                                                        : `${companyFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                                                </span>
+                                                <span style={{ marginLeft: '4px' }}>{companyDropdownOpen ? '▲' : '▼'}</span>
+                                            </button>
+                                            {companyDropdownOpen && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    left: 0,
+                                                    right: 0,
+                                                    maxHeight: '200px',
+                                                    overflowY: 'auto',
+                                                    backgroundColor: '#fff',
+                                                    border: '1px solid #ccc',
+                                                    borderRadius: '4px',
+                                                    zIndex: 100,
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                                }}>
+                                                    {uniqueCompanies.map(company => (
+                                                        <label 
+                                                            key={company} 
+                                                            style={{ 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                padding: '6px 8px', 
+                                                                cursor: 'pointer',
+                                                                fontSize: '11px',
+                                                                borderBottom: '1px solid #eee'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={companyFilter.includes(company)}
+                                                                onChange={() => toggleCompanyFilter(company)}
+                                                                style={{ marginRight: '8px' }}
+                                                            />
+                                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{company}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom', position: 'relative' }}>
+                                        <div ref={provinceDropdownRef} style={{ position: 'relative' }}>
+                                            <button
+                                                onClick={() => { setProvinceDropdownOpen(!provinceDropdownOpen); setCompanyDropdownOpen(false); }}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '6px 8px',
+                                                    fontSize: '11px',
+                                                    border: '1px solid #ccc',
+                                                    borderRadius: '4px',
+                                                    backgroundColor: '#fff',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center'
+                                                }}
+                                            >
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {provinceFilter.length === 0 
+                                                        ? (lang === 'en' ? 'All' : 'Tous')
+                                                        : `${provinceFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                                                </span>
+                                                <span style={{ marginLeft: '4px' }}>{provinceDropdownOpen ? '▲' : '▼'}</span>
+                                            </button>
+                                            {provinceDropdownOpen && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    left: 0,
+                                                    right: 0,
+                                                    maxHeight: '200px',
+                                                    overflowY: 'auto',
+                                                    backgroundColor: '#fff',
+                                                    border: '1px solid #ccc',
+                                                    borderRadius: '4px',
+                                                    zIndex: 100,
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                                }}>
+                                                    {uniqueProvinces.map(province => (
+                                                        <label 
+                                                            key={province} 
+                                                            style={{ 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                padding: '6px 8px', 
+                                                                cursor: 'pointer',
+                                                                fontSize: '11px',
+                                                                borderBottom: '1px solid #eee'
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={provinceFilter.includes(province)}
+                                                                onChange={() => toggleProvinceFilter(province)}
+                                                                style={{ marginRight: '8px' }}
+                                                            />
+                                                            <span>{province}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}></th>
+                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}>
+                                        <select
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            style={{ 
+                                                padding: '6px', 
+                                                fontSize: '11px',
+                                                border: '1px solid #ccc',
+                                                borderRadius: '4px',
+                                                width: '100%'
+                                            }}
+                                        >
+                                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
+                                            <option value="planned">{lang === 'en' ? 'Planned' : 'Prévu'}</option>
+                                            <option value="under_construction">{lang === 'en' ? 'Under Construction' : 'En construction'}</option>
+                                        </select>
+                                    </th>
+                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}>
+                                        <select
+                                            value={cleanTechFilter}
+                                            onChange={(e) => setCleanTechFilter(e.target.value)}
+                                            style={{ 
+                                                padding: '6px', 
+                                                fontSize: '11px',
+                                                border: '1px solid #ccc',
+                                                borderRadius: '4px',
+                                                width: '100%'
+                                            }}
+                                        >
+                                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
+                                            <option value="yes">{lang === 'en' ? 'Yes' : 'Oui'}</option>
+                                            <option value="no">{lang === 'en' ? 'No' : 'Non'}</option>
+                                        </select>
+                                    </th>
+                                </tr>
                                 <tr style={{ backgroundColor: '#e6e6e6' }}>
-                                    <th scope="col" style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc' }}>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        onClick={() => handleSort('project_name')}
+                                        aria-sort={sortColumn === 'project_name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                    >
                                         {lang === 'en' ? 'Project Name' : 'Nom du projet'}
+                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'project_name' ? 1 : 0.3 }}>
+                                            {sortColumn === 'project_name' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                                        </span>
                                     </th>
-                                    <th scope="col" style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc' }}>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        onClick={() => handleSort('company')}
+                                        aria-sort={sortColumn === 'company' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                    >
                                         {lang === 'en' ? 'Company' : 'Entreprise'}
+                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'company' ? 1 : 0.3 }}>
+                                            {sortColumn === 'company' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                                        </span>
                                     </th>
-                                    <th scope="col" style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc' }}>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        onClick={() => handleSort('province')}
+                                        aria-sort={sortColumn === 'province' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                    >
                                         {lang === 'en' ? 'Province' : 'Province'}
+                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'province' ? 1 : 0.3 }}>
+                                            {sortColumn === 'province' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                                        </span>
                                     </th>
-                                    <th scope="col" style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', borderBottom: '2px solid #ccc' }}>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        onClick={() => handleSort('capital_cost')}
+                                        aria-sort={sortColumn === 'capital_cost' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                    >
                                         {lang === 'en' ? 'Capital Cost ($M)' : 'Coût (M$)'}
+                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'capital_cost' ? 1 : 0.3 }}>
+                                            {sortColumn === 'capital_cost' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                                        </span>
                                     </th>
-                                    <th scope="col" style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc' }}>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
+                                    >
                                         {lang === 'en' ? 'Status' : 'Statut'}
                                     </th>
-                                    <th scope="col" style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc' }}>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
+                                    >
                                         {lang === 'en' ? 'Clean Tech' : 'Tech. propre'}
                                     </th>
                                 </tr>
@@ -1041,22 +1456,22 @@ const Page30 = () => {
                             <tbody>
                                 {filteredTableData.map((project, idx) => (
                                     <tr key={project.id || idx} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f9f9f9' }}>
-                                        <td style={{ padding: '6px 8px', borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '6px 8px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.project_name || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '6px 8px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.company || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.province || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.capital_cost || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.status || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.clean_technology || '—'}
                                         </td>
                                     </tr>

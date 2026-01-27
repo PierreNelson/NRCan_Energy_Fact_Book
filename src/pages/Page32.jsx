@@ -280,18 +280,18 @@ const Page32 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                     {utilitiesLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
                                 </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                     {oilGasLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
                                 </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                     {allIndustriesLabel}<br/>
                                     <span aria-hidden="true">{headerUnitVisual}</span>
                                     <span className="wb-inv">{headerUnitSR}</span>
@@ -301,21 +301,21 @@ const Page32 = () => {
                         <tbody>
                             {chartData.map(yearData => (
                                 <tr key={yearData.year}>
-                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
                                     <td 
-                                        style={{ textAlign: 'right' }}
+                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                         aria-label={`${yearData.year}, ${utilitiesLabel}: ${formatNumber(yearData.utilities || 0)}${cellUnitSR}`}
                                     >
                                         {formatNumber(yearData.utilities || 0)}%
                                     </td>
                                     <td 
-                                        style={{ textAlign: 'right' }}
+                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                         aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumber(yearData.oil_gas || 0)}${cellUnitSR}`}
                                     >
                                         {formatNumber(yearData.oil_gas || 0)}%
                                     </td>
                                     <td 
-                                        style={{ textAlign: 'right' }}
+                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                         aria-label={`${yearData.year}, ${allIndustriesLabel}: ${formatNumber(yearData.all_non_financial || 0)}${cellUnitSR}`}
                                     >
                                         {formatNumber(yearData.all_non_financial || 0)}%

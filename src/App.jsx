@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 // These files are NOT downloaded initially - only when user navigates to them
 const SectionOne = React.lazy(() => import('./components/SectionOne'));
 const SectionTwo = React.lazy(() => import('./components/SectionTwo'));
+const SectionSix = React.lazy(() => import('./components/SectionSix'));
 
 // Loading component for Suspense fallback
 const LoadingSpinner = () => (
@@ -62,6 +63,13 @@ function App() {
           <Route path="section-2" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionTwo />
+            </Suspense>
+          } />
+          
+          {/* Section 6: Oil, Natural Gas and Coal (Page 103+) */}
+          <Route path="section-6" element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <SectionSix />
             </Suspense>
           } />
         </Route>

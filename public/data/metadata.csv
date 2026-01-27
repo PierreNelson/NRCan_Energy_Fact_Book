@@ -38,6 +38,19 @@ enviro_natural_gas_total,Natural gas distribution - Total environmental protecti
 enviro_petroleum_total,Petroleum and coal product manufacturing - Total environmental protection expenditures,Millions of dollars,millions
 enviro_petroleum_pollution,Petroleum and coal product manufacturing - Pollution abatement and control,Millions of dollars,millions
 enviro_all_industries_total,Total industries - Total environmental protection expenditures,Millions of dollars,millions
+gdp_nominal_total,Energy's nominal GDP contribution - Total,Millions of dollars,millions
+gdp_nominal_direct,Energy's nominal GDP contribution - Direct,Millions of dollars,millions
+gdp_nominal_indirect,Energy's nominal GDP contribution - Indirect,Millions of dollars,millions
+gdp_nominal_petroleum,Energy's nominal GDP contribution - Petroleum,Millions of dollars,millions
+gdp_nominal_electricity,Energy's nominal GDP contribution - Electricity,Millions of dollars,millions
+gdp_nominal_other,Energy's nominal GDP contribution - Other,Millions of dollars,millions
+gdp_nominal_market,Nominal GDP at market prices,Millions of dollars,millions
+gdp_nominal_total_pct,Energy's nominal GDP share - Total,Percent,percent
+gdp_nominal_direct_pct,Energy's nominal GDP share - Direct,Percent,percent
+gdp_nominal_indirect_pct,Energy's nominal GDP share - Indirect,Percent,percent
+gdp_nominal_petroleum_pct,Energy's nominal GDP share - Petroleum,Percent,percent
+gdp_nominal_electricity_pct,Energy's nominal GDP share - Electricity,Percent,percent
+gdp_nominal_other_pct,Energy's nominal GDP share - Other,Percent,percent
 gdp_prov_nl,Energy sector direct nominal GDP - Newfoundland and Labrador,Millions of dollars,millions
 gdp_prov_pe,Energy sector direct nominal GDP - Prince Edward Island,Millions of dollars,millions
 gdp_prov_ns,Energy sector direct nominal GDP - Nova Scotia,Millions of dollars,millions

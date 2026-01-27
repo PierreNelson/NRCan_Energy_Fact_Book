@@ -1,4 +1,4 @@
-﻿lang,id,company,project_name,province,location,capital_cost,capital_cost_range,status,clean_technology,clean_technology_type,line_type,lat,lon,paths,type
+lang,id,company,project_name,province,location,capital_cost,capital_cost_range,status,clean_technology,clean_technology_type,line_type,lat,lon,paths,type
 en,76,Blue Fuel Energy Corp.,Clean Methanol Plant,British Columbia,Chetwynd,"1,000.00","1,000 - 2,500",Planned,Yes,Bioenergy,,55.69815303268969,-121.62970637520029,,point
 en,536,ecoTECH Energy Group (Canada) Inc,Biomass Project - McBride,British Columbia,McBride,140.00,100 - 250,Planned,Yes,Bioenergy,,53.342923128836276,-120.26762021633148,,point
 en,703,Éthanol Cellulosique Varennes s.e.c. (Recyclage Carbone Varennes),Usine de carburant à faible intensité carbone (inclut un électrolyseur),Quebec,Varennes,"1,200.00","1,000 - 2,500",Under Construction,Yes,Bioenergy,,45.681224190687864,-73.43509360332713,,point
@@ -50,9 +50,7 @@ en,1002,"Ministère du développement durable, de l'environnement et des parcs",
 en,1026,Hydro-Québec,Réhabilitation de la centrale Robert-Bourassa,Quebec,Baie-James,732.00,500 - 750,Under Construction,Yes,Hydro,,53.79520621155595,-77.43997590708145,,point
 en,1041,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique des chutes du six milles,Quebec,Forestville,45.00,10 - 50 ,Planned,Yes,Hydro,,48.723898741700125,-69.15833365878879,,point
 en,1049,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique de la chute du quatre milles,Quebec,Forestville,22.00,10 - 50 ,Planned,Yes,Hydro,,48.72639874641933,-69.0927781365157,,point
-en,1050,"Manouane Sipi, Société en commandite
-
-",Centrale hydroélectrique Manouane Sipi (Dam B),Quebec,La Tuque,100.00,100 - 250,Planned,Yes,Hydro,,47.38120946849655,-73.57270179046289,,point
+en,1050,"Manouane Sipi, Société en commandite",Centrale hydroélectrique Manouane Sipi (Dam B),Quebec,La Tuque,100.00,100 - 250,Planned,Yes,Hydro,,47.38120946849655,-73.57270179046289,,point
 en,1063,NTPC,Taltson Hydroelectricity Expansion Project (Phase 1),Northwest Territories,Multiple locations,"1,200.00","1,000 - 2,500",Under Construction,Yes,Hydro,,61.443080421813875,-112.71445927184739,,point
 en,2025,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,British Columbia,"Vancouver Island/Coast, Port Alice",18.00,10 - 50 ,Planned,Yes,Hydro,,50.43487012859043,-127.48676841941774,,point
 en,3643,Manitoba Hydro,Dorsey Synchronous Condenser Refurbishment,Manitoba,Dorsey,65.40,50 - 100,Under Construction,Yes,Hydro,,49.90592833509774,-97.12396969452502,,point
@@ -284,9 +282,7 @@ fr,1002,"Ministère du développement durable, de l'environnement et des parcs",
 fr,1026,Hydro-Québec,Réhabilitation de la centrale Robert-Bourassa,Québec,Baie-James,"732,00",500 - 750,En construction,Oui,Hydro,,53.79520621155595,-77.43997590708145,,point
 fr,1041,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique des chutes du six milles,Québec,Forestville,"45,00",10 - 50 ,Prévu,Oui,Hydro,,48.723898741700125,-69.15833365878879,,point
 fr,1049,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique de la chute du quatre milles,Québec,Forestville,"22,00",10 - 50 ,Prévu,Oui,Hydro,,48.72639874641933,-69.0927781365157,,point
-fr,1050,"Manouane Sipi, Société en commandite
-
-",Centrale hydroélectrique Manouane Sipi (Dam B),Québec,La Tuque,"100,00",100 - 250,Prévu,Oui,Hydro,,47.38120946849655,-73.57270179046289,,point
+fr,1050,"Manouane Sipi, Société en commandite",Centrale hydroélectrique Manouane Sipi (Dam B),Québec,La Tuque,"100,00",100 - 250,Prévu,Oui,Hydro,,47.38120946849655,-73.57270179046289,,point
 fr,1063,NTPC,Taltson Hydroelectricity Expansion Project (Phase 1),Territoires du Nord-Ouest,Multiple locations,"1 200,00",1 000 - 2 500,En construction,Oui,Hydro,,61.443080421813875,-112.71445927184739,,point
 fr,2025,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,Colombie-Britanique,"Vancouver Island/Coast, Port Alice","18,00",10 - 50 ,Prévu,Oui,Hydro,,50.43487012859043,-127.48676841941774,,point
 fr,3643,Manitoba Hydro,Dorsey Synchronous Condenser Refurbishment,Manitoba,Dorsey,"65,40",50 - 100,En construction,Oui,Hydro,,49.90592833509774,-97.12396969452502,,point

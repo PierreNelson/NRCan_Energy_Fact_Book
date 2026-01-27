@@ -9,6 +9,8 @@ export const TRANSLATIONS = {
         'nav_section1_title': 'Key energy, economic and environmental indicators',
         'nav_section2': 'Section 2: Investment',
         'nav_section2_title': 'Investment',
+        'nav_section6': 'Section 6: Oil, natural gas and coal',
+        'nav_section6_title': 'Oil, natural gas and coal',
 
         // Page 1
         'page1_section': 'Section 1:',
@@ -16,6 +18,22 @@ export const TRANSLATIONS = {
         'page1_item1': 'Energy production and supply',
         'page1_item2': 'Economic contributions',
         'page1_item3': 'Energy and GHG emissions',
+
+        // Page 7
+        'page7_title': 'Economic contributions',
+        'page7_subtitle': 'Nominal gross domestic product',
+        'page7_subtitle2': "Energy's nominal GDP contribution for Canada",
+        'page7_chart_title': 'Nominal GDP (% of current dollars)',
+        'page7_canadian_gdp': 'Canadian GDP',
+        'page7_energy_total': 'Energy sector',
+        'page7_non_energy': 'Non-energy sectors',
+        'page7_energy_direct': 'Energy direct',
+        'page7_energy_indirect': 'Energy indirect',
+        'page7_petroleum': 'Petroleum',
+        'page7_electricity': 'Electricity',
+        'page7_other': 'Other',
+        'page7_footnote': 'Parts may not sum to total due to rounding. For more information on the methodology used by Statistics Canada to estimate \nindirect contributions, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
+        'nav_econ_contributions': 'Economic contributions',
 
         // Page 8
         'page8_title': "Energy's nominal GDP contribution by province/territory",
@@ -224,6 +242,18 @@ export const TRANSLATIONS = {
         'page37_bullet2_part3': '%) in pollution abatement and control.',
         'page37_million': 'million',
 
+        // Page 103
+        'page103_section': 'Section 6:',
+        'page103_title': 'Oil, natural gas and coal',
+        'page103_item1': 'Crude oil',
+        'page103_item2': 'Natural gas',
+        'page103_item3': 'Hydrocarbon gas liquids (HGLs)',
+        'page103_item4': 'Refined petroleum products (RPPs)',
+        'page103_item5': 'Coal',
+        'page103_item6': 'GHG emissions from petroleum',
+        'page103_image_alt': 'Oil pump jacks in a canola field',
+        'page103_nav_label': 'Section 6 contents',
+
         // Page 28
         'nav_major_projects': "Canada's major energy projects",
         'page28_title': "Canada's major energy projects",
@@ -304,6 +334,8 @@ export const TRANSLATIONS = {
         'nav_section1_title': "Indicateurs clés sur l'énergie, l'économie et l'environnement",
         'nav_section2': 'Section 2 : Investissement',
         'nav_section2_title': 'Investissement',
+        'nav_section6': 'Section 6 : Pétrole, gaz naturel et charbon',
+        'nav_section6_title': 'Pétrole, gaz naturel et charbon',
 
         // Page 1
         'page1_section': 'Section 1 :',
@@ -311,6 +343,22 @@ export const TRANSLATIONS = {
         'page1_item1': "Production d'énergie et approvisionnement",
         'page1_item2': 'Contributions économiques',
         'page1_item3': 'Énergie et émissions de GES',
+
+        // Page 7
+        'page7_title': 'Contributions économiques',
+        'page7_subtitle': 'Produit intérieur brut nominal',
+        'page7_subtitle2': "Contribution de l'énergie au PIB nominal du Canada",
+        'page7_chart_title': 'PIB nominal (% de dollars courants)',
+        'page7_canadian_gdp': 'PIB canadien',
+        'page7_energy_total': 'Secteur de l\'énergie',
+        'page7_non_energy': 'Secteurs non énergétiques',
+        'page7_energy_direct': 'Énergie directe',
+        'page7_energy_indirect': 'Énergie indirecte',
+        'page7_petroleum': 'Pétrole',
+        'page7_electricity': 'Électricité',
+        'page7_other': 'Autres',
+        'page7_footnote': 'La somme des parties peut ne pas correspondre au total en raison de l\'arrondissement. Pour plus d\'informations sur la méthodologie utilisée par Statistique Canada pour estimer les contributions indirectes, veuillez contacter statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
+        'nav_econ_contributions': 'Contributions économiques',
 
         // Page 8
         'page8_title': "Contribution de l'énergie au PIB nominal par province ou territoire",
@@ -516,6 +564,18 @@ export const TRANSLATIONS = {
         'page37_bullet2_part2': " dans des activités de protection de l'environnement, dont le pourcentage le plus élevé des dépenses (",
         'page37_bullet2_part3': ' %) a été consacré à la réduction et au contrôle de la pollution.',
         'page37_million': 'millions de dollars',
+
+        // Page 103
+        'page103_section': 'Section 6 :',
+        'page103_title': 'Pétrole, gaz naturel et charbon',
+        'page103_item1': 'Pétrole brut',
+        'page103_item2': 'Gaz naturel',
+        'page103_item3': "Liquides de gaz d'hydrocarbures (LGHs)",
+        'page103_item4': 'Produits pétroliers raffinés (PPRs)',
+        'page103_item5': 'Charbon',
+        'page103_item6': 'Émissions de GES par les secteurs pétroliers',
+        'page103_image_alt': "Pompes à pétrole dans un champ de canola",
+        'page103_nav_label': 'Contenu de la section 6',
 
         // Page 28
         'nav_major_projects': 'Les grands projets énergétiques au Canada',

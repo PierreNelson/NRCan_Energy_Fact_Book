@@ -73,7 +73,8 @@ const Layout = () => {
 
     const pages = [
         { path: '/section-1' },
-        { path: '/section-2' }
+        { path: '/section-2' },
+        { path: '/section-6' }
     ];
 
     const normalizedPath = location.pathname === '/' ? '/section-1' : location.pathname;

@@ -221,61 +221,61 @@ const Page24 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {lang === 'en' ? 'Year' : 'Année'}
-                                </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {oilGasLabel}<br/>
-                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                    <span className="wb-inv">{headerUnitSR}</span>
-                                </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {electricityLabel}<br/>
-                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                    <span className="wb-inv">{headerUnitSR}</span>
-                                </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {otherLabel}<br/>
-                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                    <span className="wb-inv">{headerUnitSR}</span>
-                                </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {totalLabel}<br/>
-                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                    <span className="wb-inv">{headerUnitSR}</span>
-                                </th>
+<th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {lang === 'en' ? 'Year' : 'Année'}
+                                                </th>
+<th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {oilGasLabel}<br/>
+                                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                                    <span className="wb-inv">{headerUnitSR}</span>
+                                                </th>
+                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {electricityLabel}<br/>
+                                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                                    <span className="wb-inv">{headerUnitSR}</span>
+                                                </th>
+                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {otherLabel}<br/>
+                                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                                    <span className="wb-inv">{headerUnitSR}</span>
+                                                </th>
+                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {totalLabel}<br/>
+                                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                                    <span className="wb-inv">{headerUnitSR}</span>
+                                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => (
                                 <tr key={yearData.year}>
-                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>
-                                        {yearData.year}
-                                    </th>
-                                    <td 
-                                        style={{ textAlign: 'right' }}
-                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumberTable(yearData.oil_gas / 1000)}${cellUnitText}`}
-                                    >
-                                        {formatNumberTable(yearData.oil_gas / 1000)}
-                                    </td>
-                                    <td 
-                                        style={{ textAlign: 'right' }}
-                                        aria-label={`${yearData.year}, ${electricityLabel}: ${formatNumberTable(yearData.electricity / 1000)}${cellUnitText}`}
-                                    >
-                                        {formatNumberTable(yearData.electricity / 1000)}
-                                    </td>
-                                    <td 
-                                        style={{ textAlign: 'right' }}
-                                        aria-label={`${yearData.year}, ${otherLabel}: ${formatNumberTable(yearData.other / 1000)}${cellUnitText}`}
-                                    >
-                                        {formatNumberTable(yearData.other / 1000)}
-                                    </td>
-                                    <td 
-                                        style={{ textAlign: 'right' }}
-                                        aria-label={`${yearData.year}, ${getText('page24_hover_total', lang)}: ${formatNumberTable(yearData.total / 1000)}${cellUnitText}`}
-                                    >
-                                        {formatNumberTable(yearData.total / 1000)}
-                                    </td>
+<th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                        {yearData.year}
+                                                    </th>
+                                                    <td 
+                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumberTable(yearData.oil_gas / 1000)}${cellUnitText}`}
+                                                    >
+                                                        {formatNumberTable(yearData.oil_gas / 1000)}
+                                                    </td>
+                                                    <td 
+                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                                        aria-label={`${yearData.year}, ${electricityLabel}: ${formatNumberTable(yearData.electricity / 1000)}${cellUnitText}`}
+                                                    >
+                                                        {formatNumberTable(yearData.electricity / 1000)}
+                                                    </td>
+                                                    <td 
+                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                                        aria-label={`${yearData.year}, ${otherLabel}: ${formatNumberTable(yearData.other / 1000)}${cellUnitText}`}
+                                                    >
+                                                        {formatNumberTable(yearData.other / 1000)}
+                                                    </td>
+                                                    <td 
+                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                                        aria-label={`${yearData.year}, ${getText('page24_hover_total', lang)}: ${formatNumberTable(yearData.total / 1000)}${cellUnitText}`}
+                                                    >
+                                                        {formatNumberTable(yearData.total / 1000)}
+                                                    </td>
                                 </tr>
                             ))}
                         </tbody>

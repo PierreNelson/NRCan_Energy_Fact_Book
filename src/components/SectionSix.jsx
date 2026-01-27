@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Page1 from '../pages/Page1';
-import Page7 from '../pages/Page7';
-import Page8 from '../pages/Page8';
+import Page103 from '../pages/Page103';
 
-const SectionOne = () => {
+const SectionSix = () => {
     const location = useLocation();
 
     useEffect(() => {
@@ -19,6 +17,10 @@ const SectionOne = () => {
                 }
             } else {
                 window.scrollTo({ top: 0, behavior: 'instant' });
+                const overviewPage = document.getElementById('oil-gas-coal-overview');
+                if (overviewPage) {
+                    overviewPage.scrollIntoView({ behavior: 'instant', block: 'start' });
+                }
             }
         }, 300);
         
@@ -27,17 +29,11 @@ const SectionOne = () => {
 
     return (
         <div className="stacked-section-container">
-            <div id="energy-overview" className="stacked-page-wrapper">
-                <Page1 />
-            </div>
-            <div id="economic-contributions" className="stacked-page-wrapper">
-                <Page7 />
-            </div>
-            <div id="provincial-gdp" className="stacked-page-wrapper">
-                <Page8 />
+            <div id="oil-gas-coal-overview" className="stacked-page-wrapper">
+                <Page103 />
             </div>
         </div>
     );
 };
 
-export default SectionOne;
+export default SectionSix;

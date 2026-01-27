@@ -347,3 +347,21 @@ export async function getCleanTechTrendsData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+export async function getNominalGDPData() {
+    const allData = await loadAllData();
+    
+    const gdpData = allData.filter(row => row.vector && row.vector.startsWith('gdp_nominal_'));
+    
+    const yearMap = {};
+    gdpData.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('gdp_nominal_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

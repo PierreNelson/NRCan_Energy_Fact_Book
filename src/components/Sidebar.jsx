@@ -4,9 +4,9 @@ import { NavLink } from 'react-router-dom';
 import { getText } from '../utils/translations';
 
 const Sidebar = ({ lang }) => {
-    // Start collapsed - user must expand to see contents
     const [section1Expanded, setSection1Expanded] = useState(false);
     const [section2Expanded, setSection2Expanded] = useState(false);
+    const [section6Expanded, setSection6Expanded] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const toggleSection1 = () => {
@@ -17,7 +17,10 @@ const Sidebar = ({ lang }) => {
         setSection2Expanded(!section2Expanded);
     };
 
-    // Handle keyboard navigation - Space or Enter to toggle
+    const toggleSection6 = () => {
+        setSection6Expanded(!section6Expanded);
+    };
+
     const handleKeyDown1 = (e) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
@@ -29,6 +32,13 @@ const Sidebar = ({ lang }) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
             toggleSection2();
+        }
+    };
+
+    const handleKeyDown6 = (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleSection6();
         }
     };
 
@@ -141,6 +151,12 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section1_title', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-1#economic-contributions"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_econ_contributions', lang)}
                             </NavLink>
                             <NavLink
                                 to="/section-1#provincial-gdp"
@@ -264,6 +280,42 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_environmental_protection', lang)}
+                            </NavLink>
+                        </div>
+                    )}
+                </div>
+
+                {/* Section 6 */}
+                <div className="nav-section">
+                    <button
+                        className="nav-section-header"
+                        onClick={toggleSection6}
+                        onKeyDown={handleKeyDown6}
+                        aria-expanded={section6Expanded}
+                        aria-controls="section6-content"
+                        aria-label={`${getText('nav_section6', lang)}. ${section6Expanded 
+                            ? (lang === 'en' ? 'Expanded. Press Space to collapse.' : 'Développé. Appuyez sur Espace pour réduire.')
+                            : (lang === 'en' ? 'Collapsed. Press Space to expand.' : 'Réduit. Appuyez sur Espace pour développer.')
+                        }`}
+                    >
+                        <span className="section-arrow" aria-hidden="true">
+                            {section6Expanded ? "▼" : "▶"}
+                        </span>
+                        <span>{getText('nav_section6', lang)}</span>
+                    </button>
+
+                    {section6Expanded && (
+                        <div 
+                            id="section6-content"
+                            className="nav-section-content expanded"
+                            role="group"
+                            aria-label={getText('nav_section6', lang)}
+                        >
+                            <NavLink
+                                to="/section-6#oil-gas-coal-overview"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section6_title', lang)}
                             </NavLink>
                         </div>
                     )}

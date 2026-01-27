@@ -394,40 +394,40 @@ const Page25 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                {CATEGORY_ORDER.map(cat => (
-                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                        {categoryLabels[cat]}<br/>
-                                        <span aria-hidden="true">{headerUnitVisual}</span>
-                                        <span className="wb-inv">{headerUnitSR}</span>
-                                    </th>
-                                ))}
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {lang === 'en' ? 'Total' : 'Total'}<br/>
-                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                    <span className="wb-inv">{headerUnitSR}</span>
-                                </th>
+<th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                                {CATEGORY_ORDER.map(cat => (
+                                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                        {categoryLabels[cat]}<br/>
+                                                        <span aria-hidden="true">{headerUnitVisual}</span>
+                                                        <span className="wb-inv">{headerUnitSR}</span>
+                                                    </th>
+                                                ))}
+                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {lang === 'en' ? 'Total' : 'Total'}<br/>
+                                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                                    <span className="wb-inv">{headerUnitSR}</span>
+                                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.map(yearData => (
                                 <tr key={yearData.year}>
-                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
-                                    {CATEGORY_ORDER.map(cat => (
-                                        <td 
-                                            key={cat} 
-                                            style={{ textAlign: 'right' }}
-                                            aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumberTable((yearData[cat] || 0) / 1000)}${cellUnitSR}`}
-                                        >
-                                            {formatNumberTable((yearData[cat] || 0) / 1000)}
-                                        </td>
-                                    ))}
-                                    <td 
-                                        style={{ textAlign: 'right' }}
-                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${formatNumberTable((yearData.total || 0) / 1000)}${cellUnitSR}`}
-                                    >
-                                        <strong>{formatNumberTable((yearData.total || 0) / 1000)}</strong>
-                                    </td>
+<th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
+                                                    {CATEGORY_ORDER.map(cat => (
+                                                        <td 
+                                                            key={cat} 
+                                                            style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                                            aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumberTable((yearData[cat] || 0) / 1000)}${cellUnitSR}`}
+                                                        >
+                                                            {formatNumberTable((yearData[cat] || 0) / 1000)}
+                                                        </td>
+                                                    ))}
+                                                    <td 
+                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${formatNumberTable((yearData.total || 0) / 1000)}${cellUnitSR}`}
+                                                    >
+                                                        <strong>{formatNumberTable((yearData.total || 0) / 1000)}</strong>
+                                                    </td>
                                 </tr>
                             ))}
                         </tbody>

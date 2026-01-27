@@ -135,23 +135,23 @@ const Page26 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', padding: '10px' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', padding: '10px' }}>
                                     {lang === 'en' ? 'Jobs' : 'Emplois'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '(thousands)' : '(milliers)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(thousands)' : '(milliers)'}</span>
                                 </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', padding: '10px' }}>
                                     {lang === 'en' ? 'Employment income' : 'Revenu d\'emploi'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
                                 </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', padding: '10px' }}>
                                     {lang === 'en' ? 'GDP' : 'PIB'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
                                 </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', padding: '10px' }}>
                                     {lang === 'en' ? 'Investment' : 'Investissement'}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(milliards $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
@@ -169,27 +169,27 @@ const Page26 = () => {
 
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', padding: '8px' }}>{yearData.year}</th>
                                         <td 
-                                            style={{ textAlign: 'right' }}
+                                            style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
                                             aria-label={`${yearData.year}, ${jobsLabel}: ${formatJobsTable(yearData.jobs)}${jobsUnit}`}
                                         >
                                             {formatJobsTable(yearData.jobs)}
                                         </td>
                                         <td 
-                                            style={{ textAlign: 'right' }}
+                                            style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
                                             aria-label={`${yearData.year}, ${incomeLabel}: ${formatNumberTable(yearData.employment_income)}${billionUnit}`}
                                         >
                                             {formatNumberTable(yearData.employment_income)}
                                         </td>
                                         <td 
-                                            style={{ textAlign: 'right' }}
+                                            style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
                                             aria-label={`${yearData.year}, ${gdpLabel}: ${formatNumberTable(yearData.gdp)}${billionUnit}`}
                                         >
                                             {formatNumberTable(yearData.gdp)}
                                         </td>
                                         <td 
-                                            style={{ textAlign: 'right' }}
+                                            style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
                                             aria-label={`${yearData.year}, ${investLabel}: ${formatNumberTable(yearData.investment_value)}${billionUnit}`}
                                         >
                                             {formatNumberTable(yearData.investment_value)}

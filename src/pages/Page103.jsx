@@ -1,0 +1,160 @@
+import React, { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { getText } from '../utils/translations';
+import page103Image from '../assets/page103_bg.jpg';
+
+const Page103 = () => {
+    const { lang, layoutPadding } = useOutletContext();
+
+    useEffect(() => {
+    }, []);
+
+    return (
+        <main 
+            id="main-content"
+            tabIndex="-1"
+            className="page-content page-103 page103-main" 
+            role="main"
+            style={{
+                backgroundColor: '#58504a',
+                flex: '1 1 auto',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+        >
+            <style>{`
+
+.page103-main {
+    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
+    margin-left: -${layoutPadding?.left || 55}px;
+    margin-right: -${layoutPadding?.right || 15}px;
+    margin-top: 0;
+    padding: 0;
+}
+
+.page103-container {
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.page103-image-title-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.page103-title {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 0;
+    background-color: transparent;
+    box-sizing: border-box;
+}
+
+.page103-title-box {
+    background-color: rgba(255, 255, 255, 0.7); 
+    padding: 20px ${layoutPadding?.right || 15}px 20px ${layoutPadding?.left || 55}px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.page103-list {
+    width: 100%;
+    background-color: #58504a;
+    padding: 30px ${layoutPadding?.right || 15}px 30px ${layoutPadding?.left || 55}px;
+    box-sizing: border-box;
+    flex: 1;
+}
+
+.page103-title-text {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 4.5rem;
+    color: #221e1f;
+    display: block;
+    line-height: 1.15;
+    text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+    text-align: left;
+}
+
+.page103-list-item {
+    margin-bottom: 8px;
+    font-size: 2.2rem;
+    text-align: left;
+    color: #ebe8e1;
+}
+
+@media (max-width: 1745px) { .page103-title-text { font-size: 4.2rem; } }
+@media (max-width: 1536px) { .page103-title-text { font-size: 4.0rem; } }
+@media (max-width: 1280px) { .page103-title-text { font-size: 3.8rem; } }
+@media (max-width: 1100px) { .page103-title-text { font-size: 3.5rem; } }
+
+@media (max-width: 960px) {
+    .page103-image-title-wrapper { min-height: 240px; }
+    .page103-title-text { font-size: 3.2rem; }
+    .page103-list-item { font-size: 1.7rem; }
+}
+
+@media (max-width: 640px) {
+    .page103-title-text { font-size: 2.5rem; }
+    .page103-list-item { font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+    .page103-image-title-wrapper { min-height: 180px; }
+    .page103-title-text { font-size: 2.0rem; }
+    .page103-list-item { font-size: 1.3rem; }
+}
+
+            `}</style>
+
+            <div className="page103-container">
+                <div className="page103-image-title-wrapper">
+                    <img 
+                        src={page103Image} 
+                        alt={getText('page103_image_alt', lang)}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: '50% 35%',
+                            zIndex: 0
+                        }} 
+                    />
+                    <div className="page103-title">
+                        <div className="page103-title-box">
+                            <h1 className="page103-title-text">
+                                <span style={{ fontWeight: 'normal' }}>{getText('page103_section', lang)}</span>
+                                <br />
+                                <span style={{ fontWeight: 'bold' }}>{getText('page103_title', lang)}</span>
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+
+                <nav className="page103-list" aria-label={getText('page103_nav_label', lang)}>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        <li className="page103-list-item">{getText('page103_item1', lang)}</li>
+                        <li className="page103-list-item">{getText('page103_item2', lang)}</li>
+                        <li className="page103-list-item">{getText('page103_item3', lang)}</li>
+                        <li className="page103-list-item">{getText('page103_item4', lang)}</li>
+                        <li className="page103-list-item">{getText('page103_item5', lang)}</li>
+                        <li className="page103-list-item">{getText('page103_item6', lang)}</li>
+                    </ul>
+                </nav>
+            </div>
+        </main>
+    );
+};
+
+export default Page103;

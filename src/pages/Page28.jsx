@@ -940,45 +940,45 @@ const Page28 = () => {
                                     </caption>
                                     <thead>
                                         <tr>
-                                            <td style={{ borderBottom: 'none' }} aria-hidden="true"></td>
-                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>{oilGasLabel}</th>
-                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>{electricityLabel}</th>
-                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>{otherLabel}</th>
-                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Total' : 'Total'}</th>
+                                            <td style={{ borderBottom: 'none', border: '1px solid #ddd' }} aria-hidden="true"></td>
+                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{oilGasLabel}</th>
+                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{electricityLabel}</th>
+                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{otherLabel}</th>
+                                            <th scope="colgroup" colSpan={2} className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Total' : 'Total'}</th>
                                         </tr>
                                         <tr>
-                                            <th scope="col" className="text-center" style={{ fontWeight: 'bold', verticalAlign: 'top', borderTop: 'none' }}>
+                                            <th scope="col" className="text-center" style={{ fontWeight: 'bold', verticalAlign: 'top', borderTop: 'none', border: '1px solid #ddd' }}>
                                                 {lang === 'en' ? 'Year' : 'Année'}
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitValueVisual}</span>
                                                 <span className="wb-inv">{headerUnitValueSR}</span>
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitProjectsVisual}</span>
                                                 <span className="wb-inv">{headerUnitProjectsSR}</span>
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitValueVisual}</span>
                                                 <span className="wb-inv">{headerUnitValueSR}</span>
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitProjectsVisual}</span>
                                                 <span className="wb-inv">{headerUnitProjectsSR}</span>
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitValueVisual}</span>
                                                 <span className="wb-inv">{headerUnitValueSR}</span>
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitProjectsVisual}</span>
                                                 <span className="wb-inv">{headerUnitProjectsSR}</span>
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitValueVisual}</span>
                                                 <span className="wb-inv">{headerUnitValueSR}</span>
                                             </th>
-                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right' }}>
+                                            <th scope="col" className="text-right" style={{ fontWeight: 'bold', textAlign: 'right', border: '1px solid #ddd' }}>
                                                 <span aria-hidden="true">{headerUnitProjectsVisual}</span>
                                                 <span className="wb-inv">{headerUnitProjectsSR}</span>
                                             </th>
@@ -987,29 +987,29 @@ const Page28 = () => {
                                     <tbody>
                                         {pageData.yearlyData.map(d => (
                                             <tr key={d.year}>
-                                                <th scope="row" className="text-center" style={{ verticalAlign: 'middle', fontWeight: 'bold' }}>{d.year}</th>
-                                                <td className="text-right" style={{ textAlign: 'right' }} aria-label={`${d.year}, ${oilGasLabel}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.oil_gas_value} ${cellUnitValueSR}`}>
+                                                <th scope="row" className="text-center" style={{ verticalAlign: 'middle', fontWeight: 'bold', border: '1px solid #ddd' }}>{d.year}</th>
+                                                <td className="text-right" style={{ textAlign: 'right', border: '1px solid #ddd' }} aria-label={`${d.year}, ${oilGasLabel}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.oil_gas_value} ${cellUnitValueSR}`}>
                                                     {d.oil_gas_value}
                                                 </td>
-                                                <td className="text-right" style={{ textAlign: 'right' }} aria-label={`${d.year}, ${oilGasLabel}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.oil_gas_projects} ${cellUnitProjectsSR}`}>
+                                                <td className="text-right" style={{ textAlign: 'right', border: '1px solid #ddd' }} aria-label={`${d.year}, ${oilGasLabel}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.oil_gas_projects} ${cellUnitProjectsSR}`}>
                                                     {d.oil_gas_projects}
                                                 </td>
-                                                <td className="text-right" style={{ textAlign: 'right' }} aria-label={`${d.year}, ${electricityLabel}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.electricity_value} ${cellUnitValueSR}`}>
+                                                <td className="text-right" style={{ textAlign: 'right', border: '1px solid #ddd' }} aria-label={`${d.year}, ${electricityLabel}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.electricity_value} ${cellUnitValueSR}`}>
                                                     {d.electricity_value}
                                                 </td>
-                                                <td className="text-right" style={{ textAlign: 'right' }} aria-label={`${d.year}, ${electricityLabel}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.electricity_projects} ${cellUnitProjectsSR}`}>
+                                                <td className="text-right" style={{ textAlign: 'right', border: '1px solid #ddd' }} aria-label={`${d.year}, ${electricityLabel}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.electricity_projects} ${cellUnitProjectsSR}`}>
                                                     {d.electricity_projects}
                                                 </td>
-                                                <td className="text-right" style={{ textAlign: 'right' }} aria-label={`${d.year}, ${otherLabel}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.other_value} ${cellUnitValueSR}`}>
+                                                <td className="text-right" style={{ textAlign: 'right', border: '1px solid #ddd' }} aria-label={`${d.year}, ${otherLabel}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.other_value} ${cellUnitValueSR}`}>
                                                     {d.other_value}
                                                 </td>
-                                                <td className="text-right" style={{ textAlign: 'right' }} aria-label={`${d.year}, ${otherLabel}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.other_projects} ${cellUnitProjectsSR}`}>
+                                                <td className="text-right" style={{ textAlign: 'right', border: '1px solid #ddd' }} aria-label={`${d.year}, ${otherLabel}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.other_projects} ${cellUnitProjectsSR}`}>
                                                     {d.other_projects}
                                                 </td>
-                                                <td className="text-right" style={{ textAlign: 'right', fontWeight: 'bold' }} aria-label={`${d.year}, ${lang === 'en' ? 'Total' : 'Total'}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.total_value} ${cellUnitValueSR}`}>
+                                                <td className="text-right" style={{ textAlign: 'right', fontWeight: 'bold', border: '1px solid #ddd' }} aria-label={`${d.year}, ${lang === 'en' ? 'Total' : 'Total'}, ${lang === 'en' ? 'value' : 'valeur'}: ${d.total_value} ${cellUnitValueSR}`}>
                                                     {d.total_value}
                                                 </td>
-                                                <td className="text-right" style={{ textAlign: 'right', fontWeight: 'bold' }} aria-label={`${d.year}, ${lang === 'en' ? 'Total' : 'Total'}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.total_projects} ${cellUnitProjectsSR}`}>
+                                                <td className="text-right" style={{ textAlign: 'right', fontWeight: 'bold', border: '1px solid #ddd' }} aria-label={`${d.year}, ${lang === 'en' ? 'Total' : 'Total'}, ${lang === 'en' ? 'count' : 'nombre'}: ${d.total_projects} ${cellUnitProjectsSR}`}>
                                                     {d.total_projects}
                                                 </td>
                                             </tr>

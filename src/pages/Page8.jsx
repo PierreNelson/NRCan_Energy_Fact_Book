@@ -93,7 +93,9 @@ const Page8 = () => {
             return;
         }
 
-        const title = `${stripHtml(getText('page8_title', lang))} (${year})`;
+        const title = lang === 'en' 
+            ? `Energy sector direct nominal GDP* ($ millions) (${year})`
+            : `PIB nominal direct du secteur de l'énergie* (en millions de dollars) (${year})`;
 
         try {
             if (!window.Plotly) {
@@ -635,15 +637,12 @@ const Page8 = () => {
                     border: 0; 
                 }
             `}</style>
-            <div className="wb-inv" role="region" aria-label={lang === 'en' ? 'Page summary' : 'Résumé de la page'}>
-                {getSRSummary()}
-            </div>
-
             <div className="page8-container">
                 <header className="page8-header">
                     <h1 className="page8-title" aria-hidden="true">
                         {getText('page8_title', lang)}
                     </h1>
+                    <h2 className="wb-inv">{stripHtml(getText('page8_title', lang))} - {stripHtml(getText('page8_subtitle', lang))}</h2>
                     <p className="page8-subtitle" aria-hidden="true">
                         {getText('page8_subtitle', lang)}
                     </p>
@@ -670,7 +669,11 @@ const Page8 = () => {
                         ))}
                     </select>
                 </div>
-                <div ref={chartRef} className="page8-map-container" aria-hidden="true" style={{ position: 'relative' }}>
+                <div 
+                    role="region" 
+                    aria-label={getSRSummary()}
+                >
+                    <figure ref={chartRef} className="page8-map-container" style={{ margin: 0, position: 'relative' }}>
                     {selectedProvinces !== null && (
                         <button onClick={() => setSelectedProvinces(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                     )}
@@ -835,6 +838,7 @@ const Page8 = () => {
                             style={{ width: '100%', height: '650px' }}
                         />
                     )}
+                    </figure>
                 </div>
 
                 <details 

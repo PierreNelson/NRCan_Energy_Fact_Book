@@ -425,15 +425,15 @@ const getAccessibleDataTable = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
                                 {CATEGORY_ORDER.map(cat => (
-                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                         {categoryLabels[cat]}<br/>
                                         <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
                                         <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
                                     </th>
                                 ))}
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                     {getText('total', lang)}<br/>
                                     <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
                                     <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
@@ -445,18 +445,18 @@ const getAccessibleDataTable = () => {
                                 const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
                                         {CATEGORY_ORDER.map(cat => (
                                             <td 
                                                 key={cat} 
-                                                style={{ textAlign: 'right' }}
+                                                style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                                 aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumberTable(yearData[catMapping[cat]] || 0)}${cellUnitSR}`}
                                             >
                                                 {formatNumberTable(yearData[catMapping[cat]] || 0)}
                                             </td>
                                         ))}
                                         <td 
-                                            style={{ textAlign: 'right' }}
+                                            style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                             aria-label={`${yearData.year}, ${getText('total', lang)}: ${formatNumberTable(yearData.oil_gas_total || 0)}${cellUnitSR}`}
                                         >
                                             <strong>{formatNumberTable(yearData.oil_gas_total || 0)}</strong>

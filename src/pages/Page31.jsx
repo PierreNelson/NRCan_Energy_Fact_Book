@@ -247,17 +247,17 @@ const Page31 = () => {
                         </caption>
                         <thead>
                             <tr>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {cdiaLabel}<br/>
-                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                    <span className="wb-inv">{headerUnitSR}</span>
-                                </th>
-                                <th scope="col" className="text-center" style={{ fontWeight: 'bold' }}>
-                                    {fdiLabel}<br/>
-                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                    <span className="wb-inv">{headerUnitSR}</span>
-                                </th>
+<th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {cdiaLabel}<br/>
+                                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                                    <span className="wb-inv">{headerUnitSR}</span>
+                                                </th>
+                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                                    {fdiLabel}<br/>
+                                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                                    <span className="wb-inv">{headerUnitSR}</span>
+                                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -266,15 +266,15 @@ const Page31 = () => {
                                 const fdiVal = (yearData.fdi || 0) / 1000;
                                 return (
                                     <tr key={yearData.year}>
-                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold' }}>{yearData.year}</th>
+                                        <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
                                         <td 
-                                            style={{ textAlign: 'right' }}
+                                            style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                             aria-label={`${yearData.year}, ${cdiaLabel}: ${formatNumber(cdiaVal)}${cellUnitSR}`}
                                         >
                                             {formatNumber(cdiaVal)}
                                         </td>
                                         <td 
-                                            style={{ textAlign: 'right' }}
+                                            style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                             aria-label={`${yearData.year}, ${fdiLabel}: ${formatNumber(fdiVal)}${cellUnitSR}`}
                                         >
                                             {formatNumber(fdiVal)}
