@@ -271,8 +271,8 @@ const Page32 = () => {
                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div className="table-responsive" style={{ marginTop: '10px' }} role="region" aria-labelledby={captionId}>
-                    <table className="table table-striped table-hover">
+                <div className="table-responsive" style={{ marginTop: '10px', overflowX: 'auto' }} role="region" aria-labelledby={captionId}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '700px' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Foreign control of Canadian assets (percentage of total assets)'
@@ -851,6 +851,7 @@ const Page32 = () => {
                                     layout={{
                                         barmode: 'group',
                                         hovermode: 'closest',
+                                        clickmode: 'event',
                                         dragmode: windowWidth <= 768 ? false : 'zoom',
                                         showlegend: true,
                                         legend: {

@@ -9,6 +9,12 @@ export const TRANSLATIONS = {
         'nav_section1_title': 'Key energy, economic and environmental indicators',
         'nav_section2': 'Section 2: Investment',
         'nav_section2_title': 'Investment',
+        'nav_section3': 'Section 3: Skills, diversity and community',
+        'nav_section3_title': 'Skills, diversity and community',
+        'nav_section4': 'Section 4: Energy efficiency',
+        'nav_section4_title': 'Energy efficiency',
+        'nav_section5': 'Section 5: Clean power and low carbon fuels',
+        'nav_section5_title': 'Clean power and low carbon fuels',
         'nav_section6': 'Section 6: Oil, natural gas and coal',
         'nav_section6_title': 'Oil, natural gas and coal',
 
@@ -242,6 +248,32 @@ export const TRANSLATIONS = {
         'page37_bullet2_part3': '%) in pollution abatement and control.',
         'page37_million': 'million',
 
+        // Page 39
+        'page39_section': 'Section 3:',
+        'page39_title': 'Skills, diversity and community',
+        'page39_item1': 'Energy sector demographics',
+        'page39_item2': 'Energy affordability',
+        'page39_item3': 'Energy reliant communities',
+        'page39_image_alt': 'Construction workers in safety gear having a discussion',
+        'page39_nav_label': 'Section 3 contents',
+
+        // Page 47
+        'page47_section': 'Section 4:',
+        'page47_title': 'Energy efficiency',
+        'page47_item1': 'Energy use',
+        'page47_item2': 'Efficiency trends',
+        'page47_image_alt': 'Person using a home energy monitoring tablet',
+        'page47_nav_label': 'Section 4 contents',
+
+        // Page 59
+        'page59_section': 'Section 5:',
+        'page59_title': 'Clean power and low carbon fuels',
+        'page59_item1': 'Clean technology and electricity generation mix',
+        'page59_item2': 'Renewable energy',
+        'page59_item3': 'Biofuels and transportation',
+        'page59_image_alt': 'Wind turbines in a green field landscape',
+        'page59_nav_label': 'Section 5 contents',
+
         // Page 103
         'page103_section': 'Section 6:',
         'page103_title': 'Oil, natural gas and coal',
@@ -334,6 +366,12 @@ export const TRANSLATIONS = {
         'nav_section1_title': "Indicateurs clés sur l'énergie, l'économie et l'environnement",
         'nav_section2': 'Section 2 : Investissement',
         'nav_section2_title': 'Investissement',
+        'nav_section3': 'Section 3 : Compétences, diversité et communautés',
+        'nav_section3_title': 'Compétences, diversité et communautés',
+        'nav_section4': 'Section 4 : Efficacité énergétique',
+        'nav_section4_title': 'Efficacité énergétique',
+        'nav_section5': 'Section 5 : Énergie propre et carburants faibles en carbone',
+        'nav_section5_title': 'Énergie propre et carburants faibles en carbone',
         'nav_section6': 'Section 6 : Pétrole, gaz naturel et charbon',
         'nav_section6_title': 'Pétrole, gaz naturel et charbon',
 
@@ -564,6 +602,32 @@ export const TRANSLATIONS = {
         'page37_bullet2_part2': " dans des activités de protection de l'environnement, dont le pourcentage le plus élevé des dépenses (",
         'page37_bullet2_part3': ' %) a été consacré à la réduction et au contrôle de la pollution.',
         'page37_million': 'millions de dollars',
+
+        // Page 39
+        'page39_section': 'Section 3 :',
+        'page39_title': 'Compétences, diversité et communautés',
+        'page39_item1': "Démographie du secteur de l'énergie",
+        'page39_item2': "Abordabilité de l'énergie",
+        'page39_item3': "Communautés dépendentes de l'énergie",
+        'page39_image_alt': 'Travailleurs de la construction en équipement de sécurité en discussion',
+        'page39_nav_label': 'Contenu de la section 3',
+
+        // Page 47
+        'page47_section': 'Section 4 :',
+        'page47_title': 'Efficacité énergétique',
+        'page47_item1': "Consommation d'énergie",
+        'page47_item2': "Évolution de l'efficacité énergétique",
+        'page47_image_alt': "Personne utilisant une tablette de surveillance de l'énergie domestique",
+        'page47_nav_label': 'Contenu de la section 4',
+
+        // Page 59
+        'page59_section': 'Section 5 :',
+        'page59_title': 'Énergie propre et carburants faibles en carbone',
+        'page59_item1': "Technologies propres et production d'électricité au Canada",
+        'page59_item2': 'Énergie renouvelable',
+        'page59_item3': 'Biocarburants et transports',
+        'page59_image_alt': "Éoliennes dans un paysage de champs verts",
+        'page59_nav_label': 'Contenu de la section 5',
 
         // Page 103
         'page103_section': 'Section 6 :',

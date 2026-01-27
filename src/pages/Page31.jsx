@@ -238,8 +238,8 @@ const Page31 = () => {
                     <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
                 </summary>
 
-                <div className="table-responsive" role="region" aria-labelledby={captionId}>
-                    <table className="table table-striped table-hover">
+                <div className="table-responsive" role="region" aria-labelledby={captionId} style={{ overflowX: 'auto' }}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '500px' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Stock of foreign direct investment (FDI) in Canada and Canadian direct investment abroad (CDIA) in the energy industry (billions of dollars)'
@@ -718,6 +718,7 @@ const Page31 = () => {
                             layout={{
                                 barmode: 'group',
                                 hovermode: 'closest',
+                                clickmode: 'event',
                                 dragmode: windowWidth <= 768 ? false : 'zoom',
                                 xaxis: {
                                     tickvals: chartData.tickVals,

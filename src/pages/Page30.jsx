@@ -311,7 +311,9 @@ const Page30 = () => {
 
     const uniqueProvinces = useMemo(() => {
         if (!tableData || tableData.length === 0) return [];
-        const provinces = [...new Set(tableData.map(p => p.province).filter(p => p && p.trim()))];
+        const provinces = [...new Set(tableData.map(p => p.province).filter(p => 
+            p && p.trim() && p.toLowerCase() !== 'multiple' && p.toLowerCase() !== 'multiples'
+        ))];
         return provinces.sort((a, b) => a.localeCompare(b));
     }, [tableData]);
 
@@ -1115,6 +1117,7 @@ const Page30 = () => {
                                     },
                                     margin: { l: 0, r: 0, t: 0, b: 0 },
                                     height: mapHeight,
+                                    clickmode: 'event',
                                     dragmode: windowWidth <= 768 ? false : 'zoom',
                                     paper_bgcolor: 'rgba(0,0,0,0)',
                                     plot_bgcolor: 'rgba(0,0,0,0)',
@@ -1217,7 +1220,7 @@ const Page30 = () => {
                     </div>
 
                     <div className="table-responsive" role="region" style={{ overflowX: 'auto' }}>
-                        <table className="table table-striped table-hover" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                        <table className="table table-striped table-hover" style={{ minWidth: '900px', borderCollapse: 'collapse', fontSize: '12px' }}>
                             <caption className="wb-inv">
                                 {lang === 'en' 
                                     ? 'Major energy projects data including project name, company, province, capital cost, status, and clean technology indicator. Click column headers to sort.' 

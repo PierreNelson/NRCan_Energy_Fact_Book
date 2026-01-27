@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getEconomicContributionsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import page26BgImage from '../assets/page26_bg.png';
+import page26BgImage from '../assets/page26_bg.svg';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -126,8 +126,8 @@ const Page26 = () => {
                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div className="table-responsive" role="region" aria-labelledby={captionId}>
-                    <table className="table table-striped table-hover">
+                <div className="table-responsive" role="region" aria-labelledby={captionId} style={{ overflowX: 'auto' }}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '500px' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Economic contributions of fuel, energy and pipeline infrastructure'
@@ -395,6 +395,18 @@ const Page26 = () => {
                     padding-left: ${layoutPadding?.left || 55}px; 
                 }
 
+                .page26-bg-image {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: -${layoutPadding?.left || 55}px;
+                    width: calc(100% + ${layoutPadding?.left || 55}px + 15px);
+                    background-size: cover;
+                    background-position: center center;
+                    background-repeat: no-repeat;
+                    z-index: 0;
+                }
+
                 .page26-year-selector {
                     display: flex;
                     align-items: center;
@@ -519,8 +531,8 @@ const Page26 = () => {
 
                 @media (max-width: 1097px) {
                     .page26-bg-image {
-                        background-size: 80% 100% !important;
-                        background-position: right !important;
+                        background-size: cover !important;
+                        background-position: center !important;
                     }
                 }
 
@@ -528,8 +540,10 @@ const Page26 = () => {
                     .page26-year-ticks { display: none !important; }
 
                     .page26-bg-image {
-                        background-size: 70% 100% !important;
-                        background-position: right !important;
+                        left: -15px;
+                        width: calc(100% + 30px);
+                        background-size: cover !important;
+                        background-position: center !important;
                     }
 
                     .page26-slider-region {
@@ -546,7 +560,10 @@ const Page26 = () => {
 
                 @media (max-width: 480px) {
                     .page26-bg-image {
-                        display: none !important;
+                        left: -15px;
+                        width: calc(100% + 30px);
+                        background-size: cover !important;
+                        background-position: center !important;
                     }
 
                     .page26-stat-value {
@@ -631,14 +648,11 @@ const Page26 = () => {
                 </header>
 
                 <div className="page26-content">
-                    <div className="page26-bg-image" aria-hidden="true" style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundImage: `url(${page26BgImage})`,
-                        backgroundSize: '100% 100%',
-                        backgroundPosition: 'center center',
-                        backgroundRepeat: 'no-repeat',
-                        zIndex: 0
-                    }} />
+                    <div 
+                        className="page26-bg-image" 
+                        aria-hidden="true" 
+                        style={{ backgroundImage: `url(${page26BgImage})` }}
+                    />
 
                     <section 
                         className="page26-stats-row"

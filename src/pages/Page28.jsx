@@ -751,6 +751,7 @@ const Page28 = () => {
                                         layout={{
                                             barmode: 'stack',
                                             showlegend: false,
+                                            clickmode: 'event',
                                             dragmode: windowWidth <= 768 ? false : 'zoom',
                                             title: {
                                                 text: `<b>${chartTitle}</b>`,

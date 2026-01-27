@@ -323,8 +323,8 @@ const Page27 = () => {
                     <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
                 </summary>
 
-                <div className="table-responsive" role="region" aria-labelledby={captionId}>
-                    <table className="table table-striped table-hover">
+                <div className="table-responsive" role="region" aria-labelledby={captionId} style={{ overflowX: 'auto' }}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '600px' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Public and private investment in fuel, energy and pipeline infrastructure (billions of constant 2012 dollars)'
@@ -773,6 +773,7 @@ const Page27 = () => {
                             layout={{
                                 barmode: 'stack',
                                 hovermode: 'closest',
+                                clickmode: 'event',
                                 dragmode: windowWidth <= 768 ? false : 'zoom',
                                 xaxis: {
                                     tickvals: chartData.tickVals,

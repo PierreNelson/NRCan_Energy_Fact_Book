@@ -416,8 +416,8 @@ const getAccessibleDataTable = () => {
                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div className="table-responsive" style={{ marginTop: '10px' }} role="region" aria-labelledby={captionId}>
-                    <table className="table table-striped table-hover">
+                <div className="table-responsive" style={{ marginTop: '10px', overflowX: 'auto' }} role="region" aria-labelledby={captionId}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '600px' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Oil and gas extraction expenditures per environmental activity (millions of dollars)'

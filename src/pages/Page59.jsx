@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
-import page103Image from '../assets/page103_bg.jpg';
+import page59Image from '../assets/page59_bg.jpg';
 
-const Page103 = () => {
+const Page59 = () => {
     const { lang, layoutPadding } = useOutletContext();
 
     useEffect(() => {
@@ -13,10 +13,10 @@ const Page103 = () => {
         <main 
             id="main-content"
             tabIndex="-1"
-            className="page-content page-103 page103-main" 
+            className="page-content page-59 page59-main" 
             role="main"
             style={{
-                backgroundColor: '#58504a',
+                backgroundColor: '#819476',
                 flex: '1 1 auto',
                 display: 'flex',
                 flexDirection: 'column',
@@ -24,7 +24,7 @@ const Page103 = () => {
         >
             <style>{`
 
-.page103-main {
+.page59-main {
     width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
     margin-left: -${layoutPadding?.left || 55}px;
     margin-right: -${layoutPadding?.right || 15}px;
@@ -32,25 +32,25 @@ const Page103 = () => {
     padding: 0;
 }
 
-.page103-container {
+.page59-container {
     width: 100%;
-    min-height: 0;
+    min-height: calc(100vh - 295px);
     display: flex;
     flex-direction: column;
     flex: 1;
 }
 
-.page103-image-title-wrapper {
+.page59-image-title-wrapper {
     position: relative;
     width: 100%;
-    min-height: 320px;
+    min-height: 450px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
 }
 
-.page103-title {
+.page59-title {
     position: relative;
     z-index: 2;
     width: 100%;
@@ -59,22 +59,21 @@ const Page103 = () => {
     box-sizing: border-box;
 }
 
-.page103-title-box {
+.page59-title-box {
     background-color: rgba(255, 255, 255, 0.7); 
     padding: 20px ${layoutPadding?.right || 15}px 20px ${layoutPadding?.left || 55}px;
     width: 100%;
     box-sizing: border-box;
 }
 
-.page103-list {
+.page59-list {
     width: 100%;
-    background-color: #423330;
-    padding: 30px ${layoutPadding?.right || 15}px 30px ${layoutPadding?.left || 55}px;
+    background-color: #819476;
+    padding: 42px ${layoutPadding?.right || 15}px 30px ${layoutPadding?.left || 55}px;
     box-sizing: border-box;
-    flex: 1;
 }
 
-.page103-title-text {
+.page59-title-text {
     font-family: Georgia, "Times New Roman", serif;
     font-size: 4.5rem;
     color: #221e1f;
@@ -84,42 +83,42 @@ const Page103 = () => {
     text-align: left;
 }
 
-.page103-list-item {
+.page59-list-item {
     margin-bottom: 8px;
     font-size: 2.2rem;
     text-align: left;
     color: #ebe8e1;
 }
 
-@media (max-width: 1745px) { .page103-title-text { font-size: 4.2rem; } }
-@media (max-width: 1536px) { .page103-title-text { font-size: 4.0rem; } }
-@media (max-width: 1280px) { .page103-title-text { font-size: 3.8rem; } }
-@media (max-width: 1100px) { .page103-title-text { font-size: 3.5rem; } }
+@media (max-width: 1745px) { .page59-title-text { font-size: 4.2rem; } }
+@media (max-width: 1536px) { .page59-title-text { font-size: 4.0rem; } }
+@media (max-width: 1280px) { .page59-title-text { font-size: 3.8rem; } }
+@media (max-width: 1100px) { .page59-title-text { font-size: 3.5rem; } }
 
 @media (max-width: 960px) {
-    .page103-image-title-wrapper { min-height: 240px; }
-    .page103-title-text { font-size: 3.2rem; }
-    .page103-list-item { font-size: 1.7rem; }
+    .page59-image-title-wrapper { min-height: 350px; }
+    .page59-title-text { font-size: 3.2rem; }
+    .page59-list-item { font-size: 1.7rem; }
 }
 
 @media (max-width: 640px) {
-    .page103-title-text { font-size: 2.5rem; }
-    .page103-list-item { font-size: 1.5rem; }
+    .page59-title-text { font-size: 2.5rem; }
+    .page59-list-item { font-size: 1.5rem; }
 }
 
 @media (max-width: 480px) {
-    .page103-image-title-wrapper { min-height: 180px; }
-    .page103-title-text { font-size: 2.0rem; }
-    .page103-list-item { font-size: 1.3rem; }
+    .page59-image-title-wrapper { min-height: 250px; }
+    .page59-title-text { font-size: 2.0rem; }
+    .page59-list-item { font-size: 1.3rem; }
 }
 
             `}</style>
 
-            <div className="page103-container">
-                <div className="page103-image-title-wrapper">
+            <div className="page59-container">
+                <div className="page59-image-title-wrapper">
                     <img 
-                        src={page103Image} 
-                        alt={getText('page103_image_alt', lang)}
+                        src={page59Image} 
+                        alt={getText('page59_image_alt', lang)}
                         style={{
                             position: 'absolute',
                             top: 0,
@@ -131,25 +130,22 @@ const Page103 = () => {
                             zIndex: 0
                         }} 
                     />
-                    <div className="page103-title">
-                        <div className="page103-title-box">
-                            <h1 className="page103-title-text">
-                                <span style={{ fontWeight: 'normal' }}>{getText('page103_section', lang)}</span>
+                    <div className="page59-title">
+                        <div className="page59-title-box">
+                            <h1 className="page59-title-text">
+                                <span style={{ fontWeight: 'normal' }}>{getText('page59_section', lang)}</span>
                                 <br />
-                                <span style={{ fontWeight: 'bold' }}>{getText('page103_title', lang)}</span>
+                                <span style={{ fontWeight: 'bold' }}>{getText('page59_title', lang)}</span>
                             </h1>
                         </div>
                     </div>
                 </div>
 
-                <nav className="page103-list" aria-label={getText('page103_nav_label', lang)}>
+                <nav className="page59-list" aria-label={getText('page59_nav_label', lang)}>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                        <li className="page103-list-item">{getText('page103_item1', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item2', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item3', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item4', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item5', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item6', lang)}</li>
+                        <li className="page59-list-item">{getText('page59_item1', lang)}</li>
+                        <li className="page59-list-item">{getText('page59_item2', lang)}</li>
+                        <li className="page59-list-item">{getText('page59_item3', lang)}</li>
                     </ul>
                 </nav>
             </div>
@@ -157,4 +153,4 @@ const Page103 = () => {
     );
 };
 
-export default Page103;
+export default Page59;

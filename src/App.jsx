@@ -6,6 +6,9 @@ import Layout from './components/Layout';
 // These files are NOT downloaded initially - only when user navigates to them
 const SectionOne = React.lazy(() => import('./components/SectionOne'));
 const SectionTwo = React.lazy(() => import('./components/SectionTwo'));
+const SectionThree = React.lazy(() => import('./components/SectionThree'));
+const SectionFour = React.lazy(() => import('./components/SectionFour'));
+const SectionFive = React.lazy(() => import('./components/SectionFive'));
 const SectionSix = React.lazy(() => import('./components/SectionSix'));
 
 // Loading component for Suspense fallback
@@ -63,6 +66,27 @@ function App() {
           <Route path="section-2" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionTwo />
+            </Suspense>
+          } />
+          
+          {/* Section 3: Skills, Diversity and Community (Page 39+) */}
+          <Route path="section-3" element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <SectionThree />
+            </Suspense>
+          } />
+          
+          {/* Section 4: Energy Efficiency (Page 47+) */}
+          <Route path="section-4" element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <SectionFour />
+            </Suspense>
+          } />
+          
+          {/* Section 5: Clean Power and Low Carbon Fuels (Page 59+) */}
+          <Route path="section-5" element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <SectionFive />
             </Suspense>
           } />
           

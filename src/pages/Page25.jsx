@@ -385,8 +385,8 @@ const Page25 = () => {
                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                 </summary>
 
-                <div className="table-responsive" role="region" aria-labelledby={captionId}>
-                    <table className="table table-striped table-hover">
+                <div className="table-responsive" role="region" aria-labelledby={captionId} style={{ overflowX: 'auto' }}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '800px' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Capital expenditures on construction in infrastructure (billions of dollars)'

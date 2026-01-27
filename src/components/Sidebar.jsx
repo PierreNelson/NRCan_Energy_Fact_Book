@@ -6,6 +6,9 @@ import { getText } from '../utils/translations';
 const Sidebar = ({ lang }) => {
     const [section1Expanded, setSection1Expanded] = useState(false);
     const [section2Expanded, setSection2Expanded] = useState(false);
+    const [section3Expanded, setSection3Expanded] = useState(false);
+    const [section4Expanded, setSection4Expanded] = useState(false);
+    const [section5Expanded, setSection5Expanded] = useState(false);
     const [section6Expanded, setSection6Expanded] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -15,6 +18,18 @@ const Sidebar = ({ lang }) => {
 
     const toggleSection2 = () => {
         setSection2Expanded(!section2Expanded);
+    };
+
+    const toggleSection3 = () => {
+        setSection3Expanded(!section3Expanded);
+    };
+
+    const toggleSection4 = () => {
+        setSection4Expanded(!section4Expanded);
+    };
+
+    const toggleSection5 = () => {
+        setSection5Expanded(!section5Expanded);
     };
 
     const toggleSection6 = () => {
@@ -32,6 +47,27 @@ const Sidebar = ({ lang }) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
             toggleSection2();
+        }
+    };
+
+    const handleKeyDown3 = (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleSection3();
+        }
+    };
+
+    const handleKeyDown4 = (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleSection4();
+        }
+    };
+
+    const handleKeyDown5 = (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleSection5();
         }
     };
 
@@ -280,6 +316,114 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_environmental_protection', lang)}
+                            </NavLink>
+                        </div>
+                    )}
+                </div>
+
+                {/* Section 3 */}
+                <div className="nav-section">
+                    <button
+                        className="nav-section-header"
+                        onClick={toggleSection3}
+                        onKeyDown={handleKeyDown3}
+                        aria-expanded={section3Expanded}
+                        aria-controls="section3-content"
+                        aria-label={`${getText('nav_section3', lang)}. ${section3Expanded 
+                            ? (lang === 'en' ? 'Expanded. Press Space to collapse.' : 'Développé. Appuyez sur Espace pour réduire.')
+                            : (lang === 'en' ? 'Collapsed. Press Space to expand.' : 'Réduit. Appuyez sur Espace pour développer.')
+                        }`}
+                    >
+                        <span className="section-arrow" aria-hidden="true">
+                            {section3Expanded ? "▼" : "▶"}
+                        </span>
+                        <span>{getText('nav_section3', lang)}</span>
+                    </button>
+
+                    {section3Expanded && (
+                        <div 
+                            id="section3-content"
+                            className="nav-section-content expanded"
+                            role="group"
+                            aria-label={getText('nav_section3', lang)}
+                        >
+                            <NavLink
+                                to="/section-3#skills-diversity-community-overview"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section3_title', lang)}
+                            </NavLink>
+                        </div>
+                    )}
+                </div>
+
+                {/* Section 4 */}
+                <div className="nav-section">
+                    <button
+                        className="nav-section-header"
+                        onClick={toggleSection4}
+                        onKeyDown={handleKeyDown4}
+                        aria-expanded={section4Expanded}
+                        aria-controls="section4-content"
+                        aria-label={`${getText('nav_section4', lang)}. ${section4Expanded 
+                            ? (lang === 'en' ? 'Expanded. Press Space to collapse.' : 'Développé. Appuyez sur Espace pour réduire.')
+                            : (lang === 'en' ? 'Collapsed. Press Space to expand.' : 'Réduit. Appuyez sur Espace pour développer.')
+                        }`}
+                    >
+                        <span className="section-arrow" aria-hidden="true">
+                            {section4Expanded ? "▼" : "▶"}
+                        </span>
+                        <span>{getText('nav_section4', lang)}</span>
+                    </button>
+
+                    {section4Expanded && (
+                        <div 
+                            id="section4-content"
+                            className="nav-section-content expanded"
+                            role="group"
+                            aria-label={getText('nav_section4', lang)}
+                        >
+                            <NavLink
+                                to="/section-4#energy-efficiency-overview"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section4_title', lang)}
+                            </NavLink>
+                        </div>
+                    )}
+                </div>
+
+                {/* Section 5 */}
+                <div className="nav-section">
+                    <button
+                        className="nav-section-header"
+                        onClick={toggleSection5}
+                        onKeyDown={handleKeyDown5}
+                        aria-expanded={section5Expanded}
+                        aria-controls="section5-content"
+                        aria-label={`${getText('nav_section5', lang)}. ${section5Expanded 
+                            ? (lang === 'en' ? 'Expanded. Press Space to collapse.' : 'Développé. Appuyez sur Espace pour réduire.')
+                            : (lang === 'en' ? 'Collapsed. Press Space to expand.' : 'Réduit. Appuyez sur Espace pour développer.')
+                        }`}
+                    >
+                        <span className="section-arrow" aria-hidden="true">
+                            {section5Expanded ? "▼" : "▶"}
+                        </span>
+                        <span>{getText('nav_section5', lang)}</span>
+                    </button>
+
+                    {section5Expanded && (
+                        <div 
+                            id="section5-content"
+                            className="nav-section-content expanded"
+                            role="group"
+                            aria-label={getText('nav_section5', lang)}
+                        >
+                            <NavLink
+                                to="/section-5#clean-power-low-carbon-overview"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section5_title', lang)}
                             </NavLink>
                         </div>
                     )}

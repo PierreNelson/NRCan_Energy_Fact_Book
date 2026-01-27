@@ -74,6 +74,9 @@ const Layout = () => {
     const pages = [
         { path: '/section-1' },
         { path: '/section-2' },
+        { path: '/section-3' },
+        { path: '/section-4' },
+        { path: '/section-5' },
         { path: '/section-6' }
     ];
 

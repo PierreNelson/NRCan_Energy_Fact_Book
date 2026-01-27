@@ -776,6 +776,7 @@ const Page8 = () => {
                                 },
                                 margin: { l: 0, r: 0, t: 0, b: 0 },
                                 height: 650,
+                                clickmode: 'event',
                                 dragmode: windowWidth <= 768 ? false : 'zoom',
                                 paper_bgcolor: 'rgba(0,0,0,0)',
                                 plot_bgcolor: 'rgba(0,0,0,0)'

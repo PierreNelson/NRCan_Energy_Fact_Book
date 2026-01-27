@@ -578,6 +578,7 @@ const Page7 = () => {
                             data={chartData}
                             layout={{
                                 autosize: true,
+                                clickmode: 'event',
                                 dragmode: false,
                                 showlegend: false,
                                 margin: { t: 30, r: 150, b: 30, l: 30 },
@@ -648,7 +649,7 @@ const Page7 = () => {
                 </summary>
 
                 <div className="table-responsive" role="region" aria-labelledby={captionId} style={{ overflowX: 'auto', border: '1px solid #ddd', borderTop: 'none', padding: '15px' }}>
-                    <table className="table table-striped table-hover" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '500px', borderCollapse: 'collapse' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? `Energy's nominal GDP contribution for Canada, ${minYear} to ${maxYear}. Values in billions of dollars.` 

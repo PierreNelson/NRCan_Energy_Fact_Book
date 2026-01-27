@@ -212,8 +212,8 @@ const Page24 = () => {
                         {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
                     </span>
                 </summary>
-                <div className="table-responsive" style={{ width: '100%', marginTop: '10px' }}>
-                    <table className="table table-striped table-hover">
+                <div className="table-responsive" style={{ width: '100%', marginTop: '10px', overflowX: 'auto' }}>
+                    <table className="table table-striped table-hover" style={{ minWidth: '600px' }}>
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Capital expenditures in the energy sector (billions of dollars)' 
@@ -723,6 +723,7 @@ const Page24 = () => {
                                     barmode: 'stack', 
                                     hoverlabel: { bgcolor: '#ffffff' }, 
                                     showlegend: false,
+                                    clickmode: 'event',
                                     dragmode: windowWidth <= 768 ? false : 'zoom',
                                     xaxis: { 
                                         tickvals: tickVals, 
