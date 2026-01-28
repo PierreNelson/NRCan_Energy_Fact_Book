@@ -469,16 +469,49 @@ html {
   border: 1px solid #dee2e6;
 }
 
-/* Responsive table wrapper */
+/* Responsive table wrapper - CRITICAL for horizontal scrolling */
 .table-responsive {
-  display: block;
-  width: 100%;
-  overflow-x: auto;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
   -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
 }
 
-.table-responsive > .table {
+/* Force table to maintain width and trigger scrollbar */
+.table-responsive > .table,
+.table-responsive > table {
   margin-bottom: 0;
+  width: 100%;
+}
+
+/* Ensure details element doesn't block table scroll */
+details {
+  max-width: 100%;
+  overflow: visible !important;
+}
+
+details .table-responsive {
+  max-width: 100%;
+  position: relative;
+}
+
+/* Mobile-specific scrolling enhancements */
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: scroll !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .table-responsive {
+    overflow-x: scroll !important;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* WET Footnotes */

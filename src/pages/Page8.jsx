@@ -18,6 +18,66 @@ const Page8 = () => {
     const [selectedProvinces, setSelectedProvinces] = useState(null);
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, index: null });
+    const topScrollRef = useRef(null);
+    const tableScrollRef = useRef(null);
+
+    useEffect(() => {
+        const topScroll = topScrollRef.current;
+        const tableScroll = tableScrollRef.current;
+
+        if (!topScroll || !tableScroll) return;
+
+        const syncScrollbars = () => {
+            const table = tableScroll.querySelector('table');
+            if (!table) return;
+
+            const scrollWidth = table.offsetWidth;
+            const containerWidth = tableScroll.clientWidth;
+
+            const topSpacer = topScroll.firstElementChild;
+            if (topSpacer) {
+                topSpacer.style.width = `${scrollWidth}px`;
+            }
+
+            if (scrollWidth > containerWidth) {
+                topScroll.style.display = 'block';
+                topScroll.style.opacity = '1';
+            } else {
+                topScroll.style.display = 'none';
+            }
+        };
+
+        const handleTopScroll = () => {
+            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+                tableScroll.scrollLeft = topScroll.scrollLeft;
+            }
+        };
+
+        const handleTableScroll = () => {
+            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+                topScroll.scrollLeft = tableScroll.scrollLeft;
+            }
+        };
+
+        topScroll.addEventListener('scroll', handleTopScroll);
+        tableScroll.addEventListener('scroll', handleTableScroll);
+
+        const observer = new ResizeObserver(() => {
+            window.requestAnimationFrame(syncScrollbars);
+        });
+
+        const tableElement = tableScroll.querySelector('table');
+        if (tableElement) observer.observe(tableElement);
+        observer.observe(tableScroll);
+
+        syncScrollbars();
+
+        return () => {
+            topScroll.removeEventListener('scroll', handleTopScroll);
+            tableScroll.removeEventListener('scroll', handleTableScroll);
+            observer.disconnect();
+        };
+    }, [isTableOpen, windowWidth]);
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
@@ -636,6 +696,29 @@ const Page8 = () => {
                     white-space: nowrap; 
                     border: 0; 
                 }
+
+                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+                .page8-table-wrapper {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr);
+                    width: 100%;
+                }
+
+                /* Table horizontal scroll */
+                .table-responsive {
+                    display: block;
+                    width: 100%;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                    border: 1px solid #ddd;
+                    background: #fff;
+                }
+
+                .table-responsive table {
+                    width: max-content !important;
+                    min-width: 100%;
+                    border-collapse: collapse;
+                }
             `}</style>
             <div className="page8-container">
                 <header className="page8-header">
@@ -842,6 +925,7 @@ const Page8 = () => {
                     </figure>
                 </div>
 
+                <div className="page8-table-wrapper">
                 <details 
                     className="page8-data-table"
                     onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
@@ -851,8 +935,26 @@ const Page8 = () => {
                         {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                         <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                     </summary>
-                    <div className="table-responsive" role="region" style={{ overflowX: 'auto' }}>
-                        <table className="table table-striped table-hover" style={{ minWidth: '600px' }}>
+                    <div 
+                        ref={topScrollRef}
+                        style={{ 
+                            width: '100%', 
+                            overflowX: 'auto', 
+                            overflowY: 'hidden',
+                            marginBottom: '0px',
+                            display: windowWidth <= 768 ? 'none' : 'block' 
+                        }}
+                        aria-hidden="true"
+                    >
+                        <div style={{ height: '20px' }}></div>
+                    </div>
+                    <div 
+                        ref={tableScrollRef}
+                        className="table-responsive" 
+                        role="region"
+                        tabIndex="0"
+                    >
+                        <table className="table table-striped table-hover">
                             <caption className="wb-inv">
                                 {lang === 'en' 
                                     ? `Energy sector direct nominal GDP by province/territory, ${minYear}-${maxYear} (millions of dollars)`
@@ -950,6 +1052,7 @@ const Page8 = () => {
                         </button>
                     </div>
                 </details>
+                </div>
                 <aside className="wb-fnote" role="note" style={{ marginTop: 'auto', paddingTop: '10px', paddingBottom: '15px' }}>
                     <h2 id="fn-page8" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl style={{ margin: 0 }}>

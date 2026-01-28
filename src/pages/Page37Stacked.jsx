@@ -6,7 +6,7 @@ import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
-const Page37 = () => {
+const Page37Stacked = () => {
     const { lang, layoutPadding } = useOutletContext();
     const mainRef = useRef(null);
     const tableSummaryRef = useRef(null);
@@ -192,7 +192,7 @@ const Page37 = () => {
 
     const CATEGORY_ORDER = ['wastewater', 'soil', 'air', 'solid_waste', 'other'];
     const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || document.querySelector('.page37-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
+        const plotElement = plotEl || document.querySelector('.page37h-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement) {
             console.error('Plot element not found');
             alert('Could not find chart element. Please try again.');
@@ -448,13 +448,13 @@ const getAccessibleDataTable = () => {
             'other': 'oil_gas_other'
         };
 
-        const captionId = 'page37-table-caption';
+        const captionId = 'page37h-table-caption';
 
         return (
             <details 
                 open={isTableOpen}
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                className="page37-data-table"
+                className="page37h-data-table"
                 style={{ position: 'relative', zIndex: 10 }} 
             >
                 <summary
@@ -708,7 +708,7 @@ const getAccessibleDataTable = () => {
             id="main-content"
             ref={mainRef}
             tabIndex="-1"
-            className="page-37"
+            className="page-37h"
             role="main"
             aria-label={getText('page37_title', lang)}
             style={{ 
@@ -721,7 +721,7 @@ const getAccessibleDataTable = () => {
         >
             <style>{`
 
-                .page-37 {
+                .page-37h {
                     margin-right: -${layoutPadding?.right || 15}px;
                     width: calc(100% + ${layoutPadding?.right || 15}px);
                     padding-right: ${layoutPadding?.right || 15}px; 
@@ -739,14 +739,14 @@ const getAccessibleDataTable = () => {
                 .js-plotly-plot .plotly .slice path.textline { display: none !important; }
                 .js-plotly-plot .plotly g.slice path[class*="textline"] { display: none !important; }
 
-                .page37-year-selector {
+                .page37h-year-selector {
                     display: flex;
                     align-items: center;
                     margin-bottom: 15px;
                     padding: 2px 0;
                 }
 
-                .page37-year-label {
+                .page37h-year-label {
                     font-weight: bold;
                     margin-right: 15px;
                     font-size: 18px;
@@ -754,7 +754,7 @@ const getAccessibleDataTable = () => {
                     white-space: nowrap;
                 }
 
-                .page37-year-select {
+                .page37h-year-select {
                     padding: 8px 12px;
                     font-size: 16px;
                     font-family: Arial, sans-serif;
@@ -765,17 +765,17 @@ const getAccessibleDataTable = () => {
                     min-width: 100px;
                 }
 
-                .page37-year-select:hover {
+                .page37h-year-select:hover {
                     border-color: #007bff;
                 }
 
-                .page37-year-select:focus {
+                .page37h-year-select:focus {
                     outline: 2px solid #005fcc;
                     outline-offset: 2px;
                     border-color: #007bff;
                 }
 
-                .page37-container {
+                .page37h-container {
                     width: 100%;
                     padding: 15px 0;
                     display: flex;
@@ -784,7 +784,7 @@ const getAccessibleDataTable = () => {
                     min-height: 100%;
                 }
 
-                .page37-title {
+                .page37h-title {
                     font-family: 'Georgia', serif;
                     color: #857550;
                     font-size: 2.5rem;
@@ -794,7 +794,7 @@ const getAccessibleDataTable = () => {
                     line-height: 1.2;
                 }
 
-                .page37-subtitle {
+                .page37h-subtitle {
                     font-family: Arial, sans-serif;
                     color: #333;
                     font-size: 1.1rem;
@@ -802,12 +802,12 @@ const getAccessibleDataTable = () => {
                     line-height: 1.5;
                 }
 
-                .page37-subtitle:focus,
-                .page37-text:focus {
+                .page37h-subtitle:focus,
+                .page37h-text:focus {
                     outline: none;
                 }
 
-                .page37-text {
+                .page37h-text {
                     font-family: Arial, sans-serif;
                     color: #333;
                     font-size: 1.1rem;
@@ -815,36 +815,39 @@ const getAccessibleDataTable = () => {
                     line-height: 1.5;
                 }
 
-                .page37-content-row {
+                /* ALWAYS COLUMN LAYOUT - No media query switching */
+                .page37h-content-row {
                     display: flex;
-                    flex-direction: row;
+                    flex-direction: column;
                     flex: 1 1 auto;
                     min-height: 0;
-                    align-items: flex-start;
-                    gap: 40px;
+                    align-items: stretch;
+                    gap: 20px;
                 }
 
-                .page37-chart-column {
-                    width: 55%;
+                .page37h-chart-column {
+                    width: 100%;
                     height: auto;
                     min-height: auto;
                     position: relative;
                     display: flex;
                     flex-direction: column;
+                    margin-bottom: 50px;
                 }
 
-                .page37-chart-area {
+                .page37h-chart-area {
                     width: 100%;
-                    height: calc(100vh - 550px); 
+                    height: 500px;
                     min-height: 400px;
                 }
 
-                .page37-text-column {
-                    width: 40%;
-                    padding-top: 20px;
+                .page37h-text-column {
+                    width: 100%;
+                    padding-top: 0px;
+                    margin-top: -50px;
                 }
 
-                .page37-chart-title {
+                .page37h-chart-title {
                     font-family: Arial, sans-serif;
                     font-weight: bold;
                     color: #333;
@@ -853,7 +856,7 @@ const getAccessibleDataTable = () => {
                     margin-bottom: 5px;
                 }
 
-                .page37-bullets {
+                .page37h-bullets {
                     font-family: Arial, sans-serif;
                     color: #333;
                     font-size: 1.4rem;
@@ -862,7 +865,7 @@ const getAccessibleDataTable = () => {
                     list-style-type: disc;
                 }
 
-                .page37-bullets li {
+                .page37h-bullets li {
                     margin-bottom: 12px;
                 }
 
@@ -870,7 +873,7 @@ const getAccessibleDataTable = () => {
                     font-weight: bold;
                 }
 
-                .page37-data-table {
+                .page37h-data-table {
                     margin-top: 10px;
                     margin-bottom: 10px;
                     margin-left: 0;
@@ -879,136 +882,67 @@ const getAccessibleDataTable = () => {
                     width: 100%;
                 }
 
-                .layout-stacked {
-                    flex-direction: column !important;
-                    height: auto !important;
-                    align-items: stretch !important;
-                }
-
-                .layout-stacked .page37-chart-column,
-                .layout-stacked .page37-text-column {
-                    width: 100% !important;
-                }
-
-                .layout-stacked .page37-chart-column {
-                    height: auto !important;
-                    max-height: none !important;
-                    margin-bottom: 30px !important;
-                }
-
-                .layout-stacked .page37-text-column {
-                    padding-top: 0 !important;
-                }
-
-                .layout-stacked .page37-data-table {
-                    margin-top: 80px;
-                }
-
-                @media (max-width: 1745px) {
-                    .page37-content-row {
-                        flex-direction: column; 
-                        align-items: stretch;
-                    }
-
-                    .page37-chart-column,
-                    .page37-text-column {
-                        width: 100%;
-                    }
-
-                    .page37-data-table {
-                        margin-bottom: -70px !important;
-                    }
-
-                    .page37-chart-column {
-                        margin-bottom: 50px;
-                    }
-
-                    .page37-chart-area {
-                        height: 500px;
-                    }
-
-                    .page37-text-column {
-                        padding-top: 10px;
-                    }
-
-                    .layout-stacked .page37-data-table {
-                        margin-top: 10px !important;
-                    }
-                }
-
                 @media (max-width: 1536px) {
-                    .page37-title {
+                    .page37h-title {
                         font-size: 2rem;
-                    }
-
-                    .page37-chart-column {
-                        height: 540px;
-                        max-height: 540px;
-                    }
-
-                    .page37-text-column {
-                        padding-top: 0;
                     }
                 }
 
                 @media (max-width: 1280px) {
-                    .page37-title {
+                    .page37h-title {
                         font-size: 1.8rem;
                     }
-                    .page37-chart-column {
-                        height: 550px;
-                    }
-                    .page37-chart-area {
+                    .page37h-chart-area {
                         height: 550px;
                     }
                 }
 
                 @media (max-width: 960px) {
-                    .page37-year-ticks {
+                    .page37h-year-ticks {
                         display: none !important;
                     }
                 }
 
                 @media (max-width: 768px) {
-                    .page-37 {
+                    .page-37h {
                         border-right: none !important;
                     }
-                    .page37-title {
+                    .page37h-title {
                         font-size: 1.5rem;
                     }
-                    .page37-year-selector {
+                    .page37h-year-selector {
                         flex-direction: column !important;
                         align-items: flex-start !important;
                     }
-                    .page37-year-label {
+                    .page37h-year-label {
                         margin-bottom: 10px;
                         margin-right: 0;
                     }
-                    .page37-chart-column,
-                    .page37-chart-area {
+                    .page37h-chart-column,
+                    .page37h-chart-area {
                         height: 400px;
                     }
                 }
 
                 @media (max-width: 640px) {
-                    .page37-chart-column,
-                    .page37-chart-area {
+                    .page37h-chart-column,
+                    .page37h-chart-area {
                         height: 360px;
                     }
                 }
 
                 @media (max-width: 480px) {
-                    .page37-chart-area {
+                    .page37h-chart-area {
                         height: 460px;
                     }
-                    .page37-title {
+                    .page37h-title {
                         font-size: 1.3rem;
                     }
                 }
 
                 @media (max-width: 384px) {
-                    .page37-chart-column,
-                    .page37-chart-area {
+                    .page37h-chart-column,
+                    .page37h-chart-area {
                         height: 460px;
                     }
                 }
@@ -1019,7 +953,7 @@ const getAccessibleDataTable = () => {
                 }
 
                 /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
-                .page37-table-wrapper {
+                .page37h-table-wrapper {
                     display: grid;
                     grid-template-columns: minmax(0, 1fr);
                     width: 100%;
@@ -1042,16 +976,16 @@ const getAccessibleDataTable = () => {
                 }
             `}</style>
 
-            <div className="page37-container">
+            <div className="page37h-container">
                 <header role="region" aria-label={getText('page37_title', lang)}>
-                    <h1 className="page37-title">
+                    <h1 className="page37h-title">
                         {getText('page37_title', lang)}
                     </h1>
 
                     {dynamicValues && (
                         <>
                             <p 
-                                className="page37-subtitle"
+                                className="page37h-subtitle"
                                 tabIndex="0"
                             >
                                 <span className="wb-inv">{accessibleStrings.subtitle}</span>
@@ -1066,7 +1000,7 @@ const getAccessibleDataTable = () => {
                                 </span>
                             </p>
                             <p 
-                                className="page37-text"
+                                className="page37h-text"
                                 tabIndex="0"
                             >
                                 <span className="wb-inv">{accessibleStrings.text}</span>
@@ -1081,20 +1015,20 @@ const getAccessibleDataTable = () => {
                         </>
                     )}
                 </header>
-                <div className="page37-year-selector">
+                <div className="page37h-year-selector">
                     <label 
-                        id="year-label-37"
-                        className="page37-year-label"
-                        htmlFor="year-select-37"
+                        id="year-label-37h"
+                        className="page37h-year-label"
+                        htmlFor="year-select-37h"
                     >
                         {getText('year_slider_label', lang)}
                     </label>
                     <select
-                        id="year-select-37"
-                        className="page37-year-select"
+                        id="year-select-37h"
+                        className="page37h-year-select"
                         value={year || maxYear}
                         onChange={(e) => setYear(parseInt(e.target.value))}
-                        aria-labelledby="year-label-37"
+                        aria-labelledby="year-label-37h"
                     >
                         {yearsList.map(y => (
                             <option key={y} value={y}>
@@ -1110,9 +1044,9 @@ const getAccessibleDataTable = () => {
                 >
                     {chartData && `${year}`}
                 </div>
-                <div className={`page37-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
-                    <div className="page37-chart-column">
-                        <h2 className="page37-chart-title" aria-hidden="true">
+                <div className="page37h-content-row">
+                    <div className="page37h-chart-column">
+                        <h2 className="page37h-chart-title" aria-hidden="true">
                             {getText('page37_chart_title', lang)}
                             <br />
                             ({year}, {getText('page37_chart_subtitle', lang)})
@@ -1121,11 +1055,11 @@ const getAccessibleDataTable = () => {
                         {chartData && (
                             <div 
                                 role="region"
-                                className="page37-chart-area" 
+                                className="page37h-chart-area" 
                                 aria-label={`${lang === 'en' ? 'Environmental protection expenditures pie chart for' : 'Graphique circulaire des dépenses de protection de l\'environnement pour'} ${year}. ${getChartDataSummary()}`}
                                 style={{ width: '100%' }} 
                             >
-                                <figure ref={chartRef} className="page37-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
+                                <figure ref={chartRef} className="page37h-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
                                     {selectedSlices !== null && (
                                         <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                     )}
@@ -1234,7 +1168,7 @@ const getAccessibleDataTable = () => {
                                                 lastClickRef.current = { time: currentTime, index: sliceIndex };
                                                 
                                                 if (!isDoubleTap) {
-                                                    return; // Single tap: show hover label only
+                                                    return;
                                                 }
                                             }
 
@@ -1278,14 +1212,14 @@ const getAccessibleDataTable = () => {
                             </div>
                         )}
 
-                        <div className="page37-table-wrapper">
+                        <div className="page37h-table-wrapper">
                             {getAccessibleDataTable()}
                         </div>
                     </div>
-                    <div className="page37-text-column">
+                    <div className="page37h-text-column">
 
                         {dynamicValues && (
-                            <ul className="page37-bullets" role="list">
+                            <ul className="page37h-bullets" role="list">
                                 <li role="listitem" aria-label={lang === 'en'
                                     ? `Electric power generation, transmission and distribution invested ${formatNumber(dynamicValues.electricTotal)} on environmental protection measures.`
                                     : `Les secteurs de production, le transport et la distribution d'électricité ont investi ${formatNumber(dynamicValues.electricTotal)} dans des mesures de protection de l'environnement.`
@@ -1317,4 +1251,4 @@ const getAccessibleDataTable = () => {
     );
 };
 
-export default Page37;
+export default Page37Stacked;

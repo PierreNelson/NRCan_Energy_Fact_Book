@@ -1,6 +1,6 @@
 # MASTER PAGE BUILDING GUIDE & TEMPLATE
 
-**Version:** 3.0 (Updated January 2026)  
+**Version:** 3.1 (Updated January 2026)  
 **Compliance:** WCAG 2.1 AA, WET-BOEW (Web Experience Toolkit)
 
 ---
@@ -792,6 +792,212 @@ For simpler tables without grouped columns:
         ))}
     </tbody>
 </table>
+```
+
+---
+
+## 10.3 Data Table Horizontal Scrolling (Dual Scrollbars)
+
+For data tables that are wider than the viewport, implement **dual horizontal scrollbars** (top and bottom) so users don't have to scroll down to the bottom of a long table to access the scrollbar.
+
+**Note:** Page 29 is an exception - it uses a fully responsive table that squishes/stretches to fit the viewport instead of scrolling.
+
+### Required Refs
+
+```javascript
+const topScrollRef = useRef(null);
+const tableScrollRef = useRef(null);
+```
+
+### Required CSS
+
+Add this CSS to force the scrollbar to appear and enable proper syncing:
+
+```css
+/* FORCE SCROLLBARS TO APPEAR */
+.table-responsive table {
+    width: max-content !important;  /* Forces table to expand to full width */
+    min-width: 100%;                /* At minimum, fill the container */
+    border-collapse: collapse;
+}
+
+/* Ensure the wrapper respects screen width so overflow triggers scrollbar */
+.table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #ddd;
+    background: #fff;
+}
+
+/* Grid layout wrapper prevents table from blowing out page width */
+.page-table-wrapper {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+}
+```
+
+### Required useEffect (Scroll Syncing)
+
+This effect synchronizes the top and bottom scrollbars and dynamically shows/hides the top scrollbar based on whether scrolling is needed:
+
+```javascript
+useEffect(() => {
+    const topScroll = topScrollRef.current;
+    const tableScroll = tableScrollRef.current;
+
+    if (!topScroll || !tableScroll) return;
+
+    const syncScrollbars = () => {
+        const table = tableScroll.querySelector('table');
+        if (!table) return;
+
+        const scrollWidth = table.offsetWidth;
+        const containerWidth = tableScroll.clientWidth;
+
+        // Set the top scrollbar spacer width to match the table
+        const topSpacer = topScroll.firstElementChild;
+        if (topSpacer) {
+            topSpacer.style.width = `${scrollWidth}px`;
+        }
+
+        // Only show top scrollbar if scrolling is actually needed
+        if (scrollWidth > containerWidth) {
+            topScroll.style.display = 'block';
+            topScroll.style.opacity = '1';
+        } else {
+            topScroll.style.display = 'none';
+        }
+    };
+
+    // Sync scroll positions between top and bottom scrollbars
+    const handleTopScroll = () => {
+        if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+            tableScroll.scrollLeft = topScroll.scrollLeft;
+        }
+    };
+
+    const handleTableScroll = () => {
+        if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+            topScroll.scrollLeft = tableScroll.scrollLeft;
+        }
+    };
+
+    topScroll.addEventListener('scroll', handleTopScroll);
+    tableScroll.addEventListener('scroll', handleTableScroll);
+
+    // ResizeObserver watches for any size change (window resize, data load, details open)
+    const observer = new ResizeObserver(() => {
+        window.requestAnimationFrame(syncScrollbars);
+    });
+
+    const tableElement = tableScroll.querySelector('table');
+    if (tableElement) observer.observe(tableElement);
+    observer.observe(tableScroll);
+
+    syncScrollbars();
+
+    return () => {
+        topScroll.removeEventListener('scroll', handleTopScroll);
+        tableScroll.removeEventListener('scroll', handleTableScroll);
+        observer.disconnect();
+    };
+}, [isTableOpen, windowWidth]);
+```
+
+### JSX Structure
+
+```jsx
+<div className="page-table-wrapper">
+    <details 
+        className="data-table"
+        onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
+    >
+        <summary role="button" aria-expanded={isTableOpen}>
+            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
+            {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+            <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
+        </summary>
+
+        {/* TOP SCROLLBAR - Hidden on mobile (touch scrolling is natural there) */}
+        <div 
+            ref={topScrollRef}
+            style={{ 
+                width: '100%', 
+                overflowX: 'auto', 
+                overflowY: 'hidden',
+                marginBottom: '0px',
+                marginTop: '10px',
+                display: windowWidth <= 768 ? 'none' : 'block' 
+            }}
+            aria-hidden="true"
+        >
+            {/* Inner spacer - width set dynamically by useEffect */}
+            <div style={{ height: '20px' }}></div>
+        </div>
+
+        {/* BOTTOM (REAL) TABLE with scrollbar */}
+        <div 
+            ref={tableScrollRef}
+            className="table-responsive" 
+            role="region" 
+            aria-label={lang === 'en' ? 'Data Table' : 'Tableau de données'}
+            tabIndex="0"
+        >
+            <table className="table table-striped table-hover">
+                <caption className="wb-inv">...</caption>
+                <thead>...</thead>
+                <tbody>...</tbody>
+            </table>
+        </div>
+
+        {/* Download buttons */}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+            <button onClick={() => downloadTableAsCSV()}>...</button>
+            <button onClick={() => downloadTableAsDocx()}>...</button>
+        </div>
+    </details>
+</div>
+```
+
+### How It Works
+
+1. **CSS `width: max-content`** forces the table to expand to its full natural width based on content, guaranteeing overflow when the table is wider than the viewport.
+
+2. **ResizeObserver** watches the table for any size changes (window resize, new data, `<details>` opening) and updates the top scrollbar spacer width to match.
+
+3. **Scroll event listeners** keep both scrollbars synchronized - scrolling one automatically scrolls the other.
+
+4. **Mobile hiding** (`windowWidth <= 768`) hides the top scrollbar on mobile devices where touch scrolling is natural and a second scrollbar would be redundant.
+
+5. **`requestAnimationFrame`** prevents "ResizeObserver loop" errors by deferring the sync callback.
+
+### Page 29 Exception (Fully Responsive Table)
+
+Page 29 uses a different approach where the table squishes/stretches to fit the viewport instead of scrolling. Use this pattern for tables that should always fit on screen:
+
+```css
+/* Table wrapper - keep standard */
+.page29-table-wrapper {
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* FORCE table to fit screen width and resize (Squish/Stretch) */
+.page29-table-wrapper table {
+    width: 100% !important;      /* Forces table to fill the container */
+    min-width: 0 !important;     /* Allows table to shrink when zoomed in */
+    max-width: 100% !important;  /* Prevents it from going wider than screen */
+    table-layout: auto;          /* Lets columns resize based on text */
+}
+
+/* Disable the scroll container behavior */
+.page29-table-wrapper .table-responsive {
+    overflow-x: visible !important; /* Removes the scrollbar */
+    width: 100%;
+}
 ```
 
 ---

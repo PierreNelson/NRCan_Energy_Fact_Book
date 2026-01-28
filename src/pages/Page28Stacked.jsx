@@ -6,7 +6,7 @@ import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
-const Page28 = () => {
+const Page28Stacked = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState({ yearlyData: [], summary: {} });
     const [loading, setLoading] = useState(true);
@@ -200,7 +200,7 @@ const Page28 = () => {
     };
 
     const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || document.querySelector('.page28-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
+        const plotElement = plotEl || document.querySelector('.page28h-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement) {
             alert('Could not find chart element. Please try again.');
             return;
@@ -428,11 +428,11 @@ const Page28 = () => {
 
     return (
         <main
-            id="page-28"
+            id="page-28h"
             tabIndex="-1"
-            className="page-content page-28"
+            className="page-content page-28h"
             role="main"
-            aria-labelledby="page28-title"
+            aria-labelledby="page28h-title"
             style={{ backgroundColor: '#ffffff' }}
         >
             <style>{`
@@ -446,13 +446,13 @@ const Page28 = () => {
         white-space: nowrap;
     }
 
-    .page-28 {
+    .page-28h {
         width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
         margin-left: -${layoutPadding?.left || 55}px;
         margin-right: -${layoutPadding?.right || 15}px;
     }
 
-    .page28-container {
+    .page28h-container {
         padding-left: ${layoutPadding?.left || 55}px;
         padding-right: ${layoutPadding?.right || 15}px;
         padding-top: 30px;
@@ -461,7 +461,7 @@ const Page28 = () => {
         box-sizing: border-box;
     }
 
-    .page28-title {
+    .page28h-title {
         font-family: Arial, sans-serif;
         font-size: 2rem;
         font-weight: bold;
@@ -469,38 +469,40 @@ const Page28 = () => {
         margin: 0 0 20px 0;
     }
 
-    .page28-content-row {
+    /* ALWAYS COLUMN LAYOUT - No media query switching */
+    .page28h-content-row {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         flex-wrap: wrap;
-        gap: 40px;
+        gap: 30px;
         align-items: flex-start;
     }
 
-    .page28-left-column {
-        flex: 2;
+    .page28h-left-column {
+        flex: none;
+        width: 100%;
         min-width: 0;
         order: 0;
     }
 
-    .page28-right-column {
-        flex: 1;
-        min-width: 280px;
-        max-width: 350px;
-        order: 1;
-    }
-
-    .page28-data-table-section {
+    .page28h-right-column {
+        flex: none;
         width: 100%;
+        max-width: 100%;
         order: 2;
     }
 
-    .page28-bullets {
+    .page28h-data-table-section {
+        width: 100%;
+        order: 1;
+    }
+
+    .page28h-bullets {
         margin: 0 0 20px 0;
         padding-left: 20px;
     }
 
-    .page28-bullets li {
+    .page28h-bullets li {
         font-family: Arial, sans-serif;
         font-size: 1rem;
         line-height: 1.6;
@@ -508,7 +510,7 @@ const Page28 = () => {
         color: #333;
     }
 
-    .page28-sidebar {
+    .page28h-sidebar {
         background-color: #aa9c7a;
         padding: 20px;
         border-radius: 3px;
@@ -518,27 +520,27 @@ const Page28 = () => {
         color: #333;
     }
 
-    .page28-sidebar-title {
+    .page28h-sidebar-title {
         font-weight: bold;
         font-size: 1.15rem;
         margin-bottom: 10px;
     }
 
-    .page28-sidebar p {
+    .page28h-sidebar p {
         margin: 0 0 10px 0;
     }
 
-    .page28-chart {
+    .page28h-chart {
         position: relative;
         width: 100%;
         margin-top: 20px;
     }
 
-    .page28-chart .js-plotly-plot {
-        height: 500px !important;
+    .page28h-chart .js-plotly-plot {
+        height: 450px !important;
     }
 
-    .page28-chart-title {
+    .page28h-chart-title {
         font-family: Arial, sans-serif;
         font-size: 1.1rem;
         font-weight: bold;
@@ -547,7 +549,7 @@ const Page28 = () => {
         color: #333;
     }
 
-    .page28-custom-legend {
+    .page28h-custom-legend {
         display: flex;
         justify-content: center;
         gap: 40px;
@@ -555,13 +557,13 @@ const Page28 = () => {
         flex-wrap: wrap;
     }
 
-    .page28-legend-group {
+    .page28h-legend-group {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .page28-legend-group-title {
+    .page28h-legend-group-title {
         font-family: Arial, sans-serif;
         font-size: 0.85rem;
         font-weight: bold;
@@ -569,13 +571,13 @@ const Page28 = () => {
         color: #333;
     }
 
-    .page28-legend-items {
+    .page28h-legend-items {
         display: flex;
         flex-direction: column;
         gap: 4px;
     }
 
-    .page28-legend-item {
+    .page28h-legend-item {
         display: flex;
         align-items: center;
         font-family: Arial, sans-serif;
@@ -583,14 +585,14 @@ const Page28 = () => {
         color: #333;
     }
 
-    .page28-legend-color {
+    .page28h-legend-color {
         width: 20px;
         height: 12px;
         margin-right: 6px;
         display: inline-block;
     }
 
-    .page28-legend-line {
+    .page28h-legend-line {
         width: 20px;
         height: 2px;
         margin-right: 6px;
@@ -598,12 +600,12 @@ const Page28 = () => {
         border-top: 2px dotted;
     }
 
-    .page28-table-wrapper {
+    .page28h-table-wrapper {
         margin-top: 20px;
         width: 100%;
     }
 
-    .page28-table-wrapper summary {
+    .page28h-table-wrapper summary {
         cursor: pointer;
         font-weight: bold;
         padding: 10px;
@@ -614,65 +616,44 @@ const Page28 = () => {
         list-style: none;
     }
 
-    .page28-table-wrapper summary::-webkit-details-marker {
+    .page28h-table-wrapper summary::-webkit-details-marker {
         display: none;
     }
 
-    .page28-table-wrapper .table-responsive {
+    .page28h-table-wrapper .table-responsive {
         width: 100%;
     }
 
-    @media (max-width: 1280px) {
-        .page28-content-row {
-            flex-direction: column;
-        }
-        .page28-left-column {
-            order: 0;
-            width: 100%;
-        }
-        .page28-data-table-section {
-            order: 1;
-        }
-        .page28-right-column {
-            max-width: 100%;
-            width: 100%;
-            order: 2;
-        }
-        .page28-chart .js-plotly-plot {
-            height: 450px !important;
-        }
-    }
-
     @media (max-width: 960px) {
-        .page28-chart .js-plotly-plot {
+        .page28h-chart .js-plotly-plot {
             height: 400px !important;
         }
     }
     @media (max-width: 768px) {
-        .page28-title {
+        .page28h-title {
             font-size: 1.6rem;
         }
-        .page28-custom-legend {
+        .page28h-custom-legend {
             flex-direction: column;
             gap: 15px;
             align-items: flex-start;
         }
-           .page28-chart .js-plotly-plot {
+           .page28h-chart .js-plotly-plot {
             height: 350px !important;
         }
     }
 
     @media (max-width: 480px) {
-        .page28-title {
+        .page28h-title {
             font-size: 1.4rem;
         }
-        .page28-chart .js-plotly-plot {
+        .page28h-chart .js-plotly-plot {
             height: 300px !important;
         }
     }
 
     /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
-    .page28-table-wrapper {
+    .page28h-table-wrapper {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         width: 100%;
@@ -695,14 +676,14 @@ const Page28 = () => {
     }
 `}</style>
 
-            <div className="page28-container">
-                <h1 id="page28-title" className="page28-title">
+            <div className="page28h-container">
+                <h1 id="page28h-title" className="page28h-title">
                     {getText('page28_title', lang)}
                 </h1>
 
-                <div className="page28-content-row">
-                    <div className="page28-left-column">
-                        <ul className="page28-bullets">
+                <div className="page28h-content-row">
+                    <div className="page28h-left-column">
+                        <ul className="page28h-bullets">
                             <li aria-label={bullet1AriaLabel}>
                                 <span aria-hidden="true">
                                     {getText('page28_bullet1_part1', lang)}
@@ -738,7 +719,7 @@ const Page28 = () => {
                             </li>
                         </ul>
 
-                        <div className="page28-chart" style={{ position: 'relative' }}>
+                        <div className="page28h-chart" style={{ position: 'relative' }}>
                             <h2 className="wb-inv">{chartTitle}</h2>
 
                             <div role="region" aria-label={getChartSummary()}>
@@ -902,7 +883,7 @@ const Page28 = () => {
                                                     lastClickRef.current = { time: currentTime, seriesIndex, pointIndex };
                                                     
                                                     if (!isDoubleTap) {
-                                                        return; // Single tap: show hover label only
+                                                        return;
                                                     }
                                                 }
 
@@ -932,37 +913,37 @@ const Page28 = () => {
                                 </figure>
                             </div>
 
-                            <div className="page28-custom-legend" aria-hidden="true">
-                                <div className="page28-legend-group">
-                                    <div className="page28-legend-group-title">{lang === 'en' ? 'Project value' : 'Valeur des projets'}</div>
-                                    <div className="page28-legend-items">
-                                        <div className="page28-legend-item">
-                                            <span className="page28-legend-color" style={{ backgroundColor: COLORS.oil_gas_value }}></span>
+                            <div className="page28h-custom-legend" aria-hidden="true">
+                                <div className="page28h-legend-group">
+                                    <div className="page28h-legend-group-title">{lang === 'en' ? 'Project value' : 'Valeur des projets'}</div>
+                                    <div className="page28h-legend-items">
+                                        <div className="page28h-legend-item">
+                                            <span className="page28h-legend-color" style={{ backgroundColor: COLORS.oil_gas_value }}></span>
                                             <span>{oilGasLabel}</span>
                                         </div>
-                                        <div className="page28-legend-item">
-                                            <span className="page28-legend-color" style={{ backgroundColor: COLORS.electricity_value }}></span>
+                                        <div className="page28h-legend-item">
+                                            <span className="page28h-legend-color" style={{ backgroundColor: COLORS.electricity_value }}></span>
                                             <span>{electricityLabel}</span>
                                         </div>
-                                        <div className="page28-legend-item">
-                                            <span className="page28-legend-color" style={{ backgroundColor: COLORS.other_value }}></span>
+                                        <div className="page28h-legend-item">
+                                            <span className="page28h-legend-color" style={{ backgroundColor: COLORS.other_value }}></span>
                                             <span>{otherLabel}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="page28-legend-group">
-                                    <div className="page28-legend-group-title">{lang === 'en' ? 'Number of projects' : 'Nombre de projets'}</div>
-                                    <div className="page28-legend-items">
-                                        <div className="page28-legend-item">
-                                            <span className="page28-legend-line" style={{ borderColor: COLORS.oil_gas_projects }}></span>
+                                <div className="page28h-legend-group">
+                                    <div className="page28h-legend-group-title">{lang === 'en' ? 'Number of projects' : 'Nombre de projets'}</div>
+                                    <div className="page28h-legend-items">
+                                        <div className="page28h-legend-item">
+                                            <span className="page28h-legend-line" style={{ borderColor: COLORS.oil_gas_projects }}></span>
                                             <span>{oilGasLabel}</span>
                                         </div>
-                                        <div className="page28-legend-item">
-                                            <span className="page28-legend-line" style={{ borderColor: COLORS.electricity_projects }}></span>
+                                        <div className="page28h-legend-item">
+                                            <span className="page28h-legend-line" style={{ borderColor: COLORS.electricity_projects }}></span>
                                             <span>{electricityLabel}</span>
                                         </div>
-                                        <div className="page28-legend-item">
-                                            <span className="page28-legend-line" style={{ borderColor: COLORS.other_projects }}></span>
+                                        <div className="page28h-legend-item">
+                                            <span className="page28h-legend-line" style={{ borderColor: COLORS.other_projects }}></span>
                                             <span>{otherLabel}</span>
                                         </div>
                                     </div>
@@ -971,43 +952,9 @@ const Page28 = () => {
                         </div>
                     </div>
 
-                    <aside className="page28-right-column">
-                        <div className="page28-sidebar">
-                            <h3 className="page28-sidebar-title">{getText('page28_sidebar_title', lang)}</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                {getText('page28_sidebar_content', lang).split(/<br\s*\/?>/i).map((para, idx) => {
-                                    if (!para.trim()) return null;
-                                    let audioLabel = stripHtml(para);
-                                    if (lang === 'en') {
-                                        audioLabel = audioLabel.replace(/\$(\d+) million/g, '$1 million dollars');
-                                    }
-                                    let visualHtml = para;
-                                    if (lang === 'en') {
-                                        visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
-                                    } else {
-                                        visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
-                                    }
-
-                                    return (
-                                        <li 
-                                            key={idx} 
-                                            style={{ marginBottom: '10px', lineHeight: '1.6', fontFamily: 'Arial, sans-serif', color: '#333' }}
-                                            aria-label={audioLabel}
-                                        >
-                                            <span 
-                                                aria-hidden="true" 
-                                                dangerouslySetInnerHTML={{ __html: visualHtml }} 
-                                            />
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </div>
-                    </aside>
-
-                    <div className="page28-data-table-section">
+                    <div className="page28h-data-table-section">
                         <details
-                            className="page28-table-wrapper"
+                            className="page28h-table-wrapper"
                             onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
                         >
                             <summary role="button" aria-expanded={isTableOpen}>
@@ -1154,10 +1101,44 @@ const Page28 = () => {
                             </div>
                         </details>
                     </div>
+
+                    <aside className="page28h-right-column">
+                        <div className="page28h-sidebar">
+                            <h3 className="page28h-sidebar-title">{getText('page28_sidebar_title', lang)}</h3>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                {getText('page28_sidebar_content', lang).split(/<br\s*\/?>/i).map((para, idx) => {
+                                    if (!para.trim()) return null;
+                                    let audioLabel = stripHtml(para);
+                                    if (lang === 'en') {
+                                        audioLabel = audioLabel.replace(/\$(\d+) million/g, '$1 million dollars');
+                                    }
+                                    let visualHtml = para;
+                                    if (lang === 'en') {
+                                        visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
+                                    } else {
+                                        visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
+                                    }
+
+                                    return (
+                                        <li 
+                                            key={idx} 
+                                            style={{ marginBottom: '10px', lineHeight: '1.6', fontFamily: 'Arial, sans-serif', color: '#333' }}
+                                            aria-label={audioLabel}
+                                        >
+                                            <span 
+                                                aria-hidden="true" 
+                                                dangerouslySetInnerHTML={{ __html: visualHtml }} 
+                                            />
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </main>
     );
 };
 
-export default Page28;
+export default Page28Stacked;

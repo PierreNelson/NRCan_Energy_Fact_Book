@@ -6,7 +6,7 @@ import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
-const Page25 = () => {
+const Page25Stacked = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
@@ -133,7 +133,6 @@ const Page25 = () => {
             .finally(() => {
                 setLoading(false);
             });
-        import('./Page26');
     }, []);
 
     useEffect(() => {
@@ -184,7 +183,7 @@ const Page25 = () => {
 
     const CATEGORY_ORDER = ['environmental', 'fuel_energy_pipelines', 'transport', 'education', 'health_housing', 'public_safety'];
     const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || document.querySelector('.page25-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
+        const plotElement = plotEl || document.querySelector('.page25h-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement) {
             console.error('Plot element not found');
             alert('Could not find chart element. Please try again.');
@@ -413,7 +412,7 @@ const Page25 = () => {
         const cellUnitSR = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
         const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
         const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
-        const captionId = 'page25-table-caption';
+        const captionId = 'page25h-table-caption';
 
         return (
             <details 
@@ -651,7 +650,7 @@ const Page25 = () => {
         <main 
             id="main-content"
             tabIndex="-1"
-            className="page-content page-25" 
+            className="page-content page-25h" 
             role="main"
             aria-label={getText('page25_title', lang)}
             style={{
@@ -676,13 +675,13 @@ const Page25 = () => {
                     white-space: nowrap;
                 }
 
-                .page-25 {
+                .page-25h {
                     margin-right: -${layoutPadding?.right || 15}px;
                     width: calc(100% + ${layoutPadding?.right || 15}px);
                     padding-right: ${layoutPadding?.right || 15}px; 
                 }
 
-                .page25-container {
+                .page25h-container {
                     width: 100%;
                     padding: 0; 
                     display: flex;
@@ -691,94 +690,74 @@ const Page25 = () => {
                     min-height: 100%;
                 }
 
-                .page25-content-row {
+                /* ALWAYS COLUMN LAYOUT - No media query switching */
+                .page25h-content-row {
                     display: flex;
-                    flex-direction: row;
+                    flex-direction: column;
                     flex: 1 1 auto;
                     min-height: 0;
-                    align-items: flex-start;
-                    gap: 40px;
+                    align-items: center;
+                    gap: 20px;
                 }
 
-                .page25-slider-region {
+                .page25h-slider-region {
                     width: 100%;
                     position: relative;
                     z-index: 50;
                 }
-                .page25-slider-track { flex: 1; }
+                .page25h-slider-track { flex: 1; }
 
-                .page25-chart-column {
-                    width: 60%;
+                .page25h-chart-column {
+                    width: 100%;
                     height: auto;
                     min-height: 500px;
+                    max-height: none;
                     position: relative;
-                    margin-bottom: 20px;
+                    margin-bottom: 30px;
+                    overflow: visible;
                 }
 
-                .page25-chart-column details {
+                .page25h-chart-column details {
                     width: 100%;
                     position: relative;
                     z-index: 50;
                 }
 
-                .layout-stacked {
-                    flex-direction: column !important;
-                    height: auto !important;
-                    align-items: center !important;
-                    flex: 0 0 auto !important;
-                }
-                .layout-stacked .page25-chart-column {
-                    width: 100% !important;
-                    height: auto !important;
-                    max-height: none !important;
-                    margin-bottom: 30px !important;
-                    overflow: visible !important;
-                }
-                .layout-stacked .page25-text-column {
-                    width: 100% !important;
-                    padding-left: 0 !important;
-                    padding-right: 0 !important;
-                    margin-top: 20px !important;
-                }
-                .layout-stacked figure {
-                    height: 500px !important;
-                    min-height: 500px !important;
+                .page25h-chart-column figure {
+                    height: 480px !important;
+                    min-height: 480px !important;
                 }
 
-                .page25-chart-column figure {
-                    height: 450px;
-                    min-height: 450px;
-                }
-
-                .page25-text-column {
-                    width: 40%;
-                    padding-left: 25px;
+                .page25h-text-column {
+                    width: 100%;
+                    padding-left: 0;
                     padding-right: 0;
                     padding-top: 0;
-                    margin-top: 0;
+                    margin-top: 20px;
+                    margin-bottom: 40px;
                 }
 
-                .page25-definition-box {
+                .page25h-definition-box {
                     position: relative;
                     background-color: #aa9c7a;
                     padding: 20px 30px;
                     border-radius: 3px;
                     width: 100%;
-                    margin-top: 10px;
+                    margin-top: -50px;
                 }
-                .page25-definition-box h2 {
+                .page25h-definition-box h2 {
                     text-align: center !important;
                     padding-left: 0 !important;
                 }
 
-                .page25-year-selector {
+                .page25h-year-selector {
                     display: flex;
                     align-items: center;
                     margin-bottom: 10px;
                     margin-top: 5px;
                 }
 
-                .page25-year-label {
+                .page25h-year-label {
                     font-weight: bold;
                     margin-right: 15px;
                     font-size: 18px;
@@ -786,7 +765,7 @@ const Page25 = () => {
                     white-space: nowrap;
                 }
 
-                .page25-year-select {
+                .page25h-year-select {
                     padding: 8px 12px;
                     font-size: 16px;
                     font-family: Arial, sans-serif;
@@ -797,11 +776,11 @@ const Page25 = () => {
                     min-width: 100px;
                 }
 
-                .page25-year-select:hover {
+                .page25h-year-select:hover {
                     border-color: #007bff;
                 }
 
-                .page25-year-select:focus {
+                .page25h-year-select:focus {
                     outline: 2px solid #005fcc;
                     outline-offset: 2px;
                     border-color: #007bff;
@@ -810,79 +789,49 @@ const Page25 = () => {
                 .js-plotly-plot .plotly .slice path.textline { display: none !important; }
                 .js-plotly-plot .plotly g.slice path[class*="textline"] { display: none !important; }
 
-                @media (max-width: 1800px) {
-                    .page25-content-row {
-                        flex-direction: column;
-                        height: auto;
-                        align-items: center;
-                    }
-
-                    .page25-chart-column {
-                        width: 100%;
-                        height: auto;
-                        min-height: 500px;
-                        max-height: none;
-                        margin-bottom: 30px;
-                    }
-
-                    .page25-chart-column figure {
-                        height: 480px !important;
-                        min-height: 480px !important;
-                    }
-
-                    .page25-text-column {
-                        width: 100%;
-                        padding-left: 0;
-                        padding-right: 0;
-                        margin-top: 20px;
-                        margin-bottom: 40px;
-                    }
-                }
-
                 @media (max-width: 960px) {
-                    .page25-year-ticks { display: none !important; }
+                    .page25h-year-ticks { display: none !important; }
 
-                    .page25-chart-column figure {
+                    .page25h-chart-column figure {
                         height: 520px !important;
                         min-height: 520px !important;
                     }
                 }
 
                 @media (max-width: 768px) {
-                    .page-25 { border-right: none !important; }
+                    .page-25h { border-right: none !important; }
 
-                    .page25-chart-column figure { 
+                    .page25h-chart-column figure { 
                         height: 320px !important; 
                         min-height: 320px !important; 
                     }
 
-                    .page25-chart-column {
+                    .page25h-chart-column {
                         height: auto !important; 
                         min-height: 340px !important; 
                         margin-bottom: 20px !important;
                     }
 
-                    .page25-slider-region {
+                    .page25h-slider-region {
                         flex-direction: column !important;
                         align-items: stretch !important;
                     }
-                    .page25-slider-label { margin-bottom: 10px; margin-right: 0 !important; }
+                    .page25h-slider-label { margin-bottom: 10px; margin-right: 0 !important; }
                 }
 
                 @media (max-width: 640px) {
-                    .page25-slider-region {
+                    .page25h-slider-region {
                         flex-direction: column !important;
                         align-items: stretch !important;
                     }
 
-                    .page25-chart-column,
-                    .layout-stacked .page25-chart-column { 
+                    .page25h-chart-column { 
                         width: 100% !important; 
                         height: auto !important; 
                         min-height: 500px !important; 
                         margin-bottom: 20px !important;
                     }
-                    .page25-chart-column figure { height: 480px !important; min-height: 480px !important; }
+                    .page25h-chart-column figure { height: 480px !important; min-height: 480px !important; }
                     .decorative-quote { display: none !important; }
 
                     input[type=range] { height: 44px !important; padding: 10px 0 !important; }
@@ -890,20 +839,19 @@ const Page25 = () => {
                 }
 
                 @media (max-width: 480px) {
-                    .page25-chart-column { min-height: 480px !important; margin-bottom: 20px !important; }
-                    .page25-chart-column figure { height: 480px !important; min-height: 480px !important; }
+                    .page25h-chart-column { min-height: 480px !important; margin-bottom: 20px !important; }
+                    .page25h-chart-column figure { height: 480px !important; min-height: 480px !important; }
                 }
 
                 @media (max-width: 384px) {
-                    .page25-chart-column,
-                    .layout-stacked .page25-chart-column {
+                    .page25h-chart-column {
                         width: 100% !important; 
                         height: auto !important; 
                         min-height: 400px !important; 
                         margin-bottom: 20px !important;
                     }
 
-                    .page25-chart-column figure { 
+                    .page25h-chart-column figure { 
                         height: 420px !important; 
                         min-height: 420px !important; 
                     }
@@ -911,10 +859,10 @@ const Page25 = () => {
 
                 details summary::-webkit-details-marker, details summary::marker { display: none; }
                 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-                .page25-table-btn-wrapper summary:focus {outline: none !important;}
+                .page25h-table-btn-wrapper summary:focus {outline: none !important;}
 
                 /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
-                .page25-table-wrapper {
+                .page25h-table-wrapper {
                     display: grid;
                     grid-template-columns: minmax(0, 1fr);
                     width: 100%;
@@ -937,7 +885,7 @@ const Page25 = () => {
                 }
             `}</style>
 
-            <div className="page25-container">
+            <div className="page25h-container">
                 <header 
                     role="region" 
                     aria-label={`${getText('page25_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
@@ -950,20 +898,20 @@ const Page25 = () => {
                         {getSubtitle()}
                     </p>
                 </header>
-                <div className="page25-year-selector">
+                <div className="page25h-year-selector">
                     <label 
-                        id="year-label-25"
-                        className="page25-year-label"
-                        htmlFor="year-select-25"
+                        id="year-label-25h"
+                        className="page25h-year-label"
+                        htmlFor="year-select-25h"
                     >
                         {getText('year_slider_label', lang)}
                     </label>
                     <select
-                        id="year-select-25"
-                        className="page25-year-select"
+                        id="year-select-25h"
+                        className="page25h-year-select"
                         value={year || maxYear}
                         onChange={(e) => setYear(parseInt(e.target.value))}
-                        aria-labelledby="year-label-25"
+                        aria-labelledby="year-label-25h"
                     >
                         {yearsList.map(y => (
                             <option key={y} value={y}>
@@ -981,14 +929,14 @@ const Page25 = () => {
                     {chartData && `${year}`}
                 </div>
 
-                <div className={`page25-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
+                <div className="page25h-content-row">
                     <div 
-                        className="page25-chart-column"
+                        className="page25h-chart-column"
                         role="region"
                         aria-label={`${lang === 'en' ? 'Infrastructure pie chart for' : 'Graphique circulaire des infrastructures pour'} ${year}. ${getChartDataSummary()}. ${lang === 'en' ? 'Expand the data table below for detailed values.' : 'Développez le tableau de données ci-dessous pour les valeurs détaillées.'}`}
                     >
                         {chartData && (
-                            <figure ref={chartRef} className="page25-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
+                            <figure ref={chartRef} className="page25h-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
                                 {selectedSlices !== null && (
                                     <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                 )}
@@ -997,7 +945,7 @@ const Page25 = () => {
                                     data={[{
                                         values: chartData.values,
                                         labels: pieLabels,
-                                        hole: windowWidth <= 480 ? 0.80 : windowWidth <= 768 ? 0.75 : windowWidth <= 1400 ? 0.73 : 0.70,
+                                        hole: windowWidth <= 480 ? 0.80 : windowWidth <= 768 ? 0.75 : 0.73,
                                         type: 'pie',
                                         marker: { 
                                             colors: (() => {
@@ -1116,7 +1064,7 @@ const Page25 = () => {
                                             lastClickRef.current = { time: currentTime, index: sliceIndex };
                                             
                                             if (!isDoubleTap) {
-                                                return; // Single tap: show hover label only
+                                                return;
                                             }
                                         }
 
@@ -1159,17 +1107,17 @@ const Page25 = () => {
                             </figure>
                         )}
 
-                        <div className="page25-table-wrapper">
+                        <div className="page25h-table-wrapper">
                             {getAccessibleDataTable()}
                         </div>
                     </div>
 
                     <aside 
-                        className="page25-text-column"
+                        className="page25h-text-column"
                         role="region"
                         aria-label={getRightSideText()}
                     >
-                        <div className="page25-definition-box" aria-hidden="true">
+                        <div className="page25h-definition-box" aria-hidden="true">
                             <h2 style={{ fontSize: '1.15rem', fontWeight: 'bold', textAlign: 'center', color: '#333', margin: '0 0 15px 0px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
                                 {getText('infra_definition_title', lang)}
                             </h2>
@@ -1211,4 +1159,4 @@ const Page25 = () => {
     );
 };
 
-export default Page25;
+export default Page25Stacked;

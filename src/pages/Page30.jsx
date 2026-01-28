@@ -27,6 +27,66 @@ const Page30 = () => {
     const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false);
     const companyDropdownRef = useRef(null);
     const provinceDropdownRef = useRef(null);
+    const topScrollRef = useRef(null);
+    const tableScrollRef = useRef(null);
+
+    useEffect(() => {
+        const topScroll = topScrollRef.current;
+        const tableScroll = tableScrollRef.current;
+
+        if (!topScroll || !tableScroll) return;
+
+        const syncScrollbars = () => {
+            const table = tableScroll.querySelector('table');
+            if (!table) return;
+
+            const scrollWidth = table.offsetWidth;
+            const containerWidth = tableScroll.clientWidth;
+
+            const topSpacer = topScroll.firstElementChild;
+            if (topSpacer) {
+                topSpacer.style.width = `${scrollWidth}px`;
+            }
+
+            if (scrollWidth > containerWidth) {
+                topScroll.style.display = 'block';
+                topScroll.style.opacity = '1';
+            } else {
+                topScroll.style.display = 'none';
+            }
+        };
+
+        const handleTopScroll = () => {
+            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+                tableScroll.scrollLeft = topScroll.scrollLeft;
+            }
+        };
+
+        const handleTableScroll = () => {
+            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+                topScroll.scrollLeft = tableScroll.scrollLeft;
+            }
+        };
+
+        topScroll.addEventListener('scroll', handleTopScroll);
+        tableScroll.addEventListener('scroll', handleTableScroll);
+
+        const observer = new ResizeObserver(() => {
+            window.requestAnimationFrame(syncScrollbars);
+        });
+
+        const tableElement = tableScroll.querySelector('table');
+        if (tableElement) observer.observe(tableElement);
+        observer.observe(tableScroll);
+
+        syncScrollbars();
+
+        return () => {
+            topScroll.removeEventListener('scroll', handleTopScroll);
+            tableScroll.removeEventListener('scroll', handleTableScroll);
+            observer.disconnect();
+        };
+    }, [isTableOpen, windowWidth]);
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
@@ -1071,6 +1131,36 @@ const Page30 = () => {
                         }
                     }
                 }
+
+                /* FIXED: Grid layout with minmax(0, 1fr) prevents the table from 
+                   blowing out the width of the page, forcing the scrollbar to appear. */
+                .page30-table-wrapper {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr);
+                    width: 100%;
+                    margin-top: 20px;
+                }
+
+                .page30-data-table {
+                    width: 100%;
+                }
+
+                /* This is the actual scrolling box */
+                .page30-table-wrapper .table-responsive {
+                    display: block;
+                    width: 100%;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                    border: 1px solid #ddd;
+                    background: #fff;
+                }
+
+                /* FORCE SCROLLBARS TO APPEAR */
+                .page30-table-wrapper .table-responsive table {
+                    width: max-content !important;
+                    min-width: 100%;
+                    border-collapse: collapse;
+                }
             `}</style>
 
             <div className="wb-inv" role="region" aria-label={lang === 'en' ? 'Page summary' : 'Résumé de la page'}>
@@ -1178,6 +1268,7 @@ const Page30 = () => {
                     </aside>
                 </div>
 
+                <div className="page30-table-wrapper">
                 <details 
                     className="page30-data-table"
                     onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
@@ -1219,8 +1310,28 @@ const Page30 = () => {
                         </span>
                     </div>
 
-                    <div className="table-responsive" role="region" style={{ overflowX: 'auto' }}>
-                        <table className="table table-striped table-hover" style={{ minWidth: '900px', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <div 
+                        ref={topScrollRef}
+                        style={{ 
+                            width: '100%', 
+                            overflowX: 'auto', 
+                            overflowY: 'hidden',
+                            marginBottom: '0px',
+                            display: windowWidth <= 768 ? 'none' : 'block' 
+                        }}
+                        aria-hidden="true"
+                    >
+                        <div style={{ height: '20px' }}></div>
+                    </div>
+
+                    <div 
+                        ref={tableScrollRef}
+                        className="table-responsive" 
+                        role="region" 
+                        aria-label={lang === 'en' ? 'Data Table' : 'Tableau de données'}
+                        tabIndex="0"
+                    >
+                        <table className="table table-striped table-hover" style={{ fontSize: '12px' }}>
                             <caption className="wb-inv">
                                 {lang === 'en' 
                                     ? 'Major energy projects data including project name, company, province, capital cost, status, and clean technology indicator. Click column headers to sort.' 
@@ -1515,6 +1626,7 @@ const Page30 = () => {
                         </button>
                     </div>
                 </details>
+                </div>
             </div>
         </main>
     );

@@ -7,7 +7,7 @@ import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
 
-const Page24 = () => {
+const Page24Stacked = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -112,7 +112,6 @@ const Page24 = () => {
                 setError(err.message || 'Failed to load data');
             })
             .finally(() => setLoading(false));
-        import('./Page25');
     }, []);
 
     useEffect(() => {
@@ -238,10 +237,10 @@ const Page24 = () => {
         const cellUnitText = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
         const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
         const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
-        const captionId = 'page24-table-caption';
+        const captionId = 'page24h-table-caption';
 
         return (
-            <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)} className="page24-table-btn-wrapper" style={{ marginTop: '20px', marginBottom: '10px' }}>
+            <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)} className="page24h-table-btn-wrapper" style={{ marginTop: '20px', marginBottom: '10px' }}>
                 <summary 
                     role="button" 
                     aria-expanded={isTableOpen}
@@ -478,7 +477,7 @@ const Page24 = () => {
         saveAs(blob, lang === 'en' ? 'capital_expenditures_energy_table.docx' : 'depenses_en_capital_energie_tableau.docx');
     };
     const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || document.querySelector('.page24-chart.js-plotly-plot') || document.querySelector('.page24-chart-wrapper .js-plotly-plot');
+        const plotElement = plotEl || document.querySelector('.page24h-chart.js-plotly-plot') || document.querySelector('.page24h-chart-wrapper .js-plotly-plot');
         if (!plotElement) {
             console.error('Plot element not found');
             alert('Could not find chart element. Please try again.');
@@ -573,15 +572,15 @@ const Page24 = () => {
         const isIsolated = others.every(o => hiddenSeries.includes(o)) && !hiddenSeries.includes(id);
         setHiddenSeries(isIsolated ? [] : others);
     };
-    const isColumnFormat = windowWidth <= 1400;
+
     const chartMarginLeft = 50;
-    const chartMarginRight = isColumnFormat ? 0 : 15;
+    const chartMarginRight = 0;
 
     return (
         <main 
             id="main-content"
             tabIndex="-1"
-            className="page-content page-24" 
+            className="page-content page-24h" 
             role="main"
             aria-label={getText('page24_title', lang)}
             style={{
@@ -605,31 +604,24 @@ const Page24 = () => {
                     white-space: nowrap;
                 }
 
-                .page24-table-btn-wrapper summary::-webkit-details-marker,
-                .page24-table-btn-wrapper summary::marker {
+                .page24h-table-btn-wrapper summary::-webkit-details-marker,
+                .page24h-table-btn-wrapper summary::marker {
                     display: none;
                 }
 
-                .page-24 {
+                .page-24h {
                     margin-left: -${layoutPadding?.left || 55}px;
                     width: calc(100% + ${layoutPadding?.left || 55}px);
                     padding-left: ${layoutPadding?.left || 55}px; 
                 }
 
-                .page24-chart-wrapper {
+                .page24h-chart-wrapper {
                     position: relative;
-                    width: calc(100% + 30px);
+                    width: 100%;
                     margin-left: 0px;
                 }
 
-                @media (max-width: 1400px) {
-                    .page24-chart-wrapper {
-                        width: 100%;
-                        margin-left: 0;
-                    }
-                }
-
-                .page24-chart-wrapper div[role="button"]:focus {
+                .page24h-chart-wrapper div[role="button"]:focus {
                     outline: none !important;
                     box-shadow: none !important;
                 }
@@ -645,7 +637,7 @@ const Page24 = () => {
                     margin-bottom: 10px;
                 }
 
-                .page24-legend {
+                .page24h-legend {
                     display: flex;
                     flex-wrap: wrap;
                     gap: 15px;
@@ -656,36 +648,39 @@ const Page24 = () => {
                     box-sizing: border-box;
                 }
 
-                .page24-table-btn-wrapper {
+                .page24h-table-btn-wrapper {
                     width: 100%;
                 }
 
-                .page24-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; }
-                .page24-header { padding-top: 20px; padding-bottom: 20px; }
+                .page24h-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; }
+                .page24h-header { padding-top: 20px; padding-bottom: 20px; }
 
-                .page24-content-row { 
+                /* ALWAYS COLUMN LAYOUT - No media query switching */
+                .page24h-content-row { 
                     display: flex; 
-                    flex-direction: row; 
+                    flex-direction: column; 
                     flex: 1; 
                     width: 100%; 
                     overflow: visible;
-                    gap: 40px;
+                    gap: 20px;
                 }
 
-                .page24-chart-column { 
-                    width: 55%; 
+                .page24h-chart-column { 
+                    width: 100%; 
+                    margin-bottom: 30px;
                 }
 
-                .page24-text-column {
-                    width: 45%;
-                    padding-top: 30px;
-                    padding-left: 30px; 
+                .page24h-text-column {
+                    width: 100%;
+                    margin-top: -25px;
+                    margin-bottom: 25px;
+                    padding-top: 0;
+                    padding-left: 0; 
                     padding-right: 0;
                     box-sizing: border-box;
-                    min-width: 300px; 
                 }
 
-                .page24-chart-title {
+                .page24h-chart-title {
                     font-family: Arial, sans-serif;
                     font-size: 1.25rem;
                     font-weight: bold;
@@ -694,7 +689,7 @@ const Page24 = () => {
                     max-width: 100%;
                 }
 
-                .page24-legend-item {
+                .page24h-legend-item {
                     display: flex;
                     align-items: center;
                     font-family: Arial, sans-serif;
@@ -703,46 +698,40 @@ const Page24 = () => {
                     cursor: pointer;
                     user-select: none;
                 }
-                .page24-legend-color { width: 15px; height: 15px; margin-right: 8px; display: inline-block; }
+                .page24h-legend-color { width: 15px; height: 15px; margin-right: 8px; display: inline-block; }
 
                 .js-plotly-plot .plotly .modebar {
                     right: 20px !important;
                     top: 2px !important;
                 }
 
-                .page24-chart-wrapper button:focus,
+                .page24h-chart-wrapper button:focus,
                 .js-plotly-plot .plotly .modebar-btn:focus {
                     outline: none !important;
                     box-shadow: none !important;
                 }
 
-                .page24-chart { width: 100%; height: 300px; }
-
-                @media (max-width: 1400px) {
-                    .page24-content-row { flex-direction: column; }
-                    .page24-chart-column { width: 100%; margin-bottom: 30px; }
-                    .page24-text-column { width: 100%; padding-top: 0; padding-left: 0; }
-                }
+                .page24h-chart { width: 100%; height: 300px; }
 
                 @media (max-width: 640px) {
-                    .page-24 { 
+                    .page-24h { 
                         border-left: none !important; 
                         margin-left: 0;
                         width: 100%;
                         padding-left: 0;
                     }
-                    .page24-legend {
+                    .page24h-legend {
                         flex-direction: column !important;
                         align-items: flex-start !important;
                     }
                 }
 
                 @media (max-width: 480px) {
-                    .page24-chart { height: 275px; }
+                    .page24h-chart { height: 275px; }
                 }
 
                 /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
-                .page24-table-wrapper {
+                .page24h-table-wrapper {
                     display: grid;
                     grid-template-columns: minmax(0, 1fr);
                     width: 100%;
@@ -765,23 +754,23 @@ const Page24 = () => {
                 }
             `}</style>
 
-            <div className="page24-container">
-                <header className="page24-header">
+            <div className="page24h-container">
+                <header className="page24h-header">
                     <h1 style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: 0, lineHeight: 1.1 }}>
                         {renderTextWithHiddenAsterisk(getText('page24_title', lang))}
                     </h1>
                 </header>
 
-                <div className={`page24-content-row`}>
-                    <div className="page24-chart-column">
+                <div className={`page24h-content-row`}>
+                    <div className="page24h-chart-column">
 
                         <div className="chart-title-wrapper">
-                            <h2 className="page24-chart-title">
+                            <h2 className="page24h-chart-title">
                                 {renderTextWithHiddenAsterisk(chartTitle)}
                             </h2>
                         </div>
 
-                        <figure ref={chartRef} className="page24-chart-wrapper">
+                        <figure ref={chartRef} className="page24h-chart-wrapper">
                             {selectedPoints !== null && (
                                 <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                             )}
@@ -840,7 +829,7 @@ const Page24 = () => {
                                     paper_bgcolor: 'rgba(0,0,0,0)',
                                     plot_bgcolor: 'rgba(0,0,0,0)'
                                 }}
-                                className="page24-chart" 
+                                className="page24h-chart" 
                                 useResizeHandler={true} 
                                 onClick={(data) => {
                                     if (!data.points || data.points.length === 0) return;
@@ -857,7 +846,7 @@ const Page24 = () => {
                                         lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
                                         
                                         if (!isDoubleTap) {
-                                            return; // Single tap: show hover label only
+                                            return;
                                         }
                                     }
 
@@ -904,28 +893,28 @@ const Page24 = () => {
                             />
                         </figure>
 
-                        <div className="page24-legend" aria-hidden="true">
+                        <div className="page24h-legend" aria-hidden="true">
                             {legendItems.map((item) => (
                                 <div 
                                     key={item.id} 
-                                    className="page24-legend-item"
+                                    className="page24h-legend-item"
                                     style={{ cursor: 'default' }}
                                 >
-                                    <span className="page24-legend-color" style={{ backgroundColor: item.color }}></span>
+                                    <span className="page24h-legend-color" style={{ backgroundColor: item.color }}></span>
                                     <span>{item.label}</span>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="page24-table-wrapper">
+                        <div className="page24h-table-wrapper">
                             {getAccessibleDataTable()}
                         </div>
                     </div>
 
-                    <aside className="page24-text-column align-right-edge">
+                    <aside className="page24h-text-column align-right-edge">
                         <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '0', color: '#333' }}>
                             <li 
-                                className="page24-bullet" 
+                                className="page24h-bullet" 
                                 style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '1.5rem', marginTop: '20px' }}
                                 aria-label={lang === 'en' 
                                     ? `Capital expenditures in Canada's energy sector totaled ${formatBillionSR(totalLatestBillion)} in ${latestRow.year}, a decrease of ${declineFromPeakPct.toFixed(0)} percent from a peak in ${peakRow.year}.`
@@ -938,7 +927,7 @@ const Page24 = () => {
                             </li>
 
                             <li 
-                                className="page24-bullet" 
+                                className="page24h-bullet" 
                                 style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '1.5rem' }}
                                 aria-label={lang === 'en'
                                     ? `After reaching an eleven year low of ${formatBillionSR(low2020Billion)} in 2020, investment has rebounded by ${reboundFrom2020Pct.toFixed(0)} percent.`
@@ -951,7 +940,7 @@ const Page24 = () => {
                             </li>
 
                             <li 
-                                className="page24-bullet" 
+                                className="page24h-bullet" 
                                 style={{ marginBottom: '2px', lineHeight: '1.25', fontSize: '1.5rem' }}
                                 aria-label={lang === 'en'
                                     ? `Oil and gas extraction was the largest area of energy sector capital expenditure at ${formatBillionSR(oilGasBillion)} in ${latestRow.year}, followed by electrical power generation and distribution at ${formatBillionSR(electricityBillion)}.`
@@ -967,11 +956,11 @@ const Page24 = () => {
                 </div>
 
                 <aside className="wb-fnote" role="note" style={{ marginTop: 'auto', paddingTop: '10px', paddingBottom: '15px' }}>
-                    <h2 id="fn-page24" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <h2 id="fn-page24h" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl style={{ margin: 0 }}>
                         <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-page24" style={{ margin: 0 }}>
-                            <p className="page24-footnote" style={{
+                        <dd id="fn1-page24h" style={{ margin: 0 }}>
+                            <p className="page24h-footnote" style={{
                                 fontSize: '1rem',
                                 color: '#000000',
                                 marginBottom: '0',
@@ -988,4 +977,4 @@ const Page24 = () => {
     );
 };
 
-export default Page24;
+export default Page24Stacked;

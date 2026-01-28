@@ -10,6 +10,7 @@ const Sidebar = ({ lang }) => {
     const [section4Expanded, setSection4Expanded] = useState(false);
     const [section5Expanded, setSection5Expanded] = useState(false);
     const [section6Expanded, setSection6Expanded] = useState(false);
+    const [sectionTestExpanded, setSectionTestExpanded] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const toggleSection1 = () => {
@@ -34,6 +35,10 @@ const Sidebar = ({ lang }) => {
 
     const toggleSection6 = () => {
         setSection6Expanded(!section6Expanded);
+    };
+
+    const toggleSectionTest = () => {
+        setSectionTestExpanded(!sectionTestExpanded);
     };
 
     const handleKeyDown1 = (e) => {
@@ -75,6 +80,13 @@ const Sidebar = ({ lang }) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
             toggleSection6();
+        }
+    };
+
+    const handleKeyDownTest = (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleSectionTest();
         }
     };
 
@@ -460,6 +472,60 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section6_title', lang)}
+                            </NavLink>
+                        </div>
+                    )}
+                </div>
+
+                {/* Test Pages Section */}
+                <div className="nav-section">
+                    <button
+                        className="nav-section-header"
+                        onClick={toggleSectionTest}
+                        onKeyDown={handleKeyDownTest}
+                        aria-expanded={sectionTestExpanded}
+                        aria-controls="sectiontest-content"
+                        aria-label={`${lang === 'en' ? 'Test Pages' : 'Pages de test'}. ${sectionTestExpanded 
+                            ? (lang === 'en' ? 'Expanded. Press Space to collapse.' : 'Développé. Appuyez sur Espace pour réduire.')
+                            : (lang === 'en' ? 'Collapsed. Press Space to expand.' : 'Réduit. Appuyez sur Espace pour développer.')
+                        }`}
+                    >
+                        <span className="section-arrow" aria-hidden="true">
+                            {sectionTestExpanded ? "▼" : "▶"}
+                        </span>
+                        <span>{lang === 'en' ? 'Test Pages' : 'Pages de test'}</span>
+                    </button>
+
+                    {sectionTestExpanded && (
+                        <div 
+                            id="sectiontest-content"
+                            className="nav-section-content expanded"
+                            role="group"
+                            aria-label={lang === 'en' ? 'Test Pages' : 'Pages de test'}
+                        >
+                            <NavLink
+                                to="/section-test#test-page24"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {lang === 'en' ? 'Page 24 (Stacked)' : 'Page 24 (Empilée)'}
+                            </NavLink>
+                            <NavLink
+                                to="/section-test#test-page25"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {lang === 'en' ? 'Page 25 (Stacked)' : 'Page 25 (Empilée)'}
+                            </NavLink>
+                            <NavLink
+                                to="/section-test#test-page28"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {lang === 'en' ? 'Page 28 (Horizontal)' : 'Page 28 (Horizontal)'}
+                            </NavLink>
+                            <NavLink
+                                to="/section-test#test-page37"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {lang === 'en' ? 'Page 37 (Stacked)' : 'Page 37 (Empilée)'}
                             </NavLink>
                         </div>
                     )}

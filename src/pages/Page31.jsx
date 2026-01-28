@@ -17,6 +17,67 @@ const Page31 = () => {
     const [selectedPoints, setSelectedPoints] = useState(null);
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
+    const topScrollRef = useRef(null);
+    const tableScrollRef = useRef(null);
+
+    useEffect(() => {
+        const topScroll = topScrollRef.current;
+        const tableScroll = tableScrollRef.current;
+
+        if (!topScroll || !tableScroll) return;
+
+        const syncScrollbars = () => {
+            const table = tableScroll.querySelector('table');
+            if (!table) return;
+
+            const scrollWidth = table.offsetWidth;
+            const containerWidth = tableScroll.clientWidth;
+
+            const topSpacer = topScroll.firstElementChild;
+            if (topSpacer) {
+                topSpacer.style.width = `${scrollWidth}px`;
+            }
+
+            if (scrollWidth > containerWidth) {
+                topScroll.style.display = 'block';
+                topScroll.style.opacity = '1';
+            } else {
+                topScroll.style.display = 'none';
+            }
+        };
+
+        const handleTopScroll = () => {
+            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+                tableScroll.scrollLeft = topScroll.scrollLeft;
+            }
+        };
+
+        const handleTableScroll = () => {
+            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+                topScroll.scrollLeft = tableScroll.scrollLeft;
+            }
+        };
+
+        topScroll.addEventListener('scroll', handleTopScroll);
+        tableScroll.addEventListener('scroll', handleTableScroll);
+
+        const observer = new ResizeObserver(() => {
+            window.requestAnimationFrame(syncScrollbars);
+        });
+
+        const tableElement = tableScroll.querySelector('table');
+        if (tableElement) observer.observe(tableElement);
+        observer.observe(tableScroll);
+
+        syncScrollbars();
+
+        return () => {
+            topScroll.removeEventListener('scroll', handleTopScroll);
+            tableScroll.removeEventListener('scroll', handleTableScroll);
+            observer.disconnect();
+        };
+    }, [isTableOpen, windowWidth]);
+
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     useEffect(() => {
@@ -238,8 +299,28 @@ const Page31 = () => {
                     <span className="sr-only">{lang === 'en' ? ' (press Enter to open or close)' : ' (appuyez sur Entrée pour ouvrir ou fermer)'}</span>
                 </summary>
 
-                <div className="table-responsive" role="region" aria-labelledby={captionId} style={{ overflowX: 'auto' }}>
-                    <table className="table table-striped table-hover" style={{ minWidth: '500px' }}>
+                <div 
+                    ref={topScrollRef}
+                    style={{ 
+                        width: '100%', 
+                        overflowX: 'auto', 
+                        overflowY: 'hidden',
+                        marginBottom: '0px',
+                        display: windowWidth <= 768 ? 'none' : 'block' 
+                    }}
+                    aria-hidden="true"
+                >
+                    <div style={{ height: '20px' }}></div>
+                </div>
+
+                <div 
+                    ref={tableScrollRef}
+                    className="table-responsive" 
+                    role="region" 
+                    aria-labelledby={captionId}
+                    tabIndex="0"
+                >
+                    <table className="table table-striped table-hover">
                         <caption id={captionId} className="wb-inv">
                             {lang === 'en' 
                                 ? 'Stock of foreign direct investment (FDI) in Canada and Canadian direct investment abroad (CDIA) in the energy industry (billions of dollars)'
@@ -484,7 +565,7 @@ const Page31 = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 overflowY: 'auto',
-                overflowX: 'hidden',
+                overflowX: 'visible',
                 boxSizing: 'border-box',
             }}
         >
@@ -682,6 +763,29 @@ const Page31 = () => {
                     white-space: nowrap;
                     border: 0;
                 }
+
+                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+                .page31-table-wrapper {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr);
+                    width: 100%;
+                }
+
+                /* Table horizontal scroll */
+                .table-responsive {
+                    display: block;
+                    width: 100%;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                    border: 1px solid #ddd;
+                    background: #fff;
+                }
+
+                .table-responsive table {
+                    width: max-content !important;
+                    min-width: 100%;
+                    border-collapse: collapse;
+                }
             `}</style>
 
             <div className="page31-container">
@@ -830,7 +934,9 @@ const Page31 = () => {
                             />
                         </figure>
 
-                        {getAccessibleDataTable()}
+                        <div className="page31-table-wrapper">
+                            {getAccessibleDataTable()}
+                        </div>
                     </div>
                 </div>
 

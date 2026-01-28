@@ -232,7 +232,21 @@ const Page29 = () => {
                 }
 
                 .page29-table-wrapper {
+                    width: 100%;
                     margin-top: 20px;
+                }
+
+                /* FORCE table to fit the screen width and resize (Squish/Stretch) */
+                .page29-table-wrapper table {
+                    width: 100% !important;      /* Forces table to fill the container */
+                    min-width: 0 !important;     /* Removes the trigger for the scrollbar */
+                    max-width: 100% !important;  /* Prevents it from going wider than screen */
+                    table-layout: auto;          /* Lets columns resize based on text */
+                }
+
+                /* Disable the scroll container behavior */
+                .page29-table-wrapper .table-responsive {
+                    overflow-x: visible !important; /* Removes the scrollbar */
                     width: 100%;
                 }
 
@@ -422,7 +436,7 @@ const Page29 = () => {
                 <h1 className="page29-title">{pageTitle}</h1>
 
                 <div className="page29-table-wrapper">
-                    <div className="table-responsive" role="region" style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive" role="region">
                         <table className="page29-table">
                             <caption className="wb-inv">
                                 {getText('page29_table_caption', lang)}
