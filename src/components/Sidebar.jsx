@@ -519,7 +519,7 @@ const Sidebar = ({ lang }) => {
                                 to="/section-test#test-page28"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {lang === 'en' ? 'Page 28 (Horizontal)' : 'Page 28 (Horizontal)'}
+                                {lang === 'en' ? 'Page 28 (Stacked)' : 'Page 28 (Empilée)'}
                             </NavLink>
                             <NavLink
                                 to="/section-test#test-page37"

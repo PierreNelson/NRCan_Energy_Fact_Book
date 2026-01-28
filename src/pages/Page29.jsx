@@ -93,9 +93,9 @@ const Page29 = () => {
 
         const title = stripHtml(pageTitle);
 
-        const headerBgColor = '8e7e52';  // Olive/tan for header and category column
-        const totalRowBgColor = '48494a'; // Dark gray for total row data cells
-        const zebraStripeBgColor = 'd4cbba'; // Light beige for even rows
+        const headerBgColor = '8e7e52';
+        const totalRowBgColor = '48494a';
+        const zebraStripeBgColor = 'd4cbba';
 
         const headerRow = new TableRow({
             children: [
@@ -115,7 +115,7 @@ const Page29 = () => {
 
         const dataRows = categories.map((cat, index) => {
             const isTotal = cat.isTotal;
-            const isEvenRow = (index + 1) % 2 === 0; // +1 because header is row 0
+            const isEvenRow = (index + 1) % 2 === 0;
             
             return new TableRow({
                 children: [
@@ -143,7 +143,7 @@ const Page29 = () => {
                             : (value < 1 ? `${value.toFixed(2).replace('.', ',')} G$` : `${value.toFixed(1).replace('.', ',')} G$`);
                         
                         let cellBgColor = undefined;
-                        let textColor = '333333'; // Default dark text
+                        let textColor = '333333';
                         
                         if (isTotal) {
                             cellBgColor = totalRowBgColor;
@@ -168,7 +168,7 @@ const Page29 = () => {
                                         text: `(${valueStr})`, 
                                         size: 18, 
                                         bold: isTotal,
-                                        color: isTotal ? 'DDDDDD' : '666666' // Lighter color for value text
+                                        color: isTotal ? 'DDDDDD' : '666666'
                                     })],
                                     alignment: AlignmentType.CENTER
                                 })
@@ -209,16 +209,14 @@ const Page29 = () => {
         <main id="main-content" tabIndex="-1" className="page-content page29-main" role="main">
             <style>{`
                 .page29-main {
-                    width: calc(100% + ${layoutPadding.left}px + ${layoutPadding.right}px);
-                    margin-left: -${layoutPadding.left}px;
-                    margin-right: -${layoutPadding.right}px;
-                    display: flex;
-                    flex-direction: column;
+                    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
+                    margin-left: -${layoutPadding?.left || 55}px;
+                    margin-right: -${layoutPadding?.right || 15}px;
                 }
 
                 .page29-container {
-                    padding-left: ${layoutPadding.left}px;
-                    padding-right: ${layoutPadding.right}px;
+                    padding-left: ${layoutPadding?.left || 55}px;
+                    padding-right: ${layoutPadding?.right || 15}px;
                     width: 100%;
                     box-sizing: border-box;
                 }
@@ -236,17 +234,15 @@ const Page29 = () => {
                     margin-top: 20px;
                 }
 
-                /* FORCE table to fit the screen width and resize (Squish/Stretch) */
                 .page29-table-wrapper table {
-                    width: 100% !important;      /* Forces table to fill the container */
-                    min-width: 0 !important;     /* Removes the trigger for the scrollbar */
-                    max-width: 100% !important;  /* Prevents it from going wider than screen */
-                    table-layout: auto;          /* Lets columns resize based on text */
+                    width: 100% !important;
+                    min-width: 100% !important;
+                    max-width: 100% !important;
+                    table-layout: auto;
                 }
 
-                /* Disable the scroll container behavior */
                 .page29-table-wrapper .table-responsive {
-                    overflow-x: visible !important; /* Removes the scrollbar */
+                    overflow-x: visible !important;
                     width: 100%;
                 }
 
@@ -264,7 +260,6 @@ const Page29 = () => {
                     text-align: center;
                 }
 
-                /* Header Styling */
                 .page29-table th {
                     background-color: #8e7e52;
                     color: white;
@@ -272,15 +267,12 @@ const Page29 = () => {
                     font-size: 1.4rem;
                 }
 
-                /* Left Column Styling */
                 .page29-table .category-cell {
                     text-align: left;
                     background-color: #8e7e52; 
                     color: white;
                     font-weight: bold;
                     font-size: 1rem;
-                    
-                    /* Text Wrapping Settings */
                     white-space: normal;      
                     width: 180px;             
                     min-width: 150px;         
@@ -288,25 +280,21 @@ const Page29 = () => {
                     line-height: 1.2;         
                 }
 
-                /* Total Row Data Cells */
                 .page29-table .total-row td {
                     background-color: #48494a; 
                     color: white;
                     font-weight: bold;
                 }
 
-                /* Total Row Label (Keep left column color) */
                 .page29-table .total-row .category-cell {
                     background-color: #8e7e52;
                     color: white;
                 }
 
-                /* Zebra Striping */
                 .page29-table tbody tr:nth-child(even):not(.total-row) {
                     background-color: #d4cbba;
                 }
 
-                /* Hover Effects */
                 .page29-table tbody tr:nth-child(odd):hover:not(.total-row) {
                     background-color: #f2f2f2;
                 }
@@ -376,11 +364,7 @@ const Page29 = () => {
                     margin: 0;
                 }
 
-                /* CONSOLIDATED RESPONSIVE FIX
-                   Handles high zoom (300%+) and all mobile devices by forcing
-                   the table to stay within the viewport width. */
                 @media (max-width: 992px) {
-                    /* 1. Reset container negative margins so page fits screen */
                     .page29-main {
                         width: 100% !important;
                         margin-left: 0 !important;
@@ -391,41 +375,34 @@ const Page29 = () => {
                         padding-right: 4px !important;
                     }
 
-                    /* 2. Force table to squeeze into viewport (No Horizontal Scroll) */
                     .page29-table-wrapper, 
                     .table-responsive {
                         width: 100% !important;
-                        overflow-x: hidden !important; /* Disable scrollbar */
+                        overflow-x: hidden !important;
                     }
 
                     .page29-table {
                         width: 100% !important;
-                        table-layout: fixed; /* CRITICAL: Forces columns to compress */
-                        min-width: 0 !important; /* Remove any minimum width constraint */
-                        font-size: 0.7rem; /* Reduce font size */
+                        table-layout: fixed;
+                        min-width: 0 !important;
+                        font-size: 0.7rem;
                     }
 
-                    /* 3. Aggressive text wrapping to fit narrow columns */
                     .page29-table th,
                     .page29-table td {
                         padding: 4px 2px;
                         white-space: normal !important;
                         overflow-wrap: break-word;
-                        word-break: break-word; /* Ensure long words/numbers break */
+                        word-break: break-word;
                         hyphens: auto;
                     }
 
-                    /* 4. Column Sizing */
-                    /* Give the category column slightly more space (25%) */
                     .page29-table .category-cell {
-                        width: 25%; 
+                        width: 24%; 
                         font-size: 0.7rem;
-                        min-width: auto; /* Remove 150px limit */
+                        min-width: auto;
                     }
-                    
-                    /* The remaining 75% is shared by the 6 year columns (~12.5% each) */
-                    
-                    /* 5. Adjust Footnotes for zoom */
+
                     .page29-footnotes {
                         font-size: 0.9rem;
                     }
@@ -508,7 +485,7 @@ const Page29 = () => {
                             <p style={{ margin: 0 }}><sup>1</sup> {getText('page29_footnote1', lang)}</p>
                         </dd>
                         <dt className="wb-inv">{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
-                        <dd id="fn2" style={{ margin: 0 }}>
+                        <dd id="fn2" style={{ margin: '0 0 8px 0' }}>
                             <p style={{ margin: 0 }}><sup>2</sup> {getText('page29_footnote2', lang)}</p>
                         </dd>
                     </dl>
