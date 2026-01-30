@@ -188,17 +188,17 @@ const Page23 = () => {
                         fontFamily: 'Arial, sans-serif'
                     }}>
                         <li className="page23-list-item">
-                            <Link to="/section-2#page-24">
+                            <Link to="/section-2#capital-expenditure">
                                 {getText('page23_item1', lang)}
                             </Link>
                         </li>
                         <li className="page23-list-item">
-                            <Link to="/section-2#page-25">
+                            <Link to="/section-2#infrastructure-stock">
                                 {getText('page23_item2', lang)}
                             </Link>
                         </li>
                         <li className="page23-list-item">
-                            <Link to="/section-2#page-31">
+                            <Link to="/section-2#economic-contributions">
                                 {getText('page23_item3', lang)}
                             </Link>
                         </li>
@@ -209,7 +209,7 @@ const Page23 = () => {
                             {getText('page23_item5', lang)}
                         </li>
                         <li className="page23-list-item">
-                            <Link to="/section-2#page-37">
+                            <Link to="/section-2#environmental-protection">
                                 {getText('page23_item6', lang)}
                             </Link>
                         </li>

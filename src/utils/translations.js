@@ -215,6 +215,16 @@ export const TRANSLATIONS = {
         'page32_hover_oil_gas': 'Oil and gas extraction and support activities',
         'page32_hover_all_industries': 'All non-financial industries',
 
+        // Page 33
+        'nav_canadian_energy_assets': 'Canadian energy assets',
+        'page33_title': 'Canadian Energy Assets',
+        'page33_chart_title': 'Canadian energy assets by region,',
+        'page33_map_title': 'Canadian energy assets by region,',
+        'page33_chart_summary': 'World map showing Canadian energy assets distributed across regions',
+        'page33_card_total': 'Total Canadian energy assets',
+        'page33_card_abroad': 'Total Canadian energy assets abroad',
+        'page33_footnote': 'A Canadian company is here defined as a publicly traded company headquartered in Canada and not foreign-controlled.',
+
         // Page 37
         'nav_environmental_protection': 'Environmental protection expenditures',
         'page37_title': 'Environmental protection expenditures',
@@ -331,7 +341,7 @@ export const TRANSLATIONS = {
         'page29_footnote2': '"Other" includes novel initiatives such as micro-grid projects, battery storage projects, bioplastics, and a helium purification plant.',
         'page29_footnote_values': 'Certain values in 2023 have been revised due to updated data.',
 
-        'nav_projects_map': 'Major energy projects planned and under construction, 2024-2034',
+        'nav_projects_map': 'Major energy projects planned and under construction, 2024 to 2034',
         'page30_title': 'Major energy projects',
         'page30_subtitle': 'Planned and under construction, 2024 to 2034',
         'page30_legend_title_lines': 'Transmission lines',
@@ -353,8 +363,6 @@ export const TRANSLATIONS = {
         'page30_legend_clean_10_999m_construction': 'Energy [clean], $10-999 million, under construction',
         'page30_legend_clean_1_5b_construction': 'Energy [clean], $1-5 billion, under construction',
         'page30_legend_clean_5b_plus_construction': 'Energy [clean], more than $5 billion, under construction',
-        'page30_source': 'Source: Natural Resources Canada, Major Projects Inventory',
-        'page30_view_interactive': 'View interactive map',
         'page30_sr_summary': 'Map showing the location of major energy projects across Canada that are planned or under construction from 2024 to 2034. Projects are categorized by type (transmission lines and energy projects), status (planned or under construction), and value range. Clean energy projects are distinguished from conventional energy projects.',
     },
     'fr': {
@@ -570,6 +578,16 @@ export const TRANSLATIONS = {
         'page32_hover_oil_gas': 'Extraction de pétrole et de gaz et activités de soutien',
         'page32_hover_all_industries': 'Total des industries non financières',
 
+        // Page 33
+        'nav_canadian_energy_assets': 'Actifs énergétiques canadiens',
+        'page33_title': 'Actifs énergétiques canadiens',
+        'page33_chart_title': 'Actifs énergétiques canadiens par région,',
+        'page33_map_title': 'Actifs énergétiques canadiens par région,',
+        'page33_chart_summary': 'Carte mondiale montrant les actifs énergétiques canadiens répartis par région',
+        'page33_card_total': 'Total des actifs énergétiques canadiens',
+        'page33_card_abroad': "Total des actifs énergétiques canadiens à l'étranger",
+        'page33_footnote': "Une entreprise canadienne désigne ici une entreprise cotée en bourse, dont le siège est au Canada et qui n'est pas sous contrôle étranger.",
+
         // Page 37
         'nav_environmental_protection': "Dépenses de protection de l'environnement",
         'page37_title': "Dépenses de protection de l'environnement",
@@ -686,7 +704,7 @@ export const TRANSLATIONS = {
         'page29_footnote2': '« Autres » inclut les projets de microréseaux, de stockage dans des batteries et de bioplastiques, et une usine de purification d\'hélium.',
         'page29_footnote_values': 'Certains chiffres de 2000 à 2023 ont été révisés en raison de données mises à jour.',
 
-        'nav_projects_map': 'Grands projets énergétiques prévus et en construction, 2024-2034',
+        'nav_projects_map': 'Grands projets énergétiques prévus et en construction, 2024 à 2034',
         'page30_title': 'Grands projets énergétiques',
         'page30_subtitle': 'Prévus et en construction, 2024 à 2034',
         'page30_legend_title_lines': 'Lignes de transmission',
@@ -708,8 +726,6 @@ export const TRANSLATIONS = {
         'page30_legend_clean_10_999m_construction': 'Énergie [propre], 10-999 millions $, en construction',
         'page30_legend_clean_1_5b_construction': 'Énergie [propre], 1-5 milliards $, en construction',
         'page30_legend_clean_5b_plus_construction': 'Énergie [propre], plus de 5 milliards $, en construction',
-        'page30_source': 'Source : Ressources naturelles Canada, Inventaire des grands projets',
-        'page30_view_interactive': 'Voir la carte interactive',
         'page30_sr_summary': 'Carte montrant l\'emplacement des grands projets énergétiques à travers le Canada qui sont prévus ou en construction de 2024 à 2034. Les projets sont catégorisés par type (lignes de transmission et projets énergétiques), statut (prévu ou en construction) et fourchette de valeur. Les projets d\'énergie propre se distinguent des projets d\'énergie conventionnelle.',
     }
 };

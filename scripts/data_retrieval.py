@@ -1,20 +1,10 @@
 """
 Data Retrieval Module for NRCAN Energy Factbook
-Downloads and processes Statistics Canada data for all pages.
+Downloads and processes data for all pages.
 
 All data is stored in unified CSV files:
 - data.csv: Contains pre-calculated values (vector, ref_date, value)
 - metadata.csv: Contains descriptions (vector, title, uom, scalar_factor)
-
-Data sources:
-- Page 24: Table 34-10-0036-01 (Capital Expenditures)
-- Page 25: Table 36-10-0608-01 (Infrastructure Stock)
-- Page 26: Table 36-10-0610-01 (Economic Contributions of Infrastructure)
-
-The data is pre-calculated and stored with virtual vectors like:
-- page24_oil_gas, page24_electricity, page24_other, page24_total
-- page25_fuel_energy_pipelines, page25_transport, etc.
-- page26_jobs, page26_employment_income, page26_gdp, page26_investment_value
 """
 
 import requests
@@ -189,7 +179,12 @@ def process_capital_expenditure_data():
     """
     print("Processing Capital Expenditures data...")
     
-    df = fetch_csv_from_url(get_capital_expenditures_url())
+    try:
+        df = fetch_csv_from_url(get_capital_expenditures_url())
+    except Exception as e:
+        print(f"  WARNING: Failed to fetch Capital Expenditures data: {e}")
+        print(f"  Continuing with other data sources...")
+        return [], []
     
     print(f"  Columns in data: {df.columns.tolist()}")
     
@@ -865,21 +860,7 @@ def fetch_gdp_emp_forecast_data():
 
 
 def process_nominal_gdp_contributions_data():
-    """
-    Process nominal GDP contributions data for Page 7.
-    
-    This combines:
-    1. GDP income-based data from StatCan Table 36-10-0103-01 (for total nominal GDP)
-    2. Natural Resources Satellite Account from Table 38-10-0285-01 (for energy breakdown)
-    3. GDP&EMP forecast file from Google Docs (for electricity and indirect values)
-    
-    Calculates:
-    - Energy Direct (Petroleum + Electricity + Other)
-    - Energy Indirect
-    - Total nominal GDP contribution
-    - Percentage shares of GDP
-    """
-    print("Processing Nominal GDP Contributions data (Page 7)...")
+    print("Processing Nominal GDP Contributions data...")
     
     gdp_emp_data = fetch_gdp_emp_forecast_data()
     
@@ -1794,6 +1775,386 @@ def process_major_projects_map_data():
     return map_data
 
 
+def process_cea_data():
+    """
+    Process Canadian Energy Assets (CEA) data from CEA_2023.xlsx.
+    
+    Per instructions:
+    - A1 = aggregate Non-current assets 202x (Grand Total row)
+    - A3 = aggregate Non-current assets 202x for Country=Canada (domestic)
+      Note: If Country column doesn't exist, will use Row Labels 'Canada' value
+    - A4 = A1 - A3 (abroad)
+    - Regions = aggregate by Continent from Row Labels for map
+    
+    The Excel file structure (based on provided data):
+    - "Evolution from 2012 to 2023" table with:
+      * Row Labels column: Africa, Asia, Canada, Europe, Latin America and Caribbean,
+        North America (US and Mexico), Oceania, Grand Total, Total ABROAD
+      * Year columns: "Somme de Non-current Assets YYYY ($ million)" for 2012-2023
+    - May also have detailed sheets "YYYY Canadian Energy Assets" with Country/Continent columns
+    
+    Returns list of tuples for data.csv and metadata.csv
+    """
+    print("Processing Canadian Energy Assets (CEA) data...")
+    
+    excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "CEA_2023.xlsx")
+    
+    if not os.path.exists(excel_path):
+        print(f"  ERROR: CEA Excel file not found at {excel_path}")
+        return [], []
+    
+    try:
+        xl_file = pd.ExcelFile(excel_path)
+        sheet_names = xl_file.sheet_names
+        print(f"  Found {len(sheet_names)} sheet(s): {sheet_names}")
+        
+        data_rows = []
+        year_data = {}
+        
+        detailed_sheets_by_year = {}
+        summary_sheet = None
+        
+        for sheet_name in sheet_names:
+            year_match = pd.Series([sheet_name]).str.extract(r'(\d{4})')[0]
+            if not year_match.empty and not year_match.isna().all():
+                year = int(year_match.iloc[0])
+                if 'Canadian Energy Assets' in sheet_name and 2012 <= year <= 2023:
+                    detailed_sheets_by_year[year] = sheet_name
+                    print(f"  Found detailed sheet for {year}: '{sheet_name}'")
+            
+            if 'Evolution' in sheet_name or 'evolution' in sheet_name.lower():
+                summary_sheet = sheet_name
+                print(f"  Found Evolution table sheet: '{summary_sheet}'")
+        
+        if not summary_sheet and 'By region' in sheet_names:
+            summary_sheet = 'By region'
+            print(f"  Using 'By region' sheet for Evolution table")
+        
+        if not summary_sheet and len(detailed_sheets_by_year) == 0:
+            print(f"  WARNING: No Evolution table or detailed sheets found")
+            print(f"  Trying to process all sheets...")
+            summary_sheet = sheet_names[0] if sheet_names else None
+        
+        if summary_sheet:
+            print(f"\n  Processing Evolution table from sheet: '{summary_sheet}'")
+            try:
+                df_raw = pd.read_excel(excel_path, sheet_name=summary_sheet, header=None)
+                
+                header_row = None
+                row_labels_col_idx = None
+                year_cols_info = {}
+                
+                evolution_start_row = None
+                for row_idx in range(min(100, len(df_raw))):
+                    row_text = ' '.join([str(df_raw.iloc[row_idx, j]) for j in range(min(5, len(df_raw.columns))) if pd.notna(df_raw.iloc[row_idx, j])])
+                    if 'evolution' in row_text.lower() and '2012' in row_text and '2023' in row_text:
+                        evolution_start_row = row_idx
+                        print(f"    Found Evolution table starting at row {row_idx}")
+                        break
+                
+                if evolution_start_row is not None:
+                    for row_idx in range(evolution_start_row, min(evolution_start_row + 20, len(df_raw))):
+                        for col_idx in range(min(15, len(df_raw.columns))):
+                            cell_val = str(df_raw.iloc[row_idx, col_idx]).strip()
+                            cell_lower = cell_val.lower()
+                            
+                            if 'row labels' in cell_lower and row_labels_col_idx is None:
+                                row_labels_col_idx = col_idx
+                                header_row = row_idx
+                                print(f"    Found 'Row Labels' at row {row_idx}, col {col_idx}")
+                            
+                            if 'non-current' in cell_lower or 'noncurrent' in cell_lower or ('assets' in cell_lower and ('somme' in cell_lower or 'sum' in cell_lower)):
+                                year_match = pd.Series([cell_val]).str.extract(r'(\d{4})')[0]
+                                if not year_match.empty and not year_match.isna().all():
+                                    year = int(year_match.iloc[0])
+                                    if 2012 <= year <= 2023:
+                                        if header_row is None:
+                                            header_row = row_idx
+                                        year_cols_info[year] = (row_idx, col_idx)
+                                        print(f"    Found year {year} at row {row_idx}, col {col_idx}")
+                else:
+                    for row_idx in range(min(100, len(df_raw))):
+                        for col_idx in range(min(15, len(df_raw.columns))):
+                            cell_val = str(df_raw.iloc[row_idx, col_idx]).strip()
+                            cell_lower = cell_val.lower()
+                            
+                            if 'row labels' in cell_lower and row_labels_col_idx is None:
+                                row_labels_col_idx = col_idx
+                                header_row = row_idx
+                                print(f"    Found 'Row Labels' at row {row_idx}, col {col_idx}")
+                            
+                            if 'non-current' in cell_lower or 'noncurrent' in cell_lower or ('assets' in cell_lower and ('somme' in cell_lower or 'sum' in cell_lower)):
+                                year_match = pd.Series([cell_val]).str.extract(r'(\d{4})')[0]
+                                if not year_match.empty and not year_match.isna().all():
+                                    year = int(year_match.iloc[0])
+                                    if 2012 <= year <= 2023:
+                                        if header_row is None:
+                                            header_row = row_idx
+                                        year_cols_info[year] = (row_idx, col_idx)
+                                        print(f"    Found year {year} at row {row_idx}, col {col_idx}")
+                
+                if header_row is not None and len(year_cols_info) > 0:
+                    df = pd.read_excel(excel_path, sheet_name=summary_sheet, header=header_row)
+                    print(f"    Read with header at row {header_row}")
+                    print(f"    Shape: {df.shape}, Columns: {list(df.columns)[:10]}...")
+                    
+                    row_labels_col = None
+                    year_columns = {}
+                    
+                    for col in df.columns:
+                        col_str = str(col).strip()
+                        col_lower = col_str.lower()
+                        
+                        if 'row labels' in col_lower:
+                            row_labels_col = col
+                            print(f"    Row Labels column: '{col}'")
+                        
+                        if 'non-current' in col_lower or 'noncurrent' in col_lower or 'assets' in col_lower:
+                            year_match = pd.Series([col_str]).str.extract(r'(\d{4})')[0]
+                            if not year_match.empty and not year_match.isna().all():
+                                year = int(year_match.iloc[0])
+                                if 2012 <= year <= 2023:
+                                    year_columns[year] = col
+                                    print(f"    Year {year} column: '{col}'")
+                else:
+                    df = pd.read_excel(excel_path, sheet_name=summary_sheet)
+                    print(f"    Shape: {df.shape}")
+                    print(f"    Columns: {list(df.columns)[:10]}...")
+                    
+                    row_labels_col = None
+                    year_columns = {}
+                    
+                    for col in df.columns:
+                        col_str = str(col).strip()
+                        col_lower = col_str.lower()
+                        
+                        if 'row labels' in col_lower:
+                            row_labels_col = col
+                            print(f"    Found Row Labels: '{col}'")
+                        
+                        if 'non-current' in col_lower or 'noncurrent' in col_lower or 'assets' in col_lower:
+                            year_match = pd.Series([col_str]).str.extract(r'(\d{4})')[0]
+                            if not year_match.empty and not year_match.isna().all():
+                                year = int(year_match.iloc[0])
+                                if 2012 <= year <= 2023:
+                                    year_columns[year] = col
+                                    print(f"    Found year {year}: '{col}'")
+                
+                if row_labels_col and len(year_columns) > 0:
+                    for year, year_col in sorted(year_columns.items()):
+                        print(f"\n    Processing year {year}...")
+                        
+                        df_year = df[[row_labels_col, year_col]].copy()
+                        df_year[year_col] = pd.to_numeric(df_year[year_col], errors='coerce')
+                        df_year = df_year.dropna(subset=[year_col])
+                        
+                        A1 = 0
+                        A3 = 0
+                        region_values = {}
+                        
+                        for _, row in df_year.iterrows():
+                            region_name = str(row[row_labels_col]).strip()
+                            value = row[year_col]
+                            
+                            if pd.isna(value) or value == 0:
+                                continue
+                            
+                            if 'Grand Total' in region_name:
+                                A1 = value
+                                print(f"      A1 (Grand Total): ${A1:,.0f}M")
+                                continue
+                            
+                            if 'Total ABROAD' in region_name or 'Total Abroad' in region_name:
+                                continue
+                            
+                            region_mapping = {
+                                'Africa': 'africa',
+                                'Asia': 'asia',
+                                'Canada': 'canada',
+                                'Europe': 'europe',
+                                'Latin America and Caribbean': 'latin_america',
+                                'North America (US and Mexico)': 'north_america',
+                                'Oceania': 'oceania'
+                            }
+                            
+                            for map_key, region_key in region_mapping.items():
+                                if map_key.lower() in region_name.lower():
+                                    if region_key not in region_values:
+                                        region_values[region_key] = 0
+                                    region_values[region_key] += value
+                                    
+                                    if region_key == 'canada' and A3 == 0:
+                                        A3 = value
+                                        print(f"      A3 (Canada from Row Labels): ${A3:,.0f}M")
+                                    break
+                        
+                        if A1 == 0:
+                            A1 = df_year[year_col].sum()
+                            print(f"      A1 (calculated from sum): ${A1:,.0f}M")
+                        
+                        A4 = A1 - A3
+                        
+                        year_data[year] = {
+                            'A1': A1,
+                            'A3': A3,
+                            'A4': A4,
+                            'regions': region_values
+                        }
+                        
+                        print(f"      Year {year}: A1=${A1/1000:.1f}B, A3=${A3/1000:.1f}B, A4=${A4/1000:.1f}B")
+                        print(f"      Regions: {[(k, f'${v/1000:.1f}B') for k, v in region_values.items()]}")
+                
+            except Exception as e:
+                print(f"    ERROR processing Evolution table: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        for year, sheet_name in detailed_sheets_by_year.items():
+            print(f"\n  Processing detailed sheet for {year}: '{sheet_name}'")
+            try:
+                df = pd.read_excel(excel_path, sheet_name=sheet_name)
+                print(f"    Shape: {df.shape}, Columns: {list(df.columns)[:10]}...")
+                
+                assets_col = None
+                country_col = None
+                continent_col = None
+                
+                for col in df.columns:
+                    col_str = str(col).strip()
+                    col_lower = col_str.lower()
+                    
+                    if assets_col is None and ('non-current' in col_lower or 'noncurrent' in col_lower) and str(year) in col_str:
+                        assets_col = col
+                        print(f"    Assets column: '{col}'")
+                    
+                    if country_col is None and 'country' in col_lower:
+                        country_col = col
+                        print(f"    Country column: '{col}'")
+                    
+                    if continent_col is None and 'continent' in col_lower:
+                        continent_col = col
+                        print(f"    Continent column: '{col}'")
+                
+                if assets_col:
+                    df[assets_col] = pd.to_numeric(df[assets_col], errors='coerce')
+                    df = df.dropna(subset=[assets_col])
+                    
+                    A1 = df[assets_col].sum()
+                    
+                    if country_col and country_col in df.columns:
+                        A3 = df[df[country_col].str.contains('Canada', case=False, na=False)][assets_col].sum()
+                        print(f"    A3 from Country=Canada: ${A3:,.0f}M")
+                    elif continent_col and continent_col in df.columns:
+                        A3 = df[df[continent_col].str.contains('Canada', case=False, na=False)][assets_col].sum()
+                        print(f"    A3 from Continent=Canada: ${A3:,.0f}M")
+                    else:
+                        A3 = 0
+                        print(f"    WARNING: No Country or Continent column - A3 will be 0")
+                    
+                    A4 = A1 - A3
+                    
+                    if year not in year_data:
+                        year_data[year] = {'A1': A1, 'A3': A3, 'A4': A4, 'regions': {}}
+                    else:
+                        year_data[year]['A1'] = A1
+                        if A3 > 0:
+                            year_data[year]['A3'] = A3
+                            year_data[year]['A4'] = A4
+                    
+                    if continent_col and continent_col in df.columns:
+                        region_mapping = {
+                            'Africa': 'africa',
+                            'Asia': 'asia',
+                            'Canada': 'canada',
+                            'Europe': 'europe',
+                            'Latin America and Caribbean': 'latin_america',
+                            'North America (US and Mexico)': 'north_america',
+                            'Oceania': 'oceania'
+                        }
+                        
+                        region_agg = df.groupby(continent_col)[assets_col].sum().reset_index()
+                        for _, row in region_agg.iterrows():
+                            continent_name = str(row[continent_col]).strip()
+                            value = row[assets_col]
+                            
+                            for map_key, region_key in region_mapping.items():
+                                if map_key.lower() in continent_name.lower():
+                                    year_data[year]['regions'][region_key] = value
+                                    break
+                    
+                    print(f"    {year}: A1=${A1/1000:.1f}B, A3=${A3/1000:.1f}B, A4=${A4/1000:.1f}B")
+            except Exception as e:
+                print(f"    ERROR: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        if len(year_data) == 0:
+            print(f"\n  ERROR: No data extracted from any sheet")
+            print(f"  Attempting to read all sheets to understand structure...")
+            
+            for sheet_name in sheet_names[:3]:
+                try:
+                    df = pd.read_excel(excel_path, sheet_name=sheet_name, nrows=20)
+                    print(f"\n  Sheet '{sheet_name}' (first 20 rows):")
+                    print(f"    Columns: {df.columns.tolist()}")
+                    print(f"    Sample data:\n{df.head(10).to_string()}")
+                except:
+                    pass
+            
+            return [], []
+        
+        for year in sorted(year_data.keys()):
+            data = year_data[year]
+            A1 = data['A1']
+            A3 = data.get('A3', 0)
+            A4 = data.get('A4', 0)
+            
+            if A3 == 0 and 'canada' in data['regions']:
+                A3 = data['regions']['canada']
+                A4 = A1 - A3
+                print(f"  Year {year}: Using Canada region value for A3 (Country column not found): ${A3/1000:.1f}B")
+                print(f"    Note: This may differ slightly from Country=Canada if detailed data exists")
+            
+            if A4 == 0:
+                A4 = A1 - A3
+            
+            data_rows.append(('cea_total', year, round(A1 / 1000, 1)))
+            data_rows.append(('cea_domestic', year, round(A3 / 1000, 1)))
+            data_rows.append(('cea_abroad', year, round(A4 / 1000, 1)))
+            
+            for region_key, region_value in data['regions'].items():
+                if region_value > 0:
+                    data_rows.append((f'cea_{region_key}', year, round(region_value / 1000, 1)))
+        
+        metadata_rows = [
+            ('cea_total', 'Canadian Energy Assets - Total (A1)', 'Billions of dollars', 'billions'),
+            ('cea_domestic', 'Canadian Energy Assets - Domestic (A3, Country=Canada)', 'Billions of dollars', 'billions'),
+            ('cea_abroad', 'Canadian Energy Assets - Abroad (A4)', 'Billions of dollars', 'billions'),
+            ('cea_canada', 'Canadian Energy Assets - Canada (by Continent)', 'Billions of dollars', 'billions'),
+            ('cea_north_america', 'Canadian Energy Assets - North America (US and Mexico)', 'Billions of dollars', 'billions'),
+            ('cea_latin_america', 'Canadian Energy Assets - Latin America and Caribbean', 'Billions of dollars', 'billions'),
+            ('cea_europe', 'Canadian Energy Assets - Europe', 'Billions of dollars', 'billions'),
+            ('cea_africa', 'Canadian Energy Assets - Africa', 'Billions of dollars', 'billions'),
+            ('cea_asia', 'Canadian Energy Assets - Asia', 'Billions of dollars', 'billions'),
+            ('cea_oceania', 'Canadian Energy Assets - Oceania', 'Billions of dollars', 'billions'),
+        ]
+        
+        print(f"\n  {'='*60}")
+        print(f"  CEA Processing Complete")
+        print(f"  {'='*60}")
+        print(f"  Years processed: {sorted(year_data.keys())}")
+        print(f"  Total data rows: {len(data_rows)}")
+        print(f"  {'='*60}")
+        
+        return data_rows, metadata_rows
+        
+    except Exception as e:
+        print(f"  ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return [], []
+
+
 def refresh_all_data():
     """Fetch, process and save all data from StatCan to data.csv and metadata.csv."""
     print("=" * 60)
@@ -1803,51 +2164,66 @@ def refresh_all_data():
     all_data = []
     all_metadata = []
     
-    capex_data, capex_meta = process_capital_expenditure_data()
-    all_data.extend(capex_data)
-    all_metadata.extend(capex_meta)
+    data_sources = [
+        ("Capital Expenditures", process_capital_expenditure_data),
+        ("Infrastructure", process_infrastructure_data),
+        ("Economic Contributions", process_economic_contributions_data),
+        ("Investment by Asset", process_investment_by_asset_data),
+        ("International Investment", process_international_investment_data),
+        ("Foreign Control", process_foreign_control_data),
+        ("Environmental Protection", process_environmental_protection_data),
+        ("Nominal GDP Contributions", process_nominal_gdp_contributions_data),
+        ("Provincial GDP", process_provincial_gdp_data),
+        ("Major Projects", process_major_projects_data),
+        ("Clean Tech", process_clean_tech_data),
+        ("Canadian Energy Assets (CEA)", process_cea_data),
+    ]
     
-    infra_data, infra_meta = process_infrastructure_data()
-    all_data.extend(infra_data)
-    all_metadata.extend(infra_meta)
+    for source_name, process_func in data_sources:
+        try:
+            data, meta = process_func()
+            all_data.extend(data)
+            all_metadata.extend(meta)
+            if len(data) > 0:
+                print(f"  [OK] {source_name}: {len(data)} rows processed")
+            else:
+                print(f"  [WARN] {source_name}: No data processed")
+        except Exception as e:
+            print(f"  [ERROR] {source_name}: Error - {e}")
+            import traceback
+            traceback.print_exc()
+            print(f"  Continuing with other data sources...")
     
-    econ_data, econ_meta = process_economic_contributions_data()
-    all_data.extend(econ_data)
-    all_metadata.extend(econ_meta)
+    try:
+        process_major_projects_map_data()
+        print(f"  [OK] Major Projects Map: processed")
+    except Exception as e:
+        print(f"  [ERROR] Major Projects Map: Error - {e}")
     
-    asset_data, asset_meta = process_investment_by_asset_data()
-    all_data.extend(asset_data)
-    all_metadata.extend(asset_meta)
+    data_path, metadata_path = get_data_paths()
     
-    intl_data, intl_meta = process_international_investment_data()
-    all_data.extend(intl_data)
-    all_metadata.extend(intl_meta)
+    # Merge with existing data so failed sources don't wipe out existing rows
+    vectors_updated = set(row[0] for row in all_data)
+    meta_vectors_updated = set(row[0] for row in all_metadata)
     
-    foreign_data, foreign_meta = process_foreign_control_data()
-    all_data.extend(foreign_data)
-    all_metadata.extend(foreign_meta)
+    if os.path.exists(data_path):
+        try:
+            existing_data = pd.read_csv(data_path)
+            if len(existing_data.columns) >= 3 and 'vector' in existing_data.columns:
+                existing_data = existing_data[~existing_data['vector'].isin(vectors_updated)]
+                all_data.extend(existing_data.to_numpy().tolist())
+                print(f"  Merged with existing data: {len(existing_data)} rows preserved from previous run")
+        except Exception:
+            pass
     
-    enviro_data, enviro_meta = process_environmental_protection_data()
-    all_data.extend(enviro_data)
-    all_metadata.extend(enviro_meta)
-    
-    nominal_gdp_data, nominal_gdp_meta = process_nominal_gdp_contributions_data()
-    all_data.extend(nominal_gdp_data)
-    all_metadata.extend(nominal_gdp_meta)
-    
-    gdp_data, gdp_meta = process_provincial_gdp_data()
-    all_data.extend(gdp_data)
-    all_metadata.extend(gdp_meta)
-    
-    projects_data, projects_meta = process_major_projects_data()
-    all_data.extend(projects_data)
-    all_metadata.extend(projects_meta)
-    
-    cleantech_data, cleantech_meta = process_clean_tech_data()
-    all_data.extend(cleantech_data)
-    all_metadata.extend(cleantech_meta)
-    
-    process_major_projects_map_data()
+    if os.path.exists(metadata_path):
+        try:
+            existing_meta = pd.read_csv(metadata_path)
+            if len(existing_meta.columns) >= 2 and 'vector' in existing_meta.columns:
+                existing_meta = existing_meta[~existing_meta['vector'].isin(meta_vectors_updated)]
+                all_metadata.extend(existing_meta.to_numpy().tolist())
+        except Exception:
+            pass
     
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])
     metadata_df = pd.DataFrame(all_metadata, columns=['vector', 'title', 'uom', 'scalar_factor'])
@@ -1855,7 +2231,6 @@ def refresh_all_data():
     data_df = data_df.drop_duplicates(subset=['vector', 'ref_date'], keep='first')
     metadata_df = metadata_df.drop_duplicates(subset=['vector'], keep='first')
     
-    data_path, metadata_path = get_data_paths()
     data_df.to_csv(data_path, index=False)
     metadata_df.to_csv(metadata_path, index=False)
     

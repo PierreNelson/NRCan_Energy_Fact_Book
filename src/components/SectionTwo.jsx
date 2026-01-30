@@ -10,6 +10,7 @@ import Page29 from '../pages/Page29';
 import Page30 from '../pages/Page30';
 import Page31 from '../pages/Page31';
 import Page32 from '../pages/Page32';
+import Page33 from '../pages/Page33';
 import Page37 from '../pages/Page37';
 
 const SectionTwo = () => {
@@ -84,6 +85,10 @@ const SectionTwo = () => {
 
             <div id="foreign-control" className="stacked-page-wrapper">
                 <Page32 />
+            </div>
+
+            <div id="canadian-energy-assets" className="stacked-page-wrapper">
+                <Page33 />
             </div>
 
             <div id="environmental-protection" className="stacked-page-wrapper">

@@ -365,3 +365,29 @@ export async function getNominalGDPData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get Canadian Energy Assets (CEA) data
+ * Returns array of objects: { 
+ *   year, total, domestic, abroad, 
+ *   africa, asia, canada, europe, latin_america, north_america, oceania 
+ * }
+ * Values are in billions of dollars
+ */
+export async function getCEAData() {
+    const allData = await loadAllData();
+    
+    const ceaData = allData.filter(row => row.vector && row.vector.startsWith('cea_'));
+    
+    const yearMap = {};
+    ceaData.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('cea_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

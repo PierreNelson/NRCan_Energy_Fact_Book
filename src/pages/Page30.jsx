@@ -19,12 +19,16 @@ const Page30 = () => {
 
     const [sortColumn, setSortColumn] = useState('project_name');
     const [sortDirection, setSortDirection] = useState('asc');
+    const [projectFilter, setProjectFilter] = useState([]);
     const [companyFilter, setCompanyFilter] = useState([]);
     const [provinceFilter, setProvinceFilter] = useState([]);
+    const [capitalCostFilter, setCapitalCostFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
     const [cleanTechFilter, setCleanTechFilter] = useState('all');
+    const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
     const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
     const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false);
+    const projectDropdownRef = useRef(null);
     const companyDropdownRef = useRef(null);
     const provinceDropdownRef = useRef(null);
     const topScrollRef = useRef(null);
@@ -133,6 +137,9 @@ const Page30 = () => {
             if (windowWidth <= 768 && isChartInteractive && chartRef.current && !chartRef.current.contains(event.target)) {
                 setIsChartInteractive(false);
             }
+            if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target)) {
+                setProjectDropdownOpen(false);
+            }
             if (companyDropdownRef.current && !companyDropdownRef.current.contains(event.target)) {
                 setCompanyDropdownOpen(false);
             }
@@ -143,6 +150,14 @@ const Page30 = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isChartInteractive, windowWidth]);
+
+    const toggleProjectFilter = (project) => {
+        setProjectFilter(prev => 
+            prev.includes(project) 
+                ? prev.filter(p => p !== project)
+                : [...prev, project]
+        );
+    };
 
     const toggleCompanyFilter = (company) => {
         setCompanyFilter(prev => 
@@ -363,6 +378,12 @@ const Page30 = () => {
         return allProjects;
     }, [langData]);
 
+    const uniqueProjects = useMemo(() => {
+        if (!tableData || tableData.length === 0) return [];
+        const projects = [...new Set(tableData.map(p => p.project_name).filter(p => p && p.trim()))];
+        return projects.sort((a, b) => a.localeCompare(b));
+    }, [tableData]);
+
     const uniqueCompanies = useMemo(() => {
         if (!tableData || tableData.length === 0) return [];
         const companies = [...new Set(tableData.map(p => p.company).filter(c => c && c.trim()))];
@@ -395,6 +416,12 @@ const Page30 = () => {
             });
         }
 
+        if (projectFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                projectFilter.includes(project.project_name)
+            );
+        }
+
         if (companyFilter.length > 0) {
             filtered = filtered.filter(project => 
                 companyFilter.includes(project.company)
@@ -405,6 +432,20 @@ const Page30 = () => {
             filtered = filtered.filter(project => 
                 provinceFilter.includes(project.province)
             );
+        }
+
+        if (capitalCostFilter !== 'all') {
+            filtered = filtered.filter(project => {
+                const cost = parseFloat((project.capital_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+                if (capitalCostFilter === '10_999') {
+                    return cost >= 10 && cost < 1000;
+                } else if (capitalCostFilter === '1000_5000') {
+                    return cost >= 1000 && cost <= 5000;
+                } else if (capitalCostFilter === '5000_plus') {
+                    return cost > 5000;
+                }
+                return true;
+            });
         }
 
         if (statusFilter !== 'all') {
@@ -451,11 +492,17 @@ const Page30 = () => {
         });
 
         return filtered;
-    }, [tableData, selectedProvinces, lang, companyFilter, provinceFilter, statusFilter, cleanTechFilter, sortColumn, sortDirection]);
+    }, [tableData, selectedProvinces, lang, projectFilter, companyFilter, provinceFilter, capitalCostFilter, statusFilter, cleanTechFilter, sortColumn, sortDirection]);
 
     const applyFiltersToData = (data) => {
         if (!data || data.length === 0) return [];
         let filtered = [...data];
+
+        if (projectFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                projectFilter.includes(project.project_name)
+            );
+        }
 
         if (companyFilter.length > 0) {
             filtered = filtered.filter(project => 
@@ -467,6 +514,20 @@ const Page30 = () => {
             filtered = filtered.filter(project => 
                 provinceFilter.includes(project.province)
             );
+        }
+
+        if (capitalCostFilter !== 'all') {
+            filtered = filtered.filter(project => {
+                const cost = parseFloat((project.capital_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+                if (capitalCostFilter === '10_999') {
+                    return cost >= 10 && cost < 1000;
+                } else if (capitalCostFilter === '1000_5000') {
+                    return cost >= 1000 && cost <= 5000;
+                } else if (capitalCostFilter === '5000_plus') {
+                    return cost > 5000;
+                }
+                return true;
+            });
         }
 
         if (statusFilter !== 'all') {
@@ -499,12 +560,12 @@ const Page30 = () => {
     const filteredMapPoints = useMemo(() => {
         if (!langData || !langData.points) return [];
         return applyFiltersToData(langData.points);
-    }, [langData, companyFilter, provinceFilter, statusFilter, cleanTechFilter]);
+    }, [langData, projectFilter, companyFilter, provinceFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
 
     const filteredMapLines = useMemo(() => {
         if (!langData || !langData.lines) return [];
         return applyFiltersToData(langData.lines);
-    }, [langData, companyFilter, provinceFilter, statusFilter, cleanTechFilter]);
+    }, [langData, projectFilter, companyFilter, provinceFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -516,8 +577,10 @@ const Page30 = () => {
     };
 
     const clearAllFilters = () => {
+        setProjectFilter([]);
         setCompanyFilter([]);
         setProvinceFilter([]);
+        setCapitalCostFilter('all');
         setStatusFilter('all');
         setCleanTechFilter('all');
         setSortColumn('project_name');
@@ -1268,6 +1331,386 @@ const Page30 = () => {
                     </aside>
                 </div>
 
+                <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginTop: '20px', 
+                    marginBottom: '5px',
+                    padding: '8px 10px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '4px'
+                }}>
+                    <button
+                        onClick={clearAllFilters}
+                        style={{
+                            padding: '6px 12px',
+                            fontSize: '11px',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        {lang === 'en' ? 'Clear Filters' : 'Effacer filtres'}
+                    </button>
+                    <span style={{ fontSize: '11px', color: '#666', marginLeft: 'auto' }}>
+                        {lang === 'en' 
+                            ? `Showing ${filteredTableData.length} of ${tableData.length} projects`
+                            : `Affichage de ${filteredTableData.length} sur ${tableData.length} projets`}
+                    </span>
+                </div>
+
+                <div style={{ 
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                    marginBottom: '15px',
+                    padding: '10px',
+                    backgroundColor: '#fafafa',
+                    borderRadius: '4px',
+                    border: '1px solid #e0e0e0'
+                }}>
+                    <div ref={projectDropdownRef} style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Project' : 'Projet'}
+                        </label>
+                        <button
+                            onClick={() => { setProjectDropdownOpen(!projectDropdownOpen); setCompanyDropdownOpen(false); setProvinceDropdownOpen(false); }}
+                            style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                backgroundColor: '#fff',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {projectFilter.length === 0 
+                                    ? (lang === 'en' ? 'All' : 'Tous')
+                                    : `${projectFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                            </span>
+                            <span style={{ marginLeft: '4px' }}>{projectDropdownOpen ? '▲' : '▼'}</span>
+                        </button>
+                        {projectDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                maxHeight: '250px',
+                                overflowY: 'auto',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                zIndex: 100,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                            }}>
+                                <label 
+                                    style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        padding: '6px 8px', 
+                                        cursor: 'pointer',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        borderBottom: '2px solid #ddd',
+                                        backgroundColor: '#f9f9f9'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={projectFilter.length === 0}
+                                        onChange={() => setProjectFilter([])}
+                                        style={{ marginRight: '8px' }}
+                                    />
+                                    <span>{lang === 'en' ? 'All' : 'Tous'}</span>
+                                </label>
+                                {uniqueProjects.map(project => (
+                                    <label 
+                                        key={project} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            padding: '6px 8px', 
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            borderBottom: '1px solid #eee'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={projectFilter.includes(project)}
+                                            onChange={() => toggleProjectFilter(project)}
+                                            style={{ marginRight: '8px' }}
+                                        />
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div ref={companyDropdownRef} style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Company' : 'Entreprise'}
+                        </label>
+                        <button
+                            onClick={() => { setCompanyDropdownOpen(!companyDropdownOpen); setProjectDropdownOpen(false); setProvinceDropdownOpen(false); }}
+                            style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                backgroundColor: '#fff',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {companyFilter.length === 0 
+                                    ? (lang === 'en' ? 'All' : 'Tous')
+                                    : `${companyFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                            </span>
+                            <span style={{ marginLeft: '4px' }}>{companyDropdownOpen ? '▲' : '▼'}</span>
+                        </button>
+                        {companyDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                maxHeight: '250px',
+                                overflowY: 'auto',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                zIndex: 100,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                            }}>
+                                <label 
+                                    style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        padding: '6px 8px', 
+                                        cursor: 'pointer',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        borderBottom: '2px solid #ddd',
+                                        backgroundColor: '#f9f9f9'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={companyFilter.length === 0}
+                                        onChange={() => setCompanyFilter([])}
+                                        style={{ marginRight: '8px' }}
+                                    />
+                                    <span>{lang === 'en' ? 'All' : 'Tous'}</span>
+                                </label>
+                                {uniqueCompanies.map(company => (
+                                    <label 
+                                        key={company} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            padding: '6px 8px', 
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            borderBottom: '1px solid #eee'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={companyFilter.includes(company)}
+                                            onChange={() => toggleCompanyFilter(company)}
+                                            style={{ marginRight: '8px' }}
+                                        />
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{company}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div ref={provinceDropdownRef} style={{ position: 'relative', minWidth: '150px', flex: '1 1 150px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Province' : 'Province'}
+                        </label>
+                        <button
+                            onClick={() => { setProvinceDropdownOpen(!provinceDropdownOpen); setProjectDropdownOpen(false); setCompanyDropdownOpen(false); }}
+                            style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                backgroundColor: '#fff',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {provinceFilter.length === 0 
+                                    ? (lang === 'en' ? 'All' : 'Tous')
+                                    : `${provinceFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                            </span>
+                            <span style={{ marginLeft: '4px' }}>{provinceDropdownOpen ? '▲' : '▼'}</span>
+                        </button>
+                        {provinceDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                maxHeight: '250px',
+                                overflowY: 'auto',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                zIndex: 100,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                            }}>
+                                <label 
+                                    style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        padding: '6px 8px', 
+                                        cursor: 'pointer',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        borderBottom: '2px solid #ddd',
+                                        backgroundColor: '#f9f9f9'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={provinceFilter.length === 0}
+                                        onChange={() => setProvinceFilter([])}
+                                        style={{ marginRight: '8px' }}
+                                    />
+                                    <span>{lang === 'en' ? 'All' : 'Tous'}</span>
+                                </label>
+                                {uniqueProvinces.map(province => (
+                                    <label 
+                                        key={province} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            padding: '6px 8px', 
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            borderBottom: '1px solid #eee'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={provinceFilter.includes(province)}
+                                            onChange={() => toggleProvinceFilter(province)}
+                                            style={{ marginRight: '8px' }}
+                                        />
+                                        <span>{province}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ minWidth: '150px', flex: '1 1 150px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Capital Cost' : 'Coût en capital'}
+                        </label>
+                        <select
+                            value={capitalCostFilter}
+                            onChange={(e) => setCapitalCostFilter(e.target.value)}
+                            style={{ 
+                                padding: '6px 8px', 
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                width: '100%',
+                                backgroundColor: '#fff'
+                            }}
+                        >
+                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
+                            <option value="10_999">{lang === 'en' ? '$10-999 million' : '10-999 millions $'}</option>
+                            <option value="1000_5000">{lang === 'en' ? '$1-5 billion' : '1-5 milliards $'}</option>
+                            <option value="5000_plus">{lang === 'en' ? 'More than $5 billion' : 'Plus de 5 milliards $'}</option>
+                        </select>
+                    </div>
+
+                    <div style={{ minWidth: '130px', flex: '1 1 130px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Status' : 'Statut'}
+                        </label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            style={{ 
+                                padding: '6px 8px', 
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                width: '100%',
+                                backgroundColor: '#fff'
+                            }}
+                        >
+                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
+                            <option value="planned">{lang === 'en' ? 'Planned' : 'Prévu'}</option>
+                            <option value="under_construction">{lang === 'en' ? 'Under Construction' : 'En construction'}</option>
+                        </select>
+                    </div>
+
+                    <div style={{ minWidth: '120px', flex: '1 1 120px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Clean Tech' : 'Tech. propre'}
+                        </label>
+                        <select
+                            value={cleanTechFilter}
+                            onChange={(e) => setCleanTechFilter(e.target.value)}
+                            style={{ 
+                                padding: '6px 8px', 
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                width: '100%',
+                                backgroundColor: '#fff'
+                            }}
+                        >
+                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
+                            <option value="yes">{lang === 'en' ? 'Yes' : 'Oui'}</option>
+                            <option value="no">{lang === 'en' ? 'No' : 'Non'}</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div className="page30-table-wrapper">
                 <details 
                     className="page30-data-table"
@@ -1278,37 +1721,6 @@ const Page30 = () => {
                         {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                         <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                     </summary>
-                    <div style={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        marginTop: '10px', 
-                        marginBottom: '5px',
-                        padding: '8px 10px',
-                        backgroundColor: '#f5f5f5',
-                        borderRadius: '4px'
-                    }}>
-                        <button
-                            onClick={clearAllFilters}
-                            style={{
-                                padding: '6px 12px',
-                                fontSize: '11px',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            {lang === 'en' ? 'Clear Filters' : 'Effacer filtres'}
-                        </button>
-                        <span style={{ fontSize: '11px', color: '#666', marginLeft: 'auto' }}>
-                            {lang === 'en' 
-                                ? `Showing ${filteredTableData.length} of ${tableData.length} projects`
-                                : `Affichage de ${filteredTableData.length} sur ${tableData.length} projets`}
-                        </span>
-                    </div>
 
                     <div 
                         ref={topScrollRef}
@@ -1317,6 +1729,7 @@ const Page30 = () => {
                             overflowX: 'auto', 
                             overflowY: 'hidden',
                             marginBottom: '0px',
+                            marginTop: '10px',
                             display: windowWidth <= 768 ? 'none' : 'block' 
                         }}
                         aria-hidden="true"
@@ -1338,176 +1751,6 @@ const Page30 = () => {
                                     : 'Données sur les grands projets énergétiques incluant le nom du projet, l\'entreprise, la province, le coût en capital, le statut et l\'indicateur de technologie propre. Cliquez sur les en-têtes de colonne pour trier.'}
                             </caption>
                             <thead>
-                                <tr style={{ backgroundColor: '#f5f5f5' }}>
-                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}></th>
-                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom', position: 'relative' }}>
-                                        <div ref={companyDropdownRef} style={{ position: 'relative' }}>
-                                            <button
-                                                onClick={() => { setCompanyDropdownOpen(!companyDropdownOpen); setProvinceDropdownOpen(false); }}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '6px 8px',
-                                                    fontSize: '11px',
-                                                    border: '1px solid #ccc',
-                                                    borderRadius: '4px',
-                                                    backgroundColor: '#fff',
-                                                    cursor: 'pointer',
-                                                    textAlign: 'left',
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center'
-                                                }}
-                                            >
-                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {companyFilter.length === 0 
-                                                        ? (lang === 'en' ? 'All' : 'Tous')
-                                                        : `${companyFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
-                                                </span>
-                                                <span style={{ marginLeft: '4px' }}>{companyDropdownOpen ? '▲' : '▼'}</span>
-                                            </button>
-                                            {companyDropdownOpen && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: '100%',
-                                                    left: 0,
-                                                    right: 0,
-                                                    maxHeight: '200px',
-                                                    overflowY: 'auto',
-                                                    backgroundColor: '#fff',
-                                                    border: '1px solid #ccc',
-                                                    borderRadius: '4px',
-                                                    zIndex: 100,
-                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                                                }}>
-                                                    {uniqueCompanies.map(company => (
-                                                        <label 
-                                                            key={company} 
-                                                            style={{ 
-                                                                display: 'flex', 
-                                                                alignItems: 'center', 
-                                                                padding: '6px 8px', 
-                                                                cursor: 'pointer',
-                                                                fontSize: '11px',
-                                                                borderBottom: '1px solid #eee'
-                                                            }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={companyFilter.includes(company)}
-                                                                onChange={() => toggleCompanyFilter(company)}
-                                                                style={{ marginRight: '8px' }}
-                                                            />
-                                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{company}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom', position: 'relative' }}>
-                                        <div ref={provinceDropdownRef} style={{ position: 'relative' }}>
-                                            <button
-                                                onClick={() => { setProvinceDropdownOpen(!provinceDropdownOpen); setCompanyDropdownOpen(false); }}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '6px 8px',
-                                                    fontSize: '11px',
-                                                    border: '1px solid #ccc',
-                                                    borderRadius: '4px',
-                                                    backgroundColor: '#fff',
-                                                    cursor: 'pointer',
-                                                    textAlign: 'left',
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center'
-                                                }}
-                                            >
-                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {provinceFilter.length === 0 
-                                                        ? (lang === 'en' ? 'All' : 'Tous')
-                                                        : `${provinceFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
-                                                </span>
-                                                <span style={{ marginLeft: '4px' }}>{provinceDropdownOpen ? '▲' : '▼'}</span>
-                                            </button>
-                                            {provinceDropdownOpen && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: '100%',
-                                                    left: 0,
-                                                    right: 0,
-                                                    maxHeight: '200px',
-                                                    overflowY: 'auto',
-                                                    backgroundColor: '#fff',
-                                                    border: '1px solid #ccc',
-                                                    borderRadius: '4px',
-                                                    zIndex: 100,
-                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                                                }}>
-                                                    {uniqueProvinces.map(province => (
-                                                        <label 
-                                                            key={province} 
-                                                            style={{ 
-                                                                display: 'flex', 
-                                                                alignItems: 'center', 
-                                                                padding: '6px 8px', 
-                                                                cursor: 'pointer',
-                                                                fontSize: '11px',
-                                                                borderBottom: '1px solid #eee'
-                                                            }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={provinceFilter.includes(province)}
-                                                                onChange={() => toggleProvinceFilter(province)}
-                                                                style={{ marginRight: '8px' }}
-                                                            />
-                                                            <span>{province}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}></th>
-                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}>
-                                        <select
-                                            value={statusFilter}
-                                            onChange={(e) => setStatusFilter(e.target.value)}
-                                            style={{ 
-                                                padding: '6px', 
-                                                fontSize: '11px',
-                                                border: '1px solid #ccc',
-                                                borderRadius: '4px',
-                                                width: '100%'
-                                            }}
-                                        >
-                                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
-                                            <option value="planned">{lang === 'en' ? 'Planned' : 'Prévu'}</option>
-                                            <option value="under_construction">{lang === 'en' ? 'Under Construction' : 'En construction'}</option>
-                                        </select>
-                                    </th>
-                                    <th style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'bottom' }}>
-                                        <select
-                                            value={cleanTechFilter}
-                                            onChange={(e) => setCleanTechFilter(e.target.value)}
-                                            style={{ 
-                                                padding: '6px', 
-                                                fontSize: '11px',
-                                                border: '1px solid #ccc',
-                                                borderRadius: '4px',
-                                                width: '100%'
-                                            }}
-                                        >
-                                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
-                                            <option value="yes">{lang === 'en' ? 'Yes' : 'Oui'}</option>
-                                            <option value="no">{lang === 'en' ? 'No' : 'Non'}</option>
-                                        </select>
-                                    </th>
-                                </tr>
                                 <tr style={{ backgroundColor: '#e6e6e6' }}>
                                     <th 
                                         scope="col" 

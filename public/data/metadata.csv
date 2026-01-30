@@ -97,3 +97,13 @@ cleantech_multiple_count,Multiple - Number of projects,Number,units
 cleantech_multiple_value,Multiple - Project value,Billions of dollars,billions
 cleantech_other_count,Other - Number of projects,Number,units
 cleantech_other_value,Other - Project value,Billions of dollars,billions
+cea_total,Canadian Energy Assets - Total (A1),Billions of dollars,billions
+cea_domestic,"Canadian Energy Assets - Domestic (A3, Country=Canada)",Billions of dollars,billions
+cea_abroad,Canadian Energy Assets - Abroad (A4),Billions of dollars,billions
+cea_canada,Canadian Energy Assets - Canada (by Continent),Billions of dollars,billions
+cea_north_america,Canadian Energy Assets - North America (US and Mexico),Billions of dollars,billions
+cea_latin_america,Canadian Energy Assets - Latin America and Caribbean,Billions of dollars,billions
+cea_europe,Canadian Energy Assets - Europe,Billions of dollars,billions
+cea_africa,Canadian Energy Assets - Africa,Billions of dollars,billions
+cea_asia,Canadian Energy Assets - Asia,Billions of dollars,billions
+cea_oceania,Canadian Energy Assets - Oceania,Billions of dollars,billions
