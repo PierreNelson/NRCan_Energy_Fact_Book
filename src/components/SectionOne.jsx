@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Page1 from '../pages/Page1';
+import Page2 from '../pages/Page2';
+import Page3 from '../pages/Page3';
 import Page7 from '../pages/Page7';
 import Page8 from '../pages/Page8';
 
@@ -29,6 +31,12 @@ const SectionOne = () => {
         <div className="stacked-section-container">
             <div id="energy-overview" className="stacked-page-wrapper">
                 <Page1 />
+            </div>
+            <div id="energy-production" className="stacked-page-wrapper">
+                <Page2 />
+            </div>
+            <div id="canadian-energy-production" className="stacked-page-wrapper">
+                <Page3 />
             </div>
             <div id="economic-contributions" className="stacked-page-wrapper">
                 <Page7 />

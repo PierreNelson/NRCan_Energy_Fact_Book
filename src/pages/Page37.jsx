@@ -21,6 +21,13 @@ const Page37 = () => {
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, index: null });
     const topScrollRef = useRef(null);
+    
+    // Custom dropdown state
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [focusedYear, setFocusedYear] = useState(null);
+    const dropdownRef = useRef(null);
+    const listRef = useRef(null);
+    const yearButtonRef = useRef(null);
     const tableScrollRef = useRef(null);
 
     useEffect(() => {
@@ -124,6 +131,29 @@ const Page37 = () => {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleDropdownClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleDropdownClickOutside);
+        return () => document.removeEventListener('mousedown', handleDropdownClickOutside);
+    }, []);
+
+    // Sync focusedYear when year changes or dropdown opens
+    useEffect(() => {
+        if (year) setFocusedYear(year);
+    }, [year, isDropdownOpen]);
+
+    // Auto-focus the list when dropdown opens
+    useEffect(() => {
+        if (isDropdownOpen && listRef.current) {
+            listRef.current.focus();
+        }
+    }, [isDropdownOpen]);
 
     useEffect(() => {
         getEnvironmentalProtectionData()
@@ -754,8 +784,13 @@ const getAccessibleDataTable = () => {
                     white-space: nowrap;
                 }
 
-                .page37-year-select {
-                    padding: 8px 12px;
+                .custom-dropdown {
+                    position: relative;
+                    display: inline-block;
+                }
+
+                .dropdown-button {
+                    padding: 8px 35px 8px 12px;
                     font-size: 16px;
                     font-family: Arial, sans-serif;
                     border: 1px solid #ccc;
@@ -763,16 +798,74 @@ const getAccessibleDataTable = () => {
                     background-color: #fff;
                     cursor: pointer;
                     min-width: 100px;
+                    text-align: left;
+                    position: relative;
                 }
 
-                .page37-year-select:hover {
+                .dropdown-button:hover {
                     border-color: #007bff;
                 }
 
-                .page37-year-select:focus {
+                .dropdown-button:focus {
                     outline: 2px solid #005fcc;
                     outline-offset: 2px;
                     border-color: #007bff;
+                }
+
+                .dropdown-arrow {
+                    position: absolute;
+                    right: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-size: 10px;
+                    pointer-events: none;
+                }
+
+                .dropdown-list {
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    width: 100%;
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                    border: 1px solid #ccc;
+                    border-top: none;
+                    border-radius: 0 0 4px 4px;
+                    background-color: #fff;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    z-index: 1000;
+                }
+
+                .dropdown-list:focus {
+                    outline: 2px solid #005fcc;
+                    outline-offset: -2px;
+                }
+
+                .dropdown-option {
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    border-bottom: 1px solid #eee;
+                }
+
+                .dropdown-option:last-child {
+                    border-bottom: none;
+                }
+
+                .dropdown-option.focused {
+                    background-color: #005fcc;
+                    color: #fff;
+                }
+
+                .dropdown-option.selected {
+                    font-weight: bold;
+                }
+
+                .dropdown-option:hover {
+                    background-color: #005fcc;
+                    color: #fff;
                 }
 
                 .page37-container {
@@ -969,7 +1062,7 @@ const getAccessibleDataTable = () => {
                     }
                 }
 
-                @media (max-width: 768px) {
+               @media (max-width: 768px) {
                     .page-37 {
                         border-right: none !important;
                     }
@@ -984,16 +1077,28 @@ const getAccessibleDataTable = () => {
                         margin-bottom: 10px;
                         margin-right: 0;
                     }
-                    .page37-chart-column,
+                    
                     .page37-chart-area {
                         height: 400px;
+                    }
+
+                    .page37-chart-column {
+                        height: auto !important;
+                        min-height: 400px;
+                        margin-bottom: 0 !important; 
+                    }
+
+                    .page37-data-table {
+                        margin-bottom: 20px !important; 
                     }
                 }
 
                 @media (max-width: 640px) {
-                    .page37-chart-column,
                     .page37-chart-area {
                         height: 360px;
+                    }
+                    .page37-chart-column {
+                        height: auto !important;
                     }
                 }
 
@@ -1001,15 +1106,20 @@ const getAccessibleDataTable = () => {
                     .page37-chart-area {
                         height: 460px;
                     }
+                    .page37-chart-column {
+                        height: auto !important;
+                    }
                     .page37-title {
                         font-size: 1.3rem;
                     }
                 }
 
                 @media (max-width: 384px) {
-                    .page37-chart-column,
-                    .page37-chart-area {
+                   .page37-chart-area {
                         height: 460px;
+                    }
+                    .page37-chart-column {
+                        height: auto !important;
                     }
                 }
 
@@ -1018,14 +1128,12 @@ const getAccessibleDataTable = () => {
                     display: none;
                 }
 
-                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
                 .page37-table-wrapper {
                     display: grid;
                     grid-template-columns: minmax(0, 1fr);
                     width: 100%;
                 }
 
-                /* Table horizontal scroll */
                 .table-responsive {
                     display: block;
                     width: 100%;
@@ -1081,34 +1189,98 @@ const getAccessibleDataTable = () => {
                         </>
                     )}
                 </header>
-                <div className="page37-year-selector">
-                    <label 
-                        id="year-label-37"
-                        className="page37-year-label"
-                        htmlFor="year-select-37"
-                    >
+                <div className="page37-year-selector" ref={dropdownRef}>
+                    <label id="year-label-37" className="page37-year-label" aria-hidden="true">
                         {getText('year_slider_label', lang)}
                     </label>
-                    <select
-                        id="year-select-37"
-                        className="page37-year-select"
-                        value={year || maxYear}
-                        onChange={(e) => setYear(parseInt(e.target.value))}
-                        aria-labelledby="year-label-37"
-                    >
-                        {yearsList.map(y => (
-                            <option key={y} value={y}>
-                                {y}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div 
-                    aria-live="polite" 
-                    aria-atomic="true" 
-                    className="wb-inv"
-                >
-                    {chartData && `${year}`}
+                    <div id="year-instructions-37" className="wb-inv">
+                        {lang === 'en' 
+                            ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
+                            : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
+                    </div>
+                    <div className="custom-dropdown">
+                        <button
+                            ref={yearButtonRef}
+                            type="button"
+                            className="dropdown-button"
+                            aria-haspopup="listbox"
+                            aria-expanded={isDropdownOpen}
+                            aria-label={`${getText('year_slider_label', lang)} ${year || maxYear}`}
+                            aria-describedby="year-instructions-37"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    setIsDropdownOpen(true);
+                                } else if (e.key === 'Escape') {
+                                    setIsDropdownOpen(false);
+                                }
+                            }}
+                        >
+                            {year || maxYear}
+                            <span className="dropdown-arrow" aria-hidden="true">▼</span>
+                        </button>
+                        {isDropdownOpen && (
+                            <ul
+                                ref={listRef}
+                                role="listbox"
+                                aria-label={getText('year_slider_label', lang)}
+                                aria-activedescendant={focusedYear ? `year-option-37-${focusedYear}` : undefined}
+                                tabIndex={-1}
+                                className="dropdown-list"
+                                onKeyDown={(e) => {
+                                    const currentIndex = yearsList.findIndex(y => y === focusedYear);
+                                    
+                                    if (e.key === 'ArrowDown') {
+                                        e.preventDefault();
+                                        const nextIndex = Math.min(currentIndex + 1, yearsList.length - 1);
+                                        setFocusedYear(yearsList[nextIndex]);
+                                    } else if (e.key === 'ArrowUp') {
+                                        e.preventDefault();
+                                        const prevIndex = Math.max(currentIndex - 1, 0);
+                                        setFocusedYear(yearsList[prevIndex]);
+                                    } else if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setYear(focusedYear);
+                                        setIsDropdownOpen(false);
+                                        if (yearButtonRef.current) yearButtonRef.current.focus();
+                                    } else if (e.key === 'Escape') {
+                                        setIsDropdownOpen(false);
+                                        if (yearButtonRef.current) yearButtonRef.current.focus();
+                                    } else if (e.key === 'Tab') {
+                                        setIsDropdownOpen(false);
+                                    } else if (e.key === 'Home') {
+                                        e.preventDefault();
+                                        setFocusedYear(yearsList[0]);
+                                    } else if (e.key === 'End') {
+                                        e.preventDefault();
+                                        setFocusedYear(yearsList[yearsList.length - 1]);
+                                    }
+                                }}
+                            >
+                                {yearsList.map((y) => (
+                                    <li
+                                        key={y}
+                                        id={`year-option-37-${y}`}
+                                        role="option"
+                                        aria-selected={year === y}
+                                        className={`dropdown-option ${focusedYear === y ? 'focused' : ''} ${year === y ? 'selected' : ''}`}
+                                        onClick={() => {
+                                            setYear(y);
+                                            setIsDropdownOpen(false);
+                                            if (yearButtonRef.current) yearButtonRef.current.focus();
+                                        }}
+                                        onMouseEnter={() => setFocusedYear(y)}
+                                    >
+                                        {y}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                    <div role="status" className="wb-inv" aria-live="polite">
+                        {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
+                    </div>
                 </div>
                 <div className={`page37-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
                     <div className="page37-chart-column">

@@ -201,6 +201,18 @@ const Sidebar = ({ lang }) => {
                                 {getText('nav_section1_title', lang)}
                             </NavLink>
                             <NavLink
+                                to="/section-1#energy-production"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_energy_production', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-1#canadian-energy-production"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_canadian_energy_production', lang)}
+                            </NavLink>
+                            <NavLink
                                 to="/section-1#economic-contributions"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >

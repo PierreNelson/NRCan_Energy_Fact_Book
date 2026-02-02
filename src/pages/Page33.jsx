@@ -15,6 +15,13 @@ const Page33 = () => {
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const chartRef = useRef(null);
+    
+    // Custom dropdown state
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [focusedYear, setFocusedYear] = useState(null);
+    const dropdownRef = useRef(null);
+    const listRef = useRef(null);
+    const buttonRef = useRef(null);
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
@@ -49,6 +56,29 @@ const Page33 = () => {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Sync focusedYear when year changes or dropdown opens
+    useEffect(() => {
+        if (year) setFocusedYear(year);
+    }, [year, isDropdownOpen]);
+
+    // Auto-focus the list when dropdown opens
+    useEffect(() => {
+        if (isDropdownOpen && listRef.current) {
+            listRef.current.focus();
+        }
+    }, [isDropdownOpen]);
 
     useEffect(() => {
         getCEAData()
@@ -350,13 +380,13 @@ const Page33 = () => {
 
     // Region definitions with colors matching the reference image
     const regionDefinitions = useMemo(() => [
-        { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#6cbe8d', labelLat: 80, labelLon: -160 },
-        { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis et Mexique', color: '#6cbe8d', labelLat: 35, labelLon: -140 },
-        { key: 'latin_america', nameEn: 'Americas (South and Central\nAmerica, Caribbean)', nameFr: 'Amériques (Amérique du Sud,\nAmérique centrale et Caraïbes)', color: '#f26721', labelLat: -18, labelLon: -110 },
-        { key: 'europe', nameEn: 'Europe', nameFr: 'Europe', color: '#204897', labelLat: 48, labelLon: -25 },
-        { key: 'africa', nameEn: 'Africa', nameFr: 'Afrique', color: '#e8d159', labelLat: -10, labelLon: 0 },
-        { key: 'asia', nameEn: 'Asia', nameFr: 'Asie', color: '#a91e22', labelLat: 20, labelLon: 135 },
-        { key: 'oceania', nameEn: 'Oceania', nameFr: 'Océanie', color: '#857550', labelLat: -25, labelLon: 100 }
+        { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#6cbe8d', labelLat: 78, labelLon: -160 },
+        { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis et Mexique', color: '#6cbe8d', labelLat: 35, labelLon: -150 },
+        { key: 'latin_america', nameEn: 'Americas (South and Central\nAmerica, Caribbean)', nameFr: 'Amériques (Amérique du Sud,\nAmérique centrale et Caraïbes)', color: '#f26721', labelLat: -18, labelLon: -120 },
+        { key: 'europe', nameEn: 'Europe', nameFr: 'Europe', color: '#204897', labelLat: 48, labelLon: -32 },
+        { key: 'africa', nameEn: 'Africa', nameFr: 'Afrique', color: '#e8d159', labelLat: -10, labelLon: -5 },
+        { key: 'asia', nameEn: 'Asia', nameFr: 'Asie', color: '#a91e22', labelLat: 20, labelLon: 140 },
+        { key: 'oceania', nameEn: 'Oceania', nameFr: 'Océanie', color: '#857550', labelLat: -25, labelLon: 90 }
     ], []);
 
     const regionData = useMemo(() => {
@@ -372,7 +402,11 @@ const Page33 = () => {
     const mapData = useMemo(() => {
         if (!regionData.length) return [];
 
-        // 1. Create choropleth traces for each region (no hover)
+        // 1. Detect Zoom Level (Moved to top so we can use it for labels)
+        const zoomLevel = typeof window !== 'undefined' ? Math.round(window.devicePixelRatio * 100) : 100;
+        const isHighZoom = zoomLevel >= 200; // Covers 200%, 250%, 300%+
+
+        // 2. Create choropleth traces
         const choroplethTraces = regionData.map(region => ({
             type: 'choropleth',
             locationmode: 'ISO-3',
@@ -384,14 +418,14 @@ const Page33 = () => {
             marker: {
                 line: {
                     color: region.color,
-                    width: 1 // Keeps borders hidden by matching fill color
+                    width: 1
                 }
             },
             name: lang === 'en' ? region.nameEn : region.nameFr,
             showlegend: false
         }));
 
-        // 2. Create text annotations
+        // 3. Create text annotations
         const textTrace = {
             type: 'scattergeo',
             mode: 'text',
@@ -399,7 +433,20 @@ const Page33 = () => {
             lon: regionData.map(r => r.labelLon),
             text: regionData.map(r => {
                 const valueText = `<b>${formatBillion(r.value, lang === 'fr')}</b>`;
-                const rawName = lang === 'en' ? r.nameEn : r.nameFr;
+                let rawName = lang === 'en' ? r.nameEn : r.nameFr;
+
+                // SPECIAL WRAPPING FOR HIGH ZOOM (300%)
+                if (isHighZoom && lang === 'en') {
+                    if (r.key === 'north_america') {
+                        // "U.S. and /nMexico"
+                        rawName = 'U.S. and\nMexico';
+                    } else if (r.key === 'latin_america') {
+                        // "Americas (South and /nCentral America, /nCaribbean)"
+                        rawName = 'Americas (South \nand Central\n America, Caribbean)';
+                    }
+                }
+
+                // Replace all newlines with HTML breaks
                 const regionName = rawName.replace(/\n/g, '<br>');
                 return `${valueText}<br>${regionName}`;
             }),
@@ -412,7 +459,7 @@ const Page33 = () => {
             showlegend: false
         };
 
-        // 3. Correction Dot to hide Big Diomede Island (Settings kept as is)
+        // 4. Correction Dot for Big Diomede Island (Russia)
         const islandMaskTrace = {
             type: 'scattergeo',
             mode: 'markers',
@@ -420,7 +467,7 @@ const Page33 = () => {
             lon: [-173.0], 
             marker: {
                 size: 25,         
-                color: '#ffffff', // White
+                color: '#ffffff', 
                 opacity: 1,
                 symbol: 'circle'
             },
@@ -428,7 +475,7 @@ const Page33 = () => {
             showlegend: false
         };
 
-        // 4. Extra White Hider (Settings kept as is)
+        // 5. Extra White Hider (Right of Russia)
         const extraWhiteMask = {
             type: 'scattergeo',
             mode: 'markers',
@@ -444,25 +491,23 @@ const Page33 = () => {
             showlegend: false
         };
 
-        // 5. (NEW) Kaliningrad Correction (Russian exclave in Europe)
+        // 6. Kaliningrad Correction
         const kaliningradMask = {
             type: 'scattergeo',
             mode: 'markers',
-            lat: [54.8],    // Latitude of Kaliningrad
-            lon: [21.5],    // Longitude of Kaliningrad
+            lat: [54.8],    
+            lon: [21.5],    
             marker: {
                 size: 8,        
-                color: '#204897', // Matches your Europe Color
+                color: '#204897', // Europe Blue
                 opacity: 1,
                 symbol: 'circle'
             },
             hoverinfo: 'skip',
             showlegend: false
         };
-
-        const zoomLevel = typeof window !== 'undefined' ? Math.round(window.devicePixelRatio * 100) : 100;
-        const isHighZoom = zoomLevel >= 200;
         
+        // Return simplified traces for high zoom to prevent clutter
         if (isHighZoom) {
             return [...choroplethTraces, textTrace, kaliningradMask];
         }
@@ -626,7 +671,7 @@ const Page33 = () => {
 
                 .page33-title {
                     font-family: Georgia, "Times New Roman", serif;
-                    font-size: 3.5rem;
+                    font-size: 2.2rem;
                     font-weight: bold;
                     color: #8a7d5a;
                     margin: 30px 0 20px 0;
@@ -657,6 +702,7 @@ const Page33 = () => {
                 .page33-content-wrapper {
                     display: flex;
                     flex-direction: row;
+                    justify-content: space-between; 
                     gap: 0;
                     margin-top: 20px;
                     position: relative;
@@ -668,6 +714,7 @@ const Page33 = () => {
                     position: relative;
                     overflow: visible;
                     min-height: 300px;
+                    display: block; 
                 }
                 
                 .page33-map-container .js-plotly-plot {
@@ -685,9 +732,9 @@ const Page33 = () => {
                     display: flex;
                     flex-direction: column;
                     gap: 20px;
-                    padding-top: 40px;
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
+                    padding-top: 0;         
+                    margin-left: auto;      
+                    align-items: flex-end;  
                     box-sizing: border-box;
                 }
 
@@ -814,7 +861,7 @@ const Page33 = () => {
                     margin: 10px 0;
                     padding: 2px 0;
                     position: relative;
-                    z-index: 10;
+                    z-index: 100;
                 }
 
                 .year-selector label {
@@ -824,8 +871,13 @@ const Page33 = () => {
                     font-family: Arial, sans-serif;
                 }
 
-                .year-selector select {
-                    padding: 8px 12px;
+                .custom-dropdown {
+                    position: relative;
+                    display: inline-block;
+                }
+
+                .dropdown-button {
+                    padding: 8px 35px 8px 12px;
                     font-size: 16px;
                     font-family: Arial, sans-serif;
                     border: 1px solid #ccc;
@@ -833,22 +885,88 @@ const Page33 = () => {
                     background-color: #fff;
                     cursor: pointer;
                     min-width: 100px;
+                    text-align: left;
+                    position: relative;
                 }
 
-                .year-selector select:hover {
+                .dropdown-button:hover {
                     border-color: #007bff;
                 }
 
-                .year-selector select:focus {
+                .dropdown-button:focus {
                     outline: 2px solid #005fcc;
                     outline-offset: 2px;
                     border-color: #007bff;
+                }
+
+                .dropdown-arrow {
+                    position: absolute;
+                    right: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-size: 10px;
+                    pointer-events: none;
+                }
+
+                .dropdown-list {
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    width: 100%;
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                    border: 1px solid #ccc;
+                    border-top: none;
+                    border-radius: 0 0 4px 4px;
+                    background-color: #fff;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                }
+
+                .dropdown-list:focus {
+                    outline: 2px solid #005fcc;
+                    outline-offset: -2px;
+                }
+
+                .dropdown-option {
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    border-bottom: 1px solid #eee;
+                }
+
+                .dropdown-option:last-child {
+                    border-bottom: none;
+                }
+
+                .dropdown-option.focused {
+                    background-color: #005fcc;
+                    color: #fff;
+                }
+
+                .dropdown-option.selected {
+                    font-weight: bold;
+                }
+
+                .dropdown-option:hover {
+                    background-color: #005fcc;
+                    color: #fff;
                 }
 
                 @media (max-width: 1100px) {
                     .page33-content-wrapper {
                         flex-direction: column;
                     }
+                    
+                    .page33-map-container {
+                        flex: none;      
+                        width: 100%;     
+                        height: auto;    
+                        margin-bottom: 30px; 
+                        display: block;  
+                    }
+
                     .page33-stats-container {
                         width: 100%;
                         flex-direction: row;
@@ -872,6 +990,37 @@ const Page33 = () => {
                     }
                     .page33-map-title {
                         font-size: 1.1rem;
+                    } 
+                }
+
+                @media (max-width: 640px) {
+                    .page33-content-wrapper {
+                        flex-direction: column;
+                    }
+                    
+                    .page33-map-container {
+                        flex: none;      
+                        width: 100%;     
+                        height: auto;    
+                        margin-bottom: 30px; 
+                        display: block;  
+                    }
+
+                    .page33-stats-container {
+                        width: 100%;
+                        /* Stack vertically */
+                        flex-direction: column; 
+                        /* Align left */
+                        align-items: flex-start;
+                        justify-content: flex-start;
+                        gap: 20px; 
+                        padding-top: 10px;
+                        margin-right: 0;
+                        padding-right: 0;
+                    }
+                    
+                    .page33-stat {
+                        text-align: left;
                     }
                 }
             `}</style>
@@ -883,22 +1032,99 @@ const Page33 = () => {
                     </h1>
                 </header>
 
-                <div className="year-selector">
-                    <label id="year-label" htmlFor="year-select">
+                <div className="year-selector" ref={dropdownRef}>
+                    <label id="year-label" aria-hidden="true">
                         {getText('year_slider_label', lang)}
                     </label>
-                    <select
-                        id="year-select"
-                        value={year || ''}
-                        onChange={(e) => setYear(parseInt(e.target.value))}
-                        aria-labelledby="year-label"
-                    >
-                        {allData.filter(yearData => yearData.year !== 2012).map(yearData => (
-                            <option key={yearData.year} value={yearData.year}>
-                                {yearData.year}
-                            </option>
-                        ))}
-                    </select>
+                    <div id="year-instructions" className="wb-inv">
+                        {lang === 'en' 
+                            ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
+                            : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
+                    </div>
+                    <div className="custom-dropdown">
+                        <button
+                            ref={buttonRef}
+                            type="button"
+                            className="dropdown-button"
+                            aria-haspopup="listbox"
+                            aria-expanded={isDropdownOpen}
+                            aria-label={`${getText('year_slider_label', lang)} ${year}`}
+                            aria-describedby="year-instructions"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    setIsDropdownOpen(true);
+                                } else if (e.key === 'Escape') {
+                                    setIsDropdownOpen(false);
+                                }
+                            }}
+                        >
+                            {year || '...'}
+                            <span className="dropdown-arrow" aria-hidden="true">▼</span>
+                        </button>
+                        {isDropdownOpen && (
+                            <ul
+                                ref={listRef}
+                                role="listbox"
+                                aria-label={getText('year_slider_label', lang)}
+                                aria-activedescendant={focusedYear ? `year-option-${focusedYear}` : undefined}
+                                tabIndex={-1}
+                                className="dropdown-list"
+                                onKeyDown={(e) => {
+                                    const validYears = allData.filter(d => d.year !== 2012);
+                                    const currentIndex = validYears.findIndex(y => y.year === focusedYear);
+                                    
+                                    if (e.key === 'ArrowDown') {
+                                        e.preventDefault();
+                                        const nextIndex = Math.min(currentIndex + 1, validYears.length - 1);
+                                        setFocusedYear(validYears[nextIndex].year);
+                                    } else if (e.key === 'ArrowUp') {
+                                        e.preventDefault();
+                                        const prevIndex = Math.max(currentIndex - 1, 0);
+                                        setFocusedYear(validYears[prevIndex].year);
+                                    } else if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setYear(focusedYear);
+                                        setIsDropdownOpen(false);
+                                        if (buttonRef.current) buttonRef.current.focus();
+                                    } else if (e.key === 'Escape') {
+                                        setIsDropdownOpen(false);
+                                        if (buttonRef.current) buttonRef.current.focus();
+                                    } else if (e.key === 'Tab') {
+                                        setIsDropdownOpen(false);
+                                    } else if (e.key === 'Home') {
+                                        e.preventDefault();
+                                        setFocusedYear(validYears[0].year);
+                                    } else if (e.key === 'End') {
+                                        e.preventDefault();
+                                        setFocusedYear(validYears[validYears.length - 1].year);
+                                    }
+                                }}
+                            >
+                                {allData.filter(d => d.year !== 2012).map((yearData) => (
+                                    <li
+                                        key={yearData.year}
+                                        id={`year-option-${yearData.year}`}
+                                        role="option"
+                                        aria-selected={year === yearData.year}
+                                        className={`dropdown-option ${focusedYear === yearData.year ? 'focused' : ''} ${year === yearData.year ? 'selected' : ''}`}
+                                        onClick={() => {
+                                            setYear(yearData.year);
+                                            setIsDropdownOpen(false);
+                                            if (buttonRef.current) buttonRef.current.focus();
+                                        }}
+                                        onMouseEnter={() => setFocusedYear(yearData.year)}
+                                    >
+                                        {yearData.year}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                    <div role="status" className="wb-inv" aria-live="polite">
+                        {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
+                    </div>
                 </div>
 
                 <div className="page33-narrative" aria-label={narrativeTextSR}>
@@ -915,10 +1141,23 @@ const Page33 = () => {
 
                 <div className="page33-content-wrapper">
                     <div className="page33-map-container">
-                        <h2 className="page33-map-title">
+                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '10px' }}>
+                        <h2 
+                            className="page33-map-title" 
+                            style={{ margin: 0, textAlign: 'center' }} // Remove margins so flex controls positioning
+                        >
                             {getText('page33_map_title', lang)} {year}
                         </h2>
-                        <div ref={chartRef} style={{ position: 'relative' }}>
+                    </div>
+                        {}
+                        <div 
+                            ref={chartRef} 
+                            style={{ 
+                                position: 'relative', 
+                                width: '100%', 
+                                height: windowWidth <= 768 ? '400px' : '500px' 
+                            }}
+                        >
                             <h2 className="wb-inv">{stripHtml(`${getText('page33_chart_title', lang)} ${year}`)}</h2>
                             <div role="region" aria-label={getText('page33_chart_summary', lang)}>
                                 <figure style={{ margin: 0, position: 'relative' }}>
@@ -956,7 +1195,7 @@ const Page33 = () => {
                                             responsive: true,
                                             scrollZoom: false,
                                             doubleClick: false,
-                                            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'resetScale2d', 'toImage', 'resetGeo'],
+                                            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'resetScale2d', 'toImage', 'resetGeo', 'pan2d', 'zoomin', 'zoomout'],
                                             modeBarButtonsToAdd: [{
                                                 name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
                                                 icon: {

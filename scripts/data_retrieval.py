@@ -2155,6 +2155,143 @@ def process_cea_data():
         return [], []
 
 
+def process_world_energy_production_data():
+    """
+    Process world energy production data from IEA World Energy Balances.
+    
+    Returns top energy producing countries by share of world production.
+    Data source: World Energy Balances Highlights 2025.xlsx
+    
+    Note: Russia and Saudi Arabia are not included in IEA data (non-members).
+    The top 6 countries shown will be based on available IEA data only.
+    
+    Returns:
+        data_rows: list of (vector, year, value) tuples
+        metadata_rows: list of (vector, title, uom, scalar_factor) tuples
+    """
+    print("Processing World Energy Production data...")
+    
+    excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "World Energy Balances Highlights 2025.xlsx")
+    
+    if not os.path.exists(excel_path):
+        print(f"  WARNING: Excel file not found: {excel_path}")
+        return [], []
+    
+    try:
+        df = pd.read_excel(excel_path, sheet_name='TimeSeries_1971-2024', header=1)
+        
+        production_df = df[(df['Flow'] == 'Production (PJ)') & (df['Product'] == 'Total')]
+        
+        aggregates = [
+            'World', 'Non-OECD Total', 'IEA Total', 'OECD Total', 
+            'Non-OECD Asia (including China)', 'Middle East', 
+            'Non-OECD Europe and Eurasia', 'Africa', 'Non-OECD Americas',
+            'IEA and Accession/Association countries', 'OECD Europe', 
+            'OECD Americas', 'OECD Asia Oceania',
+            'European Union - 28 countries', 'European Union - 27 countries'
+        ]
+        
+        countries_df = production_df[~production_df['Country'].isin(aggregates)]
+        world_df = production_df[production_df['Country'] == 'World']
+        
+        country_mapping = {
+            'People\'s Republic of China': 'china',
+            'United States': 'united_states',
+            'India': 'india',
+            'Canada': 'canada',
+            'Indonesia': 'indonesia',
+            'Australia': 'australia',
+            'Brazil': 'brazil',
+            'Norway': 'norway',
+            'Mexico': 'mexico',
+            'South Africa': 'south_africa',
+            'Colombia': 'colombia',
+            'United Kingdom': 'united_kingdom',
+            'Egypt': 'egypt',
+            'Argentina': 'argentina',
+        }
+        
+        data_rows = []
+        years = [str(y) for y in range(2007, 2025)]
+        
+        for year in years:
+            if year not in df.columns:
+                continue
+                
+            year_int = int(year)
+            world_total = world_df[year].values[0] if len(world_df) > 0 else None
+            if world_total is None or world_total <= 0:
+                continue
+            
+            data_rows.append(('energy_prod_world_total', year_int, round(world_total, 2)))
+            
+            canada_val = countries_df[countries_df['Country'] == 'Canada'][year].values
+            if len(canada_val) > 0:
+                data_rows.append(('energy_prod_canada_pj', year_int, round(canada_val[0], 2)))
+                data_rows.append(('energy_prod_canada_pct', year_int, round(canada_val[0] / world_total * 100, 1)))
+            
+            all_countries = {}
+            
+            for _, row in countries_df.iterrows():
+                country_name = row['Country']
+                country_key = country_mapping.get(country_name)
+                if country_key:
+                    production_pj = row[year]
+                    if pd.notna(production_pj) and production_pj > 0:
+                        pct_of_world = production_pj / world_total * 100
+                        all_countries[country_key] = {
+                            'pj': round(production_pj, 2),
+                            'pct': round(pct_of_world, 1)
+                        }
+            
+            sorted_countries = sorted(all_countries.items(), key=lambda x: x[1]['pct'], reverse=True)
+            
+            for rank, (country_key, values) in enumerate(sorted_countries[:10], 1):
+                data_rows.append((f'energy_prod_{country_key}_pj', year_int, values['pj']))
+                data_rows.append((f'energy_prod_{country_key}_pct', year_int, values['pct']))
+                data_rows.append((f'energy_prod_{country_key}_rank', year_int, rank))
+        
+        canada_2005 = countries_df[countries_df['Country'] == 'Canada']['2005'].values
+        world_2005 = world_df['2005'].values[0] if len(world_df) > 0 else None
+        
+        for year in years:
+            if year not in df.columns:
+                continue
+            year_int = int(year)
+            canada_current = countries_df[countries_df['Country'] == 'Canada'][year].values
+            world_current = world_df[year].values[0] if len(world_df) > 0 else None
+            
+            if len(canada_2005) > 0 and len(canada_current) > 0 and canada_2005[0] > 0:
+                canada_growth = (canada_current[0] - canada_2005[0]) / canada_2005[0] * 100
+                data_rows.append(('energy_prod_canada_growth_since_2005', year_int, round(canada_growth, 0)))
+            
+            if world_2005 and world_current and world_2005 > 0:
+                world_growth = (world_current - world_2005) / world_2005 * 100
+                data_rows.append(('energy_prod_world_growth_since_2005', year_int, round(world_growth, 0)))
+        
+        metadata_rows = [
+            ('energy_prod_world_total', 'World Total Primary Energy Production', 'PJ', 'petajoules'),
+            ('energy_prod_canada_pj', 'Canada Primary Energy Production', 'PJ', 'petajoules'),
+            ('energy_prod_canada_pct', 'Canada Share of World Energy Production', '%', 'percent'),
+            ('energy_prod_canada_growth_since_2005', 'Canada Energy Production Growth Since 2005', '%', 'percent'),
+            ('energy_prod_world_growth_since_2005', 'World Energy Production Growth Since 2005', '%', 'percent'),
+            ('energy_prod_china_pct', 'China Share of World Energy Production', '%', 'percent'),
+            ('energy_prod_united_states_pct', 'United States Share of World Energy Production', '%', 'percent'),
+            ('energy_prod_india_pct', 'India Share of World Energy Production', '%', 'percent'),
+            ('energy_prod_indonesia_pct', 'Indonesia Share of World Energy Production', '%', 'percent'),
+            ('energy_prod_australia_pct', 'Australia Share of World Energy Production', '%', 'percent'),
+        ]
+        
+        print(f"  Processed {len(data_rows)} data rows for {len(years)} years")
+        return data_rows, metadata_rows
+        
+    except Exception as e:
+        print(f"  ERROR processing World Energy data: {e}")
+        import traceback
+        traceback.print_exc()
+        return [], []
+
+
 def refresh_all_data():
     """Fetch, process and save all data from StatCan to data.csv and metadata.csv."""
     print("=" * 60)
@@ -2177,6 +2314,7 @@ def refresh_all_data():
         ("Major Projects", process_major_projects_data),
         ("Clean Tech", process_clean_tech_data),
         ("Canadian Energy Assets (CEA)", process_cea_data),
+        ("World Energy Production", process_world_energy_production_data),
     ]
     
     for source_name, process_func in data_sources:

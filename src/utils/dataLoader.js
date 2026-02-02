@@ -391,3 +391,21 @@ export async function getCEAData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+export async function getWorldEnergyProductionData() {
+    const allData = await loadAllData();
+    
+    const energyData = allData.filter(row => row.vector && row.vector.startsWith('energy_prod_'));
+    
+    const yearMap = {};
+    energyData.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('energy_prod_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

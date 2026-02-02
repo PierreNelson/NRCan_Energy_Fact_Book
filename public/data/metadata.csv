@@ -107,3 +107,13 @@ cea_europe,Canadian Energy Assets - Europe,Billions of dollars,billions
 cea_africa,Canadian Energy Assets - Africa,Billions of dollars,billions
 cea_asia,Canadian Energy Assets - Asia,Billions of dollars,billions
 cea_oceania,Canadian Energy Assets - Oceania,Billions of dollars,billions
+energy_prod_world_total,World Total Primary Energy Production,PJ,petajoules
+energy_prod_canada_pj,Canada Primary Energy Production,PJ,petajoules
+energy_prod_canada_pct,Canada Share of World Energy Production,%,percent
+energy_prod_canada_growth_since_2005,Canada Energy Production Growth Since 2005,%,percent
+energy_prod_world_growth_since_2005,World Energy Production Growth Since 2005,%,percent
+energy_prod_china_pct,China Share of World Energy Production,%,percent
+energy_prod_united_states_pct,United States Share of World Energy Production,%,percent
+energy_prod_india_pct,India Share of World Energy Production,%,percent
+energy_prod_indonesia_pct,Indonesia Share of World Energy Production,%,percent
+energy_prod_australia_pct,Australia Share of World Energy Production,%,percent

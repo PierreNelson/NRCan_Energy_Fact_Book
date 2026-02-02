@@ -375,7 +375,9 @@ const Page30 = () => {
             ...(langData.points || []),
             ...(langData.lines || [])
         ];
-        return allProjects;
+        return allProjects.filter(project => 
+            project.project_name && project.project_name.trim() !== ''
+        );
     }, [langData]);
 
     const uniqueProjects = useMemo(() => {
