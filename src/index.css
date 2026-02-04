@@ -234,9 +234,8 @@ html {
   overflow-y: auto;
 }
 
-/* Sidebar Toggle Button - inside sidebar, covers collapsed area or in header when open */
+/* Sidebar Toggle Button */
 .sidebar-toggle-btn {
-  position: absolute;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -254,40 +253,43 @@ html {
   outline-offset: 2px !important;
 }
 
-/* Closed state - cover entire collapsed sidebar area */
+/* Closed state - FIXED position outside sidebar at all widths */
 .sidebar-toggle-closed {
-  top: 0;
+  position: fixed;
+  top: 50%;
   left: 0;
-  width: 100%;
-  height: 100%;
+  transform: translateY(-50%);
+  width: var(--sidebar-width-collapsed);
+  height: 60px;
+  background-color: var(--primary-color);
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-toggle-closed:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #1a4a5f;
 }
 
-/* When sidebar is hovered (expanded via hover), hide the closed button */
-.sidebar:hover .sidebar-toggle-closed {
-  opacity: 0;
-  pointer-events: none;
-}
 
-/* Open state - in header area, to the left of Table of Contents */
+/* Open state - FIXED position at header location, to the left of Table of Contents */
 .sidebar-toggle-open {
-  top: 20px;
-  left: 10px;
-  width: 32px;
-  height: 32px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 4px;
-  font-size: 1rem;
+  position: fixed !important;
+  top: 20px !important;
+  left: 10px !important;
+  transform: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 4px !important;
+  font-size: 1rem !important;
+  box-shadow: none !important;
+  z-index: 1003 !important;
 }
 
 .sidebar-toggle-open:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Sidebar Styles */
@@ -360,10 +362,12 @@ html {
   visibility: visible;
 }
 
-/* When sidebar is open via toggle, add left padding for the toggle button */
-.sidebar.sidebar-mobile-open .sidebar-header {
+/* When sidebar is open via toggle or hover, add left padding for the toggle button */
+.sidebar.sidebar-mobile-open .sidebar-header,
+.sidebar:hover .sidebar-header {
   padding-left: 42px;
 }
+
 
 /* Nav links container - allow scrolling */
 .nav-links {
