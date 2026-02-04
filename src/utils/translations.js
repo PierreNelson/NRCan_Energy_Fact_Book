@@ -1,6 +1,9 @@
-
+﻿
 export const TRANSLATIONS = {
     'en': {
+        // Breadcrumb
+        'breadcrumb_product_title': 'Energy Factbook',
+        
         // Navigation
         'nav_introduction': 'Introduction',
         'nav_energy_overview': 'Energy overview (Page 6)',
@@ -90,7 +93,7 @@ export const TRANSLATIONS = {
         // Page 8
         'page8_title': "Energy's nominal GDP contribution by province/territory",
         'page8_subtitle': 'Energy sector direct nominal GDP*\n($ millions)',
-        'page8_footnote': '*Provincial/territorial figures do not sum precisely to the national total, due to rounding.',
+        'page8_footnote': 'Provincial/territorial figures do not sum precisely to the national total, due to rounding.',
         'page8_footnote_2024': ' Distribution is based on 2023 proportions.',
         'nav_provincial_gdp': "Energy's nominal GDP contribution by province/territory",
 
@@ -124,7 +127,7 @@ export const TRANSLATIONS = {
         'page24_legend_other': 'Other',
         'page24_legend_electricity': 'Electricity power generation, transmission and distribution',
         'page24_legend_oil_gas': 'Oil and gas extraction',
-        'page24_footnote': '*Excludes residential expenditures and intellectual property investments such as exploration expenses.\n Includes investments in renewable electricity, does not capture other forms of renewable energy.',
+        'page24_footnote': 'Excludes residential expenditures and intellectual property investments such as exploration expenses.\n Includes investments in renewable electricity, does not capture other forms of renewable energy.',
         'page24_bullet1_part1': "Capital expenditures in Canada's energy sector totaled ",
         'page24_bullet1_part2': " in ",
         'page24_bullet1_part3': ", a decrease of ",
@@ -218,8 +221,8 @@ export const TRANSLATIONS = {
         'page31_legend_fdi': 'FDI',
         'page31_hover_cdia': 'Canadian direct investment abroad (CDIA)',
         'page31_hover_fdi': 'Foreign direct investment in Canada (FDI)',
-        'page31_footnote1': '* Direct investment is defined as a company owning a minimum of 10% of voting equity interest in a foreign enterprise and is measured as the total equity value at the time of acquisition. Excludes residential expenditures and intellectual property investments such as exploration expenses.',
-        'page31_footnote2': 'FDI and CDIA include investments in renewable electricity, do not capture other forms of renewable energy.',
+        'page31_footnote': 'Direct investment is defined as a company owning a minimum of 10% of voting equity interest in a foreign enterprise and is measured as the total equity value at the time of acquisition. Excludes residential expenditures and intellectual property investments such as exploration expenses.',
+        'page31_footnote1': 'FDI and CDIA include investments in renewable electricity, do not capture other forms of renewable energy.',
 
         // Page 32
         'nav_fdi_stock': 'Stock of foreign direct investment in Canada\nand Canadian direct investment abroad',
@@ -412,6 +415,9 @@ export const TRANSLATIONS = {
         'page30_sr_summary': 'Map showing the location of major energy projects across Canada that are planned or under construction from 2024 to 2034. Projects are categorized by type (transmission lines and energy projects), status (planned or under construction), and value range. Clean energy projects are distinguished from conventional energy projects.',
     },
     'fr': {
+        // Breadcrumb
+        'breadcrumb_product_title': "Cahier d'information sur l'énergie",
+        
         // Navigation
         'nav_introduction': 'Introduction',
         'nav_energy_overview': "Aperçu de l'énergie (Page 6)",
@@ -501,7 +507,7 @@ export const TRANSLATIONS = {
         // Page 8
         'page8_title': "Contribution de l'énergie au PIB nominal par province ou territoire",
         'page8_subtitle': 'PIB nominal direct du secteur de l\'énergie*\n(millions de $)',
-        'page8_footnote': '*La somme des données provinciales et territoriales n\'est pas tout à fait exacte en raison de l\'arrondissement.',
+        'page8_footnote': 'La somme des données provinciales et territoriales n\'est pas tout à fait exacte en raison de l\'arrondissement.',
         'page8_footnote_2024': ' La distribution est basée sur les proportions de 2023.',
         'nav_provincial_gdp': "Contribution de l'énergie au PIB nominal par province ou territoire",
 
@@ -534,7 +540,7 @@ export const TRANSLATIONS = {
         'page24_legend_other': 'Autre',
         'page24_legend_electricity': 'Production, transport et distribution d\'électricité',
         'page24_legend_oil_gas': 'Extraction de pétrole et de gaz',
-        'page24_footnote': '*Exclut les dépenses résidentielles et les investissements en propriété intellectuelle tels que les dépenses d’exploration.\n Comprend les investissements dans l’électricité renouvelable, n’inclus pas les autres formes d’énergie renouvelable.',
+        'page24_footnote': 'Exclut les dépenses résidentielles et les investissements en propriété intellectuelle tels que les dépenses d’exploration.\n Comprend les investissements dans l’électricité renouvelable, n’inclus pas les autres formes d’énergie renouvelable.',
         'page24_bullet1_part1': "Les dépenses en immobilisations dans le secteur\n canadien de l’énergie ont totalisé ",
         'page24_bullet1_part2': " en\n",
         'page24_bullet1_part3': ",  une baisse de ",
@@ -627,8 +633,8 @@ export const TRANSLATIONS = {
         'page31_legend_fdi': 'IDE',
         'page31_hover_cdia': "Investissement direct canadien à l'étranger (IDCE)",
         'page31_hover_fdi': "Investissement direct étranger au Canada (IDE)",
-        'page31_footnote1': "* L'investissement direct est défini comme une société détenant au moins 10 % des actions avec droit de vote dans une entreprise étrangère et est mesuré comme la valeur totale des capitaux propres au moment de l'acquisition. Exclut les dépenses résidentielles et les investissements en propriété intellectuelle tels que les dépenses d'exploration.",
-        'page31_footnote2': "L'IDE et l'IDCE incluent les investissements dans l'électricité renouvelable, ne comprennent pas d'autres formes d'énergie renouvelable.",
+        'page31_footnote': "L'investissement direct est défini comme une société détenant au moins 10 % des actions avec droit de vote dans une entreprise étrangère et est mesuré comme la valeur totale des capitaux propres au moment de l'acquisition. Exclut les dépenses résidentielles et les investissements en propriété intellectuelle tels que les dépenses d'exploration.",
+        'page31_footnote1': "L'IDE et l'IDCE incluent les investissements dans l'électricité renouvelable, ne comprennent pas d'autres formes d'énergie renouvelable.",
 
         // Page 32
         'nav_fdi_stock': "Stock d'investissement direct étranger au Canada et d'investissement direct canadien à l'étranger",

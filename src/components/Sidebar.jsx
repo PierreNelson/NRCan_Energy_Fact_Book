@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { getText } from '../utils/translations';
 
@@ -12,6 +12,27 @@ const Sidebar = ({ lang }) => {
     const [section6Expanded, setSection6Expanded] = useState(false);
     const [sectionTestExpanded, setSectionTestExpanded] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const toggleButtonRef = useRef(null);
+    const sidebarRef = useRef(null);
+
+    // Handle toggle and maintain focus on the button
+    const handleToggle = () => {
+        setSidebarOpen(!sidebarOpen);
+        // Refocus the button after state change
+        setTimeout(() => {
+            if (toggleButtonRef.current) {
+                toggleButtonRef.current.focus();
+            }
+        }, 50);
+    };
+
+    // Close sidebar when keyboard focus leaves it
+    const handleFocusOut = (event) => {
+        // Check if the new focus target is outside the sidebar
+        if (sidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.relatedTarget)) {
+            setSidebarOpen(false);
+        }
+    };
 
     const toggleSection1 = () => {
         setSection1Expanded(!section1Expanded);
@@ -94,9 +115,8 @@ const Sidebar = ({ lang }) => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             const sidebar = document.querySelector('.sidebar');
-            const toggleBtn = document.querySelector('.sidebar-mobile-toggle');
-            if (sidebarOpen && sidebar && !sidebar.contains(event.target) && 
-                toggleBtn && !toggleBtn.contains(event.target)) {
+            // Toggle button is now inside sidebar, so sidebar.contains() handles it
+            if (sidebarOpen && sidebar && !sidebar.contains(event.target)) {
                 setSidebarOpen(false);
             }
         };
@@ -133,35 +153,29 @@ const Sidebar = ({ lang }) => {
                         width: 300px !important; 
                     }
                 }
-                
-                /* 400% - 500% zoom (480px) */
-                @media (max-width: 480px) {
-                    .sidebar-mobile-toggle {
-                        width: 50px !important; 
-                        margin-top: -45px !important;
-                        height: 50px !important;
-                        font-size: 1.5rem !important; 
-                    }
-                }
             `}</style>
-            {/* Mobile toggle button - always visible */}
+            <div 
+                id="sidebar-nav"
+                ref={sidebarRef}
+                className={`sidebar ${sidebarOpen ? 'sidebar-mobile-open' : ''}`} 
+                role="navigation" 
+                aria-label={getText('main_navigation', lang)}
+                onBlur={handleFocusOut}
+            >
+            {/* Toggle button - covers entire collapsed sidebar, moves to header when open */}
             <button
-                className={`sidebar-mobile-toggle ${sidebarOpen ? 'open' : ''}`}
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                ref={toggleButtonRef}
+                className={`sidebar-toggle-btn ${sidebarOpen ? 'sidebar-toggle-open' : 'sidebar-toggle-closed'}`}
+                onClick={handleToggle}
                 aria-label={sidebarOpen 
                     ? (lang === 'en' ? 'Close navigation menu' : 'Fermer le menu de navigation')
                     : (lang === 'en' ? 'Open navigation menu' : 'Ouvrir le menu de navigation')
                 }
                 aria-expanded={sidebarOpen}
             >
-                <span aria-hidden="true">{sidebarOpen ? '✕' : '☰'}</span>
+                <span aria-hidden="true">☰</span>
             </button>
-
-            <div 
-                className={`sidebar ${sidebarOpen ? 'sidebar-mobile-open' : ''}`} 
-                role="navigation" 
-                aria-label={getText('main_navigation', lang)}
-            >
+            
             <div className="sidebar-header">
                 <span id="sidebar-title">{getText('table_of_contents', lang)}</span>
             </div>
@@ -332,6 +346,14 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_fdi_stock', lang)}
+                            </NavLink>
+
+                            {/* Canadian Energy Assets */}
+                            <NavLink
+                                to="/section-2#canadian-energy-assets"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_canadian_energy_assets', lang)}
                             </NavLink>
 
                             {/* Environmental Protection */}

@@ -19,6 +19,16 @@ const Page24Stacked = () => {
     const [hiddenSeries, setHiddenSeries] = useState([]); 
     const [selectedPoints, setSelectedPoints] = useState(null);
 
+    const scrollToFootnote = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-page24s')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const scrollToRef = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-rf-page24s')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
     const topScrollRef = useRef(null);
@@ -214,14 +224,20 @@ const Page24Stacked = () => {
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
-    const renderTextWithHiddenAsterisk = (text) => {
+    const renderTextWithFootnoteLink = (text) => {
         if (!text) return null;
         if (!text.includes('*')) return text;
         const parts = text.split('*');
         return parts.map((part, index) => (
             <React.Fragment key={index}>
                 {part}
-                {index < parts.length - 1 && <span aria-hidden="true">*</span>}
+                {index < parts.length - 1 && (
+                    <sup id="fn-asterisk-rf-page24s">
+                        <a className="fn-lnk" href="#fn-asterisk-page24s" onClick={scrollToFootnote} title={lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}>
+                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                        </a>
+                    </sup>
+                )}
             </React.Fragment>
         ));
     };
@@ -684,7 +700,7 @@ const Page24Stacked = () => {
                     font-family: Arial, sans-serif;
                     font-size: 1.25rem;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     line-height: 1.2;
                     max-width: 100%;
                 }
@@ -694,7 +710,7 @@ const Page24Stacked = () => {
                     align-items: center;
                     font-family: Arial, sans-serif;
                     font-size: 0.9rem;
-                    color: #333;
+                    color: var(--gc-text);
                     cursor: pointer;
                     user-select: none;
                 }
@@ -712,6 +728,15 @@ const Page24Stacked = () => {
                 }
 
                 .page24h-chart { width: 100%; height: 300px; }
+
+                @media (max-width: 768px) {
+                    .page24h-header h1 {
+                        font-size: 37px !important;
+                    }
+                    .page24h-bullet {
+                        font-size: 18px !important;
+                    }
+                }
 
                 @media (max-width: 640px) {
                     .page-24h { 
@@ -756,8 +781,8 @@ const Page24Stacked = () => {
 
             <div className="page24h-container">
                 <header className="page24h-header">
-                    <h1 style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: 0, lineHeight: 1.1 }}>
-                        {renderTextWithHiddenAsterisk(getText('page24_title', lang))}
+                    <h1 style={{ fontFamily: "'Lato', sans-serif", color: '#8e7e52', fontSize: '41px', fontWeight: 'bold', margin: 0, lineHeight: 1.1 }}>
+                        {getText('page24_title', lang)}
                     </h1>
                 </header>
 
@@ -766,7 +791,7 @@ const Page24Stacked = () => {
 
                         <div className="chart-title-wrapper">
                             <h2 className="page24h-chart-title">
-                                {renderTextWithHiddenAsterisk(chartTitle)}
+                                {renderTextWithFootnoteLink(chartTitle)}
                             </h2>
                         </div>
 
@@ -912,10 +937,10 @@ const Page24Stacked = () => {
                     </div>
 
                     <aside className="page24h-text-column align-right-edge">
-                        <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '0', color: '#333' }}>
+                        <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '0', color: '#333', fontFamily: "'Noto Sans', sans-serif" }}>
                             <li 
                                 className="page24h-bullet" 
-                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '1.5rem', marginTop: '20px' }}
+                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '20px', marginTop: '20px' }}
                                 aria-label={lang === 'en' 
                                     ? `Capital expenditures in Canada's energy sector totaled ${formatBillionSR(totalLatestBillion)} in ${latestRow.year}, a decrease of ${declineFromPeakPct.toFixed(0)} percent from a peak in ${peakRow.year}.`
                                     : `Les dépenses en immobilisations dans le secteur canadien de l'énergie ont totalisé ${formatBillionSR(totalLatestBillion)} en ${latestRow.year}, une baisse de ${declineFromPeakPct.toFixed(0)} pour cent par rapport au sommet de ${peakRow.year}.`
@@ -928,7 +953,7 @@ const Page24Stacked = () => {
 
                             <li 
                                 className="page24h-bullet" 
-                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '1.5rem' }}
+                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '20px' }}
                                 aria-label={lang === 'en'
                                     ? `After reaching an eleven year low of ${formatBillionSR(low2020Billion)} in 2020, investment has rebounded by ${reboundFrom2020Pct.toFixed(0)} percent.`
                                     : `Après avoir atteint un creux de onze ans de ${formatBillionSR(low2020Billion)} en 2020, l'investissement a rebondi de ${reboundFrom2020Pct.toFixed(0)} pour cent.`
@@ -941,7 +966,7 @@ const Page24Stacked = () => {
 
                             <li 
                                 className="page24h-bullet" 
-                                style={{ marginBottom: '2px', lineHeight: '1.25', fontSize: '1.5rem' }}
+                                style={{ marginBottom: '2px', lineHeight: '1.25', fontSize: '20px' }}
                                 aria-label={lang === 'en'
                                     ? `Oil and gas extraction was the largest area of energy sector capital expenditure at ${formatBillionSR(oilGasBillion)} in ${latestRow.year}, followed by electrical power generation and distribution at ${formatBillionSR(electricityBillion)}.`
                                     : `L'extraction de pétrole et de gaz était le plus grand domaine de dépenses en immobilisations du secteur de l'énergie avec ${formatBillionSR(oilGasBillion)} en ${latestRow.year}, suivie de la production et distribution d'électricité avec ${formatBillionSR(electricityBillion)}.`
@@ -955,19 +980,16 @@ const Page24Stacked = () => {
                     </aside>
                 </div>
 
-                <aside className="wb-fnote" role="note" style={{ marginTop: 'auto', paddingTop: '10px', paddingBottom: '15px' }}>
-                    <h2 id="fn-page24h" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl style={{ margin: 0 }}>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-page24h" style={{ margin: 0 }}>
-                            <p className="page24h-footnote" style={{
-                                fontSize: '1rem',
-                                color: '#000000',
-                                marginBottom: '0',
-                                lineHeight: '1.15',
-                                whiteSpace: 'pre-line'
-                            }}>
-                                {renderTextWithHiddenAsterisk(getText('page24_footnote', lang))}
+                <aside className="wb-fnote" role="note">
+                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <dl>
+                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                        <dd id="fn-asterisk-page24s">
+                            <a href="#fn-asterisk-rf-page24s" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                            </a>
+                            <p>
+                                {getText('page24_footnote', lang)}
                             </p>
                         </dd>
                     </dl>

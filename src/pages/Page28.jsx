@@ -5,7 +5,6 @@ import { getMajorProjectsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page28 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState({ yearlyData: [], summary: {} });
@@ -461,13 +460,25 @@ const Page28 = () => {
         box-sizing: border-box;
     }
 
-    .page28-title {
-        font-family: Arial, sans-serif;
-        font-size: 2rem;
-        font-weight: bold;
-        color: #8e7e52;
-        margin: 0 0 20px 0;
-    }
+                .page28-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    color: #8e7e52;
+                    margin: 0 0 20px 0;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page28-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
 
     .page28-content-row {
         display: flex;
@@ -500,29 +511,32 @@ const Page28 = () => {
         padding-left: 20px;
     }
 
-    .page28-bullets li {
-        font-family: Arial, sans-serif;
-        font-size: 1rem;
-        line-height: 1.6;
-        margin-bottom: 12px;
-        color: #333;
-    }
+                .page28-bullets li {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    line-height: 1.6;
+                    margin-bottom: 12px;
+                    color: var(--gc-text);
+                    max-width: 65ch;
+                }
 
-    .page28-sidebar {
-        background-color: #aa9c7a;
-        padding: 20px;
-        border-radius: 3px;
-        font-family: Arial, sans-serif;
-        font-size: 1.05rem;
-        line-height: 1.6;
-        color: #333;
-    }
+                .page28-sidebar {
+                    background-color: #aa9c7a;
+                    padding: 20px;
+                    border-radius: 3px;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    line-height: 1.6;
+                    color: var(--gc-text);
+                    max-width: 65ch;
+                }
 
-    .page28-sidebar-title {
-        font-weight: bold;
-        font-size: 1.15rem;
-        margin-bottom: 10px;
-    }
+                .page28-sidebar-title {
+                    font-family: 'Lato', sans-serif;
+                    font-weight: bold;
+                    font-size: 29px;
+                    margin-bottom: 10px;
+                }
 
     .page28-sidebar p {
         margin: 0 0 10px 0;
@@ -538,14 +552,14 @@ const Page28 = () => {
         height: 500px !important;
     }
 
-    .page28-chart-title {
-        font-family: Arial, sans-serif;
-        font-size: 1.1rem;
-        font-weight: bold;
-        text-align: center;
-        margin: 0 60px 10px 60px;
-        color: #333;
-    }
+                .page28-chart-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin: 0 60px 10px 60px;
+                    color: var(--gc-text);
+                }
 
     .page28-custom-legend {
         display: flex;
@@ -566,7 +580,7 @@ const Page28 = () => {
         font-size: 0.85rem;
         font-weight: bold;
         margin-bottom: 5px;
-        color: #333;
+        color: var(--gc-text);
     }
 
     .page28-legend-items {
@@ -580,7 +594,7 @@ const Page28 = () => {
         align-items: center;
         font-family: Arial, sans-serif;
         font-size: 0.8rem;
-        color: #333;
+        color: var(--gc-text);
     }
 
     .page28-legend-color {
@@ -648,19 +662,31 @@ const Page28 = () => {
             height: 400px !important;
         }
     }
-    @media (max-width: 768px) {
-        .page28-title {
-            font-size: 1.6rem;
-        }
-        .page28-custom-legend {
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
-        }
-           .page28-chart .js-plotly-plot {
-            height: 350px !important;
-        }
-    }
+                @media (max-width: 768px) {
+                    .page28-title {
+                        font-size: 37px;
+                    }
+                    .page28-bullets li {
+                        font-size: 18px;
+                    }
+                    .page28-sidebar {
+                        font-size: 18px;
+                    }
+                    .page28-sidebar-title {
+                        font-size: 26px;
+                    }
+                    .page28-chart-title {
+                        font-size: 26px;
+                    }
+                    .page28-custom-legend {
+                        flex-direction: column;
+                        gap: 15px;
+                        align-items: flex-start;
+                    }
+                       .page28-chart .js-plotly-plot {
+                        height: 350px !important;
+                    }
+                }
 
     @media (max-width: 480px) {
         .page28-title {
@@ -867,8 +893,8 @@ const Page28 = () => {
                                             },
                                             hoverlabel: { 
                                                 bgcolor: '#ffffff',
-                                                bordercolor: '#000000',
-                                                font: { color: '#000000', family: 'Arial, sans-serif' }
+                                                bordercolor: '#333333',
+                                                font: { color: '#333333', family: 'Arial, sans-serif' }
                                             },
                                             font: { family: 'Arial, sans-serif' }
                                         }}

@@ -176,8 +176,8 @@ const Layout = () => {
                     margin-top: 20px;
                     margin-right: 15px;
                     padding: 10px 20px;
-                    background-color: #284162;
-                    color: #ffffff;
+                    background-color: var(--gc-link);
+                    color: var(--gc-background);
                     font-weight: bold;
                     text-decoration: none;
                     border-radius: 4px;

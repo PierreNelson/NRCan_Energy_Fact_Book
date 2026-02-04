@@ -378,6 +378,7 @@ const Page2 = () => {
                     }),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1200, ...dynamicColumns.map(() => 1300)],
                         rows: [headerRow, ...dataRows]
                     })
                 ]
@@ -438,23 +439,59 @@ const Page2 = () => {
             'natural_gas': 'page2_natural_gas',
         };
 
-        const headers = [
-            lang === 'en' ? 'Year' : 'Année',
-            ...resources.flatMap(r => [
-                `${stripHtml(getText(resourceNames[r], lang))} - ${getText('page2_rankings_header_reserves', lang)}`,
-                `${stripHtml(getText(resourceNames[r], lang))} - ${getText('page2_rankings_header_production', lang)}`,
-                `${stripHtml(getText(resourceNames[r], lang))} - ${getText('page2_rankings_header_exports', lang)}`,
-            ])
-        ];
+        // Resource header row (with merged cells spanning 3 columns each)
+        const resourceHeaderRow = new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: '', bold: true, size: 18 })], alignment: AlignmentType.CENTER })],
+                    shading: { fill: 'E6E6E6' },
+                    verticalAlign: 'center'
+                }),
+                ...resources.map(r => new TableCell({
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: stripHtml(getText(resourceNames[r], lang)), bold: true, size: 18 })],
+                        alignment: AlignmentType.CENTER
+                    })],
+                    shading: { fill: 'E6E6E6' },
+                    columnSpan: 3
+                }))
+            ]
+        });
 
-        const headerRow = new TableRow({
-            children: headers.map(header => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: header, bold: true, size: 18 })],
-                    alignment: AlignmentType.CENTER
-                })],
-                shading: { fill: 'E6E6E6' }
-            }))
+        // Sub-header row with Res., Prod., Exp.
+        const subHeaderRow = new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: lang === 'en' ? 'Year' : 'Année', bold: true, size: 18 })],
+                        alignment: AlignmentType.CENTER
+                    })],
+                    shading: { fill: 'E6E6E6' }
+                }),
+                ...resources.flatMap(() => [
+                    new TableCell({
+                        children: [new Paragraph({
+                            children: [new TextRun({ text: lang === 'en' ? 'Res.' : 'Rés.', bold: true, size: 16 })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: 'E6E6E6' }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({
+                            children: [new TextRun({ text: lang === 'en' ? 'Prod.' : 'Prod.', bold: true, size: 16 })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: 'E6E6E6' }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({
+                            children: [new TextRun({ text: lang === 'en' ? 'Exp.' : 'Exp.', bold: true, size: 16 })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: 'E6E6E6' }
+                    })
+                ])
+            ]
         });
 
         const dataRows = rankingsYearData.map(d => new TableRow({
@@ -478,7 +515,8 @@ const Page2 = () => {
                     }),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [headerRow, ...dataRows]
+                        columnWidths: [800, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
+                        rows: [resourceHeaderRow, subHeaderRow, ...dataRows]
                     })
                 ]
             }]
@@ -530,28 +568,41 @@ const Page2 = () => {
                 }
 
                 .page2-title {
-                    font-family: Georgia, "Times New Roman", serif;
-                    font-size: 2.8rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
                     font-weight: bold;
                     color: #245e7f;
                     margin: 0 0 10px 0;
                     line-height: 1.2;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page2-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page2-subtitle {
-                    font-family: Arial, sans-serif;
-                    font-size: 2.4rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 39px;
                     font-weight: bold;
                     color: #58585a;
                     margin: 0 0 15px 0;
                 }
 
                 .page2-narrative {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.2rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                     line-height: 1.6;
-                    color: #333;
+                    color: var(--gc-text);
                     margin-bottom: 20px;
+                    max-width: 65ch;
                 }
 
                 .page2-narrative strong {
@@ -583,6 +634,7 @@ const Page2 = () => {
 
                 .page2-chart-section .data-table-wrapper,
                 .page2-rankings-section .data-table-wrapper {
+                    padding-top: 20px;
                     margin-top: auto;
                     width: 100%;
                     box-sizing: border-box;
@@ -608,8 +660,8 @@ const Page2 = () => {
                 }
 
                 .page2-chart-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.3rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
                     font-weight: bold;
                     color: #000000;
                     margin: 0 0 10px 0;
@@ -618,8 +670,8 @@ const Page2 = () => {
                 }
 
                 .page2-rankings-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.3rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
                     font-weight: bold;
                     color: #000000;
                     margin: 0 0 40px 0;
@@ -631,8 +683,8 @@ const Page2 = () => {
                 .page2-rankings-table {
                     width: 100%;
                     border-collapse: collapse;
-                    font-family: Arial, sans-serif;
-                    font-size: 0.9rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                 }
 
                 .page2-rankings-table th {
@@ -668,8 +720,8 @@ const Page2 = () => {
 
                 .page2-year-label {
                     font-weight: bold;
-                    font-size: 18px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                 }
 
                 .custom-dropdown {
@@ -679,8 +731,8 @@ const Page2 = () => {
 
                 .dropdown-button {
                     padding: 8px 35px 8px 12px;
-                    font-size: 16px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                     background-color: #fff;
@@ -762,8 +814,9 @@ const Page2 = () => {
 
                 .data-table-wrapper summary {
                     cursor: pointer;
-                    font-family: Arial, sans-serif;
+                    font-family: 'Noto Sans', sans-serif;
                     font-weight: bold;
+                    font-size: 20px;
                     padding: 10px;
                     background-color: #f5f5f5;
                     border: 1px solid #ddd;
@@ -829,9 +882,9 @@ const Page2 = () => {
                     width: 52%;
                     padding-top: 2%;
                     padding-left: 2%;
-                    font-family: Arial, sans-serif;
+                    font-family: 'Noto Sans', sans-serif;
                     font-size: clamp(11px, 2.2vw, 15px);
-                    color: #333;
+                    color: var(--gc-text);
                     display: flex;
                     align-items: center;
                     white-space: nowrap;
@@ -846,34 +899,11 @@ const Page2 = () => {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    font-family: Arial, sans-serif;
+                    font-family: 'Noto Sans', sans-serif;
                     font-size: clamp(12px, 2.5vw, 18px);
-                    color: #333;
+                    color: var(--gc-text);
                     white-space: nowrap;
                 }
-
-                @media (max-width: 1280px) {
-                    .page2-content-wrapper {
-                        flex-direction: column;
-                    }
-
-                    .page2-rankings-section {
-                        flex: 1;
-                        width: 100%;
-                    }
-
-                    .page2-chart-section {
-                        width: 100%;
-                    }
-
-                    .page2-chart-section .data-table-wrapper summary,
-                    .page2-rankings-section .data-table-wrapper summary {
-                        width: 100% !important;
-                        white-space: normal;
-                    }
-                }
-
-
 
                 .layout-stacked {
                     flex-direction: column !important;
@@ -883,6 +913,16 @@ const Page2 = () => {
                     width: 100% !important;
                 }
 
+                .layout-stacked .custom-chart-container {
+                    width: 100% !important;
+                    max-width: none !important;
+                }
+
+                .layout-stacked .chart-bg-image {
+                    width: 115% !important;
+                    margin-left: -7% !important; 
+                }
+
                 .layout-stacked .page2-rankings-section {
                     width: 100% !important;
                     margin-top: 30px;
@@ -890,6 +930,7 @@ const Page2 = () => {
 
                 .layout-stacked .page2-chart-section .data-table-wrapper,
                 .layout-stacked .page2-rankings-section .data-table-wrapper {
+                    margin-top: 30px;
                     width: 100% !important;
                 }
 
@@ -900,7 +941,57 @@ const Page2 = () => {
                 }
 
                 .layout-stacked .page2-rankings-section .data-table-wrapper {
-                    margin-top: 40px;
+                    margin-top: 30px;
+                }
+
+                @media (max-width: 1280px) {
+                    .page2-content-wrapper {
+                        flex-direction: column;
+                    }
+                    .page2-rankings-section {
+                        flex: 1;
+                        width: 100%;
+                    }
+                    .page2-chart-section {
+                        width: 100%;
+                    }
+                    .custom-chart-container {
+                        max-width: 100% !important; 
+                        width: 100% !important;
+                    }
+                    .page2-chart-section .data-table-wrapper summary,
+                    .page2-rankings-section .data-table-wrapper summary {
+                        width: 100% !important;
+                        white-space: normal;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .page2-title {
+                        font-size: 37px;
+                    }
+                    .page2-subtitle {
+                        font-size: 35px;
+                    }
+                    .page2-narrative {
+                        font-size: 18px;
+                    }
+                    .page2-chart-title,
+                    .page2-rankings-title {
+                        font-size: 26px;
+                    }
+                    .page2-rankings-table {
+                        font-size: 18px;
+                    }
+                    .page2-year-label {
+                        font-size: 18px;
+                    }
+                    .dropdown-button {
+                        font-size: 18px;
+                    }
+                    .data-table-wrapper summary {
+                        font-size: 18px;
+                    }
                 }
             `}</style>
 

@@ -5,7 +5,6 @@ import { getText } from '../utils/translations';
 import page26BgImage from '../assets/page26_bg.svg';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page26 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
@@ -512,6 +511,33 @@ const Page26 = () => {
                     padding-left: ${layoutPadding?.left || 55}px; 
                 }
 
+                .page26-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    color: #58585a;
+                    margin-bottom: 10px;
+                    margin-top: 0px;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page26-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+
+                .page26-body-text {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    max-width: 65ch;
+                }
+
                 .page26-bg-image {
                     position: absolute;
                     top: 0;
@@ -534,8 +560,8 @@ const Page26 = () => {
                 .page26-year-label {
                     font-weight: bold;
                     margin-right: 15px;
-                    font-size: 18px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                     white-space: nowrap;
                 }
 
@@ -546,8 +572,8 @@ const Page26 = () => {
 
                 .dropdown-button {
                     padding: 8px 35px 8px 12px;
-                    font-size: 16px;
-                    font-family: Arial, sans-serif;
+                    font-size: 18px;
+                    font-family: 'Noto Sans', sans-serif;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                     background-color: #fff;
@@ -667,12 +693,14 @@ const Page26 = () => {
                 .page26-stat-col-3 { margin-left: 360px; }
 
                 .page26-stat-value {
+                    font-family: 'Lato', sans-serif;
                     font-size: 36px;
                     font-weight: bold;
                     line-height: 1;
                 }
 
                 .page26-stat-label {
+                    font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
                 }
 
@@ -717,6 +745,22 @@ const Page26 = () => {
                 }
 
                 @media (max-width: 768px) {
+                    .page26-title {
+                        font-size: 37px;
+                    }
+
+                    .page26-body-text {
+                        font-size: 18px;
+                    }
+
+                    .page26-year-label {
+                        font-size: 18px;
+                    }
+
+                    .page26-stat-label {
+                        font-size: 18px;
+                    }
+
                     .page26-year-ticks { display: none !important; }
 
                     .page26-bg-image {
@@ -815,14 +859,7 @@ const Page26 = () => {
                     aria-label={getTitleText()}
                     style={{ flexShrink: 0, padding: '15px 0px 0 0px'}}
                 >
-                    <h1 aria-hidden="true" style={{
-                        color: COLORS.title,
-                        fontSize: '38px',
-                        fontWeight: 'bold',
-                        fontFamily: 'Arial, sans-serif',
-                        marginBottom: '10px',
-                        marginTop: '0px'
-                    }}>
+                    <h1 className="page26-title" aria-hidden="true">
                         {getText('page26_title', lang)}
                     </h1>
                     <div className="page26-year-selector" ref={dropdownRef}>
@@ -987,7 +1024,7 @@ const Page26 = () => {
                         marginTop: '0px'
                     }}
                 >
-                    <p aria-hidden="true" style={{ fontSize: '16px', margin: '0', fontFamily: 'Arial, sans-serif', color: '#555' }}>
+                    <p className="page26-body-text" aria-hidden="true" style={{ margin: '0', color: '#555' }}>
                         <span>{getText('page26_footer_part1', lang)}</span>
                         <span style={{ fontWeight: 'bold' }}> {year} </span>
                         <span>{getText('page26_footer_part2', lang)} </span>

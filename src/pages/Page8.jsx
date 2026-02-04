@@ -28,6 +28,16 @@ const Page8 = () => {
     const listRef = useRef(null);
     const yearButtonRef = useRef(null);
 
+    const scrollToFootnote = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-page8')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const scrollToRef = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-rf-page8')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleDropdownClickOutside = (event) => {
@@ -524,18 +534,30 @@ const Page8 = () => {
                 }
 
                 .page8-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.8rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
                     font-weight: bold;
                     color: #58585a;
                     margin: 0 0 5px 0;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page8-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page8-subtitle {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.1rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     margin: 0;
                     white-space: pre-line;
                 }
@@ -552,8 +574,8 @@ const Page8 = () => {
                 .page8-year-label {
                     font-weight: bold;
                     margin-right: 15px;
-                    font-size: 18px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                     white-space: nowrap;
                 }
 
@@ -564,8 +586,8 @@ const Page8 = () => {
 
                 .dropdown-button {
                     padding: 8px 35px 8px 12px;
-                    font-size: 16px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                     background-color: #fff;
@@ -672,8 +694,10 @@ const Page8 = () => {
                     cursor: pointer;
                     padding: 10px 15px;
                     background-color: #f9f9f9;
-                    color: #333;
+                    color: var(--gc-text);
                     font-weight: bold;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                     display: flex;
@@ -702,6 +726,8 @@ const Page8 = () => {
                     border-collapse: collapse;
                     margin-top: 0;
                     border: 1px solid #ccc;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                 }
 
                 .page8-data-table th,
@@ -736,6 +762,27 @@ const Page8 = () => {
                     }
                 }
 
+                @media (max-width: 768px) {
+                    .page8-title {
+                        font-size: 37px;
+                    }
+                    .page8-subtitle {
+                        font-size: 26px;
+                    }
+                    .page8-year-label {
+                        font-size: 18px;
+                    }
+                    .dropdown-button {
+                        font-size: 18px;
+                    }
+                    .page8-data-table summary {
+                        font-size: 18px;
+                    }
+                    .page8-data-table table {
+                        font-size: 18px;
+                    }
+                }
+
                 @media (max-width: 640px) {
                     .page-8 { 
                         border-left: none !important; 
@@ -750,9 +797,6 @@ const Page8 = () => {
                         margin-top: -200px;
                         margin-bottom: -60px;
                     }
-                    .page8-title {
-                        font-size: 1.4rem;
-                    }
                     .page8-year-selector {
                         flex-direction: column;
                         align-items: flex-start;
@@ -764,10 +808,6 @@ const Page8 = () => {
                 }
 
                 @media (max-width: 480px) {
-                    .page8-title {
-                        font-size: 1.2rem;
-                    }
-
                     .page8-map-container {
                         margin-top: -240px;
                         margin-bottom: -100px;
@@ -820,7 +860,13 @@ const Page8 = () => {
                     </h1>
                     <h2 className="wb-inv">{stripHtml(getText('page8_title', lang))} - {stripHtml(getText('page8_subtitle', lang))}</h2>
                     <p className="page8-subtitle" aria-hidden="true">
-                        {getText('page8_subtitle', lang)}
+                        {getText('page8_subtitle', lang).split('*')[0]}
+                        <sup id="fn-asterisk-rf-page8">
+                            <a href="#fn-asterisk-page8" onClick={scrollToFootnote} className="fn-lnk" title={lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                            </a>
+                        </sup>
+                        {getText('page8_subtitle', lang).split('*').slice(1).join('*')}
                     </p>
                 </header>
                 <div className="page8-year-selector" ref={dropdownRef}>
@@ -1218,18 +1264,15 @@ const Page8 = () => {
                     </div>
                 </details>
                 </div>
-                <aside className="wb-fnote" role="note" style={{ marginTop: 'auto', paddingTop: '10px', paddingBottom: '15px' }}>
-                    <h2 id="fn-page8" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl style={{ margin: 0 }}>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-page8" style={{ margin: 0 }}>
-                            <p style={{
-                                fontSize: '1rem',
-                                color: '#000000',
-                                marginBottom: '0',
-                                lineHeight: '1.15',
-                                whiteSpace: 'pre-line'
-                            }}>
+                <aside className="wb-fnote" role="note">
+                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <dl>
+                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                        <dd id="fn-asterisk-page8">
+                            <a href="#fn-asterisk-rf-page8" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                            </a>
+                            <p>
                                 {getText('page8_footnote', lang)}
                                 {year === 2024 && getText('page8_footnote_2024', lang)}
                             </p>

@@ -1,13 +1,239 @@
 # MASTER PAGE BUILDING GUIDE & TEMPLATE
 
-**Version:** 3.1 (Updated January 2026)  
-**Compliance:** WCAG 2.1 AA, WET-BOEW (Web Experience Toolkit)
+**Version:** 3.3 (Updated January 2026)  
+**Compliance:** WCAG 2.1 AA, WET-BOEW (Web Experience Toolkit), Canada.ca Design System
 
 ---
 
 ## Code Standards
 
 **NO COMMENTS IN CODE:** Do not add comment lines to the codebase. Code should be self-documenting through clear variable names, function names, and structure. This keeps the codebase clean and reduces maintenance overhead.
+
+---
+
+## GC Design System - Typography (MANDATORY)
+
+The typography guidance is mandatory on all pages. Fonts must be consistent across Canada.ca pages and should be easily readable across devices.
+
+### Font Families
+- **Headings:** Lato (bold)
+- **Body text:** Noto Sans (plain text)
+
+### Desktop and Tablet Default Font Specification
+| Element | Font | Size | Weight |
+|---------|------|------|--------|
+| H1 | Lato | 41px | bold |
+| H2 | Lato | 39px | bold |
+| H3 | Lato | 29px | bold |
+| H4 | Lato | 27px | bold |
+| H5 | Lato | 24px | bold |
+| H6 | Lato | 22px | bold |
+| Body | Noto Sans | 20px | plain text |
+
+### Smaller Device Default Font Specification (≤768px)
+| Element | Font | Size | Weight |
+|---------|------|------|--------|
+| H1 | Lato | 37px | bold |
+| H2 | Lato | 35px | bold |
+| H3 | Lato | 26px | bold |
+| H4 | Lato | 22px | bold |
+| H5 | Lato | 20px | bold |
+| H6 | Lato | 18px | bold |
+| Body | Noto Sans | 18px | plain text |
+
+### CSS Variables for Typography (Defined in index.css)
+```css
+:root {
+  --font-heading: 'Lato', sans-serif;
+  --font-body: 'Noto Sans', sans-serif;
+  --gc-red: #A62A1E;
+  --max-line-length: 65ch;
+  --max-content-width: 1140px;
+}
+```
+
+### Line Length Constraint
+Constrain text line length to 65 characters maximum. This ensures no lines extend beyond a comfortable reading length. Page layouts may be wider than 65 characters - the line length restriction applies only to lines of text.
+
+```css
+p, .gc-body {
+  max-width: var(--max-line-length);
+}
+```
+
+### Main Page Title (H1 with Red Bar)
+When the H1 is the main title of a page, it includes a red bar as part of the Canada.ca brand.
+
+**Specifications for the red bar (gc-thickline):**
+- Alignment: left
+- Colour: #A62A1E
+- Position: 0.2em (7.6px) underneath the H1
+- Size: 72px wide, 6px thick
+
+```jsx
+<h1 className="gc-thickline">{getText('page_title', lang)}</h1>
+```
+
+Or use the `.page-main-title` class:
+```jsx
+<h1 className="page-main-title">{getText('page_title', lang)}</h1>
+```
+
+### Indigenous Characters and Other Languages
+Both Lato and Noto Sans support a wide variety of languages. Noto Sans has a larger range and is designed with Canadian Indigenous fonts in mind. The Noto Sans Canadian Aboriginal font-family is included by default.
+
+For content in other languages:
+```jsx
+<section lang="zh-Hans">
+  <h2>标题</h2>
+  <p>....</p>
+</section>
+```
+
+```css
+:lang(zh-Hans) {
+  font-family: 'Noto Sans SC';
+}
+:lang(zh-Hans) :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: bold;
+}
+```
+
+---
+
+## GC Design System - Colours (MANDATORY)
+
+The guidance on colours is mandatory on all pages.
+
+### Background Colours
+The default background colour for Canada.ca is **white (#FFFFFF)**.
+
+While you may use another background colour for specific portions of the page, ensure that the majority of the page has a white background. When using other background colours, ensure sufficient contrast with text to meet **WCAG success criterion 1.4.6: Contrast (Enhanced) (Level AAA)**.
+
+### Text Colour
+The text colour for Canada.ca is **dark grey (#333333)**.
+
+### Link Colours
+Always use the following colours for links:
+| Link State | Colour |
+|------------|--------|
+| Default link | #284162 |
+| Selected link (hover/focus) | #0535d2 |
+| Visited link | #7834bc |
+
+### Additional Accent Colours
+Only use these colours as accent colours:
+| Purpose | Colour |
+|---------|--------|
+| Main accent colour | #26374A |
+| Form error or required element | #d3080c |
+| Selected element (service templates) | #333333 |
+| Red bar (H1 title) | #A62A1E |
+
+### CSS Variables (Defined in index.css)
+```css
+:root {
+  --gc-background: #FFFFFF;
+  --gc-text: #333333;
+  --gc-link: #284162;
+  --gc-link-hover: #0535d2;
+  --gc-link-visited: #7834bc;
+  --gc-accent: #26374A;
+  --gc-error: #d3080c;
+  --gc-selected: #333333;
+  --gc-red: #A62A1E;
+}
+```
+
+---
+
+## GC Design System - Layouts (MANDATORY)
+
+The layout guidance is mandatory on all pages.
+
+### Maximum Content Width
+The default maximum content width is **1140 pixels**. In some rare cases, a layout may need to be wider (e.g., very large data tables). This will require viewers to scroll right to see the entire layout.
+
+```css
+:root {
+  --max-content-width: 1140px;
+}
+
+.content-container {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+}
+```
+
+### Responsive Layouts
+On smaller screens, layouts will typically display as a single-column. The underlying grid system allows for responsive layouts at various screen sizes while maintaining consistent placement of elements.
+
+---
+
+## GC Design System - Text Formatting Rules (MANDATORY)
+
+### Avoid Italics
+People with dyslexia or other reading disorders may find it difficult to read italicized text.
+
+**DON'T use italics:**
+- For design or decorative purposes
+- To emphasize a word or phrase (use bold sparingly instead)
+- For long passages of text, such as quotations
+- In page titles
+
+**DO use italics only for:**
+- French and foreign words
+- Legal references (acts, laws)
+- Mathematical and scientific material
+- Titles of works (publications, books)
+- Latin terms and abbreviations
+
+### Avoid ALLCAPS
+Do not use all capital letters for emphasis or styling. All-caps text is harder to read and can be misinterpreted by screen readers.
+
+**WRONG:**
+```jsx
+<h1>CAPITAL EXPENDITURES</h1>
+<p>THIS IS IMPORTANT INFORMATION.</p>
+```
+
+**CORRECT:**
+```jsx
+<h1>Capital expenditures</h1>
+<p>This is important information.</p>
+```
+
+Use sentence case for headings and body text.
+
+---
+
+## Breadcrumb Navigation (MANDATORY)
+
+The breadcrumb is implemented in `GCHeader.jsx` and follows the Canada.ca pattern. It appears at the top of every page automatically.
+
+### Breadcrumb Structure
+```
+Canada.ca › Environment and natural resources › Energy › Canadian Centre for Energy Information › Energy Factbook
+```
+
+The "Energy Factbook" breadcrumb item links to the cover/introductory page (`/section-1#energy-overview`).
+
+### Implementation (in GCHeader.jsx)
+The breadcrumb chain is defined in the `BREADCRUMBS` array at the top of `GCHeader.jsx`. Internal links use `isInternal: true` to use React Router's `<Link>` component instead of `<a>` tags:
+
+```javascript
+const BREADCRUMBS = [
+    { title: { en: 'Canada.ca', fr: 'Canada.ca' }, link: { en: '...', fr: '...' } },
+    // ... external links ...
+    {
+        title: { en: 'Energy Factbook', fr: "Cahier d'information sur l'énergie" },
+        link: { en: '/section-1#energy-overview', fr: '/section-1#energy-overview' },
+        isInternal: true  // Uses React Router Link component
+    }
+];
+```
+
+**DO NOT** add breadcrumb components to individual pages - the breadcrumb is global and managed in GCHeader.
 
 ---
 
@@ -1430,19 +1656,136 @@ def get_data_url():
 
 ---
 
-## 14. Footnotes (WET Style)
+## 14. Footnotes (WET Style with Linked References)
+
+Footnotes should be linked to their explanation and back so that context is provided as the user navigates through the page. This implements the WET (Web Experience Toolkit) footnotes pattern for accessibility.
+
+### IMPORTANT: React SPA Scroll Handlers
+
+In a React Single Page Application with React Router, standard hash links (`href="#fn1"`) can be intercepted by the router and navigate to a blank page. **You MUST add click handlers** to scroll to the element instead.
+
+Add these scroll handler functions at the top of your component (after useState declarations):
+
+```jsx
+const scrollToElement = (elementId) => (e) => {
+    e.preventDefault();
+    document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+```
+
+Or for specific footnote IDs:
+```jsx
+const scrollToFootnote = (e) => {
+    e.preventDefault();
+    document.getElementById('fn-asterisk')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+const scrollToRef = (e) => {
+    e.preventDefault();
+    document.getElementById('fn-asterisk-rf')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+```
+
+### Linking TO a Footnote (in content)
+
+Use superscript links with screen-reader text **and onClick handler**:
+
+```jsx
+<p>
+    Capital expenditures in the energy sector
+    <sup id="fn1-rf">
+        <a className="fn-lnk" href="#fn1" onClick={scrollToElement('fn1')}>
+            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>1
+        </a>
+    </sup>
+    totalled $45 billion.
+</p>
+```
+
+### Multi-Referenced Footnotes
+When the same footnote is referenced multiple times, add a number after the indicator in the ID:
+
+```jsx
+<sup id="fn2-1-rf"><a className="fn-lnk" href="#fn2"><span className="wb-inv">Footnote </span>2</a></sup>
+// Later in content:
+<sup id="fn2-2-rf"><a className="fn-lnk" href="#fn2"><span className="wb-inv">Footnote </span>2</a></sup>
+```
+
+### Footnotes Section (with Return Links)
+
+**Note:** All return links must include `onClick` handlers for proper navigation in React.
 
 ```jsx
 <aside className="wb-fnote" role="note">
-    <h2 className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
     <dl>
-        <dt>*</dt>
+        {/* Standard footnote */}
+        <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
         <dd id="fn1">
-            <p>{getText('footnote_text', lang)}</p>
+            <p>{getText('footnote1_text', lang)}</p>
+            <p className="fn-rtn">
+                <a href="#fn1-rf" onClick={scrollToElement('fn1-rf')}>
+                    <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>1
+                    <span className="wb-inv">{lang === 'en' ? ' referrer' : ''}</span>
+                </a>
+            </p>
+        </dd>
+
+        {/* Multi-referenced footnote - return link points to FIRST reference */}
+        <dt>{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
+        <dd id="fn2">
+            <p>{getText('footnote2_text', lang)}</p>
+            <p className="fn-rtn">
+                <a href="#fn2-1-rf" onClick={scrollToElement('fn2-1-rf')}>
+                    <span className="wb-inv">{lang === 'en' ? 'Return to ' : 'Retour à la '}</span>
+                    <span>{lang === 'en' ? 'first' : 'première'}</span>
+                    <span className="wb-inv">{lang === 'en' ? ' footnote ' : ' note de bas de page '}</span>2
+                    <span className="wb-inv">{lang === 'en' ? ' referrer' : ''}</span>
+                </a>
+            </p>
+        </dd>
+
+        {/* Symbol footnote (e.g., asterisk) */}
+        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+        <dd id="fn-asterisk">
+            <p>{getText('footnote_asterisk_text', lang)}</p>
+            <p className="fn-rtn">
+                <a href="#fn-asterisk-rf" onClick={scrollToElement('fn-asterisk-rf')}>
+                    <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                    <span className="wb-inv">{lang === 'en' ? ' referrer' : ''}</span>
+                </a>
+            </p>
         </dd>
     </dl>
 </aside>
 ```
+
+### Required CSS Classes
+These styles are defined in `index.css`:
+
+```css
+.fn-lnk {
+  text-decoration: none;
+  font-size: 0.85em;
+  vertical-align: super;
+}
+
+.fn-rtn {
+  font-size: 0.9em;
+  margin-top: 0.5em;
+}
+
+.fn-rtn a {
+  text-decoration: underline;
+}
+```
+
+### Key Points
+1. **Footnote indicators** can be numbers, letters, or symbols (like *)
+2. **Return links** must point back to the referrer in the content
+3. **Multi-referenced footnotes** should have return links pointing to the FIRST reference (href="#fn2-1-rf")
+4. **Screen reader text** (`wb-inv`) provides context for assistive technologies
+5. Always use `role="note"` on the `<aside>` element
 
 ---
 

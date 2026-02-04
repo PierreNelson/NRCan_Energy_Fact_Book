@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 const BREADCRUMBS = [
     {
         title: { en: 'Canada.ca', fr: 'Canada.ca' },
@@ -15,6 +16,11 @@ const BREADCRUMBS = [
     {
         title: { en: 'Canadian Centre for Energy Information', fr: "Centre canadien d'information sur l'énergie" },
         link: { en: 'https://energy-information.canada.ca/en', fr: 'https://information-energie.canada.ca/fr' }
+    },
+    {
+        title: { en: 'Energy Factbook', fr: "Cahier d'information sur l'énergie" },
+        link: { en: '/section-1#energy-overview', fr: '/section-1#energy-overview' },
+        isInternal: true
     }
 ];
 // Full MENU_DATA restored from your uploaded file
@@ -600,7 +606,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
         <header id="wb-bnr" role="banner" className="gc-header">
             <style>{`
                 .gc-header {
-                    background-color: #fff;
+                    background-color: var(--gc-background);
                     font-family: 'Noto Sans', sans-serif, Arial;
                     flex-shrink: 0;
                 }
@@ -629,11 +635,12 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 }
                 
                 .gc-lang-link {
-                    color: #284162;
+                    color: var(--gc-link);
                     text-decoration: underline;
                     font-size: 16px;
                     border: none;
                     background: none;
+                    outline: none;
                     cursor: pointer;
                     font-family: inherit;
                     margin-bottom: 8px;
@@ -642,7 +649,12 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 
                 .gc-lang-link:hover { 
                     text-decoration: underline; 
-                    color: #0535d2; 
+                    color: var(--gc-link-hover); 
+                }
+                
+                .gc-lang-link:focus-visible {
+                    outline: 3px solid #ffbf47 !important;
+                    outline-offset: 2px !important;
                 }
                 
                 .gc-search-form {
@@ -658,9 +670,9 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     height: 40px;
                 }
 
-                .gc-search-input:focus {
-                    outline: transparent;
-                    outline-offset: -2px;
+                .gc-search-input:focus-visible {
+                    outline: 3px solid #ffbf47 !important;
+                    outline-offset: 2px !important;
                 }
 
                 .gc-search-input::placeholder {
@@ -669,14 +681,14 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 }
                 
                 .gc-search-btn {
-                    background-color: #284162;
+                    background-color: var(--gc-link);
                     border: none;
                     color: white;
                     padding: 10.5px 14px;
                     cursor: pointer;
                 }
                 
-                .gc-search-btn:hover { background-color: #444444; }
+                .gc-search-btn:hover { background-color: var(--gc-text); }
                 
                 /* Menu bar */
                 .gc-menu-bar {
@@ -696,7 +708,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 .gc-menu-btn {
                     background: white;
                     border: none;
-                    color: #284162;
+                    color: var(--gc-link);
                     padding: 15px 25px;
                     font-size: 1.2rem;
                     cursor: pointer;
@@ -707,8 +719,8 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     font-weight: 400;
                 }
                 
-                .gc-menu-btn:hover, .gc-menu-btn.active { background-color: #444444; color: white; border-color: #444444; }
-                .gc-menu-btn:focus { outline: 1px dotted #444444; }
+                .gc-menu-btn:hover, .gc-menu-btn.active { background-color: var(--gc-text); color: white; border-color: var(--gc-text); }
+                .gc-menu-btn:focus-visible { outline: 3px solid #ffbf47 !important; outline-offset: 2px !important; }
                 
                 .gc-menu-chevron {
                     font-size: 0.65rem;
@@ -725,7 +737,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     top: 100%;
                     background: white;
                     z-index: 1000;
-                    border-bottom: 4px solid #26374a;
+                    border-bottom: 4px solid var(--gc-accent);
                     box-shadow: 0 3px 10px rgba(0,0,0,0.2);
                     width: 1300px; 
                 }
@@ -740,7 +752,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 /* Left sidebar with categories */
                 .gc-menu-sidebar {
                     width: 340px;
-                    background-color: #444444;
+                    background-color: var(--gc-text);
                     padding: 0;
                     flex-shrink: 0;
                 }
@@ -750,7 +762,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     width: 100%;
                     padding: 12px 20px;
                     text-align: left;
-                    background: #444444;
+                    background: var(--gc-text);
                     border: none;
                     border-left: 4px solid transparent;
                     color: white;
@@ -762,20 +774,20 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 
                 .gc-menu-category:hover {
                     background-color: white;
-                    color: #444444;
+                    color: var(--gc-text);
                 }
                 
                 .gc-menu-category.active {
                     background-color: white;
-                    color: #444444;
-                    border-left: 1px solid #444444;
+                    color: var(--gc-text);
+                    border-left: 1px solid var(--gc-text);
                 }
                 
-               .gc-menu-category:focus {
-                    outline: 1px solid #ffffff;
-                    outline-offset: -2px;
-                    border:4px solid #000000;
-                    border-offset: 4px;
+               .gc-menu-category:focus-visible {
+                    outline: 3px solid #ffbf47 !important;
+                    outline-offset: 2px !important;
+                    background-color: #ffffff !important;
+                    color: #333 !important;
                 }
                 
                 /* Right content area */
@@ -795,7 +807,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 
                 .gc-menu-title {
                     font-size: 32px;
-                    color: #284162;
+                    color: var(--gc-link);
                     margin: 0 0 40px 0;
                     text-decoration: underline;
                     font-weight: bold;
@@ -803,7 +815,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 }
                 
                 .gc-menu-title a {
-                    color: #284162;
+                    color: var(--gc-link);
                     text-decoration: underline;
                 }
                 
@@ -818,7 +830,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 .gc-menu-links-list li { margin-bottom: 16px; }
                 
                 .gc-menu-links-list a {
-                    color: #284162;
+                    color: var(--gc-link);
                     text-decoration: underline;
                     font-size: 18px;
                     line-height: 1.5;
@@ -855,7 +867,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 }
                 
                 .gc-most-requested a {
-                    color: #284162;
+                    color: var(--gc-link);
                     text-decoration: underline;
                     font-size: 18px;
                     line-height: 2;
@@ -866,7 +878,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 /* Breadcrumb */
                 .gc-breadcrumb {
                     font-size: 16px;
-                    background-color: #fff;
+                    background-color: var(--gc-background);
                 }
                 
                 .gc-breadcrumb-inner {
@@ -888,16 +900,16 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 .gc-breadcrumb-item {
                     display: inline-flex;
                     align-items: center;
-                    color: #284162;
+                    color: var(--gc-link);
                 }
 
                 .gc-breadcrumb-link {
-                    color: #284162;
+                    color: var(--gc-link);
                     text-decoration: underline;
                 }
                 
                 .gc-breadcrumb-link:hover { 
-                    color: #0535d2;
+                    color: var(--gc-link-hover);
                 }
                 
                 .wb-inv {
@@ -925,7 +937,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     top: 0;
                     left: 0;
                     z-index: 9999;
-                    background: #26374a !important;
+                    background: var(--gc-accent) !important;
                     color: #ffffff !important;
                     padding: 10px 15px;
                     font-size: 1rem;
@@ -969,7 +981,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     
                     .gc-menu-sidebar { 
                         width: 100%; 
-                        background: #444444;
+                        background: var(--gc-text);
                     }
                     
                     .gc-mobile-category {
@@ -977,7 +989,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         align-items: center;
                         width: 100%;
                         padding: 15px 20px;
-                        background: #444444;
+                        background: var(--gc-text);
                         border: none;
                         border-bottom: 1px solid #555;
                         color: white;
@@ -1017,7 +1029,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         padding: 15px 20px;
                         border: 2px solid #333;
                         margin: 15px 20px;
-                        color: #284162;
+                        color: var(--gc-link);
                         text-decoration: underline;
                         font-size: 18px;
                     }
@@ -1039,7 +1051,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     .gc-mobile-links-list a {
                         display: block;
                         padding: 15px 20px;
-                        color: #284162;
+                        color: var(--gc-link);
                         text-decoration: underline;
                         font-size: 18px;
                     }
@@ -1096,7 +1108,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     }
                     
                     .gc-mobile-most-requested-content a {
-                        color: #284162;
+                        color: var(--gc-link);
                         text-decoration: underline;
                         font-size: 18px;
                     }
@@ -1225,23 +1237,22 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         padding-left: 25px; 
                     }
                 }
-                    #wb-bnr a:not(.gc-brand):not(.gc-breadcrumb-link):focus,
-                    #wb-bnr button:not(.gc-menu-btn):not(.gc-lang-link):not(.gc-search-btn):focus,
-                    #wb-bnr .gc-menu-category:focus,
-                    #wb-bnr .gc-most-requested a:focus {
-                        outline: 1px solid #ffffff;
-                        outline-offset: -2px;
-                        border:4px solid #000000;
-                        border-offset: 4px;
+                    #wb-bnr a:not(.gc-brand):not(.gc-breadcrumb-link):focus-visible,
+                    #wb-bnr button:not(.gc-menu-btn):not(.gc-lang-link):not(.gc-search-btn):focus-visible,
+                    #wb-bnr .gc-menu-category:focus-visible,
+                    #wb-bnr .gc-most-requested a:focus-visible {
+                        outline: 3px solid #ffbf47 !important;
+                        outline-offset: 2px !important;
+                        background-color: #ffffff !important;
+                        color: #333 !important;
                     }
 
-                    #wb-bnr .gc-brand:focus,
-                    #wb-bnr .gc-breadcrumb-link:focus,
-                    #wb-bnr .gc-lang-link:focus,
-                    #wb-bnr .gc-search-btn:focus {
-                        outline: none !important;
-                        box-shadow: none !important;
-                        border: none !important;
+                    #wb-bnr .gc-brand:focus-visible,
+                    #wb-bnr .gc-breadcrumb-link:focus-visible,
+                    #wb-bnr .gc-lang-link:focus-visible,
+                    #wb-bnr .gc-search-btn:focus-visible {
+                        outline: 3px solid #ffbf47 !important;
+                        outline-offset: 2px !important;
                     }
             `}</style>
 
@@ -1286,7 +1297,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     />
                 </a>
                 <div id="alignment-anchor-right" className="gc-search-lang-wrapper">
-                    <button className="gc-lang-link" onClick={onToggleLanguage} lang={lang === 'en' ? 'fr' : 'en'}>
+                    <button type="button" className="gc-lang-link" onClick={onToggleLanguage} lang={lang === 'en' ? 'fr' : 'en'}>
                         {isCompactMode 
                             ? (lang === 'en' ? 'FR' : 'EN')
                             : (lang === 'en' ? 'Français' : 'English')
@@ -1494,12 +1505,21 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     <ol className="gc-breadcrumb-list">
                         {BREADCRUMBS.map((crumb, index) => (
                             <li key={index} className="gc-breadcrumb-item">
-                                <a 
-                                    href={crumb.link[lang]}
-                                    className="gc-breadcrumb-link"
-                                >
-                                    {crumb.title[lang]}
-                                </a>
+                                {crumb.isInternal ? (
+                                    <Link 
+                                        to={crumb.link[lang]}
+                                        className="gc-breadcrumb-link"
+                                    >
+                                        {crumb.title[lang]}
+                                    </Link>
+                                ) : (
+                                    <a 
+                                        href={crumb.link[lang]}
+                                        className="gc-breadcrumb-link"
+                                    >
+                                        {crumb.title[lang]}
+                                    </a>
+                                )}
                                 {index < BREADCRUMBS.length - 1 && (
                                     <span className="gc-breadcrumb-separator" aria-hidden="true" style={{ margin: '0 10px', color: '#555', fontSize: '1.2em' }}>›</span>
                                 )}

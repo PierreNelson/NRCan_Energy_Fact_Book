@@ -392,8 +392,8 @@ const Page37Stacked = () => {
         const totalBillions = (chartData.total || 0) / 1000;
 
         const centerText = lang === 'en'
-            ? `<b>TOTAL</b><br><b>$${totalBillions.toFixed(0)}B</b>`
-            : `<b>TOTAL</b><br><b>${totalBillions.toFixed(0)}</b><br><b>milliards</b>`;
+            ? `<b>Total</b><br><b>$${totalBillions.toFixed(0)}B</b>`
+            : `<b>Total</b><br><b>${totalBillions.toFixed(0)}</b><br><b>milliards</b>`;
 
         return [{
             text: centerText, x: 0.5, y: 0.5,
@@ -878,19 +878,19 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37h-title {
-                    font-family: 'Georgia', serif;
+                    font-family: 'Lato', sans-serif;
                     color: #857550;
-                    font-size: 2.5rem;
-                    font-weight: normal;
-                    font-style: italic;
+                    font-size: 41px;
+                    font-weight: bold;
+                    font-style: normal;
                     margin: 0 0 10px 0;
                     line-height: 1.2;
                 }
 
                 .page37h-subtitle {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     margin-bottom: 10px;
                     line-height: 1.5;
                 }
@@ -901,9 +901,9 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37h-text {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     margin-bottom: 15px;
                     line-height: 1.5;
                 }
@@ -943,16 +943,16 @@ const getAccessibleDataTable = () => {
                 .page37h-chart-title {
                     font-family: Arial, sans-serif;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     font-size: 1rem;
                     text-align: center;
                     margin-bottom: 5px;
                 }
 
                 .page37h-bullets {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.4rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     line-height: 1.6;
                     padding-left: 20px;
                     list-style-type: disc;
@@ -1001,7 +1001,12 @@ const getAccessibleDataTable = () => {
                         border-right: none !important;
                     }
                     .page37h-title {
-                        font-size: 1.5rem;
+                        font-size: 37px;
+                    }
+                    .page37h-subtitle,
+                    .page37h-text,
+                    .page37h-bullets {
+                        font-size: 18px;
                     }
                     .page37h-year-selector {
                         flex-direction: column !important;

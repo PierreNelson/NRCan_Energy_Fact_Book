@@ -330,8 +330,8 @@ const Page25Stacked = () => {
         const totalBillions = (chartData.total || 0) / 1000;
 
         const centerText = lang === 'en'
-            ? `<b>TOTAL</b><br><b>$${totalBillions.toFixed(0)}</b><br><b>BILLION</b>`
-            : `<b>TOTAL</b><br><b>${totalBillions.toFixed(0)} $</b><br><b>MILLIARDS</b>`;
+            ? `<b>Total</b><br><b>$${totalBillions.toFixed(0)}</b><br><b>billion</b>`
+            : `<b>Total</b><br><b>${totalBillions.toFixed(0)} $</b><br><b>milliards</b>`;
 
         return [{
             text: centerText, x: 0.5, y: 0.54,
@@ -766,6 +766,7 @@ const Page25Stacked = () => {
                     margin-top: 20px;
                     margin-bottom: 40px;
                 }
+                
 
                 .page25h-definition-box {
                     position: relative;
@@ -893,6 +894,12 @@ const Page25Stacked = () => {
 
                 @media (max-width: 768px) {
                     .page-25h { border-right: none !important; }
+                    .page-25h header h1 {
+                        font-size: 37px !important;
+                    }
+                    .page-25h header p {
+                        font-size: 18px !important;
+                    }
 
                     .page25h-chart-column figure { 
                         height: 320px !important; 
@@ -976,6 +983,14 @@ const Page25Stacked = () => {
                     min-width: 100%;
                     border-collapse: collapse;
                 }
+
+                .page25h-text-column > p,
+                .page25h-definition-box p,
+                .page25h-definition-box h2 {
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                    max-width: 65ch; 
+                }
             `}</style>
 
             <div className="page25h-container">
@@ -983,11 +998,11 @@ const Page25Stacked = () => {
                     role="region" 
                     aria-label={`${getText('page25_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
                 >
-                    <h1 aria-hidden="true" style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: '0 0 3px 0' }}>
+                    <h1 aria-hidden="true" style={{ fontFamily: "'Lato', sans-serif", color: '#8e7e52', fontSize: '41px', fontWeight: 'bold', margin: '0 0 3px 0' }}>
                         {getText('page25_title', lang)}
                     </h1>
 
-                    <p aria-hidden="true" style={{ fontSize: '1.4rem', color: '#333', marginBottom: '5px', whiteSpace: 'pre-line' }}>
+                    <p aria-hidden="true" style={{ fontSize: '20px', color: '#333', marginBottom: '5px', whiteSpace: 'pre-line', fontFamily: "'Noto Sans', sans-serif" }}>
                         {getSubtitle()}
                     </p>
                 </header>

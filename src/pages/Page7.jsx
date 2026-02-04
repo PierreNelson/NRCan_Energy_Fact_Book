@@ -25,6 +25,16 @@ const Page7 = () => {
     const listRef = useRef(null);
     const yearButtonRef = useRef(null);
 
+    const scrollToFootnote = (e) => {
+        e.preventDefault();
+        document.getElementById('fn1')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const scrollToRef = (e) => {
+        e.preventDefault();
+        document.getElementById('fn1-rf')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleDropdownClickOutside = (event) => {
@@ -468,6 +478,46 @@ const Page7 = () => {
             style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column' }}
         >
             <style>{`
+                .page7-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    color: #245e7f;
+                    margin-bottom: 5px;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+                .page7-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+                .page7-subtitle {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 39px;
+                    font-weight: bold;
+                    color: #5d5d5f;
+                }
+                .page7-subtitle2 {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
+                    font-weight: bold;
+                    color: #527291;
+                    margin-bottom: 20px;
+                    margin-top: -10px;
+                }
+                .page7-chart-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
+                    font-weight: bold;
+                    color: #221e1f;
+                    margin-bottom: 15px;
+                    text-transform: uppercase;
+                }
                 .page7-chart {
                     position: relative;
                     width: 100%;
@@ -479,29 +529,30 @@ const Page7 = () => {
                 .page7-legend {
                     margin-left: 60px;
                     padding-top: 10px;
+                    font-family: 'Noto Sans', sans-serif;
                 }
                 .page7-legend-item {
                     margin-bottom: 12px;
-                    font-size: 1.2rem;
+                    font-size: 20px;
                 }
                 .page7-legend-header {
                     font-weight: bold;
                     color: #245e7f;
-                    font-size: 1.5rem;
+                    font-size: 20px;
                     margin-bottom: 8px;
                     text-transform: uppercase;
                 }
                 .page7-legend-sub {
                     margin-left: 25px;
                     color: #58585a;
-                    font-size: 1.25rem;
+                    font-size: 20px;
                     text-transform: uppercase;
                     margin-bottom: 6px;
                     font-weight: bold;
                 }
                 .page7-canadian-gdp {
                     font-weight: bold;
-                    font-size: 1.6rem;
+                    font-size: 20px;
                     margin-bottom: 25px;
                     color: #242021;
                     text-transform: uppercase;
@@ -517,8 +568,8 @@ const Page7 = () => {
                 .year-selector label {
                     font-weight: bold;
                     margin-right: 15px;
-                    font-size: 18px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                 }
                 .custom-dropdown {
                     position: relative;
@@ -526,8 +577,8 @@ const Page7 = () => {
                 }
                 .dropdown-button {
                     padding: 8px 35px 8px 12px;
-                    font-size: 16px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                     background-color: #fff;
@@ -603,6 +654,8 @@ const Page7 = () => {
                     border-radius: 4px;
                     list-style: none;
                     font-weight: bold;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                 }
                 .data-table-wrapper summary::-webkit-details-marker {
                     display: none;
@@ -621,6 +674,16 @@ const Page7 = () => {
                     white-space: nowrap;
                 }
                 @media (max-width: 768px) {
+                    .page7-title {
+                        font-size: 37px;
+                    }
+                    .page7-subtitle {
+                        font-size: 35px;
+                    }
+                    .page7-subtitle2,
+                    .page7-chart-title {
+                        font-size: 26px;
+                    }
                     .page7-content-wrapper {
                         flex-direction: column !important;
                     }
@@ -628,28 +691,25 @@ const Page7 = () => {
                         margin-left: 0;
                         margin-top: 20px;
                     }
-                    .page7-legend-header {
-                        font-size: 1.2rem;
+                    .page7-legend-header,
+                    .page7-legend-sub,
+                    .page7-canadian-gdp,
+                    .page7-legend-item {
+                        font-size: 18px;
                     }
-                    .page7-legend-sub {
-                        font-size: 1.1rem;
+                    .year-selector label {
+                        font-size: 18px;
                     }
-                    .page7-canadian-gdp {
-                        font-size: 1.3rem;
+                    .dropdown-button {
+                        font-size: 18px;
+                    }
+                    .data-table-wrapper summary {
+                        font-size: 18px;
                     }
                 }
                 @media (min-width: 1200px) {
                     .page7-legend {
                         margin-left: 100px;
-                    }
-                    .page7-legend-header {
-                        font-size: 1.6rem;
-                    }
-                    .page7-legend-sub {
-                        font-size: 1.35rem;
-                    }
-                    .page7-canadian-gdp {
-                        font-size: 1.8rem;
                     }
                 }
 
@@ -678,30 +738,13 @@ const Page7 = () => {
             `}</style>
 
             <header>
-                <h1 style={{ 
-                    fontFamily: 'Georgia, "Times New Roman", serif',
-                    fontSize: '2.8rem',
-                    color: '#245e7f',
-                    marginBottom: '5px'
-                }}>
+                <h1 className="page7-title">
                     {getText('page7_title', lang)}
                 </h1>
-                <h2 style={{ 
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: '1.8rem',
-                    fontWeight: 'bold',
-                    color: '#5d5d5f',
-                }}>
+                <h2 className="page7-subtitle">
                     {getText('page7_subtitle', lang)} ({year})
                 </h2>
-                <h3 style={{ 
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: '1.6rem',
-                    fontWeight: 'bold',
-                    color: '#527291',
-                    marginBottom: '20px',
-                    marginTop: '-10px',
-                }}>
+                <h3 className="page7-subtitle2">
                     {getText('page7_subtitle2', lang)}
                 </h3>
             </header>
@@ -801,15 +844,13 @@ const Page7 = () => {
                 </div>
             </div>
 
-            <h4 style={{ 
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '1.4rem',
-                fontWeight: 'bold',
-                color: '#221e1f',
-                marginBottom: '15px',
-                textTransform: 'uppercase'
-            }}>
+            <h4 className="page7-chart-title">
                 {getText('page7_chart_title', lang)}
+                <sup id="fn1-rf">
+                    <a href="#fn1" onClick={scrollToFootnote} className="fn-lnk" title={lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}>
+                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>1
+                    </a>
+                </sup>
             </h4>
 
             <div className="page7-content-wrapper" style={{ display: 'flex', alignItems: 'flex-start' }}>
@@ -1022,18 +1063,15 @@ const Page7 = () => {
             </details>
             </div>
 
-            <aside className="wb-fnote" role="note" style={{ marginTop: 'auto', paddingTop: '30px' }}>
-                <h2 className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                <dl style={{ margin: 0 }}>
-                    <dt style={{ display: 'none' }}>*</dt>
-                    <dd style={{ margin: 0 }}>
-                        <p style={{ 
-                            fontSize: '1rem', 
-                            color: '#000000', 
-                            lineHeight: 1.6, 
-                            margin: 0,
-                            whiteSpace: 'pre-line' 
-                        }}>
+            <aside className="wb-fnote" role="note">
+                <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                <dl>
+                    <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
+                    <dd id="fn1">
+                        <a href="#fn1-rf" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote 1 referrer' : 'Retour à la référence de la note de bas de page 1'}>
+                            <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>1
+                        </a>
+                        <p>
                             {getText('page7_footnote', lang)}
                         </p>
                     </dd>

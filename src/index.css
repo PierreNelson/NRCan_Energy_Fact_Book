@@ -1,24 +1,232 @@
+/* GC Design System Fonts - Lato for headings, Noto Sans for body */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans:wght@400;700&family=Noto+Sans+Canadian+Aboriginal&display=swap');
+
 :root {
-  --primary-color: #245E7F;
-  --secondary-color: #7B9EB2;
-  --accent-color: #C7CDD8;
+  /* Canada.ca Design System - Mandatory Colours */
+  --gc-background: #FFFFFF;
+  --gc-text: #333333;
+  --gc-link: #284162;
+  --gc-link-hover: #0535d2;
+  --gc-link-visited: #7834bc;
+  --gc-accent: #26374A;
+  --gc-error: #d3080c;
+  --gc-selected: #333333;
+  --gc-red: #A62A1E;
+  
+  /* Legacy color aliases (for backward compatibility) */
+  --primary-color: #26374A;
+  --secondary-color: #284162;
+  --accent-color: #26374A;
   --background-color: #FFFFFF;
   --text-color: #333333;
-  --font-family: 'Helvetica', 'Arial', sans-serif;
+  
+  /* Typography */
+  --font-heading: 'Lato', sans-serif;
+  --font-body: 'Noto Sans', sans-serif;
+  --font-family: 'Noto Sans', 'Helvetica', 'Arial', sans-serif;
+  
+  /* Layout */
+  --max-content-width: 1140px;
+  --max-line-length: 65ch;
   --sidebar-width: 340px;
   --sidebar-width-collapsed: 40px;
-  /* Wider collapsed area for hamburger button look */
   --transition-speed: 0.3s;
 }
 
 body {
-  font-family: var(--font-family);
-  background-color: var(--background-color);
-  color: var(--text-color);
+  font-family: var(--font-body);
+  font-size: 20px;
+  background-color: var(--gc-background);
+  color: var(--gc-text);
   margin: 0;
   padding: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  line-height: 1.5;
+}
+
+/* Canada.ca Link Styles - Mandatory */
+a {
+  color: var(--gc-link);
+  text-decoration: underline;
+}
+
+a:hover,
+a:focus {
+  color: var(--gc-link-hover);
+}
+
+a:visited {
+  color: var(--gc-link-visited);
+}
+
+/* ===============================================
+   WET FOOTNOTES STYLES
+   Linked footnotes with return links
+   =============================================== */
+
+.fn-lnk {
+  text-decoration: none;
+  font-size: 0.85em;
+  vertical-align: super;
+}
+
+.fn-rtn {
+  font-size: 0.9em;
+  margin-top: 0.5em;
+}
+
+.fn-rtn a {
+  text-decoration: underline;
+}
+
+/* ===============================================
+   GC DESIGN SYSTEM TYPOGRAPHY
+   Mandatory elements - Lato for headings, Noto Sans for body
+   =============================================== */
+
+/* Desktop and tablet default font specification */
+h1, .gc-h1 {
+  font-family: var(--font-heading);
+  font-size: 41px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+h2, .gc-h2 {
+  font-family: var(--font-heading);
+  font-size: 39px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+h3, .gc-h3 {
+  font-family: var(--font-heading);
+  font-size: 29px;
+  font-weight: bold;
+  line-height: 1.3;
+  margin-bottom: 0.5em;
+}
+
+h4, .gc-h4 {
+  font-family: var(--font-heading);
+  font-size: 27px;
+  font-weight: bold;
+  line-height: 1.3;
+  margin-bottom: 0.5em;
+}
+
+h5, .gc-h5 {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1.4;
+  margin-bottom: 0.5em;
+}
+
+h6, .gc-h6 {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 1.4;
+  margin-bottom: 0.5em;
+}
+
+p, .gc-body {
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.5;
+  max-width: var(--max-line-length);
+}
+
+/* Smaller device default font specification */
+@media (max-width: 768px) {
+  h1, .gc-h1 {
+    font-size: 37px;
+  }
+  
+  h2, .gc-h2 {
+    font-size: 35px;
+  }
+  
+  h3, .gc-h3 {
+    font-size: 26px;
+  }
+  
+  h4, .gc-h4 {
+    font-size: 22px;
+  }
+  
+  h5, .gc-h5 {
+    font-size: 20px;
+  }
+  
+  h6, .gc-h6 {
+    font-size: 18px;
+  }
+  
+  body, p, .gc-body {
+    font-size: 18px;
+  }
+}
+
+/* GC Red Bar under main page title (H1) */
+.gc-thickline,
+.page-main-title {
+  position: relative;
+  padding-bottom: 0.5em;
+}
+
+.gc-thickline::after,
+.page-main-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0.2em;
+  width: 72px;
+  height: 6px;
+  background-color: var(--gc-red);
+}
+
+/* ===============================================
+   BREADCRUMB NAVIGATION
+   =============================================== */
+
+.gc-breadcrumb {
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding: 10px 0;
+  margin-bottom: 15px;
+}
+
+.gc-breadcrumb ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gc-breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.gc-breadcrumb a {
+  color: #295376;
+  text-decoration: underline;
+}
+
+.gc-breadcrumb a:hover {
+  color: #0535d2;
+}
+
+.gc-breadcrumb .breadcrumb-current {
+  color: #333;
+  font-weight: normal;
 }
 
 html {
@@ -26,53 +234,60 @@ html {
   overflow-y: auto;
 }
 
-/* Mobile Sidebar Toggle Button - always visible */
-.sidebar-mobile-toggle {
-  position: fixed;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 36px;
-  background-color: var(--primary-color);
-  color: white;
+/* Sidebar Toggle Button - inside sidebar, covers collapsed area or in header when open */
+.sidebar-toggle-btn {
+  position: absolute;
+  background: transparent;
   border: none;
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
   cursor: pointer;
-  z-index: 1001;
+  z-index: 1002;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
-  transition: background-color 0.2s, left 0.3s;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  color: white;
+  font-size: 1.4rem;
+  transition: all 0.3s ease;
 }
 
-.sidebar-mobile-toggle:hover {
-  background-color: #1a4a5f;
+.sidebar-toggle-btn:focus-visible {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 2px !important;
 }
 
-.sidebar-mobile-toggle:focus {
-  outline: 3px solid orange;
-  outline-offset: 2px;
+/* Closed state - cover entire collapsed sidebar area */
+.sidebar-toggle-closed {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
-.sidebar-mobile-toggle.open {
-  left: var(--sidebar-width);
+.sidebar-toggle-closed:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Hide toggle button on desktop when sidebar is being hovered */
-@media (min-width: 481px) {
-  .sidebar-mobile-toggle {
-    opacity: 0;
-    pointer-events: none;
-  }
-  
-  .sidebar:hover ~ .sidebar-mobile-toggle,
-  .sidebar-mobile-toggle:focus {
-    opacity: 0;
-  }
+/* When sidebar is hovered (expanded via hover), hide the closed button */
+.sidebar:hover .sidebar-toggle-closed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Open state - in header area, to the left of Table of Contents */
+.sidebar-toggle-open {
+  top: 20px;
+  left: 10px;
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.sidebar-toggle-open:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Sidebar Styles */
@@ -94,24 +309,9 @@ html {
   border-bottom-right-radius: 8px;
 }
 
-/* Collapse indicator - hamburger icon matching mobile toggle style */
+/* Hide the pseudo-element - the toggle button now shows the icon */
 .sidebar::before {
-  content: "☰";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.4rem;
-  color: white;
-  opacity: 1;
-  transition: opacity var(--transition-speed);
-  z-index: 1001;
-  cursor: pointer;
-}
-
-.sidebar:hover::before {
-  opacity: 0;
-  /* Hide indicator when expanded */
+  display: none;
 }
 
 .sidebar:hover {
@@ -129,6 +329,8 @@ html {
   width: var(--sidebar-width) !important;
   white-space: normal !important;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25) !important;
+  overflow-y: auto !important;
+  border-radius: 0 !important;
 }
 
 .sidebar.sidebar-mobile-open .sidebar-header,
@@ -147,22 +349,33 @@ html {
   padding-bottom: 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   opacity: 0;
-  transition: opacity var(--transition-speed);
+  visibility: hidden;
+  transition: opacity var(--transition-speed), visibility var(--transition-speed);
   white-space: normal;
 }
 
-.sidebar:hover .sidebar-header {
+.sidebar:hover .sidebar-header,
+.sidebar.sidebar-mobile-open .sidebar-header {
   opacity: 1;
+  visibility: visible;
+}
+
+/* When sidebar is open via toggle, add left padding for the toggle button */
+.sidebar.sidebar-mobile-open .sidebar-header {
+  padding-left: 42px;
 }
 
 /* Nav links container - allow scrolling */
 .nav-links {
   opacity: 0;
-  transition: opacity var(--transition-speed);
+  visibility: hidden;
+  transition: opacity var(--transition-speed), visibility var(--transition-speed);
 }
 
-.sidebar:hover .nav-links {
+.sidebar:hover .nav-links,
+.sidebar.sidebar-mobile-open .nav-links {
   opacity: 1;
+  visibility: visible;
 }
 
 .nav-link {
@@ -210,9 +423,9 @@ html {
   line-height: 1.4;
 }
 
-.nav-section-header:focus {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+.nav-section-header:focus-visible {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 2px !important;
 }
 
 .nav-section-header:hover {
@@ -233,7 +446,7 @@ html {
 }
 
 .nav-section-content.expanded {
-  max-height: 500px;
+  max-height: none;
   opacity: 1;
 }
 
@@ -322,15 +535,34 @@ html {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Accessibility Focus */
-*:focus {
-  outline: 3px solid orange;
-  outline-offset: 2px;
+/* Accessibility Focus - High contrast for keyboard navigation only */
+*:focus-visible {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 2px !important;
 }
 
 /* Main content focus - transparent (for programmatic focus on page navigation) */
 #main-content:focus {
-  outline: transparent;
+  outline: transparent !important;
+}
+
+/* Ensure links and buttons have visible focus */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 2px !important;
+}
+
+/* Focus styles for interactive elements on dark backgrounds */
+.sidebar a:focus-visible,
+.sidebar button:focus-visible,
+.nav-link:focus-visible,
+.nav-section-header:focus-visible,
+.nav-sublink:focus-visible {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 2px !important;
 }
 
 /* REFLOW: At 250%+ zoom - stack navigation */
@@ -351,12 +583,6 @@ html {
 
 /* REFLOW: At 400% zoom (320px width) - prevent horizontal scrolling */
 @media (max-width: 480px) {
-  /* Show mobile toggle button */
-  .sidebar-mobile-toggle {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-  
   /* Hide sidebar by default at high zoom, show via JS toggle */
   .sidebar {
     width: 0 !important;
@@ -368,11 +594,27 @@ html {
     display: none !important;
   }
   
+  /* Show toggle button as fixed at high zoom when closed */
+  .sidebar-toggle-closed {
+    position: fixed !important;
+    width: 40px !important;
+    height: 40px !important;
+    top: 50% !important;
+    left: 0 !important;
+    transform: translateY(-50%) !important;
+    background-color: var(--primary-color) !important;
+    border-top-right-radius: 6px !important;
+    border-bottom-right-radius: 6px !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  
   /* Hide all sidebar content at high zoom by default */
   .sidebar .sidebar-header,
   .sidebar .nav-links {
     display: none !important;
     opacity: 0 !important;
+    visibility: hidden !important;
   }
   
   /* When mobile-open class is added via JS */
@@ -387,11 +629,13 @@ html {
   .sidebar.sidebar-mobile-open .nav-links {
     display: block !important;
     opacity: 1 !important;
+    visibility: visible !important;
   }
   
-  /* Position toggle at edge of open sidebar */
-  .sidebar-mobile-toggle.open {
-    left: min(var(--sidebar-width), 90vw) !important;
+  /* Reset toggle button position when open */
+  .sidebar.sidebar-mobile-open .sidebar-toggle-open {
+    position: absolute !important;
+    transform: none !important;
   }
   
   .nav-arrow {
@@ -514,15 +758,19 @@ details .table-responsive {
   }
 }
 
-/* WET Footnotes */
+/* WET Footnotes - GC Canada.ca Style */
 .wb-fnote {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #ddd;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #ccc;
 }
 
 .wb-fnote h2 {
-  margin-bottom: 0.5rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 1rem;
 }
 
 .wb-fnote dl {
@@ -530,16 +778,99 @@ details .table-responsive {
 }
 
 .wb-fnote dt {
-  font-weight: bold;
+  /* Hide the dt visually but keep for screen readers */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .wb-fnote dd {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
   margin-left: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .wb-fnote dd p {
-  margin: 0 0 0.5rem 0;
+  margin: 0;
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #333;
+}
+
+/* Footnote number box - GC style */
+.fn-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.25rem;
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #333;
+  background-color: #fff;
+  border: 1px solid #6f6f6f;
+  border-radius: 2px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.fn-num:hover,
+.fn-num:focus {
+  background-color: #f5f5f5;
+  border-color: #333;
+}
+
+/* Inline footnote reference link (superscript in content) */
+.fn-lnk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.15rem;
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #333;
+  background-color: #fff;
+  border: 1px solid #6f6f6f;
+  border-radius: 2px;
+  text-decoration: none;
+  vertical-align: super;
+  margin-left: 1px;
+}
+
+.fn-lnk:hover,
+.fn-lnk:focus {
+  background-color: #f5f5f5;
+  border-color: #333;
+}
+
+/* Return to footnote referrer link */
+.fn-rtn {
+  margin-top: 0.25rem;
+}
+
+.fn-rtn a {
+  color: #2b4380;
+  text-decoration: underline;
+  font-size: 0.875rem;
+}
+
+.fn-rtn a:hover,
+.fn-rtn a:focus {
+  color: #0535d2;
 }
 
 /* Screen reader only (sr-only) - alternative class */

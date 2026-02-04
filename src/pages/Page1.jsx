@@ -91,7 +91,7 @@ const Page1 = () => {
                 }
 
                 .page1-title-text {
-                    font-family: Georgia, "Times New Roman", serif;
+                    font-family: 'Lato', sans-serif;
                     font-size: 4.5rem; 
                     color: #221e1f;
                     display: block;
@@ -153,7 +153,7 @@ const Page1 = () => {
                         padding: '0',
                         margin: '0',
                         color: '#ebe8e1',
-                        fontFamily: 'Arial, sans-serif'
+                        fontFamily: "'Noto Sans', sans-serif"
                     }}>
                         {[1, 2, 3].map(num => (
                             <li key={num} className="page1-list-item">

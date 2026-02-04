@@ -6,7 +6,6 @@ import { getCapitalExpendituresData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page24 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
@@ -18,6 +17,16 @@ const Page24 = () => {
 
     const [hiddenSeries, setHiddenSeries] = useState([]); 
     const [selectedPoints, setSelectedPoints] = useState(null);
+
+    const scrollToFootnote = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-page24')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const scrollToRef = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-rf-page24')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
 
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
@@ -215,14 +224,20 @@ const Page24 = () => {
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
-    const renderTextWithHiddenAsterisk = (text) => {
+    const renderTextWithFootnoteLink = (text) => {
         if (!text) return null;
         if (!text.includes('*')) return text;
         const parts = text.split('*');
         return parts.map((part, index) => (
             <React.Fragment key={index}>
                 {part}
-                {index < parts.length - 1 && <span aria-hidden="true">*</span>}
+                {index < parts.length - 1 && (
+                    <sup id="fn-asterisk-rf-page24">
+                        <a className="fn-lnk" href="#fn-asterisk-page24" onClick={scrollToFootnote} title={lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}>
+                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                        </a>
+                    </sup>
+                )}
             </React.Fragment>
         ));
     };
@@ -616,6 +631,27 @@ const Page24 = () => {
                     padding-left: ${layoutPadding?.left || 55}px; 
                 }
 
+                .page24-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    color: var(--gc-text);
+                    margin: 0 0 20px 0;
+                    line-height: 1.2;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page24-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+
                 .page24-chart-wrapper {
                     position: relative;
                     width: calc(100% + 30px);
@@ -686,10 +722,10 @@ const Page24 = () => {
                 }
 
                 .page24-chart-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.25rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     line-height: 1.2;
                     max-width: 100%;
                 }
@@ -697,13 +733,23 @@ const Page24 = () => {
                 .page24-legend-item {
                     display: flex;
                     align-items: center;
-                    font-family: Arial, sans-serif;
-                    font-size: 0.9rem;
-                    color: #333;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    color: var(--gc-text);
                     cursor: pointer;
                     user-select: none;
                 }
                 .page24-legend-color { width: 15px; height: 15px; margin-right: 8px; display: inline-block; }
+
+                .page24-bullet {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    max-width: 65ch;
+                }
+
+                .page24-footnote {
+                    font-family: 'Noto Sans', sans-serif;
+                }
 
                 .js-plotly-plot .plotly .modebar {
                     right: 20px !important;
@@ -722,6 +768,21 @@ const Page24 = () => {
                     .page24-content-row { flex-direction: column; }
                     .page24-chart-column { width: 100%; margin-bottom: 30px; }
                     .page24-text-column { width: 100%; padding-top: 0; padding-left: 0; }
+                }
+
+                @media (max-width: 768px) {
+                    .page24-title {
+                        font-size: 37px;
+                    }
+                    .page24-chart-title {
+                        font-size: 26px;
+                    }
+                    .page24-legend-item {
+                        font-size: 18px;
+                    }
+                    .page24-bullet {
+                        font-size: 18px;
+                    }
                 }
 
                 @media (max-width: 640px) {
@@ -767,8 +828,8 @@ const Page24 = () => {
 
             <div className="page24-container">
                 <header className="page24-header">
-                    <h1 style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: 0, lineHeight: 1.1 }}>
-                        {renderTextWithHiddenAsterisk(getText('page24_title', lang))}
+                    <h1 className="page24-title">
+                        {getText('page24_title', lang)}
                     </h1>
                 </header>
 
@@ -777,7 +838,7 @@ const Page24 = () => {
 
                         <div className="chart-title-wrapper">
                             <h2 className="page24-chart-title">
-                                {renderTextWithHiddenAsterisk(chartTitle)}
+                                {renderTextWithFootnoteLink(chartTitle)}
                             </h2>
                         </div>
 
@@ -926,7 +987,7 @@ const Page24 = () => {
                         <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '0', color: '#333' }}>
                             <li 
                                 className="page24-bullet" 
-                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '1.5rem', marginTop: '20px' }}
+                                style={{ marginBottom: '20px', lineHeight: '1.4', marginTop: '20px' }}
                                 aria-label={lang === 'en' 
                                     ? `Capital expenditures in Canada's energy sector totaled ${formatBillionSR(totalLatestBillion)} in ${latestRow.year}, a decrease of ${declineFromPeakPct.toFixed(0)} percent from a peak in ${peakRow.year}.`
                                     : `Les dépenses en immobilisations dans le secteur canadien de l'énergie ont totalisé ${formatBillionSR(totalLatestBillion)} en ${latestRow.year}, une baisse de ${declineFromPeakPct.toFixed(0)} pour cent par rapport au sommet de ${peakRow.year}.`
@@ -939,7 +1000,7 @@ const Page24 = () => {
 
                             <li 
                                 className="page24-bullet" 
-                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '1.5rem' }}
+                                style={{ marginBottom: '20px', lineHeight: '1.4' }}
                                 aria-label={lang === 'en'
                                     ? `After reaching an eleven year low of ${formatBillionSR(low2020Billion)} in 2020, investment has rebounded by ${reboundFrom2020Pct.toFixed(0)} percent.`
                                     : `Après avoir atteint un creux de onze ans de ${formatBillionSR(low2020Billion)} en 2020, l'investissement a rebondi de ${reboundFrom2020Pct.toFixed(0)} pour cent.`
@@ -952,7 +1013,7 @@ const Page24 = () => {
 
                             <li 
                                 className="page24-bullet" 
-                                style={{ marginBottom: '2px', lineHeight: '1.25', fontSize: '1.5rem' }}
+                                style={{ marginBottom: '2px', lineHeight: '1.4' }}
                                 aria-label={lang === 'en'
                                     ? `Oil and gas extraction was the largest area of energy sector capital expenditure at ${formatBillionSR(oilGasBillion)} in ${latestRow.year}, followed by electrical power generation and distribution at ${formatBillionSR(electricityBillion)}.`
                                     : `L'extraction de pétrole et de gaz était le plus grand domaine de dépenses en immobilisations du secteur de l'énergie avec ${formatBillionSR(oilGasBillion)} en ${latestRow.year}, suivie de la production et distribution d'électricité avec ${formatBillionSR(electricityBillion)}.`
@@ -966,19 +1027,16 @@ const Page24 = () => {
                     </aside>
                 </div>
 
-                <aside className="wb-fnote" role="note" style={{ marginTop: 'auto', paddingTop: '10px', paddingBottom: '15px' }}>
-                    <h2 id="fn-page24" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl style={{ margin: 0 }}>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-page24" style={{ margin: 0 }}>
-                            <p className="page24-footnote" style={{
-                                fontSize: '1rem',
-                                color: '#000000',
-                                marginBottom: '0',
-                                lineHeight: '1.15',
-                                whiteSpace: 'pre-line'
-                            }}>
-                                {renderTextWithHiddenAsterisk(getText('page24_footnote', lang))}
+                <aside className="wb-fnote" role="note">
+                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <dl>
+                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                        <dd id="fn-asterisk-page24">
+                            <a href="#fn-asterisk-rf-page24" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                            </a>
+                            <p>
+                                {getText('page24_footnote', lang)}
                             </p>
                         </dd>
                     </dl>

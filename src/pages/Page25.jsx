@@ -5,7 +5,6 @@ import { getInfrastructureData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page25 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
@@ -331,8 +330,8 @@ const Page25 = () => {
         const totalBillions = (chartData.total || 0) / 1000;
 
         const centerText = lang === 'en'
-            ? `<b>TOTAL</b><br><b>$${totalBillions.toFixed(0)}</b><br><b>BILLION</b>`
-            : `<b>TOTAL</b><br><b>${totalBillions.toFixed(0)} $</b><br><b>MILLIARDS</b>`;
+            ? `<b>Total</b><br><b>$${totalBillions.toFixed(0)}</b><br><b>billion</b>`
+            : `<b>Total</b><br><b>${totalBillions.toFixed(0)} $</b><br><b>milliards</b>`;
 
         return [{
             text: centerText, x: 0.5, y: 0.54,
@@ -712,6 +711,39 @@ const Page25 = () => {
                     padding-right: ${layoutPadding?.right || 15}px; 
                 }
 
+                .page25-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    color: var(--gc-text);
+                    margin: 0 0 3px 0;
+                    line-height: 1.2;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page25-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+
+                .page25-subtitle {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    max-width: 65ch;
+                }
+
+                .page25-body-text {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    max-width: 65ch;
+                }
+
                 .page25-container {
                     width: 100%;
                     padding: 0; 
@@ -770,6 +802,10 @@ const Page25 = () => {
                     padding-right: 0 !important;
                     margin-top: 20px !important;
                 }
+                .layout-stacked .page25-body-text {
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                }
                 .layout-stacked figure {
                     height: 500px !important;
                     min-height: 500px !important;
@@ -811,9 +847,15 @@ const Page25 = () => {
                 .page25-year-label {
                     font-weight: bold;
                     margin-right: 15px;
-                    font-size: 18px;
-                    font-family: Arial, sans-serif;
+                    font-size: 20px;
+                    font-family: 'Noto Sans', sans-serif;
                     white-space: nowrap;
+                }
+
+                .page25-definition-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
+                    font-weight: bold;
                 }
 
                 .custom-dropdown {
@@ -823,8 +865,8 @@ const Page25 = () => {
 
                 .dropdown-button {
                     padding: 8px 35px 8px 12px;
-                    font-size: 16px;
-                    font-family: Arial, sans-serif;
+                    font-size: 18px;
+                    font-family: 'Noto Sans', sans-serif;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                     background-color: #fff;
@@ -930,6 +972,10 @@ const Page25 = () => {
                         margin-top: 20px;
                         margin-bottom: 40px;
                     }
+                    .page25-body-text {
+                        margin-left: auto !important;
+                        margin-right: auto !important;
+                    }
                 }
 
                 @media (max-width: 960px) {
@@ -943,6 +989,26 @@ const Page25 = () => {
 
                 @media (max-width: 768px) {
                     .page-25 { border-right: none !important; }
+
+                    .page25-title {
+                        font-size: 37px;
+                    }
+
+                    .page25-subtitle {
+                        font-size: 18px;
+                    }
+
+                    .page25-body-text {
+                        font-size: 18px;
+                    }
+
+                    .page25-year-label {
+                        font-size: 18px;
+                    }
+
+                    .page25-definition-title {
+                        font-size: 26px;
+                    }
 
                     .page25-chart-column figure { 
                         height: 320px !important; 
@@ -1035,11 +1101,11 @@ const Page25 = () => {
                     role="region" 
                     aria-label={`${getText('page25_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
                 >
-                    <h1 aria-hidden="true" style={{ fontFamily: 'Georgia, serif', color: '#8e7e52', fontSize: '3rem', fontWeight: 'normal', margin: '0 0 3px 0' }}>
+                    <h1 className="page25-title" aria-hidden="true">
                         {getText('page25_title', lang)}
                     </h1>
 
-                    <p aria-hidden="true" style={{ fontSize: '1.4rem', color: '#333', marginBottom: '5px', whiteSpace: 'pre-line' }}>
+                    <p className="page25-subtitle" aria-hidden="true" style={{ color: '#333', marginBottom: '5px', whiteSpace: 'pre-line' }}>
                         {getSubtitle()}
                     </p>
                 </header>
@@ -1334,7 +1400,7 @@ const Page25 = () => {
                         aria-label={getRightSideText()}
                     >
                         <div className="page25-definition-box" aria-hidden="true">
-                            <h2 style={{ fontSize: '1.15rem', fontWeight: 'bold', textAlign: 'center', color: '#333', margin: '0 0 15px 0px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
+                            <h2 className="page25-definition-title" style={{ textAlign: 'center', color: '#333', margin: '0 0 15px 0px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
                                 {getText('infra_definition_title', lang)}
                             </h2>
                             <div style={{ textAlign: 'center' }}>
@@ -1349,7 +1415,7 @@ const Page25 = () => {
                                     pointerEvents: 'none'
                                 }}>❞</span>
 
-                                <p style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.6', whiteSpace: 'pre-line', textAlign: 'center', margin: 0, padding: '0 10px' }}>
+                                <p className="page25-body-text" style={{ color: '#333', lineHeight: '1.6', whiteSpace: 'pre-line', textAlign: 'center', margin: 0, padding: '0 10px' }}>
                                     {getText('infra_definition_text', lang)}
                                 </p>
 
@@ -1365,7 +1431,7 @@ const Page25 = () => {
                                 }}>❞</span>
                             </div>
                         </div>
-                        <p aria-hidden="true" style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.5', marginTop: '10px', marginLeft: '0', textAlign: 'center', whiteSpace: 'pre-line' }}>
+                        <p className="page25-body-text" aria-hidden="true" style={{ color: '#333', lineHeight: '1.5', marginTop: '10px', marginLeft: '0', textAlign: 'center', whiteSpace: 'pre-line' }}>
                             {getText('infra_description', lang)}
                         </p>
                     </aside>

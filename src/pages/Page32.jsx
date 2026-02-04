@@ -5,7 +5,6 @@ import { getForeignControlData, getInternationalInvestmentData } from '../utils/
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page32 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [chartData, setChartData] = useState([]);
@@ -318,7 +317,7 @@ const Page32 = () => {
                     aria-expanded={isTableOpen}
                     style={{ 
                         cursor: 'pointer', 
-                        color: '#333', 
+                        color: 'var(--gc-text)', 
                         fontWeight: 'bold', 
                         padding: '10px', 
                         border: '1px solid #ccc',
@@ -418,7 +417,7 @@ const Page32 = () => {
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: 'var(--gc-text)'
                         }}
                     >
                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -433,7 +432,7 @@ const Page32 = () => {
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: 'var(--gc-text)'
                         }}
                     >
                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
@@ -642,23 +641,35 @@ const Page32 = () => {
                 }
 
                 .page32-title {
-                    font-family: 'Georgia', serif;
-                    color: #857550;
-                    font-size: 2.2rem;
+                    font-family: 'Lato', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 41px;
                     font-weight: bold;
-                    font-style: italic;
                     margin-top: 5px;
                     line-height: 1.3;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page32-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page32-bullets {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     margin-bottom: 10px;
                     line-height: 1.6;
                     list-style-type: disc;
                     padding-left: 20px;
+                    max-width: 65ch;
                 }
 
                 .page32-bullets li {
@@ -674,27 +685,28 @@ const Page32 = () => {
                 }
 
                 .page32-section-title {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.2rem;
+                    font-family: 'Lato', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 29px;
                     font-weight: bold;
                     margin-bottom: 0;
                     margin-top: 15px;
                 }
 
                 .page32-section-text {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     margin-bottom: 0;
                     line-height: 1.5;
                     position: relative;
+                    max-width: 65ch;
                 }
 
                 .page32-chart-title {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.2rem;
+                    font-family: 'Lato', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 29px;
                     font-weight: bold;
                     text-align: center;
                     margin-bottom: 5px;
@@ -772,7 +784,19 @@ const Page32 = () => {
                 @media (max-width: 768px) {
                     .page-32 { border-left: none !important; }
                     .page32-title {
-                        font-size: 1.3rem;
+                        font-size: 37px;
+                    }
+                    .page32-bullets {
+                        font-size: 18px;
+                    }
+                    .page32-section-title {
+                        font-size: 26px;
+                    }
+                    .page32-section-text {
+                        font-size: 18px;
+                    }
+                    .page32-chart-title {
+                        font-size: 26px;
                     }
                     .page32-chart {
                         height: calc(100vh - 550px);

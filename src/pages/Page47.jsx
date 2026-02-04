@@ -74,7 +74,7 @@ const Page47 = () => {
 }
 
 .page47-title-text {
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Lato', sans-serif;
     font-size: 4.5rem;
     color: #221e1f;
     display: block;
@@ -142,7 +142,7 @@ const Page47 = () => {
                 </div>
 
                 <nav className="page47-list" aria-label={getText('page47_nav_label', lang)}>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontFamily: "'Noto Sans', sans-serif" }}>
                         <li className="page47-list-item">{getText('page47_item1', lang)}</li>
                         <li className="page47-list-item">{getText('page47_item2', lang)}</li>
                     </ul>

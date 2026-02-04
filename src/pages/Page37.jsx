@@ -5,7 +5,6 @@ import { getEnvironmentalProtectionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page37 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const mainRef = useRef(null);
@@ -392,8 +391,8 @@ const Page37 = () => {
         const totalBillions = (chartData.total || 0) / 1000;
 
         const centerText = lang === 'en'
-            ? `<b>TOTAL</b><br><b>$${totalBillions.toFixed(0)}B</b>`
-            : `<b>TOTAL</b><br><b>${totalBillions.toFixed(0)}</b><br><b>milliards</b>`;
+            ? `<b>Total</b><br><b>$${totalBillions.toFixed(0)}B</b>`
+            : `<b>Total</b><br><b>${totalBillions.toFixed(0)}</b><br><b>milliards</b>`;
 
         return [{
             text: centerText, x: 0.5, y: 0.5,
@@ -493,7 +492,7 @@ const getAccessibleDataTable = () => {
                     aria-expanded={isTableOpen}
                     style={{ 
                         cursor: 'pointer', 
-                        color: '#333', 
+                        color: 'var(--gc-text)', 
                         fontWeight: 'bold', 
                         padding: '10px',
                         border: '1px solid #ccc',
@@ -590,7 +589,7 @@ const getAccessibleDataTable = () => {
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: 'var(--gc-text)'
                         }}
                     >
                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -605,7 +604,7 @@ const getAccessibleDataTable = () => {
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: 'var(--gc-text)'
                         }}
                     >
                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
@@ -878,21 +877,33 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37-title {
-                    font-family: 'Georgia', serif;
-                    color: #857550;
-                    font-size: 2.5rem;
-                    font-weight: normal;
-                    font-style: italic;
+                    font-family: 'Lato', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 41px;
+                    font-weight: bold;
                     margin: 0 0 10px 0;
                     line-height: 1.2;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page37-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page37-subtitle {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     margin-bottom: 10px;
                     line-height: 1.5;
+                    max-width: 65ch;
                 }
 
                 .page37-subtitle:focus,
@@ -901,11 +912,12 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37-text {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     margin-bottom: 15px;
                     line-height: 1.5;
+                    max-width: 65ch;
                 }
 
                 .page37-content-row {
@@ -938,21 +950,22 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37-chart-title {
-                    font-family: Arial, sans-serif;
+                    font-family: 'Lato', sans-serif;
                     font-weight: bold;
-                    color: #333;
-                    font-size: 1rem;
+                    color: var(--gc-text);
+                    font-size: 29px;
                     text-align: center;
                     margin-bottom: 5px;
                 }
 
                 .page37-bullets {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.4rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
                     line-height: 1.6;
                     padding-left: 20px;
                     list-style-type: disc;
+                    max-width: 65ch;
                 }
 
                 .page37-bullets li {
@@ -1067,7 +1080,19 @@ const getAccessibleDataTable = () => {
                         border-right: none !important;
                     }
                     .page37-title {
-                        font-size: 1.5rem;
+                        font-size: 37px;
+                    }
+                    .page37-subtitle {
+                        font-size: 18px;
+                    }
+                    .page37-text {
+                        font-size: 18px;
+                    }
+                    .page37-chart-title {
+                        font-size: 26px;
+                    }
+                    .page37-bullets {
+                        font-size: 18px;
                     }
                     .page37-year-selector {
                         flex-direction: column !important;

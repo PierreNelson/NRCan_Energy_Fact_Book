@@ -95,7 +95,7 @@ const Page23 = () => {
 }
 
 .page23-title-text {
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Lato', sans-serif;
     font-size: 4.5rem;
     color: #221e1f;
     display: block;
@@ -185,7 +185,7 @@ const Page23 = () => {
                         padding: '0',
                         margin: '0',
                         color: '#ebe8e1',
-                        fontFamily: 'Arial, sans-serif'
+                        fontFamily: "'Noto Sans', sans-serif"
                     }}>
                         <li className="page23-list-item">
                             <Link to="/section-2#capital-expenditure">

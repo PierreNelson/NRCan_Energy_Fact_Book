@@ -5,7 +5,6 @@ import { getInvestmentByAssetData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page27 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
@@ -695,6 +694,34 @@ const Page27 = () => {
                     padding-right: ${layoutPadding?.right || 15}px; 
                 }
 
+                .page27-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    color: var(--gc-text);
+                    margin-bottom: 10px;
+                    margin-top: 5px;
+                    text-align: left;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page27-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+
+                .page27-body-text {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    max-width: 65ch;
+                }
+
                 .page27-container {
                     width: 100%;
                     padding: 10px 0 0 0;
@@ -752,9 +779,12 @@ const Page27 = () => {
 
                 @media (max-width: 768px) {
                     .page-27 { border-right: none !important; }
-                    .page27-container h1 {
-                        font-size: 1.4rem !important;
+                    .page27-title {
+                        font-size: 37px !important;
                         text-align: left !important;
+                    }
+                    .page27-body-text {
+                        font-size: 18px;
                     }
                     .page27-chart {
                         height: calc(100vh - 20px);
@@ -763,8 +793,8 @@ const Page27 = () => {
                 }
 
                 @media (max-width: 640px) {
-                    .page27-container h1 {
-                        font-size: 1.3rem !important;
+                    .page27-title {
+                        font-size: 32px !important;
                     }
                     .page27-chart {
                         height: calc(100vh + 100px);
@@ -773,8 +803,8 @@ const Page27 = () => {
                 }
 
                 @media (max-width: 480px) {
-                    .page27-container h1 {
-                        font-size: 1.2rem !important;
+                    .page27-title {
+                        font-size: 28px !important;
                     }
                     .page27-chart {
                         height: calc(100vh + 200px) !important;
@@ -783,8 +813,8 @@ const Page27 = () => {
                 }
 
                 @media (max-width: 384px) {
-                    .page27-container h1 {
-                        font-size: 1.1rem !important;
+                    .page27-title {
+                        font-size: 24px !important;
                     }
                     .page27-chart {
                         height: calc(100% + 160px) !important;
@@ -850,15 +880,7 @@ const Page27 = () => {
                     role="region"
                     aria-label={chartData.chartTitle}
                 >
-                    <h1 aria-hidden="true" style={{
-                        fontFamily: 'Arial, sans-serif',
-                        color: '#333',
-                        fontSize: '1.8rem',
-                        fontWeight: 'bold',
-                        marginBottom: '10px',
-                        marginTop: '5px',
-                        textAlign: 'left',
-                    }}>
+                    <h1 className="page27-title" aria-hidden="true">
                         {chartData.chartTitle}
                     </h1>
                 </header>

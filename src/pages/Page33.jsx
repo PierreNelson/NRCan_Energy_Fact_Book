@@ -5,13 +5,22 @@ import { getCEAData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page33 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
     const [allData, setAllData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const scrollToFootnote = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-page33')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const scrollToRef = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-rf-page33')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const chartRef = useRef(null);
@@ -529,7 +538,9 @@ const Page33 = () => {
 
         if (lang === 'en') {
             return [
-                'The total value of Canadian* energy assets (CEA) went up in ',
+                'The total value of Canadian',
+                <sup key="fn-ref" id="fn-asterisk-rf-page33"><a className="fn-lnk" href="#fn-asterisk-page33" onClick={scrollToFootnote} title="Footnote *"><span className="wb-inv">Footnote </span>*</a></sup>,
+                ' energy assets (CEA) went up in ',
                 year.toString(),
                 ' to ',
                 A1Text,
@@ -555,7 +566,9 @@ const Page33 = () => {
             ];
         } else {
             return [
-                'La valeur totale des actifs énergétiques canadiens* (AEC) a augmenté en ',
+                'La valeur totale des actifs énergétiques canadiens',
+                <sup key="fn-ref-fr" id="fn-asterisk-rf-page33"><a className="fn-lnk" href="#fn-asterisk-page33" onClick={scrollToFootnote} title="Note de bas de page *"><span className="wb-inv">Note de bas de page </span>*</a></sup>,
+                ' (AEC) a augmenté en ',
                 year.toString(),
                 ' pour s\'établir à ',
                 A1Text,
@@ -670,20 +683,33 @@ const Page33 = () => {
                 }
 
                 .page33-title {
-                    font-family: Georgia, "Times New Roman", serif;
-                    font-size: 2.2rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
                     font-weight: bold;
                     color: #8a7d5a;
                     margin: 30px 0 20px 0;
                     line-height: 1.2;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page33-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page33-narrative {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                     line-height: 1.6;
-                    color: #333;
+                    color: var(--gc-text);
                     margin-bottom: 20px;
+                    max-width: 65ch;
                 }
 
                 .page33-narrative strong {
@@ -691,10 +717,10 @@ const Page33 = () => {
                 }
 
                 .page33-map-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.3rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     text-align: center;
                     margin: 0 0 10px 0;
                 }
@@ -743,28 +769,29 @@ const Page33 = () => {
                 }
 
                 .page33-stat-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.15rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     margin-bottom: 5px;
                     line-height: 1.3;
                     white-space: nowrap;
                 }
 
                 .page33-stat-value {
-                    font-family: Arial, sans-serif;
+                    font-family: 'Lato', sans-serif;
                     font-size: 2.2rem;
                     font-weight: bold;
                     color: #857550;
                 }
 
                 .page33-footnote {
-                    font-family: Arial, sans-serif;
-                    font-size: 0.9rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                     color: #666;
                     margin: 0;
                     line-height: 1.5;
+                    max-width: 65ch;
                 }
                 
                 .page33-footnote-container {
@@ -983,14 +1010,20 @@ const Page33 = () => {
 
                 @media (max-width: 768px) {
                     .page33-title {
-                        font-size: 2.5rem;
+                        font-size: 37px;
                     }
                     .page33-narrative {
-                        font-size: 1rem;
+                        font-size: 18px;
                     }
                     .page33-map-title {
-                        font-size: 1.1rem;
-                    } 
+                        font-size: 26px;
+                    }
+                    .page33-stat-title {
+                        font-size: 26px;
+                    }
+                    .page33-footnote {
+                        font-size: 18px;
+                    }
                 }
 
                 @media (max-width: 640px) {
@@ -1130,6 +1163,10 @@ const Page33 = () => {
                 <div className="page33-narrative" aria-label={narrativeTextSR}>
                     <span aria-hidden="true">
                         {narrativeTextParts.map((part, i) => {
+                            // If part is not a string (e.g., JSX element), return it as-is
+                            if (typeof part !== 'string') {
+                                return <React.Fragment key={i}>{part}</React.Fragment>;
+                            }
                             // Match English ($123.4B) or French (123,4 G$) currency formats, or percentage
                             if (part.match(/^\$[\d.]+B$/) || part.match(/^[\d,]+ G\$$/) || part.match(/^\d+\.\d+%$/)) {
                                 return <strong key={i}>{part}</strong>;
@@ -1289,42 +1326,50 @@ const Page33 = () => {
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
                         <button
                             onClick={() => downloadTableAsCSV()}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#f9f9f9',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontFamily: 'Arial, sans-serif',
-                                fontWeight: 'bold',
-                                color: '#333'
-                            }}
-                        >
-                            {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                        </button>
-                        <button
-                            onClick={() => downloadTableAsDocx()}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#f9f9f9',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontFamily: 'Arial, sans-serif',
-                                fontWeight: 'bold',
-                                color: '#333'
-                            }}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: 'var(--gc-text)'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                    </button>
+                    <button
+                        onClick={() => downloadTableAsDocx()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f9f9f9',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: 'var(--gc-text)'
+                        }}
                         >
                             {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                         </button>
                     </div>
                 </details>
 
-                <aside className="wb-fnote page33-footnote-container" role="note">
-                    <h2 className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <p className="page33-footnote">
-                        * {getText('page33_footnote', lang)}
-                    </p>
+                <aside className="wb-fnote" role="note">
+                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <dl>
+                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                        <dd id="fn-asterisk-page33">
+                            <a href="#fn-asterisk-rf-page33" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                            </a>
+                            <p>
+                                {getText('page33_footnote', lang)}
+                            </p>
+                        </dd>
+                    </dl>
                 </aside>
             </div>
         </main>

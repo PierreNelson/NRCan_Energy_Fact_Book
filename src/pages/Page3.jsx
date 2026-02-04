@@ -15,7 +15,7 @@ const Page3 = () => {
                     margin-left: -${layoutPadding?.left || 55}px;
                     margin-right: -${layoutPadding?.right || 15}px;
                     padding: 0;
-                    background-color: #fff;
+                    background-color: var(--gc-background);
                     min-height: calc(100vh - 100px);
                     overflow-x: hidden;
                 }
@@ -30,20 +30,33 @@ const Page3 = () => {
                 }
 
                 .page3-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 2rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     margin: 0 0 30px 0;
-                    line-height: 1.3;
+                    line-height: 1.2;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page3-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page3-paragraph {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.15rem;
-                    line-height: 1.8;
-                    color: #333;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    line-height: 1.5;
+                    color: var(--gc-text);
                     margin-bottom: 25px;
+                    max-width: 65ch;
                 }
 
                 .page3-paragraph em {
@@ -52,11 +65,11 @@ const Page3 = () => {
 
                 @media (max-width: 768px) {
                     .page3-title {
-                        font-size: 1.6rem;
+                        font-size: 37px;
                     }
 
                     .page3-paragraph {
-                        font-size: 1rem;
+                        font-size: 18px;
                     }
 
                     .page3-container {

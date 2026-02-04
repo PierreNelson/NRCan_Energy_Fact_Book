@@ -139,7 +139,7 @@ const GCFooter = ({ lang }) => {
         <footer id="wb-info" className="gc-footer" role="contentinfo">
             <style>{`
                 .gc-footer {
-                    background-color: #26374a;
+                    background-color: var(--gc-accent);
                     color: white;
                     font-family: 'Noto Sans', sans-serif, Arial;
                     flex-shrink: 0;
@@ -157,9 +157,9 @@ const GCFooter = ({ lang }) => {
                     text-decoration: underline;
                 }
                 
-                .gc-footer a:focus {
-                    outline: 3px solid #ffbf47;
-                    outline-offset: 0;
+                .gc-footer a:focus-visible {
+                    outline: 3px solid #ffbf47 !important;
+                    outline-offset: 2px !important;
                 }
                 
                 /* Landscape/Contextual band - NRCan section */
@@ -216,7 +216,7 @@ const GCFooter = ({ lang }) => {
                 
                 /* Main footer section */
                 .gc-footer-main {
-                    background-color: #26374a;
+                    background-color: var(--gc-accent);
                     background-image: url('https://www.canada.ca/etc/designs/canada/wet-boew/assets/landscape.png');
                     background-position: right bottom;
                     background-repeat: no-repeat;
@@ -264,7 +264,7 @@ const GCFooter = ({ lang }) => {
                 
                 /* Divider line */
                 .gc-footer-divider {
-                    border-top: 4px solid #ffffff;
+                    border-top: 4px solid var(--gc-background);
                     margin-bottom: 25px;       
                     margin-top: 50px;
                     width: 40px;
@@ -302,7 +302,7 @@ const GCFooter = ({ lang }) => {
                 }
                 
                 .gc-footer-brand a:hover {
-                    color: #0535d2;
+                    color: var(--gc-link-hover);
                     text-decoration: none;
                 }
                 
@@ -339,7 +339,7 @@ const GCFooter = ({ lang }) => {
                 }
                 
                 .gc-footer-brand-links a:hover {
-                    color: #0535d2;
+                    color: var(--gc-link-hover);
                 }
                 
                 .gc-footer-wordmark {
@@ -483,12 +483,15 @@ const GCFooter = ({ lang }) => {
                                 </li>
                             ))}
                         </ul>
-                        <div className="gc-footer-wordmark">
+                        <a 
+                            href={lang === 'en' ? 'https://www.canada.ca/en.html' : 'https://www.canada.ca/fr.html'}
+                            className="gc-footer-wordmark"
+                        >
                             <img 
                                 src="https://www.canada.ca/etc/designs/canada/wet-boew/assets/wmms-blk.svg"
                                 alt={lang === 'en' ? 'Symbol of the Government of Canada' : 'Symbole du gouvernement du Canada'}
                             />
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>

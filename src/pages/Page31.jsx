@@ -5,7 +5,6 @@ import { getInternationalInvestmentData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page31 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
@@ -19,6 +18,16 @@ const Page31 = () => {
     const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
+
+    const scrollToFootnote = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-page31')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const scrollToRef = (e) => {
+        e.preventDefault();
+        document.getElementById('fn-asterisk-rf-page31')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
 
     useEffect(() => {
         const topScroll = topScrollRef.current;
@@ -255,6 +264,24 @@ const Page31 = () => {
         } else {
             return "Stock d'investissement direct étranger au Canada et investissement direct canadien à l'étranger dans le secteur de l'énergie";
         }
+    };
+
+    const renderTextWithFootnoteLink = (text) => {
+        if (!text) return null;
+        if (!text.includes('*')) return text;
+        const parts = text.split('*');
+        return parts.map((part, index) => (
+            <React.Fragment key={index}>
+                {part}
+                {index < parts.length - 1 && (
+                    <sup id="fn-asterisk-rf-page31">
+                        <a className="fn-lnk" href="#fn-asterisk-page31" onClick={scrollToFootnote} title={lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}>
+                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                        </a>
+                    </sup>
+                )}
+            </React.Fragment>
+        ));
     };
 
     const formatNumber = (val) => {
@@ -594,26 +621,39 @@ const Page31 = () => {
                 }
 
                 .page31-title {
-                    font-family: 'Georgia', serif;
+                    font-family: 'Lato', sans-serif;
                     color: #58585a;
-                    font-size: 2.4rem;
+                    font-size: 41px;
                     font-weight: bold;
                     margin-bottom: 10px;
                     margin-top: 5px;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page31-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page31-subtitle {
-                    font-family: Arial, sans-serif;
+                    font-family: 'Noto Sans', sans-serif;
                     color: #332f30;
-                    font-size: 1.125rem;
+                    font-size: 20px;
                     margin-bottom: 15px;
                     line-height: 1.5;
+                    max-width: 65ch;
                 }
 
                 .page31-chart-title {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    font-size: 1.4rem;
+                    font-family: 'Lato', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 29px;
                     font-weight: bold;
                     text-align: center;
                     margin-bottom: 5px;
@@ -629,11 +669,12 @@ const Page31 = () => {
                 }
 
                 .page31-footnotes {
-                    font-family: Arial, sans-serif;
-                    font-size: 1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                     color: #555;
                     margin-top: 10px;
                     line-height: 1.4;
+                    max-width: 65ch;
                 }
 
                 @media (max-width: 1745px) {
@@ -692,19 +733,22 @@ const Page31 = () => {
                 @media (max-width: 768px) {
                     .page-31 { border-right: none !important; }
                     .page31-title {
-                        font-size: 1.3rem;
+                        font-size: 37px;
                         text-align: left !important;
                     }
                     .page31-subtitle {
-                        font-size: 1.2rem;
+                        font-size: 18px;
                         text-align: left !important;
+                    }
+                    .page31-chart-title {
+                        font-size: 26px;
                     }
                     .page31-chart {
                         height: calc(100vh - 280px);
                         min-height: 350px;
                     }
                     .page31-footnotes {
-                        font-size: 0.9rem;
+                        font-size: 18px;
                     }
                 }
 
@@ -800,7 +844,7 @@ const Page31 = () => {
 
                 <div>
                     <h2 className="page31-chart-title" aria-hidden="true">
-                        {getText('page31_chart_title', lang)}
+                        {renderTextWithFootnoteLink(getText('page31_chart_title', lang))}
                     </h2>
 
                     <h2 className="sr-only">{getChartTitleSR()}</h2>
@@ -940,16 +984,17 @@ const Page31 = () => {
                     </div>
                 </div>
 
-                <aside className="wb-fnote" role="note" style={{ marginTop: '10px', padding: '10px 0' }}>
-                    <h2 id="fn-page31" className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl className="page31-footnotes" style={{ margin: 0 }}>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-page31" style={{ margin: '0 0 8px 0' }}>
-                            <p style={{ margin: 0 }}>{getText('page31_footnote1', lang)}</p>
-                        </dd>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
-                        <dd id="fn2-page31" style={{ margin: 0 }}>
-                            <p style={{ margin: 0 }}>{getText('page31_footnote2', lang)}</p>
+                <aside className="wb-fnote" role="note">
+                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <dl>
+                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                        <dd id="fn-asterisk-page31">
+                            <a href="#fn-asterisk-rf-page31" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                            </a>
+                            <p>
+                                {getText('page31_footnote', lang)} {getText('page31_footnote1', lang)}
+                            </p>
                         </dd>
                     </dl>
                 </aside>

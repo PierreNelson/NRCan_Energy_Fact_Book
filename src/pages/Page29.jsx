@@ -4,13 +4,17 @@ import { getCleanTechTrendsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page29 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isTableOpen, setIsTableOpen] = useState(true);
+
+    const scrollToElement = (elementId) => (e) => {
+        e.preventDefault();
+        document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
@@ -222,11 +226,23 @@ const Page29 = () => {
                 }
 
                 .page29-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 2rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
                     font-weight: bold;
                     margin-bottom: 20px;
                     color: #58585a;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .page29-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page29-table-wrapper {
@@ -328,7 +344,7 @@ const Page29 = () => {
                     cursor: pointer;
                     font-family: Arial, sans-serif;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                 }
 
                 .page29-download-btn:hover {
@@ -336,11 +352,12 @@ const Page29 = () => {
                 }
 
                 .page29-footnotes {
-                    font-family: Arial, sans-serif;
-                    font-size: 1rem;
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
                     color: #555;
                     margin-top: 20px;
                     line-height: 1.4;
+                    max-width: 65ch;
                 }
 
                 .page29-footnotes dl {
@@ -404,7 +421,13 @@ const Page29 = () => {
                     }
 
                     .page29-footnotes {
-                        font-size: 0.9rem;
+                        font-size: 18px;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .page29-title {
+                        font-size: 37px;
                     }
                 }
             `}</style>
@@ -433,7 +456,13 @@ const Page29 = () => {
                                         <tr key={cat.key} className={isTotal ? 'total-row' : ''}>
                                             <td className="category-cell" scope="row">
                                                 {cat.label}
-                                                {cat.footnote && <sup>{cat.footnote}</sup>}
+                                                {cat.footnote && (
+                                                    <sup id={`fn${cat.footnote}-rf`}>
+                                                        <a className="fn-lnk" href={`#fn${cat.footnote}`} onClick={scrollToElement(`fn${cat.footnote}`)} title={lang === 'en' ? `Footnote ${cat.footnote}` : `Note de bas de page ${cat.footnote}`}>
+                                                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>{cat.footnote}
+                                                        </a>
+                                                    </sup>
+                                                )}
                                             </td>
                                             {years.map(y => {
                                                 const yearData = pageData.find(d => d.year === y);
@@ -473,20 +502,26 @@ const Page29 = () => {
                     </div>
                 </div>
 
-                <aside className="wb-fnote" role="note" style={{ marginTop: '10px', padding: '10px 0' }}>
-                    <h2 className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl className="page29-footnotes" style={{ margin: 0 }}>
+                <aside className="wb-fnote" role="note">
+                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
+                    <dl>
                         <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd id="fn-values" style={{ margin: '0 0 8px 0' }}>
-                            <p style={{ margin: 0 }}>{getText('page29_footnote_values', lang)}</p>
+                        <dd id="fn-values">
+                            <p>{getText('page29_footnote_values', lang)}</p>
                         </dd>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1" style={{ margin: '0 0 8px 0' }}>
-                            <p style={{ margin: 0 }}><sup>1</sup> {getText('page29_footnote1', lang)}</p>
+                        <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
+                        <dd id="fn1">
+                            <a href="#fn1-rf" onClick={scrollToElement('fn1-rf')} className="fn-num" title={lang === 'en' ? 'Return to footnote 1 referrer' : 'Retour à la référence de la note de bas de page 1'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>1
+                            </a>
+                            <p>{getText('page29_footnote1', lang)}</p>
                         </dd>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
-                        <dd id="fn2" style={{ margin: '0 0 8px 0' }}>
-                            <p style={{ margin: 0 }}><sup>2</sup> {getText('page29_footnote2', lang)}</p>
+                        <dt>{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
+                        <dd id="fn2">
+                            <a href="#fn2-rf" onClick={scrollToElement('fn2-rf')} className="fn-num" title={lang === 'en' ? 'Return to footnote 2 referrer' : 'Retour à la référence de la note de bas de page 2'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>2
+                            </a>
+                            <p>{getText('page29_footnote2', lang)}</p>
                         </dd>
                     </dl>
                 </aside>

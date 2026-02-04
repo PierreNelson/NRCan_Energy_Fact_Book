@@ -462,8 +462,8 @@ const Page28Stacked = () => {
     }
 
     .page28h-title {
-        font-family: Arial, sans-serif;
-        font-size: 2rem;
+        font-family: 'Lato', sans-serif;
+        font-size: 41px;
         font-weight: bold;
         color: #8e7e52;
         margin: 0 0 20px 0;
@@ -503,11 +503,11 @@ const Page28Stacked = () => {
     }
 
     .page28h-bullets li {
-        font-family: Arial, sans-serif;
-        font-size: 1rem;
+        font-family: 'Noto Sans', sans-serif;
+        font-size: 20px;
         line-height: 1.6;
         margin-bottom: 12px;
-        color: #333;
+        color: var(--gc-text);
     }
 
     .page28h-sidebar {
@@ -517,7 +517,7 @@ const Page28Stacked = () => {
         font-family: Arial, sans-serif;
         font-size: 1.05rem;
         line-height: 1.6;
-        color: #333;
+        color: var(--gc-text);
     }
 
     .page28h-sidebar-title {
@@ -546,7 +546,7 @@ const Page28Stacked = () => {
         font-weight: bold;
         text-align: center;
         margin: 0 60px 10px 60px;
-        color: #333;
+        color: var(--gc-text);
     }
 
     .page28h-custom-legend {
@@ -568,7 +568,7 @@ const Page28Stacked = () => {
         font-size: 0.85rem;
         font-weight: bold;
         margin-bottom: 5px;
-        color: #333;
+        color: var(--gc-text);
     }
 
     .page28h-legend-items {
@@ -582,7 +582,7 @@ const Page28Stacked = () => {
         align-items: center;
         font-family: Arial, sans-serif;
         font-size: 0.8rem;
-        color: #333;
+        color: var(--gc-text);
     }
 
     .page28h-legend-color {
@@ -631,7 +631,10 @@ const Page28Stacked = () => {
     }
     @media (max-width: 768px) {
         .page28h-title {
-            font-size: 1.6rem;
+            font-size: 37px;
+        }
+        .page28h-bullets li {
+            font-size: 18px;
         }
         .page28h-custom-legend {
             flex-direction: column;

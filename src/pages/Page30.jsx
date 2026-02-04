@@ -4,7 +4,6 @@ import Plot from 'react-plotly.js';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-
 const Page30 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -22,15 +21,21 @@ const Page30 = () => {
     const [projectFilter, setProjectFilter] = useState([]);
     const [companyFilter, setCompanyFilter] = useState([]);
     const [provinceFilter, setProvinceFilter] = useState([]);
+    const [typeFilter, setTypeFilter] = useState([]);
+    const [locationFilter, setLocationFilter] = useState([]);
     const [capitalCostFilter, setCapitalCostFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
     const [cleanTechFilter, setCleanTechFilter] = useState('all');
     const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
     const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
     const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false);
+    const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+    const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
     const projectDropdownRef = useRef(null);
     const companyDropdownRef = useRef(null);
     const provinceDropdownRef = useRef(null);
+    const typeDropdownRef = useRef(null);
+    const locationDropdownRef = useRef(null);
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
 
@@ -146,6 +151,12 @@ const Page30 = () => {
             if (provinceDropdownRef.current && !provinceDropdownRef.current.contains(event.target)) {
                 setProvinceDropdownOpen(false);
             }
+            if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target)) {
+                setTypeDropdownOpen(false);
+            }
+            if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target)) {
+                setLocationDropdownOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -172,6 +183,22 @@ const Page30 = () => {
             prev.includes(province) 
                 ? prev.filter(p => p !== province)
                 : [...prev, province]
+        );
+    };
+
+    const toggleTypeFilter = (type) => {
+        setTypeFilter(prev => 
+            prev.includes(type) 
+                ? prev.filter(t => t !== type)
+                : [...prev, type]
+        );
+    };
+
+    const toggleLocationFilter = (location) => {
+        setLocationFilter(prev => 
+            prev.includes(location) 
+                ? prev.filter(l => l !== location)
+                : [...prev, location]
         );
     };
 
@@ -400,6 +427,18 @@ const Page30 = () => {
         return provinces.sort((a, b) => a.localeCompare(b));
     }, [tableData]);
 
+    const uniqueTypes = useMemo(() => {
+        if (!tableData || tableData.length === 0) return [];
+        const types = [...new Set(tableData.map(p => p.clean_technology_type).filter(t => t && t.trim()))];
+        return types.sort((a, b) => a.localeCompare(b));
+    }, [tableData]);
+
+    const uniqueLocations = useMemo(() => {
+        if (!tableData || tableData.length === 0) return [];
+        const locations = [...new Set(tableData.map(p => p.location).filter(l => l && l.trim()))];
+        return locations.sort((a, b) => a.localeCompare(b));
+    }, [tableData]);
+
     const filteredTableData = useMemo(() => {
         let filtered = [...tableData];
 
@@ -433,6 +472,18 @@ const Page30 = () => {
         if (provinceFilter.length > 0) {
             filtered = filtered.filter(project => 
                 provinceFilter.includes(project.province)
+            );
+        }
+
+        if (typeFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                typeFilter.includes(project.clean_technology_type)
+            );
+        }
+
+        if (locationFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                locationFilter.includes(project.location)
             );
         }
 
@@ -494,7 +545,7 @@ const Page30 = () => {
         });
 
         return filtered;
-    }, [tableData, selectedProvinces, lang, projectFilter, companyFilter, provinceFilter, capitalCostFilter, statusFilter, cleanTechFilter, sortColumn, sortDirection]);
+    }, [tableData, selectedProvinces, lang, projectFilter, companyFilter, provinceFilter, typeFilter, locationFilter, capitalCostFilter, statusFilter, cleanTechFilter, sortColumn, sortDirection]);
 
     const applyFiltersToData = (data) => {
         if (!data || data.length === 0) return [];
@@ -515,6 +566,18 @@ const Page30 = () => {
         if (provinceFilter.length > 0) {
             filtered = filtered.filter(project => 
                 provinceFilter.includes(project.province)
+            );
+        }
+
+        if (typeFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                typeFilter.includes(project.clean_technology_type)
+            );
+        }
+
+        if (locationFilter.length > 0) {
+            filtered = filtered.filter(project => 
+                locationFilter.includes(project.location)
             );
         }
 
@@ -562,12 +625,12 @@ const Page30 = () => {
     const filteredMapPoints = useMemo(() => {
         if (!langData || !langData.points) return [];
         return applyFiltersToData(langData.points);
-    }, [langData, projectFilter, companyFilter, provinceFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
+    }, [langData, projectFilter, companyFilter, provinceFilter, typeFilter, locationFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
 
     const filteredMapLines = useMemo(() => {
         if (!langData || !langData.lines) return [];
         return applyFiltersToData(langData.lines);
-    }, [langData, projectFilter, companyFilter, provinceFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
+    }, [langData, projectFilter, companyFilter, provinceFilter, typeFilter, locationFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -582,6 +645,8 @@ const Page30 = () => {
         setProjectFilter([]);
         setCompanyFilter([]);
         setProvinceFilter([]);
+        setTypeFilter([]);
+        setLocationFilter([]);
         setCapitalCostFilter('all');
         setStatusFilter('all');
         setCleanTechFilter('all');
@@ -1025,18 +1090,29 @@ const Page30 = () => {
                 }
 
                 .page30-title {
-                    font-family: Arial, sans-serif;
-                    font-size: 2rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
                     font-weight: bold;
                     color: #58585a;
                     margin: 0;
-                    padding-bottom: 5px;
+                    padding-bottom: 0.5em;
                     border-bottom: 2px solid #b6b7ba;
+                    position: relative;
+                }
+
+                .page30-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
                 }
 
                 .page30-subtitle {
-                    font-family: Arial, sans-serif;
-                    font-size: 1.4rem;
+                    font-family: 'Lato', sans-serif;
+                    font-size: 39px;
                     font-weight: bold;
                     color: #58585a;
                     margin: 0;
@@ -1081,7 +1157,7 @@ const Page30 = () => {
                     font-family: Arial, sans-serif;
                     font-size: 11px;
                     font-weight: bold;
-                    color: #333;
+                    color: var(--gc-text);
                     margin-bottom: 6px;
                     padding-bottom: 3px;
                     border-bottom: 1px solid #ccc;
@@ -1141,10 +1217,10 @@ const Page30 = () => {
 
                 @media (max-width: 768px) {
                     .page30-title {
-                        font-size: 1.6rem;
+                        font-size: 37px;
                     }
                     .page30-subtitle {
-                        font-size: 1.2rem;
+                        font-size: 35px;
                     }
                 }
 
@@ -1645,6 +1721,184 @@ const Page30 = () => {
                         )}
                     </div>
 
+                    <div ref={locationDropdownRef} style={{ position: 'relative', minWidth: '140px', flex: '1 1 140px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Location' : 'Emplacement'}
+                        </label>
+                        <button
+                            onClick={() => { setLocationDropdownOpen(!locationDropdownOpen); setProjectDropdownOpen(false); setCompanyDropdownOpen(false); setProvinceDropdownOpen(false); setTypeDropdownOpen(false); }}
+                            style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                backgroundColor: '#fff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {locationFilter.length === 0 
+                                    ? (lang === 'en' ? 'All' : 'Tous')
+                                    : `${locationFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                            </span>
+                            <span style={{ marginLeft: '4px' }}>{locationDropdownOpen ? '▲' : '▼'}</span>
+                        </button>
+                        {locationDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                maxHeight: '200px',
+                                overflowY: 'auto',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                zIndex: 1000
+                            }}>
+                                <label 
+                                    style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        padding: '6px 8px', 
+                                        cursor: 'pointer',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        borderBottom: '2px solid #ddd',
+                                        backgroundColor: '#f9f9f9'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={locationFilter.length === 0}
+                                        onChange={() => setLocationFilter([])}
+                                        style={{ marginRight: '8px' }}
+                                    />
+                                    <span>{lang === 'en' ? 'All' : 'Tous'}</span>
+                                </label>
+                                {uniqueLocations.map(location => (
+                                    <label 
+                                        key={location} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            padding: '6px 8px', 
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            borderBottom: '1px solid #eee'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={locationFilter.includes(location)}
+                                            onChange={() => toggleLocationFilter(location)}
+                                            style={{ marginRight: '8px' }}
+                                        />
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{location}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div ref={typeDropdownRef} style={{ position: 'relative', minWidth: '140px', flex: '1 1 140px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {lang === 'en' ? 'Type' : 'Type'}
+                        </label>
+                        <button
+                            onClick={() => { setTypeDropdownOpen(!typeDropdownOpen); setProjectDropdownOpen(false); setCompanyDropdownOpen(false); setProvinceDropdownOpen(false); setLocationDropdownOpen(false); }}
+                            style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                fontSize: '11px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                backgroundColor: '#fff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {typeFilter.length === 0 
+                                    ? (lang === 'en' ? 'All' : 'Tous')
+                                    : `${typeFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                            </span>
+                            <span style={{ marginLeft: '4px' }}>{typeDropdownOpen ? '▲' : '▼'}</span>
+                        </button>
+                        {typeDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                maxHeight: '200px',
+                                overflowY: 'auto',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                zIndex: 1000
+                            }}>
+                                <label 
+                                    style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        padding: '6px 8px', 
+                                        cursor: 'pointer',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        borderBottom: '2px solid #ddd',
+                                        backgroundColor: '#f9f9f9'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={typeFilter.length === 0}
+                                        onChange={() => setTypeFilter([])}
+                                        style={{ marginRight: '8px' }}
+                                    />
+                                    <span>{lang === 'en' ? 'All' : 'Tous'}</span>
+                                </label>
+                                {uniqueTypes.map(type => (
+                                    <label 
+                                        key={type} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            padding: '6px 8px', 
+                                            cursor: 'pointer',
+                                            fontSize: '11px',
+                                            borderBottom: '1px solid #eee'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={typeFilter.includes(type)}
+                                            onChange={() => toggleTypeFilter(type)}
+                                            style={{ marginRight: '8px' }}
+                                        />
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{type}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <div style={{ minWidth: '150px', flex: '1 1 150px' }}>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
                             {lang === 'en' ? 'Capital Cost' : 'Coût en capital'}
@@ -1746,11 +2000,11 @@ const Page30 = () => {
                         aria-label={lang === 'en' ? 'Data Table' : 'Tableau de données'}
                         tabIndex="0"
                     >
-                        <table className="table table-striped table-hover" style={{ fontSize: '12px' }}>
+                        <table className="table table-striped table-hover" style={{ fontSize: '11px' }}>
                             <caption className="wb-inv">
                                 {lang === 'en' 
-                                    ? 'Major energy projects data including project name, company, province, capital cost, status, and clean technology indicator. Click column headers to sort.' 
-                                    : 'Données sur les grands projets énergétiques incluant le nom du projet, l\'entreprise, la province, le coût en capital, le statut et l\'indicateur de technologie propre. Cliquez sur les en-têtes de colonne pour trier.'}
+                                    ? 'Major energy projects data including project name, company, province, location, type, capital cost, status, and clean technology indicator. Click column headers to sort.' 
+                                    : 'Données sur les grands projets énergétiques incluant le nom du projet, l\'entreprise, la province, l\'emplacement, le type, le coût en capital, le statut et l\'indicateur de technologie propre. Cliquez sur les en-têtes de colonne pour trier.'}
                             </caption>
                             <thead>
                                 <tr style={{ backgroundColor: '#e6e6e6' }}>
@@ -1778,59 +2032,87 @@ const Page30 = () => {
                                     </th>
                                     <th 
                                         scope="col" 
-                                        style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
                                         onClick={() => handleSort('province')}
                                         aria-sort={sortColumn === 'province' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                                     >
-                                        {lang === 'en' ? 'Province' : 'Province'}
-                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'province' ? 1 : 0.3 }}>
+                                        {lang === 'en' ? 'Prov.' : 'Prov.'}
+                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'province' ? 1 : 0.3 }}>
                                             {sortColumn === 'province' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                                         </span>
                                     </th>
                                     <th 
                                         scope="col" 
-                                        style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        style={{ padding: '6px 4px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        onClick={() => handleSort('location')}
+                                        aria-sort={sortColumn === 'location' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                    >
+                                        {lang === 'en' ? 'Location' : 'Lieu'}
+                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'location' ? 1 : 0.3 }}>
+                                            {sortColumn === 'location' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                                        </span>
+                                    </th>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '6px 4px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
+                                        onClick={() => handleSort('clean_technology_type')}
+                                        aria-sort={sortColumn === 'clean_technology_type' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                    >
+                                        {lang === 'en' ? 'Type' : 'Type'}
+                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'clean_technology_type' ? 1 : 0.3 }}>
+                                            {sortColumn === 'clean_technology_type' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
+                                        </span>
+                                    </th>
+                                    <th 
+                                        scope="col" 
+                                        style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
                                         onClick={() => handleSort('capital_cost')}
                                         aria-sort={sortColumn === 'capital_cost' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                                     >
-                                        {lang === 'en' ? 'Capital Cost ($M)' : 'Coût (M$)'}
-                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'capital_cost' ? 1 : 0.3 }}>
+                                        {lang === 'en' ? 'Cost ($M)' : 'Coût (M$)'}
+                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'capital_cost' ? 1 : 0.3 }}>
                                             {sortColumn === 'capital_cost' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
                                         </span>
                                     </th>
                                     <th 
                                         scope="col" 
-                                        style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
+                                        style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
                                     >
                                         {lang === 'en' ? 'Status' : 'Statut'}
                                     </th>
                                     <th 
                                         scope="col" 
-                                        style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
+                                        style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
                                     >
-                                        {lang === 'en' ? 'Clean Tech' : 'Tech. propre'}
+                                        {lang === 'en' ? 'Clean' : 'Propre'}
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredTableData.map((project, idx) => (
                                     <tr key={project.id || idx} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f9f9f9' }}>
-                                        <td style={{ padding: '6px 8px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.project_name || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.company || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                        <td style={{ padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.province || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                            {project.location || '—'}
+                                        </td>
+                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                            {project.clean_technology_type || '—'}
+                                        </td>
+                                        <td style={{ padding: '4px 6px', textAlign: 'right', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.capital_cost || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                        <td style={{ padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.status || '—'}
                                         </td>
-                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
+                                        <td style={{ padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.clean_technology || '—'}
                                         </td>
                                     </tr>
