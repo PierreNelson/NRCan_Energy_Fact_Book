@@ -12,24 +12,12 @@ const Sidebar = ({ lang }) => {
     const [section6Expanded, setSection6Expanded] = useState(false);
     const [sectionTestExpanded, setSectionTestExpanded] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [sidebarHovered, setSidebarHovered] = useState(false);
     const toggleButtonRef = useRef(null);
     const sidebarRef = useRef(null);
-    const justOpenedRef = useRef(false);
 
     // Handle toggle and maintain focus on the button
     const handleToggle = () => {
-        const newState = !sidebarOpen;
-        setSidebarOpen(newState);
-        
-        // If opening, set flag to prevent immediate mouseLeave close
-        if (newState) {
-            justOpenedRef.current = true;
-            setTimeout(() => {
-                justOpenedRef.current = false;
-            }, 300);
-        }
-        
+        setSidebarOpen(!sidebarOpen);
         // Refocus the button after state change
         setTimeout(() => {
             if (toggleButtonRef.current) {
@@ -46,18 +34,12 @@ const Sidebar = ({ lang }) => {
         }
     };
 
-    // Close sidebar when mouse leaves (works for both keyboard and mouse users)
-    const handleMouseLeave = () => {
-        setSidebarHovered(false);
-        // Don't close if sidebar was just opened (prevents glitchy behavior)
-        if (sidebarOpen && !justOpenedRef.current) {
-            setSidebarOpen(false);
-        }
-    };
-
-    // Track when sidebar is hovered
-    const handleMouseEnter = () => {
-        setSidebarHovered(true);
+    // Close sidebar when mouse leaves
+    // At tablet/mobile (1366px and below), don't close on mouse leave - user must click button
+    // At desktop (above 1366px), CSS hover handles everything, JS state not used
+    const handleMouseLeave = (event) => {
+        // Don't close on mouse leave - at desktop CSS handles it, at tablet user clicks button
+        // This function is kept for potential future use but currently does nothing
     };
 
     const toggleSection1 = () => {
@@ -140,8 +122,9 @@ const Sidebar = ({ lang }) => {
     // Close sidebar when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            const sidebar = document.querySelector('.sidebar');
-            // Toggle button is now inside sidebar, so sidebar.contains() handles it
+            const sidebar = sidebarRef.current;
+            
+            // Don't close if clicking inside sidebar (button is now inside)
             if (sidebarOpen && sidebar && !sidebar.contains(event.target)) {
                 setSidebarOpen(false);
             }
@@ -158,69 +141,7 @@ const Sidebar = ({ lang }) => {
     return (
         <>
         <style>{`
-                /* 250% zoom (768px) - disable hover expansion, only toggle button */
-                @media (max-width: 768px) {
-                    .sidebar {
-                        width: 0 !important;
-                        padding: 0 !important;
-                        overflow: hidden !important;
-                    }
-                    
-                    /* Toggle button - fixed position outside sidebar when closed */
-                    .sidebar-toggle-closed {
-                        position: fixed !important;
-                        width: 36px !important;
-                        height: 50px !important;
-                        top: 50% !important;
-                        left: 0 !important;
-                        transform: translateY(-50%) !important;
-                        background-color: var(--primary-color) !important;
-                        border-top-right-radius: 6px !important;
-                        border-bottom-right-radius: 6px !important;
-                        opacity: 1 !important;
-                        pointer-events: auto !important;
-                    }
-                    
-                    /* Hide sidebar content when collapsed */
-                    .sidebar .sidebar-header,
-                    .sidebar .nav-links {
-                        display: none !important;
-                        opacity: 0 !important;
-                        visibility: hidden !important;
-                    }
-                    
-                    /* Disable hover expansion at mobile */
-                    .sidebar:hover {
-                        width: 0 !important;
-                        padding: 0 !important;
-                    }
-                    
-                    /* When open via toggle button */
-                    .sidebar.sidebar-mobile-open {
-                        width: 300px !important;
-                        padding: 15px 10px !important;
-                        overflow-y: auto !important;
-                    }
-                    
-                    .sidebar.sidebar-mobile-open .sidebar-header,
-                    .sidebar.sidebar-mobile-open .nav-links {
-                        display: block !important;
-                        opacity: 1 !important;
-                        visibility: visible !important;
-                    }
-                    
-                    /* Toggle button moves to header position when open */
-                    .sidebar-toggle-open {
-                        position: fixed !important;
-                        top: 15px !important;
-                        left: 10px !important;
-                        transform: none !important;
-                        width: 32px !important;
-                        height: 32px !important;
-                    }
-                }
-
-                /* 300% zoom (640px) */
+                /* 300% zoom (640px) - larger button for easier touch */
                 @media (max-width: 640px) {
                     .sidebar-toggle-closed {
                         width: 40px !important;
@@ -228,10 +149,23 @@ const Sidebar = ({ lang }) => {
                     }
                 }
             `}</style>
-            {/* Toggle button - OUTSIDE sidebar to avoid hover conflicts */}
+            
+            <div 
+                id="sidebar-nav"
+                ref={sidebarRef}
+                className={`sidebar ${sidebarOpen ? 'sidebar-mobile-open' : ''}`} 
+                role="navigation" 
+                aria-label={getText('main_navigation', lang)}
+                onBlur={handleFocusOut}
+                onMouseLeave={handleMouseLeave}
+            >
+            {/* Visual indicator - hidden from screen readers */}
+            <span className="sidebar-indicator" aria-hidden="true">☰</span>
+            
+            {/* Toggle button - INSIDE navigation so landmark is announced first */}
             <button
                 ref={toggleButtonRef}
-                className={`sidebar-toggle-btn ${(sidebarOpen || sidebarHovered) ? 'sidebar-toggle-open' : 'sidebar-toggle-closed'}`}
+                className={`sidebar-toggle-btn ${sidebarOpen ? 'sidebar-toggle-open' : 'sidebar-toggle-closed'}`}
                 onClick={handleToggle}
                 aria-label={sidebarOpen 
                     ? (lang === 'en' ? 'Close navigation menu' : 'Fermer le menu de navigation')
@@ -242,16 +176,6 @@ const Sidebar = ({ lang }) => {
                 <span aria-hidden="true">☰</span>
             </button>
             
-            <div 
-                id="sidebar-nav"
-                ref={sidebarRef}
-                className={`sidebar ${sidebarOpen ? 'sidebar-mobile-open' : ''}`} 
-                role="navigation" 
-                aria-label={getText('main_navigation', lang)}
-                onBlur={handleFocusOut}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-            >
             <div className="sidebar-header">
                 <span id="sidebar-title">{getText('table_of_contents', lang)}</span>
             </div>
