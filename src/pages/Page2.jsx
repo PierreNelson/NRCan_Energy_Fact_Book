@@ -634,8 +634,8 @@ const Page2 = () => {
 
                 .page2-chart-section .data-table-wrapper,
                 .page2-rankings-section .data-table-wrapper {
-                    padding-top: 20px;
-                    margin-top: auto;
+                    padding-top: 5px;
+                    margin-top: 5px;
                     width: 100%;
                     box-sizing: border-box;
                 }
@@ -688,8 +688,8 @@ const Page2 = () => {
                 }
 
                 .page2-rankings-table th {
-                    background-color: #48494a;
-                    color: white;
+                    background-color: #48494a !important;
+                    color: white !important;
                     padding: 8px 10px;
                     text-align: center;
                     font-weight: bold;
@@ -701,9 +701,7 @@ const Page2 = () => {
                     border: 1px solid #ddd;
                 }
 
-                .page2-rankings-table tr:nth-child(even) {
-                    background-color: #f5f5f5;
-                }
+                /* Removed custom zebra - using .table-striped instead */
 
                 .page2-rankings-table .resource-cell {
                     text-align: left;
@@ -834,14 +832,62 @@ const Page2 = () => {
                 }
 
                 .table-responsive {
-                    overflow-x: auto;
+                    overflow-x: visible;
                     margin-top: 5px;
+                    width: 100%;
                 }
 
                 .table-responsive table {
-                    width: max-content !important;
-                    min-width: 100%;
+                    width: 100% !important;
+                    min-width: 100% !important;
+                    max-width: 100% !important;
                     border-collapse: collapse;
+                    table-layout: auto;
+                }
+
+                .table-responsive table th,
+                .table-responsive table td {
+                    white-space: normal;
+                    overflow-wrap: break-word;
+                    word-wrap: break-word;
+                }
+
+                @media (max-width: 992px) {
+                    .table-responsive {
+                        overflow-x: hidden !important;
+                    }
+                    
+                    .table-responsive table {
+                        table-layout: fixed !important;
+                        font-size: 0.8rem;
+                    }
+                    
+                    .table-responsive table th,
+                    .table-responsive table td {
+                        padding: 4px 3px !important;
+                    }
+                }
+
+                @media (max-width: 640px) {
+                    .table-responsive table {
+                        font-size: 0.7rem;
+                    }
+                    
+                    .table-responsive table th,
+                    .table-responsive table td {
+                        padding: 3px 2px !important;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .table-responsive table {
+                        font-size: 0.6rem;
+                    }
+                    
+                    .table-responsive table th,
+                    .table-responsive table td {
+                        padding: 2px 1px !important;
+                    }
                 }
 
                 .custom-chart-container {
@@ -884,7 +930,7 @@ const Page2 = () => {
                     padding-left: 2%;
                     font-family: 'Noto Sans', sans-serif;
                     font-size: clamp(11px, 2.2vw, 15px);
-                    color: var(--gc-text);
+                    color: #000000;
                     display: flex;
                     align-items: center;
                     white-space: nowrap;
@@ -901,7 +947,7 @@ const Page2 = () => {
                     align-items: center;
                     font-family: 'Noto Sans', sans-serif;
                     font-size: clamp(12px, 2.5vw, 18px);
-                    color: var(--gc-text);
+                    color: #000000;
                     white-space: nowrap;
                 }
 
@@ -1163,20 +1209,7 @@ const Page2 = () => {
                                 <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                             </summary>
 
-                            <div 
-                                ref={topScrollRef}
-                                style={{ 
-                                    width: '100%', 
-                                    overflowX: 'auto', 
-                                    overflowY: 'hidden',
-                                    marginBottom: '0px',
-                                    marginTop: '5px',
-                                    display: windowWidth <= 768 ? 'none' : 'block' 
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }}></div>
-                            </div>
+                            {/* Top scrollbar hidden - table now fits screen */}
 
                             <div 
                                 ref={tableScrollRef}
@@ -1204,9 +1237,9 @@ const Page2 = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pageData.map(d => (
+                                        {pageData.map((d, idx) => (
                                             <tr key={d.year}>
-                                                <th scope="row" style={{ position: 'sticky', left: 0, backgroundColor: '#f9f9f9', zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #ddd' }}>
+                                                <th scope="row" style={{ position: 'sticky', left: 0, zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #ddd' }}>
                                                     {d.year}
                                                 </th>
                                                 {dynamicColumns.map(countryKey => {
@@ -1260,7 +1293,7 @@ const Page2 = () => {
 
                     <div className="page2-rankings-section">
                         <h3 className="page2-rankings-title">{getText('page2_rankings_title', lang)}, {year}</h3>
-                        <table className="page2-rankings-table">
+                        <table className="page2-rankings-table table table-striped table-hover">
                             <thead>
                                 <tr>
                                     <th scope="col"></th>
@@ -1292,20 +1325,7 @@ const Page2 = () => {
                                 <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                             </summary>
 
-                            <div 
-                                ref={rankingsTopScrollRef}
-                                style={{ 
-                                    width: '100%', 
-                                    overflowX: 'auto', 
-                                    overflowY: 'hidden',
-                                    marginBottom: '0px',
-                                    marginTop: '-20px',
-                                    display: windowWidth <= 768 ? 'none' : 'block' 
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }}></div>
-                            </div>
+                            {/* Top scrollbar hidden - table now fits screen */}
 
                             <div 
                                 ref={rankingsTableScrollRef}
@@ -1361,9 +1381,9 @@ const Page2 = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {rankingsYearData.map(d => (
+                                        {rankingsYearData.map((d, idx) => (
                                             <tr key={d.year}>
-                                                <th scope="row" style={{ position: 'sticky', left: 0, backgroundColor: '#f9f9f9', zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #ddd' }}>
+                                                <th scope="row" style={{ position: 'sticky', left: 0, zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #ddd' }}>
                                                     {d.year}
                                                 </th>
                                                 <td style={{ textAlign: 'center' }}>{d.crude_oil_reserves}</td>

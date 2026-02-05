@@ -214,9 +214,9 @@ const Page37 = () => {
     const COLORS = {
         'wastewater': '#857550',  
         'soil': '#224397',        
-        'air': '#33bccb',         
-        'solid_waste': '#f48244', 
-        'other': '#e9d259',       
+        'air': '#23808B',         
+        'solid_waste': '#CA4F0C', 
+        'other': '#877312',       
     };
 
     const CATEGORY_ORDER = ['wastewater', 'soil', 'air', 'solid_waste', 'other'];
@@ -552,7 +552,7 @@ const getAccessibleDataTable = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {pageData.map(yearData => {
+                            {pageData.map((yearData, idx) => {
                                 const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
                                 return (
                                     <tr key={yearData.year}>

@@ -389,11 +389,11 @@ const Page33 = () => {
 
     // Region definitions with colors matching the reference image
     const regionDefinitions = useMemo(() => [
-        { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#6cbe8d', labelLat: 78, labelLon: -160 },
-        { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis et Mexique', color: '#6cbe8d', labelLat: 35, labelLon: -150 },
+        { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#48A36C', labelLat: 78, labelLon: -160 },
+        { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis et Mexique', color: '#48A36C', labelLat: 35, labelLon: -150 },
         { key: 'latin_america', nameEn: 'Americas (South and Central\nAmerica, Caribbean)', nameFr: 'Amériques (Amérique du Sud,\nAmérique centrale et Caraïbes)', color: '#f26721', labelLat: -18, labelLon: -120 },
         { key: 'europe', nameEn: 'Europe', nameFr: 'Europe', color: '#204897', labelLat: 48, labelLon: -32 },
-        { key: 'africa', nameEn: 'Africa', nameFr: 'Afrique', color: '#e8d159', labelLat: -10, labelLon: -5 },
+        { key: 'africa', nameEn: 'Africa', nameFr: 'Afrique', color: '#AB9217', labelLat: -10, labelLon: -5 },
         { key: 'asia', nameEn: 'Asia', nameFr: 'Asie', color: '#a91e22', labelLat: 20, labelLon: 140 },
         { key: 'oceania', nameEn: 'Oceania', nameFr: 'Océanie', color: '#857550', labelLat: -25, labelLon: 90 }
     ], []);

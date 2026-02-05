@@ -206,9 +206,9 @@ const Page25 = () => {
     }, [pageData, lang]);
 
     const COLORS = {
-        'environmental': '#e9d259', 'fuel_energy_pipelines': '#6cbe8d',
-        'transport': '#2DA6B4', 'education': '#597DD9',
-        'health_housing': '#857550', 'public_safety': '#f58445',
+        'environmental': '#8F7200', 'fuel_energy_pipelines': '#3A8357',
+        'transport': '#23808B', 'education': '#4870D5',
+        'health_housing': '#857550', 'public_safety': '#CA4B0C',
     };
 
     const CATEGORY_ORDER = ['environmental', 'fuel_energy_pipelines', 'transport', 'education', 'health_housing', 'public_safety'];

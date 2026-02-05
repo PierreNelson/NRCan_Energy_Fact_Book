@@ -993,7 +993,7 @@ const Page8 = () => {
                                         bordercolor: '#000000',
                                         font: { color: '#000000', size: windowWidth <= 640 ? 12 : 14, family: 'Arial, sans-serif' }
                                     },
-                                    colorscale: [[0, '#e1d7c1'], [1, '#e1d7c1']],
+                                    colorscale: [[0, '#AA9255'], [1, '#AA9255']],
                                     zmin: 0,
                                     zmax: 1,
                                     showscale: false,
@@ -1032,7 +1032,7 @@ const Page8 = () => {
                                         family: 'Arial, sans-serif',
                                         size: windowWidth <= 640 ? 12 : 14,
                                         color: selectedProvinces === null 
-                                            ? '#333333' 
+                                            ? '#000000' 
                                             : provinceCodes.map((_, i) => selectedProvinces.includes(i) ? '#333333' : hexToRgba('#333333', 0.3))
                                     },
                                     hoverinfo: 'text',
@@ -1192,7 +1192,7 @@ const Page8 = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {provinceCodes.map(code => {
+                                {provinceCodes.map((code, idx) => {
                                     const info = provinceInfo[code];
                                     const name = lang === 'en' ? info.nameEn : info.nameFr;
                                     const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
@@ -1211,7 +1211,7 @@ const Page8 = () => {
                                         </tr>
                                     );
                                 })}
-                                <tr style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
+                                <tr style={{ fontWeight: 'bold' }}>
                                     <th scope="row">{lang === 'en' ? 'Canada Total' : 'Total Canada'}</th>
                                     {allData.map(yearData => {
                                         const totalLabel = lang === 'en' ? 'Canada Total' : 'Total Canada';

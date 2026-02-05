@@ -752,8 +752,8 @@ const Page30 = () => {
         const size = getMarkerSize(project.capital_cost_range);
         const opacity = isSelected ? 1 : 0.3;
         
-        const plannedColor = '#6fb1fa';
-        const constructionColor = '#005ddc';
+        const plannedColor = '#4196F6';
+        const constructionColor = '#20B2AA';
         const color = isConstruction ? constructionColor : plannedColor;
         
         if (isClean) {
@@ -779,7 +779,7 @@ const Page30 = () => {
         const opacity = isSelected ? 1 : 0.3;
         const color = isClean 
             ? (isConstruction ? '#71a210' : '#a3f900')
-            : (isConstruction ? '#e11aa8' : '#fe70e2');
+            : (isConstruction ? '#B684B6' : '#FE3ED8');
         return hexToRgba(color, opacity);
     };
 
@@ -829,8 +829,8 @@ const Page30 = () => {
         
         const geoJsonNames = provinceCodes.map(code => provinceInfo[code].geoJsonName);
         const provinceColors = provinceCodes.map((_, idx) => {
-            if (selectedProvinces === null) return '#d4d4d4';
-            return selectedProvinces.includes(idx) ? '#d4d4d4' : hexToRgba('#d4d4d4', 0.3);
+            if (selectedProvinces === null) return '#474747';
+            return selectedProvinces.includes(idx) ? '#474747' : hexToRgba('#474747', 0.3);
         });
 
         const choroplethTrace = {
@@ -1381,30 +1381,30 @@ const Page30 = () => {
                     <aside className="page30-legend" aria-label={lang === 'en' ? 'Map legend' : 'Légende de la carte'}>
                         <div className="page30-legend-section">
                             <div className="page30-legend-title">{getText('page30_legend_title_lines', lang)}</div>
-                            <LegendItem isLine color="#fe70e2" label={getText('page30_legend_transmission_planned', lang)} />
-                            <LegendItem isLine color="#e11aa8" label={getText('page30_legend_transmission_construction', lang)} />
+                            <LegendItem isLine color="#FE3ED8" label={getText('page30_legend_transmission_planned', lang)} />
+                            <LegendItem isLine color="#B684B6" label={getText('page30_legend_transmission_construction', lang)} />
                             <LegendItem isLine color="#a3f900" label={getText('page30_legend_transmission_clean_planned', lang)} />
                             <LegendItem isLine color="#71a210" label={getText('page30_legend_transmission_clean_construction', lang)} />
                         </div>
 
                         <div className="page30-legend-section">
                             <div className="page30-legend-title">{getText('page30_legend_title_energy', lang)}</div>
-                            <LegendItem symbol="up" color="#6fb1fa" isOutline size="small" label={getText('page30_legend_energy_10_999m_planned', lang)} />
-                            <LegendItem symbol="up" color="#6fb1fa" isOutline size="medium" label={getText('page30_legend_energy_1_5b_planned', lang)} />
-                            <LegendItem symbol="up" color="#6fb1fa" isOutline size="large" label={getText('page30_legend_energy_5b_plus_planned', lang)} />
-                            <LegendItem symbol="up" color="#005ddc" size="small" label={getText('page30_legend_energy_10_999m_construction', lang)} />
-                            <LegendItem symbol="up" color="#005ddc" size="medium" label={getText('page30_legend_energy_1_5b_construction', lang)} />
-                            <LegendItem symbol="up" color="#005ddc" size="large" label={getText('page30_legend_energy_5b_plus_construction', lang)} />
+                            <LegendItem symbol="up" color="#4196F6" isOutline size="small" label={getText('page30_legend_energy_10_999m_planned', lang)} />
+                            <LegendItem symbol="up" color="#4196F6" isOutline size="medium" label={getText('page30_legend_energy_1_5b_planned', lang)} />
+                            <LegendItem symbol="up" color="#4196F6" isOutline size="large" label={getText('page30_legend_energy_5b_plus_planned', lang)} />
+                            <LegendItem symbol="up" color="#20B2AA" size="small" label={getText('page30_legend_energy_10_999m_construction', lang)} />
+                            <LegendItem symbol="up" color="#20B2AA" size="medium" label={getText('page30_legend_energy_1_5b_construction', lang)} />
+                            <LegendItem symbol="up" color="#20B2AA" size="large" label={getText('page30_legend_energy_5b_plus_construction', lang)} />
                         </div>
 
                         <div className="page30-legend-section">
                             <div className="page30-legend-title">{getText('page30_legend_title_energy_clean', lang)}</div>
-                            <LegendItem symbol="down" color="#6fb1fa" isOutline size="small" label={getText('page30_legend_clean_10_999m_planned', lang)} />
-                            <LegendItem symbol="down" color="#6fb1fa" isOutline size="medium" label={getText('page30_legend_clean_1_5b_planned', lang)} />
-                            <LegendItem symbol="down" color="#6fb1fa" isOutline size="large" label={getText('page30_legend_clean_5b_plus_planned', lang)} />
-                            <LegendItem symbol="down" color="#005ddc" size="small" label={getText('page30_legend_clean_10_999m_construction', lang)} />
-                            <LegendItem symbol="down" color="#005ddc" size="medium" label={getText('page30_legend_clean_1_5b_construction', lang)} />
-                            <LegendItem symbol="down" color="#005ddc" size="large" label={getText('page30_legend_clean_5b_plus_construction', lang)} />
+                            <LegendItem symbol="down" color="#4196F6" isOutline size="small" label={getText('page30_legend_clean_10_999m_planned', lang)} />
+                            <LegendItem symbol="down" color="#4196F6" isOutline size="medium" label={getText('page30_legend_clean_1_5b_planned', lang)} />
+                            <LegendItem symbol="down" color="#4196F6" isOutline size="large" label={getText('page30_legend_clean_5b_plus_planned', lang)} />
+                            <LegendItem symbol="down" color="#20B2AA" size="small" label={getText('page30_legend_clean_10_999m_construction', lang)} />
+                            <LegendItem symbol="down" color="#20B2AA" size="medium" label={getText('page30_legend_clean_1_5b_construction', lang)} />
+                            <LegendItem symbol="down" color="#20B2AA" size="large" label={getText('page30_legend_clean_5b_plus_construction', lang)} />
                         </div>
                     </aside>
                 </div>
@@ -2090,7 +2090,7 @@ const Page30 = () => {
                             </thead>
                             <tbody>
                                 {filteredTableData.map((project, idx) => (
-                                    <tr key={project.id || idx} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f9f9f9' }}>
+                                    <tr key={project.id || idx}>
                                         <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
                                             {project.project_name || '—'}
                                         </td>

@@ -1,4 +1,4 @@
-﻿
+
 export const TRANSLATIONS = {
     'en': {
         // Breadcrumb

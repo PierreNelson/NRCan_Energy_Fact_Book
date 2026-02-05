@@ -147,7 +147,7 @@ const Page29 = () => {
                             : (value < 1 ? `${value.toFixed(2).replace('.', ',')} G$` : `${value.toFixed(1).replace('.', ',')} G$`);
                         
                         let cellBgColor = undefined;
-                        let textColor = '333333';
+                        let textColor = '000000';
                         
                         if (isTotal) {
                             cellBgColor = totalRowBgColor;
@@ -172,7 +172,7 @@ const Page29 = () => {
                                         text: `(${valueStr})`, 
                                         size: 18, 
                                         bold: isTotal,
-                                        color: isTotal ? 'DDDDDD' : '666666'
+                                        color: isTotal ? 'DDDDDD' : '000000'
                                     })],
                                     alignment: AlignmentType.CENTER
                                 })
@@ -302,6 +302,14 @@ const Page29 = () => {
                     font-weight: bold;
                 }
 
+                .page29-project-text {
+                    color: #000000;
+                }
+                
+                .page29-table .total-row .page29-project-text {
+                    color: #ffffff;
+                }
+
                 .page29-table .total-row .category-cell {
                     background-color: #8e7e52;
                     color: white;
@@ -311,17 +319,14 @@ const Page29 = () => {
                     background-color: #d4cbba;
                 }
 
-                .page29-table tbody tr:nth-child(odd):hover:not(.total-row) {
-                    background-color: #f2f2f2;
-                }
-
-                .page29-table tbody tr:nth-child(even):hover:not(.total-row) {
-                    background-color: #c4bbab;
+                .page29-table tbody tr:hover:not(.total-row) {
+                    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.2);
+                    background-color: transparent; 
                 }
 
                 .page29-cell-value {
                     font-size: 0.85rem;
-                    color: #666;
+                    color: #000000;
                 }
 
                 .page29-total-cell-value {
@@ -473,17 +478,18 @@ const Page29 = () => {
                                                     ? (lang === 'en' ? 'project' : 'projet')
                                                     : getText('page29_projects', lang);
                                                 
-                                                return (
-                                                    <td 
-                                                        key={y}
-                                                        aria-label={`${y}, ${cat.label}: ${projects} ${projectLabel}, ${value} ${lang === 'en' ? 'billion dollars' : 'milliards de dollars'}`}
-                                                    >
-                                                        <div>{projects} {projectLabel}</div>
-                                                        <div className={isTotal ? 'page29-total-cell-value' : 'page29-cell-value'}>
-                                                            ({valueDisplay})
-                                                        </div>
-                                                    </td>
-                                                );
+                                                    return (
+                                                        <td 
+                                                            key={y}
+                                                            aria-label={`${y}, ${cat.label}: ${projects} ${projectLabel}, ${value} ${lang === 'en' ? 'billion dollars' : 'milliards de dollars'}`}
+                                                        >
+                                                            <div className="page29-project-text">{projects} {projectLabel}</div>
+                                                            
+                                                            <div className={isTotal ? 'page29-total-cell-value' : 'page29-cell-value'}>
+                                                                ({valueDisplay})
+                                                            </div>
+                                                        </td>
+                                                    );
                                             })}
                                         </tr>
                                     );

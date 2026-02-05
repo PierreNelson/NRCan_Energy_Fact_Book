@@ -158,10 +158,10 @@ const Page28 = () => {
     const COLORS = {
         'oil_gas_value': '#857550',
         'electricity_value': '#224397',
-        'other_value': '#33bccb',
-        'oil_gas_projects': '#e9d259',
-        'electricity_projects': '#bdbfc0',
-        'other_projects': '#f08144',
+        'other_value': '#2B9FAB',
+        'oil_gas_projects': '#AC9316',
+        'electricity_projects': '#8E9195',
+        'other_projects': '#EE6F2B',
     };
 
     const formatBillion = (val) => {

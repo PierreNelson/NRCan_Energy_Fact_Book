@@ -196,7 +196,7 @@ const Page7 = () => {
 
     const COLORS = {
         'energy_total': '#245e7f',
-        'non_energy': '#c4bfb5',
+        'non_energy': '#9A9389',
     };
 
     const currentData = useMemo(() => {

@@ -658,6 +658,10 @@ const Page24 = () => {
                     margin-left: 0px;
                 }
 
+                .layout-stacked .page24-legend {
+                    margin-top: -200px !important; /* Reduces the standard 10px gap to 5px */
+                }
+
                 @media (max-width: 1400px) {
                     .page24-chart-wrapper {
                         width: 100%;
@@ -694,6 +698,8 @@ const Page24 = () => {
 
                 .page24-table-btn-wrapper {
                     width: 100%;
+                    position: relative;
+                    z-index: 50;
                 }
 
                 .page24-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; }
@@ -764,6 +770,29 @@ const Page24 = () => {
 
                 .page24-chart { width: 100%; height: 300px; }
 
+                /* Layout stacked mode when table is open */
+                .layout-stacked {
+                    flex-direction: column !important;
+                    height: auto !important;
+                    align-items: center !important;
+                }
+                .layout-stacked .page24-chart-column {
+                    width: 100% !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    margin-bottom: 30px !important;
+                    overflow: visible !important;
+                }
+                .layout-stacked .page24-text-column {
+                    width: 100% !important;
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                    padding-top: 0 !important;
+                    margin-top: 20px !important;
+                }
+
+               
+
                 @media (max-width: 1400px) {
                     .page24-content-row { flex-direction: column; }
                     .page24-chart-column { width: 100%; margin-bottom: 30px; }
@@ -833,7 +862,7 @@ const Page24 = () => {
                     </h1>
                 </header>
 
-                <div className={`page24-content-row`}>
+                <div className={`page24-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
                     <div className="page24-chart-column">
 
                         <div className="chart-title-wrapper">
