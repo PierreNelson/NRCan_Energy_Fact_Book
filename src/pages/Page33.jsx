@@ -744,7 +744,7 @@ const Page33 = () => {
                 }
                 
                 .page33-map-container .js-plotly-plot {
-                    max-width: 100%;
+                    max-width: 90%;
                 }
                 
                 .page33-map-container .plot-container,
@@ -992,6 +992,10 @@ const Page33 = () => {
                         height: auto;    
                         margin-bottom: 30px; 
                         display: block;  
+                    }
+
+                    .page33-map-container .js-plotly-plot {
+                        max-width: 100%;
                     }
 
                     .page33-stats-container {

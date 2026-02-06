@@ -665,7 +665,7 @@ const Page8 = () => {
 
                 .page8-map-container {
                     position: relative;
-                    width: 65%;
+                    width: 100%;
                     min-width: 600px;
                     height: 750px;
                     margin-left: auto;
@@ -760,9 +760,7 @@ const Page8 = () => {
                         margin-bottom: -160px;
                         margin-top: -180px;
                     }
-                }
-
-                @media (max-width: 768px) {
+                
                     .page8-title {
                         font-size: 37px;
                     }
@@ -782,6 +780,7 @@ const Page8 = () => {
                         font-size: 18px;
                     }
                 }
+                
 
                 @media (max-width: 640px) {
                     .page-8 { 
@@ -809,7 +808,9 @@ const Page8 = () => {
 
                 @media (max-width: 480px) {
                     .page8-map-container {
+                        width: 120% !important;
                         margin-top: -240px;
+                        margin-left: -10% !important;
                         margin-bottom: -100px;
                     }
 

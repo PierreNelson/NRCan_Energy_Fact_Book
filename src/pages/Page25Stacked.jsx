@@ -21,35 +21,21 @@ const Page25Stacked = () => {
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
     
-    // Custom dropdown state
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [focusedYear, setFocusedYear] = useState(null);
-    const dropdownRef = useRef(null);
-    const listRef = useRef(null);
+    // Year selector state
+    const [isYearSelectorOpen, setIsYearSelectorOpen] = useState(false);
+    const yearSelectorRef = useRef(null);
     const yearButtonRef = useRef(null);
 
-    // Close dropdown when clicking outside
+    // Close year selector when clicking outside
     useEffect(() => {
-        const handleDropdownClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
+        const handleClickOutside = (event) => {
+            if (yearSelectorRef.current && !yearSelectorRef.current.contains(event.target)) {
+                setIsYearSelectorOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleDropdownClickOutside);
-        return () => document.removeEventListener('mousedown', handleDropdownClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Sync focusedYear when year changes or dropdown opens
-    useEffect(() => {
-        if (year) setFocusedYear(year);
-    }, [year, isDropdownOpen]);
-
-    // Auto-focus the list when dropdown opens
-    useEffect(() => {
-        if (isDropdownOpen && listRef.current) {
-            listRef.current.focus();
-        }
-    }, [isDropdownOpen]);
 
     useEffect(() => {
         const topScroll = topScrollRef.current;
@@ -1006,95 +992,99 @@ const Page25Stacked = () => {
                         {getSubtitle()}
                     </p>
                 </header>
-                <div className="page25h-year-selector" ref={dropdownRef}>
-                    <label id="year-label-25h" className="page25h-year-label" aria-hidden="true">
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    <div id="year-instructions-25h" className="wb-inv">
-                        {lang === 'en' 
-                            ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
-                            : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
-                    </div>
-                    <div className="custom-dropdown">
-                        <button
-                            ref={yearButtonRef}
-                            type="button"
-                            className="dropdown-button"
-                            aria-haspopup="listbox"
-                            aria-expanded={isDropdownOpen}
-                            aria-label={`${getText('year_slider_label', lang)} ${year || maxYear}`}
-                            aria-describedby="year-instructions-25h"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setIsDropdownOpen(true);
-                                } else if (e.key === 'Escape') {
-                                    setIsDropdownOpen(false);
-                                }
+                {/* COLLAPSIBLE YEAR SELECTOR (Descending + Focus Fix) */}
+                <div style={{ marginBottom: '20px', position: 'relative' }} ref={yearSelectorRef}>
+                    
+                    {/* TOGGLE BUTTON */}
+                    <button
+                        ref={yearButtonRef}
+                        onClick={() => setIsYearSelectorOpen(!isYearSelectorOpen)}
+                        aria-expanded={isYearSelectorOpen}
+                        aria-controls="year-selector-grid-25h"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '200px',
+                            padding: '10px 15px',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            color: '#333',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        <span>
+                            {year ? `${getText('year_slider_label', lang)} ${year}` : (lang === 'en' ? 'Select Year' : 'Sélectionner une année')}
+                        </span>
+                        <span aria-hidden="true" style={{ fontSize: '12px', marginLeft: '10px' }}>
+                            {isYearSelectorOpen ? '▲' : '▼'}
+                        </span>
+                    </button>
+
+                    {/* THE HIDDEN GRID BOX */}
+                    {isYearSelectorOpen && (
+                        <div 
+                            id="year-selector-grid-25h"
+                            style={{ 
+                                position: 'absolute',
+                                top: '100%',
+                                left: '0',
+                                zIndex: 100,
+                                marginTop: '5px',
+                                width: '300px',
+                                padding: '15px',
+                                backgroundColor: '#f5f5f5',
+                                borderRadius: '8px',
+                                border: '1px solid #ccc',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                             }}
                         >
-                            {year || maxYear}
-                            <span className="dropdown-arrow" aria-hidden="true">▼</span>
-                        </button>
-                        {isDropdownOpen && (
-                            <ul
-                                ref={listRef}
-                                role="listbox"
-                                aria-label={getText('year_slider_label', lang)}
-                                aria-activedescendant={focusedYear ? `year-option-25h-${focusedYear}` : undefined}
-                                tabIndex={-1}
-                                className="dropdown-list"
-                                onKeyDown={(e) => {
-                                    const currentIndex = yearsList.findIndex(y => y === focusedYear);
-                                    
-                                    if (e.key === 'ArrowDown') {
-                                        e.preventDefault();
-                                        const nextIndex = Math.min(currentIndex + 1, yearsList.length - 1);
-                                        setFocusedYear(yearsList[nextIndex]);
-                                    } else if (e.key === 'ArrowUp') {
-                                        e.preventDefault();
-                                        const prevIndex = Math.max(currentIndex - 1, 0);
-                                        setFocusedYear(yearsList[prevIndex]);
-                                    } else if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        setYear(focusedYear);
-                                        setIsDropdownOpen(false);
-                                        if (yearButtonRef.current) yearButtonRef.current.focus();
-                                    } else if (e.key === 'Escape') {
-                                        setIsDropdownOpen(false);
-                                        if (yearButtonRef.current) yearButtonRef.current.focus();
-                                    } else if (e.key === 'Tab') {
-                                        setIsDropdownOpen(false);
-                                    } else if (e.key === 'Home') {
-                                        e.preventDefault();
-                                        setFocusedYear(yearsList[0]);
-                                    } else if (e.key === 'End') {
-                                        e.preventDefault();
-                                        setFocusedYear(yearsList[yearsList.length - 1]);
-                                    }
-                                }}
-                            >
-                                {yearsList.map((y) => (
-                                    <li
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', 
+                                gap: '10px' 
+                            }}>
+                                {/* Sort Descending (Newest First) */}
+                                {[...yearsList].sort((a, b) => b - a).map((y) => (
+                                    <button
                                         key={y}
-                                        id={`year-option-25h-${y}`}
-                                        role="option"
-                                        aria-selected={year === y}
-                                        className={`dropdown-option ${focusedYear === y ? 'focused' : ''} ${year === y ? 'selected' : ''}`}
                                         onClick={() => {
                                             setYear(y);
-                                            setIsDropdownOpen(false);
-                                            if (yearButtonRef.current) yearButtonRef.current.focus();
+                                            setIsYearSelectorOpen(false);
+                                            // Focus Fix: Send focus back to the main button
+                                            setTimeout(() => {
+                                                yearButtonRef.current?.focus();
+                                            }, 0);
                                         }}
-                                        onMouseEnter={() => setFocusedYear(y)}
+                                        aria-pressed={year === y}
+                                        aria-label={
+                                            year === y 
+                                            ? (lang === 'en' ? `${y}, selected` : `${y}, sélectionné`)
+                                            : y.toString()
+                                        }
+                                        style={{
+                                            padding: '8px 4px',
+                                            fontSize: '16px',
+                                            fontWeight: 'bold',
+                                            fontFamily: 'Lato, sans-serif',
+                                            cursor: 'pointer',
+                                            borderRadius: '4px',
+                                            border: year === y ? '2px solid #245e7f' : '1px solid #ccc',
+                                            backgroundColor: year === y ? '#245e7f' : '#ffffff',
+                                            color: year === y ? '#ffffff' : '#333333'
+                                        }}
                                     >
                                         {y}
-                                    </li>
+                                    </button>
                                 ))}
-                            </ul>
-                        )}
-                    </div>
+                            </div>
+                        </div>
+                    )}
+                    
                     <div role="status" className="wb-inv" aria-live="polite">
                         {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                     </div>
