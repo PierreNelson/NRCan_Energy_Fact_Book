@@ -84,16 +84,12 @@ const Page3 = () => {
                 </header>
 
                 <article>
-                    <p 
-                        className="page3-paragraph"
-                        dangerouslySetInnerHTML={{ __html: getText('page3_para1', lang) }}
-                        aria-label={stripHtml(getText('page3_para1', lang))}
-                    />
-                    <p 
-                        className="page3-paragraph"
-                        dangerouslySetInnerHTML={{ __html: getText('page3_para2', lang) }}
-                        aria-label={stripHtml(getText('page3_para2', lang))}
-                    />
+                    <p className="page3-paragraph" role="region" aria-label={stripHtml(getText('page3_para1', lang))}>
+                        <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: getText('page3_para1', lang) }} />
+                    </p>
+                    <p className="page3-paragraph" role="region" aria-label={stripHtml(getText('page3_para2', lang))}>
+                        <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: getText('page3_para2', lang) }} />
+                    </p>
                 </article>
             </div>
         </main>

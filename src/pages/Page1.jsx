@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import page1Image from '../assets/page1_bg.jpg';
 
@@ -104,6 +104,23 @@ const Page1 = () => {
                     font-size: 2.2rem; 
                 }
 
+                .page1-list-item a {
+                    color: #ebe8e1;
+                    text-decoration: underline;
+                    transition: color 0.2s ease;
+                }
+
+                .page1-list-item a:hover,
+                .page1-list-item a:focus {
+                    color: #ffffff;
+                    text-decoration: underline;
+                }
+
+                .page1-list-item a:focus {
+                    outline: 2px solid #ffffff;
+                    outline-offset: 2px;
+                }
+
                 @media (max-width: 1745px) { .page1-title-text { font-size: 4.2rem; } }
                 @media (max-width: 1536px) { .page1-title-text { font-size: 4.0rem; } }
                 @media (max-width: 1280px) { .page1-title-text { font-size: 3.8rem; } }
@@ -155,11 +172,19 @@ const Page1 = () => {
                         color: '#ebe8e1',
                         fontFamily: "'Noto Sans', sans-serif"
                     }}>
-                        {[1, 2, 3].map(num => (
-                            <li key={num} className="page1-list-item">
-                                {getText(`page1_item${num}`, lang)}
-                            </li>
-                        ))}
+                        <li className="page1-list-item">
+                            <Link to="/section-1#energy-production">
+                                {getText('page1_item1', lang)}
+                            </Link>
+                        </li>
+                        <li className="page1-list-item">
+                            <Link to="/section-1#economic-contributions">
+                                {getText('page1_item2', lang)}
+                            </Link>
+                        </li>
+                        <li className="page1-list-item">
+                            {getText('page1_item3', lang)}
+                        </li>
                     </ul>
                 </nav>
             </div>

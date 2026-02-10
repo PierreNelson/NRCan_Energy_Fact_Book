@@ -221,22 +221,10 @@ const Sidebar = ({ lang }) => {
                                 {getText('nav_energy_production', lang)}
                             </NavLink>
                             <NavLink
-                                to="/section-1#canadian-energy-production"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_canadian_energy_production', lang)}
-                            </NavLink>
-                            <NavLink
                                 to="/section-1#economic-contributions"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_econ_contributions', lang)}
-                            </NavLink>
-                            <NavLink
-                                to="/section-1#provincial-gdp"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_provincial_gdp', lang)}
                             </NavLink>
                         </div>
                     )}
@@ -282,78 +270,31 @@ const Sidebar = ({ lang }) => {
                                 to="/section-2#capital-expenditure"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('nav_capital_expenditure', lang)}
+                                {getText('page23_item1', lang)}
                             </NavLink>
 
-                            {/* Infrastructure Stock */}
+                            {/* Energy infrastructure and major projects */}
                             <NavLink
                                 to="/section-2#infrastructure-stock"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('nav_infrastructure', lang)}
+                                {getText('page23_item2', lang)}
                             </NavLink>
 
-                            {/* Economic Contributions */}
-                            <NavLink
-                                to="/section-2#economic-contributions"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_economic_contributions', lang)}
-                            </NavLink>
-
-                            {/* Investment by Asset */}
-                            <NavLink
-                                to="/section-2#investment-by-asset"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_investment_detail', lang)}
-                            </NavLink>
-
-                            {/* Major Projects */}
-                            <NavLink
-                                to="/section-2#major-projects"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_major_projects', lang)}
-                            </NavLink>
-
-                            {/* Clean Tech Trends */}
-                            <NavLink
-                                to="/section-2#clean-tech-trends"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_clean_tech_trends', lang)}
-                            </NavLink>
-
-                            <NavLink
-                                to="/section-2#projects-map"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_projects_map', lang)}
-                            </NavLink>
-
-                            {/* International Investment */}
+                            {/* FDI and investment abroad */}
                             <NavLink
                                 to="/section-2#international-investment"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('nav_international_investment', lang)}
+                                {getText('page23_item3', lang)}
                             </NavLink>
 
-                            {/* Foreign Control */}
-                            <NavLink
-                                to="/section-2#foreign-control"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_fdi_stock', lang)}
-                            </NavLink>
-
-                            {/* Canadian Energy Assets */}
+                            {/* Energy assets */}
                             <NavLink
                                 to="/section-2#canadian-energy-assets"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('nav_canadian_energy_assets', lang)}
+                                {getText('page23_item4', lang)}
                             </NavLink>
 
                             {/* Environmental Protection */}
@@ -361,7 +302,7 @@ const Sidebar = ({ lang }) => {
                                 to="/section-2#environmental-protection"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('nav_environmental_protection', lang)}
+                                {getText('page23_item6', lang)}
                             </NavLink>
                         </div>
                     )}
@@ -537,29 +478,36 @@ const Sidebar = ({ lang }) => {
                             role="group"
                             aria-label={lang === 'en' ? 'Test Pages' : 'Pages de test'}
                         >
+                            {/* Capital Expenditure - Page24Stacked */}
                             <NavLink
-                                to="/section-test#test-page24"
+                                to="/section-test#capital-expenditure"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {lang === 'en' ? 'Page 24 (Stacked)' : 'Page 24 (Empilée)'}
+                                {getText('page23_item1', lang)}
                             </NavLink>
+
+                            {/* Energy infrastructure and major projects - Page25Stacked */}
                             <NavLink
-                                to="/section-test#test-page25"
+                                to="/section-test#infrastructure-stock"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {lang === 'en' ? 'Page 25 (Stacked)' : 'Page 25 (Empilée)'}
+                                {getText('page23_item2', lang)}
                             </NavLink>
+
+                            {/* Major Projects - Page28Stacked */}
                             <NavLink
-                                to="/section-test#test-page28"
+                                to="/section-test#major-projects"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {lang === 'en' ? 'Page 28 (Stacked)' : 'Page 28 (Empilée)'}
+                                {getText('nav_major_projects', lang)}
                             </NavLink>
+
+                            {/* Environmental Protection - Page37Stacked */}
                             <NavLink
-                                to="/section-test#test-page37"
+                                to="/section-test#environmental-protection"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {lang === 'en' ? 'Page 37 (Stacked)' : 'Page 37 (Empilée)'}
+                                {getText('page23_item6', lang)}
                             </NavLink>
                         </div>
                     )}

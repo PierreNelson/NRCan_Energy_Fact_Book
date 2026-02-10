@@ -138,32 +138,46 @@ const Page31 = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [pageData, lang]);
 
     const COLORS = {
@@ -274,11 +288,11 @@ const Page31 = () => {
             <React.Fragment key={index}>
                 {part}
                 {index < parts.length - 1 && (
-                    <sup id="fn-asterisk-rf-page31">
-                        <a className="fn-lnk" href="#fn-asterisk-page31" onClick={scrollToFootnote} title={lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}>
-                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                    <span id="fn-asterisk-rf-page31" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
+                        <a className="fn-lnk" href="#fn-asterisk-page31" onClick={scrollToFootnote}>
+                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
                         </a>
-                    </sup>
+                    </span>
                 )}
             </React.Fragment>
         ));
@@ -316,7 +330,7 @@ const Page31 = () => {
                         fontWeight: 'bold', 
                         padding: '10px',
                         border: '1px solid #ccc',
-                        backgroundColor: '#f9f9f9',
+                        backgroundColor: '#fff',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -622,8 +636,8 @@ const Page31 = () => {
 
                 .page31-title {
                     font-family: 'Lato', sans-serif;
-                    color: #58585a;
-                    font-size: 41px;
+                    color: #245e7f;
+                    font-size: 50px;
                     font-weight: bold;
                     margin-bottom: 10px;
                     margin-top: 5px;
@@ -808,11 +822,38 @@ const Page31 = () => {
                     border: 0;
                 }
 
-                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+                .page31-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-sizing: border-box;
+                }
+
                 .page31-table-wrapper {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr);
+                    display: block;
                     width: 100%;
+                    margin: 0;
+                }
+
+                .page31-table-wrapper details > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .page31-table-wrapper details > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page31-table-wrapper details > summary:hover {
+                    background-color: #f5f5f5;
                 }
 
                 /* Table horizontal scroll */
@@ -842,16 +883,15 @@ const Page31 = () => {
                     </p>
                 </header>
 
-                <div>
-                    <h2 className="page31-chart-title" aria-hidden="true">
+                <div className="page31-chart-frame">
+                    <h2 className="page31-chart-title">
                         {renderTextWithFootnoteLink(getText('page31_chart_title', lang))}
                     </h2>
-
-                    <h2 className="sr-only">{getChartTitleSR()}</h2>
 
                     <div 
                         role="region"
                         aria-label={getChartDataSummary()}
+                        tabIndex="0"
                     >
                         <figure 
                             ref={chartRef} 
@@ -861,6 +901,7 @@ const Page31 = () => {
                             {selectedPoints !== null && (
                                 <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                             )}
+                            <div aria-hidden="true">
                             <Plot
                             data={chartData.traces}
                             layout={{
@@ -910,7 +951,9 @@ const Page31 = () => {
                                 },
                                 autosize: true,
                                 bargap: 0.15,
-                                bargroupgap: 0.1
+                                bargroupgap: 0.1,
+                                paper_bgcolor: 'rgba(0,0,0,0)',
+                                plot_bgcolor: 'rgba(0,0,0,0)'
                             }}
                             style={{ width: '100%', height: '100%' }} 
                             useResizeHandler={true}
@@ -967,15 +1010,15 @@ const Page31 = () => {
                                 modeBarButtonsToAdd: [{
                                     name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
                                     icon: {
-                                        width: 1000,
-                                        height: 1000,
-                                        path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
-                                        transform: 'matrix(1 0 0 -1 0 850)'
+                                        width: 24,
+                                        height: 24,
+                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
                                     },
                                     click: (gd) => downloadChartWithTitle(gd)
                                 }]
                             }}
                             />
+                            </div>
                         </figure>
 
                         <div className="page31-table-wrapper">
@@ -988,13 +1031,14 @@ const Page31 = () => {
                     <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>
                         <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-page31">
-                            <a href="#fn-asterisk-rf-page31" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            <p>
-                                {getText('page31_footnote', lang)} {getText('page31_footnote1', lang)}
-                            </p>
+                        <dd id="fn-asterisk-page31" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', width: '100%' }}>
+                                <a href="#fn-asterisk-rf-page31" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                    <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                                </a>
+                                <p style={{ margin: 0 }}>{getText('page31_footnote', lang)}</p>
+                            </div>
+                            <p style={{ margin: '10px 0 0 0', paddingLeft: '1.85rem' }}>{getText('page31_footnote1', lang)}</p>
                         </dd>
                     </dl>
                 </aside>

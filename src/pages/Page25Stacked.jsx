@@ -163,32 +163,46 @@ const Page25Stacked = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [pageData, lang]);
 
     const COLORS = {
@@ -451,7 +465,7 @@ const Page25Stacked = () => {
                         fontWeight: 'bold', 
                         padding: '10px',
                         border: '1px solid #ccc',
-                        backgroundColor: '#f9f9f9',
+                        backgroundColor: '#fff',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -752,19 +766,70 @@ const Page25Stacked = () => {
                     margin-top: 20px;
                     margin-bottom: 40px;
                 }
-                
 
-                .page25h-definition-box {
-                    position: relative;
-                    background-color: #aa9c7a;
-                    padding: 20px 30px;
-                    border-radius: 3px;
+                .page25h-definition-details {
                     width: 100%;
-                    margin-top: -50px;
+                    margin-top: 20px;
+                    margin-bottom: 40px;
+                    align-self: flex-start;
                 }
-                .page25h-definition-box h2 {
-                    text-align: center !important;
-                    padding-left: 0 !important;
+
+                .page25h-definition-details summary {
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-family: Arial, sans-serif;
+                    font-weight: bold;
+                    font-size: 1rem;
+                    list-style: none;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .page25h-definition-details summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page25h-definition-details summary:hover {
+                    background-color: #f5f5f5;
+                }
+
+                .page25h-definition-details summary .definition-arrow {
+                    margin-right: 10px;
+                    font-size: 0.8rem;
+                    transition: transform 0.2s ease;
+                }
+
+                .page25h-definition-details[open] summary .definition-arrow {
+                    transform: rotate(0deg);
+                }
+
+                .page25h-definition-details:not([open]) summary .definition-arrow {
+                    transform: rotate(-90deg);
+                }
+
+                .page25h-definition-content {
+                    background-color: #aa9c7a;
+                    padding: 20px;
+                    border-radius: 0 0 4px 4px;
+                    margin-top: -1px;
+                    text-align: left;
+                    font-size: 1.05rem;
+                    line-height: 1.6;
+                    color: #333;
+                }
+
+                .page25h-definition-content p {
+                    text-align: left;
+                    margin: 0 0 10px 0;
+                }
+
+                .page25h-definition-content p:last-child {
+                    margin-bottom: 0;
                 }
 
                 .page25h-year-selector {
@@ -918,7 +983,6 @@ const Page25Stacked = () => {
                         margin-bottom: 20px !important;
                     }
                     .page25h-chart-column figure { height: 480px !important; min-height: 480px !important; }
-                    .decorative-quote { display: none !important; }
 
                     input[type=range] { height: 44px !important; padding: 10px 0 !important; }
                     input[type=range]::-webkit-slider-thumb { height: 28px !important; width: 28px !important; margin-top: -10px !important; }
@@ -947,11 +1011,39 @@ const Page25Stacked = () => {
                 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
                 .page25h-table-btn-wrapper summary:focus {outline: none !important;}
 
-                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
-                .page25h-table-wrapper {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr);
+                .page25h-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-sizing: border-box;
                     width: 100%;
+                }
+
+                .page25h-table-wrapper {
+                    display: block;
+                    width: 100%;
+                    margin: 0;
+                }
+
+                .page25h-table-wrapper details > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .page25h-table-wrapper details > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page25h-table-wrapper details > summary:hover {
+                    background-color: #f5f5f5;
                 }
 
                 /* Table horizontal scroll */
@@ -970,9 +1062,7 @@ const Page25Stacked = () => {
                     border-collapse: collapse;
                 }
 
-                .page25h-text-column > p,
-                .page25h-definition-box p,
-                .page25h-definition-box h2 {
+                .page25h-text-column > p {
                     margin-left: auto !important;
                     margin-right: auto !important;
                     max-width: 65ch; 
@@ -984,7 +1074,7 @@ const Page25Stacked = () => {
                     role="region" 
                     aria-label={`${getText('page25_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
                 >
-                    <h1 aria-hidden="true" style={{ fontFamily: "'Lato', sans-serif", color: '#8e7e52', fontSize: '41px', fontWeight: 'bold', margin: '0 0 3px 0' }}>
+                    <h1 aria-hidden="true" style={{ fontFamily: "'Lato', sans-serif", color: '#245e7f', fontSize: '41px', fontWeight: 'bold', margin: '0 0 3px 0' }}>
                         {getText('page25_title', lang)}
                     </h1>
 
@@ -992,96 +1082,119 @@ const Page25Stacked = () => {
                         {getSubtitle()}
                     </p>
                 </header>
-                {/* COLLAPSIBLE YEAR SELECTOR (Descending + Focus Fix) */}
-                <div style={{ marginBottom: '20px', position: 'relative' }} ref={yearSelectorRef}>
+                {/* SINGLE-SELECT RADIO DROPDOWN */}
+                <div 
+                    ref={yearSelectorRef} 
+                    style={{ 
+                        position: 'relative', 
+                        marginBottom: '20px', 
+                        width: '200px' 
+                    }}
+                >
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
+                        {getText('year_slider_label', lang)}
+                    </label>
                     
                     {/* TOGGLE BUTTON */}
                     <button
                         ref={yearButtonRef}
                         onClick={() => setIsYearSelectorOpen(!isYearSelectorOpen)}
                         aria-expanded={isYearSelectorOpen}
-                        aria-controls="year-selector-grid-25h"
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '200px',
+                            width: '100%',
                             padding: '10px 15px',
                             backgroundColor: '#fff',
                             border: '1px solid #ccc',
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            fontSize: '18px',
                             fontWeight: 'bold',
-                            color: '#333',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                            textAlign: 'left',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '16px'
                         }}
                     >
-                        <span>
-                            {year ? `${getText('year_slider_label', lang)} ${year}` : (lang === 'en' ? 'Select Year' : 'Sélectionner une année')}
-                        </span>
-                        <span aria-hidden="true" style={{ fontSize: '12px', marginLeft: '10px' }}>
-                            {isYearSelectorOpen ? '▲' : '▼'}
-                        </span>
+                        <span>{year || maxYear}</span>
+                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearSelectorOpen ? '▲' : '▼'}</span>
                     </button>
 
-                    {/* THE HIDDEN GRID BOX */}
+                    {/* DROPDOWN LIST */}
                     {isYearSelectorOpen && (
-                        <div 
-                            id="year-selector-grid-25h"
-                            style={{ 
-                                position: 'absolute',
-                                top: '100%',
-                                left: '0',
-                                zIndex: 100,
-                                marginTop: '5px',
-                                width: '300px',
-                                padding: '15px',
-                                backgroundColor: '#f5f5f5',
-                                borderRadius: '8px',
-                                border: '1px solid #ccc',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                            }}
-                        >
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', 
-                                gap: '10px' 
-                            }}>
-                                {/* Sort Descending (Newest First) */}
-                                {[...yearsList].sort((a, b) => b - a).map((y) => (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            width: '100%',
+                            maxHeight: '300px',
+                            overflowY: 'auto',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            zIndex: 100,
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                        }}>
+                            {/* Sort Descending (Newest First) - Using buttons styled as radio */}
+                            {[...yearsList].sort((a, b) => b - a).map((y) => {
+                                const isSelected = year === y;
+                                return (
                                     <button
                                         key={y}
+                                        type="button"
+                                        aria-pressed={isSelected}
+                                        aria-label={y.toString()}
                                         onClick={() => {
                                             setYear(y);
                                             setIsYearSelectorOpen(false);
-                                            // Focus Fix: Send focus back to the main button
                                             setTimeout(() => {
                                                 yearButtonRef.current?.focus();
                                             }, 0);
                                         }}
-                                        aria-pressed={year === y}
-                                        aria-label={
-                                            year === y 
-                                            ? (lang === 'en' ? `${y}, selected` : `${y}, sélectionné`)
-                                            : y.toString()
-                                        }
-                                        style={{
-                                            padding: '8px 4px',
-                                            fontSize: '16px',
-                                            fontWeight: 'bold',
-                                            fontFamily: 'Lato, sans-serif',
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '10px 15px', 
                                             cursor: 'pointer',
-                                            borderRadius: '4px',
-                                            border: year === y ? '2px solid #245e7f' : '1px solid #ccc',
-                                            backgroundColor: year === y ? '#245e7f' : '#ffffff',
-                                            color: year === y ? '#ffffff' : '#333333'
+                                            border: 'none',
+                                            borderBottom: '1px solid #eee',
+                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                                            fontFamily: 'Arial, sans-serif'
                                         }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
                                     >
-                                        {y}
+                                        {/* Fake radio circle */}
+                                        <span 
+                                            aria-hidden="true"
+                                            style={{
+                                                height: '18px',
+                                                width: '18px',
+                                                borderRadius: '50%',
+                                                border: '1px solid #ccc',
+                                                marginRight: '10px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: '#fff'
+                                            }}
+                                        >
+                                            {isSelected && (
+                                                <span style={{
+                                                    height: '10px',
+                                                    width: '10px',
+                                                    borderRadius: '50%',
+                                                    backgroundColor: '#000'
+                                                }} />
+                                            )}
+                                        </span>
+                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
+                                            {y}
+                                        </span>
                                     </button>
-                                ))}
-                            </div>
+                                );
+                            })}
                         </div>
                     )}
                     
@@ -1090,19 +1203,13 @@ const Page25Stacked = () => {
                     </div>
                 </div>
 
-                <div 
-                    aria-live="polite" 
-                    aria-atomic="true" 
-                    style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}
-                >
-                    {chartData && `${year}`}
-                </div>
-
                 <div className="page25h-content-row">
+                    <div className="page25h-chart-frame">
                     <div 
                         className="page25h-chart-column"
                         role="region"
                         aria-label={`${lang === 'en' ? 'Infrastructure pie chart for' : 'Graphique circulaire des infrastructures pour'} ${year}. ${getChartDataSummary()}. ${lang === 'en' ? 'Expand the data table below for detailed values.' : 'Développez le tableau de données ci-dessous pour les valeurs détaillées.'}`}
+                        tabIndex="0"
                     >
                         {chartData && (
                             <figure ref={chartRef} className="page25h-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
@@ -1264,10 +1371,9 @@ const Page25Stacked = () => {
                                         modeBarButtonsToAdd: [{
                                             name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
                                             icon: {
-                                                width: 1000,
-                                                height: 1000,
-                                                path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
-                                                transform: 'matrix(1 0 0 -1 0 850)'
+                                                width: 24,
+                                                height: 24,
+                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
                                             },
                                             click: (gd) => downloadChartWithTitle(gd)
                                         }]
@@ -1280,48 +1386,26 @@ const Page25Stacked = () => {
                             {getAccessibleDataTable()}
                         </div>
                     </div>
+                    </div> {/* End chart-frame */}
 
-                    <aside 
-                        className="page25h-text-column"
+                    <details 
+                        className="page25h-definition-details"
                         role="region"
                         aria-label={getRightSideText()}
                     >
-                        <div className="page25h-definition-box" aria-hidden="true">
-                            <h2 style={{ fontSize: '1.15rem', fontWeight: 'bold', textAlign: 'center', color: '#333', margin: '0 0 15px 0px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
-                                {getText('infra_definition_title', lang)}
-                            </h2>
-                            <div style={{ textAlign: 'center' }}>
-                                <span className="decorative-quote" aria-hidden="true" style={{ 
-                                    position: 'absolute',
-                                    top: '-5px',
-                                    left: '10px',
-                                    fontSize: '6rem', 
-                                    color: '#292419', 
-                                    fontFamily: 'Georgia, serif', 
-                                    lineHeight: '1',
-                                    pointerEvents: 'none'
-                                }}>❞</span>
-
-                                <p style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.6', whiteSpace: 'pre-line', textAlign: 'center', margin: 0, padding: '0 10px' }}>
-                                    {getText('infra_definition_text', lang)}
-                                </p>
-
-                                <span className="decorative-quote" aria-hidden="true" style={{ 
-                                    position: 'absolute',
-                                    bottom: '-35px',
-                                    left: 'calc(100% - 70px)',
-                                    fontSize: '6rem', 
-                                    color: '#292419', 
-                                    fontFamily: 'Georgia, serif', 
-                                    lineHeight: '1',
-                                    pointerEvents: 'none'
-                                }}>❞</span>
-                            </div>
+                        <summary>
+                            <span className="definition-arrow" aria-hidden="true">▼</span>
+                            <span>{getText('infra_definition_title', lang).replace(/\n/g, ' ')}</span>
+                        </summary>
+                        <div className="page25h-definition-content">
+                            <p>
+                                {getText('infra_definition_text', lang).replace(/\n/g, ' ')}
+                            </p>
+                            <p>
+                                {getText('infra_description', lang).replace(/\n/g, ' ')}
+                            </p>
                         </div>
-                        <p aria-hidden="true" style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.5', marginTop: '10px', marginLeft: '0', textAlign: 'center', whiteSpace: 'pre-line' }}>
-                            {getText('infra_description', lang)}
-                        </p>
-                    </aside>
+                    </details>
                 </div>
             </div>
         </main>

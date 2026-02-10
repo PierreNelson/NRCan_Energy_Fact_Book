@@ -427,7 +427,90 @@ const formatNumber = (num) => {
 
 ---
 
-## 5. Year Selector (Dropdown - NOT Slider)
+## 5. Chart Frame (Visual Container)
+
+The chart frame is a light grey background container that visually groups the year selector and chart together. It provides visual separation from other page content and creates a cohesive interactive area.
+
+### Base CSS
+
+```css
+.page-chart-frame {
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 8px;
+    width: 60%;  /* Adjust based on layout - typically matches chart column width */
+    box-sizing: border-box;
+}
+```
+
+### Responsive Behavior
+
+In column/stacked mode (typically at breakpoints ≤1800px or when data table is open), the frame should span from left anchor to right anchor:
+
+```css
+/* When layout stacks to single column */
+.layout-stacked .page-chart-frame {
+    width: calc(100% + ${layoutPadding?.right || 15}px) !important;
+    margin-left: 0 !important;
+    margin-right: -${layoutPadding?.right || 15}px !important;
+    padding-right: ${layoutPadding?.right || 15}px;
+}
+
+@media (max-width: 1800px) {
+    .page-chart-frame {
+        width: calc(100% + ${layoutPadding?.right || 15}px) !important;
+        margin-left: 0 !important;
+        margin-right: -${layoutPadding?.right || 15}px !important;
+        padding-right: ${layoutPadding?.right || 15}px;
+        box-sizing: border-box;
+    }
+}
+```
+
+### JSX Structure
+
+The chart frame wraps both the year selector and the chart column:
+
+```jsx
+<div className={`page-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
+    {/* Chart Frame contains year selector + chart */}
+    <div className="page-chart-frame">
+        {/* Year selector dropdown */}
+        <div className="year-selector">
+            <label>{getText('year_slider_label', lang)}</label>
+            <button ... >{year}</button>
+            {/* Dropdown options */}
+        </div>
+
+        {/* Chart column */}
+        <div className="page-chart-column" role="region" aria-label={getChartSummary()}>
+            <figure ref={chartRef}>
+                <Plot ... />
+            </figure>
+            <div className="page-table-wrapper">
+                {getAccessibleDataTable()}
+            </div>
+        </div>
+    </div>
+
+    {/* Definition/text column (outside the frame) */}
+    <aside className="page-text-column">
+        {/* Sidebar content */}
+    </aside>
+</div>
+```
+
+### Key Points
+
+1. **Width in row mode:** Typically 60% to match chart column, allowing space for sidebar
+2. **Width in column mode:** Extends to full width using negative margin technique
+3. **Contains:** Year selector AND chart column (including data table toggle)
+4. **Does NOT contain:** Sidebar/definition box content
+5. **Background:** Light grey (#f5f5f5) with rounded corners (8px)
+
+---
+
+## 6. Year Selector (Dropdown - NOT Slider)
 
 Use a `<select>` dropdown instead of a range slider:
 

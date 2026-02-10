@@ -18,7 +18,7 @@ const BREADCRUMBS = [
         link: { en: 'https://energy-information.canada.ca/en', fr: 'https://information-energie.canada.ca/fr' }
     },
     {
-        title: { en: 'Energy Factbook', fr: "Cahier d'information sur l'énergie" },
+        title: { en: 'Energy Fact Book', fr: "Cahier d'information sur l'énergie" },
         link: { en: '/section-1#energy-overview', fr: '/section-1#energy-overview' },
         isInternal: true
     }

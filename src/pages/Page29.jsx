@@ -230,7 +230,7 @@ const Page29 = () => {
                     font-size: 41px;
                     font-weight: bold;
                     margin-bottom: 20px;
-                    color: #58585a;
+                    color: var(--gc-text);
                     position: relative;
                     padding-bottom: 0.5em;
                 }
@@ -462,11 +462,11 @@ const Page29 = () => {
                                             <td className="category-cell" scope="row">
                                                 {cat.label}
                                                 {cat.footnote && (
-                                                    <sup id={`fn${cat.footnote}-rf`}>
-                                                        <a className="fn-lnk" href={`#fn${cat.footnote}`} onClick={scrollToElement(`fn${cat.footnote}`)} title={lang === 'en' ? `Footnote ${cat.footnote}` : `Note de bas de page ${cat.footnote}`}>
-                                                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>{cat.footnote}
+                                                    <span id={`fn${cat.footnote}-rf`} style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
+                                                        <a className="fn-lnk" href={`#fn${cat.footnote}`} onClick={scrollToElement(`fn${cat.footnote}`)}>
+                                                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">{cat.footnote}</span>
                                                         </a>
-                                                    </sup>
+                                                    </span>
                                                 )}
                                             </td>
                                             {years.map(y => {

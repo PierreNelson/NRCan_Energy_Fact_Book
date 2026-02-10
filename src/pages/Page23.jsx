@@ -198,12 +198,14 @@ const Page23 = () => {
                             </Link>
                         </li>
                         <li className="page23-list-item">
-                            <Link to="/section-2#economic-contributions">
+                            <Link to="/section-2#international-investment">
                                 {getText('page23_item3', lang)}
                             </Link>
                         </li>
                         <li className="page23-list-item">
-                            {getText('page23_item4', lang)}
+                            <Link to="/section-2#canadian-energy-assets">
+                                {getText('page23_item4', lang)}
+                            </Link>
                         </li>
                         <li className="page23-list-item">
                             {getText('page23_item5', lang)}

@@ -307,32 +307,46 @@ const Page30 = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [mapData, lang]);
 
     const downloadChartWithTitle = async () => {
@@ -995,7 +1009,7 @@ const Page30 = () => {
         const triangleSize = sizeMap[size] || 12;
         
         return (
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3px', fontSize: windowWidth <= 768 ? '10px' : '11px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3px', fontSize: windowWidth <= 768 ? '14px' : '16px' }}>
                 {isLine ? (
                     <div style={{ 
                         width: '24px', 
@@ -1093,7 +1107,7 @@ const Page30 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 41px;
                     font-weight: bold;
-                    color: #58585a;
+                    color: var(--gc-text);
                     margin: 0;
                     padding-bottom: 0.5em;
                     border-bottom: 2px solid #b6b7ba;
@@ -1139,28 +1153,38 @@ const Page30 = () => {
                 }
 
                 .page30-legend {
-                    width: 260px;
-                    flex-shrink: 0;
-                    padding: 12px;
+                    width: 100%;
+                    padding: 12px 15px;
                     background-color: #fafafa;
                     border: 1px solid #e0e0e0;
                     border-radius: 4px;
-                    max-height: ${mapHeight}px;
-                    overflow-y: auto;
+                    margin-top: 15px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    justify-content: flex-start;
                 }
 
                 .page30-legend-section {
-                    margin-bottom: 12px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
                 }
 
                 .page30-legend-title {
                     font-family: Arial, sans-serif;
-                    font-size: 11px;
+                    font-size: 18px;
                     font-weight: bold;
                     color: var(--gc-text);
-                    margin-bottom: 6px;
+                    margin-bottom: 4px;
                     padding-bottom: 3px;
                     border-bottom: 1px solid #ccc;
+                }
+
+                .page30-legend-items {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px 15px;
                 }
 
                 .page30-data-table {
@@ -1170,12 +1194,16 @@ const Page30 = () => {
                 .page30-data-table summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #f5f5f5;
+                    background-color: #fff;
                     border: 1px solid #ddd;
                     border-radius: 4px;
                     font-family: Arial, sans-serif;
                     font-weight: bold;
                     list-style: none;
+                }
+
+                .page30-data-table summary:hover {
+                    background-color: #f5f5f5;
                 }
 
                 .page30-data-table summary::-webkit-details-marker {
@@ -1195,24 +1223,9 @@ const Page30 = () => {
                 }
 
                 @media (max-width: 1100px) {
-                    .page30-content {
-                        flex-direction: column;
+                    .page30-map-wrapper {
+                        margin-left: -150px;
                     }
-                    .page30-legend {
-                        width: 100%;
-                        max-height: none;
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 15px;
-                    }
-                    .page30-legend-section {
-                        flex: 1;
-                        min-width: 180px;
-                    }
-
-                        .page30-map-wrapper {
-                            margin-left: -150px;
-                        }
                 }
 
                 @media (max-width: 768px) {
@@ -1251,9 +1264,14 @@ const Page30 = () => {
                     }
                     .page30-legend {
                         flex-direction: column;
+                        gap: 12px;
                     }
                     .page30-legend-section {
-                        min-width: 100%;
+                        width: 100%;
+                    }
+                    .page30-legend-items {
+                        flex-direction: column;
+                        gap: 4px;
                     }
 
                     @media (max-width: 480px) {
@@ -1304,10 +1322,6 @@ const Page30 = () => {
                 }
             `}</style>
 
-            <div className="wb-inv" role="region" aria-label={lang === 'en' ? 'Page summary' : 'Résumé de la page'}>
-                {getText('page30_sr_summary', lang)}
-            </div>
-
             <div className="page30-container">
                 <header className="page30-header">
                     <h1 className="page30-title">
@@ -1320,10 +1334,18 @@ const Page30 = () => {
 
                 <div className="page30-content">
                     <div className="page30-map-wrapper">
-                        <div ref={chartRef} className="page30-map-container" aria-hidden="true" style={{ position: 'relative' }}>
+                        <div 
+                            ref={chartRef} 
+                            className="page30-map-container" 
+                            style={{ position: 'relative' }}
+                            role="region"
+                            aria-label={getText('page30_sr_summary', lang)}
+                            tabIndex="0"
+                        >
                             {selectedProvinces !== null && (
                                 <button onClick={() => setSelectedProvinces(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                             )}
+                            <div aria-hidden="true">
                             <Plot
                                 key={`map-${selectedProvinces ? selectedProvinces.join('-') : 'none'}`}
                                 data={plotlyData}
@@ -1365,30 +1387,34 @@ const Page30 = () => {
                                     modeBarButtonsToAdd: [{
                                         name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
                                         icon: {
-                                            width: 1000,
-                                            height: 1000,
-                                            path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
-                                            transform: 'matrix(1 0 0 -1 0 850)'
+                                            width: 24,
+                                            height: 24,
+                                            path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
                                         },
                                         click: () => downloadChartWithTitle()
                                     }]
                                 }}
                                 style={{ width: '100%', height: '100%' }}
                             />
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <aside className="page30-legend" aria-label={lang === 'en' ? 'Map legend' : 'Légende de la carte'}>
-                        <div className="page30-legend-section">
-                            <div className="page30-legend-title">{getText('page30_legend_title_lines', lang)}</div>
+                <aside className="page30-legend" aria-hidden="true">
+                    <div className="page30-legend-section">
+                        <div className="page30-legend-title">{getText('page30_legend_title_lines', lang)}</div>
+                        <div className="page30-legend-items">
                             <LegendItem isLine color="#FE3ED8" label={getText('page30_legend_transmission_planned', lang)} />
                             <LegendItem isLine color="#B684B6" label={getText('page30_legend_transmission_construction', lang)} />
                             <LegendItem isLine color="#a3f900" label={getText('page30_legend_transmission_clean_planned', lang)} />
                             <LegendItem isLine color="#71a210" label={getText('page30_legend_transmission_clean_construction', lang)} />
                         </div>
+                    </div>
 
-                        <div className="page30-legend-section">
-                            <div className="page30-legend-title">{getText('page30_legend_title_energy', lang)}</div>
+                    <div className="page30-legend-section">
+                        <div className="page30-legend-title">{getText('page30_legend_title_energy', lang)}</div>
+                        <div className="page30-legend-items">
                             <LegendItem symbol="up" color="#4196F6" isOutline size="small" label={getText('page30_legend_energy_10_999m_planned', lang)} />
                             <LegendItem symbol="up" color="#4196F6" isOutline size="medium" label={getText('page30_legend_energy_1_5b_planned', lang)} />
                             <LegendItem symbol="up" color="#4196F6" isOutline size="large" label={getText('page30_legend_energy_5b_plus_planned', lang)} />
@@ -1396,9 +1422,11 @@ const Page30 = () => {
                             <LegendItem symbol="up" color="#20B2AA" size="medium" label={getText('page30_legend_energy_1_5b_construction', lang)} />
                             <LegendItem symbol="up" color="#20B2AA" size="large" label={getText('page30_legend_energy_5b_plus_construction', lang)} />
                         </div>
+                    </div>
 
-                        <div className="page30-legend-section">
-                            <div className="page30-legend-title">{getText('page30_legend_title_energy_clean', lang)}</div>
+                    <div className="page30-legend-section">
+                        <div className="page30-legend-title">{getText('page30_legend_title_energy_clean', lang)}</div>
+                        <div className="page30-legend-items">
                             <LegendItem symbol="down" color="#4196F6" isOutline size="small" label={getText('page30_legend_clean_10_999m_planned', lang)} />
                             <LegendItem symbol="down" color="#4196F6" isOutline size="medium" label={getText('page30_legend_clean_1_5b_planned', lang)} />
                             <LegendItem symbol="down" color="#4196F6" isOutline size="large" label={getText('page30_legend_clean_5b_plus_planned', lang)} />
@@ -1406,9 +1434,14 @@ const Page30 = () => {
                             <LegendItem symbol="down" color="#20B2AA" size="medium" label={getText('page30_legend_clean_1_5b_construction', lang)} />
                             <LegendItem symbol="down" color="#20B2AA" size="large" label={getText('page30_legend_clean_5b_plus_construction', lang)} />
                         </div>
-                    </aside>
-                </div>
+                    </div>
+                </aside>
 
+                <div 
+                    role="region" 
+                    aria-label={lang === 'en' ? 'Filter controls for projects table' : 'Contrôles de filtre pour le tableau des projets'}
+                >
+                    <h3 className="wb-inv">{lang === 'en' ? 'Filter area - Use the controls below to filter the projects table' : 'Zone de filtre - Utilisez les contrôles ci-dessous pour filtrer le tableau des projets'}</h3>
                 <div style={{ 
                     display: 'flex',
                     alignItems: 'center',
@@ -1965,6 +1998,7 @@ const Page30 = () => {
                             <option value="no">{lang === 'en' ? 'No' : 'Non'}</option>
                         </select>
                     </div>
+                </div>
                 </div>
 
                 <div className="page30-table-wrapper">

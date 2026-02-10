@@ -61,6 +61,48 @@ a:visited {
 }
 
 /* ===============================================
+   GLOBAL FOCUS INDICATOR
+   High-contrast focus ring for keyboard navigation
+   =============================================== */
+
+*:focus-visible {
+  outline: 4px solid #ffbf47 !important;
+  outline-offset: 2px !important;
+  z-index: 99999 !important;
+}
+
+/* Force Modebar to stay visible when a user tabs into it */
+.js-plotly-plot .modebar-container:focus-within {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure Plotly modebar buttons receive focus styling */
+.modebar-btn:focus,
+.modebar-btn:focus-visible {
+  outline: 4px solid #ffbf47 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px #000000 !important;
+  z-index: 99999 !important;
+  border-radius: 4px;
+  opacity: 1 !important;
+}
+
+/* ===============================================
+   SCREEN READER ONLY (Visually Hidden)
+   =============================================== */
+
+.wb-inv {
+  clip: rect(1px, 1px, 1px, 1px);
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+  white-space: nowrap;
+}
+
+/* ===============================================
    WET FOOTNOTES STYLES
    Linked footnotes with return links
    =============================================== */

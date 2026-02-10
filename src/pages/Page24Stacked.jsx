@@ -136,32 +136,46 @@ const Page24Stacked = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [pageData, lang]);
 
     const { latestRow, peakRow, row2020 } = useMemo(() => {
@@ -223,23 +237,33 @@ const Page24Stacked = () => {
     };
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+    const stripForSR = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\*/g, '').replace(/\s+/g, ' ').trim() : '';
 
-    const renderTextWithFootnoteLink = (text) => {
+    const renderTextWithFootnoteLink = (text, showFootnote = true) => {
         if (!text) return null;
         if (!text.includes('*')) return text;
         const parts = text.split('*');
         return parts.map((part, index) => (
             <React.Fragment key={index}>
                 {part}
-                {index < parts.length - 1 && (
-                    <sup id="fn-asterisk-rf-page24s">
-                        <a className="fn-lnk" href="#fn-asterisk-page24s" onClick={scrollToFootnote} title={lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}>
-                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
-                        </a>
+                {index < parts.length - 1 && showFootnote && (
+                    <sup id="fn-asterisk-rf-page24s" aria-hidden="true">
+                        <a className="fn-lnk" href="#fn-asterisk-page24s" onClick={scrollToFootnote} tabIndex="-1">*</a>
                     </sup>
                 )}
             </React.Fragment>
         ));
+    };
+    
+    const getChartSummary = () => {
+        if (!pageData || pageData.length === 0) return '';
+        const latestYear = pageData[pageData.length - 1]?.year || 2025;
+        const firstYear = pageData[0]?.year || 2007;
+        if (lang === 'en') {
+            return `Stacked bar chart showing capital expenditures in Canada's energy industry from ${firstYear} to ${latestYear}. The chart displays oil and gas extraction, electricity, and other energy expenditures in billions of dollars. Expand the data table below for detailed values.`;
+        } else {
+            return `Graphique à barres empilées montrant les dépenses en immobilisations dans l'industrie énergétique canadienne de ${firstYear} à ${latestYear}. Le graphique affiche l'extraction de pétrole et de gaz, l'électricité et les autres dépenses énergétiques en milliards de dollars. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
+        }
     };
 
     const getAccessibleDataTable = () => {
@@ -265,22 +289,13 @@ const Page24Stacked = () => {
                         fontWeight: 'bold', 
                         padding: '10px', 
                         border: '1px solid #ccc', 
-                        backgroundColor: '#f9f9f9', 
+                        backgroundColor: '#fff', 
                         display: 'flex', 
                         alignItems: 'center',
                         listStyle: 'none' 
                     }}
                 >
-                    <svg 
-                        aria-hidden="true" 
-                        focusable="false" 
-                        width="12" height="12" 
-                        viewBox="0 0 12 12" 
-                        style={{ marginRight: '8px', transform: isTableOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-                    >
-                        <path d="M4 2 L10 6 L4 10 Z" fill="#333" />
-                    </svg>
-
+                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
 
                     <span className="wb-inv">
@@ -721,10 +736,9 @@ const Page24Stacked = () => {
                     top: 2px !important;
                 }
 
-                .page24h-chart-wrapper button:focus,
-                .js-plotly-plot .plotly .modebar-btn:focus {
-                    outline: none !important;
-                    box-shadow: none !important;
+                .page24h-chart-wrapper button:focus {
+                    outline: 4px solid #ffbf47 !important;
+                    outline-offset: 2px !important;
                 }
 
                 .page24h-chart { width: 100%; height: 300px; }
@@ -755,10 +769,38 @@ const Page24Stacked = () => {
                     .page24h-chart { height: 275px; }
                 }
 
-                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+                .page24h-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-sizing: border-box;
+                }
+
                 .page24h-table-wrapper {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr);
+                    display: block;
+                    width: 100%;
+                    margin: 0;
+                }
+
+                .page24h-table-wrapper details > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .page24h-table-wrapper details > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page24h-table-wrapper details > summary:hover {
+                    background-color: #f5f5f5;
                     width: 100%;
                 }
 
@@ -781,25 +823,33 @@ const Page24Stacked = () => {
 
             <div className="page24h-container">
                 <header className="page24h-header">
-                    <h1 style={{ fontFamily: "'Lato', sans-serif", color: '#8e7e52', fontSize: '41px', fontWeight: 'bold', margin: 0, lineHeight: 1.1 }}>
+                    <h1 style={{ fontFamily: "'Lato', sans-serif", color: '#245e7f', fontSize: '41px', fontWeight: 'bold', margin: 0, lineHeight: 1.1 }}>
                         {getText('page24_title', lang)}
                     </h1>
                 </header>
 
                 <div className={`page24h-content-row`}>
                     <div className="page24h-chart-column">
+                        <div className="page24h-chart-frame">
+                        <h2 
+                            className="page24h-chart-title" 
+                            role="region"
+                            aria-label={stripForSR(chartTitle)}
+                            tabIndex="0"
+                        >
+                            <span aria-hidden="true">{renderTextWithFootnoteLink(chartTitle, false)}</span>
+                            <span id="fn-asterisk-rf-page24s" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
+                                <a className="fn-lnk" href="#fn-asterisk-page24s" onClick={scrollToFootnote}>
+                                    <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
+                                </a>
+                            </span>
+                        </h2>
 
-                        <div className="chart-title-wrapper">
-                            <h2 className="page24h-chart-title">
-                                {renderTextWithFootnoteLink(chartTitle)}
-                            </h2>
-                        </div>
-
-                        <figure ref={chartRef} className="page24h-chart-wrapper">
-                            {selectedPoints !== null && (
+                        <div role="region" aria-label={getChartSummary()} tabIndex="0">
+                            <figure ref={chartRef} className="page24h-chart-wrapper">
+                                {selectedPoints !== null && (
                                 <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                             )}
-
                             <Plot
                                 data={[
                                     { 
@@ -907,16 +957,16 @@ const Page24Stacked = () => {
                                     modeBarButtonsToAdd: [{
                                         name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
                                         icon: {
-                                            width: 1000,
-                                            height: 1000,
-                                            path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
-                                            transform: 'matrix(1 0 0 -1 0 850)'
+                                            width: 24,
+                                            height: 24,
+                                            path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
                                         },
                                         click: (gd) => downloadChartWithTitle(gd)
                                     }]
                                 }}
                             />
                         </figure>
+                        </div>
 
                         <div className="page24h-legend" aria-hidden="true">
                             {legendItems.map((item) => (
@@ -934,6 +984,7 @@ const Page24Stacked = () => {
                         <div className="page24h-table-wrapper">
                             {getAccessibleDataTable()}
                         </div>
+                        </div> {/* End chart-frame */}
                     </div>
 
                     <aside className="page24h-text-column align-right-edge">

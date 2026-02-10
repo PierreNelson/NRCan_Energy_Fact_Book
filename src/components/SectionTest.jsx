@@ -20,7 +20,7 @@ const SectionTest = () => {
                 }
             } else {
                 window.scrollTo({ top: 0, behavior: 'instant' });
-                const overviewPage = document.getElementById('test-page24');
+                const overviewPage = document.getElementById('capital-expenditure');
                 if (overviewPage) {
                     overviewPage.scrollIntoView({ behavior: 'instant', block: 'start' });
                 }
@@ -32,16 +32,16 @@ const SectionTest = () => {
 
     return (
         <div className="stacked-section-container">
-            <div id="test-page24" className="stacked-page-wrapper">
+            <div id="capital-expenditure" className="stacked-page-wrapper">
                 <Page24Stacked />
             </div>
-            <div id="test-page25" className="stacked-page-wrapper">
+            <div id="infrastructure-stock" className="stacked-page-wrapper">
                 <Page25Stacked />
             </div>
-            <div id="test-page28" className="stacked-page-wrapper">
+            <div id="major-projects" className="stacked-page-wrapper">
                 <Page28Stacked />
             </div>
-            <div id="test-page37" className="stacked-page-wrapper">
+            <div id="environmental-protection" className="stacked-page-wrapper">
                 <Page37Stacked />
             </div>
         </div>

@@ -2,7 +2,7 @@
 export const TRANSLATIONS = {
     'en': {
         // Breadcrumb
-        'breadcrumb_product_title': 'Energy Factbook',
+        'breadcrumb_product_title': 'Energy Fact Book',
         
         // Navigation
         'nav_introduction': 'Introduction',
@@ -369,7 +369,7 @@ export const TRANSLATIONS = {
         'page28_bullet3_part2': ' clean technology projects valued at ',
         'page28_bullet3_part3': '.',
         'page28_sidebar_title': "Natural Resources Canada's Major Projects Inventory",
-        'page28_sidebar_content': "Natural Resources Canada's Major Projects Inventory captures information on major natural resource projects in Canada that are either currently under construction or planned in the next 10 years.<br/><br/>Minimum capital thresholds for inclusion are: $50 million for oil and gas, $20 million for electricity, and $10 million for other clean energy or technology projects.<br/><br/>Projects that are either announced, under review, approved and under construction are included.",
+        'page28_sidebar_content': "This inventory captures information on major natural resource projects in Canada that are either currently under construction or planned in the next 10 years.<br/><br/>Minimum capital thresholds for inclusion are: $50 million for oil and gas, $20 million for electricity, and $10 million for other clean energy or technology projects.<br/><br/>Projects that are either announced, under review, approved and under construction are included.",
         'page28_billion': ' B',
         'nav_clean_tech_trends': 'Clean technology project trends',
         'page29_title_prefix': 'Clean technology project trends, ',
@@ -781,7 +781,7 @@ export const TRANSLATIONS = {
         'page28_bullet3_part2': ' projets de technologies propres évalués à ',
         'page28_bullet3_part3': '.',
         'page28_sidebar_title': "L'Inventaire des grands projets de Ressources naturelles Canada",
-        'page28_sidebar_content': "L'Inventaire des grands projets de Ressources naturelles Canada saisit des informations sur les grands projets de ressources naturelles au Canada qui sont actuellement en construction ou prévus au cours des 10 prochaines années.<br/><br/>Les seuils de capital minimum pour l'inclusion sont : 50 millions de dollars pour le pétrole et le gaz, 20 millions de dollars pour l'électricité et 10 millions de dollars pour d'autres projets d'énergie ou de technologie propre.<br/><br/>Les projets qui sont soit annoncés, en cours d'examen, approuvés et en construction sont inclus.",
+        'page28_sidebar_content': "Cet inventaire saisit des informations sur les grands projets de ressources naturelles au Canada qui sont actuellement en construction ou prévus au cours des 10 prochaines années.<br/><br/>Les seuils de capital minimum pour l'inclusion sont : 50 millions de dollars pour le pétrole et le gaz, 20 millions de dollars pour l'électricité et 10 millions de dollars pour d'autres projets d'énergie ou de technologie propre.<br/><br/>Les projets qui sont soit annoncés, en cours d'examen, approuvés et en construction sont inclus.",
         'page28_billion': ' G$',
         'nav_clean_tech_trends': 'Tendances des projets de technologies propres',
         'page29_title_prefix': 'Tendances des projets de technologies propres, ',

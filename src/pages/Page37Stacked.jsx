@@ -23,35 +23,21 @@ const Page37Stacked = () => {
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
     
-    // Custom dropdown state
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [focusedYear, setFocusedYear] = useState(null);
-    const dropdownRef = useRef(null);
-    const listRef = useRef(null);
+    // Year dropdown state (radio style)
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    const yearDropdownRef = useRef(null);
     const yearButtonRef = useRef(null);
 
     // Close dropdown when clicking outside
     useEffect(() => {
-        const handleDropdownClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
+        const handleClickOutside = (event) => {
+            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
+                setIsYearDropdownOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleDropdownClickOutside);
-        return () => document.removeEventListener('mousedown', handleDropdownClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Sync focusedYear when year changes or dropdown opens
-    useEffect(() => {
-        if (year) setFocusedYear(year);
-    }, [year, isDropdownOpen]);
-
-    // Auto-focus the list when dropdown opens
-    useEffect(() => {
-        if (isDropdownOpen && listRef.current) {
-            listRef.current.focus();
-        }
-    }, [isDropdownOpen]);
 
     useEffect(() => {
         const topScroll = topScrollRef.current;
@@ -184,32 +170,46 @@ const Page37Stacked = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [pageData, lang]);
 
     const COLORS = {
@@ -485,22 +485,11 @@ const getAccessibleDataTable = () => {
                 open={isTableOpen}
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
                 className="page37h-data-table"
-                style={{ position: 'relative', zIndex: 10 }} 
             >
                 <summary
                     ref={tableSummaryRef}
                     role="button"
                     aria-expanded={isTableOpen}
-                    style={{ 
-                        cursor: 'pointer', 
-                        color: '#333', 
-                        fontWeight: 'bold', 
-                        padding: '10px',
-                        border: '1px solid #ccc',
-                        backgroundColor: '#f9f9f9',
-                        borderRadius: '4px',
-                        listStyle: 'none'
-                    }}
                 >
                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
@@ -879,7 +868,7 @@ const getAccessibleDataTable = () => {
 
                 .page37h-title {
                     font-family: 'Lato', sans-serif;
-                    color: #857550;
+                    color: #245e7f;
                     font-size: 41px;
                     font-weight: bold;
                     font-style: normal;
@@ -1050,11 +1039,39 @@ const getAccessibleDataTable = () => {
                     display: none;
                 }
 
-                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+                .page37h-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-sizing: border-box;
+                    overflow: visible;
+                }
+
                 .page37h-table-wrapper {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr);
+                    display: block;
                     width: 100%;
+                    margin: 0;
+                }
+
+                .page37h-data-table > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .page37h-data-table > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page37h-data-table > summary:hover {
+                    background-color: #f5f5f5;
                 }
 
                 /* Table horizontal scroll */
@@ -1084,9 +1101,10 @@ const getAccessibleDataTable = () => {
                         <>
                             <p 
                                 className="page37h-subtitle"
+                                role="region"
+                                aria-label={accessibleStrings.subtitle}
                                 tabIndex="0"
                             >
-                                <span className="wb-inv">{accessibleStrings.subtitle}</span>
                                 <span aria-hidden="true">
                                     {getText('page37_subtitle_part1', lang)}
                                     <span className="visual-bold">{formatNumber(dynamicValues.energySectorTotal)}</span>
@@ -1099,9 +1117,10 @@ const getAccessibleDataTable = () => {
                             </p>
                             <p 
                                 className="page37h-text"
+                                role="region"
+                                aria-label={accessibleStrings.text}
                                 tabIndex="0"
                             >
-                                <span className="wb-inv">{accessibleStrings.text}</span>
                                 <span aria-hidden="true">
                                     {getText('page37_text_part1', lang)}
                                     <span className="visual-bold">{formatNumber(dynamicValues.oilGasTotal)}</span>
@@ -1113,125 +1132,156 @@ const getAccessibleDataTable = () => {
                         </>
                     )}
                 </header>
-                <div className="page37h-year-selector" ref={dropdownRef}>
-                    <label id="year-label-37h" className="page37h-year-label" aria-hidden="true">
+                {/* SINGLE-SELECT RADIO DROPDOWN (Page 30 style) */}
+                <div 
+                    ref={yearDropdownRef} 
+                    style={{ 
+                        position: 'relative', 
+                        marginBottom: '20px', 
+                        width: '200px' 
+                    }}
+                >
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
                         {getText('year_slider_label', lang)}
                     </label>
-                    <div id="year-instructions-37h" className="wb-inv">
-                        {lang === 'en' 
-                            ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
-                            : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
-                    </div>
-                    <div className="custom-dropdown">
-                        <button
-                            ref={yearButtonRef}
-                            type="button"
-                            className="dropdown-button"
-                            aria-haspopup="listbox"
-                            aria-expanded={isDropdownOpen}
-                            aria-label={`${getText('year_slider_label', lang)} ${year || maxYear}`}
-                            aria-describedby="year-instructions-37h"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setIsDropdownOpen(true);
-                                } else if (e.key === 'Escape') {
-                                    setIsDropdownOpen(false);
-                                }
-                            }}
-                        >
-                            {year || maxYear}
-                            <span className="dropdown-arrow" aria-hidden="true">▼</span>
-                        </button>
-                        {isDropdownOpen && (
-                            <ul
-                                ref={listRef}
-                                role="listbox"
-                                aria-label={getText('year_slider_label', lang)}
-                                aria-activedescendant={focusedYear ? `year-option-37h-${focusedYear}` : undefined}
-                                tabIndex={-1}
-                                className="dropdown-list"
-                                onKeyDown={(e) => {
-                                    const currentIndex = yearsList.findIndex(y => y === focusedYear);
-                                    
-                                    if (e.key === 'ArrowDown') {
-                                        e.preventDefault();
-                                        const nextIndex = Math.min(currentIndex + 1, yearsList.length - 1);
-                                        setFocusedYear(yearsList[nextIndex]);
-                                    } else if (e.key === 'ArrowUp') {
-                                        e.preventDefault();
-                                        const prevIndex = Math.max(currentIndex - 1, 0);
-                                        setFocusedYear(yearsList[prevIndex]);
-                                    } else if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        setYear(focusedYear);
-                                        setIsDropdownOpen(false);
-                                        if (yearButtonRef.current) yearButtonRef.current.focus();
-                                    } else if (e.key === 'Escape') {
-                                        setIsDropdownOpen(false);
-                                        if (yearButtonRef.current) yearButtonRef.current.focus();
-                                    } else if (e.key === 'Tab') {
-                                        setIsDropdownOpen(false);
-                                    } else if (e.key === 'Home') {
-                                        e.preventDefault();
-                                        setFocusedYear(yearsList[0]);
-                                    } else if (e.key === 'End') {
-                                        e.preventDefault();
-                                        setFocusedYear(yearsList[yearsList.length - 1]);
-                                    }
-                                }}
-                            >
-                                {yearsList.map((y) => (
-                                    <li
+                    
+                    {/* TOGGLE BUTTON */}
+                    <button
+                        ref={yearButtonRef}
+                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                        aria-expanded={isYearDropdownOpen}
+                        style={{
+                            width: '100%',
+                            padding: '10px 15px',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            textAlign: 'left',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '16px'
+                        }}
+                    >
+                        <span>{year || maxYear}</span>
+                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+
+                    {/* DROPDOWN LIST (RADIO GROUP) */}
+                    {isYearDropdownOpen && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            width: '100%',
+                            maxHeight: '300px',
+                            overflowY: 'auto',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            zIndex: 100,
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                        }}>
+                            {/* Sort Descending (Newest First) - Using buttons styled as radio for reliable Enter key */}
+                            {[...yearsList].sort((a, b) => b - a).map((y) => {
+                                const isSelected = year === y;
+                                return (
+                                    <button
                                         key={y}
-                                        id={`year-option-37h-${y}`}
-                                        role="option"
-                                        aria-selected={year === y}
-                                        className={`dropdown-option ${focusedYear === y ? 'focused' : ''} ${year === y ? 'selected' : ''}`}
+                                        type="button"
+                                        aria-pressed={isSelected}
+                                        aria-label={y.toString()}
                                         onClick={() => {
                                             setYear(y);
-                                            setIsDropdownOpen(false);
-                                            if (yearButtonRef.current) yearButtonRef.current.focus();
+                                            setIsYearDropdownOpen(false);
+                                            setTimeout(() => {
+                                                yearButtonRef.current?.focus();
+                                            }, 0);
                                         }}
-                                        onMouseEnter={() => setFocusedYear(y)}
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '10px 15px', 
+                                            cursor: 'pointer',
+                                            border: 'none',
+                                            borderBottom: '1px solid #eee',
+                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                                            fontFamily: 'Arial, sans-serif'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
                                     >
-                                        {y}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                                        {/* Fake radio circle - purely visual */}
+                                        <span 
+                                            aria-hidden="true"
+                                            style={{
+                                                height: '18px',
+                                                width: '18px',
+                                                borderRadius: '50%',
+                                                border: '1px solid #ccc',
+                                                marginRight: '10px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: '#fff'
+                                            }}
+                                        >
+                                            {isSelected && (
+                                                <span style={{
+                                                    height: '10px',
+                                                    width: '10px',
+                                                    borderRadius: '50%',
+                                                    backgroundColor: '#000'
+                                                }} />
+                                            )}
+                                        </span>
+                                        {/* Year text */}
+                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
+                                            {y}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                    
                     <div role="status" className="wb-inv" aria-live="polite">
                         {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                     </div>
                 </div>
-                <div 
-                    aria-live="polite" 
-                    aria-atomic="true" 
-                    className="wb-inv"
-                >
-                    {chartData && `${year}`}
-                </div>
                 <div className="page37h-content-row">
                     <div className="page37h-chart-column">
-                        <h2 className="page37h-chart-title" aria-hidden="true">
-                            {getText('page37_chart_title', lang)}
-                            <br />
-                            ({year}, {getText('page37_chart_subtitle', lang)})
+                        <div className="page37h-chart-frame">
+                        <h2 
+                            className="page37h-chart-title"
+                            role="region"
+                            aria-label={`${stripHtml(getText('page37_chart_title', lang))} (${year}, ${lang === 'en' ? 'millions of dollars' : 'millions de dollars'})`}
+                            tabIndex="0"
+                        >
+                            <span aria-hidden="true">
+                                {getText('page37_chart_title', lang)}
+                                <br />
+                                ({year}, {getText('page37_chart_subtitle', lang)})
+                            </span>
                         </h2>
 
                         {chartData && (
                             <div 
                                 role="region"
                                 className="page37h-chart-area" 
-                                aria-label={`${lang === 'en' ? 'Environmental protection expenditures pie chart for' : 'Graphique circulaire des dépenses de protection de l\'environnement pour'} ${year}. ${getChartDataSummary()}`}
+                                aria-label={`${lang === 'en' ? 'Environmental protection expenditures pie chart for' : 'Graphique circulaire des dépenses de protection de l\'environnement pour'} ${year}. ${getChartDataSummary()}. ${lang === 'en' ? 'Expand the data table below for detailed values.' : 'Développez le tableau de données ci-dessous pour les valeurs détaillées.'}`}
                                 style={{ width: '100%' }} 
+                                tabIndex="0"
                             >
                                 <figure ref={chartRef} className="page37h-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
                                     {selectedSlices !== null && (
                                         <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                     )}
+                                    <div aria-hidden="true">
                                     <Plot
                                         key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}
                                         data={[{
@@ -1367,16 +1417,16 @@ const getAccessibleDataTable = () => {
                                             modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
                                             modeBarButtonsToAdd: [{
                                                 name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                                icon: {
-                                                    width: 1000,
-                                                    height: 1000,
-                                                    path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
-                                                    transform: 'matrix(1 0 0 -1 0 850)'
-                                                },
+                                            icon: {
+                                                width: 24,
+                                                height: 24,
+                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
+                                            },
                                                 click: (gd) => downloadChartWithTitle(gd)
                                             }]
                                         }}
                                     />
+                                    </div>
                                 </figure>
                             </div>
                         )}
@@ -1384,6 +1434,7 @@ const getAccessibleDataTable = () => {
                         <div className="page37h-table-wrapper">
                             {getAccessibleDataTable()}
                         </div>
+                        </div> {/* End chart-frame */}
                     </div>
                     <div className="page37h-text-column">
 

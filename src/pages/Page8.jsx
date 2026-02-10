@@ -21,11 +21,9 @@ const Page8 = () => {
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
     
-    // Custom dropdown state
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [focusedYear, setFocusedYear] = useState(null);
-    const dropdownRef = useRef(null);
-    const listRef = useRef(null);
+    // Year dropdown state
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    const yearDropdownRef = useRef(null);
     const yearButtonRef = useRef(null);
 
     const scrollToFootnote = (e) => {
@@ -40,26 +38,14 @@ const Page8 = () => {
 
     // Close dropdown when clicking outside
     useEffect(() => {
-        const handleDropdownClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
+        const handleClickOutside = (event) => {
+            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
+                setIsYearDropdownOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleDropdownClickOutside);
-        return () => document.removeEventListener('mousedown', handleDropdownClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Sync focusedYear when year changes or dropdown opens
-    useEffect(() => {
-        if (year) setFocusedYear(year);
-    }, [year, isDropdownOpen]);
-
-    // Auto-focus the list when dropdown opens
-    useEffect(() => {
-        if (isDropdownOpen && listRef.current) {
-            listRef.current.focus();
-        }
-    }, [isDropdownOpen]);
 
     useEffect(() => {
         const topScroll = topScrollRef.current;
@@ -277,32 +263,46 @@ const Page8 = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [allData, lang]);
 
     const minYear = useMemo(() => allData.length > 0 ? allData[0].year : 2019, [allData]);
@@ -537,7 +537,7 @@ const Page8 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 41px;
                     font-weight: bold;
-                    color: #58585a;
+                    color: var(--gc-text);
                     margin: 0 0 5px 0;
                     position: relative;
                     padding-bottom: 0.5em;
@@ -560,6 +560,14 @@ const Page8 = () => {
                     color: var(--gc-text);
                     margin: 0;
                     white-space: pre-line;
+                }
+
+                .page8-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    box-sizing: border-box;
                 }
 
                 .page8-year-selector {
@@ -667,11 +675,11 @@ const Page8 = () => {
                     position: relative;
                     width: 100%;
                     min-width: 600px;
-                    height: 750px;
+                    height: 650px;
                     margin-left: auto;
                     margin-right: auto;
-                    margin-top: -100px;
-                    margin-bottom: -160px;
+                    margin-top: 0;
+                    margin-bottom: 0;
                     overflow: visible;
                     z-index: 1;
                     pointer-events: none;
@@ -693,7 +701,7 @@ const Page8 = () => {
                 .page8-data-table summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #f9f9f9;
+                    background-color: #fff;
                     color: var(--gc-text);
                     font-weight: bold;
                     font-family: 'Noto Sans', sans-serif;
@@ -709,7 +717,7 @@ const Page8 = () => {
                 }
 
                 .page8-data-table summary:hover {
-                    background-color: #f9f9f9;
+                    background-color: #f5f5f5;
                 }
 
                 .page8-data-table summary:focus {
@@ -751,14 +759,14 @@ const Page8 = () => {
                         width: 100%;
                         min-width: 0;
                         height: 700px;
-                        margin-bottom: -80px;
+                        margin-bottom: 0;
                     }
                 }
 
                 @media (max-width: 768px) {
                     .page8-map-container {
-                        margin-bottom: -160px;
-                        margin-top: -180px;
+                        margin-bottom: 0;
+                        margin-top: 0;
                     }
                 
                     .page8-title {
@@ -792,9 +800,9 @@ const Page8 = () => {
                     .page8-map-container {
                         width: 100%;
                         min-width: 0;
-                        height: 550px;
-                        margin-top: -200px;
-                        margin-bottom: -60px;
+                        height: 450px;
+                        margin-top: 0;
+                        margin-bottom: 0;
                     }
                     .page8-year-selector {
                         flex-direction: column;
@@ -808,11 +816,12 @@ const Page8 = () => {
 
                 @media (max-width: 480px) {
                     .page8-map-container {
-                        width: 120% !important;
-                        margin-top: -240px;
-                        margin-left: -10% !important;
-                        margin-bottom: -100px;
+                        width: 100%;
+                        margin-top: 0;
+                        margin-left: 0;
+                        height: 400px;
                     }
+                }
 
                 details summary::-webkit-details-marker,
                 details summary::marker {
@@ -831,11 +840,31 @@ const Page8 = () => {
                     border: 0; 
                 }
 
-                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
                 .page8-table-wrapper {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr);
+                    display: block;
                     width: 100%;
+                    margin: 0;
+                }
+
+                .page8-table-wrapper details > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .page8-table-wrapper details > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page8-table-wrapper details > summary:hover {
+                    background-color: #f5f5f5;
                 }
 
                 /* Table horizontal scroll */
@@ -855,111 +884,146 @@ const Page8 = () => {
                 }
             `}</style>
             <div className="page8-container">
-                <header className="page8-header">
+                <header 
+                    className="page8-header"
+                    role="region"
+                    aria-label={lang === 'en' 
+                        ? `${stripHtml(getText('page8_title', lang))} - Energy sector direct nominal GDP (millions of dollars)`
+                        : `${stripHtml(getText('page8_title', lang))} - PIB nominal direct du secteur de l'énergie (millions de dollars)`
+                    }
+                    tabIndex="0"
+                >
                     <h1 className="page8-title" aria-hidden="true">
                         {getText('page8_title', lang)}
                     </h1>
-                    <h2 className="wb-inv">{stripHtml(getText('page8_title', lang))} - {stripHtml(getText('page8_subtitle', lang))}</h2>
                     <p className="page8-subtitle" aria-hidden="true">
                         {getText('page8_subtitle', lang).split('*')[0]}
-                        <sup id="fn-asterisk-rf-page8">
-                            <a href="#fn-asterisk-page8" onClick={scrollToFootnote} className="fn-lnk" title={lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
-                            </a>
-                        </sup>
                         {getText('page8_subtitle', lang).split('*').slice(1).join('*')}
                     </p>
+                    <span id="fn-asterisk-rf-page8" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
+                        <a href="#fn-asterisk-page8" onClick={scrollToFootnote} className="fn-lnk">
+                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
+                        </a>
+                    </span>
                 </header>
-                <div className="page8-year-selector" ref={dropdownRef}>
-                    <label id="year-label-8" className="page8-year-label" aria-hidden="true">
+                {/* Chart Frame with Year Selector and Chart */}
+                <div className="page8-chart-frame">
+                {/* SINGLE-SELECT RADIO DROPDOWN */}
+                <div 
+                    ref={yearDropdownRef} 
+                    style={{ 
+                        position: 'relative', 
+                        marginBottom: '20px', 
+                        width: '200px' 
+                    }}
+                >
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
                         {getText('year_slider_label', lang)}
                     </label>
-                    <div id="year-instructions-8" className="wb-inv">
-                        {lang === 'en' 
-                            ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
-                            : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
-                    </div>
-                    <div className="custom-dropdown">
-                        <button
-                            ref={yearButtonRef}
-                            type="button"
-                            className="dropdown-button"
-                            aria-haspopup="listbox"
-                            aria-expanded={isDropdownOpen}
-                            aria-label={`${getText('year_slider_label', lang)} ${year || maxYear}`}
-                            aria-describedby="year-instructions-8"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setIsDropdownOpen(true);
-                                } else if (e.key === 'Escape') {
-                                    setIsDropdownOpen(false);
-                                }
-                            }}
-                        >
-                            {year || maxYear}
-                            <span className="dropdown-arrow" aria-hidden="true">▼</span>
-                        </button>
-                        {isDropdownOpen && (
-                            <ul
-                                ref={listRef}
-                                role="listbox"
-                                aria-label={getText('year_slider_label', lang)}
-                                aria-activedescendant={focusedYear ? `year-option-8-${focusedYear}` : undefined}
-                                tabIndex={-1}
-                                className="dropdown-list"
-                                onKeyDown={(e) => {
-                                    const years = allData.map(d => d.year);
-                                    const currentIndex = years.findIndex(y => y === focusedYear);
-                                    
-                                    if (e.key === 'ArrowDown') {
-                                        e.preventDefault();
-                                        const nextIndex = Math.min(currentIndex + 1, years.length - 1);
-                                        setFocusedYear(years[nextIndex]);
-                                    } else if (e.key === 'ArrowUp') {
-                                        e.preventDefault();
-                                        const prevIndex = Math.max(currentIndex - 1, 0);
-                                        setFocusedYear(years[prevIndex]);
-                                    } else if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        setYear(focusedYear);
-                                        setIsDropdownOpen(false);
-                                        if (yearButtonRef.current) yearButtonRef.current.focus();
-                                    } else if (e.key === 'Escape') {
-                                        setIsDropdownOpen(false);
-                                        if (yearButtonRef.current) yearButtonRef.current.focus();
-                                    } else if (e.key === 'Tab') {
-                                        setIsDropdownOpen(false);
-                                    } else if (e.key === 'Home') {
-                                        e.preventDefault();
-                                        setFocusedYear(years[0]);
-                                    } else if (e.key === 'End') {
-                                        e.preventDefault();
-                                        setFocusedYear(years[years.length - 1]);
-                                    }
-                                }}
-                            >
-                                {allData.map((yearData) => (
-                                    <li
+                    
+                    {/* TOGGLE BUTTON */}
+                    <button
+                        ref={yearButtonRef}
+                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                        aria-expanded={isYearDropdownOpen}
+                        style={{
+                            width: '100%',
+                            padding: '10px 15px',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            textAlign: 'left',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '16px'
+                        }}
+                    >
+                        <span>{year || maxYear}</span>
+                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+
+                    {/* DROPDOWN LIST */}
+                    {isYearDropdownOpen && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            width: '100%',
+                            maxHeight: '300px',
+                            overflowY: 'auto',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            zIndex: 100,
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                        }}>
+                            {/* Sort Descending (Newest First) - Using buttons styled as radio */}
+                            {[...allData].sort((a, b) => b.year - a.year).map((yearData) => {
+                                const isSelected = year === yearData.year;
+                                return (
+                                    <button
                                         key={yearData.year}
-                                        id={`year-option-8-${yearData.year}`}
-                                        role="option"
-                                        aria-selected={year === yearData.year}
-                                        className={`dropdown-option ${focusedYear === yearData.year ? 'focused' : ''} ${year === yearData.year ? 'selected' : ''}`}
+                                        type="button"
+                                        aria-pressed={isSelected}
+                                        aria-label={yearData.year.toString()}
                                         onClick={() => {
                                             setYear(yearData.year);
-                                            setIsDropdownOpen(false);
-                                            if (yearButtonRef.current) yearButtonRef.current.focus();
+                                            setIsYearDropdownOpen(false);
+                                            setTimeout(() => {
+                                                yearButtonRef.current?.focus();
+                                            }, 0);
                                         }}
-                                        onMouseEnter={() => setFocusedYear(yearData.year)}
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '10px 15px', 
+                                            cursor: 'pointer',
+                                            border: 'none',
+                                            borderBottom: '1px solid #eee',
+                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                                            fontFamily: 'Arial, sans-serif'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
                                     >
-                                        {yearData.year}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                                        {/* Fake radio circle */}
+                                        <span 
+                                            aria-hidden="true"
+                                            style={{
+                                                height: '18px',
+                                                width: '18px',
+                                                borderRadius: '50%',
+                                                border: '1px solid #ccc',
+                                                marginRight: '10px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: '#fff'
+                                            }}
+                                        >
+                                            {isSelected && (
+                                                <span style={{
+                                                    height: '10px',
+                                                    width: '10px',
+                                                    borderRadius: '50%',
+                                                    backgroundColor: '#000'
+                                                }} />
+                                            )}
+                                        </span>
+                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
+                                            {yearData.year}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                    
                     <div role="status" className="wb-inv" aria-live="polite">
                         {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                     </div>
@@ -967,6 +1031,7 @@ const Page8 = () => {
                 <div 
                     role="region" 
                     aria-label={getSRSummary()}
+                    tabIndex="0"
                 >
                     <figure ref={chartRef} className="page8-map-container" style={{ margin: 0, position: 'relative' }}>
                     {selectedProvinces !== null && (
@@ -1066,7 +1131,7 @@ const Page8 = () => {
                                     showcoastlines: false,
                                     showsubunits: false,
                                     showlakes: true,
-                                    lakecolor: 'white',
+                                    lakecolor: '#f5f5f5',
                                     bgcolor: 'rgba(0,0,0,0)'
                                 },
                                 margin: { l: 0, r: 0, t: 0, b: 0 },
@@ -1123,10 +1188,9 @@ const Page8 = () => {
                                 modeBarButtonsToAdd: [{
                                     name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
                                     icon: {
-                                        width: 1000,
-                                        height: 1000,
-                                        path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
-                                        transform: 'matrix(1 0 0 -1 0 850)'
+                                        width: 24,
+                                        height: 24,
+                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
                                     },
                                     click: (gd) => downloadChartWithTitle(gd)
                                 }]
@@ -1265,6 +1329,7 @@ const Page8 = () => {
                     </div>
                 </details>
                 </div>
+                </div> {/* End chart-frame */}
                 <aside className="wb-fnote" role="note">
                     <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>

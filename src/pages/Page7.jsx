@@ -18,11 +18,9 @@ const Page7 = () => {
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
     
-    // Custom dropdown state
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [focusedYear, setFocusedYear] = useState(null);
-    const dropdownRef = useRef(null);
-    const listRef = useRef(null);
+    // Year dropdown state
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    const yearDropdownRef = useRef(null);
     const yearButtonRef = useRef(null);
 
     const scrollToFootnote = (e) => {
@@ -37,26 +35,14 @@ const Page7 = () => {
 
     // Close dropdown when clicking outside
     useEffect(() => {
-        const handleDropdownClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
+        const handleClickOutside = (event) => {
+            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
+                setIsYearDropdownOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleDropdownClickOutside);
-        return () => document.removeEventListener('mousedown', handleDropdownClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Sync focusedYear when year changes or dropdown opens
-    useEffect(() => {
-        if (year) setFocusedYear(year);
-    }, [year, isDropdownOpen]);
-
-    // Auto-focus the list when dropdown opens
-    useEffect(() => {
-        if (isDropdownOpen && listRef.current) {
-            listRef.current.focus();
-        }
-    }, [isDropdownOpen]);
 
     useEffect(() => {
         const topScroll = topScrollRef.current;
@@ -161,37 +147,52 @@ const Page7 = () => {
             const plotContainer = chartRef.current;
             if (!plotContainer) return;
 
+            // Hide SVG elements from screen readers
             const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
             svgElements.forEach(svg => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [pageData, lang, year]);
 
     const COLORS = {
@@ -480,7 +481,7 @@ const Page7 = () => {
             <style>{`
                 .page7-title {
                     font-family: 'Lato', sans-serif;
-                    font-size: 41px;
+                    font-size: 50px;
                     font-weight: bold;
                     color: #245e7f;
                     margin-bottom: 5px;
@@ -516,7 +517,6 @@ const Page7 = () => {
                     font-weight: bold;
                     color: #221e1f;
                     margin-bottom: 15px;
-                    text-transform: uppercase;
                 }
                 .page7-chart {
                     position: relative;
@@ -540,13 +540,11 @@ const Page7 = () => {
                     color: #245e7f;
                     font-size: 20px;
                     margin-bottom: 8px;
-                    text-transform: uppercase;
                 }
                 .page7-legend-sub {
                     margin-left: 25px;
                     color: #58585a;
                     font-size: 20px;
-                    text-transform: uppercase;
                     margin-bottom: 6px;
                     font-weight: bold;
                 }
@@ -555,7 +553,6 @@ const Page7 = () => {
                     font-size: 20px;
                     margin-bottom: 25px;
                     color: #242021;
-                    text-transform: uppercase;
                 }
                 .year-selector {
                     display: flex;
@@ -649,13 +646,17 @@ const Page7 = () => {
                 .data-table-wrapper summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #f5f5f5;
+                    background-color: #fff;
                     border: 1px solid #ddd;
                     border-radius: 4px;
                     list-style: none;
                     font-weight: bold;
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
+                }
+
+                .data-table-wrapper summary:hover {
+                    background-color: #f5f5f5;
                 }
                 .data-table-wrapper summary::-webkit-details-marker {
                     display: none;
@@ -713,11 +714,39 @@ const Page7 = () => {
                     }
                 }
 
-                /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+                .page7-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    box-sizing: border-box;
+                }
+
                 .page7-table-wrapper {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr);
+                    display: block;
                     width: 100%;
+                    margin: 0;
+                }
+
+                .page7-table-wrapper details > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .page7-table-wrapper details > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page7-table-wrapper details > summary:hover {
+                    background-color: #f5f5f5;
                 }
 
                 /* Table horizontal scroll */
@@ -749,96 +778,124 @@ const Page7 = () => {
                 </h3>
             </header>
 
-            <div className="year-selector" ref={dropdownRef}>
-                <label id="year-label-7" aria-hidden="true">
+            {/* Chart Frame with Year Selector and Chart */}
+            <div className="page7-chart-frame">
+                {/* SINGLE-SELECT RADIO DROPDOWN */}
+                <div 
+                    ref={yearDropdownRef} 
+                    style={{ 
+                        position: 'relative', 
+                        marginBottom: '20px', 
+                        width: '200px' 
+                    }}
+                >
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
                     {getText('year_slider_label', lang)}
                 </label>
-                <div id="year-instructions-7" className="wb-inv">
-                    {lang === 'en' 
-                        ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
-                        : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
-                </div>
-                <div className="custom-dropdown">
-                    <button
-                        ref={yearButtonRef}
-                        type="button"
-                        className="dropdown-button"
-                        aria-haspopup="listbox"
-                        aria-expanded={isDropdownOpen}
-                        aria-label={`${getText('year_slider_label', lang)} ${year || maxYear}`}
-                        aria-describedby="year-instructions-7"
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                e.preventDefault();
-                                setIsDropdownOpen(true);
-                            } else if (e.key === 'Escape') {
-                                setIsDropdownOpen(false);
-                            }
-                        }}
-                    >
-                        {year || maxYear}
-                        <span className="dropdown-arrow" aria-hidden="true">▼</span>
-                    </button>
-                    {isDropdownOpen && (
-                        <ul
-                            ref={listRef}
-                            role="listbox"
-                            aria-label={getText('year_slider_label', lang)}
-                            aria-activedescendant={focusedYear ? `year-option-7-${focusedYear}` : undefined}
-                            tabIndex={-1}
-                            className="dropdown-list"
-                            onKeyDown={(e) => {
-                                const years = pageData.map(d => d.year);
-                                const currentIndex = years.findIndex(y => y === focusedYear);
-                                
-                                if (e.key === 'ArrowDown') {
-                                    e.preventDefault();
-                                    const nextIndex = Math.min(currentIndex + 1, years.length - 1);
-                                    setFocusedYear(years[nextIndex]);
-                                } else if (e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    const prevIndex = Math.max(currentIndex - 1, 0);
-                                    setFocusedYear(years[prevIndex]);
-                                } else if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    setYear(focusedYear);
-                                    setIsDropdownOpen(false);
-                                    if (yearButtonRef.current) yearButtonRef.current.focus();
-                                } else if (e.key === 'Escape') {
-                                    setIsDropdownOpen(false);
-                                    if (yearButtonRef.current) yearButtonRef.current.focus();
-                                } else if (e.key === 'Tab') {
-                                    setIsDropdownOpen(false);
-                                } else if (e.key === 'Home') {
-                                    e.preventDefault();
-                                    setFocusedYear(years[0]);
-                                } else if (e.key === 'End') {
-                                    e.preventDefault();
-                                    setFocusedYear(years[years.length - 1]);
-                                }
-                            }}
-                        >
-                            {pageData.map((yearData) => (
-                                <li
+                
+                {/* TOGGLE BUTTON */}
+                <button
+                    ref={yearButtonRef}
+                    onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                    aria-expanded={isYearDropdownOpen}
+                    style={{
+                        width: '100%',
+                        padding: '10px 15px',
+                        backgroundColor: '#fff',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        textAlign: 'left',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '16px'
+                    }}
+                >
+                    <span>{year || maxYear}</span>
+                    <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
+                </button>
+
+                {/* DROPDOWN LIST */}
+                {isYearDropdownOpen && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        width: '100%',
+                        maxHeight: '300px',
+                        overflowY: 'auto',
+                        backgroundColor: '#fff',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px',
+                        zIndex: 100,
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                    }}>
+                        {/* Sort Descending (Newest First) - Using buttons styled as radio */}
+                        {[...pageData].sort((a, b) => b.year - a.year).map((yearData) => {
+                            const isSelected = year === yearData.year;
+                            return (
+                                <button
                                     key={yearData.year}
-                                    id={`year-option-7-${yearData.year}`}
-                                    role="option"
-                                    aria-selected={year === yearData.year}
-                                    className={`dropdown-option ${focusedYear === yearData.year ? 'focused' : ''} ${year === yearData.year ? 'selected' : ''}`}
+                                    type="button"
+                                    aria-pressed={isSelected}
+                                    aria-label={yearData.year.toString()}
                                     onClick={() => {
                                         setYear(yearData.year);
-                                        setIsDropdownOpen(false);
-                                        if (yearButtonRef.current) yearButtonRef.current.focus();
+                                        setIsYearDropdownOpen(false);
+                                        setTimeout(() => {
+                                            yearButtonRef.current?.focus();
+                                        }, 0);
                                     }}
-                                    onMouseEnter={() => setFocusedYear(yearData.year)}
+                                    style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        padding: '10px 15px', 
+                                        cursor: 'pointer',
+                                        border: 'none',
+                                        borderBottom: '1px solid #eee',
+                                        backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                                        fontFamily: 'Arial, sans-serif'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
                                 >
-                                    {yearData.year}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                                    {/* Fake radio circle */}
+                                    <span 
+                                        aria-hidden="true"
+                                        style={{
+                                            height: '18px',
+                                            width: '18px',
+                                            borderRadius: '50%',
+                                            border: '1px solid #ccc',
+                                            marginRight: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: '#fff'
+                                        }}
+                                    >
+                                        {isSelected && (
+                                            <span style={{
+                                                height: '10px',
+                                                width: '10px',
+                                                borderRadius: '50%',
+                                                backgroundColor: '#000'
+                                            }} />
+                                        )}
+                                    </span>
+                                    <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
+                                        {yearData.year}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+                
                 <div role="status" className="wb-inv" aria-live="polite">
                     {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                 </div>
@@ -846,11 +903,11 @@ const Page7 = () => {
 
             <h4 className="page7-chart-title">
                 {getText('page7_chart_title', lang)}
-                <sup id="fn1-rf">
-                    <a href="#fn1" onClick={scrollToFootnote} className="fn-lnk" title={lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}>
-                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>1
+                <span id="fn1-rf" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
+                    <a href="#fn1" onClick={scrollToFootnote} className="fn-lnk">
+                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">1</span>
                     </a>
-                </sup>
+                </span>
             </h4>
 
             <div className="page7-content-wrapper" style={{ display: 'flex', alignItems: 'flex-start' }}>
@@ -858,6 +915,7 @@ const Page7 = () => {
                     role="region" 
                     aria-label={getChartDataSummary()}
                     style={{ flex: '0 0 auto', width: windowWidth <= 768 ? '100%' : '500px' }}
+                    tabIndex="0"
                 >
                     <figure ref={chartRef} className="page7-chart" style={{ margin: 0, position: 'relative' }}>
                         <Plot
@@ -883,8 +941,7 @@ const Page7 = () => {
                                     icon: {
                                         width: 24,
                                         height: 24,
-                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                        transform: 'matrix(1 0 0 1 0 0)'
+                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
                                     },
                                     click: () => downloadChartWithTitle()
                                 }]
@@ -1061,6 +1118,7 @@ const Page7 = () => {
                     </div>
                 </div>
             </details>
+            </div>
             </div>
 
             <aside className="wb-fnote" role="note">

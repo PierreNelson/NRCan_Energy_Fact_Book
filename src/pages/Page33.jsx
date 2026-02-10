@@ -25,12 +25,10 @@ const Page33 = () => {
     const [isTableOpen, setIsTableOpen] = useState(false);
     const chartRef = useRef(null);
     
-    // Custom dropdown state
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [focusedYear, setFocusedYear] = useState(null);
-    const dropdownRef = useRef(null);
-    const listRef = useRef(null);
-    const buttonRef = useRef(null);
+    // Year dropdown state
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    const yearDropdownRef = useRef(null);
+    const yearButtonRef = useRef(null);
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
@@ -69,25 +67,13 @@ const Page33 = () => {
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
+            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
+                setIsYearDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Sync focusedYear when year changes or dropdown opens
-    useEffect(() => {
-        if (year) setFocusedYear(year);
-    }, [year, isDropdownOpen]);
-
-    // Auto-focus the list when dropdown opens
-    useEffect(() => {
-        if (isDropdownOpen && listRef.current) {
-            listRef.current.focus();
-        }
-    }, [isDropdownOpen]);
 
     useEffect(() => {
         getCEAData()
@@ -120,32 +106,46 @@ const Page33 = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [allData, lang]);
 
     const currentYearData = useMemo(() => {
@@ -476,7 +476,7 @@ const Page33 = () => {
             lon: [-173.0], 
             marker: {
                 size: 25,         
-                color: '#ffffff', 
+                color: '#f5f5f5', 
                 opacity: 1,
                 symbol: 'circle'
             },
@@ -492,7 +492,7 @@ const Page33 = () => {
             lon: [185.0], 
             marker: {
                 size: 55,       
-                color: '#ffffff', 
+                color: '#f5f5f5', 
                 opacity: 1,
                 symbol: 'circle'
             },
@@ -539,7 +539,7 @@ const Page33 = () => {
         if (lang === 'en') {
             return [
                 'The total value of Canadian',
-                <sup key="fn-ref" id="fn-asterisk-rf-page33"><a className="fn-lnk" href="#fn-asterisk-page33" onClick={scrollToFootnote} title="Footnote *"><span className="wb-inv">Footnote </span>*</a></sup>,
+                <span key="fn-ref" id="fn-asterisk-rf-page33" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}><a className="fn-lnk" href="#fn-asterisk-page33" onClick={scrollToFootnote}><span className="wb-inv">Footnote </span><span aria-hidden="true">*</span></a></span>,
                 ' energy assets (CEA) went up in ',
                 year.toString(),
                 ' to ',
@@ -567,7 +567,7 @@ const Page33 = () => {
         } else {
             return [
                 'La valeur totale des actifs énergétiques canadiens',
-                <sup key="fn-ref-fr" id="fn-asterisk-rf-page33"><a className="fn-lnk" href="#fn-asterisk-page33" onClick={scrollToFootnote} title="Note de bas de page *"><span className="wb-inv">Note de bas de page </span>*</a></sup>,
+                <span key="fn-ref-fr" id="fn-asterisk-rf-page33" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}><a className="fn-lnk" href="#fn-asterisk-page33" onClick={scrollToFootnote}><span className="wb-inv">Note de bas de page </span><span aria-hidden="true">*</span></a></span>,
                 ' (AEC) a augmenté en ',
                 year.toString(),
                 ' pour s\'établir à ',
@@ -684,9 +684,9 @@ const Page33 = () => {
 
                 .page33-title {
                     font-family: 'Lato', sans-serif;
-                    font-size: 41px;
+                    font-size: 50px;
                     font-weight: bold;
-                    color: #8a7d5a;
+                    color: #245e7f;
                     margin: 30px 0 20px 0;
                     line-height: 1.2;
                     position: relative;
@@ -733,12 +733,19 @@ const Page33 = () => {
                     margin-top: 20px;
                     position: relative;
                     z-index: 1;
+                    overflow: visible;
+                }
+                
+                .page33-content-wrapper::after {
+                    content: '';
+                    display: table;
+                    clear: both;
                 }
 
                 .page33-map-container {
                     flex: 1;
                     position: relative;
-                    overflow: visible;
+                    overflow: hidden;
                     min-height: 300px;
                     display: block; 
                 }
@@ -821,15 +828,16 @@ const Page33 = () => {
                 .data-table-wrapper {
                     margin-top: 20px;
                     position: relative;
-                    z-index: 5;
+                    z-index: 10;
                     background-color: white;
+                    clear: both;
                 }
                 
                 .data-table-wrapper summary {
                     cursor: pointer;
                     font-weight: bold;
                     padding: 10px;
-                    background-color: #f5f5f5;
+                    background-color: #fff;
                     border: 1px solid #ddd;
                     border-radius: 4px;
                     font-family: Arial, sans-serif;
@@ -845,7 +853,7 @@ const Page33 = () => {
                 }
                 
                 .data-table-wrapper summary:hover {
-                    background-color: #e8e8e8;
+                    background-color: #f5f5f5;
                 }
                 
                 .data-table-wrapper .table-responsive {
@@ -1060,6 +1068,40 @@ const Page33 = () => {
                         text-align: left;
                     }
                 }
+
+                .page33-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-sizing: border-box;
+                }
+
+                .page33-data-table {
+                    display: block;
+                    width: 100%;
+                    margin: 0;
+                }
+
+                .page33-data-table > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .page33-data-table > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .page33-data-table > summary:hover {
+                    background-color: #f5f5f5;
+                }
             `}</style>
 
             <div className="page33-container">
@@ -1069,125 +1111,152 @@ const Page33 = () => {
                     </h1>
                 </header>
 
-                <div className="year-selector" ref={dropdownRef}>
-                    <label id="year-label" aria-hidden="true">
+                <div className="page33-chart-frame">
+                {/* SINGLE-SELECT RADIO DROPDOWN */}
+                <div 
+                    ref={yearDropdownRef} 
+                    style={{ 
+                        position: 'relative', 
+                        marginBottom: '20px', 
+                        width: '200px' 
+                    }}
+                >
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
                         {getText('year_slider_label', lang)}
                     </label>
-                    <div id="year-instructions" className="wb-inv">
-                        {lang === 'en' 
-                            ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
-                            : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
-                    </div>
-                    <div className="custom-dropdown">
-                        <button
-                            ref={buttonRef}
-                            type="button"
-                            className="dropdown-button"
-                            aria-haspopup="listbox"
-                            aria-expanded={isDropdownOpen}
-                            aria-label={`${getText('year_slider_label', lang)} ${year}`}
-                            aria-describedby="year-instructions"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setIsDropdownOpen(true);
-                                } else if (e.key === 'Escape') {
-                                    setIsDropdownOpen(false);
-                                }
-                            }}
-                        >
-                            {year || '...'}
-                            <span className="dropdown-arrow" aria-hidden="true">▼</span>
-                        </button>
-                        {isDropdownOpen && (
-                            <ul
-                                ref={listRef}
-                                role="listbox"
-                                aria-label={getText('year_slider_label', lang)}
-                                aria-activedescendant={focusedYear ? `year-option-${focusedYear}` : undefined}
-                                tabIndex={-1}
-                                className="dropdown-list"
-                                onKeyDown={(e) => {
-                                    const validYears = allData.filter(d => d.year !== 2012);
-                                    const currentIndex = validYears.findIndex(y => y.year === focusedYear);
-                                    
-                                    if (e.key === 'ArrowDown') {
-                                        e.preventDefault();
-                                        const nextIndex = Math.min(currentIndex + 1, validYears.length - 1);
-                                        setFocusedYear(validYears[nextIndex].year);
-                                    } else if (e.key === 'ArrowUp') {
-                                        e.preventDefault();
-                                        const prevIndex = Math.max(currentIndex - 1, 0);
-                                        setFocusedYear(validYears[prevIndex].year);
-                                    } else if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        setYear(focusedYear);
-                                        setIsDropdownOpen(false);
-                                        if (buttonRef.current) buttonRef.current.focus();
-                                    } else if (e.key === 'Escape') {
-                                        setIsDropdownOpen(false);
-                                        if (buttonRef.current) buttonRef.current.focus();
-                                    } else if (e.key === 'Tab') {
-                                        setIsDropdownOpen(false);
-                                    } else if (e.key === 'Home') {
-                                        e.preventDefault();
-                                        setFocusedYear(validYears[0].year);
-                                    } else if (e.key === 'End') {
-                                        e.preventDefault();
-                                        setFocusedYear(validYears[validYears.length - 1].year);
-                                    }
-                                }}
-                            >
-                                {allData.filter(d => d.year !== 2012).map((yearData) => (
-                                    <li
+                    
+                    {/* TOGGLE BUTTON */}
+                    <button
+                        ref={yearButtonRef}
+                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                        aria-expanded={isYearDropdownOpen}
+                        style={{
+                            width: '100%',
+                            padding: '10px 15px',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            textAlign: 'left',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '16px'
+                        }}
+                    >
+                        <span>{year || '...'}</span>
+                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+
+                    {/* DROPDOWN LIST */}
+                    {isYearDropdownOpen && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            width: '100%',
+                            maxHeight: '300px',
+                            overflowY: 'auto',
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            zIndex: 100,
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                        }}>
+                            {/* Sort Descending (Newest First), filter out 2012 - Using buttons styled as radio */}
+                            {[...allData].filter(d => d.year !== 2012).sort((a, b) => b.year - a.year).map((yearData) => {
+                                const isSelected = year === yearData.year;
+                                return (
+                                    <button
                                         key={yearData.year}
-                                        id={`year-option-${yearData.year}`}
-                                        role="option"
-                                        aria-selected={year === yearData.year}
-                                        className={`dropdown-option ${focusedYear === yearData.year ? 'focused' : ''} ${year === yearData.year ? 'selected' : ''}`}
+                                        type="button"
+                                        aria-pressed={isSelected}
+                                        aria-label={yearData.year.toString()}
                                         onClick={() => {
                                             setYear(yearData.year);
-                                            setIsDropdownOpen(false);
-                                            if (buttonRef.current) buttonRef.current.focus();
+                                            setIsYearDropdownOpen(false);
+                                            setTimeout(() => {
+                                                yearButtonRef.current?.focus();
+                                            }, 0);
                                         }}
-                                        onMouseEnter={() => setFocusedYear(yearData.year)}
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '10px 15px', 
+                                            cursor: 'pointer',
+                                            border: 'none',
+                                            borderBottom: '1px solid #eee',
+                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                                            fontFamily: 'Arial, sans-serif'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
                                     >
-                                        {yearData.year}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                                        {/* Fake radio circle */}
+                                        <span 
+                                            aria-hidden="true"
+                                            style={{
+                                                height: '18px',
+                                                width: '18px',
+                                                borderRadius: '50%',
+                                                border: '1px solid #ccc',
+                                                marginRight: '10px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: '#fff'
+                                            }}
+                                        >
+                                            {isSelected && (
+                                                <span style={{
+                                                    height: '10px',
+                                                    width: '10px',
+                                                    borderRadius: '50%',
+                                                    backgroundColor: '#000'
+                                                }} />
+                                            )}
+                                        </span>
+                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
+                                            {yearData.year}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                    
                     <div role="status" className="wb-inv" aria-live="polite">
                         {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                     </div>
                 </div>
 
-                <div className="page33-narrative" aria-label={narrativeTextSR}>
-                    <span aria-hidden="true">
-                        {narrativeTextParts.map((part, i) => {
-                            // If part is not a string (e.g., JSX element), return it as-is
-                            if (typeof part !== 'string') {
-                                return <React.Fragment key={i}>{part}</React.Fragment>;
-                            }
-                            // Match English ($123.4B) or French (123,4 G$) currency formats, or percentage
-                            if (part.match(/^\$[\d.]+B$/) || part.match(/^[\d,]+ G\$$/) || part.match(/^\d+\.\d+%$/)) {
-                                return <strong key={i}>{part}</strong>;
-                            }
+                <p className="page33-narrative" role="region" aria-label={narrativeTextSR}>
+                    {narrativeTextParts.map((part, i) => {
+                        // If part is a JSX element (the footnote sup), render it accessible
+                        if (typeof part !== 'string') {
                             return <React.Fragment key={i}>{part}</React.Fragment>;
-                        })}
-                    </span>
-                </div>
+                        }
+                        // Text parts are hidden from screen reader (aria-label provides the text)
+                        if (part.match(/^\$[\d.]+B$/) || part.match(/^[\d,]+ G\$$/) || part.match(/^\d+\.\d+%$/)) {
+                            return <strong key={i} aria-hidden="true">{part}</strong>;
+                        }
+                        return <span key={i} aria-hidden="true">{part}</span>;
+                    })}
+                </p>
 
                 <div className="page33-content-wrapper">
                     <div className="page33-map-container">
                     <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '10px' }}>
                         <h2 
                             className="page33-map-title" 
-                            style={{ margin: 0, textAlign: 'center' }} // Remove margins so flex controls positioning
+                            style={{ margin: 0, textAlign: 'center' }}
+                            aria-label={`${stripHtml(getText('page33_map_title', lang))} ${year}`}
+                            tabIndex="0"
                         >
-                            {getText('page33_map_title', lang)} {year}
+                            <span aria-hidden="true">{getText('page33_map_title', lang)} {year}</span>
                         </h2>
                     </div>
                         {}
@@ -1199,9 +1268,8 @@ const Page33 = () => {
                                 height: windowWidth <= 768 ? '400px' : '500px' 
                             }}
                         >
-                            <h2 className="wb-inv">{stripHtml(`${getText('page33_chart_title', lang)} ${year}`)}</h2>
-                            <div role="region" aria-label={getText('page33_chart_summary', lang)}>
-                                <figure style={{ margin: 0, position: 'relative' }}>
+                            <div role="region" aria-label={getText('page33_chart_summary', lang)} tabIndex="0">
+                                <figure style={{ margin: 0, position: 'relative' }} aria-hidden="true">
                                     <Plot
                                         data={mapData}
                                         layout={{
@@ -1239,12 +1307,11 @@ const Page33 = () => {
                                             modeBarButtonsToRemove: ['select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'resetScale2d', 'toImage', 'resetGeo', 'pan2d', 'zoomin', 'zoomout'],
                                             modeBarButtonsToAdd: [{
                                                 name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                                icon: {
-                                                    width: 1000,
-                                                    height: 1000,
-                                                    path: 'm500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z',
-                                                    transform: 'matrix(1 0 0 -1 0 850)'
-                                                },
+                                                    icon: {
+                                                        width: 24,
+                                                        height: 24,
+                                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
+                                                    },
                                                 click: () => downloadChartWithTitle()
                                             }]
                                         }}
@@ -1256,28 +1323,33 @@ const Page33 = () => {
                         </div>
                     </div>
 
-                    <div className="page33-stats-container">
+                    <div 
+                        className="page33-stats-container" 
+                        role="region" 
+                        aria-label={`${getText('page33_card_total', lang)}: ${formatBillionSR(calculatedValues.A1)}. ${getText('page33_card_abroad', lang)}: ${formatBillionSR(calculatedValues.A4)}.`} 
+                        tabIndex="0"
+                    >
                         <div className="page33-stat">
-                            <div className="page33-stat-title">
+                            <div className="page33-stat-title" aria-hidden="true">
                                 {getText('page33_card_total', lang)}
                             </div>
-                            <div className="page33-stat-value" aria-label={formatBillionSR(calculatedValues.A1)}>
-                                <span aria-hidden="true">{formatBillion(calculatedValues.A1, lang === 'fr')}</span>
+                            <div className="page33-stat-value" aria-hidden="true">
+                                {formatBillion(calculatedValues.A1, lang === 'fr')}
                             </div>
                         </div>
                         <div className="page33-stat">
-                            <div className="page33-stat-title">
+                            <div className="page33-stat-title" aria-hidden="true">
                                 {getText('page33_card_abroad', lang)}
                             </div>
-                            <div className="page33-stat-value" aria-label={formatBillionSR(calculatedValues.A4)}>
-                                <span aria-hidden="true">{formatBillion(calculatedValues.A4, lang === 'fr')}</span>
+                            <div className="page33-stat-value" aria-hidden="true">
+                                {formatBillion(calculatedValues.A4, lang === 'fr')}
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <details 
-                    className="data-table-wrapper"
+                    className="page33-data-table"
                     onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
                 >
                     <summary role="button" aria-expanded={isTableOpen}>
@@ -1360,6 +1432,7 @@ const Page33 = () => {
                         </button>
                     </div>
                 </details>
+                </div>
 
                 <aside className="wb-fnote" role="note">
                     <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>

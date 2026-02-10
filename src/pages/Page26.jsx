@@ -16,11 +16,9 @@ const Page26 = () => {
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
     
-    // Custom dropdown state
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [focusedYear, setFocusedYear] = useState(null);
-    const dropdownRef = useRef(null);
-    const listRef = useRef(null);
+    // Year dropdown state
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    const yearDropdownRef = useRef(null);
     const yearButtonRef = useRef(null);
 
     useEffect(() => {
@@ -31,26 +29,14 @@ const Page26 = () => {
 
     // Close dropdown when clicking outside
     useEffect(() => {
-        const handleDropdownClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
+        const handleClickOutside = (event) => {
+            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
+                setIsYearDropdownOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleDropdownClickOutside);
-        return () => document.removeEventListener('mousedown', handleDropdownClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Sync focusedYear when year changes or dropdown opens
-    useEffect(() => {
-        if (year) setFocusedYear(year);
-    }, [year, isDropdownOpen]);
-
-    // Auto-focus the list when dropdown opens
-    useEffect(() => {
-        if (isDropdownOpen && listRef.current) {
-            listRef.current.focus();
-        }
-    }, [isDropdownOpen]);
 
     useEffect(() => {
         const topScroll = topScrollRef.current;
@@ -212,7 +198,7 @@ const Page26 = () => {
                         fontWeight: 'bold', 
                         padding: '10px',
                         border: '1px solid #ccc',
-                        backgroundColor: '#f9f9f9',
+                        backgroundColor: '#fff',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -515,7 +501,7 @@ const Page26 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 41px;
                     font-weight: bold;
-                    color: #58585a;
+                    color: var(--gc-text);
                     margin-bottom: 10px;
                     margin-top: 0px;
                     position: relative;
@@ -862,95 +848,122 @@ const Page26 = () => {
                     <h1 className="page26-title" aria-hidden="true">
                         {getText('page26_title', lang)}
                     </h1>
-                    <div className="page26-year-selector" ref={dropdownRef}>
-                        <label id="year-label-26" className="page26-year-label" aria-hidden="true">
+                    {/* SINGLE-SELECT RADIO DROPDOWN */}
+                    <div 
+                        ref={yearDropdownRef} 
+                        style={{ 
+                            position: 'relative', 
+                            marginBottom: '20px', 
+                            width: '200px' 
+                        }}
+                    >
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
                             {getText('year_slider_label', lang)}
                         </label>
-                        <div id="year-instructions-26" className="wb-inv">
-                            {lang === 'en' 
-                                ? "Press Space to open the menu. Use the Up and Down arrow keys to navigate options. Press Enter to select a year." 
-                                : "Appuyez sur Espace pour ouvrir le menu. Utilisez les flèches haut et bas pour naviguer. Appuyez sur Entrée pour sélectionner une année."}
-                        </div>
-                        <div className="custom-dropdown">
-                            <button
-                                ref={yearButtonRef}
-                                type="button"
-                                className="dropdown-button"
-                                aria-haspopup="listbox"
-                                aria-expanded={isDropdownOpen}
-                                aria-label={`${getText('year_slider_label', lang)} ${year || '...'}`}
-                                aria-describedby="year-instructions-26"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                        e.preventDefault();
-                                        setIsDropdownOpen(true);
-                                    } else if (e.key === 'Escape') {
-                                        setIsDropdownOpen(false);
-                                    }
-                                }}
-                            >
-                                {year || '...'}
-                                <span className="dropdown-arrow" aria-hidden="true">▼</span>
-                            </button>
-                            {isDropdownOpen && (
-                                <ul
-                                    ref={listRef}
-                                    role="listbox"
-                                    aria-label={getText('year_slider_label', lang)}
-                                    aria-activedescendant={focusedYear ? `year-option-26-${focusedYear}` : undefined}
-                                    tabIndex={-1}
-                                    className="dropdown-list"
-                                    onKeyDown={(e) => {
-                                        const currentIndex = yearsList.findIndex(y => y === focusedYear);
-                                        
-                                        if (e.key === 'ArrowDown') {
-                                            e.preventDefault();
-                                            const nextIndex = Math.min(currentIndex + 1, yearsList.length - 1);
-                                            setFocusedYear(yearsList[nextIndex]);
-                                        } else if (e.key === 'ArrowUp') {
-                                            e.preventDefault();
-                                            const prevIndex = Math.max(currentIndex - 1, 0);
-                                            setFocusedYear(yearsList[prevIndex]);
-                                        } else if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            setYear(focusedYear);
-                                            setIsDropdownOpen(false);
-                                            if (yearButtonRef.current) yearButtonRef.current.focus();
-                                        } else if (e.key === 'Escape') {
-                                            setIsDropdownOpen(false);
-                                            if (yearButtonRef.current) yearButtonRef.current.focus();
-                                        } else if (e.key === 'Tab') {
-                                            setIsDropdownOpen(false);
-                                        } else if (e.key === 'Home') {
-                                            e.preventDefault();
-                                            setFocusedYear(yearsList[0]);
-                                        } else if (e.key === 'End') {
-                                            e.preventDefault();
-                                            setFocusedYear(yearsList[yearsList.length - 1]);
-                                        }
-                                    }}
-                                >
-                                    {yearsList.map((y) => (
-                                        <li
+                        
+                        {/* TOGGLE BUTTON */}
+                        <button
+                            ref={yearButtonRef}
+                            onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                            aria-expanded={isYearDropdownOpen}
+                            style={{
+                                width: '100%',
+                                padding: '10px 15px',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                textAlign: 'left',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '16px'
+                            }}
+                        >
+                            <span>{year || '...'}</span>
+                            <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
+                        </button>
+
+                        {/* DROPDOWN LIST */}
+                        {isYearDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                width: '100%',
+                                maxHeight: '300px',
+                                overflowY: 'auto',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                zIndex: 100,
+                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                            }}>
+                                {/* Sort Descending (Newest First) - Using buttons styled as radio */}
+                                {[...yearsList].sort((a, b) => b - a).map((y) => {
+                                    const isSelected = year === y;
+                                    return (
+                                        <button
                                             key={y}
-                                            id={`year-option-26-${y}`}
-                                            role="option"
-                                            aria-selected={year === y}
-                                            className={`dropdown-option ${focusedYear === y ? 'focused' : ''} ${year === y ? 'selected' : ''}`}
+                                            type="button"
+                                            aria-pressed={isSelected}
+                                            aria-label={y.toString()}
                                             onClick={() => {
                                                 setYear(y);
-                                                setIsDropdownOpen(false);
-                                                if (yearButtonRef.current) yearButtonRef.current.focus();
+                                                setIsYearDropdownOpen(false);
+                                                setTimeout(() => {
+                                                    yearButtonRef.current?.focus();
+                                                }, 0);
                                             }}
-                                            onMouseEnter={() => setFocusedYear(y)}
+                                            style={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                width: '100%',
+                                                textAlign: 'left',
+                                                padding: '10px 15px', 
+                                                cursor: 'pointer',
+                                                border: 'none',
+                                                borderBottom: '1px solid #eee',
+                                                backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                                                fontFamily: 'Arial, sans-serif'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
                                         >
-                                            {y}
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
+                                            {/* Fake radio circle */}
+                                            <span 
+                                                aria-hidden="true"
+                                                style={{
+                                                    height: '18px',
+                                                    width: '18px',
+                                                    borderRadius: '50%',
+                                                    border: '1px solid #ccc',
+                                                    marginRight: '10px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    backgroundColor: '#fff'
+                                                }}
+                                            >
+                                                {isSelected && (
+                                                    <span style={{
+                                                        height: '10px',
+                                                        width: '10px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: '#000'
+                                                    }} />
+                                                )}
+                                            </span>
+                                            <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
+                                                {y}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        
                         <div role="status" className="wb-inv" aria-live="polite">
                             {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                         </div>

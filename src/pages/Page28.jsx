@@ -127,32 +127,46 @@ const Page28 = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [pageData, lang]);
 
     const COLORS = {
@@ -464,7 +478,7 @@ const Page28 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 41px;
                     font-weight: bold;
-                    color: #8e7e52;
+                    color: var(--gc-text);
                     margin: 0 0 20px 0;
                     position: relative;
                     padding-bottom: 0.5em;
@@ -639,18 +653,30 @@ const Page28 = () => {
     @media (max-width: 1280px) {
         .page28-content-row {
             flex-direction: column;
+            gap: 0;
         }
         .page28-left-column {
             order: 0;
             width: 100%;
         }
+        .page28-chart-frame {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            padding-bottom: 10px;
+        }
         .page28-data-table-section {
             order: 1;
+            background-color: #f5f5f5;
+            padding: 20px;
+            padding-top: 10px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
         }
         .page28-right-column {
             max-width: 100%;
             width: 100%;
             order: 2;
+            margin-top: 40px;
         }
         .page28-chart .js-plotly-plot {
             height: 450px !important;
@@ -697,11 +723,38 @@ const Page28 = () => {
         }
     }
 
-    /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+    .page28-chart-frame {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+
     .page28-table-wrapper {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        display: block;
         width: 100%;
+        margin: 0;
+    }
+
+    .page28-table-wrapper > summary {
+        display: block;
+        width: 100%;
+        padding: 12px 15px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        box-sizing: border-box;
+        list-style: none;
+    }
+
+    .page28-table-wrapper > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .page28-table-wrapper > summary:hover {
+        background-color: #f5f5f5;
     }
 
     /* Table horizontal scroll */
@@ -764,15 +817,18 @@ const Page28 = () => {
                             </li>
                         </ul>
 
+                        <div className="page28-chart-frame">
                         <div className="page28-chart" style={{ position: 'relative' }}>
-                            <h2 className="wb-inv">{chartTitle}</h2>
-
-                            <div role="region" aria-label={getChartSummary()}>
+                            <div 
+                                role="region" 
+                                aria-label={`${chartTitle}. ${getChartSummary()}`} 
+                                tabIndex="0"
+                            >
                                 <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                                     {selectedPoints !== null && (
                                         <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                     )}
-
+                                    <div aria-hidden="true">
                                     <Plot
                                         data={[
                                             {
@@ -896,7 +952,9 @@ const Page28 = () => {
                                                 bordercolor: '#333333',
                                                 font: { color: '#333333', family: 'Arial, sans-serif' }
                                             },
-                                            font: { family: 'Arial, sans-serif' }
+                                            font: { family: 'Arial, sans-serif' },
+                                            paper_bgcolor: 'rgba(0,0,0,0)',
+                                            plot_bgcolor: 'rgba(0,0,0,0)'
                                         }}
                                         config={{
                                             displayModeBar: true,
@@ -955,6 +1013,7 @@ const Page28 = () => {
                                         useResizeHandler={true}
                                         style={{ width: '100%', height: windowWidth <= 480 ? '400px' : '500px' }}
                                     />
+                                    </div>
                                 </figure>
                             </div>
 
@@ -995,6 +1054,7 @@ const Page28 = () => {
                                 </div>
                             </div>
                         </div>
+                        </div> {/* End chart-frame */}
                     </div>
 
                     <aside className="page28-right-column">

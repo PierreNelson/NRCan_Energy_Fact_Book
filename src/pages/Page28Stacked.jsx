@@ -128,32 +128,46 @@ const Page28Stacked = () => {
                 svg.setAttribute('aria-hidden', 'true');
             });
 
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
                 const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
                 }
             });
         };
 
-        const timer = setTimeout(setupChartAccessibility, 500);
-        
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
         const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) {
-            observer.observe(chartRef.current, { childList: true, subtree: true });
-        }
+        observer.observe(chartRef.current, { childList: true, subtree: true });
 
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
     }, [pageData, lang]);
 
     const COLORS = {
@@ -510,24 +524,70 @@ const Page28Stacked = () => {
         color: var(--gc-text);
     }
 
-    .page28h-sidebar {
+    .page28h-definition-details {
+        width: 100%;
+        margin-top: 20px;
+        margin-bottom: 40px;
+        align-self: flex-start;
+    }
+
+    .page28h-definition-details summary {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+        font-size: 1rem;
+        list-style: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .page28h-definition-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .page28h-definition-details summary:hover {
+        background-color: #f5f5f5;
+    }
+
+    .page28h-definition-details summary .definition-arrow {
+        margin-right: 10px;
+        font-size: 0.8rem;
+        transition: transform 0.2s ease;
+    }
+
+    .page28h-definition-details[open] summary .definition-arrow {
+        transform: rotate(0deg);
+    }
+
+    .page28h-definition-details:not([open]) summary .definition-arrow {
+        transform: rotate(-90deg);
+    }
+
+    .page28h-definition-content {
         background-color: #aa9c7a;
         padding: 20px;
-        border-radius: 3px;
+        border-radius: 0 0 4px 4px;
+        margin-top: -1px;
+        text-align: left;
         font-family: Arial, sans-serif;
         font-size: 1.05rem;
         line-height: 1.6;
-        color: var(--gc-text);
+        color: #333;
     }
 
-    .page28h-sidebar-title {
-        font-weight: bold;
-        font-size: 1.15rem;
-        margin-bottom: 10px;
-    }
-
-    .page28h-sidebar p {
+    .page28h-definition-content p {
+        text-align: left;
         margin: 0 0 10px 0;
+    }
+
+    .page28h-definition-content p:last-child {
+        margin-bottom: 0;
     }
 
     .page28h-chart {
@@ -655,10 +715,38 @@ const Page28Stacked = () => {
         }
     }
 
-    /* FIXED: Grid layout with minmax(0, 1fr) forces scrollbar to appear */
+    .page28h-chart-frame {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+
     .page28h-table-wrapper {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        display: block;
+        width: 100%;
+        margin: 0;
+    }
+
+    .page28h-table-wrapper > summary {
+        display: block;
+        width: 100%;
+        padding: 12px 15px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        box-sizing: border-box;
+        list-style: none;
+    }
+
+    .page28h-table-wrapper > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .page28h-table-wrapper > summary:hover {
+        background-color: #f5f5f5;
         width: 100%;
     }
 
@@ -722,15 +810,18 @@ const Page28Stacked = () => {
                             </li>
                         </ul>
 
+                        <div className="page28h-chart-frame">
                         <div className="page28h-chart" style={{ position: 'relative' }}>
-                            <h2 className="wb-inv">{chartTitle}</h2>
-
-                            <div role="region" aria-label={getChartSummary()}>
+                            <div 
+                                role="region" 
+                                aria-label={`${chartTitle}. ${getChartSummary()}`} 
+                                tabIndex="0"
+                            >
                                 <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                                     {selectedPoints !== null && (
                                         <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
                                     )}
-
+                                    <div aria-hidden="true">
                                     <Plot
                                         data={[
                                             {
@@ -854,7 +945,9 @@ const Page28Stacked = () => {
                                                 bordercolor: '#000000',
                                                 font: { color: '#000000', family: 'Arial, sans-serif' }
                                             },
-                                            font: { family: 'Arial, sans-serif' }
+                                            font: { family: 'Arial, sans-serif' },
+                                            paper_bgcolor: 'rgba(0,0,0,0)',
+                                            plot_bgcolor: 'rgba(0,0,0,0)'
                                         }}
                                         config={{
                                             displayModeBar: true,
@@ -913,6 +1006,7 @@ const Page28Stacked = () => {
                                         useResizeHandler={true}
                                         style={{ width: '100%', height: windowWidth <= 480 ? '400px' : '500px' }}
                                     />
+                                    </div>
                                 </figure>
                             </div>
 
@@ -953,18 +1047,17 @@ const Page28Stacked = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="page28h-data-table-section">
-                        <details
-                            className="page28h-table-wrapper"
-                            onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                        >
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
+                        <div className="page28h-data-table-section">
+                            <details
+                                className="page28h-table-wrapper"
+                                onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
+                            >
+                                <summary role="button" aria-expanded={isTableOpen}>
+                                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
+                                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+                                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
+                                </summary>
                             <div 
                                 ref={topScrollRef}
                                 style={{ 
@@ -1101,43 +1194,41 @@ const Page28Stacked = () => {
                                 >
                                     {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                 </button>
-                            </div>
-                        </details>
+                                </div>
+                            </details>
+                        </div>
+                        </div> {/* End chart-frame */}
                     </div>
 
-                    <aside className="page28h-right-column">
-                        <div className="page28h-sidebar">
-                            <h3 className="page28h-sidebar-title">{getText('page28_sidebar_title', lang)}</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                {getText('page28_sidebar_content', lang).split(/<br\s*\/?>/i).map((para, idx) => {
-                                    if (!para.trim()) return null;
-                                    let audioLabel = stripHtml(para);
-                                    if (lang === 'en') {
-                                        audioLabel = audioLabel.replace(/\$(\d+) million/g, '$1 million dollars');
-                                    }
-                                    let visualHtml = para;
-                                    if (lang === 'en') {
-                                        visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
-                                    } else {
-                                        visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
-                                    }
+                    <details 
+                        className="page28h-definition-details"
+                        role="region"
+                        aria-label={`${getText('page28_sidebar_title', lang)}. ${stripHtml(getText('page28_sidebar_content', lang))}`}
+                    >
+                        <summary>
+                            <span className="definition-arrow" aria-hidden="true">▼</span>
+                            <span>{getText('page28_sidebar_title', lang)}</span>
+                        </summary>
+                        <div className="page28h-definition-content">
+                            {getText('page28_sidebar_content', lang).split(/<br\s*\/?>/i).map((para, idx) => {
+                                if (!para.trim()) return null;
+                                let visualHtml = para;
+                                if (lang === 'en') {
+                                    visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
+                                } else {
+                                    visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
+                                }
 
-                                    return (
-                                        <li 
-                                            key={idx} 
-                                            style={{ marginBottom: '10px', lineHeight: '1.6', fontFamily: 'Arial, sans-serif', color: '#333' }}
-                                            aria-label={audioLabel}
-                                        >
-                                            <span 
-                                                aria-hidden="true" 
-                                                dangerouslySetInnerHTML={{ __html: visualHtml }} 
-                                            />
-                                        </li>
-                                    );
-                                })}
-                            </ul>
+                                return (
+                                    <p 
+                                        key={idx} 
+                                        style={{ marginBottom: '10px', lineHeight: '1.6', fontFamily: 'Arial, sans-serif', color: '#333' }}
+                                        dangerouslySetInnerHTML={{ __html: visualHtml }}
+                                    />
+                                );
+                            })}
                         </div>
-                    </aside>
+                    </details>
                 </div>
             </div>
         </main>
