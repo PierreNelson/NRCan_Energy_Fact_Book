@@ -1133,11 +1133,19 @@ const Page30 = () => {
                     padding-top: 5px;
                 }
 
+                .page30-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-top: 10px;
+                    margin-bottom: 20px;
+                    box-sizing: border-box;
+                }
+
                 .page30-content {
                     display: flex;
                     flex-direction: row;
                     gap: 15px;
-                    margin-top: 10px;
                 }
 
                 .page30-map-wrapper {
@@ -1154,9 +1162,9 @@ const Page30 = () => {
 
                 .page30-legend {
                     width: 100%;
-                    padding: 12px 15px;
-                    background-color: #fafafa;
-                    border: 1px solid #e0e0e0;
+                    padding: 12px 0;
+                    background-color: transparent;
+                    border: none;
                     border-radius: 4px;
                     margin-top: 15px;
                     display: flex;
@@ -1332,76 +1340,77 @@ const Page30 = () => {
                     </p>
                 </header>
 
-                <div className="page30-content">
-                    <div className="page30-map-wrapper">
-                        <div 
-                            ref={chartRef} 
-                            className="page30-map-container" 
-                            style={{ position: 'relative' }}
-                            role="region"
-                            aria-label={getText('page30_sr_summary', lang)}
-                            tabIndex="0"
-                        >
-                            {selectedProvinces !== null && (
-                                <button onClick={() => setSelectedProvinces(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
-                            )}
-                            <div aria-hidden="true">
-                            <Plot
-                                key={`map-${selectedProvinces ? selectedProvinces.join('-') : 'none'}`}
-                                data={plotlyData}
-                                layout={{
-                                    geo: {
-                                        scope: 'north america',
-                                        projection: {
-                                            type: 'conic conformal',
-                                            parallels: [50, 70],
-                                            rotation: { lon: -96 },
-                                            scale: mapScale
+                <div className="page30-chart-frame">
+                    <div className="page30-content">
+                        <div className="page30-map-wrapper">
+                            <div 
+                                ref={chartRef} 
+                                className="page30-map-container" 
+                                style={{ position: 'relative' }}
+                                role="region"
+                                aria-label={getText('page30_sr_summary', lang)}
+                                tabIndex="0"
+                            >
+                                {selectedProvinces !== null && (
+                                    <button onClick={() => setSelectedProvinces(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                                )}
+                                <div aria-hidden="true">
+                                <Plot
+                                    key={`map-${selectedProvinces ? selectedProvinces.join('-') : 'none'}`}
+                                    data={plotlyData}
+                                    layout={{
+                                        geo: {
+                                            scope: 'north america',
+                                            projection: {
+                                                type: 'conic conformal',
+                                                parallels: [50, 70],
+                                                rotation: { lon: -96 },
+                                                scale: mapScale
+                                            },
+                                            center: { lon: -96, lat: 62 },
+                                            showframe: false,
+                                            showland: false,
+                                            showcountries: false,
+                                            showcoastlines: false,
+                                            showsubunits: false,
+                                            showlakes: true,
+                                            lakecolor: '#f5f5f5',
+                                            bgcolor: 'rgba(0,0,0,0)'
                                         },
-                                        center: { lon: -96, lat: 62 },
-                                        showframe: false,
-                                        showland: false,
-                                        showcountries: false,
-                                        showcoastlines: false,
-                                        showsubunits: false,
-                                        showlakes: true,
-                                        lakecolor: 'white',
-                                        bgcolor: 'rgba(0,0,0,0)'
-                                    },
-                                    margin: { l: 0, r: 0, t: 0, b: 0 },
-                                    height: mapHeight,
-                                    clickmode: 'event',
-                                    dragmode: windowWidth <= 768 ? false : 'zoom',
-                                    paper_bgcolor: 'rgba(0,0,0,0)',
-                                    plot_bgcolor: 'rgba(0,0,0,0)',
-                                    showlegend: false
-                                }}
-                                onClick={handleMapClick}
-                                config={{
-                                    displayModeBar: true,
-                                    displaylogo: false,
-                                    responsive: true,
-                                    scrollZoom: false,
-                                    doubleClick: 'reset+autosize',
-                                    modeBarButtonsToRemove: ['lasso2d', 'select2d', 'toImage'],
-                                    modeBarButtonsToAdd: [{
-                                        name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                        icon: {
-                                            width: 24,
-                                            height: 24,
-                                            path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                        },
-                                        click: () => downloadChartWithTitle()
-                                    }]
-                                }}
-                                style={{ width: '100%', height: '100%' }}
-                            />
+                                        margin: { l: 0, r: 0, t: 0, b: 0 },
+                                        height: mapHeight,
+                                        clickmode: 'event',
+                                        dragmode: windowWidth <= 768 ? false : 'zoom',
+                                        paper_bgcolor: 'rgba(0,0,0,0)',
+                                        plot_bgcolor: 'rgba(0,0,0,0)',
+                                        showlegend: false
+                                    }}
+                                    onClick={handleMapClick}
+                                    config={{
+                                        displayModeBar: true,
+                                        displaylogo: false,
+                                        responsive: true,
+                                        scrollZoom: false,
+                                        doubleClick: 'reset+autosize',
+                                        modeBarButtonsToRemove: ['lasso2d', 'select2d', 'toImage'],
+                                        modeBarButtonsToAdd: [{
+                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+                                            icon: {
+                                                width: 24,
+                                                height: 24,
+                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
+                                            },
+                                            click: () => downloadChartWithTitle()
+                                        }]
+                                    }}
+                                    style={{ width: '100%', height: '100%' }}
+                                />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <aside className="page30-legend" aria-hidden="true">
+                    <aside className="page30-legend" aria-hidden="true">
                     <div className="page30-legend-section">
                         <div className="page30-legend-title">{getText('page30_legend_title_lines', lang)}</div>
                         <div className="page30-legend-items">
@@ -1436,6 +1445,7 @@ const Page30 = () => {
                         </div>
                     </div>
                 </aside>
+                </div>
 
                 <div 
                     role="region" 
