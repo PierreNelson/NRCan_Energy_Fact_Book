@@ -870,6 +870,8 @@ const getAccessibleDataTable = () => {
                     font-family: 'Lato', sans-serif;
                     color: #245e7f;
                     font-size: 41px;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     font-weight: bold;
                     font-style: normal;
                     margin: 0 0 10px 0;
@@ -956,8 +958,8 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37h-data-table {
-                    margin-top: 10px;
-                    margin-bottom: 10px;
+                    margin-top: 20px;
+                    margin-bottom: 0;
                     margin-left: 0;
                     margin-right: 0;
                     font-family: Arial, sans-serif;

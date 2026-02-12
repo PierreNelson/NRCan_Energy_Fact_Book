@@ -173,11 +173,11 @@ const Page26 = () => {
         const captionId = 'page26-table-caption';
 
         return (
-            <details 
+<details
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
                 style={{ 
-                    marginTop: '10px', 
-                    marginBottom: '10px', 
+                    marginTop: '20px', 
+                    marginBottom: '0', 
                     width: '100%', 
                     minWidth: '300px',
                     marginLeft: 0,
@@ -502,8 +502,8 @@ const Page26 = () => {
                     font-size: 41px;
                     font-weight: bold;
                     color: var(--gc-text);
-                    margin-bottom: 10px;
-                    margin-top: 0px;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     position: relative;
                     padding-bottom: 0.5em;
                 }
@@ -539,7 +539,7 @@ const Page26 = () => {
                 .page26-year-selector {
                     display: flex;
                     align-items: center;
-                    margin-bottom: 10px;
+                    margin-bottom: 15px;
                     padding: 10px 0;
                 }
 

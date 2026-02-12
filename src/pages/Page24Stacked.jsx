@@ -280,7 +280,7 @@ const Page24Stacked = () => {
         const captionId = 'page24h-table-caption';
 
         return (
-            <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)} className="page24h-table-btn-wrapper" style={{ marginTop: '20px', marginBottom: '10px' }}>
+            <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)} className="page24h-table-btn-wrapper" style={{ marginTop: '20px', marginBottom: '0' }}>
                 <summary 
                     role="button" 
                     aria-expanded={isTableOpen}
@@ -773,13 +773,16 @@ const Page24Stacked = () => {
                     background-color: #f5f5f5;
                     padding: 20px;
                     border-radius: 8px;
+                    margin-top: 0;
+                    margin-bottom: 20px;
                     box-sizing: border-box;
                 }
 
                 .page24h-table-wrapper {
                     display: block;
                     width: 100%;
-                    margin: 0;
+                    margin-top: 20px;
+                    margin-bottom: 0;
                 }
 
                 .page24h-table-wrapper details > summary {

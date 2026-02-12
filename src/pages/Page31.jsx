@@ -629,9 +629,10 @@ const Page31 = () => {
                 }
 
                 .page31-chart {
-                    height: calc(100vh - 700px);
                     width: 100%;
-                    min-height: 500px;
+                    height: 400px;
+                    position: relative;
+                    z-index: 1;
                 }
 
                 .page31-title {
@@ -639,8 +640,8 @@ const Page31 = () => {
                     color: #245e7f;
                     font-size: 50px;
                     font-weight: bold;
-                    margin-bottom: 10px;
-                    margin-top: 5px;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     position: relative;
                     padding-bottom: 0.5em;
                 }
@@ -674,12 +675,13 @@ const Page31 = () => {
                 }
 
                 .page31-data-table {
-                    margin-top: 10px;
-                    margin-bottom: 10px;
-                    margin-left: 0;
-                    margin-right: 0;
+                    margin-top: 0;
+                    margin-bottom: 0;
                     font-family: Arial, sans-serif;
                     width: 100%;
+                    position: relative;
+                    z-index: 10;
+                    background-color: #f5f5f5;
                 }
 
                 .page31-footnotes {
@@ -691,30 +693,15 @@ const Page31 = () => {
                     max-width: 65ch;
                 }
 
-                @media (max-width: 1745px) {
-                    .page31-chart {
-                        height: calc(100vh - 450px);
-                        min-height: 480px;
-                    }
-                }
-
                 @media (max-width: 1536px) {
                     .page31-title {
                         font-size: 1.8rem;
-                    }
-                    .page31-chart {
-                        height: calc(100vh - 420px);
-                        min-height: 460px;
                     }
                 }
 
                 @media (max-width: 1280px) {
                     .page31-title {
                         font-size: 1.6rem;
-                    }
-                    .page31-chart {
-                        height: calc(100vh - 380px);
-                        min-height: 440px;
                     }
                 }
 
@@ -725,10 +712,6 @@ const Page31 = () => {
                     .page31-subtitle {
                         font-size: 1.2rem;
                     }
-                    .page31-chart {
-                        height: calc(100vh - 340px);
-                        min-height: 420px;
-                    }
                 }
 
                 @media (max-width: 960px) {
@@ -737,10 +720,6 @@ const Page31 = () => {
                     }
                     .page31-subtitle {
                         font-size: 1.2rem;
-                    }
-                    .page31-chart {
-                        height: calc(100vh - 280px);
-                        min-height: 400px;
                     }
                 }
 
@@ -757,10 +736,6 @@ const Page31 = () => {
                     .page31-chart-title {
                         font-size: 26px;
                     }
-                    .page31-chart {
-                        height: calc(100vh - 280px);
-                        min-height: 350px;
-                    }
                     .page31-footnotes {
                         font-size: 18px;
                     }
@@ -773,10 +748,6 @@ const Page31 = () => {
                     .page31-subtitle {
                         font-size: 1.2rem;
                     }
-                    .page31-chart {
-                        height: calc(100vh - 260px);
-                        min-height: 320px;
-                    }
                 }
 
                 @media (max-width: 480px) {
@@ -786,9 +757,8 @@ const Page31 = () => {
                     .page31-subtitle {
                         font-size: 1.2rem;
                     }
-                    .page31-chart {
-                        height: calc(100vh - 240px);
-                        min-height: 280px;
+                    .page31-legend-label {
+                        font-size: 14px;
                     }
                 }
 
@@ -798,10 +768,6 @@ const Page31 = () => {
                     }
                     .page31-subtitle {
                         font-size: 1.2rem;
-                    }
-                    .page31-chart {
-                        height: calc(100vh - 220px);
-                        min-height: 250px;
                     }
                 }
 
@@ -825,14 +791,55 @@ const Page31 = () => {
                 .page31-chart-frame {
                     background-color: #f5f5f5;
                     padding: 20px;
+                    padding-bottom: 20px;
                     border-radius: 8px;
                     box-sizing: border-box;
+                    overflow: visible;
+                }
+
+                .page31-legend {
+                    display: flex;
+                    justify-content: center;
+                    gap: 30px;
+                    margin-top: 20px;
+                    margin-bottom: 20px;
+                    font-family: Arial, sans-serif;
+                    position: relative;
+                    z-index: 10;
+                    background-color: #f5f5f5;
+                    padding: 10px 0;
+                }
+
+                .page31-legend-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .page31-legend-color {
+                    width: 20px;
+                    height: 12px;
+                    display: inline-block;
+                }
+
+                .page31-legend-label {
+                    font-size: 18px;
+                    color: var(--gc-text);
+                }
+
+                @media (max-width: 480px) {
+                    .page31-legend-label {
+                        font-size: 14px;
+                    }
                 }
 
                 .page31-table-wrapper {
                     display: block;
                     width: 100%;
                     margin: 0;
+                    position: relative;
+                    z-index: 10;
+                    background-color: #f5f5f5;
                 }
 
                 .page31-table-wrapper details > summary {
@@ -932,22 +939,12 @@ const Page31 = () => {
                                     automargin: true,
                                     tickfont: { size: windowWidth <= 480 ? 9 : 11, family: 'Arial, sans-serif' }
                                 },
-                                legend: {
-                                    orientation: 'h',
-                                    x: windowWidth <= 384 ? 0.17 : windowWidth <= 480 ? 0.13 : windowWidth <= 640 ? 0.12 : windowWidth <= 768 ? 0.094 : windowWidth <= 960 ? 0.074 : windowWidth <= 1097 ? 0.064 : windowWidth <= 1280 ? 0.052 : windowWidth <= 1536 ? 0.044 : windowWidth <= 1745 ? 0.044 : 0.045,
-                                    xanchor: 'center',
-                                    y: windowWidth <= 384 ? -0.40 : windowWidth <= 480 ? -0.34 : windowWidth <= 640 ? -0.34 : windowWidth <= 768 ? -0.24 : windowWidth <= 960 ? -0.18 : windowWidth <= 1097 ? -0.16 :windowWidth <= 1280 ? -0.16 : windowWidth <= 1536 ? -0.16 : windowWidth <= 1745 ? -0.16 : -0.16,
-                                    yanchor: 'bottom',
-                                    font: { size: windowWidth <= 480 ? 11 : 18, family: 'Arial, sans-serif' },
-                                    traceorder: 'normal',
-                                    itemclick: false,
-                                    itemdoubleclick: false
-                                },
+                                showlegend: false,
                                 margin: { 
                                     l: 0, 
                                     r: 0,
                                     t: 40, 
-                                    b: 50
+                                    b: 60
                                 },
                                 autosize: true,
                                 bargap: 0.15,
@@ -1020,6 +1017,17 @@ const Page31 = () => {
                             />
                             </div>
                         </figure>
+
+                        <div className="page31-legend" aria-hidden="true">
+                            <div className="page31-legend-item">
+                                <span className="page31-legend-color" style={{ backgroundColor: '#419563' }}></span>
+                                <span className="page31-legend-label">CDIA</span>
+                            </div>
+                            <div className="page31-legend-item">
+                                <span className="page31-legend-color" style={{ backgroundColor: '#2EA3AD' }}></span>
+                                <span className="page31-legend-label">FDI</span>
+                            </div>
+                        </div>
 
                         <div className="page31-table-wrapper">
                             {getAccessibleDataTable()}

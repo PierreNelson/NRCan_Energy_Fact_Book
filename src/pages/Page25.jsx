@@ -448,8 +448,8 @@ const Page25 = () => {
             <details 
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
                 style={{ 
-                    marginTop: '10px', 
-                    marginBottom: '10px', 
+                    marginTop: '20px', 
+                    marginBottom: '0', 
                     width: '100%',
                     marginLeft: 0,
                     marginRight: 0,
@@ -846,8 +846,8 @@ const Page25 = () => {
                 .page25-year-selector {
                     display: flex;
                     align-items: center;
-                    margin-bottom: 10px;
-                    margin-top: 5px;
+                    margin-bottom: 15px;
+                    margin-top: 0;
                 }
 
                 .page25-year-label {

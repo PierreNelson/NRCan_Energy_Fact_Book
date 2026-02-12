@@ -1002,7 +1002,7 @@ const Page30 = () => {
     };
 
     const mapScale = 2.5;
-    const mapHeight = windowWidth <= 768 ? 500 : windowWidth <= 1100 ? 600 : 700;
+    const mapHeight = windowWidth <= 384 ? 230 : windowWidth <= 480 ? 290 : windowWidth <= 640 ? 350 : windowWidth <= 768 ? 500 : windowWidth <= 1100 ? 600 : 700;
 
     const LegendItem = ({ color, symbol, label, isLine, isOutline, size = 'medium' }) => {
         const sizeMap = { small: 8, medium: 12, large: 16 };
@@ -1100,13 +1100,15 @@ const Page30 = () => {
                 }
 
                 .page30-header {
-                    margin-bottom: 10px;
+                    margin-bottom: 20px;
                 }
 
                 .page30-title {
                     font-family: 'Lato', sans-serif;
                     font-size: 41px;
                     font-weight: bold;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     color: var(--gc-text);
                     margin: 0;
                     padding-bottom: 0.5em;
@@ -1197,6 +1199,7 @@ const Page30 = () => {
 
                 .page30-data-table {
                     margin-top: 20px;
+                    margin-bottom: 0;
                 }
 
                 .page30-data-table summary {
@@ -1243,6 +1246,7 @@ const Page30 = () => {
                     .page30-subtitle {
                         font-size: 35px;
                     }
+
                 }
 
                @media (max-width: 640px) {
@@ -1255,7 +1259,7 @@ const Page30 = () => {
                     }
 
                     .page30-map-wrapper {
-                        margin-left: -140px;
+                        margin-left: -180px;
                         margin-right: -105px;
                         width: calc(100% + 140px); 
                     }
@@ -1281,10 +1285,14 @@ const Page30 = () => {
                         flex-direction: column;
                         gap: 4px;
                     }
+                    .page30-map-container .js-plotly-plot .plotly .modebar {
+                        right: 90px !important;
+                        top: -20px !important;    
+                    }
 
                     @media (max-width: 480px) {
                         .page30-map-wrapper {
-                            margin-left: -70px;
+                            margin-left: -170px;
                             margin-right: -100px;
                             width: calc(100% + 100px);
                         }
@@ -1292,7 +1300,7 @@ const Page30 = () => {
 
                     @media (max-width: 384px) {
                         .page30-map-wrapper {
-                            margin-left: -45px;
+                            margin-left: -155px;
                             margin-right: -90px;
                             width: calc(100% + 70px);
                         }
@@ -1310,6 +1318,8 @@ const Page30 = () => {
 
                 .page30-data-table {
                     width: 100%;
+                    margin-top: 20px;
+                    margin-bottom: 0;
                 }
 
                 /* This is the actual scrolling box */

@@ -530,7 +530,7 @@ const Page8 = () => {
                 }
 
                 .page8-header {
-                    margin-bottom: 10px;
+                    margin-bottom: 20px;
                 }
 
                 .page8-title {
@@ -538,7 +538,8 @@ const Page8 = () => {
                     font-size: 41px;
                     font-weight: bold;
                     color: var(--gc-text);
-                    margin: 0 0 5px 0;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     position: relative;
                     padding-bottom: 0.5em;
                 }
@@ -558,7 +559,8 @@ const Page8 = () => {
                     font-size: 29px;
                     font-weight: bold;
                     color: var(--gc-text);
-                    margin: 0;
+                    margin-top: 0;
+                    margin-bottom: 20px;
                     white-space: pre-line;
                 }
 
@@ -566,6 +568,7 @@ const Page8 = () => {
                     background-color: #f5f5f5;
                     padding: 20px;
                     border-radius: 8px;
+                    margin-top: 0;
                     margin-bottom: 20px;
                     box-sizing: border-box;
                 }
@@ -693,7 +696,7 @@ const Page8 = () => {
 
                 .page8-data-table {
                     width: 100%;
-                    margin: 5px 0;
+                    margin-bottom: 0;
                     position: relative;
                     z-index: 10;
                 }
@@ -787,6 +790,10 @@ const Page8 = () => {
                     .page8-data-table table {
                         font-size: 18px;
                     }
+
+                    .page8-data-table {
+                        margin-top: 100px;
+                    }
                 }
                 
 
@@ -816,10 +823,25 @@ const Page8 = () => {
 
                 @media (max-width: 480px) {
                     .page8-map-container {
-                        width: 100%;
+                        width: 140%;
                         margin-top: 0;
-                        margin-left: 0;
+                        margin-left: -20% !important;
                         height: 400px;
+                    }
+                    .page8-table-wrapper {
+                        margin-top: 120px;
+                    }
+                }
+
+                @media (max-width: 384px) {
+                    .page8-table-wrapper {
+                        margin-top: 150px;
+                    }
+                }
+
+                @media (max-width: 320px) {
+                    .page8-table-wrapper {
+                        margin-top: 180px;
                     }
                 }
 
@@ -844,6 +866,9 @@ const Page8 = () => {
                     display: block;
                     width: 100%;
                     margin: 0;
+                    margin-top: 20px;
+                    position: relative;
+                    z-index: 10;
                 }
 
                 .page8-table-wrapper details > summary {
@@ -881,6 +906,12 @@ const Page8 = () => {
                     width: max-content !important;
                     min-width: 100%;
                     border-collapse: collapse;
+                }
+
+                .table-responsive table th,
+                .table-responsive table td {
+                    white-space: nowrap;
+                    padding: 8px 12px;
                 }
             `}</style>
             <div className="page8-container">
@@ -1195,7 +1226,7 @@ const Page8 = () => {
                                     click: (gd) => downloadChartWithTitle(gd)
                                 }]
                             }}
-                            style={{ width: '100%', height: '650px' }}
+                            style={{ width: '100%', height: '100%' }}
                         />
                     )}
                     </figure>

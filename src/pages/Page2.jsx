@@ -20,6 +20,8 @@ const Page2 = () => {
     const tableScrollRef = useRef(null);
     const rankingsTopScrollRef = useRef(null);
     const rankingsTableScrollRef = useRef(null);
+    const staticRankingsTopScrollRef = useRef(null);
+    const staticRankingsTableScrollRef = useRef(null);
 
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const yearDropdownRef = useRef(null);
@@ -95,6 +97,124 @@ const Page2 = () => {
             observer.disconnect();
         };
     }, [isTableOpen, windowWidth]);
+
+    // Scroll syncing for rankings table
+    useEffect(() => {
+        const topScroll = rankingsTopScrollRef.current;
+        const tableScroll = rankingsTableScrollRef.current;
+
+        if (!topScroll || !tableScroll) return;
+
+        const syncScrollbars = () => {
+            const table = tableScroll.querySelector('table');
+            if (!table) return;
+
+            const scrollWidth = table.offsetWidth;
+            const containerWidth = tableScroll.clientWidth;
+
+            const topSpacer = topScroll.firstElementChild;
+            if (topSpacer) {
+                topSpacer.style.width = `${scrollWidth}px`;
+            }
+
+            if (scrollWidth > containerWidth) {
+                topScroll.style.display = 'block';
+                topScroll.style.opacity = '1';
+            } else {
+                topScroll.style.display = 'none';
+            }
+        };
+
+        const handleTopScroll = () => {
+            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+                tableScroll.scrollLeft = topScroll.scrollLeft;
+            }
+        };
+
+        const handleTableScroll = () => {
+            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+                topScroll.scrollLeft = tableScroll.scrollLeft;
+            }
+        };
+
+        topScroll.addEventListener('scroll', handleTopScroll);
+        tableScroll.addEventListener('scroll', handleTableScroll);
+
+        const observer = new ResizeObserver(() => {
+            window.requestAnimationFrame(syncScrollbars);
+        });
+
+        const tableElement = tableScroll.querySelector('table');
+        if (tableElement) observer.observe(tableElement);
+        observer.observe(tableScroll);
+
+        syncScrollbars();
+
+        return () => {
+            topScroll.removeEventListener('scroll', handleTopScroll);
+            tableScroll.removeEventListener('scroll', handleTableScroll);
+            observer.disconnect();
+        };
+    }, [isRankingsTableOpen, windowWidth]);
+
+    // Scroll syncing for static rankings table (always visible)
+    useEffect(() => {
+        const topScroll = staticRankingsTopScrollRef.current;
+        const tableScroll = staticRankingsTableScrollRef.current;
+
+        if (!topScroll || !tableScroll) return;
+
+        const syncScrollbars = () => {
+            const table = tableScroll.querySelector('table');
+            if (!table) return;
+
+            const scrollWidth = table.offsetWidth;
+            const containerWidth = tableScroll.clientWidth;
+
+            const topSpacer = topScroll.firstElementChild;
+            if (topSpacer) {
+                topSpacer.style.width = `${scrollWidth}px`;
+            }
+
+            if (scrollWidth > containerWidth) {
+                topScroll.style.display = 'block';
+                topScroll.style.opacity = '1';
+            } else {
+                topScroll.style.display = 'none';
+            }
+        };
+
+        const handleTopScroll = () => {
+            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+                tableScroll.scrollLeft = topScroll.scrollLeft;
+            }
+        };
+
+        const handleTableScroll = () => {
+            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+                topScroll.scrollLeft = tableScroll.scrollLeft;
+            }
+        };
+
+        topScroll.addEventListener('scroll', handleTopScroll);
+        tableScroll.addEventListener('scroll', handleTableScroll);
+
+        const observer = new ResizeObserver(() => {
+            window.requestAnimationFrame(syncScrollbars);
+        });
+
+        const tableElement = tableScroll.querySelector('table');
+        if (tableElement) observer.observe(tableElement);
+        observer.observe(tableScroll);
+
+        syncScrollbars();
+
+        return () => {
+            topScroll.removeEventListener('scroll', handleTopScroll);
+            tableScroll.removeEventListener('scroll', handleTableScroll);
+            observer.disconnect();
+        };
+    }, [windowWidth]);
 
     useEffect(() => {
         if (isTableOpen && chartDetailsRef.current) {
@@ -573,6 +693,8 @@ const Page2 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 50px;
                     font-weight: bold;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     color: #245e7f;
                     margin: 0 0 10px 0;
                     line-height: 1.2;
@@ -639,7 +761,8 @@ const Page2 = () => {
                 .page2-chart-section .data-table-wrapper,
                 .page2-rankings-section .data-table-wrapper {
                     padding-top: 5px;
-                    margin-top: 5px;
+                    margin-top: 20px;
+                    margin-bottom: 0;
                     width: 100%;
                     box-sizing: border-box;
                 }
@@ -687,27 +810,37 @@ const Page2 = () => {
                     white-space: normal;
                 }
 
-                .page2-rankings-table {
+                .static-rankings-scroll-container {
+                    display: block;
                     width: 100%;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                    border: 1px solid #ddd;
+                    background: #fff;
+                }
+
+                .page2-rankings-table {
+                    width: max-content !important;
+                    min-width: 100%;
                     border-collapse: collapse;
                     font-family: 'Noto Sans', sans-serif;
-                    font-size: clamp(12px, 1.5vw, 20px);
-                    table-layout: auto;
+                    font-size: clamp(14px, 1.5vw, 20px);
                 }
 
                 .page2-rankings-table th {
                     background-color: #48494a !important;
                     color: white !important;
-                    padding: clamp(4px, 0.8vw, 8px) clamp(5px, 1vw, 10px);
+                    padding: 8px 15px;
                     text-align: center;
                     font-weight: bold;
                     white-space: nowrap;
                 }
 
                 .page2-rankings-table td {
-                    padding: clamp(8px, 1.5vw, 17px) clamp(8px, 1.2vw, 15px);
+                    padding: 12px 15px;
                     text-align: center;
                     border: 1px solid #ddd;
+                    white-space: nowrap;
                 }
 
                 /* Removed custom zebra - using .table-striped instead */
@@ -716,6 +849,7 @@ const Page2 = () => {
                     text-align: left;
                     font-weight: bold;
                     color: #48494a;
+                    white-space: nowrap;
                 }
 
                 .page2-year-selector {
@@ -817,6 +951,7 @@ const Page2 = () => {
 
                 .data-table-wrapper {
                     margin-top: 20px;
+                    margin-bottom: 0;
                 }
 
                 .data-table-wrapper summary {
@@ -841,62 +976,25 @@ const Page2 = () => {
                 }
 
                 .table-responsive {
-                    overflow-x: visible;
-                    margin-top: 5px;
+                    display: block;
                     width: 100%;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                    border: 1px solid #ddd;
+                    background: #fff;
+                    margin-top: 5px;
                 }
 
                 .table-responsive table {
-                    width: 100% !important;
-                    min-width: 100% !important;
-                    max-width: 100% !important;
+                    width: max-content !important;
+                    min-width: 100%;
                     border-collapse: collapse;
-                    table-layout: auto;
                 }
 
                 .table-responsive table th,
                 .table-responsive table td {
-                    white-space: normal;
-                    overflow-wrap: break-word;
-                    word-wrap: break-word;
-                }
-
-                @media (max-width: 992px) {
-                    .table-responsive {
-                        overflow-x: hidden !important;
-                    }
-                    
-                    .table-responsive table {
-                        table-layout: fixed !important;
-                        font-size: 0.8rem;
-                    }
-                    
-                    .table-responsive table th,
-                    .table-responsive table td {
-                        padding: 4px 3px !important;
-                    }
-                }
-
-                @media (max-width: 640px) {
-                    .table-responsive table {
-                        font-size: 0.7rem;
-                    }
-                    
-                    .table-responsive table th,
-                    .table-responsive table td {
-                        padding: 3px 2px !important;
-                    }
-                }
-
-                @media (max-width: 480px) {
-                    .table-responsive table {
-                        font-size: 0.6rem;
-                    }
-                    
-                    .table-responsive table th,
-                    .table-responsive table td {
-                        padding: 2px 1px !important;
-                    }
+                    white-space: nowrap;
+                    padding: 8px 12px;
                 }
 
                 .custom-chart-container {
@@ -1285,7 +1383,21 @@ const Page2 = () => {
                                 <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                             </summary>
 
-                            {/* Top scrollbar hidden - table now fits screen */}
+                            {/* Top scrollbar */}
+                            <div 
+                                ref={topScrollRef}
+                                style={{ 
+                                    width: '100%', 
+                                    overflowX: 'auto', 
+                                    overflowY: 'hidden',
+                                    marginBottom: '0px',
+                                    marginTop: '10px',
+                                    display: windowWidth <= 768 ? 'none' : 'block' 
+                                }}
+                                aria-hidden="true"
+                            >
+                                <div style={{ height: '20px' }}></div>
+                            </div>
 
                             <div 
                                 ref={tableScrollRef}
@@ -1369,26 +1481,51 @@ const Page2 = () => {
 
                     <div className="page2-rankings-section">
                         <h3 className="page2-rankings-title">{getText('page2_rankings_title', lang)}, {year}</h3>
-                        <table className="page2-rankings-table table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th scope="col"></th>
-                                    <th scope="col">{getText('page2_rankings_header_reserves', lang)}</th>
-                                    <th scope="col">{getText('page2_rankings_header_production', lang)}</th>
-                                    <th scope="col">{getText('page2_rankings_header_exports', lang)}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rankingsData.map((row, idx) => (
-                                    <tr key={idx}>
-                                        <td className="resource-cell">{getText(row.resource, lang)}</td>
-                                        <td>{row.reserves}</td>
-                                        <td>{row.production}</td>
-                                        <td>{row.exports}</td>
+                        
+                        {/* Top scrollbar for static rankings table */}
+                        <div 
+                            ref={staticRankingsTopScrollRef}
+                            style={{ 
+                                width: '100%', 
+                                overflowX: 'auto', 
+                                overflowY: 'hidden',
+                                marginBottom: '0px',
+                                display: windowWidth <= 768 ? 'none' : 'block' 
+                            }}
+                            aria-hidden="true"
+                        >
+                            <div style={{ height: '20px' }}></div>
+                        </div>
+                        
+                        {/* Scrollable table container */}
+                        <div 
+                            ref={staticRankingsTableScrollRef}
+                            className="static-rankings-scroll-container"
+                            role="region"
+                            aria-label={lang === 'en' ? 'Global energy rankings table' : 'Tableau des classements énergétiques mondiaux'}
+                            tabIndex="0"
+                        >
+                            <table className="page2-rankings-table table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col"></th>
+                                        <th scope="col">{getText('page2_rankings_header_reserves', lang)}</th>
+                                        <th scope="col">{getText('page2_rankings_header_production', lang)}</th>
+                                        <th scope="col">{getText('page2_rankings_header_exports', lang)}</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {rankingsData.map((row, idx) => (
+                                        <tr key={idx}>
+                                            <td className="resource-cell">{getText(row.resource, lang)}</td>
+                                            <td>{row.reserves}</td>
+                                            <td>{row.production}</td>
+                                            <td>{row.exports}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         <details 
                             ref={rankingsDetailsRef}
@@ -1401,7 +1538,21 @@ const Page2 = () => {
                                 <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                             </summary>
 
-                            {/* Top scrollbar hidden - table now fits screen */}
+                            {/* Top scrollbar */}
+                            <div 
+                                ref={rankingsTopScrollRef}
+                                style={{ 
+                                    width: '100%', 
+                                    overflowX: 'auto', 
+                                    overflowY: 'hidden',
+                                    marginBottom: '0px',
+                                    marginTop: '10px',
+                                    display: windowWidth <= 768 ? 'none' : 'block' 
+                                }}
+                                aria-hidden="true"
+                            >
+                                <div style={{ height: '20px' }}></div>
+                            </div>
 
                             <div 
                                 ref={rankingsTableScrollRef}

@@ -34,7 +34,8 @@ const Page3 = () => {
                     font-size: 41px;
                     font-weight: bold;
                     color: var(--gc-text);
-                    margin: 0 0 30px 0;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     line-height: 1.2;
                     position: relative;
                     padding-bottom: 0.5em;
@@ -55,7 +56,8 @@ const Page3 = () => {
                     font-size: 20px;
                     line-height: 1.5;
                     color: var(--gc-text);
-                    margin-bottom: 25px;
+                    margin-top: 0;
+                    margin-bottom: 20px;
                     max-width: 65ch;
                 }
 

@@ -658,6 +658,8 @@ const Page32 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 41px;
                     font-weight: bold;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     color: var(--gc-text);
                     margin-top: 5px;
                     line-height: 1.3;
@@ -746,6 +748,7 @@ const Page32 = () => {
                 .page32-data-table {
                     width: 100%;
                     margin-top: 200px;
+                    margin-bottom: 0;
                     margin-left: 0;
                     margin-right: 0;
                 }

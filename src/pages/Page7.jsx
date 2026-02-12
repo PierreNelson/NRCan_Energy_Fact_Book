@@ -484,7 +484,8 @@ const Page7 = () => {
                     font-size: 50px;
                     font-weight: bold;
                     color: #245e7f;
-                    margin-bottom: 5px;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     position: relative;
                     padding-bottom: 0.5em;
                 }
@@ -502,26 +503,30 @@ const Page7 = () => {
                     font-size: 39px;
                     font-weight: bold;
                     color: #5d5d5f;
+                    margin-top: 0;
+                    margin-bottom: 20px;
                 }
                 .page7-subtitle2 {
                     font-family: 'Lato', sans-serif;
                     font-size: 29px;
                     font-weight: bold;
                     color: #527291;
+                    margin-top: 0;
                     margin-bottom: 20px;
-                    margin-top: -10px;
                 }
                 .page7-chart-title {
                     font-family: 'Lato', sans-serif;
                     font-size: 29px;
                     font-weight: bold;
                     color: #221e1f;
-                    margin-bottom: 15px;
+                    margin-top: 0;
+                    margin-bottom: 20px;
                 }
                 .page7-chart {
                     position: relative;
                     width: 100%;
-                    margin-top: 20px;
+                    margin-top: 0;
+                    margin-bottom: 15px;
                 }
                 .page7-chart .js-plotly-plot {
                     width: 100% !important;
@@ -642,6 +647,7 @@ const Page7 = () => {
                 }
                 .data-table-wrapper {
                     margin-top: 20px;
+                    margin-bottom: 0;
                 }
                 .data-table-wrapper summary {
                     cursor: pointer;
@@ -718,6 +724,7 @@ const Page7 = () => {
                     background-color: #f5f5f5;
                     padding: 20px;
                     border-radius: 8px;
+                    margin-top: 0;
                     margin-bottom: 20px;
                     box-sizing: border-box;
                 }
@@ -726,6 +733,7 @@ const Page7 = () => {
                     display: block;
                     width: 100%;
                     margin: 0;
+                    margin-top: 20px;
                 }
 
                 .page7-table-wrapper details > summary {

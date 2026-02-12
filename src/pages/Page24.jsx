@@ -634,6 +634,8 @@ const Page24 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 50px;
                     font-weight: bold;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     color: #245e7f;
                     margin: 0 0 20px 0;
                     line-height: 1.2;
@@ -688,7 +690,7 @@ const Page24 = () => {
                     display: flex;
                     flex-wrap: wrap;
                     gap: 15px;
-                    margin-top: 10px;
+                    margin-top: 15px;
                     cursor: default;
                     justify-content: center;
                     width: 100%;
@@ -852,7 +854,10 @@ const Page24 = () => {
 
                 .page24-data-table {
                     width: 100%;
-                    margin-top: 10px;
+                    margin-top: 20px;
+                    margin-bottom: 0;
+                    position: relative;
+                    z-index: 100;
                 }
 
                 .page24-data-table > summary {

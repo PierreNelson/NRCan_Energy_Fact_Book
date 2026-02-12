@@ -686,6 +686,8 @@ const Page33 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 50px;
                     font-weight: bold;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     color: #245e7f;
                     margin: 30px 0 20px 0;
                     line-height: 1.2;
@@ -1079,7 +1081,8 @@ const Page33 = () => {
                 .page33-data-table {
                     display: block;
                     width: 100%;
-                    margin: 0;
+                    margin-top: 20px;
+                    margin-bottom: 0;
                 }
 
                 .page33-data-table > summary {

@@ -367,11 +367,11 @@ const Page27 = () => {
         const captionId = 'page27-table-caption';
 
         return (
-            <details 
+<details
                 onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
                 style={{ 
-                    marginTop: '10px', 
-                    marginBottom: '10px', 
+                    marginTop: '20px', 
+                    marginBottom: '0', 
                     marginLeft: 0,
                     marginRight: 0,
                     fontFamily: 'Arial, sans-serif'
@@ -713,8 +713,8 @@ const Page27 = () => {
                     font-size: 41px;
                     font-weight: bold;
                     color: var(--gc-text);
-                    margin-bottom: 10px;
-                    margin-top: 5px;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     text-align: left;
                     position: relative;
                     padding-bottom: 0.5em;

@@ -439,6 +439,34 @@ const Page28 = () => {
         ? `There were ${summary.clean_tech_projects || 215} clean technology projects valued at ${formatBillionSR(summary.clean_tech_value || 194)}.`
         : `Il y avait ${summary.clean_tech_projects || 215} projets de technologies propres d'une valeur de ${formatBillionSR(summary.clean_tech_value || 194)}.`;
 
+    // --- HELPER: WRAP TITLE TEXT FOR ZOOM/MOBILE ---
+    const getWrappedTitle = (text, width) => {
+        // If width is large (desktop), return original text
+        if (width > 700) return text;
+        
+        // At 500% zoom, viewport is tiny (~300-400px).
+        // 18px font needs a break roughly every 20-25 characters.
+        const charLimit = width < 480 ? 25 : 35;
+        
+        const words = text.split(' ');
+        let lines = [''];
+        let lineIndex = 0;
+
+        words.forEach(word => {
+            if ((lines[lineIndex].length + word.length) > charLimit) {
+                // Start a new line
+                lines.push(word + ' ');
+                lineIndex++;
+            } else {
+                // Append to current line
+                lines[lineIndex] += word + ' ';
+            }
+        });
+
+        // Join with Plotly's line break tag
+        return lines.map(l => l.trim()).join('<br>');
+    };
+
     return (
         <main
             id="page-28"
@@ -479,7 +507,8 @@ const Page28 = () => {
                     font-size: 41px;
                     font-weight: bold;
                     color: var(--gc-text);
-                    margin: 0 0 20px 0;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     position: relative;
                     padding-bottom: 0.5em;
                 }
@@ -529,7 +558,7 @@ const Page28 = () => {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
                     line-height: 1.6;
-                    margin-bottom: 12px;
+                    margin-bottom: 20px;
                     color: var(--gc-text);
                     max-width: 65ch;
                 }
@@ -566,13 +595,25 @@ const Page28 = () => {
         height: 500px !important;
     }
 
+    .page28-chart .modebar {
+        transform: translateX(100%) !important;
+        transform: translateY(-100%) !important;
+
+    }
+
                 .page28-chart-title {
                     font-family: 'Lato', sans-serif;
                     font-size: 29px;
                     font-weight: bold;
                     text-align: center;
-                    margin: 0 60px 10px 60px;
+                    margin: 0 0 10px 0;
+                    padding: 0 10px;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    white-space: normal;
                     color: var(--gc-text);
+                    width: 100%;
+                    box-sizing: border-box;
                 }
 
     .page28-custom-legend {
@@ -733,7 +774,8 @@ const Page28 = () => {
     .page28-table-wrapper {
         display: block;
         width: 100%;
-        margin: 0;
+        margin-top: 20px;
+        margin-bottom: 0;
     }
 
     .page28-table-wrapper > summary {
@@ -919,10 +961,11 @@ const Page28 = () => {
                                             clickmode: 'event',
                                             dragmode: windowWidth <= 768 ? false : 'zoom',
                                             title: {
-                                                text: `<b>${chartTitle}</b>`,
+                                                text: `<b>${getWrappedTitle(chartTitle, windowWidth)}</b>`,
                                                 font: { size: 18, family: 'Arial, sans-serif', color: '#333' },
                                                 x: 0.5,
-                                                xanchor: 'center'
+                                                xanchor: 'center',
+                                                y: 0.95
                                             },
                                             margin: { l: 60, r: 60, t: 50, b: 40 },
                                             xaxis: {

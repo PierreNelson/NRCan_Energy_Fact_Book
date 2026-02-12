@@ -527,7 +527,7 @@ const Page28Stacked = () => {
     .page28h-definition-details {
         width: 100%;
         margin-top: 20px;
-        margin-bottom: 40px;
+        margin-bottom: 30px;
         align-self: flex-start;
     }
 
@@ -725,7 +725,8 @@ const Page28Stacked = () => {
     .page28h-table-wrapper {
         display: block;
         width: 100%;
-        margin: 0;
+        margin-top: 20px;
+        margin-bottom: 0;
     }
 
     .page28h-table-wrapper > summary {

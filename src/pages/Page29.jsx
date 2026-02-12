@@ -229,7 +229,8 @@ const Page29 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 41px;
                     font-weight: bold;
-                    margin-bottom: 20px;
+                    margin-top: 0;
+                    margin-bottom: 25px;
                     color: var(--gc-text);
                     position: relative;
                     padding-bottom: 0.5em;
