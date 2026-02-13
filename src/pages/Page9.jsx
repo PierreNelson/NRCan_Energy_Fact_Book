@@ -177,6 +177,26 @@ const Page9 = () => {
 
     const years = Array.from({ length: 2024 - 2009 + 1 }, (_, i) => 2024 - i);
 
+    // Yearly employment data by province for all years (currently same values - will be updated with real data later)
+    // Each year contains direct employment values for each province
+    const yearlyProvinceData = years.map(yr => ({
+        year: yr,
+        bc: 29873,
+        ab: 159826,
+        sk: 17168,
+        mb: 6679,
+        on: 53834,
+        qc: 33109,
+        nb: 5491,
+        ns: 3128,
+        pe: 348,
+        nl: 6155,
+        yt: 149,
+        nt: 254,
+        nu: 229,
+        national_total: 316200
+    }));
+
     const COLORS = {
         'energy_sector': '#245e7f',
         'non_energy': '#9A9389',
@@ -434,23 +454,34 @@ const Page9 = () => {
     const downloadTableAsCSV = () => {
         const headers = [
             lang === 'en' ? 'Province/Territory' : 'Province/Territoire',
-            lang === 'en' ? 'Direct jobs' : 'Emplois directs',
-            lang === 'en' ? 'Indirect jobs' : 'Emplois indirects',
-            lang === 'en' ? 'Total jobs' : 'Total emplois',
-            lang === 'en' ? '% share of energy sector' : '% du secteur de l\'énergie',
-            lang === 'en' ? '% share of non-energy sectors' : '% des secteurs non énergétiques'
+            ...yearlyProvinceData.map(d => String(d.year))
         ];
 
         const rows = provinceCodes.map(code => {
             const info = provinceInfo[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
-            const direct = employmentData[code].direct;
-            const indirect = employmentData[code].indirect;
-            const total = direct + indirect;
-            const energyShare = getProvinceEnergyShare(code);
-            const nonEnergyShare = getProvinceNonEnergyShare(code);
-            return [name, direct, indirect, total, energyShare, nonEnergyShare];
+            return [name, ...yearlyProvinceData.map(yearData => yearData[code])];
         });
+
+        // Add Canada Total row
+        rows.push([
+            lang === 'en' ? 'Canada Total (Direct)' : 'Total Canada (direct)',
+            ...yearlyProvinceData.map(yearData => yearData.national_total)
+        ]);
+
+        // Add share rows
+        rows.push([
+            lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)",
+            ...yearlyProvinceData.map(() => `${employmentData.energy_direct_pct}%`)
+        ]);
+        rows.push([
+            lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)",
+            ...yearlyProvinceData.map(() => `${employmentData.energy_indirect_pct}%`)
+        ]);
+        rows.push([
+            lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)",
+            ...yearlyProvinceData.map(() => `${employmentData.share_total_pct}%`)
+        ]);
 
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -465,11 +496,7 @@ const Page9 = () => {
         const title = getText('page9_title', lang);
         const headers = [
             lang === 'en' ? 'Province/Territory' : 'Province/Territoire',
-            lang === 'en' ? 'Direct jobs' : 'Emplois directs',
-            lang === 'en' ? 'Indirect jobs' : 'Emplois indirects',
-            lang === 'en' ? 'Total jobs' : 'Total emplois',
-            lang === 'en' ? '% energy' : '% énergie',
-            lang === 'en' ? '% non-energy' : '% non-énergie'
+            ...yearlyProvinceData.map(d => String(d.year))
         ];
 
         const headerRow = new TableRow({
@@ -485,19 +512,52 @@ const Page9 = () => {
         const dataRows = provinceCodes.map(code => {
             const info = provinceInfo[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
-            const direct = employmentData[code].direct;
-            const indirect = employmentData[code].indirect;
-            const total = direct + indirect;
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: name, size: 18 })], alignment: AlignmentType.LEFT })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(direct), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(indirect), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(total), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getProvinceEnergyShare(code) + '%', size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getProvinceNonEnergyShare(code) + '%', size: 18 })], alignment: AlignmentType.RIGHT })] })
+                    ...yearlyProvinceData.map(yearData => new TableCell({ 
+                        children: [new Paragraph({ children: [new TextRun({ text: formatNumber(yearData[code]), size: 18 })], alignment: AlignmentType.RIGHT })] 
+                    }))
                 ]
             });
+        });
+
+        // Add Canada Total row
+        const totalRow = new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Canada Total (Direct)' : 'Total Canada (direct)', bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
+                ...yearlyProvinceData.map(yearData => new TableCell({ 
+                    children: [new Paragraph({ children: [new TextRun({ text: formatNumber(yearData.national_total), bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                }))
+            ]
+        });
+
+        // Add share rows
+        const shareDirectRow = new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)", bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
+                ...yearlyProvinceData.map(() => new TableCell({ 
+                    children: [new Paragraph({ children: [new TextRun({ text: `${employmentData.energy_direct_pct}%`, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                }))
+            ]
+        });
+
+        const shareIndirectRow = new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)", bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
+                ...yearlyProvinceData.map(() => new TableCell({ 
+                    children: [new Paragraph({ children: [new TextRun({ text: `${employmentData.energy_indirect_pct}%`, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                }))
+            ]
+        });
+
+        const shareTotalRow = new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)", bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
+                ...yearlyProvinceData.map(() => new TableCell({ 
+                    children: [new Paragraph({ children: [new TextRun({ text: `${employmentData.share_total_pct}%`, bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                }))
+            ]
         });
 
         const doc = new Document({
@@ -510,8 +570,7 @@ const Page9 = () => {
                     }),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [2500, 1500, 1500, 1500, 1200, 1200],
-                        rows: [headerRow, ...dataRows]
+                        rows: [headerRow, ...dataRows, totalRow, shareDirectRow, shareIndirectRow, shareTotalRow]
                     })
                 ]
             }]
@@ -547,9 +606,11 @@ const Page9 = () => {
 
     // Responsive map height based on window width
     const mapHeight = useMemo(() => {
-        if (windowWidth <= 480) return 400;  // Mobile height
-        if (windowWidth <= 768) return 550;  // Tablet height
-        return 750;                          // Desktop height
+        if (windowWidth <= 384) return 400; 
+        if (windowWidth <= 640) return 400;
+        if (windowWidth <= 768) return 550;
+        if (windowWidth <= 1280) return 650; 
+        return 750;                         
     }, [windowWidth]);
 
     const mapChartData = useMemo(() => {
@@ -780,6 +841,11 @@ const Page9 = () => {
                     pointer-events: auto;
                 }
 
+                .page9-map-container .js-plotly-plot .plotly .modebar {
+                    right: 20% !important;
+                    top: 100px !important;
+                }
+
                 .page9-indigenous-bullet {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
@@ -795,6 +861,8 @@ const Page9 = () => {
                     font-weight: bold;
                     color: #000000;
                     margin-bottom: 10px;
+                    margin-top: 20px !important;
+                    margin-left: 40% !important;
                 }
 
                 .page9-pie-container {
@@ -895,7 +963,7 @@ const Page9 = () => {
                     display: none;
                 }
 
-                @media (max-width: 1200px) {
+                @media (max-width: 1280px) {
                     .page9-content-row {
                         flex-direction: column;
                     }
@@ -911,7 +979,6 @@ const Page9 = () => {
                         text-align: center;
                     }
                     
-                    /* Force centering for pie chart */
                     .page9-pie-container {
                         margin-left: -160px !important;
                         margin-right: auto !important;
@@ -921,10 +988,14 @@ const Page9 = () => {
                         height: 350px;
                     }
 
-                    /* Force centering for legend */
+                    .page9-pie-title {
+                        margin-top: 100px !important;
+                        margin-left: 0% !important;
+                    }
+
                     .page9-legend {
                         text-align: center;
-                        margin-left: 0 !important;
+                        margin-left: 0px !important;
                         width: 100%;
                         display: flex;
                         flex-direction: column;
@@ -938,6 +1009,18 @@ const Page9 = () => {
                         text-align: left;
                         align-self: center;
                         max-width: 600px;
+                    }
+
+                    .page9-map-container {
+                        margin-left: -50% !important;
+                    }
+
+                    .page9-pie-container .js-plotly-plot .plotly .modebar {
+                        right: -400px !important;
+                    }
+
+                    .page9-map-container .js-plotly-plot .plotly .modebar {
+                        right: 30% !important;
                     }
                 }
 
@@ -957,6 +1040,10 @@ const Page9 = () => {
                         min-width: 0;
                         height: 550px; /* Matches JS tablet height */
                     }
+
+                    .page9-map-container .js-plotly-plot .plotly .modebar {
+                        right: 25% !important;
+                    }
                 }
 
                 @media (max-width: 640px) {
@@ -973,9 +1060,30 @@ const Page9 = () => {
 
                 @media (max-width: 480px) {
                     .page9-map-container {
-                        width: 100%;
-                        margin-left: 0 !important;
+                        width: 140%;
+                        margin-left: -15% !important;
                         height: 400px; /* Matches JS mobile height */
+                    }
+                    .page9-map-container .js-plotly-plot .plotly .modebar {
+                        right: 15% !important;
+                    }
+
+                    .page9-pie-container .js-plotly-plot .plotly .modebar {
+                        right: -350px !important;
+                    }
+                }                        
+
+                @media (max-width: 384px) {
+                    .page9-map-container {
+                        margin-left: -25% !important;
+                    }
+
+                    .page9-map-container .js-plotly-plot .plotly .modebar {
+                        right: 6.5% !important;
+                    }
+
+                    .page9-pie-container .js-plotly-plot .plotly .modebar {
+                        right: -325px !important;
                     }
                 }
             `}</style>
@@ -1410,78 +1518,101 @@ const Page9 = () => {
                                 <table className="table table-striped table-hover">
                                     <caption className="wb-inv">
                                         {lang === 'en' 
-                                            ? `Energy sector employment by province/territory for ${year}`
-                                            : `Emplois du secteur de l'énergie par province/territoire pour ${year}`
+                                            ? 'Energy sector direct employment by province/territory, 2009-2024'
+                                            : "Emplois directs du secteur de l'énergie par province/territoire, 2009-2024"
                                         }
                                     </caption>
                                     <thead>
                                         <tr>
-                                            <th scope="col" style={{ fontWeight: 'bold' }}>
+                                            <td style={{ borderBottom: 'none' }} aria-hidden="true"></td>
+                                            <th scope="colgroup" colSpan={yearlyProvinceData.length} style={{ textAlign: 'center', borderBottom: 'none' }}>
+                                                <span aria-hidden="true">{lang === 'en' ? '(jobs)' : '(emplois)'}</span>
+                                                <span className="wb-inv">{lang === 'en' ? '(number of jobs)' : "(nombre d'emplois)"}</span>
+                                            </th>
+                                        </tr>
+                                        <tr>
+                                            <th scope="col" style={{ fontWeight: 'bold', borderTop: 'none' }}>
                                                 {lang === 'en' ? 'Province/Territory' : 'Province/Territoire'}
                                             </th>
-                                            <th scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                                {lang === 'en' ? 'Direct jobs' : 'Emplois directs'}
-                                            </th>
-                                            <th scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                                {lang === 'en' ? 'Indirect jobs' : 'Emplois indirects'}
-                                            </th>
-                                            <th scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                                {lang === 'en' ? 'Total jobs' : 'Total emplois'}
-                                            </th>
-                                            <th scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                                {lang === 'en' ? '% share of energy sector' : '% du secteur de l\'énergie'}
-                                            </th>
-                                            <th scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                                {lang === 'en' ? '% share of non-energy sectors' : '% des secteurs non énergétiques'}
-                                            </th>
+                                            {yearlyProvinceData.map(yearData => (
+                                                <th key={yearData.year} scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                                                    {yearData.year}
+                                                </th>
+                                            ))}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {provinceCodes.map((code) => {
                                             const info = provinceInfo[code];
                                             const name = lang === 'en' ? info.nameEn : info.nameFr;
-                                            const direct = employmentData[code].direct;
-                                            const indirect = employmentData[code].indirect;
-                                            const total = direct + indirect;
-                                            const energyShare = getProvinceEnergyShare(code);
-                                            const nonEnergyShare = getProvinceNonEnergyShare(code);
-                                            const jobsText = lang === 'en' ? 'jobs' : 'emplois';
+                                            const cellUnitSR = lang === 'en' ? ' jobs' : ' emplois';
                                             return (
                                                 <tr key={code}>
                                                     <th scope="row" style={{ fontWeight: 'bold' }}>{name}</th>
-                                                    <td 
-                                                        style={{ textAlign: 'right' }}
-                                                        aria-label={`${name}, ${lang === 'en' ? 'direct' : 'directs'}: ${formatNumber(direct)} ${jobsText}`}
-                                                    >
-                                                        {formatNumber(direct)}
-                                                    </td>
-                                                    <td 
-                                                        style={{ textAlign: 'right' }}
-                                                        aria-label={`${name}, ${lang === 'en' ? 'indirect' : 'indirects'}: ${formatNumber(indirect)} ${jobsText}`}
-                                                    >
-                                                        {formatNumber(indirect)}
-                                                    </td>
-                                                    <td 
-                                                        style={{ textAlign: 'right', fontWeight: 'bold' }}
-                                                        aria-label={`${name}, total: ${formatNumber(total)} ${jobsText}`}
-                                                    >
-                                                        {formatNumber(total)}
-                                                    </td>
-                                                    <td 
-                                                        style={{ textAlign: 'right' }}
-                                                        aria-label={`${name}, ${lang === 'en' ? 'energy sector share' : 'part du secteur de l\'énergie'}: ${energyShare}%`}
-                                                    >
-                                                        {energyShare}%
-                                                    </td>
-                                                    <td 
-                                                        style={{ textAlign: 'right' }}
-                                                        aria-label={`${name}, ${lang === 'en' ? 'non-energy sectors share' : 'part des secteurs non énergétiques'}: ${nonEnergyShare}%`}
-                                                    >
-                                                        {nonEnergyShare}%
-                                                    </td>
+                                                    {yearlyProvinceData.map(yearData => (
+                                                        <td 
+                                                            key={yearData.year} 
+                                                            style={{ textAlign: 'right' }}
+                                                            aria-label={`${name}, ${yearData.year}: ${formatNumber(yearData[code])}${cellUnitSR}`}
+                                                        >
+                                                            {formatNumber(yearData[code])}
+                                                        </td>
+                                                    ))}
                                                 </tr>
                                             );
                                         })}
+                                        <tr style={{ fontWeight: 'bold' }}>
+                                            <th scope="row">{lang === 'en' ? 'Canada Total (Direct)' : 'Total Canada (direct)'}</th>
+                                            {yearlyProvinceData.map(yearData => {
+                                                const totalLabel = lang === 'en' ? 'Canada Total (Direct)' : 'Total Canada (direct)';
+                                                const cellUnitSR = lang === 'en' ? ' jobs' : ' emplois';
+                                                return (
+                                                    <td 
+                                                        key={yearData.year} 
+                                                        style={{ textAlign: 'right' }}
+                                                        aria-label={`${totalLabel}, ${yearData.year}: ${formatNumber(yearData.national_total)}${cellUnitSR}`}
+                                                    >
+                                                        {formatNumber(yearData.national_total)}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                        <tr style={{ fontWeight: 'bold', backgroundColor: '#e8e8e8' }}>
+                                            <th scope="row">{lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)"}</th>
+                                            {yearlyProvinceData.map(yearData => (
+                                                <td 
+                                                    key={yearData.year} 
+                                                    style={{ textAlign: 'right' }}
+                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)"}, ${yearData.year}: ${employmentData.energy_direct_pct}%`}
+                                                >
+                                                    {employmentData.energy_direct_pct}%
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr style={{ fontWeight: 'bold', backgroundColor: '#e8e8e8' }}>
+                                            <th scope="row">{lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)"}</th>
+                                            {yearlyProvinceData.map(yearData => (
+                                                <td 
+                                                    key={yearData.year} 
+                                                    style={{ textAlign: 'right' }}
+                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)"}, ${yearData.year}: ${employmentData.energy_indirect_pct}%`}
+                                                >
+                                                    {employmentData.energy_indirect_pct}%
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr style={{ fontWeight: 'bold', backgroundColor: '#d8d8d8' }}>
+                                            <th scope="row">{lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)"}</th>
+                                            {yearlyProvinceData.map(yearData => (
+                                                <td 
+                                                    key={yearData.year} 
+                                                    style={{ textAlign: 'right' }}
+                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)"}, ${yearData.year}: ${employmentData.share_total_pct}%`}
+                                                >
+                                                    {employmentData.share_total_pct}%
+                                                </td>
+                                            ))}
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>

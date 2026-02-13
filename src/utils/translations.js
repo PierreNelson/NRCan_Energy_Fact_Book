@@ -117,6 +117,14 @@ export const TRANSLATIONS = {
         'page9_other': 'Other',
         'page9_footnote': 'The indirect contribution is not comparable to previously published estimates due to revisions and a change in estimation methodology by Statistics Canada. For more information on Statistics Canada\'s estimation methodology, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
 
+        // Page 10
+        'page10_title': 'Energy sector employment',
+        'page10_chart_title': 'Energy sector employment',
+        'page10_chart_subtitle': '(Thousands of jobs)',
+        'page10_legend_direct': 'Direct employment',
+        'page10_legend_indirect': 'Indirect employment',
+        'page10_footnote': 'Parts may not sum to total due to rounding. The indirect contribution is not comparable to previously published estimates due to revisions and a change in estimation methodology by Statistics Canada. For more information on Statistics Canada\'s estimation methodology, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
+
         'nav_capital_expenditure': 'Capital expenditures',
         'nav_infrastructure': "Energy infrastructure",
         'nav_economic_contributions': 'Economic contributions',
@@ -550,6 +558,14 @@ export const TRANSLATIONS = {
         'page9_electricity': 'Électricité',
         'page9_other': 'Autres',
         'page9_footnote': "La contribution indirecte n'est pas comparable aux estimées publiées antérieurement en raison de révisions et d'un changement de méthodologie effectué par Statistique Canada. Pour obtenir des renseignements supplémentaires sur la méthode d'estimation de Statistique Canada, veuillez communiquer avec statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.",
+
+        // Page 10
+        'page10_title': "Emplois dans le secteur de l'énergie",
+        'page10_chart_title': "Emplois dans le secteur de l'énergie",
+        'page10_chart_subtitle': "(milliers d'emplois)",
+        'page10_legend_direct': 'Emplois directs',
+        'page10_legend_indirect': 'Emplois indirects',
+        'page10_footnote': "La somme des parties peut ne pas correspondre au total en raison de l'arrondissement. La contribution indirecte n'est pas comparable aux estimés publiés antérieurement en raison de révisions et d'un changement de méthodologie effectué par Statistique Canada. Pour obtenir des renseignements supplémentaires sur la méthode d'estimation de Statistique Canada, veuillez communiquer avec statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.",
 
         'nav_capital_expenditure': 'Dépenses en capital',
         'nav_infrastructure': "Infrastructure énergétique",

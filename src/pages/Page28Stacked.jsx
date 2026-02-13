@@ -479,8 +479,11 @@ const Page28Stacked = () => {
         font-family: 'Lato', sans-serif;
         font-size: 41px;
         font-weight: bold;
-        color: #8e7e52;
-        margin: 0 0 20px 0;
+        color: var(--gc-text);
+        margin-top: 0;
+        margin-bottom: 25px;
+        position: relative;
+        padding-bottom: 0.5em;
     }
 
     /* ALWAYS COLUMN LAYOUT - No media query switching */
@@ -720,6 +723,7 @@ const Page28Stacked = () => {
         padding: 20px;
         border-radius: 8px;
         box-sizing: border-box;
+        margin-bottom: 0;
     }
 
     .page28h-table-wrapper {
@@ -810,6 +814,37 @@ const Page28Stacked = () => {
                                 </span>
                             </li>
                         </ul>
+
+                        {/* Definition button moved above chart frame */}
+                        <details 
+                            className="page28h-definition-details"
+                            role="region"
+                            aria-label={`${getText('page28_sidebar_title', lang)}. ${stripHtml(getText('page28_sidebar_content', lang))}`}
+                        >
+                            <summary>
+                                <span className="definition-arrow" aria-hidden="true">▼</span>
+                                <span>{getText('page28_sidebar_title', lang)}</span>
+                            </summary>
+                            <div className="page28h-definition-content">
+                                {getText('page28_sidebar_content', lang).split(/<br\s*\/?>/i).map((para, idx) => {
+                                    if (!para.trim()) return null;
+                                    let visualHtml = para;
+                                    if (lang === 'en') {
+                                        visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
+                                    } else {
+                                        visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
+                                    }
+
+                                    return (
+                                        <p 
+                                            key={idx} 
+                                            style={{ marginBottom: '10px', lineHeight: '1.6', fontFamily: 'Arial, sans-serif', color: '#333' }}
+                                            dangerouslySetInnerHTML={{ __html: visualHtml }}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </details>
 
                         <div className="page28h-chart-frame">
                         <div className="page28h-chart" style={{ position: 'relative' }}>
@@ -1201,35 +1236,6 @@ const Page28Stacked = () => {
                         </div> {/* End chart-frame */}
                     </div>
 
-                    <details 
-                        className="page28h-definition-details"
-                        role="region"
-                        aria-label={`${getText('page28_sidebar_title', lang)}. ${stripHtml(getText('page28_sidebar_content', lang))}`}
-                    >
-                        <summary>
-                            <span className="definition-arrow" aria-hidden="true">▼</span>
-                            <span>{getText('page28_sidebar_title', lang)}</span>
-                        </summary>
-                        <div className="page28h-definition-content">
-                            {getText('page28_sidebar_content', lang).split(/<br\s*\/?>/i).map((para, idx) => {
-                                if (!para.trim()) return null;
-                                let visualHtml = para;
-                                if (lang === 'en') {
-                                    visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
-                                } else {
-                                    visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
-                                }
-
-                                return (
-                                    <p 
-                                        key={idx} 
-                                        style={{ marginBottom: '10px', lineHeight: '1.6', fontFamily: 'Arial, sans-serif', color: '#333' }}
-                                        dangerouslySetInnerHTML={{ __html: visualHtml }}
-                                    />
-                                );
-                            })}
-                        </div>
-                    </details>
                 </div>
             </div>
         </main>

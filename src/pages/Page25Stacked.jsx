@@ -713,7 +713,7 @@ const Page25Stacked = () => {
 
                 .page25h-container {
                     width: 100%;
-                    padding: 0; 
+                    padding: 0 0 40px 0; 
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -743,7 +743,7 @@ const Page25Stacked = () => {
                     min-height: 500px;
                     max-height: none;
                     position: relative;
-                    margin-bottom: 30px;
+                    margin-bottom: 0;
                     overflow: visible;
                 }
 
@@ -960,7 +960,7 @@ const Page25Stacked = () => {
                     .page25h-chart-column {
                         height: auto !important; 
                         min-height: 340px !important; 
-                        margin-bottom: 20px !important;
+                        margin-bottom: 0 !important;
                     }
 
                     .page25h-slider-region {
@@ -980,7 +980,7 @@ const Page25Stacked = () => {
                         width: 100% !important; 
                         height: auto !important; 
                         min-height: 500px !important; 
-                        margin-bottom: 20px !important;
+                        margin-bottom: 0 !important;
                     }
                     .page25h-chart-column figure { height: 480px !important; min-height: 480px !important; }
 
@@ -989,7 +989,7 @@ const Page25Stacked = () => {
                 }
 
                 @media (max-width: 480px) {
-                    .page25h-chart-column { min-height: 480px !important; margin-bottom: 20px !important; }
+                    .page25h-chart-column { min-height: 480px !important; margin-bottom: 0 !important; }
                     .page25h-chart-column figure { height: 480px !important; min-height: 480px !important; }
                 }
 
@@ -998,7 +998,7 @@ const Page25Stacked = () => {
                         width: 100% !important; 
                         height: auto !important; 
                         min-height: 400px !important; 
-                        margin-bottom: 20px !important;
+                        margin-bottom: 0 !important;
                     }
 
                     .page25h-chart-column figure { 
@@ -1017,6 +1017,7 @@ const Page25Stacked = () => {
                     border-radius: 8px;
                     box-sizing: border-box;
                     width: 100%;
+                    margin-bottom: 0;
                 }
 
                 .page25h-table-wrapper {
@@ -1074,7 +1075,7 @@ const Page25Stacked = () => {
                     role="region" 
                     aria-label={`${getText('page25_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
                 >
-                    <h1 aria-hidden="true" style={{ fontFamily: "'Lato', sans-serif", color: '#245e7f', fontSize: '41px', fontWeight: 'bold', margin: '0 0 3px 0' }}>
+                    <h1 aria-hidden="true" style={{ fontFamily: "'Lato', sans-serif", color: '#245e7f', fontSize: '50px', fontWeight: 'bold', margin: '0 0 3px 0' }}>
                         {getText('page25_title', lang)}
                     </h1>
 
@@ -1082,6 +1083,28 @@ const Page25Stacked = () => {
                         {getSubtitle()}
                     </p>
                 </header>
+
+                {/* Definition button moved above year selector */}
+                <details 
+                    className="page25h-definition-details"
+                    role="region"
+                    aria-label={getRightSideText()}
+                    style={{ marginBottom: '20px' }}
+                >
+                    <summary>
+                        <span className="definition-arrow" aria-hidden="true">▼</span>
+                        <span>{getText('infra_definition_title', lang).replace(/\n/g, ' ')}</span>
+                    </summary>
+                    <div className="page25h-definition-content">
+                        <p>
+                            {getText('infra_definition_text', lang).replace(/\n/g, ' ')}
+                        </p>
+                        <p>
+                            {getText('infra_description', lang).replace(/\n/g, ' ')}
+                        </p>
+                    </div>
+                </details>
+
                 {/* SINGLE-SELECT RADIO DROPDOWN */}
                 <div 
                     ref={yearSelectorRef} 
@@ -1387,25 +1410,6 @@ const Page25Stacked = () => {
                         </div>
                     </div>
                     </div> {/* End chart-frame */}
-
-                    <details 
-                        className="page25h-definition-details"
-                        role="region"
-                        aria-label={getRightSideText()}
-                    >
-                        <summary>
-                            <span className="definition-arrow" aria-hidden="true">▼</span>
-                            <span>{getText('infra_definition_title', lang).replace(/\n/g, ' ')}</span>
-                        </summary>
-                        <div className="page25h-definition-content">
-                            <p>
-                                {getText('infra_definition_text', lang).replace(/\n/g, ' ')}
-                            </p>
-                            <p>
-                                {getText('infra_description', lang).replace(/\n/g, ' ')}
-                            </p>
-                        </div>
-                    </details>
                 </div>
             </div>
         </main>

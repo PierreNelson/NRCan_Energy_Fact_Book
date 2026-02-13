@@ -683,7 +683,7 @@ const Page24Stacked = () => {
                     width: 100%;
                 }
 
-                .page24h-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; }
+                .page24h-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; padding-bottom: 40px; }
                 .page24h-header { padding-top: 20px; padding-bottom: 20px; }
 
                 /* ALWAYS COLUMN LAYOUT - No media query switching */
@@ -698,7 +698,7 @@ const Page24Stacked = () => {
 
                 .page24h-chart-column { 
                     width: 100%; 
-                    margin-bottom: 30px;
+                    margin-bottom: 0;
                 }
 
                 .page24h-text-column {
@@ -774,7 +774,7 @@ const Page24Stacked = () => {
                     padding: 20px;
                     border-radius: 8px;
                     margin-top: 0;
-                    margin-bottom: 20px;
+                    margin-bottom: 0;
                     box-sizing: border-box;
                 }
 
@@ -826,10 +826,52 @@ const Page24Stacked = () => {
 
             <div className="page24h-container">
                 <header className="page24h-header">
-                    <h1 style={{ fontFamily: "'Lato', sans-serif", color: '#245e7f', fontSize: '41px', fontWeight: 'bold', margin: 0, lineHeight: 1.1 }}>
+                    <h1 style={{ fontFamily: "'Lato', sans-serif", color: '#245e7f', fontSize: '50px', fontWeight: 'bold', margin: 0, lineHeight: 1.1 }}>
                         {getText('page24_title', lang)}
                     </h1>
                 </header>
+
+                {/* Bullet points moved above chart frame */}
+                <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '0 0 20px 0', color: '#333', fontFamily: "'Noto Sans', sans-serif" }}>
+                    <li 
+                        className="page24h-bullet" 
+                        style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '20px' }}
+                        aria-label={lang === 'en' 
+                            ? `Capital expenditures in Canada's energy sector totaled ${formatBillionSR(totalLatestBillion)} in ${latestRow.year}, a decrease of ${declineFromPeakPct.toFixed(0)} percent from a peak in ${peakRow.year}.`
+                            : `Les dépenses en immobilisations dans le secteur canadien de l'énergie ont totalisé ${formatBillionSR(totalLatestBillion)} en ${latestRow.year}, une baisse de ${declineFromPeakPct.toFixed(0)} pour cent par rapport au sommet de ${peakRow.year}.`
+                        }
+                    >
+                        <span aria-hidden="true">
+                            {getText('page24_bullet1_part1', lang)}<strong>{formatBillion(totalLatestBillion)}</strong>{getText('page24_bullet1_part2', lang)}{latestRow.year}{getText('page24_bullet1_part3', lang)}{declineFromPeakPct.toFixed(0)}{getText('page24_bullet1_part4', lang)}{peakRow.year}{getText('page24_bullet1_part5', lang)}
+                        </span>
+                    </li>
+
+                    <li 
+                        className="page24h-bullet" 
+                        style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '20px' }}
+                        aria-label={lang === 'en'
+                            ? `After reaching an eleven year low of ${formatBillionSR(low2020Billion)} in 2020, investment has rebounded by ${reboundFrom2020Pct.toFixed(0)} percent.`
+                            : `Après avoir atteint un creux de onze ans de ${formatBillionSR(low2020Billion)} en 2020, l'investissement a rebondi de ${reboundFrom2020Pct.toFixed(0)} pour cent.`
+                        }
+                    >
+                        <span aria-hidden="true">
+                            {getText('page24_bullet2_part1', lang)}<strong>{formatBillion(low2020Billion)}</strong>{getText('page24_bullet2_part2', lang)}<strong>{reboundFrom2020Pct.toFixed(0)}</strong>{getText('page24_bullet2_part3', lang)}
+                        </span>
+                    </li>
+
+                    <li 
+                        className="page24h-bullet" 
+                        style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '20px' }}
+                        aria-label={lang === 'en'
+                            ? `Oil and gas extraction was the largest area of energy sector capital expenditure at ${formatBillionSR(oilGasBillion)} in ${latestRow.year}, followed by electrical power generation and distribution at ${formatBillionSR(electricityBillion)}.`
+                            : `L'extraction de pétrole et de gaz était le plus grand domaine de dépenses en immobilisations du secteur de l'énergie avec ${formatBillionSR(oilGasBillion)} en ${latestRow.year}, suivie de la production et distribution d'électricité avec ${formatBillionSR(electricityBillion)}.`
+                        }
+                    >
+                        <span aria-hidden="true">
+                            {getText('page24_bullet3_part1', lang)}<strong>{formatBillion(oilGasBillion)}</strong>{getText('page24_bullet3_part2', lang)}{latestRow.year}{getText('page24_bullet3_part3', lang)}{formatBillion(electricityBillion)}{getText('page24_bullet3_part4', lang)}
+                        </span>
+                    </li>
+                </ul>
 
                 <div className={`page24h-content-row`}>
                     <div className="page24h-chart-column">
@@ -989,56 +1031,13 @@ const Page24Stacked = () => {
                         </div>
                         </div> {/* End chart-frame */}
                     </div>
-
-                    <aside className="page24h-text-column align-right-edge">
-                        <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '0', color: '#333', fontFamily: "'Noto Sans', sans-serif" }}>
-                            <li 
-                                className="page24h-bullet" 
-                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '20px', marginTop: '20px' }}
-                                aria-label={lang === 'en' 
-                                    ? `Capital expenditures in Canada's energy sector totaled ${formatBillionSR(totalLatestBillion)} in ${latestRow.year}, a decrease of ${declineFromPeakPct.toFixed(0)} percent from a peak in ${peakRow.year}.`
-                                    : `Les dépenses en immobilisations dans le secteur canadien de l'énergie ont totalisé ${formatBillionSR(totalLatestBillion)} en ${latestRow.year}, une baisse de ${declineFromPeakPct.toFixed(0)} pour cent par rapport au sommet de ${peakRow.year}.`
-                                }
-                            >
-                                <span aria-hidden="true">
-                                    {getText('page24_bullet1_part1', lang)}<strong>{formatBillion(totalLatestBillion)}</strong>{getText('page24_bullet1_part2', lang)}{latestRow.year}{getText('page24_bullet1_part3', lang)}{declineFromPeakPct.toFixed(0)}{getText('page24_bullet1_part4', lang)}{peakRow.year}{getText('page24_bullet1_part5', lang)}
-                                </span>
-                            </li>
-
-                            <li 
-                                className="page24h-bullet" 
-                                style={{ marginBottom: '20px', lineHeight: '1.25', fontSize: '20px' }}
-                                aria-label={lang === 'en'
-                                    ? `After reaching an eleven year low of ${formatBillionSR(low2020Billion)} in 2020, investment has rebounded by ${reboundFrom2020Pct.toFixed(0)} percent.`
-                                    : `Après avoir atteint un creux de onze ans de ${formatBillionSR(low2020Billion)} en 2020, l'investissement a rebondi de ${reboundFrom2020Pct.toFixed(0)} pour cent.`
-                                }
-                            >
-                                <span aria-hidden="true">
-                                    {getText('page24_bullet2_part1', lang)}<strong>{formatBillion(low2020Billion)}</strong>{getText('page24_bullet2_part2', lang)}<strong>{reboundFrom2020Pct.toFixed(0)}</strong>{getText('page24_bullet2_part3', lang)}
-                                </span>
-                            </li>
-
-                            <li 
-                                className="page24h-bullet" 
-                                style={{ marginBottom: '2px', lineHeight: '1.25', fontSize: '20px' }}
-                                aria-label={lang === 'en'
-                                    ? `Oil and gas extraction was the largest area of energy sector capital expenditure at ${formatBillionSR(oilGasBillion)} in ${latestRow.year}, followed by electrical power generation and distribution at ${formatBillionSR(electricityBillion)}.`
-                                    : `L'extraction de pétrole et de gaz était le plus grand domaine de dépenses en immobilisations du secteur de l'énergie avec ${formatBillionSR(oilGasBillion)} en ${latestRow.year}, suivie de la production et distribution d'électricité avec ${formatBillionSR(electricityBillion)}.`
-                                }
-                            >
-                                <span aria-hidden="true">
-                                    {getText('page24_bullet3_part1', lang)}<strong>{formatBillion(oilGasBillion)}</strong>{getText('page24_bullet3_part2', lang)}{latestRow.year}{getText('page24_bullet3_part3', lang)}{formatBillion(electricityBillion)}{getText('page24_bullet3_part4', lang)}
-                                </span>
-                            </li>
-                        </ul>
-                    </aside>
                 </div>
 
-                <aside className="wb-fnote" role="note">
+                <aside className="wb-fnote" role="note" style={{ marginBottom: 0 }}>
                     <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>
                         <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-page24s">
+                        <dd id="fn-asterisk-page24s" style={{ marginBottom: 0 }}>
                             <a href="#fn-asterisk-rf-page24s" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
                                 <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                             </a>

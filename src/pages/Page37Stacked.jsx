@@ -859,7 +859,7 @@ const getAccessibleDataTable = () => {
 
                 .page37h-container {
                     width: 100%;
-                    padding: 15px 0;
+                    padding: 15px 0 40px 0;
                     display: flex;
                     flex-direction: column;
                     box-sizing: border-box;
@@ -869,7 +869,7 @@ const getAccessibleDataTable = () => {
                 .page37h-title {
                     font-family: 'Lato', sans-serif;
                     color: #245e7f;
-                    font-size: 41px;
+                    font-size: 50px;
                     margin-top: 0;
                     margin-bottom: 25px;
                     font-weight: bold;
@@ -884,6 +884,8 @@ const getAccessibleDataTable = () => {
                     font-size: 20px;
                     margin-bottom: 10px;
                     line-height: 1.5;
+                    width: 100% !important;
+                    max-width: none !important;
                 }
 
                 .page37h-subtitle:focus,
@@ -897,6 +899,8 @@ const getAccessibleDataTable = () => {
                     font-size: 20px;
                     margin-bottom: 15px;
                     line-height: 1.5;
+                    width: 100% !important;
+                    max-width: none !important;
                 }
 
                 /* ALWAYS COLUMN LAYOUT - No media query switching */
@@ -916,7 +920,7 @@ const getAccessibleDataTable = () => {
                     position: relative;
                     display: flex;
                     flex-direction: column;
-                    margin-bottom: 50px;
+                    margin-bottom: 0;
                 }
 
                 .page37h-chart-area {
@@ -1047,6 +1051,7 @@ const getAccessibleDataTable = () => {
                     border-radius: 8px;
                     box-sizing: border-box;
                     overflow: visible;
+                    margin-bottom: 0;
                 }
 
                 .page37h-table-wrapper {
@@ -1094,7 +1099,7 @@ const getAccessibleDataTable = () => {
             `}</style>
 
             <div className="page37h-container">
-                <header role="region" aria-label={getText('page37_title', lang)}>
+                <header role="region" aria-label={getText('page37_title', lang)} style={{ width: '100%' }}>
                     <h1 className="page37h-title">
                         {getText('page37_title', lang)}
                     </h1>
@@ -1106,6 +1111,7 @@ const getAccessibleDataTable = () => {
                                 role="region"
                                 aria-label={accessibleStrings.subtitle}
                                 tabIndex="0"
+                                style={{ maxWidth: 'none', width: '100%' }}
                             >
                                 <span aria-hidden="true">
                                     {getText('page37_subtitle_part1', lang)}
@@ -1122,6 +1128,7 @@ const getAccessibleDataTable = () => {
                                 role="region"
                                 aria-label={accessibleStrings.text}
                                 tabIndex="0"
+                                style={{ maxWidth: 'none', width: '100%' }}
                             >
                                 <span aria-hidden="true">
                                     {getText('page37_text_part1', lang)}
@@ -1134,6 +1141,35 @@ const getAccessibleDataTable = () => {
                         </>
                     )}
                 </header>
+
+                {/* Bullets moved above year selector */}
+                {dynamicValues && (
+                    <ul className="page37h-bullets" role="list" style={{ marginTop: '20px', marginBottom: '20px' }}>
+                        <li role="listitem" aria-label={lang === 'en'
+                            ? `Electric power generation, transmission and distribution invested ${formatNumber(dynamicValues.electricTotal)} on environmental protection measures.`
+                            : `Les secteurs de production, le transport et la distribution d'électricité ont investi ${formatNumber(dynamicValues.electricTotal)} dans des mesures de protection de l'environnement.`
+                        }>
+                            <span aria-hidden="true">
+                                {getText('page37_bullet1_part1', lang)}
+                                <span className="visual-bold">{formatNumber(dynamicValues.electricTotal)}</span>
+                                {getText('page37_bullet1_part2', lang)}
+                            </span>
+                        </li>
+                        <li role="listitem" aria-label={lang === 'en'
+                            ? `Petroleum and coal product manufacturing invested ${formatNumber(dynamicValues.petroleumTotal)} in environmental protection activities, with the largest percentage of spending (${dynamicValues.petroleumPollutionPct}%) in pollution abatement and control.`
+                            : `Le secteur de fabrication de produits du pétrole et du charbon a investi ${formatNumber(dynamicValues.petroleumTotal)} dans des activités de protection de l'environnement, dont le pourcentage le plus élevé des dépenses (${dynamicValues.petroleumPollutionPct} %) a été consacré à la réduction et au contrôle de la pollution.`
+                        }>
+                            <span aria-hidden="true">
+                                {getText('page37_bullet2_part1', lang)}
+                                <span className="visual-bold">{formatNumber(dynamicValues.petroleumTotal)}</span>
+                                {getText('page37_bullet2_part2', lang)}
+                                {dynamicValues.petroleumPollutionPct}
+                                {getText('page37_bullet2_part3', lang)}
+                            </span>
+                        </li>
+                    </ul>
+                )}
+
                 {/* SINGLE-SELECT RADIO DROPDOWN (Page 30 style) */}
                 <div 
                     ref={yearDropdownRef} 
@@ -1437,35 +1473,6 @@ const getAccessibleDataTable = () => {
                             {getAccessibleDataTable()}
                         </div>
                         </div> {/* End chart-frame */}
-                    </div>
-                    <div className="page37h-text-column">
-
-                        {dynamicValues && (
-                            <ul className="page37h-bullets" role="list">
-                                <li role="listitem" aria-label={lang === 'en'
-                                    ? `Electric power generation, transmission and distribution invested ${formatNumber(dynamicValues.electricTotal)} on environmental protection measures.`
-                                    : `Les secteurs de production, le transport et la distribution d'électricité ont investi ${formatNumber(dynamicValues.electricTotal)} dans des mesures de protection de l'environnement.`
-                                }>
-                                    <span aria-hidden="true">
-                                        {getText('page37_bullet1_part1', lang)}
-                                        <span className="visual-bold">{formatNumber(dynamicValues.electricTotal)}</span>
-                                        {getText('page37_bullet1_part2', lang)}
-                                    </span>
-                                </li>
-                                <li role="listitem" aria-label={lang === 'en'
-                                    ? `Petroleum and coal product manufacturing invested ${formatNumber(dynamicValues.petroleumTotal)} in environmental protection activities, with the largest percentage of spending (${dynamicValues.petroleumPollutionPct}%) in pollution abatement and control.`
-                                    : `Le secteur de fabrication de produits du pétrole et du charbon a investi ${formatNumber(dynamicValues.petroleumTotal)} dans des activités de protection de l'environnement, dont le pourcentage le plus élevé des dépenses (${dynamicValues.petroleumPollutionPct} %) a été consacré à la réduction et au contrôle de la pollution.`
-                                }>
-                                    <span aria-hidden="true">
-                                        {getText('page37_bullet2_part1', lang)}
-                                        <span className="visual-bold">{formatNumber(dynamicValues.petroleumTotal)}</span>
-                                        {getText('page37_bullet2_part2', lang)}
-                                        {dynamicValues.petroleumPollutionPct}
-                                        {getText('page37_bullet2_part3', lang)}
-                                    </span>
-                                </li>
-                            </ul>
-                        )}
                     </div>
                 </div>
             </div>
