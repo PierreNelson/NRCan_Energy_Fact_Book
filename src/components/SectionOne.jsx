@@ -7,6 +7,7 @@ import Page7 from '../pages/Page7';
 import Page8 from '../pages/Page8';
 import Page9 from '../pages/Page9';
 import Page10 from '../pages/Page10';
+import Page11 from '../pages/Page11';
 
 const SectionOne = () => {
     const location = useLocation();
@@ -51,6 +52,9 @@ const SectionOne = () => {
             </div>
             <div id="employment-chart" className="stacked-page-wrapper">
                 <Page10 />
+            </div>
+            <div id="gdp-chart" className="stacked-page-wrapper">
+                <Page11 />
             </div>
         </div>
     );

@@ -125,6 +125,14 @@ export const TRANSLATIONS = {
         'page10_legend_indirect': 'Indirect employment',
         'page10_footnote': 'Parts may not sum to total due to rounding. The indirect contribution is not comparable to previously published estimates due to revisions and a change in estimation methodology by Statistics Canada. For more information on Statistics Canada\'s estimation methodology, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
 
+        // Page 11
+        'page11_chart_title': 'Energy sector GDP',
+        'page11_chart_subtitle': '(Billions of dollars)',
+        'page11_legend_direct': 'Direct GDP',
+        'page11_legend_indirect': 'Indirect GDP',
+        'page11_legend_total': 'Total GDP',
+        'page11_footnote': 'Parts may not sum to total due to rounding. The indirect contribution is not comparable to previously published estimates due to revisions and a change in estimation methodology by Statistics Canada. For more information on Statistics Canada\'s estimation methodology, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
+
         'nav_capital_expenditure': 'Capital expenditures',
         'nav_infrastructure': "Energy infrastructure",
         'nav_economic_contributions': 'Economic contributions',
@@ -566,6 +574,14 @@ export const TRANSLATIONS = {
         'page10_legend_direct': 'Emplois directs',
         'page10_legend_indirect': 'Emplois indirects',
         'page10_footnote': "La somme des parties peut ne pas correspondre au total en raison de l'arrondissement. La contribution indirecte n'est pas comparable aux estimés publiés antérieurement en raison de révisions et d'un changement de méthodologie effectué par Statistique Canada. Pour obtenir des renseignements supplémentaires sur la méthode d'estimation de Statistique Canada, veuillez communiquer avec statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.",
+
+        // Page 11
+        'page11_chart_title': "PIB du secteur de l'énergie",
+        'page11_chart_subtitle': '(milliards de dollars)',
+        'page11_legend_direct': 'PIB direct',
+        'page11_legend_indirect': 'PIB indirect',
+        'page11_legend_total': 'PIB total',
+        'page11_footnote': "La somme des parties peut ne pas correspondre au total en raison de l'arrondissement. La contribution indirecte n'est pas comparable aux estimés publiés antérieurement en raison de révisions et d'un changement de méthodologie effectué par Statistique Canada. Pour obtenir des renseignements supplémentaires sur la méthode d'estimation de Statistique Canada, veuillez communiquer avec statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.",
 
         'nav_capital_expenditure': 'Dépenses en capital',
         'nav_infrastructure': "Infrastructure énergétique",
