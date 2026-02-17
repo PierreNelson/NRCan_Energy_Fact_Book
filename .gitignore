@@ -40,5 +40,3 @@ venv/
 # Legacy data retrieval script (kept for reference but not tracked)
 scripts/data_retrieval.py
 
-# Page files kept locally but not tracked
-src/pages/Page4.jsx
