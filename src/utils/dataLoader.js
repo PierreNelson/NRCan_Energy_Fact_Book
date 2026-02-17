@@ -2,7 +2,7 @@
  * Data Loader Utility
  * 
  * Loads pre-calculated data from data.csv stored in public/data/
- * All calculations are done in data_retrieval.py - this module just loads and parses.
+ * All calculations are done in the scripts/main.py pipeline - this module just loads and parses.
  * 
  * Data is stored with semantic vector prefixes:
  * - capex_*: Capital expenditure data

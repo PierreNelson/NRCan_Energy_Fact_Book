@@ -1,4 +1,5 @@
 import React from 'react';
+// Force reload
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 
@@ -65,7 +66,7 @@ const Page3 = () => {
                     font-style: italic;
                 }
 
-                @media (max-width: 768px) {
+                @container (max-width: 768px) {
                     .page3-title {
                         font-size: 37px;
                     }

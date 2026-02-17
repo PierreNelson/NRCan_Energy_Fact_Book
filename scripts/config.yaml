@@ -1,0 +1,157 @@
+# ============================================================================
+# NRCan Energy Factbook Data Pipeline Configuration
+# ============================================================================
+#
+# This file controls which data sources are enabled and database connection
+# settings. Environment variables can override sensitive values.
+#
+# Environment Variables:
+#   DB_SERVER, DB_DATABASE, DB_USERNAME, DB_PASSWORD - Database connection
+#
+# ============================================================================
+
+database:
+  # SQL Server connection settings
+  server: localhost
+  database: NRCanEnergyFactbook
+  # Leave username/password empty to use environment variables or Windows Auth
+  username: ""
+  password: ""
+  # ODBC driver - leave empty for auto-detection
+  driver: ""
+  # Connection settings
+  connection_timeout: 30
+  max_retries: 3
+
+# ============================================================================
+# SECTIONS CONFIGURATION
+# ============================================================================
+# Each section can be enabled/disabled independently.
+# Individual data sources within sections can also be toggled.
+
+sections:
+  # Section 1: Key Indicators
+  section1_indicators:
+    enabled: true
+    name: "Key Indicators"
+    sources:
+      economic_contributions:
+        enabled: true
+        description: "Economic contributions (GDP, jobs, income) from energy sector"
+        statcan_table: "36-10-0610-01"
+      
+      nominal_gdp:
+        enabled: true
+        description: "Nominal GDP by industry"
+        statcan_table: "36-10-0103-01"
+      
+      provincial_gdp:
+        enabled: true
+        description: "Provincial GDP contributions"
+        statcan_table: "38-10-0285-01"
+      
+      world_energy_production:
+        enabled: true
+        description: "World energy production rankings"
+        source_type: "external"
+      
+      canadian_energy_assets:
+        enabled: true
+        description: "Canadian Energy Assets from CEA Excel"
+        source_type: "file"
+        file_path: "CEA_2023.xlsx"
+
+  # Section 2: Investment
+  section2_investment:
+    enabled: true
+    name: "Investment"
+    sources:
+      capital_expenditures:
+        enabled: true
+        description: "Capital expenditures by industry"
+        statcan_table: "34-10-0036-01"
+      
+      infrastructure:
+        enabled: true
+        description: "Infrastructure stock by category"
+        statcan_table: "36-10-0608-01"
+      
+      investment_by_asset:
+        enabled: true
+        description: "Investment by asset type"
+        statcan_table: "34-10-0036-01"
+      
+      international_investment:
+        enabled: true
+        description: "FDI and CDIA in energy sector"
+        statcan_table: "36-10-0009-01"
+      
+      foreign_control:
+        enabled: true
+        description: "Foreign control of enterprises"
+        statcan_table: "multiple"
+      
+      environmental_protection:
+        enabled: true
+        description: "Environmental protection expenditures"
+        statcan_table: "38-10-0116-01"
+      
+      major_projects:
+        enabled: true
+        description: "NRCan Major Projects Inventory"
+        source_type: "external"
+        source_url: "https://major-projects.nrcan-rncan.gc.ca/"
+      
+      clean_tech:
+        enabled: true
+        description: "Clean technology projects"
+        source_type: "derived"
+      
+      major_projects_map:
+        enabled: true
+        description: "Major projects map data from NRCan ArcGIS"
+        source_type: "api"
+        source_url: "https://maps-cartes.services.geo.ca/server_serveur/rest/services/NRCan/major_projects_inventory_en/MapServer"
+
+  # Section 3: Skills, Diversity and Community (placeholder)
+  section3_skills:
+    enabled: false
+    name: "Skills, Diversity and Community"
+    sources: {}
+
+  # Section 4: Energy Efficiency (placeholder)
+  section4_efficiency:
+    enabled: false
+    name: "Energy Efficiency"
+    sources: {}
+
+  # Section 5: Clean Power and Low Carbon Fuels (placeholder)
+  section5_clean_power:
+    enabled: false
+    name: "Clean Power and Low Carbon Fuels"
+    sources: {}
+
+  # Section 6: Oil, Natural Gas and Coal (placeholder)
+  section6_oil_gas:
+    enabled: false
+    name: "Oil, Natural Gas and Coal"
+    sources: {}
+
+# ============================================================================
+# EXPORT CONFIGURATION
+# ============================================================================
+
+export:
+  output_dir: "../public/data"
+  files:
+    data_csv: "data.csv"
+    metadata_csv: "metadata.csv"
+    major_projects_csv: "major_projects_map.csv"
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(levelname)s - %(message)s"

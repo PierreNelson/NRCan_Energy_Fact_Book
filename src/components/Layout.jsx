@@ -145,7 +145,16 @@ const Layout = () => {
                 }
                 
                 h1, h2, h3, h4, h5, h6 { 
-                    text-align: left !important; 
+                    text-align: left; 
+                }
+                
+                /* Allow chart titles to be centered */
+                .page10-chart-title,
+                .page11-chart-title,
+                .page24-chart-title,
+                .page24h-chart-title,
+                .page37h-chart-title {
+                    text-align: center !important;
                 }
 
                 /* ===============================================

@@ -1205,16 +1205,17 @@ const Page30 = () => {
                 .page30-data-table summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ddd;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     font-family: Arial, sans-serif;
                     font-weight: bold;
+                    color: #ffffff;
                     list-style: none;
                 }
 
                 .page30-data-table summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 .page30-data-table summary::-webkit-details-marker {
@@ -2179,13 +2180,13 @@ const Page30 = () => {
                             onClick={() => downloadTableAsCSV()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#f9f9f9',
-                                border: '1px solid #ccc',
+                                backgroundColor: '#26374a',
+                                border: '1px solid #26374a',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
                                 fontWeight: 'bold',
-                                color: '#333'
+                                color: '#ffffff'
                             }}
                         >
                             {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -2194,13 +2195,13 @@ const Page30 = () => {
                             onClick={() => downloadTableAsDocx()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#f9f9f9',
-                                border: '1px solid #ccc',
+                                backgroundColor: '#26374a',
+                                border: '1px solid #26374a',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
                                 fontWeight: 'bold',
-                                color: '#333'
+                                color: '#ffffff'
                             }}
                         >
                             {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}

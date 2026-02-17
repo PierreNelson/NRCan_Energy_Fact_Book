@@ -431,13 +431,14 @@ const Page11 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
                     font-weight: bold;
-                    color: #333;
+                    color: #ffffff;
+                    list-style: none;
                 }
 
                 .page11-table-wrapper details > summary::-webkit-details-marker {
@@ -445,7 +446,7 @@ const Page11 = () => {
                 }
 
                 .page11-table-wrapper details > summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 .page11-table-wrapper .table-responsive {
@@ -478,15 +479,17 @@ const Page11 = () => {
 
                 .page11-download-buttons button {
                     padding: 8px 16px;
-                    border: 1px solid #ccc;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
-                    background: #fff;
+                    background: #26374a;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
+                    font-weight: bold;
+                    color: #ffffff;
                 }
 
                 .page11-download-buttons button:hover {
-                    background: #f5f5f5;
+                    background: #1e2a3a;
                 }
 
                 @media (max-width: 1280px) {

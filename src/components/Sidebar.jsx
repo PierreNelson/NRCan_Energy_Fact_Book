@@ -478,6 +478,14 @@ const Sidebar = ({ lang }) => {
                             role="group"
                             aria-label={lang === 'en' ? 'Test Pages' : 'Pages de test'}
                         >
+                            {/* Investment Overview - Page23Stacked */}
+                            <NavLink
+                                to="/section-test#section-overview"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section2_title', lang)}
+                            </NavLink>
+
                             {/* Capital Expenditure - Page24Stacked */}
                             <NavLink
                                 to="/section-test#capital-expenditure"

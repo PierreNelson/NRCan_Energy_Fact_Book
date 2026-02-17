@@ -1,3 +1,13 @@
+# NRCan Energy Factbook Data Pipeline Dependencies
+
+# Data processing
 pandas>=2.0.0
 requests>=2.28.0
 beautifulsoup4>=4.12.0
+openpyxl>=3.1.0          # For Excel file reading (CEA data)# Database
+pyodbc>=5.0.0            # SQL Server connectivity# Configuration
+pyyaml>=6.0.0            # YAML config file parsing
+python-dotenv>=1.0.0     # Environment variable support (optional)# Note: For SQL Server connectivity, you also need:
+# - SQL Server (Developer Edition is free)
+# - ODBC Driver 17 or 18 for SQL Server
+#   Download from: https://docs.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server

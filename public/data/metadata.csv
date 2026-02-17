@@ -27,17 +27,6 @@ intl_fdi,Foreign direct investment in Canada (FDI) - Energy industry,Millions of
 foreign_utilities,Utilities - Percentage of total assets under foreign control,Percent,units
 foreign_oil_gas,Oil and gas extraction and support activities - Percentage of total assets under foreign control,Percent,units
 foreign_all_non_financial,Total non-financial industries - Percentage of total assets under foreign control,Percent,units
-enviro_oil_gas_total,Oil and gas extraction - Total environmental protection expenditures,Millions of dollars,millions
-enviro_oil_gas_wastewater,Oil and gas extraction - Wastewater management,Millions of dollars,millions
-enviro_oil_gas_soil,"Oil and gas extraction - Protection and remediation of soil, groundwater and surface water",Millions of dollars,millions
-enviro_oil_gas_air,Oil and gas extraction - Air pollution management,Millions of dollars,millions
-enviro_oil_gas_solid_waste,Oil and gas extraction - Solid waste management,Millions of dollars,millions
-enviro_oil_gas_other,Oil and gas extraction - Other environmental protection activities,Millions of dollars,millions
-enviro_electric_total,Electric power generation - Total environmental protection expenditures,Millions of dollars,millions
-enviro_natural_gas_total,Natural gas distribution - Total environmental protection expenditures,Millions of dollars,millions
-enviro_petroleum_total,Petroleum and coal product manufacturing - Total environmental protection expenditures,Millions of dollars,millions
-enviro_petroleum_pollution,Petroleum and coal product manufacturing - Pollution abatement and control,Millions of dollars,millions
-enviro_all_industries_total,Total industries - Total environmental protection expenditures,Millions of dollars,millions
 gdp_nominal_total,Energy's nominal GDP contribution - Total,Millions of dollars,millions
 gdp_nominal_direct,Energy's nominal GDP contribution - Direct,Millions of dollars,millions
 gdp_nominal_indirect,Energy's nominal GDP contribution - Indirect,Millions of dollars,millions
@@ -117,3 +106,15 @@ energy_prod_united_states_pct,United States Share of World Energy Production,%,p
 energy_prod_india_pct,India Share of World Energy Production,%,percent
 energy_prod_indonesia_pct,Indonesia Share of World Energy Production,%,percent
 energy_prod_australia_pct,Australia Share of World Energy Production,%,percent
+enviro_all_industries_total,Total industries - Total environmental protection expenditures,Millions of dollars,millions
+enviro_electric_total,Electric power generation - Total environmental protection expenditures,Millions of dollars,millions
+enviro_natural_gas_total,Natural gas distribution - Total environmental protection expenditures,Millions of dollars,millions
+enviro_oil_gas_air,Oil and gas extraction - Air pollution management,Millions of dollars,millions
+enviro_oil_gas_other,Oil and gas extraction - Other environmental protection activities,Millions of dollars,millions
+enviro_oil_gas_soil,"Oil and gas extraction - Protection and remediation of soil, groundwater and surface water",Millions of dollars,millions
+enviro_oil_gas_solid_waste,Oil and gas extraction - Solid waste management,Millions of dollars,millions
+enviro_oil_gas_total,Oil and gas extraction - Total environmental protection expenditures,Millions of dollars,millions
+enviro_oil_gas_wastewater,Oil and gas extraction - Wastewater management,Millions of dollars,millions
+enviro_petroleum_pollution,Petroleum and coal product manufacturing - Pollution abatement and control,Millions of dollars,millions
+enviro_petroleum_total,Petroleum and coal product manufacturing - Total environmental protection expenditures,Millions of dollars,millions
+foreign_total,Foreign control - Total non-financial industries,Percent,percent

@@ -372,16 +372,22 @@ const Page25Stacked = () => {
             ? `($${fuelValueBillions.toFixed(1)} ${billionText})`
             : `(${fuelValueBillions.toFixed(1)} $ ${billionText})`;
 
+        // Strip newlines from translation parts to prevent early text wrapping
+        const part1 = getText('page25_subtitle_part1', lang).replace(/\n/g, ' ');
+        const part2 = getText('page25_subtitle_part2', lang).replace(/\n/g, ' ');
+        const part3 = getText('page25_subtitle_part3', lang).replace(/\n/g, ' ');
+        const part4 = getText('page25_subtitle_part4', lang).replace(/\n/g, ' ');
+
         return (
             <span>
-                <strong>{getText('page25_subtitle_part1', lang)}</strong>
-                {getText('page25_subtitle_part2', lang)}
+                <strong>{part1}</strong>
+                {part2}
                 <strong>{fuelPct.toFixed(1)}%</strong>
-                {getText('page25_subtitle_part3', lang)}
+                {part3}
                 <strong>{year}</strong>
                 {' '}
                 <strong>{valueDisplay}</strong>
-                {getText('page25_subtitle_part4', lang)}
+                {part4}
             </span>
         );
     };
@@ -461,11 +467,11 @@ const Page25Stacked = () => {
                     aria-expanded={isTableOpen}
                     style={{ 
                         cursor: 'pointer', 
-                        color: '#333', 
+                        color: '#ffffff', 
                         fontWeight: 'bold', 
                         padding: '10px',
-                        border: '1px solid #ccc',
-                        backgroundColor: '#fff',
+                        border: '1px solid #26374a',
+                        backgroundColor: '#26374a',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -548,13 +554,13 @@ const Page25Stacked = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -563,13 +569,13 @@ const Page25Stacked = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
@@ -778,8 +784,8 @@ const Page25Stacked = () => {
                     display: flex;
                     align-items: center;
                     padding: 12px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ddd;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
@@ -788,6 +794,7 @@ const Page25Stacked = () => {
                     list-style: none;
                     width: 100%;
                     box-sizing: border-box;
+                    color: #ffffff;
                 }
 
                 .page25h-definition-details summary::-webkit-details-marker {
@@ -795,7 +802,7 @@ const Page25Stacked = () => {
                 }
 
                 .page25h-definition-details summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 .page25h-definition-details summary .definition-arrow {
@@ -1030,13 +1037,14 @@ const Page25Stacked = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
                     box-sizing: border-box;
                     list-style: none;
+                    color: #ffffff;
                 }
 
                 .page25h-table-wrapper details > summary::-webkit-details-marker {
@@ -1044,7 +1052,7 @@ const Page25Stacked = () => {
                 }
 
                 .page25h-table-wrapper details > summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 /* Table horizontal scroll */
@@ -1079,7 +1087,7 @@ const Page25Stacked = () => {
                         {getText('page25_title', lang)}
                     </h1>
 
-                    <p aria-hidden="true" style={{ fontSize: '20px', color: '#333', marginBottom: '5px', whiteSpace: 'pre-line', fontFamily: "'Noto Sans', sans-serif" }}>
+                    <p aria-hidden="true" style={{ fontSize: '20px', color: '#333', marginBottom: '5px', whiteSpace: 'normal', fontFamily: "'Noto Sans', sans-serif", maxWidth: 'none' }}>
                         {getSubtitle()}
                     </p>
                 </header>

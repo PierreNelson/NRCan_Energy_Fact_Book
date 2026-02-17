@@ -382,11 +382,11 @@ const Page27 = () => {
                     aria-expanded={isTableOpen}
                     style={{ 
                         cursor: 'pointer', 
-                        color: '#333', 
+                        color: '#ffffff', 
                         fontWeight: 'bold', 
                         padding: '10px',
-                        border: '1px solid #ccc',
-                        backgroundColor: '#fff',
+                        border: '1px solid #26374a',
+                        backgroundColor: '#26374a',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -475,13 +475,13 @@ const Page27 = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -490,13 +490,13 @@ const Page27 = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
@@ -883,13 +883,14 @@ const Page27 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
                     box-sizing: border-box;
                     list-style: none;
+                    color: #ffffff;
                 }
 
                 .page27-table-wrapper details > summary::-webkit-details-marker {
@@ -897,7 +898,7 @@ const Page27 = () => {
                 }
 
                 .page27-table-wrapper details > summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 /* Table horizontal scroll */

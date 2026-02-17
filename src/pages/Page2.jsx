@@ -773,16 +773,17 @@ const Page2 = () => {
                     font-family: Arial, sans-serif;
                     font-weight: bold;
                     padding: 10px;
-                    background-color: #fff;
-                    border: 1px solid #ddd;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     list-style: none;
                     box-sizing: border-box;
                     width: 100%;
+                    color: #ffffff;
                 }
 
                 .data-table-wrapper summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 .page2-chart-section .data-table-wrapper summary {
@@ -960,11 +961,12 @@ const Page2 = () => {
                     font-weight: bold;
                     font-size: 20px;
                     padding: 10px;
-                    background-color: #fff;
-                    border: 1px solid #ddd;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     list-style: none;
                     width: 100%;
+                    color: #ffffff;
                 }
 
                 .data-table-wrapper summary::-webkit-details-marker {
@@ -1449,13 +1451,13 @@ const Page2 = () => {
                                     onClick={() => downloadTableAsCSV()}
                                     style={{
                                         padding: '8px 16px',
-                                        backgroundColor: '#f9f9f9',
-                                        border: '1px solid #ccc',
+                                        backgroundColor: '#26374a',
+                                        border: '1px solid #26374a',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',
                                         fontWeight: 'bold',
-                                        color: '#333'
+                                        color: '#ffffff'
                                     }}
                                 >
                                     {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -1464,13 +1466,13 @@ const Page2 = () => {
                                     onClick={() => downloadTableAsDocx()}
                                     style={{
                                         padding: '8px 16px',
-                                        backgroundColor: '#f9f9f9',
-                                        border: '1px solid #ccc',
+                                        backgroundColor: '#26374a',
+                                        border: '1px solid #26374a',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',
                                         fontWeight: 'bold',
-                                        color: '#333'
+                                        color: '#ffffff'
                                     }}
                                 >
                                     {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
@@ -1642,13 +1644,13 @@ const Page2 = () => {
                                     onClick={() => downloadRankingsAsCSV()}
                                     style={{
                                         padding: '8px 16px',
-                                        backgroundColor: '#f9f9f9',
-                                        border: '1px solid #ccc',
+                                        backgroundColor: '#26374a',
+                                        border: '1px solid #26374a',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',
                                         fontWeight: 'bold',
-                                        color: '#333'
+                                        color: '#ffffff'
                                     }}
                                 >
                                     {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -1657,13 +1659,13 @@ const Page2 = () => {
                                     onClick={() => downloadRankingsAsDocx()}
                                     style={{
                                         padding: '8px 16px',
-                                        backgroundColor: '#f9f9f9',
-                                        border: '1px solid #ccc',
+                                        backgroundColor: '#26374a',
+                                        border: '1px solid #26374a',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',
                                         fontWeight: 'bold',
-                                        color: '#333'
+                                        color: '#ffffff'
                                     }}
                                 >
                                     {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}

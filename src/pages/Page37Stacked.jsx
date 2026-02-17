@@ -573,13 +573,13 @@ const getAccessibleDataTable = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -588,13 +588,13 @@ const getAccessibleDataTable = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
@@ -942,6 +942,7 @@ const getAccessibleDataTable = () => {
                     font-size: 1rem;
                     text-align: center;
                     margin-bottom: 5px;
+                    width: 100%;
                 }
 
                 .page37h-bullets {
@@ -1064,13 +1065,14 @@ const getAccessibleDataTable = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
                     box-sizing: border-box;
                     list-style: none;
+                    color: #ffffff;
                 }
 
                 .page37h-data-table > summary::-webkit-details-marker {
@@ -1078,7 +1080,7 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37h-data-table > summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 /* Table horizontal scroll */
@@ -1299,6 +1301,7 @@ const getAccessibleDataTable = () => {
                             role="region"
                             aria-label={`${stripHtml(getText('page37_chart_title', lang))} (${year}, ${lang === 'en' ? 'millions of dollars' : 'millions de dollars'})`}
                             tabIndex="0"
+                            style={{ textAlign: 'center', width: '100%' }}
                         >
                             <span aria-hidden="true">
                                 {getText('page37_chart_title', lang)}

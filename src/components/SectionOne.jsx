@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import Page1 from '../pages/Page1';
 import Page2 from '../pages/Page2';
 import Page3 from '../pages/Page3';
+import Page4 from '../pages/Page4';
 import Page7 from '../pages/Page7';
 import Page8 from '../pages/Page8';
 import Page9 from '../pages/Page9';
@@ -11,10 +12,12 @@ import Page11 from '../pages/Page11';
 
 const SectionOne = () => {
     const location = useLocation();
+    const [nativeWidth, setNativeWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        
+
         const scrollTimer = setTimeout(() => {
             if (location.hash) {
                 const elementId = location.hash.replace('#', '');
@@ -26,35 +29,40 @@ const SectionOne = () => {
                 window.scrollTo({ top: 0, behavior: 'instant' });
             }
         }, 300);
-        
+
         return () => clearTimeout(scrollTimer);
     }, [location.pathname, location.hash]);
 
     return (
-        <div className="stacked-section-container">
-            <div id="energy-overview" className="stacked-page-wrapper">
-                <Page1 />
-            </div>
-            <div id="energy-production" className="stacked-page-wrapper">
-                <Page2 />
-            </div>
-            <div id="canadian-energy-production" className="stacked-page-wrapper">
-                <Page3 />
-            </div>
-            <div id="economic-contributions" className="stacked-page-wrapper">
-                <Page7 />
-            </div>
-            <div id="provincial-gdp" className="stacked-page-wrapper">
-                <Page8 />
-            </div>
-            <div id="employment" className="stacked-page-wrapper">
-                <Page9 />
-            </div>
-            <div id="employment-chart" className="stacked-page-wrapper">
-                <Page10 />
-            </div>
-            <div id="gdp-chart" className="stacked-page-wrapper">
-                <Page11 />
+        <div className="stacked-section-container" style={{ backgroundColor: '#ccc' }}>
+            <div style={{ maxWidth: nativeWidth, margin: '0 0', backgroundColor: 'white', transition: 'max-width 0.3s ease-in-out', boxShadow: 'none' }}>
+                <div id="energy-overview" className="stacked-page-wrapper">
+                    <Page1 />
+                </div>
+                <div id="energy-production" className="stacked-page-wrapper">
+                    <Page2 />
+                </div>
+                <div id="canadian-energy-production" className="stacked-page-wrapper">
+                    <Page3 />
+                </div>
+                <div id="primary-energy-production" className="stacked-page-wrapper">
+                    <Page4 />
+                </div>
+                <div id="economic-contributions" className="stacked-page-wrapper">
+                    <Page7 />
+                </div>
+                <div id="provincial-gdp" className="stacked-page-wrapper">
+                    <Page8 />
+                </div>
+                <div id="employment" className="stacked-page-wrapper">
+                    <Page9 />
+                </div>
+                <div id="employment-chart" className="stacked-page-wrapper">
+                    <Page10 />
+                </div>
+                <div id="gdp-chart" className="stacked-page-wrapper">
+                    <Page11 />
+                </div>
             </div>
         </div>
     );

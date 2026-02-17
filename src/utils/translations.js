@@ -74,6 +74,22 @@ export const TRANSLATIONS = {
         'page3_para1': 'Primary energy is energy that is found in nature before any processing or conversion. <em>The Energy Fact Book</em> calculates primary energy production by using two methods. The first method treats the energy embodied in uranium as primary energy, thereby capturing the uranium Canada produces and then exports. This method provides a more accurate picture of energy production in Canada.',
         'page3_para2': 'The second method–also employed by the International Energy Agency (IEA), the Energy Information Administration (EIA) and others–treats domestic electricity production from nuclear energy as primary energy, but not uranium itself. Uranium is energy-dense, and Canada exports most of its uranium production, which explains why the two methods produce such different results.',
 
+        // Page 4
+        'page4_title': 'Primary energy production by source (2023)',
+        'page4_chart1_title': 'Primary energy production, including uranium',
+        'page4_chart2_title': 'Primary energy production, excluding uranium',
+        'page4_total': 'Total',
+        'page4_pj': 'PJ',
+        'page4_natural_gas': 'Natural gas',
+        'page4_hydro': 'Hydro',
+        'page4_coal': 'Coal',
+        'page4_other_renewables': 'Other renewables',
+        'page4_ngls': 'Natural gas liquids (NGLs)',
+        'page4_crude_oil': 'Crude oil',
+        'page4_uranium': 'Uranium',
+        'page4_nuclear': 'Nuclear',
+        'page4_footnote': '"Other renewables" includes wind, solar, wood/wood waste, biofuels and municipal waste.',
+
         // Page 7
         'page7_title': 'Economic contributions',
         'page7_subtitle': 'Nominal gross domestic product',
@@ -523,6 +539,22 @@ export const TRANSLATIONS = {
         'page3_title': "Production canadienne d'énergie",
         'page3_para1': "L'énergie primaire est celle que l'on trouve dans la nature, avant qu'elle ne soit traitée ou convertie. Le <em>Cahier d'information sur l'énergie</em> calcule la production d'énergie primaire au moyen de deux méthodes. La première traite l'énergie de l'uranium comme une énergie primaire et tient donc compte de l'uranium produit et exporté par le Canada. Cette méthode présente un portait plus juste de la production d'énergie au Canada.",
         'page3_para2': "La deuxième méthode, qui est également employée par l'Agence internationale de l'énergie (AIE) et l'Energy Information Administration (EIA), entre autres, traite la production nationale d'électricité à partir d'énergie nucléaire comme une énergie primaire, mais pas l'uranium en soi. L'uranium est dense en énergie et le Canada exporte la majorité de sa production, ce qui explique pourquoi les deux méthodes produisent des résultats si disparates.",
+
+        // Page 4
+        'page4_title': "Production d'énergie primaire par source (2023)",
+        'page4_chart1_title': "Production d'énergie primaire, incluant l'uranium",
+        'page4_chart2_title': "Production d'énergie primaire, excluant l'uranium",
+        'page4_total': 'Total',
+        'page4_pj': 'PJ',
+        'page4_natural_gas': 'Gaz naturel',
+        'page4_hydro': 'Hydroélectricité',
+        'page4_coal': 'Charbon',
+        'page4_other_renewables': 'Autres énergies renouvelables',
+        'page4_ngls': 'Liquides de gaz naturel (LGN)',
+        'page4_crude_oil': 'Pétrole brut',
+        'page4_uranium': 'Uranium',
+        'page4_nuclear': 'Énergie nucléaire',
+        'page4_footnote': "La catégorie « Autres énergies renouvelables » comprend l'énergie éolienne, l'énergie solaire, le bois et les résidus ligneux, les biocarburants et les déchets municipaux.",
 
         // Page 7
         'page7_title': 'Contributions économiques',

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import Page23Stacked from '../pages/Page23Stacked';
 import Page24Stacked from '../pages/Page24Stacked';
 import Page25Stacked from '../pages/Page25Stacked';
 import Page28Stacked from '../pages/Page28Stacked';
@@ -20,7 +21,7 @@ const SectionTest = () => {
                 }
             } else {
                 window.scrollTo({ top: 0, behavior: 'instant' });
-                const overviewPage = document.getElementById('capital-expenditure');
+                const overviewPage = document.getElementById('section-overview');
                 if (overviewPage) {
                     overviewPage.scrollIntoView({ behavior: 'instant', block: 'start' });
                 }
@@ -32,6 +33,9 @@ const SectionTest = () => {
 
     return (
         <div className="stacked-section-container">
+            <div id="section-overview" className="stacked-page-wrapper">
+                <Page23Stacked />
+            </div>
             <div id="capital-expenditure" className="stacked-page-wrapper">
                 <Page24Stacked />
             </div>

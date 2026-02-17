@@ -6,15 +6,22 @@ import page1Image from '../assets/page1_bg.jpg';
 const Page1 = () => {
     const { lang, layoutPadding } = useOutletContext();
 
+
+    // Default target widths for testing
+    const targetWidths = [1920, 1745, 1536, 1280, 1097, 960, 768, 640, 480, 384];
+
     useEffect(() => {
         import('./Page23');
     }, []);
 
+    // Close dropdowns when clicking outside
+
+
     return (
-        <main 
+        <main
             id="main-content"
             tabIndex="-1"
-            className="page-content page-1 page1-main" 
+            className="page-content page-1 page1-main"
             role="main"
             style={{
                 backgroundColor: '#5a7a8a',
@@ -121,29 +128,28 @@ const Page1 = () => {
                     outline-offset: 2px;
                 }
 
-                @media (max-width: 1745px) { .page1-title-text { font-size: 4.2rem; } }
-                @media (max-width: 1536px) { .page1-title-text { font-size: 4.0rem; } }
-                @media (max-width: 1280px) { .page1-title-text { font-size: 3.8rem; } }
-                @media (max-width: 1100px) { .page1-title-text { font-size: 3.5rem; } }
+                @container (max-width: 1745px) { .page1-title-text { font-size: 4.2rem; } }
+                @container (max-width: 1536px) { .page1-title-text { font-size: 4.0rem; } }
+                @container (max-width: 1280px) { .page1-title-text { font-size: 3.8rem; } }
+                @container (max-width: 1100px) { .page1-title-text { font-size: 3.5rem; } }
 
-                @media (max-width: 960px) {
+                @container (max-width: 960px) {
                     .page1-image-title-wrapper { min-height: 350px; }
                     .page1-title-text { font-size: 3.2rem; }
                     .page1-list-item { font-size: 1.7rem; }
                 }
 
-                @media (max-width: 640px) {
+                @container (max-width: 640px) {
                     .page1-title-text { font-size: 2.5rem; }
                     .page1-list-item { font-size: 1.5rem; }
                 }
 
-                @media (max-width: 480px) {
+                @container (max-width: 480px) {
                     .page1-image-title-wrapper { min-height: 250px; }
                     .page1-title-text { font-size: 2.0rem; }
                     .page1-list-item { font-size: 1.3rem; }
                 }
             `}</style>
-
             <div className="page1-container">
                 <div className="page1-image-title-wrapper">
                     <div className="page1-image" aria-hidden="true">
@@ -186,6 +192,8 @@ const Page1 = () => {
                             {getText('page1_item3', lang)}
                         </li>
                     </ul>
+
+
                 </nav>
             </div>
         </main>

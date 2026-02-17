@@ -704,12 +704,12 @@ const Page8 = () => {
                 .page8-data-table summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #fff;
-                    color: var(--gc-text);
+                    background-color: #26374a;
+                    color: #ffffff;
                     font-weight: bold;
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    border: 1px solid #ccc;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     display: flex;
                     align-items: center;
@@ -720,7 +720,7 @@ const Page8 = () => {
                 }
 
                 .page8-data-table summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 .page8-data-table summary:focus {
@@ -875,8 +875,9 @@ const Page8 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
+                    color: #ffffff;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -889,7 +890,7 @@ const Page8 = () => {
                 }
 
                 .page8-table-wrapper details > summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                 }
 
                 /* Table horizontal scroll */
@@ -1331,13 +1332,13 @@ const Page8 = () => {
                             onClick={() => downloadTableAsCSV()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#f9f9f9',
-                                border: '1px solid #ccc',
+                                backgroundColor: '#26374a',
+                                border: '1px solid #26374a',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
                                 fontWeight: 'bold',
-                                color: '#333'
+                                color: '#ffffff'
                             }}
                         >
                             {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -1346,13 +1347,13 @@ const Page8 = () => {
                             onClick={() => downloadTableAsDocx()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#f9f9f9',
-                                border: '1px solid #ccc',
+                                backgroundColor: '#26374a',
+                                border: '1px solid #26374a',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
                                 fontWeight: 'bold',
-                                color: '#333'
+                                color: '#ffffff'
                             }}
                         >
                             {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}

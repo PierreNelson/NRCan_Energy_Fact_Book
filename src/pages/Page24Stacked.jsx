@@ -288,8 +288,9 @@ const Page24Stacked = () => {
                         cursor: 'pointer', 
                         fontWeight: 'bold', 
                         padding: '10px', 
-                        border: '1px solid #ccc', 
-                        backgroundColor: '#fff', 
+                        border: '1px solid #26374a', 
+                        backgroundColor: '#26374a',
+                        color: '#ffffff',
                         display: 'flex', 
                         alignItems: 'center',
                         listStyle: 'none' 
@@ -393,13 +394,13 @@ const Page24Stacked = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -408,13 +409,13 @@ const Page24Stacked = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
@@ -718,6 +719,8 @@ const Page24Stacked = () => {
                     color: var(--gc-text);
                     line-height: 1.2;
                     max-width: 100%;
+                    width: 100%;
+                    text-align: center;
                 }
 
                 .page24h-legend-item {
@@ -789,13 +792,14 @@ const Page24Stacked = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
                     box-sizing: border-box;
                     list-style: none;
+                    color: #ffffff;
                 }
 
                 .page24h-table-wrapper details > summary::-webkit-details-marker {
@@ -803,7 +807,7 @@ const Page24Stacked = () => {
                 }
 
                 .page24h-table-wrapper details > summary:hover {
-                    background-color: #f5f5f5;
+                    background-color: #1e2a3a;
                     width: 100%;
                 }
 
@@ -881,6 +885,7 @@ const Page24Stacked = () => {
                             role="region"
                             aria-label={stripForSR(chartTitle)}
                             tabIndex="0"
+                            style={{ textAlign: 'center', width: '100%' }}
                         >
                             <span aria-hidden="true">{renderTextWithFootnoteLink(chartTitle, false)}</span>
                             <span id="fn-asterisk-rf-page24s" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
@@ -1037,12 +1042,12 @@ const Page24Stacked = () => {
                     <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>
                         <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-page24s" style={{ marginBottom: 0 }}>
+                        <dd id="fn-asterisk-page24s" style={{ marginBottom: 0, marginLeft: 0 }}>
                             <a href="#fn-asterisk-rf-page24s" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
                                 <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                             </a>
-                            <p>
-                                {getText('page24_footnote', lang)}
+                            <p style={{ whiteSpace: 'normal', maxWidth: 'none' }}>
+                                {getText('page24_footnote', lang).replace(/\n/g, ' ')}
                             </p>
                         </dd>
                     </dl>

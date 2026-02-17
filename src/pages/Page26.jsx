@@ -194,11 +194,11 @@ const Page26 = () => {
                     aria-expanded={isTableOpen}
                     style={{ 
                         cursor: 'pointer', 
-                        color: '#333', 
+                        color: '#ffffff', 
                         fontWeight: 'bold', 
                         padding: '10px',
-                        border: '1px solid #ccc',
-                        backgroundColor: '#fff',
+                        border: '1px solid #26374a',
+                        backgroundColor: '#26374a',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -307,13 +307,13 @@ const Page26 = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
@@ -322,13 +322,13 @@ const Page26 = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#f9f9f9',
-                            border: '1px solid #ccc',
+                            backgroundColor: '#26374a',
+                            border: '1px solid #26374a',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
                             fontWeight: 'bold',
-                            color: '#333'
+                            color: '#ffffff'
                         }}
                     >
                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}

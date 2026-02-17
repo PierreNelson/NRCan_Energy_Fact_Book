@@ -344,17 +344,17 @@ const Page29 = () => {
 
                 .page29-download-btn {
                     padding: 8px 16px;
-                    background-color: #f9f9f9;
-                    border: 1px solid #ccc;
+                    background-color: #26374a;
+                    border: 1px solid #26374a;
                     border-radius: 4px;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
                     font-weight: bold;
-                    color: var(--gc-text);
+                    color: #ffffff;
                 }
 
                 .page29-download-btn:hover {
-                    background-color: #e9e9e9;
+                    background-color: #1e2a3a;
                 }
 
                 .page29-footnotes {
