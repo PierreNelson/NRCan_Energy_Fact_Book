@@ -36,7 +36,7 @@ scripts/
 
 ```bash
 cd scripts
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### 2. Set Up SQL Server Database
