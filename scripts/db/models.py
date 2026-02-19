@@ -557,9 +557,11 @@ class DataRepository:
         """
         Prepare export tables by aggregating all raw and calculated data.
         
-        This consolidates data from:
-        1. raw_statcan_data - Original fetched data with semantic vector names
-        2. calc_* tables - Calculated/derived data stored in normalized tables
+        Data flow:
+        - raw_statcan_data contains BOTH original StatCan vectors AND calculated 
+          semantic vectors (capex_*, infra_*, econ_*, etc.)
+        - calc_* tables contain normalized calculated data (for querying)
+        - Export pulls from raw_statcan_data since it already has semantic vectors
         
         All data is converted to the export format: (vector, ref_date, value)
         """
@@ -568,133 +570,13 @@ class DataRepository:
         self.db.execute_non_query("DELETE FROM export_metadata")
         
         # Copy raw StatCan data to export (already has semantic vector names)
+        # This includes both original vectors (v123...) and calculated semantic vectors (capex_*, infra_*, etc.)
+        # Note: calc_* tables store the same data in normalized form for querying,
+        # but we don't need to insert from them since raw_statcan_data already has the semantic vectors
         self.db.execute_non_query("""
             INSERT INTO export_data (vector, ref_date, value)
             SELECT vector, ref_date, CAST(value AS NVARCHAR(100))
             FROM raw_statcan_data
-        """)
-        
-        # Export calculated capital expenditures
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT 'capex_oil_gas', CAST(ref_year AS NVARCHAR(20)), CAST(oil_gas AS NVARCHAR(100))
-            FROM calc_capital_expenditures WHERE oil_gas IS NOT NULL
-            UNION ALL
-            SELECT 'capex_electricity', CAST(ref_year AS NVARCHAR(20)), CAST(electricity AS NVARCHAR(100))
-            FROM calc_capital_expenditures WHERE electricity IS NOT NULL
-            UNION ALL
-            SELECT 'capex_other', CAST(ref_year AS NVARCHAR(20)), CAST(other_energy AS NVARCHAR(100))
-            FROM calc_capital_expenditures WHERE other_energy IS NOT NULL
-            UNION ALL
-            SELECT 'capex_total', CAST(ref_year AS NVARCHAR(20)), CAST(total AS NVARCHAR(100))
-            FROM calc_capital_expenditures WHERE total IS NOT NULL
-        """)
-        
-        # Export calculated infrastructure
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT 'infra_fuel_energy_pipelines', CAST(ref_year AS NVARCHAR(20)), CAST(fuel_energy_pipelines AS NVARCHAR(100))
-            FROM calc_infrastructure WHERE fuel_energy_pipelines IS NOT NULL
-            UNION ALL
-            SELECT 'infra_transport', CAST(ref_year AS NVARCHAR(20)), CAST(transport AS NVARCHAR(100))
-            FROM calc_infrastructure WHERE transport IS NOT NULL
-            UNION ALL
-            SELECT 'infra_education', CAST(ref_year AS NVARCHAR(20)), CAST(education AS NVARCHAR(100))
-            FROM calc_infrastructure WHERE education IS NOT NULL
-            UNION ALL
-            SELECT 'infra_health_housing', CAST(ref_year AS NVARCHAR(20)), CAST(health_housing AS NVARCHAR(100))
-            FROM calc_infrastructure WHERE health_housing IS NOT NULL
-            UNION ALL
-            SELECT 'infra_environmental', CAST(ref_year AS NVARCHAR(20)), CAST(environmental AS NVARCHAR(100))
-            FROM calc_infrastructure WHERE environmental IS NOT NULL
-            UNION ALL
-            SELECT 'infra_public_safety', CAST(ref_year AS NVARCHAR(20)), CAST(public_safety AS NVARCHAR(100))
-            FROM calc_infrastructure WHERE public_safety IS NOT NULL
-            UNION ALL
-            SELECT 'infra_total', CAST(ref_year AS NVARCHAR(20)), CAST(total AS NVARCHAR(100))
-            FROM calc_infrastructure WHERE total IS NOT NULL
-        """)
-        
-        # Export calculated economic contributions
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT 'econ_gdp', CAST(ref_year AS NVARCHAR(20)), CAST(gdp_total AS NVARCHAR(100))
-            FROM calc_economic_contributions WHERE gdp_total IS NOT NULL
-            UNION ALL
-            SELECT 'econ_jobs', CAST(ref_year AS NVARCHAR(20)), CAST(jobs_total AS NVARCHAR(100))
-            FROM calc_economic_contributions WHERE jobs_total IS NOT NULL
-            UNION ALL
-            SELECT 'econ_employment_income', CAST(ref_year AS NVARCHAR(20)), CAST(income_total AS NVARCHAR(100))
-            FROM calc_economic_contributions WHERE income_total IS NOT NULL
-        """)
-        
-        # Export calculated international investment
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT 
-                CASE investment_type 
-                    WHEN 'CDIA' THEN 'intl_cdia'
-                    WHEN 'FDI' THEN 'intl_fdi'
-                    ELSE 'intl_' + LOWER(investment_type)
-                END,
-                CAST(ref_year AS NVARCHAR(20)), 
-                CAST(value AS NVARCHAR(100))
-            FROM calc_international_investment WHERE value IS NOT NULL
-        """)
-        
-        # Export calculated provincial GDP
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT 'gdp_prov_' + province_code, CAST(ref_year AS NVARCHAR(20)), CAST(energy_gdp AS NVARCHAR(100))
-            FROM calc_provincial_gdp WHERE energy_gdp IS NOT NULL
-        """)
-        
-        # Export calculated clean tech
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT 'cleantech_' + LOWER(REPLACE(category, ' ', '_')) + '_count', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(project_count AS NVARCHAR(100))
-            FROM calc_clean_tech WHERE project_count IS NOT NULL
-            UNION ALL
-            SELECT 'cleantech_' + LOWER(REPLACE(category, ' ', '_')) + '_value', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(total_investment AS NVARCHAR(100))
-            FROM calc_clean_tech WHERE total_investment IS NOT NULL
-        """)
-        
-        # Export calculated environmental protection
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT 'enviro_' + LOWER(REPLACE(industry_category, ' ', '_')) + '_total', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(total AS NVARCHAR(100))
-            FROM calc_environmental_protection WHERE total IS NOT NULL
-            UNION ALL
-            SELECT 'enviro_' + LOWER(REPLACE(industry_category, ' ', '_')) + '_wastewater', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(wastewater AS NVARCHAR(100))
-            FROM calc_environmental_protection WHERE wastewater IS NOT NULL
-            UNION ALL
-            SELECT 'enviro_' + LOWER(REPLACE(industry_category, ' ', '_')) + '_air', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(air_pollution AS NVARCHAR(100))
-            FROM calc_environmental_protection WHERE air_pollution IS NOT NULL
-            UNION ALL
-            SELECT 'enviro_' + LOWER(REPLACE(industry_category, ' ', '_')) + '_soil', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(soil_groundwater AS NVARCHAR(100))
-            FROM calc_environmental_protection WHERE soil_groundwater IS NOT NULL
-            UNION ALL
-            SELECT 'enviro_' + LOWER(REPLACE(industry_category, ' ', '_')) + '_solid_waste', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(solid_waste AS NVARCHAR(100))
-            FROM calc_environmental_protection WHERE solid_waste IS NOT NULL
-            UNION ALL
-            SELECT 'enviro_' + LOWER(REPLACE(industry_category, ' ', '_')) + '_other', 
-                   CAST(ref_year AS NVARCHAR(20)), 
-                   CAST(other AS NVARCHAR(100))
-            FROM calc_environmental_protection WHERE other IS NOT NULL
         """)
         
         # Copy metadata
