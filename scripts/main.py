@@ -174,17 +174,15 @@ def cmd_export(args, config: Config, db: DatabaseConnection):
     # Check for filter options
     source_filter = getattr(args, 'source', None)
     vectors_filter = getattr(args, 'vectors', None)
-    page_filter = getattr(args, 'page', None)
     
-    if source_filter or vectors_filter or page_filter:
+    if source_filter or vectors_filter:
         print("\nSelective export mode:")
     
     try:
         results = export_website_files(
             config, db,
             source=source_filter,
-            vectors=vectors_filter,
-            page=page_filter
+            vectors=vectors_filter
         )
     except ValueError as e:
         print(f"\nError: {e}")
@@ -212,7 +210,7 @@ def cmd_export(args, config: Config, db: DatabaseConnection):
 
 def cmd_list(args, config: Config, db: DatabaseConnection):
     """Handle the list command."""
-    from export.page_vectors import get_all_pages, get_vectors_for_page, SOURCE_VECTOR_PREFIXES
+    from export.source_vectors import SOURCE_VECTOR_PREFIXES
     
     print("=" * 60)
     print("NRCan Energy Factbook - Available Sections and Sources")
@@ -238,16 +236,6 @@ def cmd_list(args, config: Config, db: DatabaseConnection):
                 print(f"    Vectors: {', '.join(prefixes)}*")
             if description:
                 print(f"    {description}")
-    
-    # List pages
-    print("\n" + "=" * 60)
-    print("Available Pages for Export Filtering")
-    print("=" * 60)
-    
-    pages = get_all_pages()
-    for page in pages:
-        prefixes = get_vectors_for_page(page)
-        print(f"  {page}: {', '.join(prefixes)}*")
     
     return 0
 
@@ -303,7 +291,6 @@ Examples:
   python main.py export                     Export all website files
   python main.py export --source capex      Export only capital expenditures
   python main.py export --vectors "cea_*"   Export vectors matching pattern
-  python main.py export --page Page24       Export only Page24 data
   
   python main.py list                       List available sections/sources
   python main.py test-connection            Test database connection
@@ -348,10 +335,6 @@ Examples:
     export_parser.add_argument(
         '--vectors', '-v',
         help='Export only vectors matching a pattern (e.g., "capex_*", "*_total")'
-    )
-    export_parser.add_argument(
-        '--page', '-p',
-        help='Export only vectors used by a specific page (e.g., Page24, page24)'
     )
     
     # List command

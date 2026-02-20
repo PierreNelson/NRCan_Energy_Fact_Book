@@ -80,7 +80,10 @@ async function loadAllData() {
 
 /**
  * Get capital expenditures data
- * Returns array of objects: { year, oil_gas, electricity, other, total }
+ * Returns array of objects with raw values (millions), percentages, and billions:
+ * { year, oil_gas, electricity, other, total, oil_gas_pct, electricity_pct, other_pct, 
+ *   oil_gas_billions, electricity_billions, other_billions, total_billions }
+ * Percentages and billions are pre-calculated in the database.
  */
 export async function getCapitalExpendituresData() {
     const allData = await loadAllData();
@@ -102,7 +105,12 @@ export async function getCapitalExpendituresData() {
 
 /**
  * Get infrastructure data
- * Returns array of objects: { year, fuel_energy_pipelines, transport, health_housing, education, public_safety, environmental, total }
+ * Returns array of objects with raw values (millions), percentages, and billions:
+ * { year, fuel_energy_pipelines, transport, health_housing, education, public_safety, environmental, total,
+ *   fuel_energy_pipelines_pct, transport_pct, health_housing_pct, education_pct, public_safety_pct, environmental_pct,
+ *   fuel_energy_pipelines_billions, transport_billions, health_housing_billions, education_billions, 
+ *   public_safety_billions, environmental_billions, total_billions }
+ * Percentages and billions are pre-calculated in the database.
  */
 export async function getInfrastructureData() {
     const allData = await loadAllData();
@@ -124,7 +132,10 @@ export async function getInfrastructureData() {
 
 /**
  * Get economic contributions data
- * Returns array of objects: { year, jobs, employment_income, gdp, investment_value }
+ * Returns array of objects with raw values and pre-calculated display values:
+ * { year, jobs, employment_income, gdp, investment_value,
+ *   jobs_thousands, employment_income_billions, gdp_billions, investment_value_billions }
+ * Pre-calculated values are computed in the database (thousands for jobs, billions for monetary).
  */
 export async function getEconomicContributionsData() {
     const allData = await loadAllData();
@@ -146,8 +157,11 @@ export async function getEconomicContributionsData() {
 
 /**
  * Get investment by asset type data
- * Returns array of objects with breakdown by asset type:
- * { year, transmission_distribution, pipelines, nuclear, other_electric, hydraulic, wind_solar, steam_thermal, total }
+ * Returns array of objects with breakdown by asset type (raw values in millions and pre-calculated billions):
+ * { year, transmission_distribution, pipelines, nuclear, other_electric, hydraulic, wind_solar, steam_thermal, total,
+ *   transmission_distribution_billions, pipelines_billions, nuclear_billions, other_electric_billions,
+ *   hydraulic_billions, wind_solar_billions, steam_thermal_billions, total_billions }
+ * Billions values are pre-calculated in the database.
  */
 export async function getInvestmentByAssetData() {
     const allData = await loadAllData();

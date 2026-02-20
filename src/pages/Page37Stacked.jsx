@@ -389,7 +389,8 @@ const Page37Stacked = () => {
     }, [lang]);
     const annotations = useMemo(() => {
         if (!chartData) return [];
-        const totalBillions = (chartData.total || 0) / 1000;
+        // Use pre-calculated billions from database
+        const totalBillions = currentYearData?.total_billions ?? ((chartData.total || 0) / 1000);
 
         const centerText = lang === 'en'
             ? `<b>Total</b><br><b>$${totalBillions.toFixed(0)}B</b>`
@@ -401,9 +402,10 @@ const Page37Stacked = () => {
             showarrow: false,
         }];
     }, [chartData, lang, windowWidth]);
-    const formatNumber = (val) => {
+    const formatNumber = (val, preCalcBillions) => {
         if (val >= 1000) {
-            return `$${(val / 1000).toFixed(1)} ${lang === 'en' ? 'billion' : 'milliards de dollars'}`;
+            const billions = preCalcBillions ?? (val / 1000);
+            return `$${billions.toFixed(1)} ${lang === 'en' ? 'billion' : 'milliards de dollars'}`;
         }
         return `$${val.toLocaleString()} ${getText('page37_million', lang)}`;
     };
@@ -963,7 +965,7 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37h-data-table {
-                    margin-top: 20px;
+                    margin-top: -50px;
                     margin-bottom: 0;
                     margin-left: 0;
                     margin-right: 0;
@@ -983,6 +985,12 @@ const getAccessibleDataTable = () => {
                     }
                     .page37h-chart-area {
                         height: 550px;
+                    }
+                }
+
+                @media (max-width: 1280px) {
+                    .page37h-data-table {
+                        margin-top: -90px;
                     }
                 }
 
@@ -1016,12 +1024,20 @@ const getAccessibleDataTable = () => {
                     .page37h-chart-area {
                         height: 400px;
                     }
+
+                     .page37h-data-table {
+                        margin-top: 60px;
+                    }
                 }
 
                 @media (max-width: 640px) {
                     .page37h-chart-column,
                     .page37h-chart-area {
                         height: 360px;
+                    }
+
+                     .page37h-data-table {
+                        margin-top: 0px;
                     }
                 }
 

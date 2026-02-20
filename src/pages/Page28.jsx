@@ -560,7 +560,7 @@ const Page28 = () => {
                     line-height: 1.6;
                     margin-bottom: 20px;
                     color: var(--gc-text);
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page28-sidebar {
@@ -571,7 +571,7 @@ const Page28 = () => {
                     font-size: 20px;
                     line-height: 1.6;
                     color: var(--gc-text);
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page28-sidebar-title {

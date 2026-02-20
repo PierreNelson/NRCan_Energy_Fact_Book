@@ -134,34 +134,40 @@ const Page26 = () => {
         return pageData.find(d => d.year === year) || pageData[pageData.length - 1];
     }, [year, pageData]);
 
-    const formatJobs = (val) => `${(val / 1000).toFixed(1)} k`;
+    // Format functions now accept pre-calculated values directly
+    const formatJobs = (val, preCalcThousands) => {
+        const k = preCalcThousands ?? (val / 1000);
+        return `${k.toFixed(1)} k`;
+    };
 
-    const formatBillions = (val) => {
-        const b = val / 1000;
+    const formatBillions = (val, preCalcBillions) => {
+        const b = preCalcBillions ?? (val / 1000);
         const text = getText('billion', lang);
         return lang === 'en' ? `$${b.toFixed(1)} ${text}` : `${b.toFixed(1)} $ ${text}`;
     };
 
-    const formatJobsSR = (val) => {
-        const k = (val / 1000).toFixed(1);
+    const formatJobsSR = (val, preCalcThousands) => {
+        const k = (preCalcThousands ?? (val / 1000)).toFixed(1);
         return lang === 'en' ? `${k} thousand jobs` : `${k} mille emplois`;
     };
 
-    const formatBillionsSR = (val) => {
-        const b = (val / 1000).toFixed(1);
+    const formatBillionsSR = (val, preCalcBillions) => {
+        const b = (preCalcBillions ?? (val / 1000)).toFixed(1);
         const text = getText('billion', lang);
         return `${b} ${text} ${lang === 'en' ? 'dollars' : 'dollars'}`;
     };
 
-    const formatNumberTable = (val) => {
-        return (val / 1000).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
+    const formatNumberTable = (val, preCalcBillions) => {
+        const b = preCalcBillions ?? (val / 1000);
+        return b.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
             minimumFractionDigits: 1, 
             maximumFractionDigits: 1 
         });
     };
 
-    const formatJobsTable = (val) => {
-        return (val / 1000).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
+    const formatJobsTable = (val, preCalcThousands) => {
+        const k = preCalcThousands ?? (val / 1000);
+        return k.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
             minimumFractionDigits: 1, 
             maximumFractionDigits: 1 
         });
@@ -274,27 +280,27 @@ const Page26 = () => {
                                         <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', padding: '8px' }}>{yearData.year}</th>
                                         <td 
                                             style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
-                                            aria-label={`${yearData.year}, ${jobsLabel}: ${formatJobsTable(yearData.jobs)}${jobsUnit}`}
+                                            aria-label={`${yearData.year}, ${jobsLabel}: ${formatJobsTable(yearData.jobs, yearData.jobs_thousands)}${jobsUnit}`}
                                         >
-                                            {formatJobsTable(yearData.jobs)}
+                                            {formatJobsTable(yearData.jobs, yearData.jobs_thousands)}
                                         </td>
                                         <td 
                                             style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
-                                            aria-label={`${yearData.year}, ${incomeLabel}: ${formatNumberTable(yearData.employment_income)}${billionUnit}`}
+                                            aria-label={`${yearData.year}, ${incomeLabel}: ${formatNumberTable(yearData.employment_income, yearData.employment_income_billions)}${billionUnit}`}
                                         >
-                                            {formatNumberTable(yearData.employment_income)}
+                                            {formatNumberTable(yearData.employment_income, yearData.employment_income_billions)}
                                         </td>
                                         <td 
                                             style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
-                                            aria-label={`${yearData.year}, ${gdpLabel}: ${formatNumberTable(yearData.gdp)}${billionUnit}`}
+                                            aria-label={`${yearData.year}, ${gdpLabel}: ${formatNumberTable(yearData.gdp, yearData.gdp_billions)}${billionUnit}`}
                                         >
-                                            {formatNumberTable(yearData.gdp)}
+                                            {formatNumberTable(yearData.gdp, yearData.gdp_billions)}
                                         </td>
                                         <td 
                                             style={{ textAlign: 'right', border: '1px solid #ddd', padding: '8px' }}
-                                            aria-label={`${yearData.year}, ${investLabel}: ${formatNumberTable(yearData.investment_value)}${billionUnit}`}
+                                            aria-label={`${yearData.year}, ${investLabel}: ${formatNumberTable(yearData.investment_value, yearData.investment_value_billions)}${billionUnit}`}
                                         >
-                                            {formatNumberTable(yearData.investment_value)}
+                                            {formatNumberTable(yearData.investment_value, yearData.investment_value_billions)}
                                         </td>
                                     </tr>
                                 );
@@ -348,10 +354,10 @@ const Page26 = () => {
         ];
         const rows = pageData.map(yearData => [
             yearData.year,
-            (yearData.jobs || 0).toFixed(1),
-            (yearData.employment_income || 0).toFixed(1),
-            (yearData.gdp || 0).toFixed(1),
-            (yearData.investment_value || 0).toFixed(1)
+            (yearData.jobs_thousands ?? ((yearData.jobs || 0) / 1000)).toFixed(1),
+            (yearData.employment_income_billions ?? ((yearData.employment_income || 0) / 1000)).toFixed(1),
+            (yearData.gdp_billions ?? ((yearData.gdp || 0) / 1000)).toFixed(1),
+            (yearData.investment_value_billions ?? ((yearData.investment_value || 0) / 1000)).toFixed(1)
         ]);
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -389,10 +395,10 @@ const Page26 = () => {
         const dataRows = pageData.map(yearData => new TableRow({
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.jobs || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.employment_income || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.gdp || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.investment_value || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] })
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.jobs_thousands ?? ((yearData.jobs || 0) / 1000)).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.employment_income_billions ?? ((yearData.employment_income || 0) / 1000)).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.gdp_billions ?? ((yearData.gdp || 0) / 1000)).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.investment_value_billions ?? ((yearData.investment_value || 0) / 1000)).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] })
             ]
         }));
 
@@ -444,9 +450,9 @@ const Page26 = () => {
     };
 
     const getStatsSummary = () => {
-        const jobsText = formatJobsSR(currentYearData.jobs);
-        const incomeText = formatBillionsSR(currentYearData.employment_income);
-        const gdpText = formatBillionsSR(currentYearData.gdp);
+        const jobsText = formatJobsSR(currentYearData.jobs, currentYearData.jobs_thousands);
+        const incomeText = formatBillionsSR(currentYearData.employment_income, currentYearData.employment_income_billions);
+        const gdpText = formatBillionsSR(currentYearData.gdp, currentYearData.gdp_billions);
 
         if (lang === 'en') {
             return `Economic contributions in ${year}. Fuel, energy and pipeline infrastructure supported ${jobsText}, generated ${incomeText} in employment income, and ${gdpText} in GDP. These are direct and indirect contributions.`;
@@ -521,7 +527,7 @@ const Page26 = () => {
                 .page26-body-text {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page26-bg-image {
@@ -985,7 +991,7 @@ const Page26 = () => {
                         <div className="page26-stat-col page26-stat-col-1" aria-hidden="true">
                             <div className="page26-stat-label" style={{ fontWeight: 'bold', color: '#333' }}>{getText('page26_supported', lang)}</div>
                             <div className="page26-stat-value" style={{ color: COLORS.jobs }}>
-                                {formatJobs(currentYearData.jobs)}
+                                {formatJobs(currentYearData.jobs, currentYearData.jobs_thousands)}
                             </div>
                             <div className="page26-stat-label" style={{ color: '#666' }}>{getText('page26_jobs', lang)}</div>
                         </div>
@@ -993,7 +999,7 @@ const Page26 = () => {
                         <div className="page26-stat-col page26-stat-col-2" aria-hidden="true">
                             <div className="page26-stat-label" style={{ fontWeight: 'bold', color: '#333' }}>{getText('page26_generated', lang)}</div>
                             <div className="page26-stat-value" style={{ color: COLORS.income }}>
-                                {formatBillions(currentYearData.employment_income)}
+                                {formatBillions(currentYearData.employment_income, currentYearData.employment_income_billions)}
                             </div>
                             <div className="page26-stat-label" style={{ color: '#333' }}>{getText('page26_in_employment_income', lang)}</div>
                         </div>
@@ -1001,7 +1007,7 @@ const Page26 = () => {
                         <div className="page26-stat-col page26-stat-col-3" aria-hidden="true">
                             <div className="page26-stat-label" style={{ fontWeight: 'bold', color: '#333' }}>{getText('page26_and', lang)}</div>
                             <div className="page26-stat-value" style={{ color: COLORS.gdp }}>
-                                {formatBillions(currentYearData.gdp)}
+                                {formatBillions(currentYearData.gdp, currentYearData.gdp_billions)}
                             </div>
                             <div style={{ fontSize: '30px', fontWeight: 'bold', color: '#666', lineHeight: '1' }}>{getText('page26_in_gdp', lang)}</div>
                             <div style={{ fontSize: '18px', color: '#333', marginTop: '5px' }}>

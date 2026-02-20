@@ -190,13 +190,14 @@ const Page24Stacked = () => {
     if (error) return <div>Error: {error}</div>;
     if (!latestRow) return <div>No data available.</div>;
 
-    const totalLatestBillion = latestRow.total / 1000;
-    const peakTotalBillion = peakRow.total / 1000;
-    const low2020Billion = row2020.total / 1000;
+    // Use pre-calculated billions from database where available
+    const totalLatestBillion = latestRow.total_billions ?? (latestRow.total / 1000);
+    const peakTotalBillion = peakRow.total_billions ?? (peakRow.total / 1000);
+    const low2020Billion = row2020.total_billions ?? (row2020.total / 1000);
     const declineFromPeakPct = ((peakTotalBillion - totalLatestBillion) / peakTotalBillion) * 100;
     const reboundFrom2020Pct = ((totalLatestBillion - low2020Billion) / low2020Billion) * 100;
-    const oilGasBillion = latestRow.oil_gas / 1000;
-    const electricityBillion = latestRow.electricity / 1000;
+    const oilGasBillion = latestRow.oil_gas_billions ?? (latestRow.oil_gas / 1000);
+    const electricityBillion = latestRow.electricity_billions ?? (latestRow.electricity / 1000);
 
     const formatBillion = (val) => {
         const text = getText('billion', lang);
@@ -217,10 +218,11 @@ const Page24Stacked = () => {
         tickVals.push(y);
     }
 
-    const oilGasValues = pageData.map(d => d.oil_gas / 1000);
-    const electricValues = pageData.map(d => d.electricity / 1000);
-    const otherValues = pageData.map(d => d.other / 1000);
-    const totalValues = pageData.map(d => d.total / 1000);
+    // Use pre-calculated billions from database where available
+    const oilGasValues = pageData.map(d => d.oil_gas_billions ?? (d.oil_gas / 1000));
+    const electricValues = pageData.map(d => d.electricity_billions ?? (d.electricity / 1000));
+    const otherValues = pageData.map(d => d.other_billions ?? (d.other / 1000));
+    const totalValues = pageData.map(d => d.total_billions ?? (d.total / 1000));
 
     const colors = { 'oil_gas': '#48A36C', 'electricity': '#E3540D', 'other': '#857550' };
 
@@ -362,27 +364,27 @@ const Page24Stacked = () => {
                                                     </th>
                                                     <td 
                                                         style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumberTable(yearData.oil_gas / 1000)}${cellUnitText}`}
+                                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumberTable(yearData.oil_gas_billions ?? (yearData.oil_gas / 1000))}${cellUnitText}`}
                                                     >
-                                                        {formatNumberTable(yearData.oil_gas / 1000)}
+                                                        {formatNumberTable(yearData.oil_gas_billions ?? (yearData.oil_gas / 1000))}
                                                     </td>
                                                     <td 
                                                         style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${electricityLabel}: ${formatNumberTable(yearData.electricity / 1000)}${cellUnitText}`}
+                                                        aria-label={`${yearData.year}, ${electricityLabel}: ${formatNumberTable(yearData.electricity_billions ?? (yearData.electricity / 1000))}${cellUnitText}`}
                                                     >
-                                                        {formatNumberTable(yearData.electricity / 1000)}
+                                                        {formatNumberTable(yearData.electricity_billions ?? (yearData.electricity / 1000))}
                                                     </td>
                                                     <td 
                                                         style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${otherLabel}: ${formatNumberTable(yearData.other / 1000)}${cellUnitText}`}
+                                                        aria-label={`${yearData.year}, ${otherLabel}: ${formatNumberTable(yearData.other_billions ?? (yearData.other / 1000))}${cellUnitText}`}
                                                     >
-                                                        {formatNumberTable(yearData.other / 1000)}
+                                                        {formatNumberTable(yearData.other_billions ?? (yearData.other / 1000))}
                                                     </td>
                                                     <td 
                                                         style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${getText('page24_hover_total', lang)}: ${formatNumberTable(yearData.total / 1000)}${cellUnitText}`}
+                                                        aria-label={`${yearData.year}, ${getText('page24_hover_total', lang)}: ${formatNumberTable(yearData.total_billions ?? (yearData.total / 1000))}${cellUnitText}`}
                                                     >
-                                                        {formatNumberTable(yearData.total / 1000)}
+                                                        {formatNumberTable(yearData.total_billions ?? (yearData.total / 1000))}
                                                     </td>
                                 </tr>
                             ))}
@@ -440,10 +442,10 @@ const Page24Stacked = () => {
         ];
         const rows = pageData.map(yearData => [
             yearData.year,
-            (yearData.oil_gas / 1000).toFixed(2),
-            (yearData.electricity / 1000).toFixed(2),
-            (yearData.other / 1000).toFixed(2),
-            (yearData.total / 1000).toFixed(2)
+            (yearData.oil_gas_billions ?? (yearData.oil_gas / 1000)).toFixed(2),
+            (yearData.electricity_billions ?? (yearData.electricity / 1000)).toFixed(2),
+            (yearData.other_billions ?? (yearData.other / 1000)).toFixed(2),
+            (yearData.total_billions ?? (yearData.total / 1000)).toFixed(2)
         ]);
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -481,10 +483,10 @@ const Page24Stacked = () => {
         const dataRows = pageData.map(yearData => new TableRow({
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.oil_gas / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.electricity / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.other / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.total / 1000).toFixed(2), bold: true, size: 22 })], alignment: AlignmentType.RIGHT })] })
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.oil_gas_billions ?? (yearData.oil_gas / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.electricity_billions ?? (yearData.electricity / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.other_billions ?? (yearData.other / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.total_billions ?? (yearData.total / 1000)).toFixed(2), bold: true, size: 22 })], alignment: AlignmentType.RIGHT })] })
             ]
         }));
 

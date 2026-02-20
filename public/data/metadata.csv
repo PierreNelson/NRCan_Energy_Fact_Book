@@ -1,16 +1,31 @@
 vector,title,uom,scalar_factor
 asset_hydraulic,Investment by asset - Hydraulic,Millions of dollars,millions
+asset_hydraulic_billions,Investment by asset - Hydraulic (billions),Billions of dollars,billions
 asset_nuclear,Investment by asset - Nuclear,Millions of dollars,millions
+asset_nuclear_billions,Investment by asset - Nuclear (billions),Billions of dollars,billions
 asset_other_electric,Investment by asset - Other electric,Millions of dollars,millions
+asset_other_electric_billions,Investment by asset - Other electric (billions),Billions of dollars,billions
 asset_pipelines,Investment by asset - Pipelines,Millions of dollars,millions
+asset_pipelines_billions,Investment by asset - Pipelines (billions),Billions of dollars,billions
 asset_steam_thermal,Investment by asset - Steam/thermal,Millions of dollars,millions
+asset_steam_thermal_billions,Investment by asset - Steam/thermal (billions),Billions of dollars,billions
 asset_total,"Investment - Total fuel, energy and pipeline",Millions of dollars,millions
+asset_total_billions,"Investment - Total fuel, energy and pipeline (billions)",Billions of dollars,billions
 asset_transmission_distribution,Investment by asset - Transmission and distribution,Millions of dollars,millions
+asset_transmission_distribution_billions,Investment by asset - Transmission and distribution (billions),Billions of dollars,billions
 asset_wind_solar,Investment by asset - Wind and solar,Millions of dollars,millions
+asset_wind_solar_billions,Investment by asset - Wind and solar (billions),Billions of dollars,billions
 capex_electricity,Capital expenditures - Electric power,Millions of dollars,millions
+capex_electricity_billions,Capital expenditures - Electric power,Billions of dollars,billions
+capex_electricity_pct,Capital expenditures - Electric power (% of total),Percent,percent
 capex_oil_gas,Capital expenditures - Oil and gas extraction,Millions of dollars,millions
+capex_oil_gas_billions,Capital expenditures - Oil and gas extraction,Billions of dollars,billions
+capex_oil_gas_pct,Capital expenditures - Oil and gas (% of total),Percent,percent
 capex_other,Capital expenditures - Other energy,Millions of dollars,millions
+capex_other_billions,Capital expenditures - Other energy,Billions of dollars,billions
+capex_other_pct,Capital expenditures - Other energy (% of total),Percent,percent
 capex_total,Capital expenditures - Total energy sector,Millions of dollars,millions
+capex_total_billions,Capital expenditures - Total energy sector,Billions of dollars,billions
 cea_abroad,Canadian Energy Assets - Abroad (A4),Billions of dollars,billions
 cea_africa,Canadian Energy Assets - Africa,Billions of dollars,billions
 cea_asia,Canadian Energy Assets - Asia,Billions of dollars,billions
@@ -46,9 +61,13 @@ cleantech_total_value,Total clean technology - Project value,Billions of dollars
 cleantech_wind_count,Wind - Number of projects,Number,units
 cleantech_wind_value,Wind - Project value,Billions of dollars,billions
 econ_employment_income,Economic contributions - Employment income,Millions of dollars,millions
+econ_employment_income_billions,Economic contributions - Employment income (billions),Billions of dollars,billions
 econ_gdp,Economic contributions - GDP,Millions of dollars,millions
+econ_gdp_billions,Economic contributions - GDP (billions),Billions of dollars,billions
 econ_investment_value,"Annual investment - Fuel, energy and pipelines",Millions of dollars,millions
+econ_investment_value_billions,Annual investment (billions),Billions of dollars,billions
 econ_jobs,Economic contributions - Jobs (direct + indirect),Number,units
+econ_jobs_thousands,Economic contributions - Jobs (thousands),Thousands,thousands
 energy_prod_australia_pct,Australia Share of World Energy Production,%,percent
 energy_prod_canada_growth_since_2005,Canada Energy Production Growth Since 2005,%,percent
 energy_prod_canada_pct,Canada Share of World Energy Production,%,percent
@@ -60,13 +79,16 @@ energy_prod_united_states_pct,United States Share of World Energy Production,%,p
 energy_prod_world_growth_since_2005,World Energy Production Growth Since 2005,%,percent
 energy_prod_world_total,World Total Primary Energy Production,PJ,petajoules
 enviro_all_industries_total,Total industries - Total environmental protection expenditures,Millions of dollars,millions
+enviro_all_industries_total_billions,All industries - Total (billions),Billions of dollars,billions
 enviro_electric_total,Electric power generation - Total environmental protection expenditures,Millions of dollars,millions
+enviro_electric_total_billions,Electric power - Total (billions),Billions of dollars,billions
 enviro_natural_gas_total,Natural gas distribution - Total environmental protection expenditures,Millions of dollars,millions
 enviro_oil_gas_air,Oil and gas extraction - Air pollution management,Millions of dollars,millions
 enviro_oil_gas_other,Oil and gas extraction - Other environmental protection activities,Millions of dollars,millions
 enviro_oil_gas_soil,"Oil and gas extraction - Protection and remediation of soil, groundwater and surface water",Millions of dollars,millions
 enviro_oil_gas_solid_waste,Oil and gas extraction - Solid waste management,Millions of dollars,millions
 enviro_oil_gas_total,Oil and gas extraction - Total environmental protection expenditures,Millions of dollars,millions
+enviro_oil_gas_total_billions,Oil and gas - Total (billions),Billions of dollars,billions
 enviro_oil_gas_wastewater,Oil and gas extraction - Wastewater management,Millions of dollars,millions
 enviro_petroleum_pollution,Petroleum and coal product manufacturing - Pollution abatement and control,Millions of dollars,millions
 enviro_petroleum_total,Petroleum and coal product manufacturing - Total environmental protection expenditures,Millions of dollars,millions
@@ -75,17 +97,24 @@ foreign_oil_gas,Foreign control - Oil and gas extraction,Percent,percent
 foreign_total,Foreign control - Total non-financial industries,Percent,percent
 foreign_utilities,Foreign control - Utilities,Percent,percent
 gdp_nominal_direct,Energy's nominal GDP contribution - Direct,Millions of dollars,millions
+gdp_nominal_direct_billions,Energy's nominal GDP - Direct (billions),Billions of dollars,billions
 gdp_nominal_direct_pct,Energy's nominal GDP share - Direct,Percent,percent
 gdp_nominal_electricity,Energy's nominal GDP contribution - Electricity,Millions of dollars,millions
+gdp_nominal_electricity_billions,Energy's nominal GDP - Electricity (billions),Billions of dollars,billions
 gdp_nominal_electricity_pct,Energy's nominal GDP share - Electricity,Percent,percent
 gdp_nominal_indirect,Energy's nominal GDP contribution - Indirect,Millions of dollars,millions
+gdp_nominal_indirect_billions,Energy's nominal GDP - Indirect (billions),Billions of dollars,billions
 gdp_nominal_indirect_pct,Energy's nominal GDP share - Indirect,Percent,percent
 gdp_nominal_market,Nominal GDP at market prices,Millions of dollars,millions
+gdp_nominal_market_billions,Nominal GDP at market prices (billions),Billions of dollars,billions
 gdp_nominal_other,Energy's nominal GDP contribution - Other,Millions of dollars,millions
+gdp_nominal_other_billions,Energy's nominal GDP - Other (billions),Billions of dollars,billions
 gdp_nominal_other_pct,Energy's nominal GDP share - Other,Percent,percent
 gdp_nominal_petroleum,Energy's nominal GDP contribution - Petroleum,Millions of dollars,millions
+gdp_nominal_petroleum_billions,Energy's nominal GDP - Petroleum (billions),Billions of dollars,billions
 gdp_nominal_petroleum_pct,Energy's nominal GDP share - Petroleum,Percent,percent
 gdp_nominal_total,Energy's nominal GDP contribution - Total,Millions of dollars,millions
+gdp_nominal_total_billions,Energy's nominal GDP - Total (billions),Billions of dollars,billions
 gdp_nominal_total_pct,Energy's nominal GDP share - Total,Percent,percent
 gdp_prov_ab,Energy sector direct nominal GDP - Alberta,Millions of dollars,millions
 gdp_prov_bc,Energy sector direct nominal GDP - British Columbia,Millions of dollars,millions
@@ -102,14 +131,29 @@ gdp_prov_qc,Energy sector direct nominal GDP - Quebec,Millions of dollars,millio
 gdp_prov_sk,Energy sector direct nominal GDP - Saskatchewan,Millions of dollars,millions
 gdp_prov_yt,Energy sector direct nominal GDP - Yukon,Millions of dollars,millions
 infra_education,Infrastructure - Education,Millions of dollars,millions
+infra_education_billions,Infrastructure - Education,Billions of dollars,billions
+infra_education_pct,Infrastructure - Education (% of total),Percent,percent
 infra_environmental,Infrastructure - Environmental protection,Millions of dollars,millions
+infra_environmental_billions,Infrastructure - Environmental protection,Billions of dollars,billions
+infra_environmental_pct,Infrastructure - Environmental protection (% of total),Percent,percent
 infra_fuel_energy_pipelines,"Infrastructure - Fuel, energy and pipelines",Millions of dollars,millions
+infra_fuel_energy_pipelines_billions,"Infrastructure - Fuel, energy and pipelines",Billions of dollars,billions
+infra_fuel_energy_pipelines_pct,"Infrastructure - Fuel, energy and pipelines (% of total)",Percent,percent
 infra_health_housing,Infrastructure - Health and housing,Millions of dollars,millions
+infra_health_housing_billions,Infrastructure - Health and housing,Billions of dollars,billions
+infra_health_housing_pct,Infrastructure - Health and housing (% of total),Percent,percent
 infra_public_safety,Infrastructure - Public safety and other,Millions of dollars,millions
+infra_public_safety_billions,Infrastructure - Public safety,Billions of dollars,billions
+infra_public_safety_pct,Infrastructure - Public safety (% of total),Percent,percent
 infra_total,Infrastructure - Total net stock,Millions of dollars,millions
+infra_total_billions,Infrastructure - Total net stock,Billions of dollars,billions
 infra_transport,Infrastructure - Transport (less pipelines),Millions of dollars,millions
+infra_transport_billions,Infrastructure - Transport,Billions of dollars,billions
+infra_transport_pct,Infrastructure - Transport (% of total),Percent,percent
 intl_cdia,Canadian direct investment abroad (CDIA) - Energy industry,Millions of dollars,millions
+intl_cdia_billions,CDIA - Energy industry (billions),Billions of dollars,billions
 intl_fdi,Foreign direct investment in Canada (FDI) - Energy industry,Millions of dollars,millions
+intl_fdi_billions,FDI - Energy industry (billions),Billions of dollars,billions
 projects_electricity_count,Electricity - Number of projects,Number,units
 projects_electricity_value,Electricity - Project value,Billions of dollars,billions
 projects_oil_gas_count,Oil and gas - Number of projects,Number,units

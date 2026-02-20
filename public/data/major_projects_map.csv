@@ -1,235 +1,469 @@
 ﻿lang,id,company,project_name,province,location,capital_cost,capital_cost_range,status,clean_technology,clean_technology_type,line_type,lat,lon,paths,type
-en,76,Blue Fuel Energy Corp.,Clean Methanol Plant,British Columbia,Chetwynd,"1,000.00","1,000 - 2,500",Planned,Yes,Bioenergy,,55.69815303268969,-121.62970637520029,,point
-en,536,ecoTECH Energy Group (Canada) Inc,Biomass Project - McBride,British Columbia,McBride,140.00,100 - 250,Planned,Yes,Bioenergy,,53.342923128836276,-120.26762021633148,,point
-en,703,Éthanol Cellulosique Varennes s.e.c. (Recyclage Carbone Varennes),Usine de carburant à faible intensité carbone (inclut un électrolyseur),Quebec,Varennes,"1,200.00","1,000 - 2,500",Under Construction,Yes,Bioenergy,,45.681224190687864,-73.43509360332713,,point
-en,758,Pristine Power Inc./Cheslatta Forest Products,Cheslatta Green Energy Project,British Columbia,Burns Lake,46.00,10 - 50 ,Planned,Yes,Bioenergy,,53.579205533293006,-124.95001710191428,,point
-en,970,Creative Energy Vancouver Platforms Inc.,Creative Energy Plant,British Columbia,Vancouver,100.00,100 - 250,Under Construction,Yes,Bioenergy,,49.27818960970724,-123.11245344429159,,point
-en,2114,Chantiers Chibougamau inc.,Centrale de cogénération Assinica,Quebec,Lebel-sur-Quévillon,342.00,250 - 500,Planned,Yes,Bioenergy,,49.93405783371148,-74.33350629654286,,point
-en,2115,Cogénération Val-d'Or,Cogénération Val-d'Or,Quebec,Val-d'Or,72.00,50 - 100,Planned,Yes,Bioenergy,,48.14852540375368,-77.79189830123957,,point
-en,2121,Ainsworth Energy Co. Ltd.,Anahim Lake Bioenergy Project,British Columbia,"Cariboo, Anahim Lake",15.00,10 - 50 ,Planned,Yes,Bioenergy,,52.41840330533732,-126.48629291719534,,point
-en,2122,Yun Ka Whu'ten Holdings,Biomass Project - Anahim Lake,British Columbia,"Cariboo, Anahim Lake",15.00,10 - 50 ,Planned,Yes,Bioenergy,,52.46535345624128,-125.31755776109446,,point
-en,2123,Ainsworth Energy Co. Ltd.,Tumbler Ridge Bioenergy Project,British Columbia,"Thompson, Okanagan, Kelowna",15.00,10 - 50 ,Planned,Yes,Bioenergy,,50.02465907974658,-119.37344401338525,,point
-en,2124,Nations Energy Corp.,Biomass Project - Kamloops,British Columbia,"Thompson, Okanagan, Kamloops",15.00,10 - 50 ,Planned,Yes,Bioenergy,,50.716193995918665,-120.38900139195297,,point
-en,3600,Fibre Pontiac,Fibre Pontiac (The Biomass Conversion Centre),Quebec,Pontiac,120.00,100 - 250,Planned,Yes,Bioenergy,,45.54231605809882,-76.10905848348709,,point
-en,4104,Canfor Corporation/Licella,Biofuel Facility,British Columbia,Prince George,70.00,50 - 100,Planned,Yes,Bioenergy,,53.92241583182545,-122.74572286801184,,point
-en,4154,Sustane Technologies,Sustane Chester,Nova Scotia,"Chester, NS",16.00,10 - 50 ,Under Construction,Yes,Bioenergy,,44.71885929532686,-64.23958942328696,,point
-en,5076,Résolve Énergie,Usine de production d'éthanol cellulosique,Quebec,Chaudière-Appalaches,300.00,250 - 500,Planned,Yes,Bioenergy,,46.48334082923308,-70.61666490630381,,point
-en,5077,Greenfield Global,Agrandissement usine d'éthanol à Varennes,Quebec,Varennes,120.00,100 - 250,Planned,Yes,Bioenergy,,45.68201108867333,-73.44098453886596,,point
-en,6002,Highwood Organics Processing,Aldersyde Bioenergy Facility,Alberta,Foothills No. 31,25.00,10 - 50 ,Planned,Yes,Bioenergy,,50.63106673924745,-113.87502409508629,,point
-en,6088,Expander Energy,Slave Lake Bio-Mass/Gas to Liquids Plant (Phase 1),Alberta,Lesser Slave River No.124,30.00,10 - 50 ,Planned,Yes,Bioenergy,,55.26504493081816,-114.57518575876578,,point
-en,6090,Imperial Oil Ltd.,Strathcona Refinery Renewable Diesel Expansion,Alberta,Strathcona County,720.00,500 - 750,Under Construction,Yes,Bioenergy,,53.546099982986796,-113.38417287374237,,point
-en,6098,Elkem Métal Canada,Usine de démonstration de fabrication de briquettes de biocarbone,Quebec,Chicoutimi,46.00,10 - 50 ,Under Construction,Yes,Bioenergy,,48.41233981336846,-71.1298496143123,,point
-en,7029,Federated Co-operatives Limited,FCL HDRD Plant,Saskatchewan,Regina,"2,000.00","1,000 - 2,500",Planned,Yes,Bioenergy,,50.43936850516761,-104.72685984383412,,point
-en,7035,Green Impact Partners (In partnership with Carbon Clean Energy and PCL Construction),Future Energy Park Renewable Natural Gas and Ethanol Project,Alberta,Calgary,"1,200.00","1,000 - 2,500",Planned,Yes,Bioenergy,,51.010139761953205,-113.91401420907387,,point
-en,7077,SAF + Consortium,SAF Consortium,Quebec,Montreal,200.00,100 - 250,Planned,Yes,Bioenergy,,45.597554774103884,-73.60407836987785,,point
-en,7086,Énergir/WM Québec,WM Sainte-Sophie Landfill RNG Facility,Quebec,Saint-Sophie,200.00,100 - 250,Planned,Yes,Bioenergy,,45.84605120020925,-73.94108478705101,,point
-en,8319,Covenant Energy Ltd.,Covenant Energy  Renewable Diesel Facility,Saskatchewan,Lloydminster,920.00,"750 - 1,000",Planned,Yes,Bioenergy,,53.29464695644856,-109.98372702277987,,point
-en,3402,Dow Chemical Canada,Dow Net-Zero Polyethylene and Ethylene Derivatives Facility,Alberta,Fort Saskatchewan,"11,500.00","10,000 +",Under Construction,Yes,Carbon Capture and Storage,,53.7339050194484,-113.17216889065274,,point
-en,6028,TransAlta Corporation,Glacier Gas Plant CSS (Phase 2),Alberta,Saddle Hills County,100.00,100 - 250,Planned,Yes,Carbon Capture and Storage,,55.559547296971765,-119.60377693245539,,point
-en,6067,Northern Petrochemical Corp.,Northern Petrochemical Ammonia and Methanol Production Facility,Alberta,Greenview No. 16,"2,500.00","2,500 - 5,000",Planned,Yes,Carbon Capture and Storage,,54.760771401331205,-118.57240841210825,,point
-en,7040,Heidelberg Materials,Heidelberg Materials Carbon Capture Utilization and Storage Hub,Alberta,Edmonton,"1,360.00","1,000 - 2,500",Planned,Yes,Carbon Capture and Storage,,53.57980695822925,-113.60601493535256,,point
-en,7069,The Pathways Alliance,Pathways Alliance Carbon Capture Storage Hub (Phase 1),Alberta,Improvement District No. 349|Wood Buffalo|Lac la Biche County|Improvement District No. 24 Wood Buffalo|Bonnyville No. 87,"16,500.00","10,000 +",Planned,Yes,Carbon Capture and Storage,,58.15284035767626,-112.28501642926246,,point
-en,8115,Potentia Renewables Inc.,Skyview 2 Battery Energy Storage System,Ontario,Edwardsburgh-Cardinal,750.00,"750 - 1,000",Planned,Yes,Energy Storage,,44.14855878536593,-76.84013260635508,,point
-en,974,Enbridge/ Borealis Inc./ Kitselas First Nation,Lakelse Geothermal Power Plant,British Columbia,Terrace,120.00,100 - 250,Planned,Yes,Geothermal,,54.44564506940774,-128.5403179643181,,point
-en,4111,Borealis Geopower,Canoe Reach Geothermal Energy Project,British Columbia,Valemount,120.00,100 - 250,Planned,Yes,Geothermal,,52.83062223236273,-119.26593285122959,,point
-en,4198,Climate Transition Development Corporation,Greenview Geothermal Power Plant (Alberta No. 1),Alberta,Greenview No. 16,106.00,100 - 250,Planned,Yes,Geothermal,,54.84183341959331,-117.6498575653256,,point
-en,5010,Deh Tai GP Ltd,Clarke Lake Geothermal Development,British Columbia,Fort Nelson,100.00,100 - 250,Planned,Yes,Geothermal,,58.772043036142314,-122.66014132981157,,point
-en,6104,NTPC,Whati Transmission Line,Northwest Territories,Whati to Snare Hydro Complex,41.50,10 - 50 ,Planned,Yes,Hydro,,63.25242788954209,-116.73558351352949,,point
-en,67,BC Hydro,Peace River Site C Hydro-electric project,British Columbia,Fort St. John,"16,000.00","10,000 +",Under Construction,Yes,Hydro,,56.250795152938124,-120.8483104651631,,point
-en,165,WindRiver Power Corp.,Kinskuch Hydroelectric Project,British Columbia,Iskut,250.00,250 - 500,Planned,Yes,Hydro,,57.85717888202591,-129.97926772233177,,point
-en,188,Fosthall Creek Power LP,Fosthall Creek Hydropower Project,British Columbia,Nakusp,50.00,50 - 100,Planned,Yes,Hydro,,50.241338271704784,-117.80108978074341,,point
-en,220,Hydro-Québec,Rénovation de groupes à la centrale électrique Beauharnois,Quebec,Beauharnois,"1,600.00","1,000 - 2,500",Under Construction,Yes,Hydro,,45.32898811241681,-73.87550572317538,,point
-en,298,NB Power and Partners,Smart Grid Investments Phase,New Brunswick,Various locations across NB  (St. John),147.00,100 - 250,Under Construction,Yes,Hydro,,45.275189351486695,-66.06856207473336,,point
-en,545,Holmes Hydro,Robson Valley Hydroelectric Project,British Columbia,McBride,200.00,100 - 250,Planned,Yes,Hydro,,53.34686518237983,-119.84065113668431,,point
-en,725,Greater Vancouver Regional District,Capilano (Cleveland) Dam Power Plant,British Columbia,North Vancouver,90.00,50 - 100,Planned,Yes,Hydro,,49.3605096147232,-123.11086546642917,,point
-en,753,Kruger Energy Inc.,Maselpanik Creek Hydro Project,British Columbia,Chilliwack,35.00,10 - 50 ,Planned,Yes,Hydro,,49.089005814775916,-121.25841509066645,,point
-en,757,Innergex Renewable Energy Inc.,Shovel Creek Hydroelectric Project,British Columbia,Harrison Hot Springs,40.00,10 - 50 ,Planned,Yes,Hydro,,49.72120578115957,-121.8148153526896,,point
-en,759,KMC Power,Tamihi Creek Hydro Project,British Columbia,Chilliwack,50.00,50 - 100,Planned,Yes,Hydro,,49.04610574860923,-121.81961517251978,,point
-en,764,Highwater Power Corporation Altagas Ltd.,Log Creek Water Power  Project,British Columbia,Boston Bar,20.00,10 - 50 ,Planned,Yes,Hydro,,50.058845809258266,-121.71741143265548,,point
-en,1002,"Ministère du développement durable, de l'environnement et des parcs",Réfection du barrage des Quinze,Quebec,Angliers,110.00,100 - 250,Under Construction,Yes,Hydro,,47.5536497395114,-79.24020052176486,,point
-en,1026,Hydro-Québec,Réhabilitation de la centrale Robert-Bourassa,Quebec,Baie-James,732.00,500 - 750,Under Construction,Yes,Hydro,,53.79520621155595,-77.43997590708145,,point
-en,1041,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique des chutes du six milles,Quebec,Forestville,45.00,10 - 50 ,Planned,Yes,Hydro,,48.723898741700125,-69.15833365878879,,point
-en,1049,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique de la chute du quatre milles,Quebec,Forestville,22.00,10 - 50 ,Planned,Yes,Hydro,,48.72639874641933,-69.0927781365157,,point
-en,1050,"Manouane Sipi, Société en commandite
-
-",Centrale hydroélectrique Manouane Sipi (Dam B),Quebec,La Tuque,100.00,100 - 250,Planned,Yes,Hydro,,47.38120946849655,-73.57270179046289,,point
-en,1063,NTPC,Taltson Hydroelectricity Expansion Project (Phase 1),Northwest Territories,Multiple locations,"1,200.00","1,000 - 2,500",Under Construction,Yes,Hydro,,61.443080421813875,-112.71445927184739,,point
-en,2025,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,British Columbia,"Vancouver Island/Coast, Port Alice",18.00,10 - 50 ,Planned,Yes,Hydro,,50.43487012859043,-127.48676841941774,,point
-en,3643,Manitoba Hydro,Dorsey Synchronous Condenser Refurbishment,Manitoba,Dorsey,65.40,50 - 100,Under Construction,Yes,Hydro,,49.90592833509774,-97.12396969452502,,point
-en,4077,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,British Columbia,Port Alice,18.00,10 - 50 ,Planned,Yes,Hydro,,50.424702129188304,-127.48728041724996,,point
-en,4079,BC Hydro,Mica 600V Circuit Breaker Upgrades Project,British Columbia,Revelstoke,32.00,10 - 50 ,Under Construction,Yes,Hydro,,51.049743272838825,-118.19468608791263,,point
-en,4080,Pacific Greengen Power Inc.,Fries Creek Hydroelectric Project,British Columbia,Harrison Hot Springs,20.00,10 - 50 ,Planned,Yes,Hydro,,49.30777176217097,-121.79963723788129,,point
-en,4081,BC Hydro,Cheakamus Recoat Units 1 & 2 Penstock Project,British Columbia,Squamish,35.00,10 - 50 ,Under Construction,Yes,Hydro,,49.702858623121855,-123.15902656864714,,point
-en,4093,BC Hydro,Mica Modernize Controls (Digital) Project,British Columbia,Revelstoke,56.00,50 - 100,Under Construction,Yes,Hydro,,51.001448269397514,-118.19375507247065,,point
-en,4201,Manitoba Hydro,Portage Area Capacity Enhancements,Manitoba,Portage la Prarie Area,84.80,50 - 100,Under Construction,Yes,Hydro,,49.97230824054932,-98.29031004119356,,point
-en,4224,WindRiver Power Corp. & TC Energy,Canyon Creek Hydro Power Project (storage),Alberta,Yellowhead County,200.00,100 - 250,Planned,Yes,Hydro,,53.53011154187485,-117.52454425439852,,point
-en,5018,Tlingit Homeland Energy Limited Partnership (THELP),Atlin Hydro Expansion project,British Columbia,Atlin,330.00,250 - 500,Planned,Yes,Hydro,,59.582978309458504,-133.64456514110927,,point
-en,5066,Ontario Power Generation,Redevelopment of the Calabogie site,Ontario,Greater Madawaska,137.00,100 - 250,Under Construction,Yes,Hydro,,45.303539991518605,-76.7107076610028,,point
-en,5067,Ontario Power Generation,Redevelopment of Coniston station,Ontario,Sudbury,85.00,50 - 100,Planned,Yes,Hydro,,46.4746189873983,-80.81837312268169,,point
-en,6045,Manitoba Hydro,Limestone Units 1-3 & 5-10 Stator Re-Wedge,Manitoba,Nelson River,37.80,10 - 50 ,Under Construction,Yes,Hydro,,56.50690927832008,-94.10691042372036,,point
-en,6047,Manitoba Hydro,Long Spruce Generator Protection Replacement,Manitoba,Nelson River,22.50,10 - 50 ,Under Construction,Yes,Hydro,,56.39790924556829,-94.36921047473238,,point
-en,7073,Manitoba Hydro,Pointe du Bois Renewable Energy Project,Manitoba,Wpg River,387.30,250 - 500,Under Construction,Yes,Hydro,,50.30000851434925,-95.55000931596169,,point
-en,8085,Churchill Falls Labrador Corporation,Electric Utility 2024 Capital Program (Churchill Falls Labrador Corporation),Newfoundland and Labrador,Labrador,105.70,100 - 250,Under Construction,Yes,Hydro,,53.594618683678604,-64.30802990540812,,point
-en,8086,Newfoundland and Labrador Hydro,Electric Utility 2024 Capital Program (Newfoundland and Labrador Hydro),Newfoundland and Labrador,Various,139.30,100 - 250,Under Construction,Yes,Hydro,,54.18001085139709,-58.42999663894855,,point
-en,8087,Newfoundland Power Inc.,Electric Utility 2024 Capital Program (Newfoundland Power Inc.),Newfoundland and Labrador,Various,115.90,100 - 250,Under Construction,Yes,Hydro,,48.5500100368941,-58.42999651375843,,point
-en,8107,Ontario Power Generation,Sir Adam Beck Complex Refurbishment,Ontario,Niagara Falls,"1,000.00","1,000 - 2,500",Planned,Yes,Hydro,,43.14910851148513,-79.04442323243475,,point
-en,8108,Ontario Power Generation,R.H. Saunders Refurbishment,Ontario,Cornwall,600.00,500 - 750,Planned,Yes,Hydro,,45.00962902123348,-74.78765200244551,,point
-en,8327,Manitoba Hydro,Ashern Station Bank Addition,Manitoba,Ashern,20.59,10 - 50 ,Under Construction,Yes,Hydro,,51.182208366843184,-98.34551032330548,,point
-en,8328,Manitoba Hydro,Slave Falls 7 Bay Sluiceway Concrete Res,Manitoba,Wpg River,84.32,50 - 100,Under Construction,Yes,Hydro,,50.22200850338435,-95.56800930504849,,point
-en,8329,Manitoba Hydro,Dauphin Vermillion 230kV Stn Capacity In,Manitoba,Dauphin,20.85,10 - 50 ,Under Construction,Yes,Hydro,,51.149008208168205,-100.04901080101858,,point
-en,333,Ontario Power Generation,Darlington Refurbishment Project,Ontario,Clarington,"12,800.00","10,000 +",Under Construction,Yes,Nuclear,,43.86987765370181,-78.71949018864062,,point
-en,654,Bruce Power,Bruce Nuclear Refurbishment,Ontario,Tiverton,"13,000.00","10,000 +",Under Construction,Yes,Nuclear,,44.32730859487263,-81.58610414476549,,point
-en,4072,PEI Energy Corporation,Borden Battery Park,Prince Edward Island,Borden-Carleton,35.00,10 - 50 ,Planned,Yes,Other,,46.253772175730134,-63.69216049802934,,point
-en,4216,NRStor and Six Nations of the Grand River Development Corporation Oneida Energy Storage LP,Oneida Energy Storage,Ontario,Ohsweken Nanticoke,800.00,"750 - 1,000",Planned,Yes,Other,,42.82699540697331,-80.05929852530481,,point
-en,4219,Yukon Energy Corporation,Grid-Scale Battery Storage,Yukon,Whitehorse,35.00,10 - 50 ,Under Construction,Yes,Other,,60.77924202999076,-135.27313707668182,,point
-en,6101,Ville de Québec,Projet de valorisation de la vapeur de l'incinérateur pour le CHU de Québec - Université Laval,Quebec,Ville de Québec,43.80,10 - 50 ,Planned,Yes,Other,,46.83470946667822,-71.20330093275318,,point
-en,4057,EDF Renewables Canada,Vulcan Solar Project,Alberta,Vulcan County,155.00,100 - 250,Planned,Yes,Solar,,50.40378979208051,-113.25314690001144,,point
-en,4188,Alpin Sun,Airport City Solar,Alberta,Leduc County,169.00,100 - 250,Planned,Yes,Solar,,53.291085568662865,-113.5936694692827,,point
-en,6016,Voltarix Group,Creekside Solar Project,Alberta,Leduc County,43.00,10 - 50 ,Planned,Yes,Solar,,53.24715291243408,-113.82518687368807,,point
-en,6017,ATCO,Deerfoot Solar Project,Alberta,Calgary,50.00,50 - 100,Under Construction,Yes,Solar,,50.93948275011693,-113.96523820092142,,point
-en,6062,Voltarix Group,Moon Lake Solar Project,Alberta,Parkland County,43.00,10 - 50 ,Planned,Yes,Solar,,53.42250078412357,-114.99053218644902,,point
-en,6083,Voltarix Group,Rocktree Solar Project,Alberta,Parkland County,40.00,10 - 50 ,Planned,Yes,Solar,,53.515094918936676,-113.91209598176626,,point
-en,6084,DP Energy,Saamis Solar Farm,Alberta,Medicine Hat,600.00,500 - 750,Planned,Yes,Solar,,50.07068104136028,-110.70735324998958,,point
-en,6086,Silicon Ranch,Scottford Refinery Solar Farm,Alberta,Strathcona County,100.00,100 - 250,Under Construction,Yes,Solar,,53.804246032893666,-113.08892089282085,,point
-en,7042,Kiwetinohk Energy Corp,Homestead Solar Project,Alberta,Willow Creek No. 26,500.00,500 - 750,Planned,Yes,Solar,,49.98142074177492,-113.44601383107721,,point
-en,7047,Northland Power,Jurassic Solar and Battery Storage,Alberta,Cypress County,500.00,500 - 750,Under Construction,Yes,Solar,,50.66321104513456,-111.11601349770832,,point
-en,7055,Kiwetinohk Energy Corp,Phoenix Solar Project,Alberta,Red Deer County,320.00,250 - 500,Planned,Yes,Solar,,52.238027812803274,-114.15701462513617,,point
-en,7057,Greengate Power Corporation,Luna Solar Project (Phase One),Alberta,Newell County,700.00,500 - 750,Under Construction,Yes,Solar,,50.60377491848504,-112.23601373213037,,point
-en,7058,Greengate Power Corporation,Luna Solar Project (Phase Two),Alberta,Newell County,700.00,500 - 750,Planned,Yes,Solar,,50.58239591558705,-112.24601372795794,,point
-en,7078,Pace Canada LP,Salt Flats Solar Project,Alberta,Brooks,28.00,10 - 50 ,Planned,Yes,Solar,,50.582851951926116,-111.91401365626616,,point
-en,7081,ABO Wind Canada Ltd.,Stettler Solar and Battery Storage Project,Alberta,Stettler County No. 6,160.00,100 - 250,Planned,Yes,Solar,,52.29043997702485,-112.75601433198032,,point
-en,7083,Evolugen by Brookfield Renewable,Sunrise Solar Project,Alberta,Pincher Creek No. 9,140.00,100 - 250,Planned,Yes,Solar,,49.50343665072535,-113.96301381589504,,point
-en,8001,Renewable Energy Systems Canada Inc.,Enterprise Solar Project,Alberta,Vulcan County,175.00,100 - 250,Under Construction,Yes,Solar,,50.37388877900198,-113.35782491617891,,point
-en,8002,Renewable Energy Systems Canada Inc.,Big Sky Solar Project,Alberta,Acadia No. 34,200.00,100 - 250,Under Construction,Yes,Solar,,51.19666617526284,-110.28504745129067,,point
-en,8005,MYTILINEOS Energy & Metals,Red Willow Solar,Alberta,Stettler County No. 6,315.00,250 - 500,Planned,Yes,Solar,,52.411529020275935,-112.46171430279654,,point
-en,8006,MYTILINEOS Energy & Metals,Sunnynook Solar Project,Alberta,Special Area No. 2,385.00,250 - 500,Planned,Yes,Solar,,51.325488045728534,-111.55785977985856,,point
-en,8007,MYTILINEOS Energy & Metals,Dolcy Solar Project,Alberta,Wainwright No. 61,275.00,250 - 500,Planned,Yes,Solar,,52.68557526410013,-110.47290292641775,,point
-en,8009,Peace Energy Cooperative,Peace River Energy Project,Alberta,Peace River,10.00,10 - 50 ,Under Construction,Yes,Solar,,56.24325961802046,-117.35159675881134,,point
-en,8010,ATCO,Forty Mile Solar Farm (Granlea Phase 2),Alberta,Forty Mile County No. 8,400.00,250 - 500,Under Construction,Yes,Solar,,49.696514952160506,-111.27160428155803,,point
-en,8011,Solar Krafte and Kinbrook Solar,Rainier Solar Farm,Alberta,Newell County,700.00,500 - 750,Planned,Yes,Solar,,50.50213794024314,-111.97481564850649,,point
-en,8021,Horizon New Energy,Aira Solar Project,Alberta,Forty Mile County No. 8,700.00,500 - 750,Planned,Yes,Solar,,49.593546980098836,-110.93400418104007,,point
-en,8022,hep Energy,Alderson Solar Power Project,Alberta,Cypress County,150.00,100 - 250,Planned,Yes,Solar,,50.35223699524816,-111.36066847007169,,point
-en,8024,FortisAlberta,Bassano 435S DER Solar,Alberta,Newell County,15.00,10 - 50 ,Under Construction,Yes,Solar,,50.6740259163967,-112.31131976780539,,point
-en,8029,Renewable Energy Systems Canada Inc.,Nova Solar Project,Alberta,Wheatland County,225.00,100 - 250,Planned,Yes,Solar,,50.84036279377887,-113.52506107992372,,point
-en,8032,PR Development GP Inc.,Prominence Solar Project,Alberta,Lethbridge County,120.00,100 - 250,Planned,Yes,Solar,,49.857671811480685,-112.71884364191413,,point
-en,754,Pacific Coastal Wave Energy Corp.,Wave Energy Project,British Columbia,Ucluelet,20.00,10 - 50 ,Planned,Yes,Tidal,,48.920605313372754,-125.54481571782894,,point
-en,4153,DP Energy Limited (Haligonia Tidal Energy Ltd. / Rio Fundo Operations Canada Ltd.),Uisce Tapa In-Stream Tidal Energy Project,Nova Scotia,Bay of Fundy,117.00,100 - 250,Planned,Yes,Tidal,,45.36465840518318,-64.42845151533173,,point
-en,4204,Jupiter Hydro,In-Stream Tidal Demonstration Project,Nova Scotia,Bay of Fundy,23.30,10 - 50 ,Planned,Yes,Tidal,,45.357413405075945,-64.40966550695899,,point
-en,4205,Nova Innovation,The Nova Tidal Array (Petit Passage),Nova Scotia,Petit Passage,22.00,10 - 50 ,Under Construction,Yes,Tidal,,44.3923451902667,-66.20675907830483,,point
-en,10,Aeolis Wind Power Corporation,Hackney Hills Wind Park,British Columbia,Fort St. John,400.00,250 - 500,Planned,Yes,Wind,,56.24926915303787,-120.84756646255396,,point
-en,283,Mount Hays Wind Farm Limited Partnership,Mount Hays Wind Farm,British Columbia,Prince Rupert,125.00,100 - 250,Planned,Yes,Wind,,54.29148782491433,-130.30822113182606,,point
-en,293,Capstone Infrastructure Corporation,Wild Rose' Wind Farm (Phase 2),Alberta,Cypress County (S of Irvine),300.00,250 - 500,Under Construction,Yes,Wind,,49.9560870790788,-110.26577211996009,,point
-en,692,EDF Renouvelables,Taylor Wind Project,British Columbia,Taylor,900.00,"750 - 1,000",Planned,Yes,Wind,,55.99995315826963,-120.76406333996326,,point
-en,983,Red Willow Wind LP,Red Willow Wind Farm,British Columbia,Tumbler Ridge,480.00,250 - 500,Planned,Yes,Wind,,54.80866917107059,-120.37502777981982,,point
-en,2020,PEI Energy Corporation,PEIEC Wind Farm #5,Prince Edward Island,Eastern Kings,80.00,50 - 100,Under Construction,Yes,Wind,,46.433855637314906,-62.0998197500688,,point
-en,2059,Aeolis / Boralex,Hackney Hills Wind Park (Aeolis / Boralex),British Columbia,Fort St. John,"5,200.00","5,000 - 10,000",Planned,Yes,Wind,,56.24772515471928,-120.84189946150133,,point
-en,2110,"Nation Innue, RES et Boralex",Apuiat,Quebec,MRC de Sept-Rivières,600.00,500 - 750,Under Construction,Yes,Wind,,50.21057015396229,-66.37465246018533,,point
-en,4096,Boralex,Babcock Ridge Wind Farm,British Columbia,Tumbler Ridge,50.00,50 - 100,Planned,Yes,Wind,,55.111676098148344,-121.00065101738561,,point
-en,4220,Port Hawkesbury Paper,Goose Harbour Lake Wind Farm (formerly Pirate Harbour),Nova Scotia,Point Tupper,155.00,100 - 250,Planned,Yes,Wind,,45.60570360575094,-61.37092407029237,,point
-en,6030,Capital Power,Halkirk Wind Project Phase 2,Alberta,Paintearth County No. 18,274.00,250 - 500,Under Construction,Yes,Wind,,52.2357210485371,-112.11133016915629,,point
-en,7032,ACCIONA Energía,Forty Mile Wind Project (ACCONIA),Alberta,Forty Mile County No. 8,400.00,250 - 500,Under Construction,Yes,Wind,,49.79284196867155,-111.18601328705076,,point
-en,7079,Invenergy,Skinners Pond Wind Energy Centre,Prince Edward Island,Sherbrooke; Tignish,85.00,50 - 100,Planned,Yes,Wind,,46.42192268375068,-63.77014007164625,,point
-en,7085,Enerfin Energy Company of Canada Inc.,Winnifred Wind Power Project,Alberta,Forty Mile County No. 8|Cypress County,180.00,100 - 250,Under Construction,Yes,Wind,,49.940744994924856,-111.04901329386502,,point
-en,8025,ENGIE Development Canada LP,Buffalo Trail North Wind Project,Alberta,Cypress County,200.00,100 - 250,Under Construction,Yes,Wind,,49.84235606340341,-110.32929810639786,,point
-en,8043,EDF EN Canada,Pe-Na-Koyim Wind Project,Alberta,Blood 148,425.00,250 - 500,Planned,Yes,Wind,,49.44702573738304,-113.12142762346306,,point
-en,75,IPC Canada Ltd.,Blackrod,Alberta,Regional Municipality of Wood Buffalo (RMWB) & Lac La Biche County,"2,927.00","2,500 - 5,000",Under Construction,No,N/A,,55.611718192527775,-112.61193843788737,,point
-en,89,Canadian Natural Resources Limited,Grouse,Alberta,Hudson Hope,"1,530.00","1,000 - 2,500",Planned,No,N/A,,55.466299088800085,-111.75578167788436,,point
-en,140,Canadian Natural Resources Limited,Pike (Formely Kirby),Alberta,Lac la Biche County,"7,700.00","5,000 - 10,000",Planned,No,N/A,,55.448226400882255,-110.82403594354774,,point
-en,207,Harvest Operations Corp.,BlackGold Oil Sands Project,Alberta,Regional Municipality of Wood Buffalo (SE of Conklin),540.00,500 - 750,Planned,No,N/A,,55.58264649024491,-110.9730248301697,,point
-en,215,Husky Energy Inc.,White Rose Expansion,Newfoundland and Labrador,Offshore Newfoundland,"2,300.00","1,000 - 2,500",Under Construction,No,N/A,,47.100054801869035,-48.713372081034386,,point
-en,341,Osum Oil Sands Corp.,Taiga,Alberta,MD of Bonnyville (N of Cold Lake),"1,570.00","1,000 - 2,500",Planned,No,N/A,,54.680885237327786,-110.13649482869653,,point
-en,397,"LNG Canada (Shell Canada Limited, PETRONAS, Korea Gas Corporation (KOGAS), Mitsubishi Corporation, and PetroChina Company Limited)",LNG Canada Phase 1,British Columbia,Kitimat,"47,900.00","10,000 +",Under Construction,No,N/A,,54.08195605054043,-128.63807583162247,,point
-en,399,Canadian Natural Resources Limited,AOSP Jackpine,Alberta,Fort McMurray,"12,000.00","10,000 +",Planned,No,N/A,,57.224504531129696,-111.36769668637707,,point
-en,422,Suncor Energy Inc.,Lewis,Alberta,Regional Municipality of Wood Buffalo,"6,200.00","5,000 - 10,000",Planned,No,N/A,,56.94062750751476,-111.0483611526399,,point
-en,427,Sunshine Oilsands Ltd.,Thickwood (Sunshine),Alberta,Regional Municipality of Wood Buffalo (RMWB) & Municipal District of Opportunity,"1,753.00","1,000 - 2,500",Planned,No,N/A,,56.83332213272563,-112.78679927161589,,point
-en,429,Sunshine Oilsands Ltd.,West Ells,Alberta,MD of Opportunity,"2,950.00","2,500 - 5,000",Planned,No,N/A,,57.20249825698639,-112.72925381463206,,point
-en,515,Athabasca Oil Corporation,Dover West Clastics,Alberta,Municipal District of Opportunity,615.00,500 - 750,Planned,No,N/A,,57.10045918999997,-113.22511419208392,,point
-en,566,MEG Energy Corp.,Surmont (MEG),Alberta,Regional Municipality of Wood Buffalo (RMWB),"5,000.00","5,000 - 10,000",Planned,No,N/A,,56.03446644647128,-110.72023014054042,,point
-en,584,Quicksilver Resources/ Kohlberg Kravis Roberts & Co. L.P. (KKR),Fortune Creek Gas Plant,British Columbia,Fort Nelson,760.00,"750 - 1,000",Planned,No,N/A,,58.805561953355244,-122.69543305064624,,point
-en,587,Rio Tinto Alcan Inc.,Kemano Tunnel Project (T2),British Columbia,Kitimat,500.00,500 - 750,Under Construction,No,N/A,,53.63813014145951,-127.92482256362713,,point
-en,607,Value Creation Inc.,TriStar Advanced (In Situ + Upgrader),Alberta,Regional Municipality of Wood Buffalo (RMWB),"2,000.00","1,000 - 2,500",Planned,No,N/A,,56.736821431867355,-111.15659353076784,,point
-en,629,Sunshine Oilsands Ltd.,West Ells,Alberta,MD of Opportunity,"2,100.00","1,000 - 2,500",Planned,No,N/A,,57.20249825698639,-112.72925381463206,,point
-en,649,Husky Oil Operations Ltd.,Saleski' Thermal Oil Sands Project Using CSS,Alberta,M.D. of Opportunity No. 17,300.00,250 - 500,Planned,No,N/A,,56.59335069186159,-113.01275822593301,,point
-en,652,Woodfibre LNG,Woodfibre LNG project,British Columbia,Squamish,"6,880.00","5,000 - 10,000",Under Construction,No,N/A,,49.66667261106278,-123.2527935730007,,point
-en,684,Osum Oil Sands Corp.,Sepiko Kesik Project,Alberta,Municipal District of Opportunity,"3,200.00","2,500 - 5,000",Planned,No,N/A,,56.689006357656304,-113.13101269811,,point
-en,693,Imperial Oil Limited,Aspen' oil sands project (SAGD),Alberta,Regional Municipality of Wood Buffalo,"5,200.00","5,000 - 10,000",Planned,No,N/A,,57.24238941042507,-111.53911583727455,,point
-en,697,"Husky Energy Inc., Suncor, Nalcor Energy",White Rose Expansion - White Rose West,Newfoundland and Labrador,Offshore Newfoundland,"3,800.00","2,500 - 5,000",Under Construction,No,N/A,,46.471909691658915,-48.00539284949052,,point
-en,707,Port Alberni Harbour Authority,Port Alberni LNG Export Facility,British Columbia,Port Alberni,"1,600.00","1,000 - 2,500",Planned,No,N/A,,49.23001940949698,-124.81107569248316,,point
-en,718,Kitimat Clean Ltd.,Kitimat Clean Oil Refinery,British Columbia,Kitimat,"22,000.00","10,000 +",Planned,No,N/A,,54.16667174310097,-128.7000178722288,,point
-en,737,BC Hydro,Capilano Substation Upgrade,British Columbia,North Vancouver,87.00,50 - 100,Under Construction,No,N/A,,49.3350756137466,-123.10830445934201,,point
-en,808,Spartan Delta Inception Exploration Ltd.,Greenview Sour Gas plant,Alberta,Greenview,50.00,50 - 100,Planned,No,N/A,,54.70000710578636,-119.01501586526526,,point
-en,818,Athabasca Oil Corporation,Hangingstone Oil Sands,Alberta,Fort McMurray-Conklin,640.00,500 - 750,Planned,No,N/A,,56.4761462876768,-111.40765438651681,,point
-en,841,Canadian Natural Resources Limited,Jackfish,Alberta,Regional Municipality of Wood Buffalo (SE of Conklin),"1,300.00","1,000 - 2,500",Planned,No,N/A,,55.527907399695295,-110.87381498492836,,point
-en,850,Syncrude Canada Ltd.,Stage 4a - MLX-W,Alberta,Mildred Lake,"3,300.00","2,500 - 5,000",Under Construction,No,N/A,,57.04521839482405,-111.58510376639647,,point
-en,857,Bear Head Energy,Bear Head Energy,Nova Scotia,Richmond County,"8,000.00","5,000 - 10,000",Planned,No,N/A,,45.596597504749376,-61.35684146343753,,point
-en,858,ConocoPhillips Canada,Surmont (ConocoPhillips),Alberta,Regional Municipality of Wood Buffalo,"6,000.00","5,000 - 10,000",Planned,No,N/A,,56.193607428181664,-110.950615259331,,point
-en,938,Cedar LNG  (partnership between Pembina Pipeline Corporation and Haisla Nation),Cedar LNG,British Columbia,Kitimat,"4,600.00","2,500 - 5,000",Planned,No,N/A,,53.9254160368947,-128.72793278374058,,point
-en,942,Watson Island LNG Corporation,Watson Island LNG,British Columbia,Prince Rupert,270.00,250 - 500,Planned,No,N/A,,54.24115582634536,-130.2971731090514,,point
-en,943,"Tilbury Jetty Marine Partnership (Fortis, Seaspan, Shell)",Tilbury Marine Jetty,British Columbia,Delta,175.00,100 - 250,Planned,No,N/A,,49.141803214496605,-123.02352039431199,,point
-en,965,BC Hydro,G.M. Shrum Units 1 to 10 Control Systems Upgrade Project,British Columbia,Hudson Hope,75.00,50 - 100,Under Construction,No,N/A,,56.01667596272236,-122.2027623146087,,point
-en,1037,"Western LNG, Nisga'a Nation, Rockies LNG Partners",Ksi Lisims LNG,British Columbia,Nasoga Gulf,"10,000.00","10,000 +",Planned,No,N/A,,54.9015738613368,-130.0726223522332,,point
-en,1057,Pacific Future Energy,Pacific Future Energy Oil Refinery,British Columbia,Kitimat,"10,000.00","10,000 +",Planned,No,N/A,,53.95290133774895,-128.72261179293892,,point
-en,1077,Cenovus Energy Inc.,Christina Lake,Alberta,Cenovus Christina Lake,900.00,"750 - 1,000",Planned,No,N/A,,55.57643039920016,-110.89742500969423,,point
-en,1079,Japan Canada Oil Sands Limited (JACOS),Hangingstone,Alberta,Fort McMurray,"1,200.00","1,000 - 2,500",Planned,No,N/A,,56.288067353317636,-111.60424846001553,,point
-en,1082,Cenovus Energy Inc.,Narrows Lake,Alberta,Meanook,"1,600.00","1,000 - 2,500",Planned,No,N/A,,54.61611003860595,-113.4264742565062,,point
-en,1083,Value Creation Inc.,Heartland Upgrader,Alberta,Strathcona County,"2,000.00","1,000 - 2,500",Planned,No,N/A,,53.54873598659379,-113.35643586959304,,point
-en,1090,Value Creation Inc.,Heartland Upgrader,Alberta,Strathcona County,"2,000.00","1,000 - 2,500",Planned,No,N/A,,53.77218080346211,-113.11677517041406,,point
-en,1094,Imperial Oil Limited,Syncrude Mildred Lake Extension,Alberta,Regional Municipality of Wood Buffalo,"3,300.00","2,500 - 5,000",Under Construction,No,N/A,,57.07271569259319,-111.58987053496057,,point
-en,2060,Pacific Future Energy,Pacific Future Energy Refinery Project,British Columbia,Harrison Lake,55.00,50 - 100,Under Construction,No,N/A,,54.28390105591053,-128.61758690801616,,point
-en,4106,BC Hydro,Downtown Vancouver Electricity Supply - West End Strategic Property Purchase,British Columbia,Vancouver,81.00,50 - 100,Under Construction,No,N/A,,49.274225608574376,-123.12562044560613,,point
-en,4108,BCHydro,LNG Canada Load Interconnection Project,British Columbia,Kitimat,82.00,50 - 100,Under Construction,No,N/A,,54.06154105091425,-128.63390482274906,,point
-en,4116,Alcan Aluminum Ltd. and the Province of BC,Kenney Dam Cold Water Release Facility,British Columbia,Vanderhoof,275.00,250 - 500,Planned,No,N/A,,53.566672534048,-124.95001709775694,,point
-en,4119,AltaGas / Vopak Development Canada Inc.,Ridley Island Energy Export Facility (REEF),British Columbia,Prince Rupert,750.00,"750 - 1,000",Planned,No,N/A,,54.31419282379263,-130.32220114276933,,point
-en,4125,Nisga’a Nation,Nisga’a LNG,British Columbia,Nasoga Gulf,"10,000.00","10,000 +",Planned,No,N/A,,54.9015738613368,-130.0726223522332,,point
-en,4126,Devon Energy Corporation/ BP JV,Pike,Alberta,Regional Municipality of Wood Buffalo,"1,900.00","1,000 - 2,500",Planned,No,N/A,,55.59941238878263,-110.99578104140443,,point
-en,4148,Ontario Power Generation,Ranney Falls Expansion,Ontario,Campbellford,77.00,50 - 100,Under Construction,No,N/A,,44.291789769462085,-77.8011840315436,,point
-en,4178,Suncor Energy Inc.,Suncor Power Cogeneration Units,Alberta,Regional Municipality of Wood Buffalo,"1,400.00","1,000 - 2,500",Under Construction,No,N/A,,56.99719148314166,-111.48051880086578,,point
-en,4217,Cenovus Energy Inc.,Spruce Lake East Lloyd,Saskatchewan,Spruce Lake,350.00,250 - 500,Under Construction,No,N/A,,53.54445448051496,-109.0896328587503,,point
-en,5002,Inuvialuit Petroleum Corporation,Inuvialuit Energy Security Project,Northwest Territories,17km south of Tuktoyaktuk,160.00,100 - 250,Planned,No,N/A,,69.2973931446749,-133.07630815535455,,point
-en,5052,Fortis,Tilbury LNG Phase 2,British Columbia,Delta,"3,500.00","2,500 - 5,000",Planned,No,N/A,,49.141803214496605,-123.02352039431199,,point
-en,5060,Fortis,Tilbury LNG Phase 1B,British Columbia,Delta,60.00,50 - 100,Planned,No,N/A,,49.141803214496605,-123.02352039431199,,point
-en,6022,NTPC,Fort Providence and Kakisa Transmission Line,Northwest Territories,Highway 2/5 juction to Fort Providence,60.00,50 - 100,Planned,No,N/A,,60.97746477996914,-117.22141212864338,,point
-en,6026,TransAlta Corporation,Ghost River WaterCharger Battery Energy Storage,Alberta,Rocky View County,120.00,100 - 250,Planned,No,N/A,,51.21778868494428,-114.70461843700394,,point
-en,6029,LNG Newfoundland and Labrador,Grassy Point LNG,Newfoundland and Labrador,Grassy Point,"10,000.00","10,000 +",Planned,No,N/A,,47.752800932336214,-54.02714193437833,,point
-en,6031,Diageo Canada Inc.,Implantation de mesures de réduction des émissions de GES et de conversion énergétique,Quebec,Salaberry-de-Valleyfield,94.00,50 - 100,Planned,No,N/A,,45.256783648130806,-74.12034437396946,,point
-en,6036,Imperial Oil,Kearl Oil Sand In-Pit Tailings Project,Alberta,Wood Buffalo,750.00,"750 - 1,000",Under Construction,No,N/A,,57.41143546491772,-111.16349881604737,,point
-en,6046,"LNG Canada (Shell Canada Limited, PETRONAS, Korea Gas Corporation (KOGAS), Mitsubishi Corporation, and PetroChina Company Limited)",LNG Canada Phase 2,British Columbia,Kitimat,"25,000.00","10,000 +",Planned,No,N/A,,54.08195605054043,-128.63807583162247,,point
-en,6092,Suncor Energy Inc.,Suncor PURE Demonstration Facility,Alberta,Wood Buffalo,52.50,50 - 100,Planned,No,N/A,,57.38056842064643,-111.50978688886617,,point
-en,7026,ENMAX Energy Corp.,Enmax Substation No. 1,Alberta,Calgary,200.00,100 - 250,Under Construction,No,N/A,,51.04532474470257,-114.08001425483637,,point
-en,7067,Enbridge Gas,Panhandle Regional Expansion,Ontario,"Municipalities of Chatham-Kent, Lakeshore, Leamington",358.00,250 - 500,Planned,No,N/A,,42.37063921550448,-82.38873021443506,,point
-en,8004,Federation Group,Marguerite Lake Compressed Air Energy Storage,Alberta,Bonnyville No. 87,500.00,500 - 750,Planned,No,N/A,,54.58571435205573,-110.80400462793247,,point
-en,8013,Kineticor Resource Corp.,Greenlight Electricity Centre,Alberta,Sturgeon County,"4,500.00","2,500 - 5,000",Planned,No,N/A,,53.828815024705335,-113.17863492462718,,point
-en,8017,Gibson Energy & Varme Energy JV,Heartland Waste to Power Project,Alberta,Strathcona County,300.00,250 - 500,Planned,No,N/A,,53.775940037341286,-113.04027587325821,,point
-en,8038,Cielo,Carseland Biomass Gasifier Project,Alberta,Wheatland County,100.00,100 - 250,Planned,No,N/A,,50.88845380982432,-113.39973406570839,,point
-en,8041,Cenovus Energy Inc.,Narrows Lake Tie-Back to Christina Lake,Alberta,Wood Buffalo,300.00,250 - 500,Under Construction,No,N/A,,55.59027140623013,-110.85275200395415,,point
-en,8042,Canadian Natural Resources Ltd. (CNRL),Naphtha Recovery Unit Tailings Treatment Project,Alberta,Wood Buffalo,350.00,250 - 500,Planned,No,N/A,,57.34739237729774,-111.84100795950293,,point
-en,1023,Nukik Corp.,Kivalliq Hydro Fibre Link,Multiple,Gillam to Baker Lake,"1,600.00","1,000 - 2,500",Planned,Yes,Hydro,Transmission,,,"[[{""lon"": -96.08108123795023, ""lat"": 64.32352700092815}, {""lon"": -92.09020595410392, ""lat"": 62.852285803744955}, {""lon"": -93.85470654436244, ""lat"": 56.67014512837238}]]",line
-en,3641,Manitoba Hydro,Laverendrye-St.Vital 230kV Line & Breakers,Manitoba,Winnipeg,58.70,50 - 100,Under Construction,Yes,Hydro,Transmission,,,"[[{""lon"": -97.36407173881346, ""lat"": 49.790575301930836}, {""lon"": -97.02171364896496, ""lat"": 49.836632336520424}, {""lon"": -97.30445959062916, ""lat"": 49.13351723019125}]]",line
-en,4001,Hydro One,Hawthorne to Merivale transmission upgrades (Planned),Ontario,Ottawa,21.30,10 - 50 ,Under Construction,Yes,Hydro,Transmission,,,"[[{""lon"": -75.60825830662024, ""lat"": 45.392181053744274}, {""lon"": -75.71923133636517, ""lat"": 45.325215037106126}]]",line
-en,5064,Manitoba Hydro,Southwest Wpg 115kV Tsfrmr Improv-Phase2,Manitoba,Headingley,62.00,50 - 100,Under Construction,Yes,Hydro,Transmission,,,"[[{""lon"": -97.01891667623597, ""lat"": 49.96927735136907}, {""lon"": -97.35313773911209, ""lat"": 49.80390130356868}]]",line
-en,6063,Northriver Midstream NEBC Connector GP Inc.,NEBC Connector Project,Multiple,"NW of Wonovon, BC & Gordondale, AB",350.00,250 - 500,Planned,Yes,Other,Pipeline,,,"[[{""lon"": -122.0580179950256, ""lat"": 56.92280600646155}, {""lon"": -119.6917170664486, ""lat"": 55.839706295661244}]]",line
-en,126,Connacher Oil & Gas Ltd.,Great Divide,Alberta,Regional Municipality of Wood Buffalo (RMWB),600.00,500 - 750,Planned,No,N/A,Pipeline,,,"[[{""lon"": -111.82931544365083, ""lat"": 56.11350731592327}, {""lon"": -111.51219189344253, ""lat"": 56.146339143882436}]]",line
-en,547,Hydro-Québec,Raccordement du complexe de La Romaine au réseau de transport,Quebec,Camp satellite line 34 5KV,"1,300.00","1,000 - 2,500",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -63.127846286720974, ""lat"": 50.48894626974321}, {""lon"": -66.57519553477161, ""lat"": 50.22393715100787}]]",line
-en,593,Enbridge,Westcoast Connector Gas Transmission Project,British Columbia,Fort St John to Prince Rupert,"6,000.00","5,000 - 10,000",Planned,No,N/A,Pipeline,,,"[[{""lon"": -122.62941305872116, ""lat"": 56.8369599253289}, {""lon"": -130.2868831416294, ""lat"": 54.322935828868324}]]",line
-en,650,TransCanada,Prince Rupert Gas Transmission Project,British Columbia,North Montney to Port Edward (near Prince Rupert),"5,000.00","5,000 - 10,000",Planned,No,N/A,Pipeline,,,"[[{""lon"": -130.29346010802482, ""lat"": 54.23554282730339}, {""lon"": -122.01143165468748, ""lat"": 56.186844993859964}]]",line
-en,651,FortisBC Energy (Vancouver Island) Inc.,Eagle Mountain - Woodfibre LNG Gas Pipeline Projects,British Columbia,Coquitlam to Squamish,350.00,250 - 500,Under Construction,No,N/A,Pipeline,,,"[[{""lon"": -122.79309839543868, ""lat"": 49.28492264787294}, {""lon"": -123.16078757162828, ""lat"": 49.714269623244}]]",line
-en,885,Pacific Northern Gas Ltd.,Pacific Northern Gas Pipeline Looping Project,British Columbia,Kitimat To Summit Lake,"1,300.00","1,000 - 2,500",Planned,No,N/A,Pipeline,,,"[[{""lon"": -128.68556181861072, ""lat"": 54.03302404275836}, {""lon"": -122.63654198142927, ""lat"": 54.270993856528875}]]",line
-en,956,Altalink,Chapel Rock to Pincher Creek Area Transmission Development,Alberta,M.D. of Pincher Creek No. 9,500.00,500 - 750,Planned,No,N/A,Transmission,,,"[[{""lon"": -114.3006649470084, ""lat"": 49.739204629756166}, {""lon"": -113.94712782972196, ""lat"": 49.5698936572677}]]",line
 en,996,"AltaLink, ATCO",Central East Area Transmission Development,Alberta,Multiple locations,332.00,250 - 500,Under Construction,No,N/A,Transmission,,,"[[{""lon"": -110.8995250775973, ""lat"": 52.84847622790844}, {""lon"": -110.26338681525446, ""lat"": 52.48095427247306}]]",line
-en,3206,Hydro-Québec,New England Clean Energy Connect (NECEC) project,Quebec,Across the Quebec border through Beattie township Maine to Lewiston Maine,950.00,"750 - 1,000",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -70.98428277917243, ""lat"": 45.72302928630145}, {""lon"": -69.96081940375113, ""lat"": 45.333579251748986}, {""lon"": -70.21551841404592, ""lat"": 44.10385202430323}]]",line
-en,3208,"Transmission Developers Inc. (TDI),",Transmission Line - Champlain Hudson Power Express,Quebec,Runs south from Canada-US border to the New York metro area,"2,200.00","1,000 - 2,500",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -73.34309052831851, ""lat"": 45.09613609269886}, {""lon"": -73.92068542400284, ""lat"": 40.76311926957715}]]",line
-en,3509,Wataynikaneyap Power,Wataynikaneyap Transmission Project,Ontario,Northwest Ontario,"1,900.00","1,000 - 2,500",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -92.49780627937037, ""lat"": 49.68148268733783}, {""lon"": -91.58400428261058, ""lat"": 51.1649399400299}, {""lon"": -90.19403390058937, ""lat"": 51.46765908434607}]]",line
-en,4000,Hydro One,Northwest Bulk Transmission Line Waasigan Transmission Line,Ontario,Thunder Bay to Dryden,"1,200.00","1,000 - 2,500",Planned,No,N/A,Transmission,,,"[[{""lon"": -89.24195708819956, ""lat"": 48.58398878515795}, {""lon"": -91.61500784379284, ""lat"": 48.74362863409662}, {""lon"": -92.84547841733615, ""lat"": 49.854038682594}]]",line
-en,4073,PEI Energy Corporation,Western PEI Transmission Upgrade,Prince Edward Island,"Western Prince County, PEI",44.00,10 - 50 ,Planned,No,N/A,Transmission,,,"[[{""lon"": -63.77626077337365, ""lat"": 46.43472346996201}, {""lon"": -64.11740865242652, ""lat"": 46.96495485839825}]]",line
-en,4215,Hydro One,Lakeshore Transmission Stations Project Leamington Area Transmission Reinforcement (Lakeshore Transmission Station & Chatham to Lakeshore Line),Ontario,Lakeshore Windsor-Essex,257.00,250 - 500,Under Construction,No,N/A,Transmission,,,"[[{""lon"": -82.60390209543951, ""lat"": 42.203014974089825}, {""lon"": -82.19044027432692, ""lat"": 42.40446445052515}]]",line
+en,956,Altalink,Chapel Rock to Pincher Creek Area Transmission Development,Alberta,M.D. of Pincher Creek No. 9,500.00,500 - 750,Planned,No,N/A,Transmission,,,"[[{""lon"": -114.3006649470084, ""lat"": 49.739204629756166}, {""lon"": -113.94712782972196, ""lat"": 49.5698936572677}]]",line
+en,126,Connacher Oil & Gas Ltd.,Great Divide,Alberta,Regional Municipality of Wood Buffalo (RMWB),600.00,500 - 750,Planned,No,N/A,Pipeline,,,"[[{""lon"": -111.82931544365083, ""lat"": 56.11350731592327}, {""lon"": -111.51219189344253, ""lat"": 56.146339143882436}]]",line
+en,651,FortisBC Energy (Vancouver Island) Inc.,Eagle Mountain - Woodfibre LNG Gas Pipeline Projects,British Columbia,Coquitlam to Squamish,350.00,250 - 500,Under Construction,No,N/A,Pipeline,,,"[[{""lon"": -122.79309839543868, ""lat"": 49.28492264787294}, {""lon"": -123.16078757162828, ""lat"": 49.714269623244}]]",line
 en,4231,Enbridge Frontier Inc.,Frontier NGL Plant and Pipeline Project,British Columbia,Chetwynd,"2,500.00","2,500 - 5,000",Planned,No,N/A,Pipeline,,,"[[{""lon"": -121.66892388778616, ""lat"": 55.71251502712359}, {""lon"": -120.72301079854081, ""lat"": 56.15324116754652}]]",line
+en,885,Pacific Northern Gas Ltd.,Pacific Northern Gas Pipeline Looping Project,British Columbia,Kitimat To Summit Lake,"1,300.00","1,000 - 2,500",Planned,No,N/A,Pipeline,,,"[[{""lon"": -128.68556181861072, ""lat"": 54.03302404275836}, {""lon"": -122.63654198142927, ""lat"": 54.270993856528875}]]",line
+en,650,TransCanada,Prince Rupert Gas Transmission Project,British Columbia,North Montney to Port Edward (near Prince Rupert),"5,000.00","5,000 - 10,000",Planned,No,N/A,Pipeline,,,"[[{""lon"": -130.29346010802482, ""lat"": 54.23554282730339}, {""lon"": -122.01143165468748, ""lat"": 56.186844993859964}]]",line
+en,593,Enbridge,Westcoast Connector Gas Transmission Project,British Columbia,Fort St John to Prince Rupert,"6,000.00","5,000 - 10,000",Planned,No,N/A,Pipeline,,,"[[{""lon"": -122.62941305872116, ""lat"": 56.8369599253289}, {""lon"": -130.2868831416294, ""lat"": 54.322935828868324}]]",line
+en,3641,Manitoba Hydro,Laverendrye-St.Vital 230kV Line & Breakers,Manitoba,Winnipeg,58.70,50 - 100,Under Construction,Yes,Hydro,Transmission,,,"[[{""lon"": -97.36407173881346, ""lat"": 49.790575301930836}, {""lon"": -97.02171364896496, ""lat"": 49.836632336520424}, {""lon"": -97.30445959062916, ""lat"": 49.13351723019125}]]",line
+en,5064,Manitoba Hydro,Southwest Wpg 115kV Tsfrmr Improv-Phase2,Manitoba,Headingley,62.00,50 - 100,Under Construction,Yes,Hydro,Transmission,,,"[[{""lon"": -97.01891667623597, ""lat"": 49.96927735136907}, {""lon"": -97.35313773911209, ""lat"": 49.80390130356868}]]",line
+en,1023,Nukik Corp.,Kivalliq Hydro Fibre Link,Multiple,Gillam to Baker Lake,"1,600.00","1,000 - 2,500",Planned,Yes,Hydro,Transmission,,,"[[{""lon"": -96.08108123795023, ""lat"": 64.32352700092815}, {""lon"": -92.09020595410392, ""lat"": 62.852285803744955}, {""lon"": -93.85470654436244, ""lat"": 56.67014512837238}]]",line
+en,6063,Northriver Midstream NEBC Connector GP Inc.,NEBC Connector Project,Multiple,"NW of Wonovon, BC & Gordondale, AB",350.00,250 - 500,Planned,Yes,Other,Pipeline,,,"[[{""lon"": -122.0580179950256, ""lat"": 56.92280600646155}, {""lon"": -119.6917170664486, ""lat"": 55.839706295661244}]]",line
 en,6043,Hydro One,Chatham to Lakeshore Transmission Line,Ontario,"Lakeshore, Chatham-Kent Southwestern Ontario",253.00,250 - 500,Under Construction,No,N/A,Transmission,,,"[[{""lon"": -82.19294415626445, ""lat"": 42.413388231634954}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
-en,6089,Hydro One,St.Clair Transmission Line,Ontario,"St.Clair, Chatham Kent",250.00,250 - 500,Planned,No,N/A,Transmission,,,"[[{""lon"": -82.0953441230177, ""lat"": 42.385228232002554}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
+en,8134,Hydro One,Greater Toronto Area East Line,Ontario,"Pickering/Oshawa, Peterborough",298.00,250 - 500,Planned,No,N/A,Transmission,,,"[[{""lon"": -79.11390331526452, ""lat"": 43.85240863311178}, {""lon"": -78.84660323977157, ""lat"": 43.98230866757875}, {""lon"": -78.9320032982593, ""lat"": 44.311308720706165}]]",line
+en,4001,Hydro One,Hawthorne to Merivale transmission upgrades (Planned),Ontario,Ottawa,21.30,10 - 50 ,Under Construction,Yes,Hydro,Transmission,,,"[[{""lon"": -75.60825830662024, ""lat"": 45.392181053744274}, {""lon"": -75.71923133636517, ""lat"": 45.325215037106126}]]",line
+en,4215,Hydro One,Lakeshore Transmission Stations Project Leamington Area Transmission Reinforcement (Lakeshore Transmission Station & Chatham to Lakeshore Line),Ontario,Lakeshore Windsor-Essex,257.00,250 - 500,Under Construction,No,N/A,Transmission,,,"[[{""lon"": -82.60390209543951, ""lat"": 42.203014974089825}, {""lon"": -82.19044027432692, ""lat"": 42.40446445052515}]]",line
 en,8130,Hydro One,Longwood to Lakeshore Phase 1,Ontario,Municipality of Strathroy-Caradoc to Municipality of Lakeshore,800.00,"750 - 1,000",Planned,No,N/A,Transmission,,,"[[{""lon"": -81.62679402842653, ""lat"": 42.95939835627326}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
 en,8131,Hydro One,Longwood to Lakeshore Phase 2,Ontario,Municipality of Strathroy-Caradoc to Municipality of Lakeshore,800.00,"750 - 1,000",Planned,No,N/A,Transmission,,,"[[{""lon"": -81.62679402842653, ""lat"": 42.95939835627326}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
 en,8132,Hydro One,Mississagi to Third Line Transmission Line,Ontario,"Wharncliffe, Sault Ste. Marie",230.00,100 - 250,Planned,No,N/A,Transmission,,,"[[{""lon"": -83.38830494393625, ""lat"": 46.420008838524176}, {""lon"": -84.32880525809954, ""lat"": 46.54500880450048}]]",line
 en,8133,Hydro One,Northeast Power Line (Mississagi to Hanmer Transmissio Line),Ontario,"Wharncliffe, Sudbury",650.00,500 - 750,Planned,No,N/A,Transmission,,,"[[{""lon"": -83.38830494393625, ""lat"": 46.420008838524176}, {""lon"": -80.92080417506084, ""lat"": 46.63170900785126}]]",line
-en,8134,Hydro One,Greater Toronto Area East Line,Ontario,"Pickering/Oshawa, Peterborough",298.00,250 - 500,Planned,No,N/A,Transmission,,,"[[{""lon"": -79.11390331526452, ""lat"": 43.85240863311178}, {""lon"": -78.84660323977157, ""lat"": 43.98230866757875}, {""lon"": -78.9320032982593, ""lat"": 44.311308720706165}]]",line
-en,8135,TBD,Wawa to Porcupine,Ontario,"Timmins, Greater Sudbury",650.00,500 - 750,Planned,No,N/A,Transmission,,,"[[{""lon"": -84.5469445005294, ""lat"": 47.88515089361095}, {""lon"": -94.90912907573089, ""lat"": 48.46564544491719}]]",line
-en,8136,Hydro One,St. Thomas Line (including Centennial Transformer Station & Line),Ontario,City of London to St. Thomas,381.00,250 - 500,Planned,No,N/A,Transmission,,,"[[{""lon"": -81.1605128809628, ""lat"": 42.93962837493266}, {""lon"": -81.15351986738781, ""lat"": 42.793748349566286}]]",line
+en,4000,Hydro One,Northwest Bulk Transmission Line Waasigan Transmission Line,Ontario,Thunder Bay to Dryden,"1,200.00","1,000 - 2,500",Planned,No,N/A,Transmission,,,"[[{""lon"": -89.24195708819956, ""lat"": 48.58398878515795}, {""lon"": -91.61500784379284, ""lat"": 48.74362863409662}, {""lon"": -92.84547841733615, ""lat"": 49.854038682594}]]",line
 en,8137,PUC Transmisison,PUC Tx Project,Ontario,Sault Ste. Marie,188.00,100 - 250,Planned,No,N/A,Transmission,,,"[[{""lon"": -84.39065727586261, ""lat"": 46.5273917973633}, {""lon"": -84.32880525809954, ""lat"": 46.54500880450048}]]",line
+en,8136,Hydro One,St. Thomas Line (including Centennial Transformer Station & Line),Ontario,City of London to St. Thomas,381.00,250 - 500,Planned,No,N/A,Transmission,,,"[[{""lon"": -81.1605128809628, ""lat"": 42.93962837493266}, {""lon"": -81.15351986738781, ""lat"": 42.793748349566286}]]",line
+en,6089,Hydro One,St.Clair Transmission Line,Ontario,"St.Clair, Chatham Kent",250.00,250 - 500,Planned,No,N/A,Transmission,,,"[[{""lon"": -82.0953441230177, ""lat"": 42.385228232002554}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
+en,3509,Wataynikaneyap Power,Wataynikaneyap Transmission Project,Ontario,Northwest Ontario,"1,900.00","1,000 - 2,500",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -92.49780627937037, ""lat"": 49.68148268733783}, {""lon"": -91.58400428261058, ""lat"": 51.1649399400299}, {""lon"": -90.19403390058937, ""lat"": 51.46765908434607}]]",line
+en,8135,TBD,Wawa to Porcupine,Ontario,"Timmins, Greater Sudbury",650.00,500 - 750,Planned,No,N/A,Transmission,,,"[[{""lon"": -84.5469445005294, ""lat"": 47.88515089361095}, {""lon"": -94.90912907573089, ""lat"": 48.46564544491719}]]",line
+en,4073,PEI Energy Corporation,Western PEI Transmission Upgrade,Prince Edward Island,"Western Prince County, PEI",44.00,10 - 50 ,Planned,No,N/A,Transmission,,,"[[{""lon"": -63.77626077337365, ""lat"": 46.43472346996201}, {""lon"": -64.11740865242652, ""lat"": 46.96495485839825}]]",line
+en,3206,Hydro-Québec,New England Clean Energy Connect (NECEC) project,Quebec,Across the Quebec border through Beattie township Maine to Lewiston Maine,950.00,"750 - 1,000",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -70.98428277917243, ""lat"": 45.72302928630145}, {""lon"": -69.96081940375113, ""lat"": 45.333579251748986}, {""lon"": -70.21551841404592, ""lat"": 44.10385202430323}]]",line
+en,547,Hydro-Québec,Raccordement du complexe de La Romaine au réseau de transport,Quebec,Camp satellite line 34 5KV,"1,300.00","1,000 - 2,500",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -63.127846286720974, ""lat"": 50.48894626974321}, {""lon"": -66.57519553477161, ""lat"": 50.22393715100787}]]",line
+en,3208,"Transmission Developers Inc. (TDI),",Transmission Line - Champlain Hudson Power Express,Quebec,Runs south from Canada-US border to the New York metro area,"2,200.00","1,000 - 2,500",Under Construction,No,N/A,Transmission,,,"[[{""lon"": -73.34309052831851, ""lat"": 45.09613609269886}, {""lon"": -73.92068542400284, ""lat"": 40.76311926957715}]]",line
+en,8021,Horizon New Energy,Aira Solar Project,Alberta,Forty Mile County No. 8,700.00,500 - 750,Planned,Yes,Solar,,49.593546980098836,-110.93400418104007,,point
+en,4188,Alpin Sun,Airport City Solar,Alberta,Leduc County,169.00,100 - 250,Planned,Yes,Solar,,53.291085568662865,-113.5936694692827,,point
+en,8022,hep Energy,Alderson Solar Power Project,Alberta,Cypress County,150.00,100 - 250,Planned,Yes,Solar,,50.35223699524816,-111.36066847007169,,point
+en,6002,Highwood Organics Processing,Aldersyde Bioenergy Facility,Alberta,Foothills No. 31,25.00,10 - 50 ,Planned,Yes,Bioenergy,,50.63106673924745,-113.87502409508629,,point
+en,399,Canadian Natural Resources Limited,AOSP Jackpine,Alberta,Fort McMurray,"12,000.00","10,000 +",Planned,No,N/A,,57.224504531129696,-111.36769668637707,,point
+en,693,Imperial Oil Limited,Aspen' oil sands project (SAGD),Alberta,Regional Municipality of Wood Buffalo,"5,200.00","5,000 - 10,000",Planned,No,N/A,,57.24238941042507,-111.53911583727455,,point
+en,8024,FortisAlberta,Bassano 435S DER Solar,Alberta,Newell County,15.00,10 - 50 ,Under Construction,Yes,Solar,,50.6740259163967,-112.31131976780539,,point
+en,8002,Renewable Energy Systems Canada Inc.,Big Sky Solar Project,Alberta,Acadia No. 34,200.00,100 - 250,Under Construction,Yes,Solar,,51.19666617526284,-110.28504745129067,,point
+en,207,Harvest Operations Corp.,BlackGold Oil Sands Project,Alberta,Regional Municipality of Wood Buffalo (SE of Conklin),540.00,500 - 750,Planned,No,N/A,,55.58264649024491,-110.9730248301697,,point
+en,75,IPC Canada Ltd.,Blackrod,Alberta,Regional Municipality of Wood Buffalo (RMWB) & Lac La Biche County,"2,927.00","2,500 - 5,000",Under Construction,No,N/A,,55.611718192527775,-112.61193843788737,,point
+en,8025,ENGIE Development Canada LP,Buffalo Trail North Wind Project,Alberta,Cypress County,200.00,100 - 250,Under Construction,Yes,Wind,,49.84235606340341,-110.32929810639786,,point
+en,4224,WindRiver Power Corp. & TC Energy,Canyon Creek Hydro Power Project (storage),Alberta,Yellowhead County,200.00,100 - 250,Planned,Yes,Hydro,,53.53011154187485,-117.52454425439852,,point
+en,8038,Cielo,Carseland Biomass Gasifier Project,Alberta,Wheatland County,100.00,100 - 250,Planned,No,N/A,,50.88845380982432,-113.39973406570839,,point
+en,1077,Cenovus Energy Inc.,Christina Lake,Alberta,Cenovus Christina Lake,900.00,"750 - 1,000",Planned,No,N/A,,55.57643039920016,-110.89742500969423,,point
+en,6016,Voltarix Group,Creekside Solar Project,Alberta,Leduc County,43.00,10 - 50 ,Planned,Yes,Solar,,53.24715291243408,-113.82518687368807,,point
+en,6017,ATCO,Deerfoot Solar Project,Alberta,Calgary,50.00,50 - 100,Under Construction,Yes,Solar,,50.93948275011693,-113.96523820092142,,point
+en,8007,MYTILINEOS Energy & Metals,Dolcy Solar Project,Alberta,Wainwright No. 61,275.00,250 - 500,Planned,Yes,Solar,,52.68557526410013,-110.47290292641775,,point
+en,515,Athabasca Oil Corporation,Dover West Clastics,Alberta,Municipal District of Opportunity,615.00,500 - 750,Planned,No,N/A,,57.10045918999997,-113.22511419208392,,point
+en,3402,Dow Chemical Canada,Dow Net-Zero Polyethylene and Ethylene Derivatives Facility,Alberta,Fort Saskatchewan,"11,500.00","10,000 +",Under Construction,Yes,Carbon Capture and Storage,,53.7339050194484,-113.17216889065274,,point
+en,7026,ENMAX Energy Corp.,Enmax Substation No. 1,Alberta,Calgary,200.00,100 - 250,Under Construction,No,N/A,,51.04532474470257,-114.08001425483637,,point
+en,8001,Renewable Energy Systems Canada Inc.,Enterprise Solar Project,Alberta,Vulcan County,175.00,100 - 250,Under Construction,Yes,Solar,,50.37388877900198,-113.35782491617891,,point
+en,8010,ATCO,Forty Mile Solar Farm (Granlea Phase 2),Alberta,Forty Mile County No. 8,400.00,250 - 500,Under Construction,Yes,Solar,,49.696514952160506,-111.27160428155803,,point
+en,7032,ACCIONA Energía,Forty Mile Wind Project (ACCONIA),Alberta,Forty Mile County No. 8,400.00,250 - 500,Under Construction,Yes,Wind,,49.79284196867155,-111.18601328705076,,point
+en,7035,Green Impact Partners (In partnership with Carbon Clean Energy and PCL Construction),Future Energy Park Renewable Natural Gas and Ethanol Project,Alberta,Calgary,"1,200.00","1,000 - 2,500",Planned,Yes,Bioenergy,,51.010139761953205,-113.91401420907387,,point
+en,6026,TransAlta Corporation,Ghost River WaterCharger Battery Energy Storage,Alberta,Rocky View County,120.00,100 - 250,Planned,No,N/A,,51.21778868494428,-114.70461843700394,,point
+en,6028,TransAlta Corporation,Glacier Gas Plant CSS (Phase 2),Alberta,Saddle Hills County,100.00,100 - 250,Planned,Yes,Carbon Capture and Storage,,55.559547296971765,-119.60377693245539,,point
+en,8013,Kineticor Resource Corp.,Greenlight Electricity Centre,Alberta,Sturgeon County,"4,500.00","2,500 - 5,000",Planned,No,N/A,,53.828815024705335,-113.17863492462718,,point
+en,4198,Climate Transition Development Corporation,Greenview Geothermal Power Plant (Alberta No. 1),Alberta,Greenview No. 16,106.00,100 - 250,Planned,Yes,Geothermal,,54.84183341959331,-117.6498575653256,,point
+en,808,Spartan Delta Inception Exploration Ltd.,Greenview Sour Gas plant,Alberta,Greenview,50.00,50 - 100,Planned,No,N/A,,54.70000710578636,-119.01501586526526,,point
+en,89,Canadian Natural Resources Limited,Grouse,Alberta,Hudson Hope,"1,530.00","1,000 - 2,500",Planned,No,N/A,,55.466299088800085,-111.75578167788436,,point
+en,6030,Capital Power,Halkirk Wind Project Phase 2,Alberta,Paintearth County No. 18,274.00,250 - 500,Under Construction,Yes,Wind,,52.2357210485371,-112.11133016915629,,point
+en,1079,Japan Canada Oil Sands Limited (JACOS),Hangingstone,Alberta,Fort McMurray,"1,200.00","1,000 - 2,500",Planned,No,N/A,,56.288067353317636,-111.60424846001553,,point
+en,818,Athabasca Oil Corporation,Hangingstone Oil Sands,Alberta,Fort McMurray-Conklin,640.00,500 - 750,Planned,No,N/A,,56.4761462876768,-111.40765438651681,,point
+en,1083,Value Creation Inc.,Heartland Upgrader,Alberta,Strathcona County,"2,000.00","1,000 - 2,500",Planned,No,N/A,,53.54873598659379,-113.35643586959304,,point
+en,1090,Value Creation Inc.,Heartland Upgrader,Alberta,Strathcona County,"2,000.00","1,000 - 2,500",Planned,No,N/A,,53.77218080346211,-113.11677517041406,,point
+en,8017,Gibson Energy & Varme Energy JV,Heartland Waste to Power Project,Alberta,Strathcona County,300.00,250 - 500,Planned,No,N/A,,53.775940037341286,-113.04027587325821,,point
+en,7040,Heidelberg Materials,Heidelberg Materials Carbon Capture Utilization and Storage Hub,Alberta,Edmonton,"1,360.00","1,000 - 2,500",Planned,Yes,Carbon Capture and Storage,,53.57980695822925,-113.60601493535256,,point
+en,7042,Kiwetinohk Energy Corp,Homestead Solar Project,Alberta,Willow Creek No. 26,500.00,500 - 750,Planned,Yes,Solar,,49.98142074177492,-113.44601383107721,,point
+en,841,Canadian Natural Resources Limited,Jackfish,Alberta,Regional Municipality of Wood Buffalo (SE of Conklin),"1,300.00","1,000 - 2,500",Planned,No,N/A,,55.527907399695295,-110.87381498492836,,point
+en,7047,Northland Power,Jurassic Solar and Battery Storage,Alberta,Cypress County,500.00,500 - 750,Under Construction,Yes,Solar,,50.66321104513456,-111.11601349770832,,point
+en,6036,Imperial Oil,Kearl Oil Sand In-Pit Tailings Project,Alberta,Wood Buffalo,750.00,"750 - 1,000",Under Construction,No,N/A,,57.41143546491772,-111.16349881604737,,point
+en,422,Suncor Energy Inc.,Lewis,Alberta,Regional Municipality of Wood Buffalo,"6,200.00","5,000 - 10,000",Planned,No,N/A,,56.94062750751476,-111.0483611526399,,point
+en,7057,Greengate Power Corporation,Luna Solar Project (Phase One),Alberta,Newell County,700.00,500 - 750,Under Construction,Yes,Solar,,50.60377491848504,-112.23601373213037,,point
+en,7058,Greengate Power Corporation,Luna Solar Project (Phase Two),Alberta,Newell County,700.00,500 - 750,Planned,Yes,Solar,,50.58239591558705,-112.24601372795794,,point
+en,8004,Federation Group,Marguerite Lake Compressed Air Energy Storage,Alberta,Bonnyville No. 87,500.00,500 - 750,Planned,No,N/A,,54.58571435205573,-110.80400462793247,,point
+en,6062,Voltarix Group,Moon Lake Solar Project,Alberta,Parkland County,43.00,10 - 50 ,Planned,Yes,Solar,,53.42250078412357,-114.99053218644902,,point
+en,8042,Canadian Natural Resources Ltd. (CNRL),Naphtha Recovery Unit Tailings Treatment Project,Alberta,Wood Buffalo,350.00,250 - 500,Planned,No,N/A,,57.34739237729774,-111.84100795950293,,point
+en,1082,Cenovus Energy Inc.,Narrows Lake,Alberta,Meanook,"1,600.00","1,000 - 2,500",Planned,No,N/A,,54.61611003860595,-113.4264742565062,,point
+en,8041,Cenovus Energy Inc.,Narrows Lake Tie-Back to Christina Lake,Alberta,Wood Buffalo,300.00,250 - 500,Under Construction,No,N/A,,55.59027140623013,-110.85275200395415,,point
+en,6067,Northern Petrochemical Corp.,Northern Petrochemical Ammonia and Methanol Production Facility,Alberta,Greenview No. 16,"2,500.00","2,500 - 5,000",Planned,Yes,Carbon Capture and Storage,,54.760771401331205,-118.57240841210825,,point
+en,8029,Renewable Energy Systems Canada Inc.,Nova Solar Project,Alberta,Wheatland County,225.00,100 - 250,Planned,Yes,Solar,,50.84036279377887,-113.52506107992372,,point
+en,7069,The Pathways Alliance,Pathways Alliance Carbon Capture Storage Hub (Phase 1),Alberta,Improvement District No. 349|Wood Buffalo|Lac la Biche County|Improvement District No. 24 Wood Buffalo|Bonnyville No. 87,"16,500.00","10,000 +",Planned,Yes,Carbon Capture and Storage,,58.15284035767626,-112.28501642926246,,point
+en,8009,Peace Energy Cooperative,Peace River Energy Project,Alberta,Peace River,10.00,10 - 50 ,Under Construction,Yes,Solar,,56.24325961802046,-117.35159675881134,,point
+en,8043,EDF EN Canada,Pe-Na-Koyim Wind Project,Alberta,Blood 148,425.00,250 - 500,Planned,Yes,Wind,,49.44702573738304,-113.12142762346306,,point
+en,7055,Kiwetinohk Energy Corp,Phoenix Solar Project,Alberta,Red Deer County,320.00,250 - 500,Planned,Yes,Solar,,52.238027812803274,-114.15701462513617,,point
+en,4126,Devon Energy Corporation/ BP JV,Pike,Alberta,Regional Municipality of Wood Buffalo,"1,900.00","1,000 - 2,500",Planned,No,N/A,,55.59941238878263,-110.99578104140443,,point
+en,140,Canadian Natural Resources Limited,Pike (Formely Kirby),Alberta,Lac la Biche County,"7,700.00","5,000 - 10,000",Planned,No,N/A,,55.448226400882255,-110.82403594354774,,point
+en,8032,PR Development GP Inc.,Prominence Solar Project,Alberta,Lethbridge County,120.00,100 - 250,Planned,Yes,Solar,,49.857671811480685,-112.71884364191413,,point
+en,8011,Solar Krafte and Kinbrook Solar,Rainier Solar Farm,Alberta,Newell County,700.00,500 - 750,Planned,Yes,Solar,,50.50213794024314,-111.97481564850649,,point
+en,8005,MYTILINEOS Energy & Metals,Red Willow Solar,Alberta,Stettler County No. 6,315.00,250 - 500,Planned,Yes,Solar,,52.411529020275935,-112.46171430279654,,point
+en,6083,Voltarix Group,Rocktree Solar Project,Alberta,Parkland County,40.00,10 - 50 ,Planned,Yes,Solar,,53.515094918936676,-113.91209598176626,,point
+en,6084,DP Energy,Saamis Solar Farm,Alberta,Medicine Hat,600.00,500 - 750,Planned,Yes,Solar,,50.07068104136028,-110.70735324998958,,point
+en,649,Husky Oil Operations Ltd.,Saleski' Thermal Oil Sands Project Using CSS,Alberta,M.D. of Opportunity No. 17,300.00,250 - 500,Planned,No,N/A,,56.59335069186159,-113.01275822593301,,point
+en,7078,Pace Canada LP,Salt Flats Solar Project,Alberta,Brooks,28.00,10 - 50 ,Planned,Yes,Solar,,50.582851951926116,-111.91401365626616,,point
+en,6086,Silicon Ranch,Scottford Refinery Solar Farm,Alberta,Strathcona County,100.00,100 - 250,Under Construction,Yes,Solar,,53.804246032893666,-113.08892089282085,,point
+en,684,Osum Oil Sands Corp.,Sepiko Kesik Project,Alberta,Municipal District of Opportunity,"3,200.00","2,500 - 5,000",Planned,No,N/A,,56.689006357656304,-113.13101269811,,point
+en,6088,Expander Energy,Slave Lake Bio-Mass/Gas to Liquids Plant (Phase 1),Alberta,Lesser Slave River No.124,30.00,10 - 50 ,Planned,Yes,Bioenergy,,55.26504493081816,-114.57518575876578,,point
+en,850,Syncrude Canada Ltd.,Stage 4a - MLX-W,Alberta,Mildred Lake,"3,300.00","2,500 - 5,000",Under Construction,No,N/A,,57.04521839482405,-111.58510376639647,,point
+en,7081,ABO Wind Canada Ltd.,Stettler Solar and Battery Storage Project,Alberta,Stettler County No. 6,160.00,100 - 250,Planned,Yes,Solar,,52.29043997702485,-112.75601433198032,,point
+en,6090,Imperial Oil Ltd.,Strathcona Refinery Renewable Diesel Expansion,Alberta,Strathcona County,720.00,500 - 750,Under Construction,Yes,Bioenergy,,53.546099982986796,-113.38417287374237,,point
+en,4178,Suncor Energy Inc.,Suncor Power Cogeneration Units,Alberta,Regional Municipality of Wood Buffalo,"1,400.00","1,000 - 2,500",Under Construction,No,N/A,,56.99719148314166,-111.48051880086578,,point
+en,6092,Suncor Energy Inc.,Suncor PURE Demonstration Facility,Alberta,Wood Buffalo,52.50,50 - 100,Planned,No,N/A,,57.38056842064643,-111.50978688886617,,point
+en,8006,MYTILINEOS Energy & Metals,Sunnynook Solar Project,Alberta,Special Area No. 2,385.00,250 - 500,Planned,Yes,Solar,,51.325488045728534,-111.55785977985856,,point
+en,7083,Evolugen by Brookfield Renewable,Sunrise Solar Project,Alberta,Pincher Creek No. 9,140.00,100 - 250,Planned,Yes,Solar,,49.50343665072535,-113.96301381589504,,point
+en,858,ConocoPhillips Canada,Surmont (ConocoPhillips),Alberta,Regional Municipality of Wood Buffalo,"6,000.00","5,000 - 10,000",Planned,No,N/A,,56.193607428181664,-110.950615259331,,point
+en,566,MEG Energy Corp.,Surmont (MEG),Alberta,Regional Municipality of Wood Buffalo (RMWB),"5,000.00","5,000 - 10,000",Planned,No,N/A,,56.03446644647128,-110.72023014054042,,point
+en,1094,Imperial Oil Limited,Syncrude Mildred Lake Extension,Alberta,Regional Municipality of Wood Buffalo,"3,300.00","2,500 - 5,000",Under Construction,No,N/A,,57.07271569259319,-111.58987053496057,,point
+en,341,Osum Oil Sands Corp.,Taiga,Alberta,MD of Bonnyville (N of Cold Lake),"1,570.00","1,000 - 2,500",Planned,No,N/A,,54.680885237327786,-110.13649482869653,,point
+en,427,Sunshine Oilsands Ltd.,Thickwood (Sunshine),Alberta,Regional Municipality of Wood Buffalo (RMWB) & Municipal District of Opportunity,"1,753.00","1,000 - 2,500",Planned,No,N/A,,56.83332213272563,-112.78679927161589,,point
+en,607,Value Creation Inc.,TriStar Advanced (In Situ + Upgrader),Alberta,Regional Municipality of Wood Buffalo (RMWB),"2,000.00","1,000 - 2,500",Planned,No,N/A,,56.736821431867355,-111.15659353076784,,point
+en,4057,EDF Renewables Canada,Vulcan Solar Project,Alberta,Vulcan County,155.00,100 - 250,Planned,Yes,Solar,,50.40378979208051,-113.25314690001144,,point
+en,629,Sunshine Oilsands Ltd.,West Ells,Alberta,MD of Opportunity,"2,100.00","1,000 - 2,500",Planned,No,N/A,,57.20249825698639,-112.72925381463206,,point
+en,429,Sunshine Oilsands Ltd.,West Ells,Alberta,MD of Opportunity,"2,950.00","2,500 - 5,000",Planned,No,N/A,,57.20249825698639,-112.72925381463206,,point
+en,293,Capstone Infrastructure Corporation,Wild Rose' Wind Farm (Phase 2),Alberta,Cypress County (S of Irvine),300.00,250 - 500,Under Construction,Yes,Wind,,49.9560870790788,-110.26577211996009,,point
+en,7085,Enerfin Energy Company of Canada Inc.,Winnifred Wind Power Project,Alberta,Forty Mile County No. 8|Cypress County,180.00,100 - 250,Under Construction,Yes,Wind,,49.940744994924856,-111.04901329386502,,point
+en,2121,Ainsworth Energy Co. Ltd.,Anahim Lake Bioenergy Project,British Columbia,"Cariboo, Anahim Lake",15.00,10 - 50 ,Planned,Yes,Bioenergy,,52.41840330533732,-126.48629291719534,,point
+en,5018,Tlingit Homeland Energy Limited Partnership (THELP),Atlin Hydro Expansion project,British Columbia,Atlin,330.00,250 - 500,Planned,Yes,Hydro,,59.582978309458504,-133.64456514110927,,point
+en,4096,Boralex,Babcock Ridge Wind Farm,British Columbia,Tumbler Ridge,50.00,50 - 100,Planned,Yes,Wind,,55.111676098148344,-121.00065101738561,,point
+en,4104,Canfor Corporation/Licella,Biofuel Facility,British Columbia,Prince George,70.00,50 - 100,Planned,Yes,Bioenergy,,53.92241583182545,-122.74572286801184,,point
+en,2122,Yun Ka Whu'ten Holdings,Biomass Project - Anahim Lake,British Columbia,"Cariboo, Anahim Lake",15.00,10 - 50 ,Planned,Yes,Bioenergy,,52.46535345624128,-125.31755776109446,,point
+en,2124,Nations Energy Corp.,Biomass Project - Kamloops,British Columbia,"Thompson, Okanagan, Kamloops",15.00,10 - 50 ,Planned,Yes,Bioenergy,,50.716193995918665,-120.38900139195297,,point
+en,536,ecoTECH Energy Group (Canada) Inc,Biomass Project - McBride,British Columbia,McBride,140.00,100 - 250,Planned,Yes,Bioenergy,,53.342923128836276,-120.26762021633148,,point
+en,4111,Borealis Geopower,Canoe Reach Geothermal Energy Project,British Columbia,Valemount,120.00,100 - 250,Planned,Yes,Geothermal,,52.83062223236273,-119.26593285122959,,point
+en,725,Greater Vancouver Regional District,Capilano (Cleveland) Dam Power Plant,British Columbia,North Vancouver,90.00,50 - 100,Planned,Yes,Hydro,,49.3605096147232,-123.11086546642917,,point
+en,737,BC Hydro,Capilano Substation Upgrade,British Columbia,North Vancouver,87.00,50 - 100,Under Construction,No,N/A,,49.3350756137466,-123.10830445934201,,point
+en,938,Cedar LNG  (partnership between Pembina Pipeline Corporation and Haisla Nation),Cedar LNG,British Columbia,Kitimat,"4,600.00","2,500 - 5,000",Planned,No,N/A,,53.9254160368947,-128.72793278374058,,point
+en,4081,BC Hydro,Cheakamus Recoat Units 1 & 2 Penstock Project,British Columbia,Squamish,35.00,10 - 50 ,Under Construction,Yes,Hydro,,49.702858623121855,-123.15902656864714,,point
+en,758,Pristine Power Inc./Cheslatta Forest Products,Cheslatta Green Energy Project,British Columbia,Burns Lake,46.00,10 - 50 ,Planned,Yes,Bioenergy,,53.579205533293006,-124.95001710191428,,point
+en,5010,Deh Tai GP Ltd,Clarke Lake Geothermal Development,British Columbia,Fort Nelson,100.00,100 - 250,Planned,Yes,Geothermal,,58.772043036142314,-122.66014132981157,,point
+en,76,Blue Fuel Energy Corp.,Clean Methanol Plant,British Columbia,Chetwynd,"1,000.00","1,000 - 2,500",Planned,Yes,Bioenergy,,55.69815303268969,-121.62970637520029,,point
+en,970,Creative Energy Vancouver Platforms Inc.,Creative Energy Plant,British Columbia,Vancouver,100.00,100 - 250,Under Construction,Yes,Bioenergy,,49.27818960970724,-123.11245344429159,,point
+en,4106,BC Hydro,Downtown Vancouver Electricity Supply - West End Strategic Property Purchase,British Columbia,Vancouver,81.00,50 - 100,Under Construction,No,N/A,,49.274225608574376,-123.12562044560613,,point
+en,584,Quicksilver Resources/ Kohlberg Kravis Roberts & Co. L.P. (KKR),Fortune Creek Gas Plant,British Columbia,Fort Nelson,760.00,"750 - 1,000",Planned,No,N/A,,58.805561953355244,-122.69543305064624,,point
+en,188,Fosthall Creek Power LP,Fosthall Creek Hydropower Project,British Columbia,Nakusp,50.00,50 - 100,Planned,Yes,Hydro,,50.241338271704784,-117.80108978074341,,point
+en,4080,Pacific Greengen Power Inc.,Fries Creek Hydroelectric Project,British Columbia,Harrison Hot Springs,20.00,10 - 50 ,Planned,Yes,Hydro,,49.30777176217097,-121.79963723788129,,point
+en,965,BC Hydro,G.M. Shrum Units 1 to 10 Control Systems Upgrade Project,British Columbia,Hudson Hope,75.00,50 - 100,Under Construction,No,N/A,,56.01667596272236,-122.2027623146087,,point
+en,10,Aeolis Wind Power Corporation,Hackney Hills Wind Park,British Columbia,Fort St. John,400.00,250 - 500,Planned,Yes,Wind,,56.24926915303787,-120.84756646255396,,point
+en,2059,Aeolis / Boralex,Hackney Hills Wind Park (Aeolis / Boralex),British Columbia,Fort St. John,"5,200.00","5,000 - 10,000",Planned,Yes,Wind,,56.24772515471928,-120.84189946150133,,point
+en,587,Rio Tinto Alcan Inc.,Kemano Tunnel Project (T2),British Columbia,Kitimat,500.00,500 - 750,Under Construction,No,N/A,,53.63813014145951,-127.92482256362713,,point
+en,4116,Alcan Aluminum Ltd. and the Province of BC,Kenney Dam Cold Water Release Facility,British Columbia,Vanderhoof,275.00,250 - 500,Planned,No,N/A,,53.566672534048,-124.95001709775694,,point
+en,165,WindRiver Power Corp.,Kinskuch Hydroelectric Project,British Columbia,Iskut,250.00,250 - 500,Planned,Yes,Hydro,,57.85717888202591,-129.97926772233177,,point
+en,718,Kitimat Clean Ltd.,Kitimat Clean Oil Refinery,British Columbia,Kitimat,"22,000.00","10,000 +",Planned,No,N/A,,54.16667174310097,-128.7000178722288,,point
+en,1037,"Western LNG, Nisga'a Nation, Rockies LNG Partners",Ksi Lisims LNG,British Columbia,Nasoga Gulf,"10,000.00","10,000 +",Planned,No,N/A,,54.9015738613368,-130.0726223522332,,point
+en,974,Enbridge/ Borealis Inc./ Kitselas First Nation,Lakelse Geothermal Power Plant,British Columbia,Terrace,120.00,100 - 250,Planned,Yes,Geothermal,,54.44564506940774,-128.5403179643181,,point
+en,4108,BCHydro,LNG Canada Load Interconnection Project,British Columbia,Kitimat,82.00,50 - 100,Under Construction,No,N/A,,54.06154105091425,-128.63390482274906,,point
+en,397,"LNG Canada (Shell Canada Limited, PETRONAS, Korea Gas Corporation (KOGAS), Mitsubishi Corporation, and PetroChina Company Limited)",LNG Canada Phase 1,British Columbia,Kitimat,"47,900.00","10,000 +",Under Construction,No,N/A,,54.08195605054043,-128.63807583162247,,point
+en,6046,"LNG Canada (Shell Canada Limited, PETRONAS, Korea Gas Corporation (KOGAS), Mitsubishi Corporation, and PetroChina Company Limited)",LNG Canada Phase 2,British Columbia,Kitimat,"25,000.00","10,000 +",Planned,No,N/A,,54.08195605054043,-128.63807583162247,,point
+en,764,Highwater Power Corporation Altagas Ltd.,Log Creek Water Power  Project,British Columbia,Boston Bar,20.00,10 - 50 ,Planned,Yes,Hydro,,50.058845809258266,-121.71741143265548,,point
+en,753,Kruger Energy Inc.,Maselpanik Creek Hydro Project,British Columbia,Chilliwack,35.00,10 - 50 ,Planned,Yes,Hydro,,49.089005814775916,-121.25841509066645,,point
+en,4079,BC Hydro,Mica 600V Circuit Breaker Upgrades Project,British Columbia,Revelstoke,32.00,10 - 50 ,Under Construction,Yes,Hydro,,51.049743272838825,-118.19468608791263,,point
+en,4093,BC Hydro,Mica Modernize Controls (Digital) Project,British Columbia,Revelstoke,56.00,50 - 100,Under Construction,Yes,Hydro,,51.001448269397514,-118.19375507247065,,point
+en,283,Mount Hays Wind Farm Limited Partnership,Mount Hays Wind Farm,British Columbia,Prince Rupert,125.00,100 - 250,Planned,Yes,Wind,,54.29148782491433,-130.30822113182606,,point
+en,4125,Nisga’a Nation,Nisga’a LNG,British Columbia,Nasoga Gulf,"10,000.00","10,000 +",Planned,No,N/A,,54.9015738613368,-130.0726223522332,,point
+en,1057,Pacific Future Energy,Pacific Future Energy Oil Refinery,British Columbia,Kitimat,"10,000.00","10,000 +",Planned,No,N/A,,53.95290133774895,-128.72261179293892,,point
+en,2060,Pacific Future Energy,Pacific Future Energy Refinery Project,British Columbia,Harrison Lake,55.00,50 - 100,Under Construction,No,N/A,,54.28390105591053,-128.61758690801616,,point
+en,67,BC Hydro,Peace River Site C Hydro-electric project,British Columbia,Fort St. John,"16,000.00","10,000 +",Under Construction,Yes,Hydro,,56.250795152938124,-120.8483104651631,,point
+en,707,Port Alberni Harbour Authority,Port Alberni LNG Export Facility,British Columbia,Port Alberni,"1,600.00","1,000 - 2,500",Planned,No,N/A,,49.23001940949698,-124.81107569248316,,point
+en,983,Red Willow Wind LP,Red Willow Wind Farm,British Columbia,Tumbler Ridge,480.00,250 - 500,Planned,Yes,Wind,,54.80866917107059,-120.37502777981982,,point
+en,4119,AltaGas / Vopak Development Canada Inc.,Ridley Island Energy Export Facility (REEF),British Columbia,Prince Rupert,750.00,"750 - 1,000",Planned,No,N/A,,54.31419282379263,-130.32220114276933,,point
+en,545,Holmes Hydro,Robson Valley Hydroelectric Project,British Columbia,McBride,200.00,100 - 250,Planned,Yes,Hydro,,53.34686518237983,-119.84065113668431,,point
+en,757,Innergex Renewable Energy Inc.,Shovel Creek Hydroelectric Project,British Columbia,Harrison Hot Springs,40.00,10 - 50 ,Planned,Yes,Hydro,,49.72120578115957,-121.8148153526896,,point
+en,759,KMC Power,Tamihi Creek Hydro Project,British Columbia,Chilliwack,50.00,50 - 100,Planned,Yes,Hydro,,49.04610574860923,-121.81961517251978,,point
+en,692,EDF Renouvelables,Taylor Wind Project,British Columbia,Taylor,900.00,"750 - 1,000",Planned,Yes,Wind,,55.99995315826963,-120.76406333996326,,point
+en,5060,Fortis,Tilbury LNG Phase 1B,British Columbia,Delta,60.00,50 - 100,Planned,No,N/A,,49.141803214496605,-123.02352039431199,,point
+en,5052,Fortis,Tilbury LNG Phase 2,British Columbia,Delta,"3,500.00","2,500 - 5,000",Planned,No,N/A,,49.141803214496605,-123.02352039431199,,point
+en,943,"Tilbury Jetty Marine Partnership (Fortis, Seaspan, Shell)",Tilbury Marine Jetty,British Columbia,Delta,175.00,100 - 250,Planned,No,N/A,,49.141803214496605,-123.02352039431199,,point
+en,2123,Ainsworth Energy Co. Ltd.,Tumbler Ridge Bioenergy Project,British Columbia,"Thompson, Okanagan, Kelowna",15.00,10 - 50 ,Planned,Yes,Bioenergy,,50.02465907974658,-119.37344401338525,,point
+en,2025,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,British Columbia,"Vancouver Island/Coast, Port Alice",18.00,10 - 50 ,Planned,Yes,Hydro,,50.43487012859043,-127.48676841941774,,point
+en,4077,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,British Columbia,Port Alice,18.00,10 - 50 ,Planned,Yes,Hydro,,50.424702129188304,-127.48728041724996,,point
+en,942,Watson Island LNG Corporation,Watson Island LNG,British Columbia,Prince Rupert,270.00,250 - 500,Planned,No,N/A,,54.24115582634536,-130.2971731090514,,point
+en,754,Pacific Coastal Wave Energy Corp.,Wave Energy Project,British Columbia,Ucluelet,20.00,10 - 50 ,Planned,Yes,Tidal,,48.920605313372754,-125.54481571782894,,point
+en,652,Woodfibre LNG,Woodfibre LNG project,British Columbia,Squamish,"6,880.00","5,000 - 10,000",Under Construction,No,N/A,,49.66667261106278,-123.2527935730007,,point
+en,8327,Manitoba Hydro,Ashern Station Bank Addition,Manitoba,Ashern,20.59,10 - 50 ,Under Construction,Yes,Hydro,,51.182208366843184,-98.34551032330548,,point
+en,8329,Manitoba Hydro,Dauphin Vermillion 230kV Stn Capacity In,Manitoba,Dauphin,20.85,10 - 50 ,Under Construction,Yes,Hydro,,51.149008208168205,-100.04901080101858,,point
+en,3643,Manitoba Hydro,Dorsey Synchronous Condenser Refurbishment,Manitoba,Dorsey,65.40,50 - 100,Under Construction,Yes,Hydro,,49.90592833509774,-97.12396969452502,,point
+en,6045,Manitoba Hydro,Limestone Units 1-3 & 5-10 Stator Re-Wedge,Manitoba,Nelson River,37.80,10 - 50 ,Under Construction,Yes,Hydro,,56.50690927832008,-94.10691042372036,,point
+en,6047,Manitoba Hydro,Long Spruce Generator Protection Replacement,Manitoba,Nelson River,22.50,10 - 50 ,Under Construction,Yes,Hydro,,56.39790924556829,-94.36921047473238,,point
+en,7073,Manitoba Hydro,Pointe du Bois Renewable Energy Project,Manitoba,Wpg River,387.30,250 - 500,Under Construction,Yes,Hydro,,50.30000851434925,-95.55000931596169,,point
+en,4201,Manitoba Hydro,Portage Area Capacity Enhancements,Manitoba,Portage la Prarie Area,84.80,50 - 100,Under Construction,Yes,Hydro,,49.97230824054932,-98.29031004119356,,point
+en,8328,Manitoba Hydro,Slave Falls 7 Bay Sluiceway Concrete Res,Manitoba,Wpg River,84.32,50 - 100,Under Construction,Yes,Hydro,,50.22200850338435,-95.56800930504849,,point
+en,298,NB Power and Partners,Smart Grid Investments Phase,New Brunswick,Various locations across NB  (St. John),147.00,100 - 250,Under Construction,Yes,Hydro,,45.275189351486695,-66.06856207473336,,point
+en,8085,Churchill Falls Labrador Corporation,Electric Utility 2024 Capital Program (Churchill Falls Labrador Corporation),Newfoundland and Labrador,Labrador,105.70,100 - 250,Under Construction,Yes,Hydro,,53.594618683678604,-64.30802990540812,,point
+en,8086,Newfoundland and Labrador Hydro,Electric Utility 2024 Capital Program (Newfoundland and Labrador Hydro),Newfoundland and Labrador,Various,139.30,100 - 250,Under Construction,Yes,Hydro,,54.18001085139709,-58.42999663894855,,point
+en,8087,Newfoundland Power Inc.,Electric Utility 2024 Capital Program (Newfoundland Power Inc.),Newfoundland and Labrador,Various,115.90,100 - 250,Under Construction,Yes,Hydro,,48.5500100368941,-58.42999651375843,,point
+en,6029,LNG Newfoundland and Labrador,Grassy Point LNG,Newfoundland and Labrador,Grassy Point,"10,000.00","10,000 +",Planned,No,N/A,,47.752800932336214,-54.02714193437833,,point
+en,215,Husky Energy Inc.,White Rose Expansion,Newfoundland and Labrador,Offshore Newfoundland,"2,300.00","1,000 - 2,500",Under Construction,No,N/A,,47.100054801869035,-48.713372081034386,,point
+en,697,"Husky Energy Inc., Suncor, Nalcor Energy",White Rose Expansion - White Rose West,Newfoundland and Labrador,Offshore Newfoundland,"3,800.00","2,500 - 5,000",Under Construction,No,N/A,,46.471909691658915,-48.00539284949052,,point
+en,6022,NTPC,Fort Providence and Kakisa Transmission Line,Northwest Territories,Highway 2/5 juction to Fort Providence,60.00,50 - 100,Planned,No,N/A,,60.97746477996914,-117.22141212864338,,point
+en,5002,Inuvialuit Petroleum Corporation,Inuvialuit Energy Security Project,Northwest Territories,17km south of Tuktoyaktuk,160.00,100 - 250,Planned,No,N/A,,69.2973931446749,-133.07630815535455,,point
+en,1063,NTPC,Taltson Hydroelectricity Expansion Project (Phase 1),Northwest Territories,Multiple locations,"1,200.00","1,000 - 2,500",Under Construction,Yes,Hydro,,61.443080421813875,-112.71445927184739,,point
+en,6104,NTPC,Whati Transmission Line,Northwest Territories,Whati to Snare Hydro Complex,41.50,10 - 50 ,Planned,Yes,Hydro,,63.25242788954209,-116.73558351352949,,point
+en,857,Bear Head Energy,Bear Head Energy,Nova Scotia,Richmond County,"8,000.00","5,000 - 10,000",Planned,No,N/A,,45.596597504749376,-61.35684146343753,,point
+en,4220,Port Hawkesbury Paper,Goose Harbour Lake Wind Farm (formerly Pirate Harbour),Nova Scotia,Point Tupper,155.00,100 - 250,Planned,Yes,Wind,,45.60570360575094,-61.37092407029237,,point
+en,4204,Jupiter Hydro,In-Stream Tidal Demonstration Project,Nova Scotia,Bay of Fundy,23.30,10 - 50 ,Planned,Yes,Tidal,,45.357413405075945,-64.40966550695899,,point
+en,4154,Sustane Technologies,Sustane Chester,Nova Scotia,"Chester, NS",16.00,10 - 50 ,Under Construction,Yes,Bioenergy,,44.71885929532686,-64.23958942328696,,point
+en,4205,Nova Innovation,The Nova Tidal Array (Petit Passage),Nova Scotia,Petit Passage,22.00,10 - 50 ,Under Construction,Yes,Tidal,,44.3923451902667,-66.20675907830483,,point
+en,4153,DP Energy Limited (Haligonia Tidal Energy Ltd. / Rio Fundo Operations Canada Ltd.),Uisce Tapa In-Stream Tidal Energy Project,Nova Scotia,Bay of Fundy,117.00,100 - 250,Planned,Yes,Tidal,,45.36465840518318,-64.42845151533173,,point
+en,654,Bruce Power,Bruce Nuclear Refurbishment,Ontario,Tiverton,"13,000.00","10,000 +",Under Construction,Yes,Nuclear,,44.32730859487263,-81.58610414476549,,point
+en,333,Ontario Power Generation,Darlington Refurbishment Project,Ontario,Clarington,"12,800.00","10,000 +",Under Construction,Yes,Nuclear,,43.86987765370181,-78.71949018864062,,point
+en,4216,NRStor and Six Nations of the Grand River Development Corporation Oneida Energy Storage LP,Oneida Energy Storage,Ontario,Ohsweken Nanticoke,800.00,"750 - 1,000",Planned,Yes,Other,,42.82699540697331,-80.05929852530481,,point
+en,7067,Enbridge Gas,Panhandle Regional Expansion,Ontario,"Municipalities of Chatham-Kent, Lakeshore, Leamington",358.00,250 - 500,Planned,No,N/A,,42.37063921550448,-82.38873021443506,,point
+en,8108,Ontario Power Generation,R.H. Saunders Refurbishment,Ontario,Cornwall,600.00,500 - 750,Planned,Yes,Hydro,,45.00962902123348,-74.78765200244551,,point
+en,4148,Ontario Power Generation,Ranney Falls Expansion,Ontario,Campbellford,77.00,50 - 100,Under Construction,No,N/A,,44.291789769462085,-77.8011840315436,,point
+en,5067,Ontario Power Generation,Redevelopment of Coniston station,Ontario,Sudbury,85.00,50 - 100,Planned,Yes,Hydro,,46.4746189873983,-80.81837312268169,,point
+en,5066,Ontario Power Generation,Redevelopment of the Calabogie site,Ontario,Greater Madawaska,137.00,100 - 250,Under Construction,Yes,Hydro,,45.303539991518605,-76.7107076610028,,point
+en,8107,Ontario Power Generation,Sir Adam Beck Complex Refurbishment,Ontario,Niagara Falls,"1,000.00","1,000 - 2,500",Planned,Yes,Hydro,,43.14910851148513,-79.04442323243475,,point
+en,8115,Potentia Renewables Inc.,Skyview 2 Battery Energy Storage System,Ontario,Edwardsburgh-Cardinal,750.00,"750 - 1,000",Planned,Yes,Energy Storage,,44.14855878536593,-76.84013260635508,,point
+en,4072,PEI Energy Corporation,Borden Battery Park,Prince Edward Island,Borden-Carleton,35.00,10 - 50 ,Planned,Yes,Other,,46.253772175730134,-63.69216049802934,,point
+en,2020,PEI Energy Corporation,PEIEC Wind Farm #5,Prince Edward Island,Eastern Kings,80.00,50 - 100,Under Construction,Yes,Wind,,46.433855637314906,-62.0998197500688,,point
+en,7079,Invenergy,Skinners Pond Wind Energy Centre,Prince Edward Island,Sherbrooke; Tignish,85.00,50 - 100,Planned,Yes,Wind,,46.42192268375068,-63.77014007164625,,point
+en,5077,Greenfield Global,Agrandissement usine d'éthanol à Varennes,Quebec,Varennes,120.00,100 - 250,Planned,Yes,Bioenergy,,45.68201108867333,-73.44098453886596,,point
+en,2110,"Nation Innue, RES et Boralex",Apuiat,Quebec,MRC de Sept-Rivières,600.00,500 - 750,Under Construction,Yes,Wind,,50.21057015396229,-66.37465246018533,,point
+en,2114,Chantiers Chibougamau inc.,Centrale de cogénération Assinica,Quebec,Lebel-sur-Quévillon,342.00,250 - 500,Planned,Yes,Bioenergy,,49.93405783371148,-74.33350629654286,,point
+en,1049,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique de la chute du quatre milles,Quebec,Forestville,22.00,10 - 50 ,Planned,Yes,Hydro,,48.72639874641933,-69.0927781365157,,point
+en,1041,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique des chutes du six milles,Quebec,Forestville,45.00,10 - 50 ,Planned,Yes,Hydro,,48.723898741700125,-69.15833365878879,,point
+en,1050,"Manouane Sipi, Société en commandite
+
+",Centrale hydroélectrique Manouane Sipi (Dam B),Quebec,La Tuque,100.00,100 - 250,Planned,Yes,Hydro,,47.38120946849655,-73.57270179046289,,point
+en,2115,Cogénération Val-d'Or,Cogénération Val-d'Or,Quebec,Val-d'Or,72.00,50 - 100,Planned,Yes,Bioenergy,,48.14852540375368,-77.79189830123957,,point
+en,3600,Fibre Pontiac,Fibre Pontiac (The Biomass Conversion Centre),Quebec,Pontiac,120.00,100 - 250,Planned,Yes,Bioenergy,,45.54231605809882,-76.10905848348709,,point
+en,6031,Diageo Canada Inc.,Implantation de mesures de réduction des émissions de GES et de conversion énergétique,Quebec,Salaberry-de-Valleyfield,94.00,50 - 100,Planned,No,N/A,,45.256783648130806,-74.12034437396946,,point
+en,6101,Ville de Québec,Projet de valorisation de la vapeur de l'incinérateur pour le CHU de Québec - Université Laval,Quebec,Ville de Québec,43.80,10 - 50 ,Planned,Yes,Other,,46.83470946667822,-71.20330093275318,,point
+en,1002,"Ministère du développement durable, de l'environnement et des parcs",Réfection du barrage des Quinze,Quebec,Angliers,110.00,100 - 250,Under Construction,Yes,Hydro,,47.5536497395114,-79.24020052176486,,point
+en,1026,Hydro-Québec,Réhabilitation de la centrale Robert-Bourassa,Quebec,Baie-James,732.00,500 - 750,Under Construction,Yes,Hydro,,53.79520621155595,-77.43997590708145,,point
+en,220,Hydro-Québec,Rénovation de groupes à la centrale électrique Beauharnois,Quebec,Beauharnois,"1,600.00","1,000 - 2,500",Under Construction,Yes,Hydro,,45.32898811241681,-73.87550572317538,,point
+en,7077,SAF + Consortium,SAF Consortium,Quebec,Montreal,200.00,100 - 250,Planned,Yes,Bioenergy,,45.597554774103884,-73.60407836987785,,point
+en,703,Éthanol Cellulosique Varennes s.e.c. (Recyclage Carbone Varennes),Usine de carburant à faible intensité carbone (inclut un électrolyseur),Quebec,Varennes,"1,200.00","1,000 - 2,500",Under Construction,Yes,Bioenergy,,45.681224190687864,-73.43509360332713,,point
+en,6098,Elkem Métal Canada,Usine de démonstration de fabrication de briquettes de biocarbone,Quebec,Chicoutimi,46.00,10 - 50 ,Under Construction,Yes,Bioenergy,,48.41233981336846,-71.1298496143123,,point
+en,5076,Résolve Énergie,Usine de production d'éthanol cellulosique,Quebec,Chaudière-Appalaches,300.00,250 - 500,Planned,Yes,Bioenergy,,46.48334082923308,-70.61666490630381,,point
+en,7086,Énergir/WM Québec,WM Sainte-Sophie Landfill RNG Facility,Quebec,Saint-Sophie,200.00,100 - 250,Planned,Yes,Bioenergy,,45.84605120020925,-73.94108478705101,,point
+en,8319,Covenant Energy Ltd.,Covenant Energy  Renewable Diesel Facility,Saskatchewan,Lloydminster,920.00,"750 - 1,000",Planned,Yes,Bioenergy,,53.29464695644856,-109.98372702277987,,point
+en,7029,Federated Co-operatives Limited,FCL HDRD Plant,Saskatchewan,Regina,"2,000.00","1,000 - 2,500",Planned,Yes,Bioenergy,,50.43936850516761,-104.72685984383412,,point
+en,4217,Cenovus Energy Inc.,Spruce Lake East Lloyd,Saskatchewan,Spruce Lake,350.00,250 - 500,Under Construction,No,N/A,,53.54445448051496,-109.0896328587503,,point
+en,4219,Yukon Energy Corporation,Grid-Scale Battery Storage,Yukon,Whitehorse,35.00,10 - 50 ,Under Construction,Yes,Other,,60.77924202999076,-135.27313707668182,,point
+fr,996,"AltaLink, ATCO",Central East Area Transmission Development,Alberta,Multiple locations,"332,00",250 - 500,En construction,Non,N/A,Ligne de transmission,,,"[[{""lon"": -110.8995250775973, ""lat"": 52.84847622790844}, {""lon"": -110.26338681525446, ""lat"": 52.48095427247306}]]",line
+fr,956,Altalink,Chapel Rock to Pincher Creek Area Transmission Development,Alberta,M.D. of Pincher Creek No. 9,"500,00",500 - 750,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -114.3006649470084, ""lat"": 49.739204629756166}, {""lon"": -113.94712782972196, ""lat"": 49.5698936572677}]]",line
+fr,126,Connacher Oil & Gas Ltd.,Great Divide,Alberta,Regional Municipality of Wood Buffalo (RMWB),"600,00",500 - 750,Prévu,Non,N/A,Pipeline,,,"[[{""lon"": -111.82931544365083, ""lat"": 56.11350731592327}, {""lon"": -111.51219189344253, ""lat"": 56.146339143882436}]]",line
+fr,651,FortisBC Energy (Vancouver Island) Inc.,Eagle Mountain - Woodfibre LNG Gas Pipeline Projects,Colombie-Britanique,Coquitlam to Squamish,"350,00",250 - 500,En construction,Non,N/A,Pipeline,,,"[[{""lon"": -122.79309839543868, ""lat"": 49.28492264787294}, {""lon"": -123.16078757162828, ""lat"": 49.714269623244}]]",line
+fr,4231,Enbridge Frontier Inc.,Frontier NGL Plant and Pipeline Project,Colombie-Britanique,Chetwynd,"2 500,00",2 500 - 5 000,Prévu,Non,N/A,Pipeline,,,"[[{""lon"": -121.66892388778616, ""lat"": 55.71251502712359}, {""lon"": -120.72301079854081, ""lat"": 56.15324116754652}]]",line
+fr,885,Pacific Northern Gas Ltd.,Pacific Northern Gas Pipeline Looping Project,Colombie-Britanique,Kitimat To Summit Lake,"1 300,00",1 000 - 2 500,Prévu,Non,N/A,Pipeline,,,"[[{""lon"": -128.68556181861072, ""lat"": 54.03302404275836}, {""lon"": -122.63654198142927, ""lat"": 54.270993856528875}]]",line
+fr,650,TransCanada,Prince Rupert Gas Transmission Project,Colombie-Britanique,North Montney to Port Edward (near Prince Rupert),"5 000,00",5 000 - 10 000,Prévu,Non,N/A,Pipeline,,,"[[{""lon"": -130.29346010802482, ""lat"": 54.23554282730339}, {""lon"": -122.01143165468748, ""lat"": 56.186844993859964}]]",line
+fr,593,Enbridge,Westcoast Connector Gas Transmission Project,Colombie-Britanique,Fort St John to Prince Rupert,"6 000,00",5 000 - 10 000,Prévu,Non,N/A,Pipeline,,,"[[{""lon"": -122.62941305872116, ""lat"": 56.8369599253289}, {""lon"": -130.2868831416294, ""lat"": 54.322935828868324}]]",line
+fr,4073,PEI Energy Corporation,Western PEI Transmission Upgrade,Île-du-Prince-Édouard,"Western Prince County, PEI","44,00",10 - 50 ,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -63.77626077337365, ""lat"": 46.43472346996201}, {""lon"": -64.11740865242652, ""lat"": 46.96495485839825}]]",line
+fr,3641,Manitoba Hydro,Laverendrye-St.Vital 230kV Line & Breakers,Manitoba,Winnipeg,"58,70",50 - 100,En construction,Oui,Hydro,Ligne de transmission,,,"[[{""lon"": -97.36407173881346, ""lat"": 49.790575301930836}, {""lon"": -97.02171364896496, ""lat"": 49.836632336520424}, {""lon"": -97.30445959062916, ""lat"": 49.13351723019125}]]",line
+fr,5064,Manitoba Hydro,Southwest Wpg 115kV Tsfrmr Improv-Phase2,Manitoba,Headingley,"62,00",50 - 100,En construction,Oui,Hydro,Ligne de transmission,,,"[[{""lon"": -97.01891667623597, ""lat"": 49.96927735136907}, {""lon"": -97.35313773911209, ""lat"": 49.80390130356868}]]",line
+fr,1023,Nukik Corp.,Kivalliq Hydro Fibre Link,Multiple,Gillam to Baker Lake,"1 600,00",1 000 - 2 500,Prévu,Oui,Hydro,Ligne de transmission,,,"[[{""lon"": -96.08108123795023, ""lat"": 64.32352700092815}, {""lon"": -92.09020595410392, ""lat"": 62.852285803744955}, {""lon"": -93.85470654436244, ""lat"": 56.67014512837238}]]",line
+fr,6063,Northriver Midstream NEBC Connector GP Inc.,NEBC Connector Project,Multiple,"NW of Wonovon, BC & Gordondale, AB","350,00",250 - 500,Prévu,Oui,Autre,Pipeline,,,"[[{""lon"": -122.0580179950256, ""lat"": 56.92280600646155}, {""lon"": -119.6917170664486, ""lat"": 55.839706295661244}]]",line
+fr,6043,Hydro One,Chatham to Lakeshore Transmission Line,Ontario,"Lakeshore, Chatham-Kent Southwestern Ontario","253,00",250 - 500,En construction,Non,N/A,Ligne de transmission,,,"[[{""lon"": -82.19294415626445, ""lat"": 42.413388231634954}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
+fr,8134,Hydro One,Greater Toronto Area East Line,Ontario,"Pickering/Oshawa, Peterborough","298,00",250 - 500,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -79.11390331526452, ""lat"": 43.85240863311178}, {""lon"": -78.84660323977157, ""lat"": 43.98230866757875}, {""lon"": -78.9320032982593, ""lat"": 44.311308720706165}]]",line
+fr,4001,Hydro One,Hawthorne to Merivale transmission upgrades (Planned),Ontario,Ottawa,"21,30",10 - 50 ,En construction,Oui,Hydro,Ligne de transmission,,,"[[{""lon"": -75.60825830662024, ""lat"": 45.392181053744274}, {""lon"": -75.71923133636517, ""lat"": 45.325215037106126}]]",line
+fr,4215,Hydro One,Lakeshore Transmission Stations Project Leamington Area Transmission Reinforcement (Lakeshore Transmission Station & Chatham to Lakeshore Line),Ontario,Lakeshore Windsor-Essex,"257,00",250 - 500,En construction,Non,N/A,Ligne de transmission,,,"[[{""lon"": -82.60390209543951, ""lat"": 42.203014974089825}, {""lon"": -82.19044027432692, ""lat"": 42.40446445052515}]]",line
+fr,8130,Hydro One,Longwood to Lakeshore Phase 1,Ontario,Municipality of Strathroy-Caradoc to Municipality of Lakeshore,"800,00",750 - 1 000,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -81.62679402842653, ""lat"": 42.95939835627326}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
+fr,8131,Hydro One,Longwood to Lakeshore Phase 2,Ontario,Municipality of Strathroy-Caradoc to Municipality of Lakeshore,"800,00",750 - 1 000,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -81.62679402842653, ""lat"": 42.95939835627326}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
+fr,8132,Hydro One,Mississagi to Third Line Transmission Line,Ontario,"Wharncliffe, Sault Ste. Marie","230,00",100 - 250,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -83.38830494393625, ""lat"": 46.420008838524176}, {""lon"": -84.32880525809954, ""lat"": 46.54500880450048}]]",line
+fr,8133,Hydro One,Northeast Power Line (Mississagi to Hanmer Transmissio Line),Ontario,"Wharncliffe, Sudbury","650,00",500 - 750,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -83.38830494393625, ""lat"": 46.420008838524176}, {""lon"": -80.92080417506084, ""lat"": 46.63170900785126}]]",line
+fr,4000,Hydro One,Northwest Bulk Transmission Line Waasigan Transmission Line,Ontario,Thunder Bay to Dryden,"1 200,00",1 000 - 2 500,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -89.24195708819956, ""lat"": 48.58398878515795}, {""lon"": -91.61500784379284, ""lat"": 48.74362863409662}, {""lon"": -92.84547841733615, ""lat"": 49.854038682594}]]",line
+fr,8137,PUC Transmisison,PUC Tx Project,Ontario,Sault Ste. Marie,"188,00",100 - 250,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -84.39065727586261, ""lat"": 46.5273917973633}, {""lon"": -84.32880525809954, ""lat"": 46.54500880450048}]]",line
+fr,8136,Hydro One,St. Thomas Line (including Centennial Transformer Station & Line),Ontario,City of London to St. Thomas,"381,00",250 - 500,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -81.1605128809628, ""lat"": 42.93962837493266}, {""lon"": -81.15351986738781, ""lat"": 42.793748349566286}]]",line
+fr,6089,Hydro One,St.Clair Transmission Line,Ontario,"St.Clair, Chatham Kent","250,00",250 - 500,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -82.0953441230177, ""lat"": 42.385228232002554}, {""lon"": -82.70597430586251, ""lat"": 42.31002818826645}]]",line
+fr,3509,Wataynikaneyap Power,Wataynikaneyap Transmission Project,Ontario,Northwest Ontario,"1 900,00",1 000 - 2 500,En construction,Non,N/A,Ligne de transmission,,,"[[{""lon"": -92.49780627937037, ""lat"": 49.68148268733783}, {""lon"": -91.58400428261058, ""lat"": 51.1649399400299}, {""lon"": -90.19403390058937, ""lat"": 51.46765908434607}]]",line
+fr,8135,TBD,Wawa to Porcupine,Ontario,"Timmins, Greater Sudbury","650,00",500 - 750,Prévu,Non,N/A,Ligne de transmission,,,"[[{""lon"": -84.5469445005294, ""lat"": 47.88515089361095}, {""lon"": -94.90912907573089, ""lat"": 48.46564544491719}]]",line
+fr,3206,Hydro-Québec,New England Clean Energy Connect (NECEC) project,Québec,Across the Quebec border through Beattie township Maine to Lewiston Maine,"950,00",750 - 1 000,En construction,Non,N/A,Ligne de transmission,,,"[[{""lon"": -70.98428277917243, ""lat"": 45.72302928630145}, {""lon"": -69.96081940375113, ""lat"": 45.333579251748986}, {""lon"": -70.21551841404592, ""lat"": 44.10385202430323}]]",line
+fr,547,Hydro-Québec,Raccordement du complexe de La Romaine au réseau de transport,Québec,Camp satellite line 34 5KV,"1 300,00",1 000 - 2 500,En construction,Non,N/A,Ligne de transmission,,,"[[{""lon"": -63.127846286720974, ""lat"": 50.48894626974321}, {""lon"": -66.57519553477161, ""lat"": 50.22393715100787}]]",line
+fr,3208,"Transmission Developers Inc. (TDI),",Transmission Line - Champlain Hudson Power Express,Québec,Runs south from Canada-US border to the New York metro area,"2 200,00",1 000 - 2 500,En construction,Non,N/A,Ligne de transmission,,,"[[{""lon"": -73.34309052831851, ""lat"": 45.09613609269886}, {""lon"": -73.92068542400284, ""lat"": 40.76311926957715}]]",line
+fr,8021,Horizon New Energy,Aira Solar Project,Alberta,Forty Mile County No. 8,"700,00",500 - 750,Prévu,Oui,Solaire,,49.593546980098836,-110.93400418104007,,point
+fr,4188,Alpin Sun,Airport City Solar,Alberta,Leduc County,"169,00",100 - 250,Prévu,Oui,Solaire,,53.291085568662865,-113.5936694692827,,point
+fr,8022,hep Energy,Alderson Solar Power Project,Alberta,Cypress County,"150,00",100 - 250,Prévu,Oui,Solaire,,50.35223699524816,-111.36066847007169,,point
+fr,6002,Highwood Organics Processing,Aldersyde Bioenergy Facility,Alberta,Foothills No. 31,"25,00",10 - 50 ,Prévu,Oui,Bioénergie,,50.63106673924745,-113.87502409508629,,point
+fr,399,Canadian Natural Resources Limited,AOSP Jackpine,Alberta,Fort McMurray,"12 000,00",10 000 +,Prévu,Non,N/A,,57.224504531129696,-111.36769668637707,,point
+fr,693,Imperial Oil Limited,Aspen' oil sands project (SAGD),Alberta,Regional Municipality of Wood Buffalo,"5 200,00",5 000 - 10 000,Prévu,Non,N/A,,57.24238941042507,-111.53911583727455,,point
+fr,8024,FortisAlberta,Bassano 435S DER Solar,Alberta,Newell County,"15,00",10 - 50 ,En construction,Oui,Solaire,,50.6740259163967,-112.31131976780539,,point
+fr,8002,Renewable Energy Systems Canada Inc.,Big Sky Solar Project,Alberta,Acadia No. 34,"200,00",100 - 250,En construction,Oui,Solaire,,51.19666617526284,-110.28504745129067,,point
+fr,207,Harvest Operations Corp.,BlackGold Oil Sands Project,Alberta,Regional Municipality of Wood Buffalo (SE of Conklin),"540,00",500 - 750,Prévu,Non,N/A,,55.58264649024491,-110.9730248301697,,point
+fr,75,IPC Canada Ltd.,Blackrod,Alberta,Regional Municipality of Wood Buffalo (RMWB) & Lac La Biche County,"2 927,00",2 500 - 5 000,En construction,Non,N/A,,55.611718192527775,-112.61193843788737,,point
+fr,8025,ENGIE Development Canada LP,Buffalo Trail North Wind Project,Alberta,Cypress County,"200,00",100 - 250,En construction,Oui,Éolienne,,49.84235606340341,-110.32929810639786,,point
+fr,4224,WindRiver Power Corp. & TC Energy,Canyon Creek Hydro Power Project (storage),Alberta,Yellowhead County,"200,00",100 - 250,Prévu,Oui,Hydro,,53.53011154187485,-117.52454425439852,,point
+fr,8038,Cielo,Carseland Biomass Gasifier Project,Alberta,Wheatland County,"100,00",100 - 250,Prévu,Non,N/A,,50.88845380982432,-113.39973406570839,,point
+fr,1077,Cenovus Energy Inc.,Christina Lake,Alberta,Cenovus Christina Lake,"900,00",750 - 1 000,Prévu,Non,N/A,,55.57643039920016,-110.89742500969423,,point
+fr,6016,Voltarix Group,Creekside Solar Project,Alberta,Leduc County,"43,00",10 - 50 ,Prévu,Oui,Solaire,,53.24715291243408,-113.82518687368807,,point
+fr,6017,ATCO,Deerfoot Solar Project,Alberta,Calgary,"50,00",50 - 100,En construction,Oui,Solaire,,50.93948275011693,-113.96523820092142,,point
+fr,8007,MYTILINEOS Energy & Metals,Dolcy Solar Project,Alberta,Wainwright No. 61,"275,00",250 - 500,Prévu,Oui,Solaire,,52.68557526410013,-110.47290292641775,,point
+fr,515,Athabasca Oil Corporation,Dover West Clastics,Alberta,Municipal District of Opportunity,"615,00",500 - 750,Prévu,Non,N/A,,57.10045918999997,-113.22511419208392,,point
+fr,3402,Dow Chemical Canada,Dow Net-Zero Polyethylene and Ethylene Derivatives Facility,Alberta,Fort Saskatchewan,"11 500,00",10 000 +,En construction,Oui,Capture et stockage du carbone,,53.7339050194484,-113.17216889065274,,point
+fr,7026,ENMAX Energy Corp.,Enmax Substation No. 1,Alberta,Calgary,"200,00",100 - 250,En construction,Non,N/A,,51.04532474470257,-114.08001425483637,,point
+fr,8001,Renewable Energy Systems Canada Inc.,Enterprise Solar Project,Alberta,Vulcan County,"175,00",100 - 250,En construction,Oui,Solaire,,50.37388877900198,-113.35782491617891,,point
+fr,8010,ATCO,Forty Mile Solar Farm (Granlea Phase 2),Alberta,Forty Mile County No. 8,"400,00",250 - 500,En construction,Oui,Solaire,,49.696514952160506,-111.27160428155803,,point
+fr,7032,ACCIONA Energía,Forty Mile Wind Project (ACCONIA),Alberta,Forty Mile County No. 8,"400,00",250 - 500,En construction,Oui,Éolienne,,49.79284196867155,-111.18601328705076,,point
+fr,7035,Green Impact Partners (In partnership with Carbon Clean Energy and PCL Construction),Future Energy Park Renewable Natural Gas and Ethanol Project,Alberta,Calgary,"1 200,00",1 000 - 2 500,Prévu,Oui,Bioénergie,,51.010139761953205,-113.91401420907387,,point
+fr,6026,TransAlta Corporation,Ghost River WaterCharger Battery Energy Storage,Alberta,Rocky View County,"120,00",100 - 250,Prévu,Non,N/A,,51.21778868494428,-114.70461843700394,,point
+fr,6028,TransAlta Corporation,Glacier Gas Plant CSS (Phase 2),Alberta,Saddle Hills County,"100,00",100 - 250,Prévu,Oui,Capture et stockage du carbone,,55.559547296971765,-119.60377693245539,,point
+fr,8013,Kineticor Resource Corp.,Greenlight Electricity Centre,Alberta,Sturgeon County,"4 500,00",2 500 - 5 000,Prévu,Non,N/A,,53.828815024705335,-113.17863492462718,,point
+fr,4198,Climate Transition Development Corporation,Greenview Geothermal Power Plant (Alberta No. 1),Alberta,Greenview No. 16,"106,00",100 - 250,Prévu,Oui,Géothermique,,54.84183341959331,-117.6498575653256,,point
+fr,808,Spartan Delta Inception Exploration Ltd.,Greenview Sour Gas plant,Alberta,Greenview,"50,00",50 - 100,Prévu,Non,N/A,,54.70000710578636,-119.01501586526526,,point
+fr,89,Canadian Natural Resources Limited,Grouse,Alberta,Hudson Hope,"1 530,00",1 000 - 2 500,Prévu,Non,N/A,,55.466299088800085,-111.75578167788436,,point
+fr,6030,Capital Power,Halkirk Wind Project Phase 2,Alberta,Paintearth County No. 18,"274,00",250 - 500,En construction,Oui,Éolienne,,52.2357210485371,-112.11133016915629,,point
+fr,1079,Japan Canada Oil Sands Limited (JACOS),Hangingstone,Alberta,Fort McMurray,"1 200,00",1 000 - 2 500,Prévu,Non,N/A,,56.288067353317636,-111.60424846001553,,point
+fr,818,Athabasca Oil Corporation,Hangingstone Oil Sands,Alberta,Fort McMurray-Conklin,"640,00",500 - 750,Prévu,Non,N/A,,56.4761462876768,-111.40765438651681,,point
+fr,1083,Value Creation Inc.,Heartland Upgrader,Alberta,Strathcona County,"2 000,00",1 000 - 2 500,Prévu,Non,N/A,,53.54873598659379,-113.35643586959304,,point
+fr,1090,Value Creation Inc.,Heartland Upgrader,Alberta,Strathcona County,"2 000,00",1 000 - 2 500,Prévu,Non,N/A,,53.77218080346211,-113.11677517041406,,point
+fr,8017,Gibson Energy & Varme Energy JV,Heartland Waste to Power Project,Alberta,Strathcona County,"300,00",250 - 500,Prévu,Non,N/A,,53.775940037341286,-113.04027587325821,,point
+fr,7040,Heidelberg Materials,Heidelberg Materials Carbon Capture Utilization and Storage Hub,Alberta,Edmonton,"1 360,00",1 000 - 2 500,Prévu,Oui,Capture et stockage du carbone,,53.57980695822925,-113.60601493535256,,point
+fr,7042,Kiwetinohk Energy Corp,Homestead Solar Project,Alberta,Willow Creek No. 26,"500,00",500 - 750,Prévu,Oui,Solaire,,49.98142074177492,-113.44601383107721,,point
+fr,841,Canadian Natural Resources Limited,Jackfish,Alberta,Regional Municipality of Wood Buffalo (SE of Conklin),"1 300,00",1 000 - 2 500,Prévu,Non,N/A,,55.527907399695295,-110.87381498492836,,point
+fr,7047,Northland Power,Jurassic Solar and Battery Storage,Alberta,Cypress County,"500,00",500 - 750,En construction,Oui,Solaire,,50.66321104513456,-111.11601349770832,,point
+fr,6036,Imperial Oil,Kearl Oil Sand In-Pit Tailings Project,Alberta,Wood Buffalo,"750,00",750 - 1 000,En construction,Non,N/A,,57.41143546491772,-111.16349881604737,,point
+fr,422,Suncor Energy Inc.,Lewis,Alberta,Regional Municipality of Wood Buffalo,"6 200,00",5 000 - 10 000,Prévu,Non,N/A,,56.94062750751476,-111.0483611526399,,point
+fr,7057,Greengate Power Corporation,Luna Solar Project (Phase One),Alberta,Newell County,"700,00",500 - 750,En construction,Oui,Solaire,,50.60377491848504,-112.23601373213037,,point
+fr,7058,Greengate Power Corporation,Luna Solar Project (Phase Two),Alberta,Newell County,"700,00",500 - 750,Prévu,Oui,Solaire,,50.58239591558705,-112.24601372795794,,point
+fr,8004,Federation Group,Marguerite Lake Compressed Air Energy Storage,Alberta,Bonnyville No. 87,"500,00",500 - 750,Prévu,Non,N/A,,54.58571435205573,-110.80400462793247,,point
+fr,6062,Voltarix Group,Moon Lake Solar Project,Alberta,Parkland County,"43,00",10 - 50 ,Prévu,Oui,Solaire,,53.42250078412357,-114.99053218644902,,point
+fr,8042,Canadian Natural Resources Ltd. (CNRL),Naphtha Recovery Unit Tailings Treatment Project,Alberta,Wood Buffalo,"350,00",250 - 500,Prévu,Non,N/A,,57.34739237729774,-111.84100795950293,,point
+fr,1082,Cenovus Energy Inc.,Narrows Lake,Alberta,Meanook,"1 600,00",1 000 - 2 500,Prévu,Non,N/A,,54.61611003860595,-113.4264742565062,,point
+fr,8041,Cenovus Energy Inc.,Narrows Lake Tie-Back to Christina Lake,Alberta,Wood Buffalo,"300,00",250 - 500,En construction,Non,N/A,,55.59027140623013,-110.85275200395415,,point
+fr,6067,Northern Petrochemical Corp.,Northern Petrochemical Ammonia and Methanol Production Facility,Alberta,Greenview No. 16,"2 500,00",2 500 - 5 000,Prévu,Oui,Capture et stockage du carbone,,54.760771401331205,-118.57240841210825,,point
+fr,8029,Renewable Energy Systems Canada Inc.,Nova Solar Project,Alberta,Wheatland County,"225,00",100 - 250,Prévu,Oui,Solaire,,50.84036279377887,-113.52506107992372,,point
+fr,7069,The Pathways Alliance,Pathways Alliance Carbon Capture Storage Hub (Phase 1),Alberta,Improvement District No. 349|Wood Buffalo|Lac la Biche County|Improvement District No. 24 Wood Buffalo|Bonnyville No. 87,"16 500,00",10 000 +,Prévu,Oui,Capture et stockage du carbone,,58.15284035767626,-112.28501642926246,,point
+fr,8009,Peace Energy Cooperative,Peace River Energy Project,Alberta,Peace River,"10,00",10 - 50 ,En construction,Oui,Solaire,,56.24325961802046,-117.35159675881134,,point
+fr,8043,EDF EN Canada,Pe-Na-Koyim Wind Project,Alberta,Blood 148,"425,00",250 - 500,Prévu,Oui,Éolienne,,49.44702573738304,-113.12142762346306,,point
+fr,7055,Kiwetinohk Energy Corp,Phoenix Solar Project,Alberta,Red Deer County,"320,00",250 - 500,Prévu,Oui,Solaire,,52.238027812803274,-114.15701462513617,,point
+fr,4126,Devon Energy Corporation/ BP JV,Pike,Alberta,Regional Municipality of Wood Buffalo,"1 900,00",1 000 - 2 500,Prévu,Non,N/A,,55.59941238878263,-110.99578104140443,,point
+fr,140,Canadian Natural Resources Limited,Pike (Formely Kirby),Alberta,Lac la Biche County,"7 700,00",5 000 - 10 000,Prévu,Non,N/A,,55.448226400882255,-110.82403594354774,,point
+fr,8032,PR Development GP Inc.,Prominence Solar Project,Alberta,Lethbridge County,"120,00",100 - 250,Prévu,Oui,Solaire,,49.857671811480685,-112.71884364191413,,point
+fr,8011,Solar Krafte and Kinbrook Solar,Rainier Solar Farm,Alberta,Newell County,"700,00",500 - 750,Prévu,Oui,Solaire,,50.50213794024314,-111.97481564850649,,point
+fr,8005,MYTILINEOS Energy & Metals,Red Willow Solar,Alberta,Stettler County No. 6,"315,00",250 - 500,Prévu,Oui,Solaire,,52.411529020275935,-112.46171430279654,,point
+fr,6083,Voltarix Group,Rocktree Solar Project,Alberta,Parkland County,"40,00",10 - 50 ,Prévu,Oui,Solaire,,53.515094918936676,-113.91209598176626,,point
+fr,6084,DP Energy,Saamis Solar Farm,Alberta,Medicine Hat,"600,00",500 - 750,Prévu,Oui,Solaire,,50.07068104136028,-110.70735324998958,,point
+fr,649,Husky Oil Operations Ltd.,Saleski' Thermal Oil Sands Project Using CSS,Alberta,M.D. of Opportunity No. 17,"300,00",250 - 500,Prévu,Non,N/A,,56.59335069186159,-113.01275822593301,,point
+fr,7078,Pace Canada LP,Salt Flats Solar Project,Alberta,Brooks,"28,00",10 - 50 ,Prévu,Oui,Solaire,,50.582851951926116,-111.91401365626616,,point
+fr,6086,Silicon Ranch,Scottford Refinery Solar Farm,Alberta,Strathcona County,"100,00",100 - 250,En construction,Oui,Solaire,,53.804246032893666,-113.08892089282085,,point
+fr,684,Osum Oil Sands Corp.,Sepiko Kesik Project,Alberta,Municipal District of Opportunity,"3 200,00",2 500 - 5 000,Prévu,Non,N/A,,56.689006357656304,-113.13101269811,,point
+fr,6088,Expander Energy,Slave Lake Bio-Mass/Gas to Liquids Plant (Phase 1),Alberta,Lesser Slave River No.124,"30,00",10 - 50 ,Prévu,Oui,Bioénergie,,55.26504493081816,-114.57518575876578,,point
+fr,850,Syncrude Canada Ltd.,Stage 4a - MLX-W,Alberta,Mildred Lake,"3 300,00",2 500 - 5 000,En construction,Non,N/A,,57.04521839482405,-111.58510376639647,,point
+fr,7081,ABO Wind Canada Ltd.,Stettler Solar and Battery Storage Project,Alberta,Stettler County No. 6,"160,00",100 - 250,Prévu,Oui,Solaire,,52.29043997702485,-112.75601433198032,,point
+fr,6090,Imperial Oil Ltd.,Strathcona Refinery Renewable Diesel Expansion,Alberta,Strathcona County,"720,00",500 - 750,En construction,Oui,Bioénergie,,53.546099982986796,-113.38417287374237,,point
+fr,4178,Suncor Energy Inc.,Suncor Power Cogeneration Units,Alberta,Regional Municipality of Wood Buffalo,"1 400,00",1 000 - 2 500,En construction,Non,N/A,,56.99719148314166,-111.48051880086578,,point
+fr,6092,Suncor Energy Inc.,Suncor PURE Demonstration Facility,Alberta,Wood Buffalo,"52,50",50 - 100,Prévu,Non,N/A,,57.38056842064643,-111.50978688886617,,point
+fr,8006,MYTILINEOS Energy & Metals,Sunnynook Solar Project,Alberta,Special Area No. 2,"385,00",250 - 500,Prévu,Oui,Solaire,,51.325488045728534,-111.55785977985856,,point
+fr,7083,Evolugen by Brookfield Renewable,Sunrise Solar Project,Alberta,Pincher Creek No. 9,"140,00",100 - 250,Prévu,Oui,Solaire,,49.50343665072535,-113.96301381589504,,point
+fr,858,ConocoPhillips Canada,Surmont (ConocoPhillips),Alberta,Regional Municipality of Wood Buffalo,"6 000,00",5 000 - 10 000,Prévu,Non,N/A,,56.193607428181664,-110.950615259331,,point
+fr,566,MEG Energy Corp.,Surmont (MEG),Alberta,Regional Municipality of Wood Buffalo (RMWB),"5 000,00",5 000 - 10 000,Prévu,Non,N/A,,56.03446644647128,-110.72023014054042,,point
+fr,1094,Imperial Oil Limited,Syncrude Mildred Lake Extension,Alberta,Regional Municipality of Wood Buffalo,"3 300,00",2 500 - 5 000,En construction,Non,N/A,,57.07271569259319,-111.58987053496057,,point
+fr,341,Osum Oil Sands Corp.,Taiga,Alberta,MD of Bonnyville (N of Cold Lake),"1 570,00",1 000 - 2 500,Prévu,Non,N/A,,54.680885237327786,-110.13649482869653,,point
+fr,427,Sunshine Oilsands Ltd.,Thickwood (Sunshine),Alberta,Regional Municipality of Wood Buffalo (RMWB) & Municipal District of Opportunity,"1 753,00",1 000 - 2 500,Prévu,Non,N/A,,56.83332213272563,-112.78679927161589,,point
+fr,607,Value Creation Inc.,TriStar Advanced (In Situ + Upgrader),Alberta,Regional Municipality of Wood Buffalo (RMWB),"2 000,00",1 000 - 2 500,Prévu,Non,N/A,,56.736821431867355,-111.15659353076784,,point
+fr,4057,EDF Renewables Canada,Vulcan Solar Project,Alberta,Vulcan County,"155,00",100 - 250,Prévu,Oui,Solaire,,50.40378979208051,-113.25314690001144,,point
+fr,429,Sunshine Oilsands Ltd.,West Ells,Alberta,MD of Opportunity,"2 950,00",2 500 - 5 000,Prévu,Non,N/A,,57.20249825698639,-112.72925381463206,,point
+fr,629,Sunshine Oilsands Ltd.,West Ells,Alberta,MD of Opportunity,"2 100,00",1 000 - 2 500,Prévu,Non,N/A,,57.20249825698639,-112.72925381463206,,point
+fr,293,Capstone Infrastructure Corporation,Wild Rose' Wind Farm (Phase 2),Alberta,Cypress County (S of Irvine),"300,00",250 - 500,En construction,Oui,Éolienne,,49.9560870790788,-110.26577211996009,,point
+fr,7085,Enerfin Energy Company of Canada Inc.,Winnifred Wind Power Project,Alberta,Forty Mile County No. 8|Cypress County,"180,00",100 - 250,En construction,Oui,Éolienne,,49.940744994924856,-111.04901329386502,,point
+fr,2121,Ainsworth Energy Co. Ltd.,Anahim Lake Bioenergy Project,Colombie-Britanique,"Cariboo, Anahim Lake","15,00",10 - 50 ,Prévu,Oui,Bioénergie,,52.41840330533732,-126.48629291719534,,point
+fr,5018,Tlingit Homeland Energy Limited Partnership (THELP),Atlin Hydro Expansion project,Colombie-Britanique,Atlin,"330,00",250 - 500,Prévu,Oui,Hydro,,59.582978309458504,-133.64456514110927,,point
+fr,4096,Boralex,Babcock Ridge Wind Farm,Colombie-Britanique,Tumbler Ridge,"50,00",50 - 100,Prévu,Oui,Éolienne,,55.111676098148344,-121.00065101738561,,point
+fr,4104,Canfor Corporation/Licella,Biofuel Facility,Colombie-Britanique,Prince George,"70,00",50 - 100,Prévu,Oui,Bioénergie,,53.92241583182545,-122.74572286801184,,point
+fr,2122,Yun Ka Whu'ten Holdings,Biomass Project - Anahim Lake,Colombie-Britanique,"Cariboo, Anahim Lake","15,00",10 - 50 ,Prévu,Oui,Bioénergie,,52.46535345624128,-125.31755776109446,,point
+fr,2124,Nations Energy Corp.,Biomass Project - Kamloops,Colombie-Britanique,"Thompson, Okanagan, Kamloops","15,00",10 - 50 ,Prévu,Oui,Bioénergie,,50.716193995918665,-120.38900139195297,,point
+fr,536,ecoTECH Energy Group (Canada) Inc,Biomass Project - McBride,Colombie-Britanique,McBride,"140,00",100 - 250,Prévu,Oui,Bioénergie,,53.342923128836276,-120.26762021633148,,point
+fr,4111,Borealis Geopower,Canoe Reach Geothermal Energy Project,Colombie-Britanique,Valemount,"120,00",100 - 250,Prévu,Oui,Géothermique,,52.83062223236273,-119.26593285122959,,point
+fr,725,Greater Vancouver Regional District,Capilano (Cleveland) Dam Power Plant,Colombie-Britanique,North Vancouver,"90,00",50 - 100,Prévu,Oui,Hydro,,49.3605096147232,-123.11086546642917,,point
+fr,737,BC Hydro,Capilano Substation Upgrade,Colombie-Britanique,North Vancouver,"87,00",50 - 100,En construction,Non,N/A,,49.3350756137466,-123.10830445934201,,point
+fr,938,Cedar LNG  (partnership between Pembina Pipeline Corporation and Haisla Nation),Cedar LNG,Colombie-Britanique,Kitimat,"4 600,00",2 500 - 5 000,Prévu,Non,N/A,,53.9254160368947,-128.72793278374058,,point
+fr,4081,BC Hydro,Cheakamus Recoat Units 1 & 2 Penstock Project,Colombie-Britanique,Squamish,"35,00",10 - 50 ,En construction,Oui,Hydro,,49.702858623121855,-123.15902656864714,,point
+fr,758,Pristine Power Inc./Cheslatta Forest Products,Cheslatta Green Energy Project,Colombie-Britanique,Burns Lake,"46,00",10 - 50 ,Prévu,Oui,Bioénergie,,53.579205533293006,-124.95001710191428,,point
+fr,5010,Deh Tai GP Ltd,Clarke Lake Geothermal Development,Colombie-Britanique,Fort Nelson,"100,00",100 - 250,Prévu,Oui,Géothermique,,58.772043036142314,-122.66014132981157,,point
+fr,76,Blue Fuel Energy Corp.,Clean Methanol Plant,Colombie-Britanique,Chetwynd,"1 000,00",1 000 - 2 500,Prévu,Oui,Bioénergie,,55.69815303268969,-121.62970637520029,,point
+fr,970,Creative Energy Vancouver Platforms Inc.,Creative Energy Plant,Colombie-Britanique,Vancouver,"100,00",100 - 250,En construction,Oui,Bioénergie,,49.27818960970724,-123.11245344429159,,point
+fr,4106,BC Hydro,Downtown Vancouver Electricity Supply - West End Strategic Property Purchase,Colombie-Britanique,Vancouver,"81,00",50 - 100,En construction,Non,N/A,,49.274225608574376,-123.12562044560613,,point
+fr,584,Quicksilver Resources/ Kohlberg Kravis Roberts & Co. L.P. (KKR),Fortune Creek Gas Plant,Colombie-Britanique,Fort Nelson,"760,00",750 - 1 000,Prévu,Non,N/A,,58.805561953355244,-122.69543305064624,,point
+fr,188,Fosthall Creek Power LP,Fosthall Creek Hydropower Project,Colombie-Britanique,Nakusp,"50,00",50 - 100,Prévu,Oui,Hydro,,50.241338271704784,-117.80108978074341,,point
+fr,4080,Pacific Greengen Power Inc.,Fries Creek Hydroelectric Project,Colombie-Britanique,Harrison Hot Springs,"20,00",10 - 50 ,Prévu,Oui,Hydro,,49.30777176217097,-121.79963723788129,,point
+fr,965,BC Hydro,G.M. Shrum Units 1 to 10 Control Systems Upgrade Project,Colombie-Britanique,Hudson Hope,"75,00",50 - 100,En construction,Non,N/A,,56.01667596272236,-122.2027623146087,,point
+fr,10,Aeolis Wind Power Corporation,Hackney Hills Wind Park,Colombie-Britanique,Fort St. John,"400,00",250 - 500,Prévu,Oui,Éolienne,,56.24926915303787,-120.84756646255396,,point
+fr,2059,Aeolis / Boralex,Hackney Hills Wind Park (Aeolis / Boralex),Colombie-Britanique,Fort St. John,"5 200,00",5 000 - 10 000,Prévu,Oui,Éolienne,,56.24772515471928,-120.84189946150133,,point
+fr,587,Rio Tinto Alcan Inc.,Kemano Tunnel Project (T2),Colombie-Britanique,Kitimat,"500,00",500 - 750,En construction,Non,N/A,,53.63813014145951,-127.92482256362713,,point
+fr,4116,Alcan Aluminum Ltd. and the Province of BC,Kenney Dam Cold Water Release Facility,Colombie-Britanique,Vanderhoof,"275,00",250 - 500,Prévu,Non,N/A,,53.566672534048,-124.95001709775694,,point
+fr,165,WindRiver Power Corp.,Kinskuch Hydroelectric Project,Colombie-Britanique,Iskut,"250,00",250 - 500,Prévu,Oui,Hydro,,57.85717888202591,-129.97926772233177,,point
+fr,718,Kitimat Clean Ltd.,Kitimat Clean Oil Refinery,Colombie-Britanique,Kitimat,"22 000,00",10 000 +,Prévu,Non,N/A,,54.16667174310097,-128.7000178722288,,point
+fr,1037,"Western LNG, Nisga'a Nation, Rockies LNG Partners",Ksi Lisims LNG,Colombie-Britanique,Nasoga Gulf,"10 000,00",10 000 +,Prévu,Non,N/A,,54.9015738613368,-130.0726223522332,,point
+fr,974,Enbridge/ Borealis Inc./ Kitselas First Nation,Lakelse Geothermal Power Plant,Colombie-Britanique,Terrace,"120,00",100 - 250,Prévu,Oui,Géothermique,,54.44564506940774,-128.5403179643181,,point
+fr,4108,BCHydro,LNG Canada Load Interconnection Project,Colombie-Britanique,Kitimat,"82,00",50 - 100,En construction,Non,N/A,,54.06154105091425,-128.63390482274906,,point
+fr,397,"LNG Canada (Shell Canada Limited, PETRONAS, Korea Gas Corporation (KOGAS), Mitsubishi Corporation, and PetroChina Company Limited)",LNG Canada Phase 1,Colombie-Britanique,Kitimat,"47 900,00",10 000 +,En construction,Non,N/A,,54.08195605054043,-128.63807583162247,,point
+fr,6046,"LNG Canada (Shell Canada Limited, PETRONAS, Korea Gas Corporation (KOGAS), Mitsubishi Corporation, and PetroChina Company Limited)",LNG Canada Phase 2,Colombie-Britanique,Kitimat,"25 000,00",10 000 +,Prévu,Non,N/A,,54.08195605054043,-128.63807583162247,,point
+fr,764,Highwater Power Corporation Altagas Ltd.,Log Creek Water Power  Project,Colombie-Britanique,Boston Bar,"20,00",10 - 50 ,Prévu,Oui,Hydro,,50.058845809258266,-121.71741143265548,,point
+fr,753,Kruger Energy Inc.,Maselpanik Creek Hydro Project,Colombie-Britanique,Chilliwack,"35,00",10 - 50 ,Prévu,Oui,Hydro,,49.089005814775916,-121.25841509066645,,point
+fr,4079,BC Hydro,Mica 600V Circuit Breaker Upgrades Project,Colombie-Britanique,Revelstoke,"32,00",10 - 50 ,En construction,Oui,Hydro,,51.049743272838825,-118.19468608791263,,point
+fr,4093,BC Hydro,Mica Modernize Controls (Digital) Project,Colombie-Britanique,Revelstoke,"56,00",50 - 100,En construction,Oui,Hydro,,51.001448269397514,-118.19375507247065,,point
+fr,283,Mount Hays Wind Farm Limited Partnership,Mount Hays Wind Farm,Colombie-Britanique,Prince Rupert,"125,00",100 - 250,Prévu,Oui,Éolienne,,54.29148782491433,-130.30822113182606,,point
+fr,4125,Nisga’a Nation,Nisga’a LNG,Colombie-Britanique,Nasoga Gulf,"10 000,00",10 000 +,Prévu,Non,N/A,,54.9015738613368,-130.0726223522332,,point
+fr,1057,Pacific Future Energy,Pacific Future Energy Oil Refinery,Colombie-Britanique,Kitimat,"10 000,00",10 000 +,Prévu,Non,N/A,,53.95290133774895,-128.72261179293892,,point
+fr,2060,Pacific Future Energy,Pacific Future Energy Refinery Project,Colombie-Britanique,Harrison Lake,"55,00",50 - 100,En construction,Non,N/A,,54.28390105591053,-128.61758690801616,,point
+fr,67,BC Hydro,Peace River Site C Hydro-electric project,Colombie-Britanique,Fort St. John,"16 000,00",10 000 +,En construction,Oui,Hydro,,56.250795152938124,-120.8483104651631,,point
+fr,707,Port Alberni Harbour Authority,Port Alberni LNG Export Facility,Colombie-Britanique,Port Alberni,"1 600,00",1 000 - 2 500,Prévu,Non,N/A,,49.23001940949698,-124.81107569248316,,point
+fr,983,Red Willow Wind LP,Red Willow Wind Farm,Colombie-Britanique,Tumbler Ridge,"480,00",250 - 500,Prévu,Oui,Éolienne,,54.80866917107059,-120.37502777981982,,point
+fr,4119,AltaGas / Vopak Development Canada Inc.,Ridley Island Energy Export Facility (REEF),Colombie-Britanique,Prince Rupert,"750,00",750 - 1 000,Prévu,Non,N/A,,54.31419282379263,-130.32220114276933,,point
+fr,545,Holmes Hydro,Robson Valley Hydroelectric Project,Colombie-Britanique,McBride,"200,00",100 - 250,Prévu,Oui,Hydro,,53.34686518237983,-119.84065113668431,,point
+fr,757,Innergex Renewable Energy Inc.,Shovel Creek Hydroelectric Project,Colombie-Britanique,Harrison Hot Springs,"40,00",10 - 50 ,Prévu,Oui,Hydro,,49.72120578115957,-121.8148153526896,,point
+fr,759,KMC Power,Tamihi Creek Hydro Project,Colombie-Britanique,Chilliwack,"50,00",50 - 100,Prévu,Oui,Hydro,,49.04610574860923,-121.81961517251978,,point
+fr,692,EDF Renouvelables,Taylor Wind Project,Colombie-Britanique,Taylor,"900,00",750 - 1 000,Prévu,Oui,Éolienne,,55.99995315826963,-120.76406333996326,,point
+fr,5060,Fortis,Tilbury LNG Phase 1B,Colombie-Britanique,Delta,"60,00",50 - 100,Prévu,Non,N/A,,49.141803214496605,-123.02352039431199,,point
+fr,5052,Fortis,Tilbury LNG Phase 2,Colombie-Britanique,Delta,"3 500,00",2 500 - 5 000,Prévu,Non,N/A,,49.141803214496605,-123.02352039431199,,point
+fr,943,"Tilbury Jetty Marine Partnership (Fortis, Seaspan, Shell)",Tilbury Marine Jetty,Colombie-Britanique,Delta,"175,00",100 - 250,Prévu,Non,N/A,,49.141803214496605,-123.02352039431199,,point
+fr,2123,Ainsworth Energy Co. Ltd.,Tumbler Ridge Bioenergy Project,Colombie-Britanique,"Thompson, Okanagan, Kelowna","15,00",10 - 50 ,Prévu,Oui,Bioénergie,,50.02465907974658,-119.37344401338525,,point
+fr,4077,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,Colombie-Britanique,Port Alice,"18,00",10 - 50 ,Prévu,Oui,Hydro,,50.424702129188304,-127.48728041724996,,point
+fr,2025,Synex Energy Resources Ltd.,Victoria Lake Hydro Project,Colombie-Britanique,"Vancouver Island/Coast, Port Alice","18,00",10 - 50 ,Prévu,Oui,Hydro,,50.43487012859043,-127.48676841941774,,point
+fr,942,Watson Island LNG Corporation,Watson Island LNG,Colombie-Britanique,Prince Rupert,"270,00",250 - 500,Prévu,Non,N/A,,54.24115582634536,-130.2971731090514,,point
+fr,754,Pacific Coastal Wave Energy Corp.,Wave Energy Project,Colombie-Britanique,Ucluelet,"20,00",10 - 50 ,Prévu,Oui,Marémotrice,,48.920605313372754,-125.54481571782894,,point
+fr,652,Woodfibre LNG,Woodfibre LNG project,Colombie-Britanique,Squamish,"6 880,00",5 000 - 10 000,En construction,Non,N/A,,49.66667261106278,-123.2527935730007,,point
+fr,4072,PEI Energy Corporation,Borden Battery Park,Île-du-Prince-Édouard,Borden-Carleton,"35,00",10 - 50 ,Prévu,Oui,Autre,,46.253772175730134,-63.69216049802934,,point
+fr,2020,PEI Energy Corporation,PEIEC Wind Farm #5,Île-du-Prince-Édouard,Eastern Kings,"80,00",50 - 100,En construction,Oui,Éolienne,,46.433855637314906,-62.0998197500688,,point
+fr,7079,Invenergy,Skinners Pond Wind Energy Centre,Île-du-Prince-Édouard,Sherbrooke; Tignish,"85,00",50 - 100,Prévu,Oui,Éolienne,,46.42192268375068,-63.77014007164625,,point
+fr,8327,Manitoba Hydro,Ashern Station Bank Addition,Manitoba,Ashern,"20,59",10 - 50 ,En construction,Oui,Hydro,,51.182208366843184,-98.34551032330548,,point
+fr,8329,Manitoba Hydro,Dauphin Vermillion 230kV Stn Capacity In,Manitoba,Dauphin,"20,85",10 - 50 ,En construction,Oui,Hydro,,51.149008208168205,-100.04901080101858,,point
+fr,3643,Manitoba Hydro,Dorsey Synchronous Condenser Refurbishment,Manitoba,Dorsey,"65,40",50 - 100,En construction,Oui,Hydro,,49.90592833509774,-97.12396969452502,,point
+fr,6045,Manitoba Hydro,Limestone Units 1-3 & 5-10 Stator Re-Wedge,Manitoba,Nelson River,"37,80",10 - 50 ,En construction,Oui,Hydro,,56.50690927832008,-94.10691042372036,,point
+fr,6047,Manitoba Hydro,Long Spruce Generator Protection Replacement,Manitoba,Nelson River,"22,50",10 - 50 ,En construction,Oui,Hydro,,56.39790924556829,-94.36921047473238,,point
+fr,7073,Manitoba Hydro,Pointe du Bois Renewable Energy Project,Manitoba,Wpg River,"387,30",250 - 500,En construction,Oui,Hydro,,50.30000851434925,-95.55000931596169,,point
+fr,4201,Manitoba Hydro,Portage Area Capacity Enhancements,Manitoba,Portage la Prarie Area,"84,80",50 - 100,En construction,Oui,Hydro,,49.97230824054932,-98.29031004119356,,point
+fr,8328,Manitoba Hydro,Slave Falls 7 Bay Sluiceway Concrete Res,Manitoba,Wpg River,"84,32",50 - 100,En construction,Oui,Hydro,,50.22200850338435,-95.56800930504849,,point
+fr,298,NB Power and Partners,Smart Grid Investments Phase,Nouveau-Brunswick,Various locations across NB  (St. John),"147,00",100 - 250,En construction,Oui,Hydro,,45.275189351486695,-66.06856207473336,,point
+fr,857,Bear Head Energy,Bear Head Energy,Nouvelle-Écosse,Richmond County,"8 000,00",5 000 - 10 000,Prévu,Non,N/A,,45.596597504749376,-61.35684146343753,,point
+fr,4220,Port Hawkesbury Paper,Goose Harbour Lake Wind Farm (formerly Pirate Harbour),Nouvelle-Écosse,Point Tupper,"155,00",100 - 250,Prévu,Oui,Éolienne,,45.60570360575094,-61.37092407029237,,point
+fr,4204,Jupiter Hydro,In-Stream Tidal Demonstration Project,Nouvelle-Écosse,Bay of Fundy,"23,30",10 - 50 ,Prévu,Oui,Marémotrice,,45.357413405075945,-64.40966550695899,,point
+fr,4154,Sustane Technologies,Sustane Chester,Nouvelle-Écosse,"Chester, NS","16,00",10 - 50 ,En construction,Oui,Bioénergie,,44.71885929532686,-64.23958942328696,,point
+fr,4205,Nova Innovation,The Nova Tidal Array (Petit Passage),Nouvelle-Écosse,Petit Passage,"22,00",10 - 50 ,En construction,Oui,Marémotrice,,44.3923451902667,-66.20675907830483,,point
+fr,4153,DP Energy Limited (Haligonia Tidal Energy Ltd. / Rio Fundo Operations Canada Ltd.),Uisce Tapa In-Stream Tidal Energy Project,Nouvelle-Écosse,Bay of Fundy,"117,00",100 - 250,Prévu,Oui,Marémotrice,,45.36465840518318,-64.42845151533173,,point
+fr,654,Bruce Power,Bruce Nuclear Refurbishment,Ontario,Tiverton,"13 000,00",10 000 +,En construction,Oui,Nucléaire,,44.32730859487263,-81.58610414476549,,point
+fr,333,Ontario Power Generation,Darlington Refurbishment Project,Ontario,Clarington,"12 800,00",10 000 +,En construction,Oui,Nucléaire,,43.86987765370181,-78.71949018864062,,point
+fr,4216,NRStor and Six Nations of the Grand River Development Corporation Oneida Energy Storage LP,Oneida Energy Storage,Ontario,Ohsweken Nanticoke,"800,00",750 - 1 000,Prévu,Oui,Autre,,42.82699540697331,-80.05929852530481,,point
+fr,7067,Enbridge Gas,Panhandle Regional Expansion,Ontario,"Municipalities of Chatham-Kent, Lakeshore, Leamington","358,00",250 - 500,Prévu,Non,N/A,,42.37063921550448,-82.38873021443506,,point
+fr,8108,Ontario Power Generation,R.H. Saunders Refurbishment,Ontario,Cornwall,"600,00",500 - 750,Prévu,Oui,Hydro,,45.00962902123348,-74.78765200244551,,point
+fr,4148,Ontario Power Generation,Ranney Falls Expansion,Ontario,Campbellford,"77,00",50 - 100,En construction,Non,N/A,,44.291789769462085,-77.8011840315436,,point
+fr,5067,Ontario Power Generation,Redevelopment of Coniston station,Ontario,Sudbury,"85,00",50 - 100,Prévu,Oui,Hydro,,46.4746189873983,-80.81837312268169,,point
+fr,5066,Ontario Power Generation,Redevelopment of the Calabogie site,Ontario,Greater Madawaska,"137,00",100 - 250,En construction,Oui,Hydro,,45.303539991518605,-76.7107076610028,,point
+fr,8107,Ontario Power Generation,Sir Adam Beck Complex Refurbishment,Ontario,Niagara Falls,"1 000,00",1 000 - 2 500,Prévu,Oui,Hydro,,43.14910851148513,-79.04442323243475,,point
+fr,8115,Potentia Renewables Inc.,Skyview 2 Battery Energy Storage System,Ontario,Edwardsburgh-Cardinal,"750,00",750 - 1 000,Prévu,Oui,Stockage d'énergie,,44.14855878536593,-76.84013260635508,,point
+fr,5077,Greenfield Global,Agrandissement usine d'éthanol à Varennes,Québec,Varennes,"120,00",100 - 250,Prévu,Oui,Bioénergie,,45.68201108867333,-73.44098453886596,,point
+fr,2110,"Nation Innue, RES et Boralex",Apuiat,Québec,MRC de Sept-Rivières,"600,00",500 - 750,En construction,Oui,Éolienne,,50.21057015396229,-66.37465246018533,,point
+fr,2114,Chantiers Chibougamau inc.,Centrale de cogénération Assinica,Québec,Lebel-sur-Quévillon,"342,00",250 - 500,Prévu,Oui,Bioénergie,,49.93405783371148,-74.33350629654286,,point
+fr,1049,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique de la chute du quatre milles,Québec,Forestville,"22,00",10 - 50 ,Prévu,Oui,Hydro,,48.72639874641933,-69.0927781365157,,point
+fr,1041,"Énergie hydroélectrique Pessamit, Société en commandite",Centrale hydroélectrique des chutes du six milles,Québec,Forestville,"45,00",10 - 50 ,Prévu,Oui,Hydro,,48.723898741700125,-69.15833365878879,,point
+fr,1050,"Manouane Sipi, Société en commandite
+
+",Centrale hydroélectrique Manouane Sipi (Dam B),Québec,La Tuque,"100,00",100 - 250,Prévu,Oui,Hydro,,47.38120946849655,-73.57270179046289,,point
+fr,2115,Cogénération Val-d'Or,Cogénération Val-d'Or,Québec,Val-d'Or,"72,00",50 - 100,Prévu,Oui,Bioénergie,,48.14852540375368,-77.79189830123957,,point
+fr,3600,Fibre Pontiac,Fibre Pontiac (The Biomass Conversion Centre),Québec,Pontiac,"120,00",100 - 250,Prévu,Oui,Bioénergie,,45.54231605809882,-76.10905848348709,,point
+fr,6031,Diageo Canada Inc.,Implantation de mesures de réduction des émissions de GES et de conversion énergétique,Québec,Salaberry-de-Valleyfield,"94,00",50 - 100,Prévu,Non,N/A,,45.256783648130806,-74.12034437396946,,point
+fr,6101,Ville de Québec,Projet de valorisation de la vapeur de l'incinérateur pour le CHU de Québec - Université Laval,Québec,Ville de Québec,"43,80",10 - 50 ,Prévu,Oui,Autre,,46.83470946667822,-71.20330093275318,,point
+fr,1002,"Ministère du développement durable, de l'environnement et des parcs",Réfection du barrage des Quinze,Québec,Angliers,"110,00",100 - 250,En construction,Oui,Hydro,,47.5536497395114,-79.24020052176486,,point
+fr,1026,Hydro-Québec,Réhabilitation de la centrale Robert-Bourassa,Québec,Baie-James,"732,00",500 - 750,En construction,Oui,Hydro,,53.79520621155595,-77.43997590708145,,point
+fr,220,Hydro-Québec,Rénovation de groupes à la centrale électrique Beauharnois,Québec,Beauharnois,"1 600,00",1 000 - 2 500,En construction,Oui,Hydro,,45.32898811241681,-73.87550572317538,,point
+fr,7077,SAF + Consortium,SAF Consortium,Québec,Montreal,"200,00",100 - 250,Prévu,Oui,Bioénergie,,45.597554774103884,-73.60407836987785,,point
+fr,703,Éthanol Cellulosique Varennes s.e.c. (Recyclage Carbone Varennes),Usine de carburant à faible intensité carbone (inclut un électrolyseur),Québec,Varennes,"1 200,00",1 000 - 2 500,En construction,Oui,Bioénergie,,45.681224190687864,-73.43509360332713,,point
+fr,6098,Elkem Métal Canada,Usine de démonstration de fabrication de briquettes de biocarbone,Québec,Chicoutimi,"46,00",10 - 50 ,En construction,Oui,Bioénergie,,48.41233981336846,-71.1298496143123,,point
+fr,5076,Résolve Énergie,Usine de production d'éthanol cellulosique,Québec,Chaudière-Appalaches,"300,00",250 - 500,Prévu,Oui,Bioénergie,,46.48334082923308,-70.61666490630381,,point
+fr,7086,Énergir/WM Québec,WM Sainte-Sophie Landfill RNG Facility,Québec,Saint-Sophie,"200,00",100 - 250,Prévu,Oui,Bioénergie,,45.84605120020925,-73.94108478705101,,point
+fr,8319,Covenant Energy Ltd.,Covenant Energy  Renewable Diesel Facility,Saskatchewan,Lloydminster,"920,00",750 - 1 000,Prévu,Oui,Bioénergie,,53.29464695644856,-109.98372702277987,,point
+fr,7029,Federated Co-operatives Limited,FCL HDRD Plant,Saskatchewan,Regina,"2 000,00",1 000 - 2 500,Prévu,Oui,Bioénergie,,50.43936850516761,-104.72685984383412,,point
+fr,4217,Cenovus Energy Inc.,Spruce Lake East Lloyd,Saskatchewan,Spruce Lake,"350,00",250 - 500,En construction,Non,N/A,,53.54445448051496,-109.0896328587503,,point
+fr,8085,Churchill Falls Labrador Corporation,Electric Utility 2024 Capital Program (Churchill Falls Labrador Corporation),Terre-Neuve-et-Labrador,Labrador,"105,70",100 - 250,En construction,Oui,Hydro,,53.594618683678604,-64.30802990540812,,point
+fr,8086,Newfoundland and Labrador Hydro,Electric Utility 2024 Capital Program (Newfoundland and Labrador Hydro),Terre-Neuve-et-Labrador,Various,"139,30",100 - 250,En construction,Oui,Hydro,,54.18001085139709,-58.42999663894855,,point
+fr,8087,Newfoundland Power Inc.,Electric Utility 2024 Capital Program (Newfoundland Power Inc.),Terre-Neuve-et-Labrador,Various,"115,90",100 - 250,En construction,Oui,Hydro,,48.5500100368941,-58.42999651375843,,point
+fr,6029,LNG Newfoundland and Labrador,Grassy Point LNG,Terre-Neuve-et-Labrador,Grassy Point,"10 000,00",10 000 +,Prévu,Non,N/A,,47.752800932336214,-54.02714193437833,,point
+fr,215,Husky Energy Inc.,White Rose Expansion,Terre-Neuve-et-Labrador,Offshore Newfoundland,"2 300,00",1 000 - 2 500,En construction,Non,N/A,,47.100054801869035,-48.713372081034386,,point
+fr,697,"Husky Energy Inc., Suncor, Nalcor Energy",White Rose Expansion - White Rose West,Terre-Neuve-et-Labrador,Offshore Newfoundland,"3 800,00",2 500 - 5 000,En construction,Non,N/A,,46.471909691658915,-48.00539284949052,,point
+fr,6022,NTPC,Fort Providence and Kakisa Transmission Line,Territoires du Nord-Ouest,Highway 2/5 juction to Fort Providence,"60,00",50 - 100,Prévu,Non,N/A,,60.97746477996914,-117.22141212864338,,point
+fr,5002,Inuvialuit Petroleum Corporation,Inuvialuit Energy Security Project,Territoires du Nord-Ouest,17km south of Tuktoyaktuk,"160,00",100 - 250,Prévu,Non,N/A,,69.2973931446749,-133.07630815535455,,point
+fr,1063,NTPC,Taltson Hydroelectricity Expansion Project (Phase 1),Territoires du Nord-Ouest,Multiple locations,"1 200,00",1 000 - 2 500,En construction,Oui,Hydro,,61.443080421813875,-112.71445927184739,,point
+fr,6104,NTPC,Whati Transmission Line,Territoires du Nord-Ouest,Whati to Snare Hydro Complex,"41,50",10 - 50 ,Prévu,Oui,Hydro,,63.25242788954209,-116.73558351352949,,point
+fr,4219,Yukon Energy Corporation,Grid-Scale Battery Storage,Yukon,Whitehorse,"35,00",10 - 50 ,En construction,Oui,Autre,,60.77924202999076,-135.27313707668182,,point

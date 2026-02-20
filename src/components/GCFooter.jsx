@@ -179,10 +179,9 @@ const GCFooter = ({ lang }) => {
                 }
                 
                 .gc-footer-container {
-                    max-width: 1400px;
+                    max-width: 1140px;
                     margin: 0 auto;
-                    /* ALIGNMENT FIX: Left 55px (Flag), Right 30px (Lang Button) */
-                    padding: 0 30px 0 55px;
+                    padding: 0 20px;
                 }
                 
                 /* Contextual Navigation Section (NRCan) */

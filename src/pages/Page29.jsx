@@ -363,7 +363,7 @@ const Page29 = () => {
                     color: #555;
                     margin-top: 20px;
                     line-height: 1.4;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page29-footnotes dl {

@@ -13,7 +13,7 @@ const Page103 = () => {
         <main 
             id="main-content"
             tabIndex="-1"
-            className="page-content page-103 page103-main" 
+            className="page-content page-103 page103-main cover-page" 
             role="main"
             style={{
                 backgroundColor: '#58504a',
@@ -25,9 +25,7 @@ const Page103 = () => {
             <style>{`
 
 .page103-main {
-    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
+    width: 100%;
     margin-top: 0;
     padding: 0;
 }

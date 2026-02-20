@@ -223,6 +223,17 @@ class Section2Investment(SectionProcessor):
             if total > 0:
                 year_int = int(year)
                 
+                # Calculate percentages (pre-calculated for frontend)
+                oil_gas_pct = round((oil_gas / total) * 100, 1)
+                electricity_pct = round((electricity / total) * 100, 1)
+                other_pct = round((other / total) * 100, 1)
+                
+                # Convert to billions for display (values are in millions)
+                total_billions = round(total / 1000, 2)
+                oil_gas_billions = round(oil_gas / 1000, 2)
+                electricity_billions = round(electricity / 1000, 2)
+                other_billions = round(other / 1000, 2)
+                
                 # STEP 2: Add to calc table data
                 calc_data.append({
                     'year': year_int,
@@ -232,19 +243,44 @@ class Section2Investment(SectionProcessor):
                     'total': round(total, 1),
                 })
                 
-                # Also store with semantic vectors for backwards compatibility
+                # Store with semantic vectors - raw values (millions)
                 data_rows.extend([
                     ('capex_oil_gas', str(year_int), round(oil_gas, 1)),
                     ('capex_electricity', str(year_int), round(electricity, 1)),
                     ('capex_other', str(year_int), round(other, 1)),
                     ('capex_total', str(year_int), round(total, 1)),
                 ])
+                
+                # Store pre-calculated percentages
+                data_rows.extend([
+                    ('capex_oil_gas_pct', str(year_int), oil_gas_pct),
+                    ('capex_electricity_pct', str(year_int), electricity_pct),
+                    ('capex_other_pct', str(year_int), other_pct),
+                ])
+                
+                # Store pre-calculated billions values
+                data_rows.extend([
+                    ('capex_oil_gas_billions', str(year_int), oil_gas_billions),
+                    ('capex_electricity_billions', str(year_int), electricity_billions),
+                    ('capex_other_billions', str(year_int), other_billions),
+                    ('capex_total_billions', str(year_int), total_billions),
+                ])
         
         metadata_rows = [
+            # Raw values in millions
             ('capex_oil_gas', 'Capital expenditures - Oil and gas extraction', 'Millions of dollars', 'millions'),
             ('capex_electricity', 'Capital expenditures - Electric power', 'Millions of dollars', 'millions'),
             ('capex_other', 'Capital expenditures - Other energy', 'Millions of dollars', 'millions'),
             ('capex_total', 'Capital expenditures - Total energy sector', 'Millions of dollars', 'millions'),
+            # Pre-calculated percentages
+            ('capex_oil_gas_pct', 'Capital expenditures - Oil and gas (% of total)', 'Percent', 'percent'),
+            ('capex_electricity_pct', 'Capital expenditures - Electric power (% of total)', 'Percent', 'percent'),
+            ('capex_other_pct', 'Capital expenditures - Other energy (% of total)', 'Percent', 'percent'),
+            # Pre-calculated billions values
+            ('capex_oil_gas_billions', 'Capital expenditures - Oil and gas extraction', 'Billions of dollars', 'billions'),
+            ('capex_electricity_billions', 'Capital expenditures - Electric power', 'Billions of dollars', 'billions'),
+            ('capex_other_billions', 'Capital expenditures - Other energy', 'Billions of dollars', 'billions'),
+            ('capex_total_billions', 'Capital expenditures - Total energy sector', 'Billions of dollars', 'billions'),
         ]
         
         # STEP 2: Store calculated data in calc_capital_expenditures table
@@ -326,6 +362,23 @@ class Section2Investment(SectionProcessor):
             if total > 0:
                 year_int = int(year)
                 
+                # Calculate percentages (pre-calculated for frontend)
+                fuel_energy_pipelines_pct = round((fuel_energy_pipelines / total) * 100, 1)
+                transport_pct = round((transport / total) * 100, 1)
+                health_housing_pct = round((health_housing / total) * 100, 1)
+                education_pct = round((education / total) * 100, 1)
+                public_safety_pct = round((public_safety / total) * 100, 1)
+                environmental_pct = round((environmental / total) * 100, 1)
+                
+                # Convert to billions for display (values are in millions)
+                total_billions = round(total / 1000, 2)
+                fuel_energy_pipelines_billions = round(fuel_energy_pipelines / 1000, 2)
+                transport_billions = round(transport / 1000, 2)
+                health_housing_billions = round(health_housing / 1000, 2)
+                education_billions = round(education / 1000, 2)
+                public_safety_billions = round(public_safety / 1000, 2)
+                environmental_billions = round(environmental / 1000, 2)
+                
                 # STEP 2: Add to calc table data
                 calc_data.append({
                     'year': year_int,
@@ -338,7 +391,7 @@ class Section2Investment(SectionProcessor):
                     'total': round(float(total), 1),
                 })
                 
-                # Also store with semantic vectors for backwards compatibility
+                # Store with semantic vectors - raw values (millions)
                 data_rows.extend([
                     ('infra_fuel_energy_pipelines', str(year_int), round(float(fuel_energy_pipelines), 1)),
                     ('infra_transport', str(year_int), round(float(transport), 1)),
@@ -348,8 +401,30 @@ class Section2Investment(SectionProcessor):
                     ('infra_environmental', str(year_int), round(float(environmental), 1)),
                     ('infra_total', str(year_int), round(float(total), 1)),
                 ])
+                
+                # Store pre-calculated percentages
+                data_rows.extend([
+                    ('infra_fuel_energy_pipelines_pct', str(year_int), fuel_energy_pipelines_pct),
+                    ('infra_transport_pct', str(year_int), transport_pct),
+                    ('infra_health_housing_pct', str(year_int), health_housing_pct),
+                    ('infra_education_pct', str(year_int), education_pct),
+                    ('infra_public_safety_pct', str(year_int), public_safety_pct),
+                    ('infra_environmental_pct', str(year_int), environmental_pct),
+                ])
+                
+                # Store pre-calculated billions values
+                data_rows.extend([
+                    ('infra_fuel_energy_pipelines_billions', str(year_int), fuel_energy_pipelines_billions),
+                    ('infra_transport_billions', str(year_int), transport_billions),
+                    ('infra_health_housing_billions', str(year_int), health_housing_billions),
+                    ('infra_education_billions', str(year_int), education_billions),
+                    ('infra_public_safety_billions', str(year_int), public_safety_billions),
+                    ('infra_environmental_billions', str(year_int), environmental_billions),
+                    ('infra_total_billions', str(year_int), total_billions),
+                ])
         
         metadata_rows = [
+            # Raw values in millions
             ('infra_fuel_energy_pipelines', 'Infrastructure - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
             ('infra_transport', 'Infrastructure - Transport (less pipelines)', 'Millions of dollars', 'millions'),
             ('infra_health_housing', 'Infrastructure - Health and housing', 'Millions of dollars', 'millions'),
@@ -357,6 +432,21 @@ class Section2Investment(SectionProcessor):
             ('infra_public_safety', 'Infrastructure - Public safety and other', 'Millions of dollars', 'millions'),
             ('infra_environmental', 'Infrastructure - Environmental protection', 'Millions of dollars', 'millions'),
             ('infra_total', 'Infrastructure - Total net stock', 'Millions of dollars', 'millions'),
+            # Pre-calculated percentages
+            ('infra_fuel_energy_pipelines_pct', 'Infrastructure - Fuel, energy and pipelines (% of total)', 'Percent', 'percent'),
+            ('infra_transport_pct', 'Infrastructure - Transport (% of total)', 'Percent', 'percent'),
+            ('infra_health_housing_pct', 'Infrastructure - Health and housing (% of total)', 'Percent', 'percent'),
+            ('infra_education_pct', 'Infrastructure - Education (% of total)', 'Percent', 'percent'),
+            ('infra_public_safety_pct', 'Infrastructure - Public safety (% of total)', 'Percent', 'percent'),
+            ('infra_environmental_pct', 'Infrastructure - Environmental protection (% of total)', 'Percent', 'percent'),
+            # Pre-calculated billions values
+            ('infra_fuel_energy_pipelines_billions', 'Infrastructure - Fuel, energy and pipelines', 'Billions of dollars', 'billions'),
+            ('infra_transport_billions', 'Infrastructure - Transport', 'Billions of dollars', 'billions'),
+            ('infra_health_housing_billions', 'Infrastructure - Health and housing', 'Billions of dollars', 'billions'),
+            ('infra_education_billions', 'Infrastructure - Education', 'Billions of dollars', 'billions'),
+            ('infra_public_safety_billions', 'Infrastructure - Public safety', 'Billions of dollars', 'billions'),
+            ('infra_environmental_billions', 'Infrastructure - Environmental protection', 'Billions of dollars', 'billions'),
+            ('infra_total_billions', 'Infrastructure - Total net stock', 'Billions of dollars', 'billions'),
         ]
         
         # STEP 2: Store calculated data in calc_infrastructure table
@@ -437,6 +527,7 @@ class Section2Investment(SectionProcessor):
             )
             
             if total > 0:
+                # Raw values in millions
                 data_rows.extend([
                     ('asset_wind_solar', str(year_int), round(float(values['wind_solar']), 1)),
                     ('asset_transmission_distribution', str(year_int), round(float(transmission_distribution), 1)),
@@ -446,6 +537,18 @@ class Section2Investment(SectionProcessor):
                     ('asset_steam_thermal', str(year_int), round(float(values['steam_thermal']), 1)),
                     ('asset_other_electric', str(year_int), round(float(values['other_electric']), 1)),
                     ('asset_total', str(year_int), round(float(total), 1)),
+                ])
+                
+                # Pre-calculated billions values (millions / 1000)
+                data_rows.extend([
+                    ('asset_wind_solar_billions', str(year_int), round(float(values['wind_solar']) / 1000, 2)),
+                    ('asset_transmission_distribution_billions', str(year_int), round(float(transmission_distribution) / 1000, 2)),
+                    ('asset_pipelines_billions', str(year_int), round(float(values['pipelines']) / 1000, 2)),
+                    ('asset_nuclear_billions', str(year_int), round(float(values['nuclear']) / 1000, 2)),
+                    ('asset_hydraulic_billions', str(year_int), round(float(values['hydraulic']) / 1000, 2)),
+                    ('asset_steam_thermal_billions', str(year_int), round(float(values['steam_thermal']) / 1000, 2)),
+                    ('asset_other_electric_billions', str(year_int), round(float(values['other_electric']) / 1000, 2)),
+                    ('asset_total_billions', str(year_int), round(float(total) / 1000, 2)),
                 ])
         
         metadata_rows = [
@@ -457,6 +560,14 @@ class Section2Investment(SectionProcessor):
             ('asset_steam_thermal', 'Investment by asset - Steam/thermal', 'Millions of dollars', 'millions'),
             ('asset_other_electric', 'Investment by asset - Other electric', 'Millions of dollars', 'millions'),
             ('asset_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions'),
+            ('asset_wind_solar_billions', 'Investment by asset - Wind and solar (billions)', 'Billions of dollars', 'billions'),
+            ('asset_transmission_distribution_billions', 'Investment by asset - Transmission and distribution (billions)', 'Billions of dollars', 'billions'),
+            ('asset_pipelines_billions', 'Investment by asset - Pipelines (billions)', 'Billions of dollars', 'billions'),
+            ('asset_nuclear_billions', 'Investment by asset - Nuclear (billions)', 'Billions of dollars', 'billions'),
+            ('asset_hydraulic_billions', 'Investment by asset - Hydraulic (billions)', 'Billions of dollars', 'billions'),
+            ('asset_steam_thermal_billions', 'Investment by asset - Steam/thermal (billions)', 'Billions of dollars', 'billions'),
+            ('asset_other_electric_billions', 'Investment by asset - Other electric (billions)', 'Billions of dollars', 'billions'),
+            ('asset_total_billions', 'Investment - Total fuel, energy and pipeline (billions)', 'Billions of dollars', 'billions'),
         ]
         
         return self.store_raw_data('investment_by_asset', data_rows, metadata_rows)
@@ -524,10 +635,17 @@ class Section2Investment(SectionProcessor):
                     ('intl_cdia', str(year_int), round(float(cdia_total), 1)),
                     ('intl_fdi', str(year_int), round(float(fdi_total), 1)),
                 ])
+                # Pre-calculated billions for frontend
+                data_rows.extend([
+                    ('intl_cdia_billions', str(year_int), round(float(cdia_total) / 1000, 1)),
+                    ('intl_fdi_billions', str(year_int), round(float(fdi_total) / 1000, 1)),
+                ])
         
         metadata_rows = [
             ('intl_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions'),
             ('intl_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions'),
+            ('intl_cdia_billions', 'CDIA - Energy industry (billions)', 'Billions of dollars', 'billions'),
+            ('intl_fdi_billions', 'FDI - Energy industry (billions)', 'Billions of dollars', 'billions'),
         ]
         
         return self.store_raw_data('international_investment', data_rows, metadata_rows)
@@ -713,6 +831,13 @@ class Section2Investment(SectionProcessor):
                 if pd.notna(value):
                     data_rows.append(('enviro_all_industries_total', str(year), float(value)))
         
+        # Add pre-calculated billions for key totals (values are in millions)
+        billions_fields = ['oil_gas_total', 'electric_total', 'natural_gas_total', 'petroleum_total', 'all_industries_total']
+        for vector, ref_date, value in list(data_rows):
+            field = vector.replace('enviro_', '')
+            if field in billions_fields:
+                data_rows.append((f'{vector}_billions', ref_date, round(float(value) / 1000, 2)))
+        
         metadata_rows = [
             ('enviro_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
             ('enviro_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions'),
@@ -725,12 +850,22 @@ class Section2Investment(SectionProcessor):
             ('enviro_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
             ('enviro_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions'),
             ('enviro_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+            ('enviro_oil_gas_total_billions', 'Oil and gas - Total (billions)', 'Billions of dollars', 'billions'),
+            ('enviro_electric_total_billions', 'Electric power - Total (billions)', 'Billions of dollars', 'billions'),
+            ('enviro_all_industries_total_billions', 'All industries - Total (billions)', 'Billions of dollars', 'billions'),
         ]
+        
+        # Add pre-calculated billions for total fields
+        billions_rows = []
+        for vector, ref_date, value in data_rows:
+            if vector.endswith('_total'):
+                billions_rows.append((f'{vector}_billions', ref_date, round(float(value) / 1000, 2)))
+        data_rows.extend(billions_rows)
         
         return self.store_raw_data('environmental_protection', data_rows, metadata_rows)
     
     def _get_nrcan_mpi_url(self) -> str:
-        """Get URL for NRCan Major Projects Inventory page."""
+        """Get URL for NRCan Major Projects Inventory."""
         return "https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034"
     
     def _parse_table_cell(self, cell_text: str):
@@ -785,10 +920,10 @@ class Section2Investment(SectionProcessor):
         return years
     
     def _fetch_nrcan_mpi_tables(self):
-        """Fetch and parse tables from NRCan Major Projects Inventory page."""
+        """Fetch and parse tables from NRCan Major Projects Inventory."""
         from bs4 import BeautifulSoup
         
-        print("    Fetching NRCan Major Projects Inventory page...")
+        print("    Fetching NRCan Major Projects Inventory...")
         url = self._get_nrcan_mpi_url()
         
         try:
@@ -797,7 +932,7 @@ class Section2Investment(SectionProcessor):
             soup = BeautifulSoup(response.content, 'html.parser')
             
             tables = soup.find_all('table')
-            print(f"    Found {len(tables)} tables on page")
+            print(f"    Found {len(tables)} tables in NRCan MPI")
             
             energy_table = None
             cleantech_table = None
@@ -824,7 +959,7 @@ class Section2Investment(SectionProcessor):
             return energy_table, cleantech_table, soup
             
         except Exception as e:
-            print(f"    ERROR fetching NRCan MPI page: {e}")
+            print(f"    ERROR fetching NRCan MPI: {e}")
             return None, None, None
     
     def _parse_energy_table(self, table) -> dict:
@@ -974,7 +1109,7 @@ class Section2Investment(SectionProcessor):
         return data
     
     def _extract_energy_data_from_text(self, soup) -> dict:
-        """Fallback extraction from page text if table parsing fails."""
+        """Fallback extraction if table parsing fails."""
         import re
         
         if soup is None:
@@ -1027,7 +1162,7 @@ class Section2Investment(SectionProcessor):
         return data
     
     def _extract_cleantech_data_from_text(self, soup) -> dict:
-        """Fallback extraction for clean tech data from page text."""
+        """Fallback extraction for clean tech data."""
         import re
         
         if soup is None:
@@ -1091,7 +1226,7 @@ class Section2Investment(SectionProcessor):
         """
         Process major projects data from NRCan Major Projects Inventory.
         
-        Scrapes Table 1 (Energy Projects by category) from the NRCan MPI page.
+        Scrapes Table 1 (Energy Projects by category) from the NRCan MPI.
         
         Returns:
             Number of data rows processed
@@ -1162,7 +1297,7 @@ class Section2Investment(SectionProcessor):
         """
         Process clean technology data from NRCan Major Projects Inventory.
         
-        Scrapes Table 4 (Clean Technology breakdown) from the NRCan MPI page.
+        Scrapes Table 4 (Clean Technology breakdown) from the NRCan MPI.
         
         Returns:
             Number of data rows processed
@@ -1482,13 +1617,10 @@ class Section2Investment(SectionProcessor):
                 }
                 csv_rows.append(row)
         
-        # Write directly to CSV file (this data doesn't fit the standard data.csv format)
+        # Store in database for export
         if csv_rows:
-            csv_df = pd.DataFrame(csv_rows)
-            script_dir = Path(__file__).parent.parent.parent
-            csv_path = script_dir / "public" / "data" / "major_projects_map.csv"
-            csv_df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-            print(f"    Major Projects Map: saved EN({len(en_points)} points, {len(en_lines)} lines) FR({len(fr_points)} points, {len(fr_lines)} lines)")
-            print(f"    Major Projects Map CSV: saved {len(csv_rows)} rows to {csv_path}")
+            self.repo.insert_major_projects_map(csv_rows)
+            print(f"    Major Projects Map: stored EN({len(en_points)} points, {len(en_lines)} lines) FR({len(fr_points)} points, {len(fr_lines)} lines)")
+            print(f"    Major Projects Map: {len(csv_rows)} rows saved to database")
         
         return len(csv_rows)

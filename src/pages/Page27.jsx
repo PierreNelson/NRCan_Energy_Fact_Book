@@ -241,13 +241,14 @@ const Page27 = () => {
             tickVals.push(y);
         }
 
-        const totalValues = pageData.map(d => {
+        // Use pre-calculated total_billions from database if available
+        const totalValues = pageData.map(d => d.total_billions ?? (() => {
             let total = 0;
             CATEGORY_ORDER.forEach(cat => {
                 total += (d[cat] || 0) / 1000;
             });
             return total;
-        });
+        })());
 
         const LEGEND_ORDER_ZOOMED = [
             'transmission_distribution',
@@ -272,7 +273,8 @@ const Page27 = () => {
         const LEGEND_ORDER = windowWidth <= 1536 ? LEGEND_ORDER_ZOOMED : LEGEND_ORDER_DEFAULT;
 
         const traces = CATEGORY_ORDER.map((cat) => {
-            const values = pageData.map(d => (d[cat] || 0) / 1000);
+            // Use pre-calculated billions from database if available
+            const values = pageData.map(d => d[`${cat}_billions`] ?? ((d[cat] || 0) / 1000));
 
             const hoverTexts = values.map((v, i) => {
                 const y = years[i];
@@ -326,10 +328,14 @@ const Page27 = () => {
         const firstYearNum = firstYear.year;
         const latestYearNum = latestYear.year;
 
-        let total = 0;
-        CATEGORY_ORDER.forEach(cat => {
-            total += (latestYear[cat] || 0) / 1000;
-        });
+        // Use pre-calculated total_billions from database if available
+        let total = latestYear.total_billions ?? (() => {
+            let t = 0;
+            CATEGORY_ORDER.forEach(cat => {
+                t += (latestYear[cat] || 0) / 1000;
+            });
+            return t;
+        })();
 
         if (lang === 'en') {
             return `Stacked bar chart showing public and private investment in fuel, energy and pipeline infrastructure from ${firstYearNum} to ${latestYearNum}. Total investment in ${latestYearNum} was approximately ${formatBillionSR(total)}. Expand the data table below for detailed values.`;
@@ -442,22 +448,27 @@ const Page27 = () => {
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
-                                let total = 0;
-                                CATEGORY_ORDER.forEach(cat => {
-                                    total += (yearData[cat] || 0) / 1000;
-                                });
+                                // Use pre-calculated total_billions from database
+                                const total = yearData.total_billions ?? (() => {
+                                    let t = 0;
+                                    CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
+                                    return t;
+                                })();
                                 return (
                                     <tr key={yearData.year}>
                                         <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
-                                        {CATEGORY_ORDER.map(cat => (
+                                        {CATEGORY_ORDER.map(cat => {
+                                            const val = yearData[`${cat}_billions`] ?? ((yearData[cat] || 0) / 1000);
+                                            return (
                                             <td 
                                                 key={cat} 
                                                 style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumber((yearData[cat] || 0) / 1000)}${cellUnitSR}`}
+                                                aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumber(val)}${cellUnitSR}`}
                                             >
-                                                {formatNumber((yearData[cat] || 0) / 1000)}
+                                                {formatNumber(val)}
                                             </td>
-                                        ))}
+                                            );
+                                        })}
                                         <td 
                                             style={{ textAlign: 'right', border: '1px solid #ddd' }}
                                             aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${formatNumber(total)}${cellUnitSR}`}
@@ -525,12 +536,16 @@ const Page27 = () => {
             `Total ${unitHeader}`
         ];
         const rows = pageData.map(yearData => {
-            let total = 0;
+            // Use pre-calculated billions from database
             const values = CATEGORY_ORDER.map(cat => {
-                const val = (yearData[cat] || 0) / 1000;
-                total += val;
+                const val = yearData[`${cat}_billions`] ?? ((yearData[cat] || 0) / 1000);
                 return val.toFixed(2);
             });
+            const total = yearData.total_billions ?? (() => {
+                let t = 0;
+                CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
+                return t;
+            })();
             return [yearData.year, ...values, total.toFixed(2)];
         });
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
@@ -574,12 +589,16 @@ const Page27 = () => {
         });
 
         const dataRows = pageData.map(yearData => {
-            let total = 0;
+            // Use pre-calculated billions from database
             const values = CATEGORY_ORDER.map(cat => {
-                const val = (yearData[cat] || 0) / 1000;
-                total += val;
+                const val = yearData[`${cat}_billions`] ?? ((yearData[cat] || 0) / 1000);
                 return val.toFixed(2);
             });
+            const total = yearData.total_billions ?? (() => {
+                let t = 0;
+                CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
+                return t;
+            })();
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 20 })], alignment: AlignmentType.CENTER })] }),
@@ -733,7 +752,7 @@ const Page27 = () => {
                 .page27-body-text {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page27-container {

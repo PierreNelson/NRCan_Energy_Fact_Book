@@ -249,12 +249,24 @@ class Section1Indicators(SectionProcessor):
                     ('econ_gdp', str(year_int), round(float(gdp_total), 1)),
                     ('econ_investment_value', str(year_int), round(float(investment_value), 1)),
                 ])
+                
+                # Pre-calculated values for frontend (thousands for jobs, billions for monetary)
+                data_rows.extend([
+                    ('econ_jobs_thousands', str(year_int), round(float(jobs_total) / 1000, 1)),
+                    ('econ_employment_income_billions', str(year_int), round(float(income_total) / 1000, 2)),
+                    ('econ_gdp_billions', str(year_int), round(float(gdp_total) / 1000, 2)),
+                    ('econ_investment_value_billions', str(year_int), round(float(investment_value) / 1000, 2)),
+                ])
         
         metadata_rows = [
             ('econ_jobs', 'Economic contributions - Jobs (direct + indirect)', 'Number', 'units'),
             ('econ_employment_income', 'Economic contributions - Employment income', 'Millions of dollars', 'millions'),
             ('econ_gdp', 'Economic contributions - GDP', 'Millions of dollars', 'millions'),
             ('econ_investment_value', 'Annual investment - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
+            ('econ_jobs_thousands', 'Economic contributions - Jobs (thousands)', 'Thousands', 'thousands'),
+            ('econ_employment_income_billions', 'Economic contributions - Employment income (billions)', 'Billions of dollars', 'billions'),
+            ('econ_gdp_billions', 'Economic contributions - GDP (billions)', 'Billions of dollars', 'billions'),
+            ('econ_investment_value_billions', 'Annual investment (billions)', 'Billions of dollars', 'billions'),
         ]
         
         # STEP 2: Store calculated data in calc_economic_contributions table
@@ -342,6 +354,17 @@ class Section1Indicators(SectionProcessor):
                     ('gdp_nominal_electricity_pct', str(year), electricity_pct),
                     ('gdp_nominal_other_pct', str(year), other_pct),
                 ])
+                
+                # Pre-calculated billions values for frontend
+                data_rows.extend([
+                    ('gdp_nominal_total_billions', str(year), round(total_nominal_gdp / 1000, 0)),
+                    ('gdp_nominal_direct_billions', str(year), round(energy_plus_direct / 1000, 0)),
+                    ('gdp_nominal_indirect_billions', str(year), round(energy_plus_indirect / 1000, 0)),
+                    ('gdp_nominal_petroleum_billions', str(year), round(petroleum_direct / 1000, 0)),
+                    ('gdp_nominal_electricity_billions', str(year), round(electricity_direct / 1000, 0)),
+                    ('gdp_nominal_other_billions', str(year), round(other_direct / 1000, 0)),
+                    ('gdp_nominal_market_billions', str(year), round(nominal_gdp_market / 1000, 0)),
+                ])
         
         metadata_rows = [
             ('gdp_nominal_total', "Energy's nominal GDP contribution - Total", 'Millions of dollars', 'millions'),
@@ -357,6 +380,13 @@ class Section1Indicators(SectionProcessor):
             ('gdp_nominal_petroleum_pct', "Energy's nominal GDP share - Petroleum", 'Percent', 'percent'),
             ('gdp_nominal_electricity_pct', "Energy's nominal GDP share - Electricity", 'Percent', 'percent'),
             ('gdp_nominal_other_pct', "Energy's nominal GDP share - Other", 'Percent', 'percent'),
+            ('gdp_nominal_total_billions', "Energy's nominal GDP - Total (billions)", 'Billions of dollars', 'billions'),
+            ('gdp_nominal_direct_billions', "Energy's nominal GDP - Direct (billions)", 'Billions of dollars', 'billions'),
+            ('gdp_nominal_indirect_billions', "Energy's nominal GDP - Indirect (billions)", 'Billions of dollars', 'billions'),
+            ('gdp_nominal_petroleum_billions', "Energy's nominal GDP - Petroleum (billions)", 'Billions of dollars', 'billions'),
+            ('gdp_nominal_electricity_billions', "Energy's nominal GDP - Electricity (billions)", 'Billions of dollars', 'billions'),
+            ('gdp_nominal_other_billions', "Energy's nominal GDP - Other (billions)", 'Billions of dollars', 'billions'),
+            ('gdp_nominal_market_billions', "Nominal GDP at market prices (billions)", 'Billions of dollars', 'billions'),
         ]
         
         return self.store_raw_data('nominal_gdp', data_rows, metadata_rows)

@@ -711,7 +711,7 @@ const Page33 = () => {
                     line-height: 1.6;
                     color: var(--gc-text);
                     margin-bottom: 20px;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page33-narrative strong {
@@ -800,7 +800,7 @@ const Page33 = () => {
                     color: #666;
                     margin: 0;
                     line-height: 1.5;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
                 
                 .page33-footnote-container {

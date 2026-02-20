@@ -388,7 +388,8 @@ const Page37 = () => {
     }, [lang]);
     const annotations = useMemo(() => {
         if (!chartData) return [];
-        const totalBillions = (chartData.total || 0) / 1000;
+        // Use pre-calculated billions from database
+        const totalBillions = currentYearData?.total_billions ?? ((chartData.total || 0) / 1000);
 
         const centerText = lang === 'en'
             ? `<b>Total</b><br><b>$${totalBillions.toFixed(0)}B</b>`
@@ -399,10 +400,11 @@ const Page37 = () => {
             font: { size: windowWidth <= 480 ? 14 : windowWidth <= 768 ? 16 : 22, color: '#424243', family: 'Arial Black, sans-serif' },
             showarrow: false,
         }];
-    }, [chartData, lang, windowWidth]);
-    const formatNumber = (val) => {
+    }, [chartData, currentYearData, lang, windowWidth]);
+    const formatNumber = (val, preCalcBillions) => {
         if (val >= 1000) {
-            return `$${(val / 1000).toFixed(1)} ${lang === 'en' ? 'billion' : 'milliards de dollars'}`;
+            const billions = preCalcBillions ?? (val / 1000);
+            return `$${billions.toFixed(1)} ${lang === 'en' ? 'billion' : 'milliards de dollars'}`;
         }
         return `$${val.toLocaleString()} ${getText('page37_million', lang)}`;
     };
@@ -894,7 +896,7 @@ const getAccessibleDataTable = () => {
                     font-size: 20px;
                     margin-bottom: 10px;
                     line-height: 1.5;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page37-subtitle:focus,
@@ -908,7 +910,7 @@ const getAccessibleDataTable = () => {
                     font-size: 20px;
                     margin-bottom: 15px;
                     line-height: 1.5;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page37-content-row {
@@ -957,7 +959,7 @@ const getAccessibleDataTable = () => {
                     line-height: 1.6;
                     padding-left: 20px;
                     list-style-type: disc;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page37-bullets li {
@@ -969,7 +971,7 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37-data-table {
-                    margin-top: 20px;
+                    margin-top: -50px;
                     margin-bottom: 0;
                     font-family: Arial, sans-serif;
                     width: 100%;
@@ -1040,6 +1042,11 @@ const getAccessibleDataTable = () => {
                     .page37-text-column {
                         padding-top: 10px;
                     }
+
+                    .page37-data-table {
+                        margin-top: -80px;
+                    }
+
                 }
 
                 @media (max-width: 1536px) {
@@ -1066,6 +1073,10 @@ const getAccessibleDataTable = () => {
                     }
                     .page37-chart-area {
                         height: 550px;
+                    }
+
+                     .page37-data-table {
+                        margin-top: -140px;
                     }
                 }
 
@@ -1112,6 +1123,10 @@ const getAccessibleDataTable = () => {
                         min-height: 400px;
                         margin-bottom: 0 !important; 
                     }
+
+                     .page37-data-table {
+                        margin-top: 0px;
+                    }
                 }
 
                 @media (max-width: 640px) {
@@ -1120,6 +1135,10 @@ const getAccessibleDataTable = () => {
                     }
                     .page37-chart-column {
                         height: auto !important;
+                    }
+
+                      .page37-data-table {
+                        margin-top: -40px;
                     }
                 }
 

@@ -241,6 +241,66 @@ class DataRepository:
         
         return self.db.execute_many(query, params_list)
     
+    def insert_major_projects_map(self, rows: List[Dict[str, Any]]):
+        """
+        Insert major projects map data for CSV export.
+        
+        Args:
+            rows: List of row dictionaries with map feature data
+        """
+        if not rows:
+            return 0
+        
+        # Clear existing and insert fresh
+        self.db.execute_non_query("DELETE FROM raw_major_projects_map")
+        
+        query = """
+            INSERT INTO raw_major_projects_map 
+            (lang, feature_id, company, project_name, province, location, 
+             capital_cost, capital_cost_range, status, clean_technology, 
+             clean_technology_type, line_type, lat, lon, paths, feature_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        
+        params_list = [
+            (
+                str(r.get('lang', '')),
+                str(r.get('id', '')),
+                str(r.get('company', '')),
+                str(r.get('project_name', '')),
+                str(r.get('province', '')),
+                str(r.get('location', '')),
+                str(r.get('capital_cost', '')),
+                str(r.get('capital_cost_range', '')),
+                str(r.get('status', '')),
+                str(r.get('clean_technology', '')),
+                str(r.get('clean_technology_type', '')),
+                str(r.get('line_type', '')),
+                str(r.get('lat', '')),
+                str(r.get('lon', '')),
+                str(r.get('paths', '')),
+                str(r.get('type', ''))
+            )
+            for r in rows
+        ]
+        
+        return self.db.execute_many(query, params_list)
+    
+    def get_major_projects_map_for_export(self) -> List[Dict[str, Any]]:
+        """
+        Get major projects map data for CSV export.
+        
+        Returns:
+            List of row dictionaries
+        """
+        return self.db.execute_query("""
+            SELECT lang, feature_id as id, company, project_name, province, location,
+                   capital_cost, capital_cost_range, status, clean_technology,
+                   clean_technology_type, line_type, lat, lon, paths, feature_type as type
+            FROM raw_major_projects_map
+            ORDER BY lang, feature_type, province, project_name
+        """)
+    
     # =========================================================================
     # CALCULATED DATA OPERATIONS
     # =========================================================================

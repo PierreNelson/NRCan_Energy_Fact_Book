@@ -131,17 +131,21 @@ const Layout = () => {
                     position: relative;
                 }
                 
-                /* Strict Alignment Container - Padding is now set dynamically via JS */
+                /* Strict Alignment Container - 1140px max width */
                 .layout-content-container {
                     width: 100%;
-                    max-width: 1400px;
+                    max-width: 1140px;
                     margin: 0 auto;
-                    /* Padding is applied via inline styles from alignment automation */
+                    padding: 0;
                     text-align: left;
                     position: relative;
                     overflow: visible;
                     box-sizing: border-box;
-                    transition: padding 0.1s ease-out; /* Smooth adjustment during zoom */
+                }
+                
+                /* Content pages get padding, cover pages don't */
+                .layout-content-container .page-content:not(.cover-page) {
+                    padding: 20px;
                 }
                 
                 h1, h2, h3, h4, h5, h6 { 
@@ -207,12 +211,6 @@ const Layout = () => {
                                 <div 
                                     id="main-content-container"
                                     className="layout-content-container"
-                                    style={{
-                                        paddingLeft: `${layoutPadding.left}px`,
-                                        paddingRight: `${layoutPadding.right}px`,
-                                        paddingTop: '20px',
-                                        paddingBottom: '20px'
-                                    }}
                                 >
                                 <Outlet context={{ lang, layoutPadding }} />
 

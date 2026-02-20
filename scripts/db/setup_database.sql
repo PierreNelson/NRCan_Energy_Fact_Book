@@ -154,6 +154,38 @@ BEGIN
 END
 GO
 
+-- Major Projects Map Data
+-- Stores project data from NRCan ArcGIS for map visualization (both points and lines)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'raw_major_projects_map')
+BEGIN
+    CREATE TABLE raw_major_projects_map (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        lang NVARCHAR(10) NOT NULL,
+        feature_id NVARCHAR(100) NULL,
+        company NVARCHAR(500) NULL,
+        project_name NVARCHAR(500) NULL,
+        province NVARCHAR(100) NULL,
+        location NVARCHAR(255) NULL,
+        capital_cost NVARCHAR(100) NULL,
+        capital_cost_range NVARCHAR(100) NULL,
+        status NVARCHAR(100) NULL,
+        clean_technology NVARCHAR(100) NULL,
+        clean_technology_type NVARCHAR(255) NULL,
+        line_type NVARCHAR(100) NULL,
+        lat NVARCHAR(50) NULL,
+        lon NVARCHAR(50) NULL,
+        paths NVARCHAR(MAX) NULL,
+        feature_type NVARCHAR(20) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    
+    CREATE INDEX IX_raw_projects_map_lang ON raw_major_projects_map(lang);
+    CREATE INDEX IX_raw_projects_map_type ON raw_major_projects_map(feature_type);
+    
+    PRINT 'Table raw_major_projects_map created.';
+END
+GO
+
 -- ============================================================================
 -- CALCULATED DATA TABLES
 -- These store processed/aggregated data ready for chart generation

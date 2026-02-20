@@ -197,8 +197,9 @@ const Page31 = () => {
             tickVals.push(y);
         }
 
-        const cdiaValues = pageData.map(d => (d.cdia || 0) / 1000);
-        const fdiValues = pageData.map(d => (d.fdi || 0) / 1000);
+        // Use pre-calculated billions from database
+        const cdiaValues = pageData.map(d => d.cdia_billions ?? ((d.cdia || 0) / 1000));
+        const fdiValues = pageData.map(d => d.fdi_billions ?? ((d.fdi || 0) / 1000));
 
         const cdiaHoverText = cdiaValues.map((v, i) => {
             const vFormatted = v < 1 ? v.toFixed(2) : v.toFixed(1);
@@ -262,8 +263,9 @@ const Page31 = () => {
 
         const latestYear = pageData[pageData.length - 1];
         const latestYearNum = latestYear.year;
-        const latestCDIA = (latestYear.cdia || 0) / 1000;
-        const latestFDI = (latestYear.fdi || 0) / 1000;
+        // Use pre-calculated billions from database
+        const latestCDIA = latestYear.cdia_billions ?? ((latestYear.cdia || 0) / 1000);
+        const latestFDI = latestYear.fdi_billions ?? ((latestYear.fdi || 0) / 1000);
 
         if (lang === 'en') {
             return `Grouped bar chart showing stock of foreign direct investment in Canada and Canadian direct investment abroad in the energy industry from ${chartData?.minYear} to ${latestYearNum}. In ${latestYearNum}, Canadian direct investment abroad was approximately ${formatBillionSR(latestCDIA)} and foreign direct investment was approximately ${formatBillionSR(latestFDI)}. Expand the data table below for detailed values.`;
@@ -384,8 +386,9 @@ const Page31 = () => {
                         </thead>
                         <tbody>
                             {pageData.map(yearData => {
-                                const cdiaVal = (yearData.cdia || 0) / 1000;
-                                const fdiVal = (yearData.fdi || 0) / 1000;
+                                // Use pre-calculated billions from database
+                                const cdiaVal = yearData.cdia_billions ?? ((yearData.cdia || 0) / 1000);
+                                const fdiVal = yearData.fdi_billions ?? ((yearData.fdi || 0) / 1000);
                                 return (
                                     <tr key={yearData.year}>
                                         <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
@@ -455,8 +458,8 @@ backgroundColor: '#26374a',
         ];
         const rows = pageData.map(yearData => [
             yearData.year,
-            ((yearData.cdia || 0) / 1000).toFixed(2),
-            ((yearData.fdi || 0) / 1000).toFixed(2)
+            (yearData.cdia_billions ?? ((yearData.cdia || 0) / 1000)).toFixed(2),
+            (yearData.fdi_billions ?? ((yearData.fdi || 0) / 1000)).toFixed(2)
         ]);
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -493,8 +496,8 @@ backgroundColor: '#26374a',
         const dataRows = pageData.map(yearData => new TableRow({
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((yearData.cdia || 0) / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((yearData.fdi || 0) / 1000).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] })
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.cdia_billions ?? ((yearData.cdia || 0) / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.fdi_billions ?? ((yearData.fdi || 0) / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] })
             ]
         }));
 
@@ -662,7 +665,7 @@ backgroundColor: '#26374a',
                     font-size: 20px;
                     margin-bottom: 15px;
                     line-height: 1.5;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page31-chart-title {
@@ -690,7 +693,7 @@ backgroundColor: '#26374a',
                     color: #555;
                     margin-top: 10px;
                     line-height: 1.4;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 @media (max-width: 1536px) {

@@ -726,7 +726,7 @@ const Page2 = () => {
                     line-height: 1.6;
                     color: var(--gc-text);
                     margin-bottom: 20px;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page2-narrative strong {

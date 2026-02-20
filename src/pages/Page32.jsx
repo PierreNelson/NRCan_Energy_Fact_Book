@@ -183,10 +183,11 @@ const Page32 = () => {
         const latestYear = investmentData[investmentData.length - 1];
         const prevYear = investmentData[investmentData.length - 2];
 
-        const fdiLatest = (latestYear.fdi || 0) / 1000;
-        const fdiPrev = (prevYear.fdi || 0) / 1000;
-        const cdiaLatest = (latestYear.cdia || 0) / 1000;
-        const cdiaPrev = (prevYear.cdia || 0) / 1000;
+        // Use pre-calculated billions from database
+        const fdiLatest = latestYear.fdi_billions ?? ((latestYear.fdi || 0) / 1000);
+        const fdiPrev = prevYear.fdi_billions ?? ((prevYear.fdi || 0) / 1000);
+        const cdiaLatest = latestYear.cdia_billions ?? ((latestYear.cdia || 0) / 1000);
+        const cdiaPrev = prevYear.cdia_billions ?? ((prevYear.cdia || 0) / 1000);
 
         const fdiGrowth = fdiPrev > 0 ? ((fdiLatest - fdiPrev) / fdiPrev * 100) : 0;
         const cdiaGrowth = cdiaPrev > 0 ? ((cdiaLatest - cdiaPrev) / cdiaPrev * 100) : 0;
@@ -685,7 +686,7 @@ const Page32 = () => {
                     line-height: 1.6;
                     list-style-type: disc;
                     padding-left: 20px;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page32-bullets li {
@@ -716,7 +717,7 @@ const Page32 = () => {
                     margin-bottom: 0;
                     line-height: 1.5;
                     position: relative;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page32-chart-title {
@@ -777,6 +778,10 @@ const Page32 = () => {
                     .page32-chart {
                         height: calc(100vh - 620px);
                         min-height: 272px;
+                    }
+
+                    .page32-data-table {
+                        margin-top: 180px;
                     }
                 }
 
@@ -1036,7 +1041,7 @@ const Page32 = () => {
                                             orientation: windowWidth <= 1280 ? 'h' : 'v',
                                             x: windowWidth <= 1280 ? 0.5 : 1.02,
                                             xanchor: windowWidth <= 1280 ? 'center' : 'left',
-                                            y: windowWidth <= 1280 ? -0.25 : 0.1,
+                                            y: windowWidth <= 1280 ? -0.1 : 0.1,
                                             yanchor: windowWidth <= 1280 ? 'top' : 'middle',
                                             font: { size: windowWidth <= 480 ? 13 : 16, family: 'Arial, sans-serif' },
                                             itemclick: false,

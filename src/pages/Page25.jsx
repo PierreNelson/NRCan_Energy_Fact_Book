@@ -297,13 +297,16 @@ const Page25 = () => {
 
         CATEGORY_ORDER.forEach(cat => {
             const value = currentYearData[cat] || 0;
-            const pct = total > 0 ? (value / total) * 100 : 0;
+            // Use pre-calculated percentage from database if available, otherwise calculate
+            const pct = currentYearData[`${cat}_pct`] ?? (total > 0 ? (value / total) * 100 : 0);
+            // Use pre-calculated billions from database if available, otherwise calculate
+            const valueBillions = currentYearData[`${cat}_billions`] ?? (value / 1000);
+            
             if (value >= 0) { 
                 values.push(value);
                 colors.push(COLORS[cat]);
                 pctDict[cat] = pct;
                 const catName = getText(hoverKeys[cat], lang);
-                const valueBillions = value / 1000;
                 let hoverText = lang === 'en' 
                     ? `<b>${catName}</b><br>$${valueBillions.toFixed(1)} ${billionText}<br>${pct.toFixed(0)}%`
                     : `<b>${catName}</b><br>${valueBillions.toFixed(1)} $ ${billionText}<br>${pct.toFixed(0)}%`;
@@ -327,7 +330,8 @@ const Page25 = () => {
 
     const annotations = useMemo(() => {
         if (!chartData || !chartData.pctDict) return [];
-        const totalBillions = (chartData.total || 0) / 1000;
+        // Use pre-calculated total_billions from database if available
+        const totalBillions = currentYearData?.total_billions ?? ((chartData.total || 0) / 1000);
 
         const centerText = lang === 'en'
             ? `<b>Total</b><br><b>$${totalBillions.toFixed(0)}</b><br><b>billion</b>`
@@ -354,8 +358,9 @@ const Page25 = () => {
 
     const getSubtitleText = () => {
         if (!currentYearData) return '';
-        const fuelPct = ((currentYearData['fuel_energy_pipelines'] || 0) / currentYearData.total) * 100;
-        const fuelValueBillions = (currentYearData['fuel_energy_pipelines'] || 0) / 1000;
+        // Use pre-calculated values from database
+        const fuelPct = currentYearData.fuel_energy_pipelines_pct ?? ((currentYearData['fuel_energy_pipelines'] || 0) / currentYearData.total * 100);
+        const fuelValueBillions = currentYearData.fuel_energy_pipelines_billions ?? ((currentYearData['fuel_energy_pipelines'] || 0) / 1000);
         const billionText = getText('billion', lang);
         const dollarsText = lang === 'en' ? 'dollars' : 'dollars';
         const valueDisplay = `(${fuelValueBillions.toFixed(1)} ${billionText} ${dollarsText})`;
@@ -365,8 +370,9 @@ const Page25 = () => {
 
     const getSubtitle = () => {
         if (!currentYearData) return null;
-        const fuelPct = ((currentYearData['fuel_energy_pipelines'] || 0) / currentYearData.total) * 100;
-        const fuelValueBillions = (currentYearData['fuel_energy_pipelines'] || 0) / 1000;
+        // Use pre-calculated values from database
+        const fuelPct = currentYearData.fuel_energy_pipelines_pct ?? ((currentYearData['fuel_energy_pipelines'] || 0) / currentYearData.total * 100);
+        const fuelValueBillions = currentYearData.fuel_energy_pipelines_billions ?? ((currentYearData['fuel_energy_pipelines'] || 0) / 1000);
         const billionText = getText('billion', lang);
         const valueDisplay = lang === 'en'
             ? `($${fuelValueBillions.toFixed(1)} ${billionText})`
@@ -400,10 +406,10 @@ const Page25 = () => {
         };
 
         const parts = CATEGORY_ORDER.map(cat => {
-            const value = currentYearData[cat] || 0;
             const pct = chartData.pctDict[cat] || 0;
             const name = getText(categoryNames[cat], lang).replace(/<br>/g, ' ');
-            const valueBillions = (value / 1000).toFixed(1);
+            // Use pre-calculated billions from database
+            const valueBillions = (currentYearData[`${cat}_billions`] ?? ((currentYearData[cat] || 0) / 1000)).toFixed(1);
             return `${name}: ${valueBillions} ${billionText} ${dollarsText} (${pct.toFixed(1)}%)`;
         });
 
@@ -735,13 +741,13 @@ const Page25 = () => {
                 .page25-subtitle {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page25-body-text {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 65ch;
+                    max-width: 80ch;
                 }
 
                 .page25-container {

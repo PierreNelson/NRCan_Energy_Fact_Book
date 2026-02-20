@@ -7,7 +7,6 @@ SQL Server database.
 Supports selective export by:
 - Data source (--source): Export only vectors from a specific source
 - Vector pattern (--vectors): Export vectors matching a glob pattern
-- Page (--page): Export only vectors used by a specific page
 """
 
 import csv
@@ -18,11 +17,9 @@ from typing import Dict, Any, List, Optional
 from db.connection import DatabaseConnection
 from db.models import DataRepository
 from config_loader import Config
-from export.page_vectors import (
+from export.source_vectors import (
     get_vectors_for_source,
-    get_vectors_for_page,
     match_vector_pattern,
-    get_all_pages,
     get_all_sources,
 )
 
@@ -54,7 +51,6 @@ class WebsiteExporter:
         # Filter settings
         self._source_filter: Optional[str] = None
         self._vector_pattern: Optional[str] = None
-        self._page_filter: Optional[str] = None
         self._vector_prefixes: List[str] = []
     
     def set_source_filter(self, source: str):
@@ -83,22 +79,6 @@ class WebsiteExporter:
         self._vector_pattern = pattern
         print(f"  Filter: vectors matching '{pattern}'")
     
-    def set_page_filter(self, page: str):
-        """
-        Set filter to export only vectors used by a specific page.
-        
-        Args:
-            page: Page name (e.g., 'Page24', 'page24')
-        """
-        prefixes = get_vectors_for_page(page)
-        if not prefixes:
-            available = ', '.join(get_all_pages())
-            raise ValueError(f"Unknown page '{page}'. Available: {available}")
-        
-        self._page_filter = page
-        self._vector_prefixes = prefixes
-        print(f"  Filter: page={page} (prefixes: {prefixes})")
-    
     def _should_include_vector(self, vector: str) -> bool:
         """
         Check if a vector should be included based on active filters.
@@ -109,7 +89,7 @@ class WebsiteExporter:
         Returns:
             True if vector passes all filters
         """
-        # Check prefix filter (from source or page)
+        # Check prefix filter (from source)
         if self._vector_prefixes:
             if not any(vector.startswith(prefix) for prefix in self._vector_prefixes):
                 return False
@@ -123,7 +103,7 @@ class WebsiteExporter:
     
     def _is_filtered_export(self) -> bool:
         """Check if any filters are active."""
-        return bool(self._source_filter or self._vector_pattern or self._page_filter)
+        return bool(self._source_filter or self._vector_pattern)
     
     def export_all(self) -> Dict[str, Any]:
         """
@@ -164,8 +144,6 @@ class WebsiteExporter:
         filter_desc = ""
         if self._source_filter:
             filter_desc = f" (source: {self._source_filter})"
-        elif self._page_filter:
-            filter_desc = f" (page: {self._page_filter})"
         elif self._vector_pattern:
             filter_desc = f" (pattern: {self._vector_pattern})"
         
@@ -232,8 +210,6 @@ class WebsiteExporter:
         filter_desc = ""
         if self._source_filter:
             filter_desc = f" (source: {self._source_filter})"
-        elif self._page_filter:
-            filter_desc = f" (page: {self._page_filter})"
         elif self._vector_pattern:
             filter_desc = f" (pattern: {self._vector_pattern})"
         
@@ -303,21 +279,21 @@ class WebsiteExporter:
         # Ensure output directory exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Get projects from database
-        projects = self.repo.get_major_projects_for_export()
+        # Get projects from database (map data with points and lines)
+        projects = self.repo.get_major_projects_map_for_export()
         
         if not projects:
-            print("  No major projects data available")
+            print("  No major projects map data available")
             return {'status': 'skipped', 'rows': 0, 'path': str(output_path)}
         
-        # Write CSV
+        # Write CSV with all map fields
         headers = [
-            'project_name', 'company', 'location', 'province', 
-            'project_type', 'sub_type', 'estimated_cost', 'status',
-            'latitude', 'longitude'
+            'lang', 'id', 'company', 'project_name', 'province', 'location',
+            'capital_cost', 'capital_cost_range', 'status', 'clean_technology',
+            'clean_technology_type', 'line_type', 'lat', 'lon', 'paths', 'type'
         ]
         
-        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+        with open(output_path, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.DictWriter(f, fieldnames=headers, extrasaction='ignore')
             writer.writeheader()
             
@@ -332,8 +308,7 @@ def export_website_files(
     config: Config, 
     db: DatabaseConnection,
     source: Optional[str] = None,
-    vectors: Optional[str] = None,
-    page: Optional[str] = None
+    vectors: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Export website files with optional filtering.
@@ -343,7 +318,6 @@ def export_website_files(
         db: Database connection instance
         source: Filter by data source (e.g., 'capital_expenditures')
         vectors: Filter by vector pattern (e.g., 'capex_*')
-        page: Filter by page (e.g., 'Page24')
         
     Returns:
         Export results summary
@@ -355,7 +329,5 @@ def export_website_files(
         exporter.set_source_filter(source)
     if vectors:
         exporter.set_vector_pattern(vectors)
-    if page:
-        exporter.set_page_filter(page)
     
     return exporter.export_all()

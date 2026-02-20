@@ -616,8 +616,8 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-start;
-                    padding: 10px 30px 15px 55px; /* Left padding 55px */
-                    max-width: 1400px;
+                    padding: 10px 20px 15px 20px;
+                    max-width: 1140px;
                     margin: 0 auto;
                 }
                 
@@ -697,9 +697,9 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 }
                 
                 .gc-menu-bar-inner {
-                    max-width: 1400px;
+                    max-width: 1140px;
                     margin: 0 auto;
-                    padding: 8px 30px;
+                    padding: 8px 20px;
                     display: flex;
                     justify-content: flex-start;
                     position: relative;
@@ -882,10 +882,9 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 }
                 
                 .gc-breadcrumb-inner {
-                    max-width: 1400px;
+                    max-width: 1140px;
                     margin: 0 auto;
-                    padding: 10px 30px;
-                    padding-left: 55px; 
+                    padding: 10px 20px;
                 }
 
                 .gc-breadcrumb-list {

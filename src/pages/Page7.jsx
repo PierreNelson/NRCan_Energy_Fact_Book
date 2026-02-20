@@ -210,10 +210,11 @@ const Page7 = () => {
     const getChartDataSummary = () => {
         if (!currentData) return '';
         const billionText = lang === 'en' ? 'billion dollars' : 'milliards de dollars';
-        const energyTotal = Math.round(currentData.total / 1000);
-        const energyDirect = Math.round(currentData.direct / 1000);
-        const energyIndirect = Math.round(currentData.indirect / 1000);
-        const marketGDP = Math.round((currentData.market || 2879000) / 1000);
+        // Use pre-calculated billions from database
+        const energyTotal = currentData.total_billions ?? Math.round(currentData.total / 1000);
+        const energyDirect = currentData.direct_billions ?? Math.round(currentData.direct / 1000);
+        const energyIndirect = currentData.indirect_billions ?? Math.round(currentData.indirect / 1000);
+        const marketGDP = currentData.market_billions ?? Math.round((currentData.market || 2879000) / 1000);
         const nonEnergy = marketGDP - energyTotal;
         
         if (lang === 'en') {
@@ -226,11 +227,14 @@ const Page7 = () => {
     const getLegendText = () => {
         if (!currentData) return '';
         const billionText = lang === 'en' ? 'billion dollars' : 'milliards de dollars';
+        // Use pre-calculated billions from database
+        const directBillions = currentData.direct_billions ?? Math.round(currentData.direct / 1000);
+        const indirectBillions = currentData.indirect_billions ?? Math.round(currentData.indirect / 1000);
         
         if (lang === 'en') {
-            return `Canadian GDP breakdown. Energy Direct: ${currentData.direct_pct}% or ${Math.round(currentData.direct / 1000)} ${billionText}. This includes Petroleum at ${currentData.petroleum_pct}%, Electricity at ${currentData.electricity_pct}%, and Other at ${currentData.other_pct}%. Energy Indirect: ${currentData.indirect_pct}% or ${Math.round(currentData.indirect / 1000)} ${billionText}.`;
+            return `Canadian GDP breakdown. Energy Direct: ${currentData.direct_pct}% or ${directBillions} ${billionText}. This includes Petroleum at ${currentData.petroleum_pct}%, Electricity at ${currentData.electricity_pct}%, and Other at ${currentData.other_pct}%. Energy Indirect: ${currentData.indirect_pct}% or ${indirectBillions} ${billionText}.`;
         } else {
-            return `Répartition du PIB canadien. Énergie directe : ${currentData.direct_pct} % ou ${Math.round(currentData.direct / 1000)} ${billionText}. Cela comprend le Pétrole à ${currentData.petroleum_pct} %, l'Électricité à ${currentData.electricity_pct} % et Autres à ${currentData.other_pct} %. Énergie indirecte : ${currentData.indirect_pct} % ou ${Math.round(currentData.indirect / 1000)} ${billionText}.`;
+            return `Répartition du PIB canadien. Énergie directe : ${currentData.direct_pct} % ou ${directBillions} ${billionText}. Cela comprend le Pétrole à ${currentData.petroleum_pct} %, l'Électricité à ${currentData.electricity_pct} % et Autres à ${currentData.other_pct} %. Énergie indirecte : ${currentData.indirect_pct} % ou ${indirectBillions} ${billionText}.`;
         }
     };
 
@@ -320,9 +324,9 @@ const Page7 = () => {
         const dataRows = pageData.map(yearData => new TableRow({
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${Math.round(yearData.direct / 1000)}`, size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${Math.round(yearData.indirect / 1000)}`, size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${Math.round(yearData.total / 1000)}`, bold: true, size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${yearData.direct_billions ?? Math.round(yearData.direct / 1000)}`, size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${yearData.indirect_billions ?? Math.round(yearData.indirect / 1000)}`, size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${yearData.total_billions ?? Math.round(yearData.total / 1000)}`, bold: true, size: 22 })], alignment: AlignmentType.RIGHT })] }),
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${yearData.total_pct}%`, bold: true, size: 22 })], alignment: AlignmentType.RIGHT })] }),
             ],
         }));
@@ -364,9 +368,9 @@ const Page7 = () => {
 
         const dataRows = pageData.map(yearData => [
             yearData.year,
-            Math.round(yearData.direct / 1000),
-            Math.round(yearData.indirect / 1000),
-            Math.round(yearData.total / 1000),
+            yearData.direct_billions ?? Math.round(yearData.direct / 1000),
+            yearData.indirect_billions ?? Math.round(yearData.indirect / 1000),
+            yearData.total_billions ?? Math.round(yearData.total / 1000),
             yearData.total_pct
         ]);
 
@@ -386,9 +390,13 @@ const Page7 = () => {
         const nonEnergy = marketGDP - energyTotal;
         const energyPct = currentData.total_pct || 0;
         const nonEnergyPct = 100 - energyPct;
+        
+        // Use pre-calculated billions from database
+        const energyTotalBillions = currentData.total_billions ?? Math.round(energyTotal / 1000);
+        const nonEnergyBillions = (currentData.market_billions ?? Math.round(marketGDP / 1000)) - energyTotalBillions;
 
-        const energyLabel = `<b>${energyPct}%</b><br>or<br><b>$${Math.round(energyTotal / 1000)} billion</b>`;
-        const energyLabelFr = `<b>${energyPct} %</b><br>ou<br><b>${Math.round(energyTotal / 1000)} milliards $</b>`;
+        const energyLabel = `<b>${energyPct}%</b><br>or<br><b>$${energyTotalBillions} billion</b>`;
+        const energyLabelFr = `<b>${energyPct} %</b><br>ou<br><b>${energyTotalBillions} milliards $</b>`;
 
         return [{
             type: 'pie',
@@ -413,8 +421,8 @@ const Page7 = () => {
             },
             hoverinfo: 'text',
             hovertext: [
-                `<b>${getText('page7_energy_total', lang)}</b><br>$${Math.round(energyTotal / 1000)} ${lang === 'en' ? 'billion' : 'milliards'}<br>${energyPct}%`,
-                `<b>${getText('page7_non_energy', lang)}</b><br>$${Math.round(nonEnergy / 1000)} ${lang === 'en' ? 'billion' : 'milliards'}<br>${nonEnergyPct.toFixed(1)}%`
+                `<b>${getText('page7_energy_total', lang)}</b><br>$${energyTotalBillions} ${lang === 'en' ? 'billion' : 'milliards'}<br>${energyPct}%`,
+                `<b>${getText('page7_non_energy', lang)}</b><br>$${nonEnergyBillions} ${lang === 'en' ? 'billion' : 'milliards'}<br>${nonEnergyPct.toFixed(1)}%`
             ],
             hoverlabel: {
                 bgcolor: '#ffffff',
@@ -433,11 +441,12 @@ const Page7 = () => {
         }];
     }, [currentData, lang, windowWidth]);
 
-    const formatBillions = (val) => {
+    const formatBillions = (val, preCalcBillions) => {
+        const billions = preCalcBillions ?? Math.round(val / 1000);
         if (lang === 'fr') {
-            return `${Math.round(val / 1000)} milliards $`;
+            return `${billions} milliards $`;
         }
-        return `$${Math.round(val / 1000)} billion`;
+        return `$${billions} billion`;
     };
 
     const formatPercent = (val) => {
@@ -1064,23 +1073,23 @@ const Page7 = () => {
                                     <td 
                                         className="text-right" 
                                         style={{ textAlign: 'right', padding: '8px', border: '1px solid #ddd' }}
-                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Energy Direct' : 'Énergie directe'}: ${Math.round(yearData.direct / 1000)} ${billionsSR}`}
+                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Energy Direct' : 'Énergie directe'}: ${yearData.direct_billions ?? Math.round(yearData.direct / 1000)} ${billionsSR}`}
                                     >
-                                        ${Math.round(yearData.direct / 1000)}
+                                        ${yearData.direct_billions ?? Math.round(yearData.direct / 1000)}
                                     </td>
                                     <td 
                                         className="text-right" 
                                         style={{ textAlign: 'right', padding: '8px', border: '1px solid #ddd' }}
-                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Energy Indirect' : 'Énergie indirecte'}: ${Math.round(yearData.indirect / 1000)} ${billionsSR}`}
+                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Energy Indirect' : 'Énergie indirecte'}: ${yearData.indirect_billions ?? Math.round(yearData.indirect / 1000)} ${billionsSR}`}
                                     >
-                                        ${Math.round(yearData.indirect / 1000)}
+                                        ${yearData.indirect_billions ?? Math.round(yearData.indirect / 1000)}
                                     </td>
                                     <td 
                                         className="text-right" 
                                         style={{ textAlign: 'right', padding: '8px', fontWeight: 'bold', border: '1px solid #ddd' }}
-                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${Math.round(yearData.total / 1000)} ${billionsSR}`}
+                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${yearData.total_billions ?? Math.round(yearData.total / 1000)} ${billionsSR}`}
                                     >
-                                        ${Math.round(yearData.total / 1000)}
+                                        ${yearData.total_billions ?? Math.round(yearData.total / 1000)}
                                     </td>
                                     <td 
                                         className="text-right" 

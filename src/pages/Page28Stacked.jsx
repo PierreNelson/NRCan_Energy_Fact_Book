@@ -538,8 +538,8 @@ const Page28Stacked = () => {
         display: flex;
         align-items: center;
         padding: 12px 15px;
-        background-color: #26374a;
-        border: 1px solid #26374a;
+        background-color: #8A7D5A;
+        border: 1px solid #8A7D5A;
         border-radius: 4px;
         cursor: pointer;
         font-family: Arial, sans-serif;
@@ -556,7 +556,7 @@ const Page28Stacked = () => {
     }
 
     .page28h-definition-details summary:hover {
-        background-color: #1e2a3a;
+        background-color: #6F6449;
     }
 
     .page28h-definition-details summary .definition-arrow {
