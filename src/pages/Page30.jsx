@@ -1087,9 +1087,7 @@ const Page30 = () => {
                 }
 
                 .page-30 {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${layoutPadding?.left || 55}px; 
+                    width: 100%; 
                 }
 
                 .page30-container {
@@ -1255,8 +1253,6 @@ const Page30 = () => {
                         border-left: none !important; 
                         margin-left: 0;
                         width: 100%;
-                        padding-left: 15px;
-                        padding-right: 15px;
                     }
 
                     .page30-map-wrapper {

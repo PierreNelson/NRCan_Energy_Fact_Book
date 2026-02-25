@@ -213,14 +213,10 @@ const Page29 = () => {
         <main id="main-content" tabIndex="-1" className="page-content page29-main" role="main">
             <style>{`
                 .page29-main {
-                    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
+                    width: 100%;
                 }
 
                 .page29-container {
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                     width: 100%;
                     box-sizing: border-box;
                 }

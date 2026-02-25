@@ -627,9 +627,10 @@ backgroundColor: '#26374a',
                 }
 
                 .page-24 {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${layoutPadding?.left || 55}px; 
+                    width: 100%;
+                    max-width: 100%;
+                    overflow-x: hidden;
+                    box-sizing: border-box;
                 }
 
                 .page24-title {

@@ -498,9 +498,7 @@ const Page26 = () => {
                 }
 
                 .page-26 {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    width: calc(100% + ${layoutPadding?.left || 55}px);
-                    padding-left: ${layoutPadding?.left || 55}px; 
+                    width: 100%; 
                 }
 
                 .page26-title {
@@ -534,8 +532,8 @@ const Page26 = () => {
                     position: absolute;
                     top: 0;
                     bottom: 0;
-                    left: -${layoutPadding?.left || 55}px;
-                    width: calc(100% + ${layoutPadding?.left || 55}px + 15px);
+                    left: 0;
+                    width: 100%;
                     background-size: cover;
                     background-position: center center;
                     background-repeat: no-repeat;
@@ -681,8 +679,8 @@ const Page26 = () => {
                 }
 
                 .page26-stat-col-1 { margin-left: 0; }
-                .page26-stat-col-2 { margin-left: 360px; }
-                .page26-stat-col-3 { margin-left: 360px; }
+                .page26-stat-col-2 { margin-left: 240px; }
+                .page26-stat-col-3 { margin-left: 240px; }
 
                 .page26-stat-value {
                     font-family: 'Lato', sans-serif;
@@ -756,8 +754,8 @@ const Page26 = () => {
                     .page26-year-ticks { display: none !important; }
 
                     .page26-bg-image {
-                        left: -15px;
-                        width: calc(100% + 30px);
+                        left: 0;
+                        width: 100%;
                         background-size: cover !important;
                         background-position: center !important;
                     }
@@ -776,8 +774,8 @@ const Page26 = () => {
 
                 @media (max-width: 480px) {
                     .page26-bg-image {
-                        left: -15px;
-                        width: calc(100% + 30px);
+                        left: 0;
+                        width: 100%;
                         background-size: cover !important;
                         background-position: center !important;
                     }

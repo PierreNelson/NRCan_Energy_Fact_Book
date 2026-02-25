@@ -366,7 +366,6 @@ const Page10 = () => {
                     color: var(--gc-text);
                     text-align: center;
                     margin: 0 0 5px 0;
-                    padding-left: 450px;
                 }
 
                 .page10-chart-subtitle {
@@ -374,8 +373,7 @@ const Page10 = () => {
                     font-size: 20px;
                     color: var(--gc-text);
                     text-align: center;
-                    margin: 0 0 15px 0;
-                    padding-left: 525px;
+                    margin: 0 0 15px 80px;
                 }
 
                 .page10-chart {
@@ -468,41 +466,35 @@ const Page10 = () => {
                 .page10-table-wrapper .table-responsive table td {
                     white-space: nowrap;
                     padding: 8px 12px;
-                }
+                }  
 
-                @media (max-width: 1280px) {
-                    .page10-chart-title { padding-left: 32%; }
-                    .page10-chart-subtitle { padding-left: 25%; }
+                @media (max-width: 1097px) {
+                    .page10-chart-subtitle { margin-left: 50px; }
                 }
 
                 @media (max-width: 960px) {
-                    .page10-chart-title { padding-left: 28%; }
-                    .page10-chart-subtitle { padding-left: 10%; }
+                    .page10-chart-subtitle { margin-left: 10px; }
                 }
 
                 @media (max-width: 768px) {
                     .page-10 { border-right: none !important; }
-                    .page10-chart-title { font-size: 26px; padding-left: 25%; }
-                    .page10-chart-subtitle { font-size: 18px; padding-left: 0% }
+                    .page10-chart-title { font-size: 26px; }
+                    .page10-chart-subtitle { font-size: 18px; }
                     .page10-legend { flex-wrap: wrap; gap: 20px; }
                     .page10-legend-label { font-size: 16px; }
                     .page10-chart { height: 350px; }
                 }
 
                 @media (max-width: 640px) {
-                    .page10-chart-title { padding-left: 20%; }
-                    .page10-chart-subtitle { padding-left: 0; }
                     .page10-chart { height: 325px; }
                 }
 
                 @media (max-width: 480px) {
                     .page10-chart { height: 275px; }
                     .page10-legend-label { font-size: 14px; }
-                    .page10-chart-title { padding-left: 10%; }
                 }
 
                 @media (max-width: 384px) {
-                    .page10-chart-title { padding-left: 25%; }
                     .page10-chart { height: 250px; }
                     .page10-legend-inner {
                         flex-direction: column;       

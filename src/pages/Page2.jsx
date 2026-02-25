@@ -221,10 +221,6 @@ const Page2 = () => {
             setTimeout(() => {
                 chartDetailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
-        } else if (!isTableOpen && !isRankingsTableOpen && contentWrapperRef.current) {
-            setTimeout(() => {
-                contentWrapperRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
         }
     }, [isTableOpen]);
 
@@ -232,10 +228,6 @@ const Page2 = () => {
         if (isRankingsTableOpen && rankingsDetailsRef.current) {
             setTimeout(() => {
                 rankingsDetailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-        } else if (!isRankingsTableOpen && !isTableOpen && contentWrapperRef.current) {
-            setTimeout(() => {
-                contentWrapperRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
     }, [isRankingsTableOpen]);
@@ -1067,12 +1059,22 @@ const Page2 = () => {
 
                 .layout-stacked .custom-chart-container {
                     width: 100% !important;
-                    max-width: none !important;
+                    /* 1. Set the exact max-width you requested */
+                    max-width: 1280px !important; 
+                    /* 2. Set height to match the approximate height of the 6-row data table */
+                    height: 350px !important;     
+                    margin: 0 auto !important;
+                    /* Prevent the cropped image edges from spilling out */
+                    overflow: hidden !important;  
                 }
 
                 .layout-stacked .chart-bg-image {
                     width: 124% !important;
                     margin-left: -22.5% !important;
+                    /* 3. Force the image to shrink to the 350px height */
+                    height: 100% !important;      
+                    /* 4. Allow the aspect ratio to squish vertically */
+                    object-fit: fill !important;  
                 }
 
                 .layout-stacked .chart-overlay {
@@ -1091,6 +1093,10 @@ const Page2 = () => {
 
                 .layout-stacked .page2-rankings-section {
                     width: 100% !important;
+                    /* Match the table section's width to the chart's width */
+                    max-width: 1280px !important; 
+                    margin-left: auto !important;
+                    margin-right: auto !important;
                     margin-top: 30px;
                 }
 
@@ -1316,7 +1322,7 @@ const Page2 = () => {
                     </div>
                 </div>
 
-                <div ref={contentWrapperRef} className={`page2-content-wrapper ${isTableOpen || isRankingsTableOpen ? 'layout-stacked' : ''}`}>
+                <div ref={contentWrapperRef} className="page2-content-wrapper layout-stacked">
                     <div className="page2-chart-section">
                         <h3 
                             className="page2-chart-title" 

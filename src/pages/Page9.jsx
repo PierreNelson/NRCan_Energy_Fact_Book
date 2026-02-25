@@ -862,7 +862,7 @@ const Page9 = () => {
                     color: #000000;
                     margin-bottom: 10px;
                     margin-top: 20px !important;
-                    margin-left: 40% !important;
+                    text-align: center;
                 }
 
                 .page9-pie-container {
@@ -870,12 +870,14 @@ const Page9 = () => {
                     max-width: 350px;
                     height: 300px;
                     margin-bottom: 20px;
+                    margin-left: 100px !important;
                 }
 
                 .page9-legend {
                     font-family: 'Noto Sans', sans-serif;
                     padding-top: 10px;
-                    margin-left: 300px;
+                    width: fit-content;   
+                    margin-left: 160px !important;
                 }
 
                 .page9-legend-header {
@@ -985,7 +987,7 @@ const Page9 = () => {
                         margin-right: auto !important;
                         margin-bottom: 0px !important;
                         margin-top: 0px !important;
-                        max-width: 550px; /* Increased from 350px */
+                        max-width: 550px; 
                         height: 350px;
                     }
 
@@ -996,7 +998,7 @@ const Page9 = () => {
 
                     .page9-legend {
                         text-align: center;
-                        margin-left: 0px !important;
+                        margin-left: 20px !important;
                         width: 100%;
                         display: flex;
                         flex-direction: column;
@@ -1422,7 +1424,7 @@ const Page9 = () => {
                                 aria-label={getPieSRSummary()}
                                 tabIndex="0"
                             >
-                                <figure ref={pieChartRef} className="page9-pie-container" style={{ marginLeft: 'auto', marginRight: 0}}>
+                                <figure ref={pieChartRef} className="page9-pie-container" style={{ margin: '0 auto' }}>
                                     <Plot
                                         data={pieChartData}
                                         layout={{

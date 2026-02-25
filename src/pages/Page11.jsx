@@ -352,8 +352,8 @@ const Page11 = () => {
                     font-weight: bold;
                     color: var(--gc-text);
                     text-align: center;
-                    margin: 0 0 5px 4%;
-                    padding-left: 450px;
+                    margin: 0 0 5px 0;
+                    padding-left: 15px;
                 }
 
                 .page11-chart-subtitle {
@@ -361,8 +361,8 @@ const Page11 = () => {
                     font-size: 20px;
                     color: var(--gc-text);
                     text-align: center;
-                    margin: 0 0 15px 0;
-                    padding-left: 525px;
+                    margin: 0 0 15px 90px;
+                    padding-left: 0;
                 }
 
                 .page11-chart {
@@ -492,48 +492,25 @@ const Page11 = () => {
                     background: #1e2a3a;
                 }
 
-                @media (max-width: 1280px) {
-                    .page11-chart-title { padding-left: 32%; margin-left: 7% !important; }
-                    .page11-chart-subtitle { padding-left: 25%; margin-left: 5.5% !important; }
-                }
-
                 @media (max-width: 1097px) {
-                    .page11-chart-subtitle { padding-left: 25%; margin-left: 1.5% !important; }
+                    .page11-chart-subtitle { margin-left: 60px; }
                 }
 
-                @media (max-width: 960px) {
-                    .page11-chart-title { padding-left: 28%; }
-                    .page11-chart-subtitle { padding-left: 10%; }
+                @media (max-width: 960px) { 
+                    .page11-chart-subtitle { margin-left: 20px; }
                 }
 
                 @media (max-width: 768px) {
                     .page-11 { border-right: none !important; }
-                    .page11-chart-title { font-size: 26px; padding-left: 25%; }
-                    .page11-chart-subtitle { font-size: 18px; padding-left: 0%; }
+                    .page11-chart-title { font-size: 26px; }
+                    .page11-chart-subtitle { font-size: 18px; }
                     .page11-legend { flex-wrap: wrap; gap: 20px; }
                     .page11-legend-label { font-size: 16px; }
-                }
-
-                @media (max-width: 640px) {
-                    .page11-chart-title { padding-left: 20%; }
-                    .page11-chart-subtitle { padding-left: 0; }
                 }
 
                 @media (max-width: 480px) {
                     .page11-chart { height: 275px; }
                     .page11-legend-label { font-size: 14px; }
-                    .page11-chart-title { padding-left: 18%; }
-                    .page11-chart-subtitle { padding-left: 5%; }
-                }
-
-                @media (max-width: 384px) {
-                    .page11-chart-title { padding-left: 0; margin-left: 0 !important; }
-                    .page11-chart-subtitle { padding-left: 0; margin-left: 0 !important; }
-                }
-
-                @media (max-width: 384px) {
-                    .page11-chart-title { padding-left: 17.5% !important; }
-                    .page11-chart-subtitle { padding-left: 10% !important; }
                 }
             `}</style>
 

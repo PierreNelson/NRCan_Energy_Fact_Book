@@ -705,7 +705,8 @@ const Page7 = () => {
                         flex-direction: column !important;
                     }
                     .page7-legend {
-                        margin-left: 0;
+                        margin-left: 190px !important;
+                        text-align: center;
                         margin-top: 20px;
                     }
                     .page7-legend-header,
@@ -783,6 +784,25 @@ const Page7 = () => {
                     min-width: 100%;
                     border-collapse: collapse;
                 }
+
+                @media (max-width: 640px) {
+                    .page7-legend {
+                        margin-left: 130px !important;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .page7-legend {
+                        margin-left: 50px !important;
+                    }
+                }
+
+                @media (max-width: 384px) {
+                    .page7-legend {
+                        margin-left: 5px !important;
+                    }
+                }
+              
             `}</style>
 
             <header>
@@ -944,7 +964,12 @@ const Page7 = () => {
                                 clickmode: 'event',
                                 dragmode: false,
                                 showlegend: false,
-                                margin: { t: 30, r: 150, b: 30, l: 30 },
+                                margin: { 
+                                    t: 30, 
+                                    r: windowWidth <= 768 ? 30 : 150, 
+                                    b: 30, 
+                                    l: 30 
+                                },
                                 paper_bgcolor: 'rgba(0,0,0,0)',
                                 plot_bgcolor: 'rgba(0,0,0,0)',
                             }}

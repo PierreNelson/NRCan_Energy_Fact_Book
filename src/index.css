@@ -33,6 +33,16 @@
   --transition-speed: 0.3s;
 }
 
+/* Prevent horizontal overflow at high zoom */
+.layout-content-container {
+  overflow-x: hidden;
+}
+
+.page-content {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-body);
   font-size: 20px;

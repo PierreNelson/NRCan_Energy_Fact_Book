@@ -488,14 +488,10 @@ const Page28 = () => {
     }
 
     .page-28 {
-        width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
-        margin-left: -${layoutPadding?.left || 55}px;
-        margin-right: -${layoutPadding?.right || 15}px;
+        width: 100%;
     }
 
     .page28-container {
-        padding-left: ${layoutPadding?.left || 55}px;
-        padding-right: ${layoutPadding?.right || 15}px;
         padding-top: 30px;
         padding-bottom: 40px;
         width: 100%;

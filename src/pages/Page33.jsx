@@ -670,14 +670,10 @@ const Page33 = () => {
         >
             <style>{`
                 .page-33 {
-                    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
+                    width: 100%;
                 }
 
                 .page33-container {
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                     width: 100%;
                     box-sizing: border-box;
                 }
