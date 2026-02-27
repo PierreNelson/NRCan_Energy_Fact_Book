@@ -423,3 +423,29 @@ export async function getWorldEnergyProductionData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get GHG emissions by economic sector data
+ * Returns array of objects: { 
+ *   year, oil_gas, electricity, transportation, heavy_industry, 
+ *   buildings, agriculture, waste_others 
+ * }
+ * Values are in megatonnes of CO2 equivalent
+ */
+export async function getGHGEmissionsData() {
+    const allData = await loadAllData();
+    
+    const ghgData = allData.filter(row => row.vector && row.vector.startsWith('ghg_'));
+    
+    const yearMap = {};
+    ghgData.forEach(row => {
+        const year = row.ref_date;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('ghg_', '');
+        yearMap[year][field] = row.value;
+    });
+    
+    return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}

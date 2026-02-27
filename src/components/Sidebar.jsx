@@ -226,6 +226,12 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_econ_contributions', lang)}
                             </NavLink>
+                            <NavLink
+                                to="/section-1#ghg-emissions"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_ghg_emissions', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>

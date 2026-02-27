@@ -134,6 +134,45 @@ const Page4 = () => {
         };
     }, [lang]);
 
+    // Force Plotly to recalculate layout after CSS settles
+    useEffect(() => {
+        const resizePlots = () => {
+            if (window.Plotly) {
+                const plot1 = chartRef1.current?.querySelector('.js-plotly-plot');
+                const plot2 = chartRef2.current?.querySelector('.js-plotly-plot');
+                if (plot1) window.Plotly.Plots.resize(plot1);
+                if (plot2) window.Plotly.Plots.resize(plot2);
+            }
+        };
+
+        // Resize after initial render and after short delays to catch CSS settling
+        const timer1 = setTimeout(resizePlots, 100);
+        const timer2 = setTimeout(resizePlots, 300);
+        const timer3 = setTimeout(resizePlots, 600);
+
+        return () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+            clearTimeout(timer3);
+        };
+    }, []);
+
+    // Also resize when table opens/closes (layout shift)
+    useEffect(() => {
+        const resizePlots = () => {
+            if (window.Plotly) {
+                const plot1 = chartRef1.current?.querySelector('.js-plotly-plot');
+                const plot2 = chartRef2.current?.querySelector('.js-plotly-plot');
+                if (plot1) window.Plotly.Plots.resize(plot1);
+                if (plot2) window.Plotly.Plots.resize(plot2);
+            }
+        };
+
+        // Short delay to let the DOM update after table toggle
+        const timer = setTimeout(resizePlots, 50);
+        return () => clearTimeout(timer);
+    }, [isTableOpen]);
+
     const COLORS = {
         natural_gas: '#3A9FC8',
         hydro: '#245e7f',
@@ -208,21 +247,29 @@ const Page4 = () => {
             ? data.sources.map(() => 0.02)
             : data.sources.map((_, i) => selectedSlices.includes(i) ? 0.08 : 0.02);
 
+        // At high zoom (small viewport), use legend instead of outside labels
+        const useCompactLayout = windowWidth <= 768;
+
         return [{
             type: 'pie',
             values: values,
             labels: labels,
-            texttemplate: '%{label}<br><b>%{percent:.0%}</b>',
-            textinfo: 'label+percent',
-            textposition: 'outside',
+            texttemplate: useCompactLayout ? '%{percent:.0%}' : '%{label}<br><b>%{percent:.0%}</b>',
+            textinfo: useCompactLayout ? 'percent' : 'label+percent',
+            textposition: useCompactLayout ? 'inside' : 'outside',
             textfont: {
                 size: windowWidth <= 480 ? 11 : windowWidth <= 768 ? 12 : windowWidth <= 1280 ? 15 : 18,
                 family: 'Arial, sans-serif',
-                color: textColors
+                color: useCompactLayout ? '#ffffff' : textColors
             },
             outsidetextfont: {
                 color: textColors,
                 size: windowWidth <= 480 ? 11 : windowWidth <= 768 ? 12 : windowWidth <= 1280 ? 15 : 18,
+                family: 'Arial, sans-serif'
+            },
+            insidetextfont: {
+                color: '#ffffff',
+                size: windowWidth <= 480 ? 10 : 12,
                 family: 'Arial, sans-serif'
             },
             hovertext: hoverTexts,
@@ -401,15 +448,30 @@ const Page4 = () => {
         saveAs(blob, lang === 'en' ? 'primary_energy_production.docx' : 'production_energie_primaire.docx');
     };
 
+    // Use legend instead of outside labels at high zoom (small viewport)
+    const useCompactLayout = windowWidth <= 768;
+
     const createChartLayout = (data) => ({
         autosize: true,
-        showlegend: false,
-        margin: {
-            t: 50,
-            r: windowWidth <= 480 ? 20 : windowWidth <= 768 ? 50 : 100,
-            b: 50,
-            l: windowWidth <= 480 ? 20 : windowWidth <= 768 ? 50 : 100
-        },
+        showlegend: useCompactLayout,
+        legend: useCompactLayout ? {
+            orientation: 'h',
+            y: -0.15,
+            x: 0.5,
+            xanchor: 'center',
+            yanchor: 'top',
+            font: { size: windowWidth <= 480 ? 10 : 12 },
+            itemclick: false,
+            itemdoubleclick: false
+        } : undefined,
+        margin: useCompactLayout
+            ? { t: 20, r: 20, b: 100, l: 20 }
+            : {
+                t: 70,
+                r: windowWidth <= 480 ? 40 : windowWidth <= 768 ? 80 : 120,
+                b: 70,
+                l: windowWidth <= 480 ? 40 : windowWidth <= 768 ? 80 : 120
+            },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         clickmode: 'event',
@@ -523,19 +585,20 @@ const Page4 = () => {
                 }
 
                 .page4-charts-row {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 60px;
+                    display: block;
                     width: 100%;
                 }
 
                 .page4-chart-column {
                     width: 100%;
-                    max-width: 700px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
+                    max-width: 100%;
+                    margin: 0 auto 60px auto;
+                    display: block;
+                    text-align: center;
+                }
+
+                .page4-chart-column:last-child {
+                    margin-bottom: 0;
                 }
 
                 .page4-chart-title {
@@ -551,23 +614,19 @@ const Page4 = () => {
                 .page4-chart-wrapper {
                     position: relative;
                     width: 100%;
-                    height: 400px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
+                    height: 450px;
                 }
 
                 .page4-chart-wrapper figure {
                     width: 100%;
                     height: 100%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
                     margin: 0;
+                    position: relative;
                 }
 
                 .page4-chart-wrapper .js-plotly-plot {
                     width: 100% !important;
+                    margin: 0 auto;
                 }
 
                 .page4-table-wrapper {
@@ -632,16 +691,13 @@ const Page4 = () => {
                         font-size: 16px;
                     }
                     .page4-chart-wrapper {
-                        height: 350px;
-                    }
-                    .page4-chart-column {
-                        max-width: 100%;
+                        height: 420px;
                     }
                 }
 
                 @container (max-width: 480px) {
                     .page4-chart-wrapper {
-                        height: 320px;
+                        height: 400px;
                     }
                 }
             `}</style>
@@ -675,7 +731,7 @@ const Page4 = () => {
                                                 {lang === 'en' ? 'Clear' : 'Effacer'}
                                             </button>
                                         )}
-                                        <div aria-hidden="true">
+                                        <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                             <Plot
                                                 key={`pie1-${selectedSlices1 ? selectedSlices1.join('-') : 'none'}`}
                                                 data={chart1Data}
@@ -733,7 +789,7 @@ const Page4 = () => {
                                                 {lang === 'en' ? 'Clear' : 'Effacer'}
                                             </button>
                                         )}
-                                        <div aria-hidden="true">
+                                        <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                             <Plot
                                                 key={`pie2-${selectedSlices2 ? selectedSlices2.join('-') : 'none'}`}
                                                 data={chart2Data}

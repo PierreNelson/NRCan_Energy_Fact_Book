@@ -1,7 +1,64 @@
 # MASTER PAGE BUILDING GUIDE & TEMPLATE
 
-**Version:** 4.0 (Updated January 2026)  
+**Version:** 5.0 (Updated January 2026)  
 **Compliance:** WCAG 2.1 AA, WET-BOEW (Web Experience Toolkit), Canada.ca Design System
+
+---
+
+## LAYOUT CONSTRAINTS
+
+The website uses a **maximum width of 1140px** for all content. This is enforced at the layout level.
+
+| Property | Value | Notes |
+|----------|-------|-------|
+| Max content width | `1140px` | Controlled by `Layout.jsx` |
+| Max line length | `80ch` | For readability (StatCan recommendation) |
+| Side padding | Dynamic | Aligns with header anchors |
+
+Pages should **not** override these widths. The `Layout.jsx` component handles:
+- Maximum width constraint (`max-width: 1140px`)
+- Dynamic horizontal padding (based on header anchor alignment)
+- Centering via `margin: 0 auto`
+
+---
+
+## DATA PIPELINE ARCHITECTURE
+
+Data flows through a SQL Server-based pipeline before reaching the frontend:
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  External APIs  │────▶│   SQL Server    │────▶│   CSV Export    │────▶│  React Frontend │
+│  (StatCan, etc) │     │   (raw + calc)  │     │  (public/data/) │     │  (dataLoader.js)│
+└─────────────────┘     └─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+### Data Sources
+Data is organized by **source** (not page number):
+
+| Source | Vector Prefix | SQL Table | Description |
+|--------|---------------|-----------|-------------|
+| `economic_contributions` | `econ_` | `calc_economic_contributions` | GDP, jobs, trade |
+| `capital_expenditures` | `capex_` | `calc_capital_expenditures` | Investment data |
+| `infrastructure` | `infra_` | `calc_infrastructure` | Infrastructure stock |
+| `provincial_gdp` | `gdp_prov_` | `calc_provincial_gdp` | Provincial GDP breakdown |
+| `world_energy_production` | `energy_prod_` | `calc_world_energy_production` | Global energy data |
+| `major_projects` | `projects_` | `calc_major_projects` | Project summaries |
+| `major_projects_map` | N/A | `raw_major_projects_map` | Map visualization data |
+| `clean_tech` | `cleantech_` | `calc_clean_tech` | Clean technology investment |
+| `investment_by_asset` | `asset_` | `calc_investment_by_asset` | Asset-level investment |
+| `international_investment` | `intl_` | `calc_international_investment` | FDI/CDIA data |
+| `foreign_control` | `foreign_` | `calc_foreign_control` | Foreign ownership data |
+| `environmental_protection` | `enviro_` | `calc_environmental_protection` | Environmental spending |
+
+### Exported Files
+The pipeline exports three CSV files to `public/data/`:
+- `data.csv` - Time series data (vector, ref_date, value)
+- `metadata.csv` - Vector metadata (vector, title, uom, scalar_factor, data_source)
+- `major_projects_map.csv` - Project map visualization data
+
+### Key Principle: Pre-calculated Data
+**All calculations (percentages, totals, unit conversions) are performed in SQL Server.** The React frontend should consume pre-calculated values directly. Client-side calculations should only be used as fallbacks.
 
 ---
 
@@ -16,8 +73,8 @@ These rules are **non-negotiable** and must be followed exactly when generating 
    - `useOutletContext` from `react-router-dom`
    - `Plot` from `react-plotly.js`
    - `getText` from `../utils/translations`
-5. **DATA LOADING:** Use the `useEffect` hook pattern shown in `[DATA_LOADING_PATTERN]` section.
-6. **LAYOUT PADDING:** Always destructure `layoutPadding` from `useOutletContext()` and use in CSS template literals.
+5. **DATA LOADING:** Use the `useEffect` hook pattern shown in `[DATA_LOADING_PATTERN]` section. Data comes from pre-exported CSV files, not directly from SQL Server.
+6. **LAYOUT:** The layout width (1140px) is controlled by `Layout.jsx`. Do not override with page-specific width calculations.
 7. **BILINGUAL:** All user-facing text must use `getText('key', lang)` for EN/FR support.
 8. **TOKEN REPLACEMENT:** Replace all `[[PLACEHOLDER]]` tokens with actual values before output.
 
@@ -85,11 +142,11 @@ These values are **fixed** and must not be changed.
 
 Copy this CSS block **verbatim** into every page file. Replace `[[PAGE_NUMBER]]` with actual page number.
 
+**Note:** The layout width (1140px max) is controlled by `Layout.jsx`. Pages should use `width: 100%` and let the layout handle constraints.
+
 ```css
 .page-[[PAGE_NUMBER]] {
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${layoutPadding?.right || 15}px);
-    padding-right: ${layoutPadding?.right || 15}px;
+    width: 100%;
 }
 
 .page[[PAGE_NUMBER]]-container {
@@ -130,7 +187,7 @@ Copy this CSS block **verbatim** into every page file. Replace `[[PAGE_NUMBER]]`
     margin-top: 0;
     margin-bottom: 20px;
     line-height: 1.5;
-    max-width: 65ch;
+    max-width: 80ch;
 }
 
 .page[[PAGE_NUMBER]]-chart-frame {
@@ -234,7 +291,7 @@ Copy this CSS block **verbatim** into every page file. Replace `[[PAGE_NUMBER]]`
     color: #555;
     margin-top: 10px;
     line-height: 1.4;
-    max-width: 65ch;
+    max-width: 80ch;
 }
 
 @media (max-width: 768px) {
@@ -276,7 +333,7 @@ import { saveAs } from 'file-saver';
 ## [MANDATORY_STATE_VARIABLES]
 
 ```javascript
-const { lang, layoutPadding } = useOutletContext();
+const { lang } = useOutletContext();
 const [year, setYear] = useState(null);
 const [pageData, setPageData] = useState([]);
 const [loading, setLoading] = useState(true);
@@ -287,6 +344,8 @@ const [selectedPoints, setSelectedPoints] = useState(null);
 const chartRef = useRef(null);
 const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
 ```
+
+**Note:** `layoutPadding` is available from `useOutletContext()` if needed for special alignment cases, but most pages should not need it as the layout handles width constraints.
 
 ---
 
@@ -807,7 +866,7 @@ import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, Width
 import { saveAs } from 'file-saver';
 
 const Page[[PAGE_NUMBER]] = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);

@@ -19,7 +19,57 @@ SOURCE_VECTOR_PREFIXES = {
     'environmental_protection': ['enviro_'],
     'major_projects': ['projects_'],
     'clean_tech': ['cleantech_'],
+    'ghg_emissions': ['ghg_'],
 }
+
+# Source name to display name mapping (human-readable)
+SOURCE_DISPLAY_NAMES = {
+    'economic_contributions': 'Economic Contributions',
+    'nominal_gdp': 'Nominal GDP',
+    'provincial_gdp': 'Provincial GDP',
+    'world_energy_production': 'World Energy Production',
+    'canadian_energy_assets': 'Canadian Energy Assets',
+    'capital_expenditures': 'Capital Expenditures',
+    'infrastructure': 'Infrastructure',
+    'investment_by_asset': 'Investment by Asset',
+    'international_investment': 'International Investment',
+    'foreign_control': 'Foreign Control',
+    'environmental_protection': 'Environmental Protection',
+    'major_projects': 'Major Projects',
+    'clean_tech': 'Clean Technology',
+    'ghg_emissions': 'GHG Emissions by Economic Sector',
+}
+
+
+def get_source_for_vector(vector: str) -> str:
+    """
+    Get the data source name for a vector based on its prefix.
+    
+    Args:
+        vector: Vector name (e.g., 'capex_oil_gas')
+        
+    Returns:
+        Source name (e.g., 'capital_expenditures') or 'unknown'
+    """
+    for source, prefixes in SOURCE_VECTOR_PREFIXES.items():
+        for prefix in prefixes:
+            if vector.startswith(prefix):
+                return source
+    return 'unknown'
+
+
+def get_display_name_for_vector(vector: str) -> str:
+    """
+    Get the human-readable data source name for a vector.
+    
+    Args:
+        vector: Vector name (e.g., 'capex_oil_gas')
+        
+    Returns:
+        Display name (e.g., 'Capital Expenditures') or 'Unknown'
+    """
+    source = get_source_for_vector(vector)
+    return SOURCE_DISPLAY_NAMES.get(source, 'Unknown')
 
 
 def get_vectors_for_source(source_key: str) -> list:

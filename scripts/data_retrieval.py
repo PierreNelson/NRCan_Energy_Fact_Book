@@ -2155,6 +2155,193 @@ def process_cea_data():
         return [], []
 
 
+def process_ghg_emissions_data():
+    """
+    Process GHG emissions by Canadian economic sector from ECCC data.
+    
+    Data source: Environment and Climate Change Canada
+    File: EN_Annex10_GHG_Econ_Canada.xlsx from B-Economic-Sector folder
+    Tab: Table A10-2
+    
+    Extracts data from year 2000 onwards for:
+    - Oil and Gas
+    - Electricity
+    - Transport (mapped to 'transportation')
+    - Heavy Industry
+    - Buildings
+    - Agriculture
+    - Waste
+    - Coal Production
+    - Light Manufacturing, Construction and Forest Resources
+    
+    Creates calculated variable:
+    - Waste and Others = Waste + Coal Production + Light Manufacturing, Construction and Forest Resources
+    
+    Values are in megatonnes of CO2 equivalent.
+    """
+    print("Processing GHG Emissions by Economic Sector data...")
+    
+    # Use local file - download manually from:
+    # https://data-donnees.az.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FEN_Annex10_GHG_Econ_Canada.xlsx
+    excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "EN_Annex10_GHG_Econ_Canada.xlsx")
+    
+    try:
+        if not os.path.exists(excel_path):
+            print(f"  ERROR: GHG Excel file not found at {excel_path}")
+            print(f"  Please download from ECCC and place in project root.")
+            return [], []
+        
+        print(f"  Reading local file: {excel_path}")
+        excel_data = pd.ExcelFile(excel_path, engine='openpyxl')
+        sheet_names = excel_data.sheet_names
+        print(f"  Found sheets: {sheet_names}")
+        
+        target_sheet = None
+        for sheet in sheet_names:
+            if 'A10-2' in sheet or 'Table A10-2' in sheet.replace(' ', ''):
+                target_sheet = sheet
+                break
+        
+        if not target_sheet:
+            for sheet in sheet_names:
+                if 'a10' in sheet.lower() and '2' in sheet:
+                    target_sheet = sheet
+                    break
+        
+        if not target_sheet:
+            target_sheet = sheet_names[0]
+            print(f"  WARNING: Could not find Table A10-2, using first sheet: {target_sheet}")
+        
+        print(f"  Reading sheet: {target_sheet}")
+        df_raw = pd.read_excel(excel_data, sheet_name=target_sheet, header=None)
+        
+        def is_year_value(v):
+            """Check if a value looks like a year (1990-2030)."""
+            try:
+                num = float(v)
+                return 1990 <= num <= 2030 and num == int(num)
+            except (ValueError, TypeError):
+                return False
+        
+        header_row = None
+        for idx in range(min(30, len(df_raw))):
+            row = df_raw.iloc[idx]
+            potential_years = [v for v in row.values if is_year_value(v)]
+            
+            if len(potential_years) >= 10:
+                header_row = idx
+                print(f"  Found header row at index {idx} with {len(potential_years)} year columns")
+                print(f"    Sample years: {[int(y) for y in potential_years[:5]]}...{[int(y) for y in potential_years[-3:]]}")
+                break
+        
+        if header_row is None:
+            print("  ERROR: Could not find header row with years")
+            print("  DEBUG: First 15 rows of sheet:")
+            for i in range(min(15, len(df_raw))):
+                print(f"    Row {i}: {list(df_raw.iloc[i].values[:8])}")
+            return [], []
+        
+        df = pd.read_excel(excel_data, sheet_name=target_sheet, header=header_row)
+        
+        first_col = df.columns[0]
+        df = df.rename(columns={first_col: 'Category'})
+        df['Category'] = df['Category'].astype(str).str.strip()
+        
+        def get_year_from_col(col):
+            """Extract year as int from column name."""
+            try:
+                num = float(col)
+                if 2000 <= num <= 2030 and num == int(num):
+                    return int(num)
+            except (ValueError, TypeError):
+                pass
+            return None
+        
+        year_columns = [col for col in df.columns if get_year_from_col(col) is not None]
+        year_ints = [get_year_from_col(col) for col in year_columns]
+        print(f"  Found {len(year_columns)} year columns from 2000+: {year_ints[:5]}...{year_ints[-3:] if len(year_ints) > 5 else ''}")
+        
+        sector_mapping = {
+            'Oil and Gas': 'oil_gas',
+            'Electricity': 'electricity',
+            'Transport': 'transportation',
+            'Heavy Industry': 'heavy_industry',
+            'Buildings': 'buildings',
+            'Agriculture': 'agriculture',
+            'Waste': 'waste',
+            'Coal Production': 'coal_production',
+            'Light Manufacturing, Construction and Forest Resources': 'light_manufacturing'
+        }
+        
+        data_rows = []
+        sector_data = {sector: {} for sector in sector_mapping.values()}
+        sector_data['waste_others'] = {}
+        
+        for original_name, vector_name in sector_mapping.items():
+            mask = df['Category'].str.contains(original_name, case=False, na=False, regex=False)
+            if not mask.any():
+                mask = df['Category'].str.lower().str.contains(original_name.lower().split()[0], na=False)
+            
+            matching_rows = df[mask]
+            
+            if len(matching_rows) == 0:
+                print(f"  WARNING: Could not find '{original_name}' in data")
+                continue
+            
+            row = matching_rows.iloc[0]
+            print(f"  Found '{original_name}' -> {vector_name}")
+            
+            for year_col in year_columns:
+                year = get_year_from_col(year_col)
+                if year is None:
+                    continue
+                value = row[year_col]
+                
+                if pd.notna(value):
+                    try:
+                        val = float(value)
+                        sector_data[vector_name][year] = val
+                    except (ValueError, TypeError):
+                        pass
+        
+        for year_col in year_columns:
+            year = get_year_from_col(year_col)
+            if year is None:
+                continue
+            waste = sector_data.get('waste', {}).get(year, 0)
+            coal = sector_data.get('coal_production', {}).get(year, 0)
+            light_mfg = sector_data.get('light_manufacturing', {}).get(year, 0)
+            
+            waste_others = waste + coal + light_mfg
+            sector_data['waste_others'][year] = waste_others
+        
+        output_sectors = ['oil_gas', 'electricity', 'transportation', 'heavy_industry', 
+                         'buildings', 'agriculture', 'waste_others']
+        
+        for sector in output_sectors:
+            for year, value in sector_data.get(sector, {}).items():
+                data_rows.append((f'ghg_{sector}', year, round(value, 1)))
+        
+        metadata_rows = [
+            ('ghg_oil_gas', 'GHG Emissions - Oil and Gas', 'Mt CO2 eq', 'megatonnes'),
+            ('ghg_electricity', 'GHG Emissions - Electricity', 'Mt CO2 eq', 'megatonnes'),
+            ('ghg_transportation', 'GHG Emissions - Transportation', 'Mt CO2 eq', 'megatonnes'),
+            ('ghg_heavy_industry', 'GHG Emissions - Heavy Industry', 'Mt CO2 eq', 'megatonnes'),
+            ('ghg_buildings', 'GHG Emissions - Buildings', 'Mt CO2 eq', 'megatonnes'),
+            ('ghg_agriculture', 'GHG Emissions - Agriculture', 'Mt CO2 eq', 'megatonnes'),
+            ('ghg_waste_others', 'GHG Emissions - Waste and Others', 'Mt CO2 eq', 'megatonnes'),
+        ]
+        
+        print(f"  Processed {len(data_rows)} data rows for GHG emissions")
+        return data_rows, metadata_rows
+        
+    except Exception as e:
+        print(f"  ERROR processing GHG Emissions data: {e}")
+        import traceback
+        traceback.print_exc()
+        return [], []
+
+
 def process_world_energy_production_data():
     """
     Process world energy production data from IEA World Energy Balances.
@@ -2315,6 +2502,7 @@ def refresh_all_data():
         ("Clean Tech", process_clean_tech_data),
         ("Canadian Energy Assets (CEA)", process_cea_data),
         ("World Energy Production", process_world_energy_production_data),
+        ("GHG Emissions by Economic Sector", process_ghg_emissions_data),
     ]
     
     for source_name, process_func in data_sources:
@@ -2359,7 +2547,12 @@ def refresh_all_data():
             existing_meta = pd.read_csv(metadata_path)
             if len(existing_meta.columns) >= 2 and 'vector' in existing_meta.columns:
                 existing_meta = existing_meta[~existing_meta['vector'].isin(meta_vectors_updated)]
-                all_metadata.extend(existing_meta.to_numpy().tolist())
+                # Only keep first 4 columns (vector, title, uom, scalar_factor) - ignore data_source if present
+                core_cols = ['vector', 'title', 'uom', 'scalar_factor']
+                existing_cols = [c for c in core_cols if c in existing_meta.columns]
+                if existing_cols:
+                    existing_meta = existing_meta[existing_cols]
+                    all_metadata.extend(existing_meta.to_numpy().tolist())
         except Exception:
             pass
     

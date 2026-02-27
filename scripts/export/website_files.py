@@ -21,6 +21,7 @@ from export.source_vectors import (
     get_vectors_for_source,
     match_vector_pattern,
     get_all_sources,
+    get_display_name_for_vector,
 )
 
 
@@ -234,28 +235,36 @@ class WebsiteExporter:
                     reader = csv.reader(f)
                     next(reader)  # Skip header
                     for row in reader:
-                        if len(row) >= 4:
-                            existing_metadata[row[0]] = (row[1], row[2], row[3])
+                        if len(row) >= 5:
+                            existing_metadata[row[0]] = (row[1], row[2], row[3], row[4])
+                        elif len(row) >= 4:
+                            # Legacy format without data_source
+                            existing_metadata[row[0]] = (row[1], row[2], row[3], get_display_name_for_vector(row[0]))
             
             # Filter new metadata
             filtered_metadata = [row for row in all_metadata if self._should_include_vector(row[0])]
             
-            # Update existing with filtered new
+            # Update existing with filtered new (add data_source)
             for row in filtered_metadata:
-                existing_metadata[row[0]] = (row[1], row[2], row[3])
+                data_source = get_display_name_for_vector(row[0])
+                existing_metadata[row[0]] = (row[1], row[2], row[3], data_source)
             
             # Convert back to list and sort
-            metadata = [(k, v[0], v[1], v[2]) for k, v in existing_metadata.items()]
+            metadata = [(k, v[0], v[1], v[2], v[3]) for k, v in existing_metadata.items()]
             metadata.sort(key=lambda x: x[0])
             
             print(f"  Updated {len(filtered_metadata)} vectors, total {len(metadata)} rows")
         else:
-            metadata = all_metadata
+            # Add data_source to all metadata rows
+            metadata = []
+            for row in all_metadata:
+                data_source = get_display_name_for_vector(row[0])
+                metadata.append((row[0], row[1], row[2], row[3], data_source))
         
         # Write CSV
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow(['vector', 'title', 'uom', 'scalar_factor'])
+            writer.writerow(['vector', 'title', 'uom', 'scalar_factor', 'data_source'])
             
             for row in metadata:
                 writer.writerow(row)

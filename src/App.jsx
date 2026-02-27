@@ -11,6 +11,7 @@ const SectionFour = React.lazy(() => import('./components/SectionFour'));
 const SectionFive = React.lazy(() => import('./components/SectionFive'));
 const SectionSix = React.lazy(() => import('./components/SectionSix'));
 const SectionTest = React.lazy(() => import('./components/SectionTest'));
+const Glossary = React.lazy(() => import('./components/Glossary'));
 
 // Loading component for Suspense fallback
 const LoadingSpinner = () => (
@@ -102,6 +103,13 @@ function App() {
           <Route path="section-test" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionTest />
+            </Suspense>
+          } />
+          
+          {/* Glossary Page */}
+          <Route path="Glossary" element={
+            <Suspense fallback={<LoadingSpinner />}>
+              <Glossary />
             </Suspense>
           } />
         </Route>
