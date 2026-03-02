@@ -235,11 +235,14 @@ def process_capital_expenditure_data():
                 ('capex_total', year_int, round(total, 1)),
             ])
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601'
+    
     metadata_rows = [
-        ('capex_oil_gas', 'Capital expenditures - Oil and gas extraction', 'Millions of dollars', 'millions'),
-        ('capex_electricity', 'Capital expenditures - Electric power', 'Millions of dollars', 'millions'),
-        ('capex_other', 'Capital expenditures - Other energy', 'Millions of dollars', 'millions'),
-        ('capex_total', 'Capital expenditures - Total energy sector', 'Millions of dollars', 'millions'),
+        ('capex_oil_gas', 'Capital expenditures - Oil and gas extraction', 'Millions of dollars', 'millions', source_org, source_url),
+        ('capex_electricity', 'Capital expenditures - Electric power', 'Millions of dollars', 'millions', source_org, source_url),
+        ('capex_other', 'Capital expenditures - Other energy', 'Millions of dollars', 'millions', source_org, source_url),
+        ('capex_total', 'Capital expenditures - Total energy sector', 'Millions of dollars', 'millions', source_org, source_url),
     ]
     
     print(f"  Capital Expenditures: {len(data_rows)} data rows")
@@ -303,14 +306,17 @@ def process_infrastructure_data():
                 ('infra_total', year_int, round(total, 1)),
             ])
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801'
+    
     metadata_rows = [
-        ('infra_fuel_energy_pipelines', 'Infrastructure - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
-        ('infra_transport', 'Infrastructure - Transport (less pipelines)', 'Millions of dollars', 'millions'),
-        ('infra_health_housing', 'Infrastructure - Health and housing', 'Millions of dollars', 'millions'),
-        ('infra_education', 'Infrastructure - Education', 'Millions of dollars', 'millions'),
-        ('infra_public_safety', 'Infrastructure - Public safety and other', 'Millions of dollars', 'millions'),
-        ('infra_environmental', 'Infrastructure - Environmental protection', 'Millions of dollars', 'millions'),
-        ('infra_total', 'Infrastructure - Total net stock', 'Millions of dollars', 'millions'),
+        ('infra_fuel_energy_pipelines', 'Infrastructure - Fuel, energy and pipelines', 'Millions of dollars', 'millions', source_org, source_url),
+        ('infra_transport', 'Infrastructure - Transport (less pipelines)', 'Millions of dollars', 'millions', source_org, source_url),
+        ('infra_health_housing', 'Infrastructure - Health and housing', 'Millions of dollars', 'millions', source_org, source_url),
+        ('infra_education', 'Infrastructure - Education', 'Millions of dollars', 'millions', source_org, source_url),
+        ('infra_public_safety', 'Infrastructure - Public safety and other', 'Millions of dollars', 'millions', source_org, source_url),
+        ('infra_environmental', 'Infrastructure - Environmental protection', 'Millions of dollars', 'millions', source_org, source_url),
+        ('infra_total', 'Infrastructure - Total net stock', 'Millions of dollars', 'millions', source_org, source_url),
     ]
     
     print(f"  Infrastructure: {len(data_rows)} data rows")
@@ -382,15 +388,18 @@ def process_investment_by_asset_data():
                 ('asset_total', year_int, round(total, 1)),
             ])
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801'
+    
     metadata_rows = [
-        ('asset_transmission_distribution', 'Investment - Transmission, distribution and transformers', 'Millions of dollars', 'millions'),
-        ('asset_pipelines', 'Investment - Pipelines', 'Millions of dollars', 'millions'),
-        ('asset_nuclear', 'Investment - Nuclear production plants', 'Millions of dollars', 'millions'),
-        ('asset_other_electric', 'Investment - Other electric power construction', 'Millions of dollars', 'millions'),
-        ('asset_hydraulic', 'Investment - Hydraulic production plants', 'Millions of dollars', 'millions'),
-        ('asset_wind_solar', 'Investment - Wind and solar power plants', 'Millions of dollars', 'millions'),
-        ('asset_steam_thermal', 'Investment - Steam production plants', 'Millions of dollars', 'millions'),
-        ('asset_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions'),
+        ('asset_transmission_distribution', 'Investment - Transmission, distribution and transformers', 'Millions of dollars', 'millions', source_org, source_url),
+        ('asset_pipelines', 'Investment - Pipelines', 'Millions of dollars', 'millions', source_org, source_url),
+        ('asset_nuclear', 'Investment - Nuclear production plants', 'Millions of dollars', 'millions', source_org, source_url),
+        ('asset_other_electric', 'Investment - Other electric power construction', 'Millions of dollars', 'millions', source_org, source_url),
+        ('asset_hydraulic', 'Investment - Hydraulic production plants', 'Millions of dollars', 'millions', source_org, source_url),
+        ('asset_wind_solar', 'Investment - Wind and solar power plants', 'Millions of dollars', 'millions', source_org, source_url),
+        ('asset_steam_thermal', 'Investment - Steam production plants', 'Millions of dollars', 'millions', source_org, source_url),
+        ('asset_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions', source_org, source_url),
     ]
     
     print(f"  Investment by Asset: {len(data_rows)} data rows")
@@ -454,11 +463,14 @@ def process_economic_contributions_data():
                 ('econ_investment_value', year_int, round(investment_value, 1)),
             ])
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001'
+    
     metadata_rows = [
-        ('econ_jobs', 'Economic contributions - Jobs (direct + indirect)', 'Number', 'units'),
-        ('econ_employment_income', 'Economic contributions - Employment income', 'Millions of dollars', 'millions'),
-        ('econ_gdp', 'Economic contributions - GDP', 'Millions of dollars', 'millions'),
-        ('econ_investment_value', 'Annual investment - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
+        ('econ_jobs', 'Economic contributions - Jobs (direct + indirect)', 'Number', 'units', source_org, source_url),
+        ('econ_employment_income', 'Economic contributions - Employment income', 'Millions of dollars', 'millions', source_org, source_url),
+        ('econ_gdp', 'Economic contributions - GDP', 'Millions of dollars', 'millions', source_org, source_url),
+        ('econ_investment_value', 'Annual investment - Fuel, energy and pipelines', 'Millions of dollars', 'millions', source_org, source_url),
     ]
     
     print(f"  Economic Contributions: {len(data_rows)} data rows")
@@ -538,9 +550,12 @@ def process_international_investment_data():
             if year_int == 2007 or year_int == max(years):
                 print(f"    {year_int}: CDIA={cdia_total}M, FDI={fdi_total}M")
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610000801'
+    
     metadata_rows = [
-        ('intl_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions'),
-        ('intl_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions'),
+        ('intl_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions', source_org, source_url),
+        ('intl_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions', source_org, source_url),
     ]
     
     print(f"  International Investment: {len(data_rows)} data rows")
@@ -565,7 +580,7 @@ def get_environmental_protection_url():
     - Other environmental protection activities
     """
     end_date = get_future_end_date()
-    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3810013001&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B3%2C5%2C6%2C11%5D%2C%5B12%2C13%2C14%2C15%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C3D2"
+    return f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=3810013001&latestN=0&startDate=20180101&endDate={end_date}&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B3%2C5%2C6%2C11%5D%2C%5B12%2C13%2C14%2C15%5D%5D&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C3D2"
 
 def get_foreign_control_url():
     """Get foreign control URL (Table 33-10-0570-01).
@@ -627,10 +642,13 @@ def process_foreign_control_data():
         if year_int == 2010 or year_int == max(years):
             print(f"    {year_int}: Data processed")
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310057001'
+    
     metadata_rows = [
-        ('foreign_utilities', 'Utilities - Percentage of total assets under foreign control', 'Percent', 'units'),
-        ('foreign_oil_gas', 'Oil and gas extraction and support activities - Percentage of total assets under foreign control', 'Percent', 'units'),
-        ('foreign_all_non_financial', 'Total non-financial industries - Percentage of total assets under foreign control', 'Percent', 'units'),
+        ('foreign_utilities', 'Utilities - Percentage of total assets under foreign control', 'Percent', 'units', source_org, source_url),
+        ('foreign_oil_gas', 'Oil and gas extraction and support activities - Percentage of total assets under foreign control', 'Percent', 'units', source_org, source_url),
+        ('foreign_all_non_financial', 'Total non-financial industries - Percentage of total assets under foreign control', 'Percent', 'units', source_org, source_url),
     ]
     
     print(f"  Foreign Control: {len(data_rows)} data rows")
@@ -663,6 +681,7 @@ def process_environmental_protection_data():
     df = df[df['Expenditures'] == 'Total, expenditures'].copy()
     
     df['year'] = df['REF_DATE'].astype(int)
+    df = df[df['year'] >= 2018].copy()  # Reference period from 2018 per EEDAS
     
     main_activities = {
         'wastewater': 'Wastewater management',
@@ -674,7 +693,10 @@ def process_environmental_protection_data():
     
     other_activities = [
         'Protection of biodiversity and habitat',
+        'Noise and vibration abatement',
+        'Protection against radiation',
         'Environmental charges',
+        'Clean vehicles and transportation technologies',
         'Other environmental protection activities'
     ]
     
@@ -750,18 +772,21 @@ def process_environmental_protection_data():
             if pd.notna(value):
                 data_rows.append(('enviro_all_industries_total', year, float(value)))
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001'
+    
     metadata_rows = [
-        ('enviro_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('enviro_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions'),
-        ('enviro_oil_gas_soil', 'Oil and gas extraction - Protection and remediation of soil, groundwater and surface water', 'Millions of dollars', 'millions'),
-        ('enviro_oil_gas_air', 'Oil and gas extraction - Air pollution management', 'Millions of dollars', 'millions'),
-        ('enviro_oil_gas_solid_waste', 'Oil and gas extraction - Solid waste management', 'Millions of dollars', 'millions'),
-        ('enviro_oil_gas_other', 'Oil and gas extraction - Other environmental protection activities', 'Millions of dollars', 'millions'),
-        ('enviro_electric_total', 'Electric power generation - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('enviro_natural_gas_total', 'Natural gas distribution - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('enviro_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-        ('enviro_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions'),
-        ('enviro_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
+        ('enviro_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_oil_gas_soil', 'Oil and gas extraction - Protection and remediation of soil, groundwater and surface water', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_oil_gas_air', 'Oil and gas extraction - Air pollution management', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_oil_gas_solid_waste', 'Oil and gas extraction - Solid waste management', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_oil_gas_other', 'Oil and gas extraction - Other environmental protection activities', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_electric_total', 'Electric power generation - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_natural_gas_total', 'Natural gas distribution - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions', source_org, source_url),
+        ('enviro_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
     ]
     
     print(f"  Environmental Protection: {len(data_rows)} data rows")
@@ -937,20 +962,23 @@ def process_nominal_gdp_contributions_data():
                 ('gdp_nominal_other_pct', year, other_pct),
             ])
     
+    source_org = 'Statistics Canada'
+    source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501'
+    
     metadata_rows = [
-        ('gdp_nominal_total', "Energy's nominal GDP contribution - Total", 'Millions of dollars', 'millions'),
-        ('gdp_nominal_direct', "Energy's nominal GDP contribution - Direct", 'Millions of dollars', 'millions'),
-        ('gdp_nominal_indirect', "Energy's nominal GDP contribution - Indirect", 'Millions of dollars', 'millions'),
-        ('gdp_nominal_petroleum', "Energy's nominal GDP contribution - Petroleum", 'Millions of dollars', 'millions'),
-        ('gdp_nominal_electricity', "Energy's nominal GDP contribution - Electricity", 'Millions of dollars', 'millions'),
-        ('gdp_nominal_other', "Energy's nominal GDP contribution - Other", 'Millions of dollars', 'millions'),
-        ('gdp_nominal_market', "Nominal GDP at market prices", 'Millions of dollars', 'millions'),
-        ('gdp_nominal_total_pct', "Energy's nominal GDP share - Total", 'Percent', 'percent'),
-        ('gdp_nominal_direct_pct', "Energy's nominal GDP share - Direct", 'Percent', 'percent'),
-        ('gdp_nominal_indirect_pct', "Energy's nominal GDP share - Indirect", 'Percent', 'percent'),
-        ('gdp_nominal_petroleum_pct', "Energy's nominal GDP share - Petroleum", 'Percent', 'percent'),
-        ('gdp_nominal_electricity_pct', "Energy's nominal GDP share - Electricity", 'Percent', 'percent'),
-        ('gdp_nominal_other_pct', "Energy's nominal GDP share - Other", 'Percent', 'percent'),
+        ('gdp_nominal_total', "Energy's nominal GDP contribution - Total", 'Millions of dollars', 'millions', source_org, source_url),
+        ('gdp_nominal_direct', "Energy's nominal GDP contribution - Direct", 'Millions of dollars', 'millions', source_org, source_url),
+        ('gdp_nominal_indirect', "Energy's nominal GDP contribution - Indirect", 'Millions of dollars', 'millions', source_org, source_url),
+        ('gdp_nominal_petroleum', "Energy's nominal GDP contribution - Petroleum", 'Millions of dollars', 'millions', source_org, source_url),
+        ('gdp_nominal_electricity', "Energy's nominal GDP contribution - Electricity", 'Millions of dollars', 'millions', source_org, source_url),
+        ('gdp_nominal_other', "Energy's nominal GDP contribution - Other", 'Millions of dollars', 'millions', source_org, source_url),
+        ('gdp_nominal_market', "Nominal GDP at market prices", 'Millions of dollars', 'millions', source_org, source_url),
+        ('gdp_nominal_total_pct', "Energy's nominal GDP share - Total", 'Percent', 'percent', source_org, source_url),
+        ('gdp_nominal_direct_pct', "Energy's nominal GDP share - Direct", 'Percent', 'percent', source_org, source_url),
+        ('gdp_nominal_indirect_pct', "Energy's nominal GDP share - Indirect", 'Percent', 'percent', source_org, source_url),
+        ('gdp_nominal_petroleum_pct', "Energy's nominal GDP share - Petroleum", 'Percent', 'percent', source_org, source_url),
+        ('gdp_nominal_electricity_pct', "Energy's nominal GDP share - Electricity", 'Percent', 'percent', source_org, source_url),
+        ('gdp_nominal_other_pct', "Energy's nominal GDP share - Other", 'Percent', 'percent', source_org, source_url),
     ]
     
     print(f"  Nominal GDP Contributions: {len(data_rows)} data rows for years {sorted(years_processed)}")
@@ -1082,12 +1110,17 @@ def process_provincial_gdp_data():
             
             print(f"\n  Note: {ry} values are estimates based on {ry_minus_1} provincial distribution")
         
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401'
+        
         for prov_code, prov_name in province_names.items():
             metadata_rows.append((
                 f'gdp_prov_{prov_code}',
                 f'Energy sector direct nominal GDP - {prov_name}',
                 'Millions of dollars',
-                'millions'
+                'millions',
+                source_org,
+                source_url
             ))
         
         print(f"\n  Provincial GDP: {len(data_rows)} data rows total")
@@ -1392,15 +1425,18 @@ def process_major_projects_data():
             total_projects = values['oil_gas_projects'] + values['electricity_projects'] + values['other_projects']
             data_rows.append(('projects_total_count', year, total_projects))
     
+    source_org = 'Natural Resources Canada'
+    source_url = 'https://natural-resources.canada.ca/our-natural-resources/energy-sources-distribution/clean-energy-services/major-energy-and-clean-technology-projects/27933'
+    
     metadata_rows = [
-        ('projects_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions'),
-        ('projects_oil_gas_count', 'Oil and gas - Number of projects', 'Number', 'units'),
-        ('projects_electricity_value', 'Electricity - Project value', 'Billions of dollars', 'billions'),
-        ('projects_electricity_count', 'Electricity - Number of projects', 'Number', 'units'),
-        ('projects_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
-        ('projects_other_count', 'Other - Number of projects', 'Number', 'units'),
-        ('projects_total_value', 'Total - Project value', 'Billions of dollars', 'billions'),
-        ('projects_total_count', 'Total - Number of projects', 'Number', 'units'),
+        ('projects_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('projects_oil_gas_count', 'Oil and gas - Number of projects', 'Number', 'units', source_org, source_url),
+        ('projects_electricity_value', 'Electricity - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('projects_electricity_count', 'Electricity - Number of projects', 'Number', 'units', source_org, source_url),
+        ('projects_other_value', 'Other - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('projects_other_count', 'Other - Number of projects', 'Number', 'units', source_org, source_url),
+        ('projects_total_value', 'Total - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('projects_total_count', 'Total - Number of projects', 'Number', 'units', source_org, source_url),
     ]
     
     print(f"  Major Projects: {len(data_rows)} data rows")
@@ -1490,31 +1526,34 @@ def process_clean_tech_data():
             if f'{cat}_value' in values:
                 data_rows.append((f'cleantech_{cat}_value', year, values[f'{cat}_value']))
     
+    source_org = 'Natural Resources Canada'
+    source_url = 'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+    
     metadata_rows = [
-        ('cleantech_total_count', 'Total clean technology - Number of projects', 'Number', 'units'),
-        ('cleantech_total_value', 'Total clean technology - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_hydro_count', 'Hydro - Number of projects', 'Number', 'units'),
-        ('cleantech_hydro_value', 'Hydro - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_wind_count', 'Wind - Number of projects', 'Number', 'units'),
-        ('cleantech_wind_value', 'Wind - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_biomass_count', 'Biomass/Biofuels - Number of projects', 'Number', 'units'),
-        ('cleantech_biomass_value', 'Biomass/Biofuels - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_solar_count', 'Solar - Number of projects', 'Number', 'units'),
-        ('cleantech_solar_value', 'Solar - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_nuclear_count', 'Nuclear - Number of projects', 'Number', 'units'),
-        ('cleantech_nuclear_value', 'Nuclear - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_ccs_count', 'Carbon Capture and Storage - Number of projects', 'Number', 'units'),
-        ('cleantech_ccs_value', 'Carbon Capture and Storage - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_geothermal_count', 'Geothermal - Number of projects', 'Number', 'units'),
-        ('cleantech_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_tidal_count', 'Tidal - Number of projects', 'Number', 'units'),
-        ('cleantech_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_storage_count', 'Energy Storage - Number of projects', 'Number', 'units'),
-        ('cleantech_storage_value', 'Energy Storage - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_multiple_count', 'Multiple - Number of projects', 'Number', 'units'),
-        ('cleantech_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions'),
-        ('cleantech_other_count', 'Other - Number of projects', 'Number', 'units'),
-        ('cleantech_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
+        ('cleantech_total_count', 'Total clean technology - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_total_value', 'Total clean technology - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_hydro_count', 'Hydro - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_hydro_value', 'Hydro - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_wind_count', 'Wind - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_wind_value', 'Wind - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_biomass_count', 'Biomass/Biofuels - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_biomass_value', 'Biomass/Biofuels - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_solar_count', 'Solar - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_solar_value', 'Solar - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_nuclear_count', 'Nuclear - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_nuclear_value', 'Nuclear - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_ccs_count', 'Carbon Capture and Storage - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_ccs_value', 'Carbon Capture and Storage - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_geothermal_count', 'Geothermal - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_tidal_count', 'Tidal - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_storage_count', 'Energy Storage - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_storage_value', 'Energy Storage - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_multiple_count', 'Multiple - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+        ('cleantech_other_count', 'Other - Number of projects', 'Number', 'units', source_org, source_url),
+        ('cleantech_other_value', 'Other - Project value', 'Billions of dollars', 'billions', source_org, source_url),
     ]
     
     print(f"  Clean Tech Trends: {len(data_rows)} data rows")
@@ -2126,17 +2165,20 @@ def process_cea_data():
                 if region_value > 0:
                     data_rows.append((f'cea_{region_key}', year, round(region_value / 1000, 1)))
         
+        source_org = 'Natural Resources Canada'
+        source_url = 'Local file: CEA_2023.xlsx'
+        
         metadata_rows = [
-            ('cea_total', 'Canadian Energy Assets - Total (A1)', 'Billions of dollars', 'billions'),
-            ('cea_domestic', 'Canadian Energy Assets - Domestic (A3, Country=Canada)', 'Billions of dollars', 'billions'),
-            ('cea_abroad', 'Canadian Energy Assets - Abroad (A4)', 'Billions of dollars', 'billions'),
-            ('cea_canada', 'Canadian Energy Assets - Canada (by Continent)', 'Billions of dollars', 'billions'),
-            ('cea_north_america', 'Canadian Energy Assets - North America (US and Mexico)', 'Billions of dollars', 'billions'),
-            ('cea_latin_america', 'Canadian Energy Assets - Latin America and Caribbean', 'Billions of dollars', 'billions'),
-            ('cea_europe', 'Canadian Energy Assets - Europe', 'Billions of dollars', 'billions'),
-            ('cea_africa', 'Canadian Energy Assets - Africa', 'Billions of dollars', 'billions'),
-            ('cea_asia', 'Canadian Energy Assets - Asia', 'Billions of dollars', 'billions'),
-            ('cea_oceania', 'Canadian Energy Assets - Oceania', 'Billions of dollars', 'billions'),
+            ('cea_total', 'Canadian Energy Assets - Total (A1)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_domestic', 'Canadian Energy Assets - Domestic (A3, Country=Canada)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_abroad', 'Canadian Energy Assets - Abroad (A4)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_canada', 'Canadian Energy Assets - Canada (by Continent)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_north_america', 'Canadian Energy Assets - North America (US and Mexico)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_latin_america', 'Canadian Energy Assets - Latin America and Caribbean', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_europe', 'Canadian Energy Assets - Europe', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_africa', 'Canadian Energy Assets - Africa', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_asia', 'Canadian Energy Assets - Asia', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cea_oceania', 'Canadian Energy Assets - Oceania', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         print(f"\n  {'='*60}")
@@ -2322,14 +2364,17 @@ def process_ghg_emissions_data():
             for year, value in sector_data.get(sector, {}).items():
                 data_rows.append((f'ghg_{sector}', year, round(value, 1)))
         
+        source_org = 'Environment and Climate Change Canada'
+        source_url = 'https://data-donnees.az.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FEN_Annex10_GHG_Econ_Canada.xlsx'
+        
         metadata_rows = [
-            ('ghg_oil_gas', 'GHG Emissions - Oil and Gas', 'Mt CO2 eq', 'megatonnes'),
-            ('ghg_electricity', 'GHG Emissions - Electricity', 'Mt CO2 eq', 'megatonnes'),
-            ('ghg_transportation', 'GHG Emissions - Transportation', 'Mt CO2 eq', 'megatonnes'),
-            ('ghg_heavy_industry', 'GHG Emissions - Heavy Industry', 'Mt CO2 eq', 'megatonnes'),
-            ('ghg_buildings', 'GHG Emissions - Buildings', 'Mt CO2 eq', 'megatonnes'),
-            ('ghg_agriculture', 'GHG Emissions - Agriculture', 'Mt CO2 eq', 'megatonnes'),
-            ('ghg_waste_others', 'GHG Emissions - Waste and Others', 'Mt CO2 eq', 'megatonnes'),
+            ('ghg_oil_gas', 'GHG Emissions - Oil and Gas', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
+            ('ghg_electricity', 'GHG Emissions - Electricity', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
+            ('ghg_transportation', 'GHG Emissions - Transportation', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
+            ('ghg_heavy_industry', 'GHG Emissions - Heavy Industry', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
+            ('ghg_buildings', 'GHG Emissions - Buildings', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
+            ('ghg_agriculture', 'GHG Emissions - Agriculture', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
+            ('ghg_waste_others', 'GHG Emissions - Waste and Others', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
         ]
         
         print(f"  Processed {len(data_rows)} data rows for GHG emissions")
@@ -2456,17 +2501,20 @@ def process_world_energy_production_data():
                 world_growth = (world_current - world_2005) / world_2005 * 100
                 data_rows.append(('energy_prod_world_growth_since_2005', year_int, round(world_growth, 0)))
         
+        source_org = 'International Energy Agency'
+        source_url = 'https://www.iea.org/data-and-statistics'
+        
         metadata_rows = [
-            ('energy_prod_world_total', 'World Total Primary Energy Production', 'PJ', 'petajoules'),
-            ('energy_prod_canada_pj', 'Canada Primary Energy Production', 'PJ', 'petajoules'),
-            ('energy_prod_canada_pct', 'Canada Share of World Energy Production', '%', 'percent'),
-            ('energy_prod_canada_growth_since_2005', 'Canada Energy Production Growth Since 2005', '%', 'percent'),
-            ('energy_prod_world_growth_since_2005', 'World Energy Production Growth Since 2005', '%', 'percent'),
-            ('energy_prod_china_pct', 'China Share of World Energy Production', '%', 'percent'),
-            ('energy_prod_united_states_pct', 'United States Share of World Energy Production', '%', 'percent'),
-            ('energy_prod_india_pct', 'India Share of World Energy Production', '%', 'percent'),
-            ('energy_prod_indonesia_pct', 'Indonesia Share of World Energy Production', '%', 'percent'),
-            ('energy_prod_australia_pct', 'Australia Share of World Energy Production', '%', 'percent'),
+            ('energy_prod_world_total', 'World Total Primary Energy Production', 'PJ', 'petajoules', source_org, source_url),
+            ('energy_prod_canada_pj', 'Canada Primary Energy Production', 'PJ', 'petajoules', source_org, source_url),
+            ('energy_prod_canada_pct', 'Canada Share of World Energy Production', '%', 'percent', source_org, source_url),
+            ('energy_prod_canada_growth_since_2005', 'Canada Energy Production Growth Since 2005', '%', 'percent', source_org, source_url),
+            ('energy_prod_world_growth_since_2005', 'World Energy Production Growth Since 2005', '%', 'percent', source_org, source_url),
+            ('energy_prod_china_pct', 'China Share of World Energy Production', '%', 'percent', source_org, source_url),
+            ('energy_prod_united_states_pct', 'United States Share of World Energy Production', '%', 'percent', source_org, source_url),
+            ('energy_prod_india_pct', 'India Share of World Energy Production', '%', 'percent', source_org, source_url),
+            ('energy_prod_indonesia_pct', 'Indonesia Share of World Energy Production', '%', 'percent', source_org, source_url),
+            ('energy_prod_australia_pct', 'Australia Share of World Energy Production', '%', 'percent', source_org, source_url),
         ]
         
         print(f"  Processed {len(data_rows)} data rows for {len(years)} years")
@@ -2547,17 +2595,22 @@ def refresh_all_data():
             existing_meta = pd.read_csv(metadata_path)
             if len(existing_meta.columns) >= 2 and 'vector' in existing_meta.columns:
                 existing_meta = existing_meta[~existing_meta['vector'].isin(meta_vectors_updated)]
-                # Only keep first 4 columns (vector, title, uom, scalar_factor) - ignore data_source if present
-                core_cols = ['vector', 'title', 'uom', 'scalar_factor']
-                existing_cols = [c for c in core_cols if c in existing_meta.columns]
+                # Keep all 6 columns if present
+                all_cols = ['vector', 'title', 'uom', 'scalar_factor', 'source_org', 'source_url']
+                existing_cols = [c for c in all_cols if c in existing_meta.columns]
                 if existing_cols:
                     existing_meta = existing_meta[existing_cols]
-                    all_metadata.extend(existing_meta.to_numpy().tolist())
+                    # Pad rows with empty strings if fewer than 6 columns
+                    for _, row in existing_meta.iterrows():
+                        row_list = row.tolist()
+                        while len(row_list) < 6:
+                            row_list.append('')
+                        all_metadata.append(tuple(row_list))
         except Exception:
             pass
     
     data_df = pd.DataFrame(all_data, columns=['vector', 'ref_date', 'value'])
-    metadata_df = pd.DataFrame(all_metadata, columns=['vector', 'title', 'uom', 'scalar_factor'])
+    metadata_df = pd.DataFrame(all_metadata, columns=['vector', 'title', 'uom', 'scalar_factor', 'source_org', 'source_url'])
     
     data_df = data_df.drop_duplicates(subset=['vector', 'ref_date'], keep='first')
     metadata_df = metadata_df.drop_duplicates(subset=['vector'], keep='first')

@@ -167,33 +167,35 @@ class DataRepository:
             return len(params_list)
     
     def insert_raw_statcan_metadata(self, source_key: str,
-                                     metadata: List[Tuple[str, str, str, str]]):
+                                     metadata: List[Tuple[str, str, str, str, str, str]]):
         """
         Insert raw StatCan metadata.
         
         Args:
             source_key: Identifier for the data source
-            metadata: List of (vector, title, uom, scalar_factor) tuples
+            metadata: List of (vector, title, uom, scalar_factor, source_org, source_url) tuples
         """
         if not metadata:
             return 0
         
         query = """
             MERGE INTO raw_statcan_metadata AS target
-            USING (VALUES (?, ?, ?, ?, ?)) AS source (vector, title, uom, scalar_factor, source_key)
+            USING (VALUES (?, ?, ?, ?, ?, ?, ?)) AS source (vector, title, uom, scalar_factor, source_org, source_url, source_key)
             ON target.vector = source.vector
             WHEN MATCHED THEN
                 UPDATE SET title = source.title,
                            uom = source.uom,
                            scalar_factor = source.scalar_factor,
+                           source_org = source.source_org,
+                           source_url = source.source_url,
                            source_key = source.source_key,
                            fetched_at = GETUTCDATE()
             WHEN NOT MATCHED THEN
-                INSERT (vector, title, uom, scalar_factor, source_key)
-                VALUES (source.vector, source.title, source.uom, source.scalar_factor, source.source_key);
+                INSERT (vector, title, uom, scalar_factor, source_org, source_url, source_key)
+                VALUES (source.vector, source.title, source.uom, source.scalar_factor, source.source_org, source.source_url, source.source_key);
         """
         
-        params_list = [(row[0], row[1], row[2], row[3], source_key) for row in metadata]
+        params_list = [(row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else None, row[5] if len(row) > 5 else None, source_key) for row in metadata]
         
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
@@ -639,10 +641,10 @@ class DataRepository:
             FROM raw_statcan_data
         """)
         
-        # Copy metadata
+        # Copy metadata (including source_org, source_url)
         self.db.execute_non_query("""
-            INSERT INTO export_metadata (vector, title, uom, scalar_factor)
-            SELECT vector, title, uom, scalar_factor
+            INSERT INTO export_metadata (vector, title, uom, scalar_factor, source_org, source_url)
+            SELECT vector, title, uom, scalar_factor, source_org, source_url
             FROM raw_statcan_metadata
         """)
     
@@ -658,17 +660,17 @@ class DataRepository:
         )
         return [(r['vector'], r['ref_date'], r['value']) for r in results]
     
-    def get_export_metadata(self) -> List[Tuple[str, str, str, str]]:
+    def get_export_metadata(self) -> List[Tuple[str, str, str, str, str, str]]:
         """
         Get all metadata for export to CSV.
         
         Returns:
-            List of (vector, title, uom, scalar_factor) tuples
+            List of (vector, title, uom, scalar_factor, source_org, source_url) tuples
         """
         results = self.db.execute_query(
-            "SELECT vector, title, uom, scalar_factor FROM export_metadata ORDER BY vector"
+            "SELECT vector, title, uom, scalar_factor, source_org, source_url FROM export_metadata ORDER BY vector"
         )
-        return [(r['vector'], r['title'], r['uom'], r['scalar_factor']) for r in results]
+        return [(r['vector'], r['title'], r['uom'], r['scalar_factor'], r.get('source_org') or '', r.get('source_url') or '') for r in results]
     
     def get_major_projects_for_export(self) -> List[Dict[str, Any]]:
         """

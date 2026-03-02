@@ -131,11 +131,11 @@ class Section2Investment(SectionProcessor):
         )
     
     def _get_environmental_protection_url(self) -> str:
-        """Get URL for Table 38-10-0130-01 (Environmental protection)."""
+        """Get URL for Table 38-10-0130-01 (Environmental protection). Reference period from 2018."""
         end_date = self._get_future_end_date()
         return (
             f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?"
-            f"pid=3810013001&latestN=0&startDate=20070101&endDate={end_date}"
+            f"pid=3810013001&latestN=0&startDate=20180101&endDate={end_date}"
             f"&csvLocale=en&selectedMembers=%5B%5B%5D%2C%5B%5D%2C%5B3%2C5%2C6%2C11%5D%2C%5B12%2C13%2C14%2C15%5D%5D"
             f"&checkedLevels=0D1%2C1D1%2C2D1%2C3D1%2C3D2"
         )
@@ -266,21 +266,24 @@ class Section2Investment(SectionProcessor):
                     ('capex_total_billions', str(year_int), total_billions),
                 ])
         
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601'
+        
         metadata_rows = [
             # Raw values in millions
-            ('capex_oil_gas', 'Capital expenditures - Oil and gas extraction', 'Millions of dollars', 'millions'),
-            ('capex_electricity', 'Capital expenditures - Electric power', 'Millions of dollars', 'millions'),
-            ('capex_other', 'Capital expenditures - Other energy', 'Millions of dollars', 'millions'),
-            ('capex_total', 'Capital expenditures - Total energy sector', 'Millions of dollars', 'millions'),
+            ('capex_oil_gas', 'Capital expenditures - Oil and gas extraction', 'Millions of dollars', 'millions', source_org, source_url),
+            ('capex_electricity', 'Capital expenditures - Electric power', 'Millions of dollars', 'millions', source_org, source_url),
+            ('capex_other', 'Capital expenditures - Other energy', 'Millions of dollars', 'millions', source_org, source_url),
+            ('capex_total', 'Capital expenditures - Total energy sector', 'Millions of dollars', 'millions', source_org, source_url),
             # Pre-calculated percentages
-            ('capex_oil_gas_pct', 'Capital expenditures - Oil and gas (% of total)', 'Percent', 'percent'),
-            ('capex_electricity_pct', 'Capital expenditures - Electric power (% of total)', 'Percent', 'percent'),
-            ('capex_other_pct', 'Capital expenditures - Other energy (% of total)', 'Percent', 'percent'),
+            ('capex_oil_gas_pct', 'Capital expenditures - Oil and gas (% of total)', 'Percent', 'percent', source_org, source_url),
+            ('capex_electricity_pct', 'Capital expenditures - Electric power (% of total)', 'Percent', 'percent', source_org, source_url),
+            ('capex_other_pct', 'Capital expenditures - Other energy (% of total)', 'Percent', 'percent', source_org, source_url),
             # Pre-calculated billions values
-            ('capex_oil_gas_billions', 'Capital expenditures - Oil and gas extraction', 'Billions of dollars', 'billions'),
-            ('capex_electricity_billions', 'Capital expenditures - Electric power', 'Billions of dollars', 'billions'),
-            ('capex_other_billions', 'Capital expenditures - Other energy', 'Billions of dollars', 'billions'),
-            ('capex_total_billions', 'Capital expenditures - Total energy sector', 'Billions of dollars', 'billions'),
+            ('capex_oil_gas_billions', 'Capital expenditures - Oil and gas extraction', 'Billions of dollars', 'billions', source_org, source_url),
+            ('capex_electricity_billions', 'Capital expenditures - Electric power', 'Billions of dollars', 'billions', source_org, source_url),
+            ('capex_other_billions', 'Capital expenditures - Other energy', 'Billions of dollars', 'billions', source_org, source_url),
+            ('capex_total_billions', 'Capital expenditures - Total energy sector', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         # STEP 2: Store calculated data in calc_capital_expenditures table
@@ -423,30 +426,33 @@ class Section2Investment(SectionProcessor):
                     ('infra_total_billions', str(year_int), total_billions),
                 ])
         
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801'
+        
         metadata_rows = [
             # Raw values in millions
-            ('infra_fuel_energy_pipelines', 'Infrastructure - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
-            ('infra_transport', 'Infrastructure - Transport (less pipelines)', 'Millions of dollars', 'millions'),
-            ('infra_health_housing', 'Infrastructure - Health and housing', 'Millions of dollars', 'millions'),
-            ('infra_education', 'Infrastructure - Education', 'Millions of dollars', 'millions'),
-            ('infra_public_safety', 'Infrastructure - Public safety and other', 'Millions of dollars', 'millions'),
-            ('infra_environmental', 'Infrastructure - Environmental protection', 'Millions of dollars', 'millions'),
-            ('infra_total', 'Infrastructure - Total net stock', 'Millions of dollars', 'millions'),
+            ('infra_fuel_energy_pipelines', 'Infrastructure - Fuel, energy and pipelines', 'Millions of dollars', 'millions', source_org, source_url),
+            ('infra_transport', 'Infrastructure - Transport (less pipelines)', 'Millions of dollars', 'millions', source_org, source_url),
+            ('infra_health_housing', 'Infrastructure - Health and housing', 'Millions of dollars', 'millions', source_org, source_url),
+            ('infra_education', 'Infrastructure - Education', 'Millions of dollars', 'millions', source_org, source_url),
+            ('infra_public_safety', 'Infrastructure - Public safety and other', 'Millions of dollars', 'millions', source_org, source_url),
+            ('infra_environmental', 'Infrastructure - Environmental protection', 'Millions of dollars', 'millions', source_org, source_url),
+            ('infra_total', 'Infrastructure - Total net stock', 'Millions of dollars', 'millions', source_org, source_url),
             # Pre-calculated percentages
-            ('infra_fuel_energy_pipelines_pct', 'Infrastructure - Fuel, energy and pipelines (% of total)', 'Percent', 'percent'),
-            ('infra_transport_pct', 'Infrastructure - Transport (% of total)', 'Percent', 'percent'),
-            ('infra_health_housing_pct', 'Infrastructure - Health and housing (% of total)', 'Percent', 'percent'),
-            ('infra_education_pct', 'Infrastructure - Education (% of total)', 'Percent', 'percent'),
-            ('infra_public_safety_pct', 'Infrastructure - Public safety (% of total)', 'Percent', 'percent'),
-            ('infra_environmental_pct', 'Infrastructure - Environmental protection (% of total)', 'Percent', 'percent'),
+            ('infra_fuel_energy_pipelines_pct', 'Infrastructure - Fuel, energy and pipelines (% of total)', 'Percent', 'percent', source_org, source_url),
+            ('infra_transport_pct', 'Infrastructure - Transport (% of total)', 'Percent', 'percent', source_org, source_url),
+            ('infra_health_housing_pct', 'Infrastructure - Health and housing (% of total)', 'Percent', 'percent', source_org, source_url),
+            ('infra_education_pct', 'Infrastructure - Education (% of total)', 'Percent', 'percent', source_org, source_url),
+            ('infra_public_safety_pct', 'Infrastructure - Public safety (% of total)', 'Percent', 'percent', source_org, source_url),
+            ('infra_environmental_pct', 'Infrastructure - Environmental protection (% of total)', 'Percent', 'percent', source_org, source_url),
             # Pre-calculated billions values
-            ('infra_fuel_energy_pipelines_billions', 'Infrastructure - Fuel, energy and pipelines', 'Billions of dollars', 'billions'),
-            ('infra_transport_billions', 'Infrastructure - Transport', 'Billions of dollars', 'billions'),
-            ('infra_health_housing_billions', 'Infrastructure - Health and housing', 'Billions of dollars', 'billions'),
-            ('infra_education_billions', 'Infrastructure - Education', 'Billions of dollars', 'billions'),
-            ('infra_public_safety_billions', 'Infrastructure - Public safety', 'Billions of dollars', 'billions'),
-            ('infra_environmental_billions', 'Infrastructure - Environmental protection', 'Billions of dollars', 'billions'),
-            ('infra_total_billions', 'Infrastructure - Total net stock', 'Billions of dollars', 'billions'),
+            ('infra_fuel_energy_pipelines_billions', 'Infrastructure - Fuel, energy and pipelines', 'Billions of dollars', 'billions', source_org, source_url),
+            ('infra_transport_billions', 'Infrastructure - Transport', 'Billions of dollars', 'billions', source_org, source_url),
+            ('infra_health_housing_billions', 'Infrastructure - Health and housing', 'Billions of dollars', 'billions', source_org, source_url),
+            ('infra_education_billions', 'Infrastructure - Education', 'Billions of dollars', 'billions', source_org, source_url),
+            ('infra_public_safety_billions', 'Infrastructure - Public safety', 'Billions of dollars', 'billions', source_org, source_url),
+            ('infra_environmental_billions', 'Infrastructure - Environmental protection', 'Billions of dollars', 'billions', source_org, source_url),
+            ('infra_total_billions', 'Infrastructure - Total net stock', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         # STEP 2: Store calculated data in calc_infrastructure table
@@ -551,23 +557,26 @@ class Section2Investment(SectionProcessor):
                     ('asset_total_billions', str(year_int), round(float(total) / 1000, 2)),
                 ])
         
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801'
+        
         metadata_rows = [
-            ('asset_wind_solar', 'Investment by asset - Wind and solar', 'Millions of dollars', 'millions'),
-            ('asset_transmission_distribution', 'Investment by asset - Transmission and distribution', 'Millions of dollars', 'millions'),
-            ('asset_pipelines', 'Investment by asset - Pipelines', 'Millions of dollars', 'millions'),
-            ('asset_nuclear', 'Investment by asset - Nuclear', 'Millions of dollars', 'millions'),
-            ('asset_hydraulic', 'Investment by asset - Hydraulic', 'Millions of dollars', 'millions'),
-            ('asset_steam_thermal', 'Investment by asset - Steam/thermal', 'Millions of dollars', 'millions'),
-            ('asset_other_electric', 'Investment by asset - Other electric', 'Millions of dollars', 'millions'),
-            ('asset_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions'),
-            ('asset_wind_solar_billions', 'Investment by asset - Wind and solar (billions)', 'Billions of dollars', 'billions'),
-            ('asset_transmission_distribution_billions', 'Investment by asset - Transmission and distribution (billions)', 'Billions of dollars', 'billions'),
-            ('asset_pipelines_billions', 'Investment by asset - Pipelines (billions)', 'Billions of dollars', 'billions'),
-            ('asset_nuclear_billions', 'Investment by asset - Nuclear (billions)', 'Billions of dollars', 'billions'),
-            ('asset_hydraulic_billions', 'Investment by asset - Hydraulic (billions)', 'Billions of dollars', 'billions'),
-            ('asset_steam_thermal_billions', 'Investment by asset - Steam/thermal (billions)', 'Billions of dollars', 'billions'),
-            ('asset_other_electric_billions', 'Investment by asset - Other electric (billions)', 'Billions of dollars', 'billions'),
-            ('asset_total_billions', 'Investment - Total fuel, energy and pipeline (billions)', 'Billions of dollars', 'billions'),
+            ('asset_wind_solar', 'Investment by asset - Wind and solar', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_transmission_distribution', 'Investment by asset - Transmission and distribution', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_pipelines', 'Investment by asset - Pipelines', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_nuclear', 'Investment by asset - Nuclear', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_hydraulic', 'Investment by asset - Hydraulic', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_steam_thermal', 'Investment by asset - Steam/thermal', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_other_electric', 'Investment by asset - Other electric', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_total', 'Investment - Total fuel, energy and pipeline', 'Millions of dollars', 'millions', source_org, source_url),
+            ('asset_wind_solar_billions', 'Investment by asset - Wind and solar (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('asset_transmission_distribution_billions', 'Investment by asset - Transmission and distribution (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('asset_pipelines_billions', 'Investment by asset - Pipelines (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('asset_nuclear_billions', 'Investment by asset - Nuclear (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('asset_hydraulic_billions', 'Investment by asset - Hydraulic (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('asset_steam_thermal_billions', 'Investment by asset - Steam/thermal (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('asset_other_electric_billions', 'Investment by asset - Other electric (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('asset_total_billions', 'Investment - Total fuel, energy and pipeline (billions)', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         return self.store_raw_data('investment_by_asset', data_rows, metadata_rows)
@@ -641,11 +650,14 @@ class Section2Investment(SectionProcessor):
                     ('intl_fdi_billions', str(year_int), round(float(fdi_total) / 1000, 1)),
                 ])
         
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610001001'
+        
         metadata_rows = [
-            ('intl_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions'),
-            ('intl_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions'),
-            ('intl_cdia_billions', 'CDIA - Energy industry (billions)', 'Billions of dollars', 'billions'),
-            ('intl_fdi_billions', 'FDI - Energy industry (billions)', 'Billions of dollars', 'billions'),
+            ('intl_cdia', 'Canadian direct investment abroad (CDIA) - Energy industry', 'Millions of dollars', 'millions', source_org, source_url),
+            ('intl_fdi', 'Foreign direct investment in Canada (FDI) - Energy industry', 'Millions of dollars', 'millions', source_org, source_url),
+            ('intl_cdia_billions', 'CDIA - Energy industry (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('intl_fdi_billions', 'FDI - Energy industry (billions)', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         return self.store_raw_data('international_investment', data_rows, metadata_rows)
@@ -698,10 +710,13 @@ class Section2Investment(SectionProcessor):
                     if pd.notna(value):
                         data_rows.append((vector_key, str(year_int), round(float(value), 1)))
         
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310002401'
+        
         metadata_rows = [
-            ('foreign_all_non_financial', 'Foreign control - Total non-financial industries', 'Percent', 'percent'),
-            ('foreign_oil_gas', 'Foreign control - Oil and gas extraction', 'Percent', 'percent'),
-            ('foreign_utilities', 'Foreign control - Utilities', 'Percent', 'percent'),
+            ('foreign_all_non_financial', 'Foreign control - Total non-financial industries', 'Percent', 'percent', source_org, source_url),
+            ('foreign_oil_gas', 'Foreign control - Oil and gas extraction', 'Percent', 'percent', source_org, source_url),
+            ('foreign_utilities', 'Foreign control - Utilities', 'Percent', 'percent', source_org, source_url),
         ]
         
         return self.store_raw_data('foreign_control', data_rows, metadata_rows)
@@ -722,6 +737,7 @@ class Section2Investment(SectionProcessor):
         df = pd.read_csv(io.StringIO(response.text))
         df = df[df['Expenditures'] == 'Total, expenditures'].copy()
         df['year'] = df['REF_DATE'].astype(int)
+        df = df[df['year'] >= 2018].copy()  # Reference period from 2018 per EEDAS
         
         industries = {
             'oil_gas': 'Oil and gas extraction [211]',
@@ -739,10 +755,13 @@ class Section2Investment(SectionProcessor):
             'total': 'Total, environmental protection activities'
         }
         
-        # Define other environmental protection activities to sum into "other"
+        # Define other environmental protection activities to sum into "other" (per EEDAS spec)
         other_activities = [
             'Protection of biodiversity and habitat',
+            'Noise and vibration abatement',
+            'Protection against radiation',
             'Environmental charges',
+            'Clean vehicles and transportation technologies',
             'Other environmental protection activities'
         ]
         
@@ -838,29 +857,25 @@ class Section2Investment(SectionProcessor):
             if field in billions_fields:
                 data_rows.append((f'{vector}_billions', ref_date, round(float(value) / 1000, 2)))
         
-        metadata_rows = [
-            ('enviro_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-            ('enviro_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions'),
-            ('enviro_oil_gas_soil', 'Oil and gas extraction - Protection and remediation of soil, groundwater and surface water', 'Millions of dollars', 'millions'),
-            ('enviro_oil_gas_air', 'Oil and gas extraction - Air pollution management', 'Millions of dollars', 'millions'),
-            ('enviro_oil_gas_solid_waste', 'Oil and gas extraction - Solid waste management', 'Millions of dollars', 'millions'),
-            ('enviro_oil_gas_other', 'Oil and gas extraction - Other environmental protection activities', 'Millions of dollars', 'millions'),
-            ('enviro_electric_total', 'Electric power generation - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-            ('enviro_natural_gas_total', 'Natural gas distribution - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-            ('enviro_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-            ('enviro_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions'),
-            ('enviro_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions'),
-            ('enviro_oil_gas_total_billions', 'Oil and gas - Total (billions)', 'Billions of dollars', 'billions'),
-            ('enviro_electric_total_billions', 'Electric power - Total (billions)', 'Billions of dollars', 'billions'),
-            ('enviro_all_industries_total_billions', 'All industries - Total (billions)', 'Billions of dollars', 'billions'),
-        ]
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001'
         
-        # Add pre-calculated billions for total fields
-        billions_rows = []
-        for vector, ref_date, value in data_rows:
-            if vector.endswith('_total'):
-                billions_rows.append((f'{vector}_billions', ref_date, round(float(value) / 1000, 2)))
-        data_rows.extend(billions_rows)
+        metadata_rows = [
+            ('enviro_oil_gas_total', 'Oil and gas extraction - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_oil_gas_wastewater', 'Oil and gas extraction - Wastewater management', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_oil_gas_soil', 'Oil and gas extraction - Protection and remediation of soil, groundwater and surface water', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_oil_gas_air', 'Oil and gas extraction - Air pollution management', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_oil_gas_solid_waste', 'Oil and gas extraction - Solid waste management', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_oil_gas_other', 'Oil and gas extraction - Other environmental protection activities', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_electric_total', 'Electric power generation - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_natural_gas_total', 'Natural gas distribution - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_petroleum_total', 'Petroleum and coal product manufacturing - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_petroleum_pollution', 'Petroleum and coal product manufacturing - Pollution abatement and control', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_all_industries_total', 'Total industries - Total environmental protection expenditures', 'Millions of dollars', 'millions', source_org, source_url),
+            ('enviro_oil_gas_total_billions', 'Oil and gas - Total (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('enviro_electric_total_billions', 'Electric power - Total (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('enviro_all_industries_total_billions', 'All industries - Total (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+        ]
         
         return self.store_raw_data('environmental_protection', data_rows, metadata_rows)
     
@@ -1279,15 +1294,18 @@ class Section2Investment(SectionProcessor):
                 total_projects = values['oil_gas_projects'] + values['electricity_projects'] + values['other_projects']
                 data_rows.append(('projects_total_count', str(year), total_projects))
         
+        source_org = 'NRCan'
+        source_url = 'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+        
         metadata_rows = [
-            ('projects_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions'),
-            ('projects_oil_gas_count', 'Oil and gas - Number of projects', 'Number', 'units'),
-            ('projects_electricity_value', 'Electricity - Project value', 'Billions of dollars', 'billions'),
-            ('projects_electricity_count', 'Electricity - Number of projects', 'Number', 'units'),
-            ('projects_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
-            ('projects_other_count', 'Other - Number of projects', 'Number', 'units'),
-            ('projects_total_value', 'Total - Project value', 'Billions of dollars', 'billions'),
-            ('projects_total_count', 'Total - Number of projects', 'Number', 'units'),
+            ('projects_oil_gas_value', 'Oil and gas - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('projects_oil_gas_count', 'Oil and gas - Number of projects', 'Number', 'units', source_org, source_url),
+            ('projects_electricity_value', 'Electricity - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('projects_electricity_count', 'Electricity - Number of projects', 'Number', 'units', source_org, source_url),
+            ('projects_other_value', 'Other - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('projects_other_count', 'Other - Number of projects', 'Number', 'units', source_org, source_url),
+            ('projects_total_value', 'Total - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('projects_total_count', 'Total - Number of projects', 'Number', 'units', source_org, source_url),
         ]
         
         print(f"    Major Projects: {len(data_rows)} data rows")
@@ -1333,31 +1351,34 @@ class Section2Investment(SectionProcessor):
                 if f'{cat}_value' in values:
                     data_rows.append((f'cleantech_{cat}_value', str(year), values[f'{cat}_value']))
         
+        source_org = 'NRCan'
+        source_url = 'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+        
         metadata_rows = [
-            ('cleantech_total_count', 'Total clean technology - Number of projects', 'Number', 'units'),
-            ('cleantech_total_value', 'Total clean technology - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_hydro_count', 'Hydro - Number of projects', 'Number', 'units'),
-            ('cleantech_hydro_value', 'Hydro - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_wind_count', 'Wind - Number of projects', 'Number', 'units'),
-            ('cleantech_wind_value', 'Wind - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_biomass_count', 'Biomass/Biofuels - Number of projects', 'Number', 'units'),
-            ('cleantech_biomass_value', 'Biomass/Biofuels - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_solar_count', 'Solar - Number of projects', 'Number', 'units'),
-            ('cleantech_solar_value', 'Solar - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_nuclear_count', 'Nuclear - Number of projects', 'Number', 'units'),
-            ('cleantech_nuclear_value', 'Nuclear - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_ccs_count', 'Carbon Capture and Storage - Number of projects', 'Number', 'units'),
-            ('cleantech_ccs_value', 'Carbon Capture and Storage - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_geothermal_count', 'Geothermal - Number of projects', 'Number', 'units'),
-            ('cleantech_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_tidal_count', 'Tidal - Number of projects', 'Number', 'units'),
-            ('cleantech_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_storage_count', 'Energy Storage - Number of projects', 'Number', 'units'),
-            ('cleantech_storage_value', 'Energy Storage - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_multiple_count', 'Multiple - Number of projects', 'Number', 'units'),
-            ('cleantech_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions'),
-            ('cleantech_other_count', 'Other - Number of projects', 'Number', 'units'),
-            ('cleantech_other_value', 'Other - Project value', 'Billions of dollars', 'billions'),
+            ('cleantech_total_count', 'Total clean technology - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_total_value', 'Total clean technology - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_hydro_count', 'Hydro - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_hydro_value', 'Hydro - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_wind_count', 'Wind - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_wind_value', 'Wind - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_biomass_count', 'Biomass/Biofuels - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_biomass_value', 'Biomass/Biofuels - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_solar_count', 'Solar - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_solar_value', 'Solar - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_nuclear_count', 'Nuclear - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_nuclear_value', 'Nuclear - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_ccs_count', 'Carbon Capture and Storage - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_ccs_value', 'Carbon Capture and Storage - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_geothermal_count', 'Geothermal - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_geothermal_value', 'Geothermal - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_tidal_count', 'Tidal - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_tidal_value', 'Tidal - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_storage_count', 'Energy Storage - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_storage_value', 'Energy Storage - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_multiple_count', 'Multiple - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_multiple_value', 'Multiple - Project value', 'Billions of dollars', 'billions', source_org, source_url),
+            ('cleantech_other_count', 'Other - Number of projects', 'Number', 'units', source_org, source_url),
+            ('cleantech_other_value', 'Other - Project value', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         print(f"    Clean Tech Trends: {len(data_rows)} data rows")

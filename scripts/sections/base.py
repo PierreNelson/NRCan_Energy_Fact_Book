@@ -6,6 +6,7 @@ in the SQL Server database.
 """
 
 import io
+import time
 import pandas as pd
 import requests
 from abc import ABC, abstractmethod
@@ -204,6 +205,81 @@ class SectionProcessor(ABC):
                     pass
             
             raise Exception(f"Failed to fetch data from StatCan: {e}")
+    
+    def fetch_wds_vector_data(self, vector_ids: List[str], start_ref: str = "2007-01-01", end_ref: str = "2030-12-31") -> List[Tuple[int, str, float]]:
+        """
+        Fetch data from StatCan WDS getDataFromVectorByReferencePeriodRange (JSON).
+        Returns list of (vector_id, ref_per, value). ref_per is YYYY or YYYY-MM-DD.
+        vector_ids: list of numeric strings, e.g. ['2363382'] or ['v2363382'] (V stripped).
+        """
+        ids = [str(v).strip().lstrip('vV') for v in vector_ids]
+        vector_str = ','.join(ids)
+        url = (
+            f"https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorByReferencePeriodRange"
+            f"?vectorIds={vector_str}&startRefPeriod={start_ref}&endReferencePeriod={end_ref}"
+        )
+        headers = {
+            "Accept": "*/*",
+            "Accept-Language": "en-CA,en;q=0.9",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://www.statcan.gc.ca/",
+        }
+        last_error = None
+        for attempt in range(3):
+            try:
+                if attempt > 0:
+                    time.sleep(4)
+                response = requests.get(url, timeout=self.REQUEST_TIMEOUT, headers=headers)
+                response.raise_for_status()
+                raw = response.json()
+                last_error = None
+                break
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, ConnectionResetError) as e:
+                last_error = e
+                continue
+            except requests.exceptions.HTTPError as e:
+                if e.response is not None and e.response.status_code in (502, 503, 504):
+                    last_error = e
+                    continue
+                raise Exception(f"WDS request failed: {e}")
+            except Exception as e:
+                raise Exception(f"WDS request failed: {e}")
+        if last_error is not None:
+            raise Exception(f"WDS request failed after 3 attempts: {last_error}")
+        out = []
+        if isinstance(raw, list):
+            for item in raw:
+                if item.get("status") != "SUCCESS":
+                    continue
+                obj = item.get("object") or {}
+                vid = obj.get("vectorId")
+                if vid is None:
+                    continue
+                points = obj.get("vectorDataPoint") or []
+                for pt in points:
+                    ref = (pt.get("refPer") or pt.get("refPerRaw") or "")
+                    val = pt.get("value")
+                    if ref and val is not None and (isinstance(val, (int, float)) or (isinstance(val, str) and val.replace(".", "").replace("-", "").isdigit())):
+                        try:
+                            vfloat = float(val) if not isinstance(val, (int, float)) else val
+                            out.append((int(vid), ref, vfloat))
+                        except (TypeError, ValueError):
+                            pass
+        elif isinstance(raw, dict) and raw.get("status") == "SUCCESS":
+            obj = raw.get("object") or {}
+            vid = obj.get("vectorId")
+            if vid is not None:
+                points = obj.get("vectorDataPoint") or []
+                for pt in points:
+                    ref = (pt.get("refPer") or pt.get("refPerRaw") or "")
+                    val = pt.get("value")
+                    if ref and val is not None:
+                        try:
+                            vfloat = float(val) if not isinstance(val, (int, float)) else val
+                            out.append((int(vid), ref, vfloat))
+                        except (TypeError, ValueError):
+                            pass
+        return out
     
     def get_column(self, df: pd.DataFrame, *possible_names, default=None):
         """

@@ -86,6 +86,7 @@ class Section1Indicators(SectionProcessor):
             'provincial_gdp': self._process_provincial_gdp,
             'world_energy_production': self._process_world_energy_production,
             'canadian_energy_assets': self._process_cea_data,
+            'ghg_emissions': self._process_ghg_emissions,
         }
     
     # =========================================================================
@@ -258,15 +259,17 @@ class Section1Indicators(SectionProcessor):
                     ('econ_investment_value_billions', str(year_int), round(float(investment_value) / 1000, 2)),
                 ])
         
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001'
         metadata_rows = [
-            ('econ_jobs', 'Economic contributions - Jobs (direct + indirect)', 'Number', 'units'),
-            ('econ_employment_income', 'Economic contributions - Employment income', 'Millions of dollars', 'millions'),
-            ('econ_gdp', 'Economic contributions - GDP', 'Millions of dollars', 'millions'),
-            ('econ_investment_value', 'Annual investment - Fuel, energy and pipelines', 'Millions of dollars', 'millions'),
-            ('econ_jobs_thousands', 'Economic contributions - Jobs (thousands)', 'Thousands', 'thousands'),
-            ('econ_employment_income_billions', 'Economic contributions - Employment income (billions)', 'Billions of dollars', 'billions'),
-            ('econ_gdp_billions', 'Economic contributions - GDP (billions)', 'Billions of dollars', 'billions'),
-            ('econ_investment_value_billions', 'Annual investment (billions)', 'Billions of dollars', 'billions'),
+            ('econ_jobs', 'Economic contributions - Jobs (direct + indirect)', 'Number', 'units', source_org, source_url),
+            ('econ_employment_income', 'Economic contributions - Employment income', 'Millions of dollars', 'millions', source_org, source_url),
+            ('econ_gdp', 'Economic contributions - GDP', 'Millions of dollars', 'millions', source_org, source_url),
+            ('econ_investment_value', 'Annual investment - Fuel, energy and pipelines', 'Millions of dollars', 'millions', source_org, source_url),
+            ('econ_jobs_thousands', 'Economic contributions - Jobs (thousands)', 'Thousands', 'thousands', source_org, source_url),
+            ('econ_employment_income_billions', 'Economic contributions - Employment income (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('econ_gdp_billions', 'Economic contributions - GDP (billions)', 'Billions of dollars', 'billions', source_org, source_url),
+            ('econ_investment_value_billions', 'Annual investment (billions)', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         # STEP 2: Store calculated data in calc_economic_contributions table
@@ -366,27 +369,29 @@ class Section1Indicators(SectionProcessor):
                     ('gdp_nominal_market_billions', str(year), round(nominal_gdp_market / 1000, 0)),
                 ])
         
+        source_org = 'NRCan'
+        source_url = 'https://docs.google.com/document/d/11ad-aqY6WjcQwHRWuSrZgQKxMD_U6jKaXlR5q-p0CXI/'
         metadata_rows = [
-            ('gdp_nominal_total', "Energy's nominal GDP contribution - Total", 'Millions of dollars', 'millions'),
-            ('gdp_nominal_direct', "Energy's nominal GDP contribution - Direct", 'Millions of dollars', 'millions'),
-            ('gdp_nominal_indirect', "Energy's nominal GDP contribution - Indirect", 'Millions of dollars', 'millions'),
-            ('gdp_nominal_petroleum', "Energy's nominal GDP contribution - Petroleum", 'Millions of dollars', 'millions'),
-            ('gdp_nominal_electricity', "Energy's nominal GDP contribution - Electricity", 'Millions of dollars', 'millions'),
-            ('gdp_nominal_other', "Energy's nominal GDP contribution - Other", 'Millions of dollars', 'millions'),
-            ('gdp_nominal_market', "Nominal GDP at market prices", 'Millions of dollars', 'millions'),
-            ('gdp_nominal_total_pct', "Energy's nominal GDP share - Total", 'Percent', 'percent'),
-            ('gdp_nominal_direct_pct', "Energy's nominal GDP share - Direct", 'Percent', 'percent'),
-            ('gdp_nominal_indirect_pct', "Energy's nominal GDP share - Indirect", 'Percent', 'percent'),
-            ('gdp_nominal_petroleum_pct', "Energy's nominal GDP share - Petroleum", 'Percent', 'percent'),
-            ('gdp_nominal_electricity_pct', "Energy's nominal GDP share - Electricity", 'Percent', 'percent'),
-            ('gdp_nominal_other_pct', "Energy's nominal GDP share - Other", 'Percent', 'percent'),
-            ('gdp_nominal_total_billions', "Energy's nominal GDP - Total (billions)", 'Billions of dollars', 'billions'),
-            ('gdp_nominal_direct_billions', "Energy's nominal GDP - Direct (billions)", 'Billions of dollars', 'billions'),
-            ('gdp_nominal_indirect_billions', "Energy's nominal GDP - Indirect (billions)", 'Billions of dollars', 'billions'),
-            ('gdp_nominal_petroleum_billions', "Energy's nominal GDP - Petroleum (billions)", 'Billions of dollars', 'billions'),
-            ('gdp_nominal_electricity_billions', "Energy's nominal GDP - Electricity (billions)", 'Billions of dollars', 'billions'),
-            ('gdp_nominal_other_billions', "Energy's nominal GDP - Other (billions)", 'Billions of dollars', 'billions'),
-            ('gdp_nominal_market_billions', "Nominal GDP at market prices (billions)", 'Billions of dollars', 'billions'),
+            ('gdp_nominal_total', "Energy's nominal GDP contribution - Total", 'Millions of dollars', 'millions', source_org, source_url),
+            ('gdp_nominal_direct', "Energy's nominal GDP contribution - Direct", 'Millions of dollars', 'millions', source_org, source_url),
+            ('gdp_nominal_indirect', "Energy's nominal GDP contribution - Indirect", 'Millions of dollars', 'millions', source_org, source_url),
+            ('gdp_nominal_petroleum', "Energy's nominal GDP contribution - Petroleum", 'Millions of dollars', 'millions', source_org, source_url),
+            ('gdp_nominal_electricity', "Energy's nominal GDP contribution - Electricity", 'Millions of dollars', 'millions', source_org, source_url),
+            ('gdp_nominal_other', "Energy's nominal GDP contribution - Other", 'Millions of dollars', 'millions', source_org, source_url),
+            ('gdp_nominal_market', "Nominal GDP at market prices", 'Millions of dollars', 'millions', source_org, source_url),
+            ('gdp_nominal_total_pct', "Energy's nominal GDP share - Total", 'Percent', 'percent', source_org, source_url),
+            ('gdp_nominal_direct_pct', "Energy's nominal GDP share - Direct", 'Percent', 'percent', source_org, source_url),
+            ('gdp_nominal_indirect_pct', "Energy's nominal GDP share - Indirect", 'Percent', 'percent', source_org, source_url),
+            ('gdp_nominal_petroleum_pct', "Energy's nominal GDP share - Petroleum", 'Percent', 'percent', source_org, source_url),
+            ('gdp_nominal_electricity_pct', "Energy's nominal GDP share - Electricity", 'Percent', 'percent', source_org, source_url),
+            ('gdp_nominal_other_pct', "Energy's nominal GDP share - Other", 'Percent', 'percent', source_org, source_url),
+            ('gdp_nominal_total_billions', "Energy's nominal GDP - Total (billions)", 'Billions of dollars', 'billions', source_org, source_url),
+            ('gdp_nominal_direct_billions', "Energy's nominal GDP - Direct (billions)", 'Billions of dollars', 'billions', source_org, source_url),
+            ('gdp_nominal_indirect_billions', "Energy's nominal GDP - Indirect (billions)", 'Billions of dollars', 'billions', source_org, source_url),
+            ('gdp_nominal_petroleum_billions', "Energy's nominal GDP - Petroleum (billions)", 'Billions of dollars', 'billions', source_org, source_url),
+            ('gdp_nominal_electricity_billions', "Energy's nominal GDP - Electricity (billions)", 'Billions of dollars', 'billions', source_org, source_url),
+            ('gdp_nominal_other_billions', "Energy's nominal GDP - Other (billions)", 'Billions of dollars', 'billions', source_org, source_url),
+            ('gdp_nominal_market_billions', "Nominal GDP at market prices (billions)", 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
         return self.store_raw_data('nominal_gdp', data_rows, metadata_rows)
@@ -482,12 +487,16 @@ class Section1Indicators(SectionProcessor):
                 data_rows.append(('gdp_prov_national_total', str(ry), energy_direct_gdp_ry))
         
         # Build metadata
+        source_org = 'Statistics Canada'
+        source_url = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401'
         for prov_code, prov_name in self.PROVINCE_NAMES.items():
             metadata_rows.append((
                 f'gdp_prov_{prov_code}',
                 f'Energy sector direct nominal GDP - {prov_name}',
                 'Millions of dollars',
-                'millions'
+                'millions',
+                source_org,
+                source_url
             ))
         
         return self.store_raw_data('provincial_gdp', data_rows, metadata_rows)
@@ -616,17 +625,19 @@ class Section1Indicators(SectionProcessor):
                     world_growth = (float(world_current) - float(world_2005)) / float(world_2005) * 100
                     data_rows.append(('energy_prod_world_growth_since_2005', str(year_int), round(world_growth, 0)))
             
+            source_org = 'International Energy Agency'
+            source_url = 'https://www.iea.org/data-and-statistics/data-tools/world-energy-balances'
             metadata_rows = [
-                ('energy_prod_world_total', 'World Total Primary Energy Production', 'PJ', 'petajoules'),
-                ('energy_prod_canada_pj', 'Canada Primary Energy Production', 'PJ', 'petajoules'),
-                ('energy_prod_canada_pct', 'Canada Share of World Energy Production', '%', 'percent'),
-                ('energy_prod_canada_growth_since_2005', 'Canada Energy Production Growth Since 2005', '%', 'percent'),
-                ('energy_prod_world_growth_since_2005', 'World Energy Production Growth Since 2005', '%', 'percent'),
-                ('energy_prod_china_pct', 'China Share of World Energy Production', '%', 'percent'),
-                ('energy_prod_united_states_pct', 'United States Share of World Energy Production', '%', 'percent'),
-                ('energy_prod_india_pct', 'India Share of World Energy Production', '%', 'percent'),
-                ('energy_prod_indonesia_pct', 'Indonesia Share of World Energy Production', '%', 'percent'),
-                ('energy_prod_australia_pct', 'Australia Share of World Energy Production', '%', 'percent'),
+                ('energy_prod_world_total', 'World Total Primary Energy Production', 'PJ', 'petajoules', source_org, source_url),
+                ('energy_prod_canada_pj', 'Canada Primary Energy Production', 'PJ', 'petajoules', source_org, source_url),
+                ('energy_prod_canada_pct', 'Canada Share of World Energy Production', '%', 'percent', source_org, source_url),
+                ('energy_prod_canada_growth_since_2005', 'Canada Energy Production Growth Since 2005', '%', 'percent', source_org, source_url),
+                ('energy_prod_world_growth_since_2005', 'World Energy Production Growth Since 2005', '%', 'percent', source_org, source_url),
+                ('energy_prod_china_pct', 'China Share of World Energy Production', '%', 'percent', source_org, source_url),
+                ('energy_prod_united_states_pct', 'United States Share of World Energy Production', '%', 'percent', source_org, source_url),
+                ('energy_prod_india_pct', 'India Share of World Energy Production', '%', 'percent', source_org, source_url),
+                ('energy_prod_indonesia_pct', 'Indonesia Share of World Energy Production', '%', 'percent', source_org, source_url),
+                ('energy_prod_australia_pct', 'Australia Share of World Energy Production', '%', 'percent', source_org, source_url),
             ]
             
             print(f"    Processed {len(data_rows)} data rows")
@@ -929,17 +940,19 @@ class Section1Indicators(SectionProcessor):
                     if region_value > 0:
                         data_rows.append((f'cea_{region_key}', str(year), round(float(region_value) / 1000, 1)))
             
+            source_org = 'NRCan'
+            source_url = 'https://www.nrcan.gc.ca/energy/energy-sources-distribution/energy-facts/canadian-energy-assets/20064'
             metadata_rows = [
-                ('cea_total', 'Canadian Energy Assets - Total (A1)', 'Billions of dollars', 'billions'),
-                ('cea_domestic', 'Canadian Energy Assets - Domestic (A3, Country=Canada)', 'Billions of dollars', 'billions'),
-                ('cea_abroad', 'Canadian Energy Assets - Abroad (A4)', 'Billions of dollars', 'billions'),
-                ('cea_canada', 'Canadian Energy Assets - Canada (by Continent)', 'Billions of dollars', 'billions'),
-                ('cea_north_america', 'Canadian Energy Assets - North America (US and Mexico)', 'Billions of dollars', 'billions'),
-                ('cea_latin_america', 'Canadian Energy Assets - Latin America and Caribbean', 'Billions of dollars', 'billions'),
-                ('cea_europe', 'Canadian Energy Assets - Europe', 'Billions of dollars', 'billions'),
-                ('cea_africa', 'Canadian Energy Assets - Africa', 'Billions of dollars', 'billions'),
-                ('cea_asia', 'Canadian Energy Assets - Asia', 'Billions of dollars', 'billions'),
-                ('cea_oceania', 'Canadian Energy Assets - Oceania', 'Billions of dollars', 'billions'),
+                ('cea_total', 'Canadian Energy Assets - Total (A1)', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_domestic', 'Canadian Energy Assets - Domestic (A3, Country=Canada)', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_abroad', 'Canadian Energy Assets - Abroad (A4)', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_canada', 'Canadian Energy Assets - Canada (by Continent)', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_north_america', 'Canadian Energy Assets - North America (US and Mexico)', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_latin_america', 'Canadian Energy Assets - Latin America and Caribbean', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_europe', 'Canadian Energy Assets - Europe', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_africa', 'Canadian Energy Assets - Africa', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_asia', 'Canadian Energy Assets - Asia', 'Billions of dollars', 'billions', source_org, source_url),
+                ('cea_oceania', 'Canadian Energy Assets - Oceania', 'Billions of dollars', 'billions', source_org, source_url),
             ]
             
             print(f"\n    CEA Processing Complete")
@@ -950,6 +963,26 @@ class Section1Indicators(SectionProcessor):
             
         except Exception as e:
             print(f"    Error processing CEA file: {e}")
+            import traceback
+            traceback.print_exc()
+            return 0
+
+    def _process_ghg_emissions(self) -> int:
+        """Process GHG emissions by economic sector from ECCC Excel (data_retrieval logic)."""
+        try:
+            import sys
+            from pathlib import Path
+            scripts_dir = Path(__file__).resolve().parent.parent
+            if str(scripts_dir) not in sys.path:
+                sys.path.insert(0, str(scripts_dir))
+            from data_retrieval import process_ghg_emissions_data
+            data_rows, metadata_rows = process_ghg_emissions_data()
+            if not data_rows:
+                return 0
+            self.repo.clear_raw_data('ghg_emissions')
+            return self.store_raw_data('ghg_emissions', data_rows, metadata_rows)
+        except Exception as e:
+            print(f"    Error processing GHG emissions: {e}")
             import traceback
             traceback.print_exc()
             return 0

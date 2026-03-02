@@ -147,28 +147,25 @@ const Page20 = () => {
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
-    if (pageData.length === 0) return <div>No data available.</div>;
+    if (pageData.length === 0) return <div className="page20-empty" style={{ padding: '24px 20px', marginTop: '32px' }} role="region" aria-label={lang === 'en' ? 'GHG emissions chart' : 'Graphique des émissions de GES'}>{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</div>;
 
     const years = pageData.map(d => d.year);
     const minYear = Math.min(...years);
     const maxYear = Math.max(...years);
 
     const tickVals = [];
-    for (let y = minYear; y <= maxYear; y += 5) {
+    for (let y = 2001; y <= maxYear; y += 2) {
         tickVals.push(y);
-    }
-    if (!tickVals.includes(maxYear)) {
-        tickVals.push(maxYear);
     }
 
     const colors = {
-        'oil_gas': '#1a472a',
-        'heavy_industry': '#2d5a3d',
-        'transportation': '#48A36C',
-        'buildings': '#E3540D',
-        'electricity': '#857550',
-        'waste_others': '#c4b896',
-        'agriculture': '#e8dcc8'
+        'oil_gas': '#819892',
+        'heavy_industry': '#54A2AB',
+        'transportation': '#214897',
+        'buildings': '#647c8f',
+        'electricity': '#2D9FA9',
+        'waste_others': '#48A36C',
+        'agriculture': '#857550'
     };
 
     const seriesConfig = [
@@ -341,7 +338,7 @@ const Page20 = () => {
         const headerRow = new TableRow({
             children: headers.map(header => new TableCell({
                 children: [new Paragraph({
-                    children: [new TextRun({ text: header, bold: true, size: 18 })],
+                    children: [new TextRun({ text: header, bold: true, size: 22 })],
                     alignment: AlignmentType.CENTER
                 })],
                 shading: { fill: 'E6E6E6' }
@@ -350,10 +347,10 @@ const Page20 = () => {
 
         const dataRows = pageData.map(yearData => new TableRow({
             children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 18 })], alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
                 ...seriesConfig.map(s => new TableCell({ 
                     children: [new Paragraph({ 
-                        children: [new TextRun({ text: (yearData[s.key] || 0).toFixed(1), size: 18 })], 
+                        children: [new TextRun({ text: (yearData[s.key] || 0).toFixed(1), size: 22 })], 
                         alignment: AlignmentType.RIGHT 
                     })] 
                 }))
@@ -364,12 +361,13 @@ const Page20 = () => {
             sections: [{
                 children: [
                     new Paragraph({
-                        children: [new TextRun({ text: title, bold: true, size: 24 })],
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
                         alignment: AlignmentType.CENTER,
                         spacing: { after: 300 }
                     }),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1000, 1400, 1400, 1400, 1200, 1200, 1400, 1200],
                         rows: [headerRow, ...dataRows]
                     })
                 ]
@@ -505,12 +503,11 @@ const Page20 = () => {
 
                 .page20-title {
                     font-family: 'Lato', sans-serif;
-                    font-size: 50px;
+                    font-size: 41px;
                     font-weight: bold;
+                    color: var(--gc-text);
                     margin-top: 0;
                     margin-bottom: 25px;
-                    color: #245e7f;
-                    margin: 0 0 20px 0;
                     line-height: 1.2;
                     position: relative;
                     padding-bottom: 0.5em;
@@ -530,10 +527,6 @@ const Page20 = () => {
                     position: relative;
                     width: calc(100% + 30px);
                     margin-left: 0px;
-                }
-
-                .layout-stacked .page20-legend {
-                    margin-top: -200px !important;
                 }
 
                 @media (max-width: 1400px) {
@@ -895,37 +888,60 @@ const Page20 = () => {
                                     </div>
                                 ))}
                             </div>
+                        </div>
 
-                            <div className="page20-table-wrapper">
-                                {getAccessibleDataTable()}
-                            </div>
+                        <div className="page20-table-wrapper">
+                            {getAccessibleDataTable()}
                         </div>
                     </div>
 
                     <aside className="page20-text-column">
                         <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '0', color: '#333' }}>
-                            <li className="page20-bullet" style={{ marginBottom: '20px', lineHeight: '1.4', marginTop: '20px' }}>
-                                {getText('page20_bullet1_part1', lang)}
-                                <strong>{getText('page20_bullet1_part2', lang)}</strong>
-                                {getText('page20_bullet1_part3', lang)}
+                            <li 
+                                className="page20-bullet" 
+                                style={{ marginBottom: '20px', lineHeight: '1.4', marginTop: '20px' }}
+                                aria-label={lang === 'en'
+                                    ? 'Between 2000 and 2023, emissions from electricity generation dropped 62%, largely due to Ontario\'s coal phase-out plan which began in 2001.'
+                                    : "Entre 2000 et 2023, les émissions provenant de la production d'électricité ont connu une baisse de 62 %, surtout grâce au plan d'action de l'Ontario visant une élimination progressive du charbon qui a débuté en 2001."
+                                }
+                            >
+                                <span aria-hidden="true">
+                                    {getText('page20_bullet1_part1', lang)}
+                                    <strong>{getText('page20_bullet1_part2', lang)}</strong>
+                                    {getText('page20_bullet1_part3', lang)}
+                                </span>
                             </li>
 
-                            <li className="page20-bullet" style={{ marginBottom: '20px', lineHeight: '1.4' }}>
-                                {getText('page20_bullet2_part1', lang)}
-                                <strong>{getText('page20_bullet2_part2', lang)}</strong>
-                                {getText('page20_bullet2_part3', lang)}
+                            <li 
+                                className="page20-bullet" 
+                                style={{ marginBottom: '20px', lineHeight: '1.4' }}
+                                aria-label={lang === 'en'
+                                    ? 'Oil and gas sector emissions increased 16% due to a 67% rise in production.'
+                                    : "Les émissions du secteur pétrolier et gazier ont augmenté de 16 % en raison de l'augmentation de 67 % de la production."
+                                }
+                            >
+                                <span aria-hidden="true">
+                                    {getText('page20_bullet2_part1', lang)}
+                                    <strong>{getText('page20_bullet2_part2', lang)}</strong>
+                                    {getText('page20_bullet2_part3', lang)}
+                                </span>
                             </li>
 
-                            <li className="page20-bullet" style={{ marginBottom: '20px', lineHeight: '1.4' }}>
-                                {getText('page20_bullet3_part1', lang)}
-                                <strong>{getText('page20_bullet3_part2', lang)}</strong>
-                                {getText('page20_bullet3_part3', lang)}
+                            <li 
+                                className="page20-bullet" 
+                                style={{ marginBottom: '2px', lineHeight: '1.4' }}
+                                aria-label={lang === 'en'
+                                    ? 'Heavy industry sector emissions decreased by nearly 19% despite increased industrial production, partly due to energy efficiency improvements and fuel switching.'
+                                    : "Les émissions du secteur de l'industrie lourde ont diminué de presque 19 % malgré une hausse de production pour le secteur industriel. Cela est dû en partie aux améliorations de l'efficacité énergétique et au changement de combustible."
+                                }
+                            >
+                                <span aria-hidden="true">
+                                    {getText('page20_bullet3_part1', lang)}
+                                    <strong>{getText('page20_bullet3_part2', lang)}</strong>
+                                    {getText('page20_bullet3_part3', lang)}
+                                </span>
                             </li>
                         </ul>
-
-                        <p className="page20-source">
-                            {getText('page20_source', lang)}
-                        </p>
                     </aside>
                 </div>
             </div>

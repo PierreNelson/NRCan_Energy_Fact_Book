@@ -10,6 +10,7 @@ import Page9 from '../pages/Page9';
 import Page10 from '../pages/Page10';
 import Page11 from '../pages/Page11';
 import Page20 from '../pages/Page20';
+import Page21 from '../pages/Page21';
 
 const SectionOne = () => {
     const location = useLocation();
@@ -66,6 +67,9 @@ const SectionOne = () => {
                 </div>
                 <div id="ghg-emissions" className="stacked-page-wrapper">
                     <Page20 />
+                </div>
+                <div id="energy-information-landscape" className="stacked-page-wrapper">
+                    <Page21 />
                 </div>
             </div>
         </div>

@@ -449,3 +449,77 @@ export async function getGHGEmissionsData() {
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
+
+/**
+ * Get environmental and clean technology snapshot data.
+ * Returns { snapshots, years, tmx }. snapshots: array of snapshot objects (one per year 2007..latest);
+ * years: [2007, ..., latest]; tmx: TSX stats if available (from most recent year with tmx data).
+ */
+export async function getEnvironmentalCleanTechData() {
+    const allData = await loadAllData();
+    const ectData = allData.filter(row => row.vector && row.vector.startsWith('envcleantech_'));
+    const yearMap = {};
+    ectData.forEach(row => {
+        const rawYear = row.ref_date;
+        const year = typeof rawYear === 'number' && !Number.isNaN(rawYear) ? rawYear : Number(rawYear) || rawYear;
+        if (!yearMap[year]) {
+            yearMap[year] = { year };
+        }
+        const field = row.vector.replace('envcleantech_', '');
+        yearMap[year][field] = row.value;
+    });
+    const sorted = Object.values(yearMap).sort((a, b) => Number(a.year) - Number(b.year));
+    const minYear = 2007;
+    const maxYear = sorted.length ? Math.max(...sorted.map((s) => Number(s.year))) : minYear;
+    const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+    const marketGdpByYear = {};
+    allData.forEach((row) => {
+        if (row.vector !== 'gdp_nominal_market') return;
+        const yr = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (!Number.isNaN(yr)) marketGdpByYear[yr] = Number(row.value);
+    });
+    const snapshots = years.map((y) => {
+        const row = yearMap[y] || { year: y };
+        const emp = row.employment_total;
+        const gdp = row.gdp_annual;
+        const jobsTotal = row.eco_jobs_total;
+        const jobsClean = row.eco_jobs_clean_energy;
+        const exports = row.eco_exports;
+        const gdpBillions = gdp != null ? gdp / 1000 : null;
+        const exportsBillions = exports != null ? exports / 1000 : null;
+        const jobsPct = emp != null && emp !== 0 && jobsTotal != null ? (jobsTotal / (emp * 1000)) * 100 : null;
+        const totalMarketGdp = marketGdpByYear[y];
+        const gdp_pct = (gdp != null && totalMarketGdp != null && totalMarketGdp > 0)
+            ? Math.round((gdp / totalMarketGdp) * 1000) / 10
+            : null;
+        const cleanEnergyGdp = row.clean_energy_gdp;
+        const clean_energy_gdp_pct = (cleanEnergyGdp != null && totalMarketGdp != null && totalMarketGdp > 0)
+            ? Math.round((cleanEnergyGdp / totalMarketGdp) * 1000) / 10
+            : null;
+        return {
+            year: y,
+            employment_total: emp,
+            gdp_annual: gdp,
+            gdp_billions: gdpBillions,
+            gdp_pct: gdp_pct ?? null,
+            clean_energy_gdp_pct: clean_energy_gdp_pct ?? null,
+            eco_jobs_total: jobsTotal,
+            eco_jobs_clean_energy: jobsClean,
+            eco_exports: exports,
+            eco_exports_billions: exportsBillions,
+            jobs_pct: jobsPct,
+        };
+    });
+    // TMX: from the most recent year that has tmx data
+    const withTmx = sorted.filter((y) => y.tmx_count != null || y.tmx_mcap_total != null);
+    const tmxSource = withTmx.length ? withTmx[withTmx.length - 1] : null;
+    const tmxCount = tmxSource?.tmx_count;
+    const tmxMcap = tmxSource?.tmx_mcap_total;
+    const tmxCanCount = tmxSource?.tmx_can_count;
+    const tmxCanMcap = tmxSource?.tmx_can_mcap;
+    return {
+        snapshots,
+        years,
+        tmx: (tmxCount != null || tmxMcap != null) ? { count: tmxCount, mcap_total: tmxMcap, can_count: tmxCanCount, can_mcap: tmxCanMcap } : null,
+    };
+}

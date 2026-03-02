@@ -61,6 +61,12 @@ sections:
         source_type: "file"
         file_path: "CEA_2023.xlsx"
 
+      ghg_emissions:
+        enabled: true
+        description: "GHG emissions by Canadian economic sector (ECCC)"
+        source_type: "file"
+        file_path: "EN_Annex10_GHG_Econ_Canada.xlsx"
+
   # Section 2: Investment
   section2_investment:
     enabled: true
@@ -125,11 +131,19 @@ sections:
     name: "Energy Efficiency"
     sources: {}
 
-  # Section 5: Clean Power and Low Carbon Fuels (placeholder)
+  # Section 5: Clean Power and Low Carbon Fuels
   section5_clean_power:
-    enabled: false
+    enabled: true
     name: "Clean Power and Low Carbon Fuels"
-    sources: {}
+    sources:
+      environmental_clean_tech:
+        enabled: true
+        description: "Environmental and clean technology (GDP, jobs, exports) + TSX/TSXV cleantech list"
+        statcan_table: "14-10-0023-01, 36-10-0103-01, 36-10-0632-01, 36-10-0629-01"
+        source_type: "external"
+        source_url: "https://www.tsx.com/resource/en/571"
+        # Optional: path to TSX cleantech XLSX (relative to scripts/ or absolute). If unset, scripts/tmx_cleantech.xlsx is used when present.
+        # tmx_xlsx_path: "tmx_cleantech.xlsx"
 
   # Section 6: Oil, Natural Gas and Coal (placeholder)
   section6_oil_gas:

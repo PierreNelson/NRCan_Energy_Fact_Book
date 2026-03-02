@@ -87,6 +87,8 @@ const Glossary = () => {
                 uom: meta.uom || '',
                 scalar: meta.scalar_factor || '',
                 dataSource: meta.data_source || '',
+                sourceOrg: meta.source_org || '',
+                sourceUrl: meta.source_url || '',
                 dataPoints
             };
         }).sort((a, b) => a.vector.localeCompare(b.vector));
@@ -184,6 +186,22 @@ const Glossary = () => {
                     padding: 1px 4px;
                     border-radius: 3px;
                     font-size: 13px;
+                }
+                .glossary-source {
+                    font-size: 14px;
+                    color: #333;
+                    margin-top: 8px;
+                    padding: 8px;
+                    background: #e8f4e8;
+                    border-radius: 4px;
+                    word-break: break-all;
+                }
+                .glossary-source a {
+                    color: #26374a;
+                    text-decoration: underline;
+                }
+                .glossary-source a:hover {
+                    color: #1a252f;
                 }
                 .glossary-empty {
                     padding: 40px;
@@ -316,8 +334,23 @@ const Glossary = () => {
                                         <div className="glossary-meta">
                                             {item.uom && <span>Unit: {item.uom}</span>}
                                             {item.scalar && <span> | Scale: {item.scalar}</span>}
-                                            {item.dataSource && <span> | Source: {item.dataSource}</span>}
                                         </div>
+                                        {(item.sourceOrg || item.sourceUrl) && (
+                                            <div className="glossary-source">
+                                                {item.sourceOrg && <span><strong>Source:</strong> {item.sourceOrg}</span>}
+                                                {item.sourceUrl && (
+                                                    <span>
+                                                        {item.sourceOrg && ' | '}
+                                                        <strong>URL:</strong>{' '}
+                                                        {item.sourceUrl.startsWith('http') ? (
+                                                            <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">{item.sourceUrl}</a>
+                                                        ) : (
+                                                            <span>{item.sourceUrl}</span>
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                         {item.dataPoints.length > 0 && (
                                             <details className="glossary-data-details">
                                                 <summary>{item.dataPoints.length} data point(s) - click to expand</summary>
@@ -384,6 +417,20 @@ const Glossary = () => {
                                                 <strong>{lang === 'en' ? 'Clean Technology:' : 'Technologie propre:'}</strong> {project.clean_technology_type || 'Yes'}
                                             </div>
                                         )}
+                                        {(() => {
+                                            const sourceOrg = project.source_org || (lang === 'en' ? 'Natural Resources Canada' : 'Ressources naturelles Canada');
+                                            const sourceUrl = project.source_url || 'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034';
+                                            return (
+                                                <div className="glossary-source">
+                                                    <span><strong>{lang === 'en' ? 'Source:' : 'Source :'}</strong> {sourceOrg}</span>
+                                                    <span>
+                                                        {' | '}
+                                                        <strong>URL:</strong>{' '}
+                                                        <a href={sourceUrl} target="_blank" rel="noopener noreferrer">{sourceUrl}</a>
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 ))}
                             </>

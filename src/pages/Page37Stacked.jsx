@@ -1188,6 +1188,14 @@ const getAccessibleDataTable = () => {
                     </ul>
                 )}
 
+                {dynamicValues && (
+                    <p className="page37-source" style={{ fontSize: '14px', marginTop: '8px', marginBottom: '16px', color: '#555' }}>
+                        {lang === 'en' ? 'Source: Statistics Canada. ' : 'Source : Statistique Canada. '}
+                        <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001" target="_blank" rel="noopener noreferrer">{lang === 'en' ? 'Table 38-10-0130-01' : 'Tableau 38-10-0130-01'}</a>
+                        {lang === 'en' ? ', Capital and operating expenditures on environmental activities by industry.' : ', Dépenses en capital et d\'exploitation pour les activités de protection de l\'environnement par industrie.'}
+                    </p>
+                )}
+
                 {/* SINGLE-SELECT RADIO DROPDOWN (Page 30 style) */}
                 <div 
                     ref={yearDropdownRef} 

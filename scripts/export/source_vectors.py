@@ -19,6 +19,7 @@ SOURCE_VECTOR_PREFIXES = {
     'environmental_protection': ['enviro_'],
     'major_projects': ['projects_'],
     'clean_tech': ['cleantech_'],
+    'environmental_clean_tech': ['envcleantech_'],
     'ghg_emissions': ['ghg_'],
 }
 
@@ -37,6 +38,7 @@ SOURCE_DISPLAY_NAMES = {
     'environmental_protection': 'Environmental Protection',
     'major_projects': 'Major Projects',
     'clean_tech': 'Clean Technology',
+    'environmental_clean_tech': 'Environmental and Clean Technology',
     'ghg_emissions': 'GHG Emissions by Economic Sector',
 }
 

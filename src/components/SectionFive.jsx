@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Page59 from '../pages/Page59';
+import Page61 from '../pages/Page61';
 
 const SectionFive = () => {
     const location = useLocation();
@@ -20,9 +21,12 @@ const SectionFive = () => {
     }, [location]);
 
     return (
-        <div className="section-five-container">
-            <div id="clean-power-low-carbon-overview">
+        <div className="section-five-container stacked-section-container">
+            <div id="clean-power-low-carbon-overview" className="stacked-page-wrapper">
                 <Page59 />
+            </div>
+            <div id="environmental-clean-technology" className="stacked-page-wrapper">
+                <Page61 />
             </div>
         </div>
     );

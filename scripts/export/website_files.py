@@ -229,43 +229,40 @@ class WebsiteExporter:
         # Apply filters if any
         if self._is_filtered_export():
             # For filtered exports, merge with existing metadata
+            # Stored value: (title, uom, scalar_factor, data_source, source_org, source_url)
             existing_metadata = {}
             if output_path.exists():
                 with open(output_path, 'r', encoding='utf-8') as f:
                     reader = csv.reader(f)
-                    next(reader)  # Skip header
+                    header = next(reader)
                     for row in reader:
-                        if len(row) >= 5:
-                            existing_metadata[row[0]] = (row[1], row[2], row[3], row[4])
+                        if len(row) >= 7:
+                            existing_metadata[row[0]] = (row[1], row[2], row[3], row[4], row[5], row[6])
+                        elif len(row) >= 5:
+                            existing_metadata[row[0]] = (row[1], row[2], row[3], row[4], '', '')
                         elif len(row) >= 4:
-                            # Legacy format without data_source
-                            existing_metadata[row[0]] = (row[1], row[2], row[3], get_display_name_for_vector(row[0]))
+                            existing_metadata[row[0]] = (row[1], row[2], row[3], get_display_name_for_vector(row[0]), '', '')
             
-            # Filter new metadata
+            # Filter new metadata (row: vector, title, uom, scalar_factor, source_org, source_url)
             filtered_metadata = [row for row in all_metadata if self._should_include_vector(row[0])]
-            
-            # Update existing with filtered new (add data_source)
             for row in filtered_metadata:
                 data_source = get_display_name_for_vector(row[0])
-                existing_metadata[row[0]] = (row[1], row[2], row[3], data_source)
+                existing_metadata[row[0]] = (row[1], row[2], row[3], data_source, row[4], row[5])
             
-            # Convert back to list and sort
-            metadata = [(k, v[0], v[1], v[2], v[3]) for k, v in existing_metadata.items()]
+            metadata = [(k, v[0], v[1], v[2], v[3], v[4], v[5]) for k, v in existing_metadata.items()]
             metadata.sort(key=lambda x: x[0])
-            
             print(f"  Updated {len(filtered_metadata)} vectors, total {len(metadata)} rows")
         else:
-            # Add data_source to all metadata rows
+            # Full export: row is (vector, title, uom, scalar_factor, source_org, source_url)
             metadata = []
             for row in all_metadata:
                 data_source = get_display_name_for_vector(row[0])
-                metadata.append((row[0], row[1], row[2], row[3], data_source))
+                metadata.append((row[0], row[1], row[2], row[3], data_source, row[4], row[5]))
         
-        # Write CSV
+        # Write CSV (7 columns for Glossary: data_source, source_org, source_url)
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow(['vector', 'title', 'uom', 'scalar_factor', 'data_source'])
-            
+            writer.writerow(['vector', 'title', 'uom', 'scalar_factor', 'data_source', 'source_org', 'source_url'])
             for row in metadata:
                 writer.writerow(row)
         
@@ -295,19 +292,24 @@ class WebsiteExporter:
             print("  No major projects map data available")
             return {'status': 'skipped', 'rows': 0, 'path': str(output_path)}
         
-        # Write CSV with all map fields
+        # Source for glossary (NRCan Major Energy and Clean Technology Projects)
+        source_org = 'Natural Resources Canada'
+        source_url = 'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+        
+        # Write CSV with all map fields plus source_org, source_url for glossary
         headers = [
             'lang', 'id', 'company', 'project_name', 'province', 'location',
             'capital_cost', 'capital_cost_range', 'status', 'clean_technology',
-            'clean_technology_type', 'line_type', 'lat', 'lon', 'paths', 'type'
+            'clean_technology_type', 'line_type', 'lat', 'lon', 'paths', 'type',
+            'source_org', 'source_url'
         ]
         
         with open(output_path, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.DictWriter(f, fieldnames=headers, extrasaction='ignore')
             writer.writeheader()
-            
             for project in projects:
-                writer.writerow(project)
+                row = {**project, 'source_org': source_org, 'source_url': source_url}
+                writer.writerow(row)
         
         print(f"  Wrote {len(projects)} rows to {output_path}")
         return {'status': 'success', 'rows': len(projects), 'path': str(output_path)}

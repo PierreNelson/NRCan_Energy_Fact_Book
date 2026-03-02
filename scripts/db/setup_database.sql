@@ -117,6 +117,8 @@ BEGIN
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,           -- Unit of measure
         scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
         fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
     );
@@ -391,7 +393,9 @@ BEGIN
         vector NVARCHAR(100) NOT NULL UNIQUE,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
-        scalar_factor NVARCHAR(50) NULL
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL
     );
     
     PRINT 'Table export_metadata created.';
