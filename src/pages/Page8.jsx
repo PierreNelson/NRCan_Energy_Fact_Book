@@ -694,6 +694,10 @@ const Page8 = () => {
                     pointer-events: auto;
                 }
 
+                .page8-clear-btn:hover {
+                    background-color: #1e2a3a !important;
+                }
+
                 .page8-data-table {
                     width: 100%;
                     margin-bottom: 0;
@@ -1067,7 +1071,28 @@ const Page8 = () => {
                 >
                     <figure ref={chartRef} className="page8-map-container" style={{ margin: 0, position: 'relative' }}>
                     {selectedProvinces !== null && (
-                        <button onClick={() => setSelectedProvinces(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                        <button
+                            type="button"
+                            onClick={() => setSelectedProvinces(null)}
+                            className="page8-clear-btn"
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                right: 295,
+                                zIndex: 20,
+                                padding: '6px 12px',
+                                backgroundColor: '#26374a',
+                                border: '1px solid #26374a',
+                                borderRadius: '4px',
+                                color: '#ffffff',
+                                fontFamily: 'Arial, sans-serif',
+                                fontWeight: 'bold',
+                                fontSize: '14px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {lang === 'en' ? 'Clear' : 'Effacer'}
+                        </button>
                     )}
                     {chartData && (
                         <Plot

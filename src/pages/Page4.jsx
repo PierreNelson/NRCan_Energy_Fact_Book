@@ -174,10 +174,10 @@ const Page4 = () => {
     }, [isTableOpen]);
 
     const COLORS = {
-        natural_gas: '#3A9FC8',
+        natural_gas: '#14333E',
         hydro: '#245e7f',
         coal: '#7A7A7A',
-        other_renewables: '#8CC9E0',
+        other_renewables: '#339CC1',
         ngls: '#9A9389',
         crude_oil: '#9b8a42',
         uranium: '#1C6B7E',
@@ -629,6 +629,10 @@ const Page4 = () => {
                     margin: 0 auto;
                 }
 
+                .page4-chart-wrapper button[type="button"]:hover {
+                    background-color: #1e2a3a !important;
+                }
+
                 .page4-table-wrapper {
                     display: block;
                     width: 100%;
@@ -725,8 +729,23 @@ const Page4 = () => {
                                     <figure ref={chartRef1} style={{ margin: 0, width: '100%', height: '100%', position: 'relative' }}>
                                         {selectedSlices1 !== null && (
                                             <button
+                                                type="button"
                                                 onClick={() => setSelectedSlices1(null)}
-                                                style={{ position: 'absolute', top: 0, right: 10, zIndex: 20, padding: '4px 8px', cursor: 'pointer' }}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    right: 295,
+                                                    zIndex: 20,
+                                                    padding: '6px 12px',
+                                                    backgroundColor: '#26374a',
+                                                    border: '1px solid #26374a',
+                                                    borderRadius: '4px',
+                                                    color: '#ffffff',
+                                                    fontFamily: 'Arial, sans-serif',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '14px',
+                                                    cursor: 'pointer'
+                                                }}
                                             >
                                                 {lang === 'en' ? 'Clear' : 'Effacer'}
                                             </button>
@@ -783,8 +802,23 @@ const Page4 = () => {
                                     <figure ref={chartRef2} style={{ margin: 0, width: '100%', height: '100%', position: 'relative' }}>
                                         {selectedSlices2 !== null && (
                                             <button
+                                                type="button"
                                                 onClick={() => setSelectedSlices2(null)}
-                                                style={{ position: 'absolute', top: 0, right: 10, zIndex: 20, padding: '4px 8px', cursor: 'pointer' }}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    right: 295,
+                                                    zIndex: 20,
+                                                    padding: '6px 12px',
+                                                    backgroundColor: '#26374a',
+                                                    border: '1px solid #26374a',
+                                                    borderRadius: '4px',
+                                                    color: '#ffffff',
+                                                    fontFamily: 'Arial, sans-serif',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '14px',
+                                                    cursor: 'pointer'
+                                                }}
                                             >
                                                 {lang === 'en' ? 'Clear' : 'Effacer'}
                                             </button>

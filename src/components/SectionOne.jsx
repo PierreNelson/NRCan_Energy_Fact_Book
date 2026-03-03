@@ -4,11 +4,14 @@ import Page1 from '../pages/Page1';
 import Page2 from '../pages/Page2';
 import Page3 from '../pages/Page3';
 import Page4 from '../pages/Page4';
+import Page5 from '../pages/Page5';
 import Page7 from '../pages/Page7';
 import Page8 from '../pages/Page8';
 import Page9 from '../pages/Page9';
 import Page10 from '../pages/Page10';
 import Page11 from '../pages/Page11';
+import Page16 from '../pages/Page16';
+import Page17 from '../pages/Page17';
 import Page20 from '../pages/Page20';
 import Page21 from '../pages/Page21';
 
@@ -50,6 +53,9 @@ const SectionOne = () => {
                 <div id="primary-energy-production" className="stacked-page-wrapper">
                     <Page4 />
                 </div>
+                <div id="primary-energy-by-region" className="stacked-page-wrapper">
+                    <Page5 />
+                </div>
                 <div id="economic-contributions" className="stacked-page-wrapper">
                     <Page7 />
                 </div>
@@ -64,6 +70,12 @@ const SectionOne = () => {
                 </div>
                 <div id="gdp-chart" className="stacked-page-wrapper">
                     <Page11 />
+                </div>
+                <div id="government-revenues" className="stacked-page-wrapper">
+                    <Page16 />
+                </div>
+                <div id="corporate-income-taxes" className="stacked-page-wrapper">
+                    <Page17 />
                 </div>
                 <div id="ghg-emissions" className="stacked-page-wrapper">
                     <Page20 />

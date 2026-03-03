@@ -501,28 +501,6 @@ const Page20 = () => {
                     box-sizing: border-box;
                 }
 
-                .page20-title {
-                    font-family: 'Lato', sans-serif;
-                    font-size: 41px;
-                    font-weight: bold;
-                    color: var(--gc-text);
-                    margin-top: 0;
-                    margin-bottom: 25px;
-                    line-height: 1.2;
-                    position: relative;
-                    padding-bottom: 0.5em;
-                }
-
-                .page20-title::after {
-                    content: '';
-                    position: absolute;
-                    left: 0;
-                    bottom: 0.2em;
-                    width: 72px;
-                    height: 6px;
-                    background-color: var(--gc-red);
-                }
-
                 .page20-chart-wrapper {
                     position: relative;
                     width: calc(100% + 30px);
@@ -569,8 +547,7 @@ const Page20 = () => {
                     z-index: 50;
                 }
 
-                .page20-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; }
-                .page20-header { padding-top: 20px; padding-bottom: 20px; }
+                .page20-container { width: 100%; display: flex; flex-direction: column; min-height: 100%; padding-top: 20px; }
 
                 .page20-content-row { 
                     display: flex; 
@@ -666,9 +643,6 @@ const Page20 = () => {
                 }
 
                 @media (max-width: 768px) {
-                    .page20-title {
-                        font-size: 37px;
-                    }
                     .page20-chart-title {
                         font-size: 26px;
                     }
@@ -758,16 +732,10 @@ const Page20 = () => {
             `}</style>
 
             <div className="page20-container">
-                <header className="page20-header">
-                    <h1 className="page20-title">
-                        {getText('page20_title', lang)}
-                    </h1>
-                </header>
-
                 <div className={`page20-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
                     <div className="page20-chart-column">
                         <div className="page20-chart-frame">
-                            <h2 className="page20-chart-title" tabIndex="0">
+                            <h2 id="page20-chart-title" className="page20-chart-title" tabIndex="0">
                                 {getText('page20_chart_title', lang)}
                             </h2>
 

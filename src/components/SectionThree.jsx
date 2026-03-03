@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Page39 from '../pages/Page39';
+import Page43 from '../pages/Page43';
 
 const SectionThree = () => {
     const location = useLocation();
@@ -23,6 +24,9 @@ const SectionThree = () => {
         <div className="section-three-container">
             <div id="skills-diversity-community-overview">
                 <Page39 />
+            </div>
+            <div id="energy-affordability" className="stacked-page-wrapper">
+                <Page43 />
             </div>
         </div>
     );

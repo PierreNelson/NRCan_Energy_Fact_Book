@@ -1057,6 +1057,13 @@ details .table-responsive {
   margin-bottom: 20px;
 }
 
+/* Divider above stacked pages that follow another block (e.g. Section 3 overview then Energy affordability) */
+.section-three-container .stacked-page-wrapper {
+  border-top: 3px solid #e0e0e0;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
 /* Remove border from last page in section */
 .stacked-page-wrapper:last-child {
   border-bottom: none;

@@ -523,3 +523,36 @@ export async function getEnvironmentalCleanTechData() {
         tmx: (tmxCount != null || tmxMcap != null) ? { count: tmxCount, mcap_total: tmxMcap, can_count: tmxCanCount, can_mcap: tmxCanMcap } : null,
     };
 }
+
+const PEP_REGIONS = ['BC', 'Alta', 'Sask', 'Man', 'Ont', 'Que', 'NL', 'Territories', 'Maritimes'];
+const PEP_SOURCES = ['coal', 'crude_oil', 'natural_gas', 'ngls', 'hydro', 'uranium', 'other_renewables'];
+
+function parsePepVector(vector) {
+    if (!vector || !vector.startsWith('pep_')) return null;
+    const rest = vector.slice(4);
+    const parts = rest.split('_');
+    if (parts.length < 2) return null;
+    const region = parts[0];
+    const source = parts.slice(1).join('_');
+    if (!PEP_REGIONS.includes(region) || !PEP_SOURCES.includes(source)) return null;
+    return { region, source };
+}
+
+export async function getPrimaryEnergyProductionData() {
+    const allData = await loadAllData();
+    const pepData = allData.filter(row => row.vector && row.vector.startsWith('pep_'));
+    const byYear = {};
+    pepData.forEach(row => {
+        const parsed = parsePepVector(row.vector);
+        if (!parsed) return;
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = {};
+        if (!byYear[year][parsed.region]) byYear[year][parsed.region] = {};
+        byYear[year][parsed.region][parsed.source] = row.value;
+    });
+    const years = Object.keys(byYear).map(Number).sort((a, b) => a - b);
+    const bestYear = years.length > 0 ? years[years.length - 1] : 2023;
+    const regions = byYear[bestYear] || {};
+    return { year: bestYear, regions };
+}
