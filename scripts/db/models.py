@@ -204,45 +204,6 @@ class DataRepository:
             conn.commit()
             return len(params_list)
     
-    def insert_raw_major_projects(self, projects: List[Dict[str, Any]]):
-        """
-        Insert major projects data.
-        
-        Args:
-            projects: List of project dictionaries
-        """
-        if not projects:
-            return 0
-        
-        # Clear existing and insert fresh
-        self.db.execute_non_query("DELETE FROM raw_major_projects")
-        
-        query = """
-            INSERT INTO raw_major_projects 
-            (project_name, company, location, province, project_type, sub_type,
-             estimated_cost, status, latitude, longitude, source_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        
-        params_list = [
-            (
-                p.get('project_name'),
-                p.get('company'),
-                p.get('location'),
-                p.get('province'),
-                p.get('project_type'),
-                p.get('sub_type'),
-                p.get('estimated_cost'),
-                p.get('status'),
-                p.get('latitude'),
-                p.get('longitude'),
-                p.get('source_url')
-            )
-            for p in projects
-        ]
-        
-        return self.db.execute_many(query, params_list)
-    
     def insert_major_projects_map(self, rows: List[Dict[str, Any]]):
         """
         Insert major projects map data for CSV export.
@@ -590,6 +551,39 @@ class DataRepository:
                 ))
             conn.commit()
             return len(data)
+
+    def upsert_energy_use(self, data: List[Dict[str, Any]]):
+        """
+        Insert or update energy use by sector (OEE NEUD + Primary Energy Use Demand).
+        Args:
+            data: List of dicts with year, R, C, I, T, A, P, NPC, FK, EL (PJ).
+        """
+        if not data:
+            return 0
+        query = """
+            MERGE INTO calc_energy_use AS target
+            USING (VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)) AS source
+                  (ref_year, R, C, I, T, A, P, NPC, FK, EL)
+            ON target.ref_year = source.ref_year
+            WHEN MATCHED THEN
+                UPDATE SET R = source.R, C = source.C, I = source.I, T = source.T,
+                           A = source.A, P = source.P, NPC = source.NPC, FK = source.FK, EL = source.EL,
+                           calculated_at = GETUTCDATE()
+            WHEN NOT MATCHED THEN
+                INSERT (ref_year, R, C, I, T, A, P, NPC, FK, EL)
+                VALUES (source.ref_year, source.R, source.C, source.I, source.T,
+                        source.A, source.P, source.NPC, source.FK, source.EL);
+        """
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            for row in data:
+                cursor.execute(query, (
+                    row['year'],
+                    row.get('R'), row.get('C'), row.get('I'), row.get('T'), row.get('A'),
+                    row.get('P'), row.get('NPC'), row.get('FK'), row.get('EL')
+                ))
+            conn.commit()
+            return len(data)
     
     def upsert_foreign_control(self, data: List[Dict[str, Any]]):
         """
@@ -671,20 +665,6 @@ class DataRepository:
             "SELECT vector, title, uom, scalar_factor, source_org, source_url FROM export_metadata ORDER BY vector"
         )
         return [(r['vector'], r['title'], r['uom'], r['scalar_factor'], r.get('source_org') or '', r.get('source_url') or '') for r in results]
-    
-    def get_major_projects_for_export(self) -> List[Dict[str, Any]]:
-        """
-        Get major projects data for map CSV export.
-        
-        Returns:
-            List of project dictionaries
-        """
-        return self.db.execute_query("""
-            SELECT project_name, company, location, province, project_type,
-                   sub_type, estimated_cost, status, latitude, longitude
-            FROM raw_major_projects
-            ORDER BY province, project_name
-        """)
     
     # =========================================================================
     # DATA SOURCE QUERIES

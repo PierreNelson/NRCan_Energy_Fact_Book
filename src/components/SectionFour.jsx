@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Page47 from '../pages/Page47';
+import Page48 from '../pages/Page48';
 
 const SectionFour = () => {
     const location = useLocation();
@@ -23,6 +24,9 @@ const SectionFour = () => {
         <div className="section-four-container">
             <div id="energy-efficiency-overview">
                 <Page47 />
+            </div>
+            <div id="energy-use">
+                <Page48 />
             </div>
         </div>
     );

@@ -382,6 +382,12 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_section4_title', lang)}
                             </NavLink>
+                            <NavLink
+                                to="/section-4#energy-use"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('page48_nav_label', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>

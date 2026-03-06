@@ -129,33 +129,6 @@ BEGIN
 END
 GO
 
--- Raw Major Projects Data
--- Stores project data from NRCan Major Projects Inventory
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'raw_major_projects')
-BEGIN
-    CREATE TABLE raw_major_projects (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        project_name NVARCHAR(500) NOT NULL,
-        company NVARCHAR(500) NULL,
-        location NVARCHAR(255) NULL,
-        province NVARCHAR(100) NULL,
-        project_type NVARCHAR(100) NULL,
-        sub_type NVARCHAR(100) NULL,
-        estimated_cost DECIMAL(18,2) NULL,
-        status NVARCHAR(100) NULL,
-        latitude DECIMAL(10,6) NULL,
-        longitude DECIMAL(10,6) NULL,
-        source_url NVARCHAR(1000) NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    
-    CREATE INDEX IX_raw_projects_province ON raw_major_projects(province);
-    CREATE INDEX IX_raw_projects_type ON raw_major_projects(project_type);
-    
-    PRINT 'Table raw_major_projects created.';
-END
-GO
-
 -- Major Projects Map Data
 -- Stores project data from NRCan ArcGIS for map visualization (both points and lines)
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'raw_major_projects_map')
@@ -366,9 +339,34 @@ BEGIN
 END
 GO
 
+-- Energy use by sector (OEE NEUD + Primary Energy Use Demand), PJ per year
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'calc_energy_use')
+BEGIN
+    CREATE TABLE calc_energy_use (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        ref_year INT NOT NULL UNIQUE,
+        R DECIMAL(18,2) NULL,
+        C DECIMAL(18,2) NULL,
+        I DECIMAL(18,2) NULL,
+        T DECIMAL(18,2) NULL,
+        A DECIMAL(18,2) NULL,
+        P DECIMAL(18,2) NULL,
+        NPC DECIMAL(18,2) NULL,
+        FK DECIMAL(18,2) NULL,
+        EL DECIMAL(18,2) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    CREATE INDEX IX_calc_energy_use_year ON calc_energy_use(ref_year);
+    PRINT 'Table calc_energy_use created.';
+END
+GO
+
 -- ============================================================================
--- EXPORT STAGING TABLE
--- Used to generate the final CSV files for the website
+-- CONSOLIDATED EXPORT TABLES (DATA + METADATA)
+-- All pipeline data is compiled into these two tables for CSV export.
+-- raw_statcan_data and raw_statcan_metadata feed into them via prepare_export_data().
+-- calc_* tables are staging for processing; export_data/export_metadata are the
+-- single source of truth for data.csv and metadata.csv.
 -- ============================================================================
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'export_data')
@@ -402,6 +400,14 @@ BEGIN
 END
 GO
 
+-- Remove obsolete table if upgrading (raw_major_projects was never populated; map data uses raw_major_projects_map only)
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'raw_major_projects')
+BEGIN
+    DROP TABLE raw_major_projects;
+    PRINT 'Table raw_major_projects dropped (obsolete).';
+END
+GO
+
 -- ============================================================================
 -- INSERT DEFAULT DATA SOURCES
 -- ============================================================================
@@ -430,7 +436,7 @@ VALUES
 
 -- Section 3-6: Placeholders for future data sources
 ('skills_data', 'Skills and Employment Data', 3, 'Skills, Diversity and Community', NULL, 0),
-('efficiency_data', 'Energy Efficiency Data', 4, 'Energy Efficiency', NULL, 0),
+('energy_use', 'Energy use (OEE NEUD + Primary Energy Use Demand)', 4, 'Energy Efficiency', NULL, 1),
 ('clean_power_data', 'Clean Power and Low Carbon Fuels', 5, 'Clean Power and Low Carbon Fuels', NULL, 0),
 ('oil_gas_data', 'Oil, Natural Gas and Coal', 6, 'Oil, Natural Gas and Coal', NULL, 0);
 

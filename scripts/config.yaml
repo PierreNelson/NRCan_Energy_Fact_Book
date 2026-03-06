@@ -125,11 +125,18 @@ sections:
     name: "Skills, Diversity and Community"
     sources: {}
 
-  # Section 4: Energy Efficiency (placeholder)
-  section4_efficiency:
-    enabled: false
+  # Section 4: Energy Efficiency
+  section4_indicators:
+    enabled: true
     name: "Energy Efficiency"
-    sources: {}
+    sources:
+      energy_use:
+        enabled: true
+        description: "Energy use by sector (OEE NEUD + Primary Energy Use Demand), PJ"
+        source_type: "file"
+        # Paths relative to scripts/ or absolute. Set both to run refresh --source energy_use.
+        oee_neud_file_path: ""    # e.g. OEE_NEUD_export.xlsx (sector R,C,I,T,A in PJ)
+        primary_demand_file_path: ""  # e.g. Primary_Energy_Use_Demand.xlsx (P,NPC,FK,EL in PJ)
 
   # Section 5: Clean Power and Low Carbon Fuels
   section5_clean_power:

@@ -15,6 +15,7 @@
  * - foreign_*: Foreign control data
  * - enviro_*: Environmental protection data
  * - gdp_prov_*: Provincial GDP data
+ * - oee_neud_*: Energy use (secondary by sector + primary demand components), PJ
  */
 
 let dataCache = null;
@@ -555,4 +556,26 @@ export async function getPrimaryEnergyProductionData() {
     const bestYear = years.length > 0 ? years[years.length - 1] : 2023;
     const regions = byYear[bestYear] || {};
     return { year: bestYear, regions };
+}
+
+const OEE_NEUD_VECTOR_SUFFIXES = ['R', 'C', 'I', 'T', 'A', 'P', 'NPC', 'FK', 'EL'];
+
+export async function getEnergyUseData() {
+    const allData = await loadAllData();
+    const rows = allData.filter(row => row.vector && row.vector.startsWith('oee_neud_'));
+    const yearMap = {};
+    rows.forEach(row => {
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        const suffix = row.vector.replace('oee_neud_', '');
+        if (!OEE_NEUD_VECTOR_SUFFIXES.includes(suffix)) return;
+        if (!yearMap[year]) yearMap[year] = { year };
+        yearMap[year][suffix] = row.value;
+    });
+    const years = Object.keys(yearMap).map(Number).sort((a, b) => a - b);
+    const data = years.map(y => yearMap[y]).filter(row => {
+        const hasAll = OEE_NEUD_VECTOR_SUFFIXES.every(v => row[v] != null && !Number.isNaN(Number(row[v])));
+        return hasAll;
+    });
+    return { years, data };
 }

@@ -21,6 +21,7 @@ SOURCE_VECTOR_PREFIXES = {
     'clean_tech': ['cleantech_'],
     'environmental_clean_tech': ['envcleantech_'],
     'ghg_emissions': ['ghg_'],
+    'energy_use': ['oee_neud_'],
 }
 
 # Source name to display name mapping (human-readable)
@@ -40,6 +41,7 @@ SOURCE_DISPLAY_NAMES = {
     'clean_tech': 'Clean Technology',
     'environmental_clean_tech': 'Environmental and Clean Technology',
     'ghg_emissions': 'GHG Emissions by Economic Sector',
+    'energy_use': 'Energy Use (OEE NEUD)',
 }
 
 

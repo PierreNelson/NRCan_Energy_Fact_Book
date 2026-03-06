@@ -177,12 +177,12 @@ Set `enabled: false` to skip a section or specific source during refresh.
 - `data_sources`: Registry of all data sources
 - `run_history`: Audit log of refresh operations
 
-### Raw Data Tables
-- `raw_statcan_data`: Individual data points from StatCan
-- `raw_statcan_metadata`: Vector metadata (titles, units)
-- `raw_major_projects`: Major projects inventory
+### Raw Data Tables (staging for pipeline)
+- `raw_statcan_data`: Individual data points from StatCan (fed into export_data)
+- `raw_statcan_metadata`: Vector metadata (titles, units) (fed into export_metadata)
+- `raw_major_projects_map`: Major projects map data for map CSV (points/lines by lang)
 
-### Calculated Tables
+### Calculated Tables (staging for pipeline)
 - `calc_capital_expenditures`
 - `calc_infrastructure`
 - `calc_economic_contributions`
@@ -192,9 +192,10 @@ Set `enabled: false` to skip a section or specific source during refresh.
 - `calc_world_energy_production`
 - `calc_clean_tech`
 
-### Export Tables
-- `export_data`: Staging for data.csv
-- `export_metadata`: Staging for metadata.csv
+### Consolidated Export Tables (data + metadata)
+All pipeline data that can be compiled is written into these two tables; they are the single source for the website CSVs. Other tables are used only during the pipeline run.
+- `export_data`: Consolidated data table → data.csv (vector, ref_date, value)
+- `export_metadata`: Consolidated metadata table → metadata.csv (vector, title, uom, etc.)
 
 ## Troubleshooting
 

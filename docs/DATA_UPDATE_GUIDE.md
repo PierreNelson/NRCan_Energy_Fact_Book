@@ -27,6 +27,7 @@ python main.py test-connection
 | Update everything | `python main.py refresh --all --export-after` |
 | Update Section 1 only | `python main.py refresh --section section1_indicators` |
 | Update Section 2 only | `python main.py refresh --section section2_investment` |
+| Update Section 4 only | `python main.py refresh --section section4_indicators` |
 | Export all data | `python main.py export` |
 | Export by source | `python main.py export --source capital_expenditures` |
 | Export by pattern | `python main.py export --vectors "capex_*"` |
@@ -90,6 +91,21 @@ python main.py refresh --section section2_investment
 - Environmental protection expenditures
 - Major projects inventory
 - Clean technology projects
+
+---
+
+### Section 4: Energy Efficiency
+
+Updates energy use by sector (OEE NEUD + Primary Energy Use Demand). Extract → SQL → export (same flow as other sections).
+
+```bash
+python main.py refresh --section section4_indicators
+```
+
+**Data sources in this section:**
+- Energy use (OEE NEUD: R,C,I,T,A; Primary Energy Use Demand: P,NPC,FK,EL), PJ
+
+**For Page 48 (Primary and secondary energy use by sector):** Place `Primary Energy Use Demand.xlsx` at the project root with columns `YEAR`, `PRODUCT`, `VALUE` (products: Pipeline, Non-energy (feedstock), Noncovered producer consumption, Energy losses (conversion)). After refreshing Section 4, run **Export** so `data.csv` includes the Primary vectors; otherwise the pie chart will only show Secondary.
 
 ---
 
@@ -185,6 +201,16 @@ python main.py refresh --source major_projects_map
 - Source: Derived from major projects
 ```bash
 python main.py refresh --source clean_tech
+```
+
+---
+
+### Section 4: Energy Efficiency - Individual Sources
+
+**Energy use (OEE NEUD + Primary Energy Use Demand)**
+- Sources: OEE NEUD (sector R,C,I,T,A in PJ) and Primary Energy Use Demand / SharePoint–Excel (P,NPC,FK,EL in PJ). Set `oee_neud_file_path` and `primary_demand_file_path` under `sections.section4_indicators.sources.energy_use` in config.
+```bash
+python main.py refresh --source energy_use
 ```
 
 ---
@@ -327,6 +353,7 @@ python main.py refresh --all --export-after     # Refresh all + export CSVs
 # === SECTION UPDATES ===
 python main.py refresh --section section1_indicators    # Key Indicators
 python main.py refresh --section section2_investment    # Investment
+python main.py refresh --section section4_indicators    # Energy Efficiency
 
 # === INDIVIDUAL SOURCE UPDATES (Section 1) ===
 python main.py refresh --source economic_contributions
@@ -346,6 +373,9 @@ python main.py refresh --source major_projects
 python main.py refresh --source major_projects_map
 python main.py refresh --source clean_tech
 
+# === INDIVIDUAL SOURCE UPDATES (Section 4) ===
+python main.py refresh --source energy_use
+
 # === EXPORT ALL ===
 python main.py export                           # Export all CSVs from database
 
@@ -354,9 +384,11 @@ python main.py export --source capital_expenditures
 python main.py export --source infrastructure
 python main.py export --source canadian_energy_assets
 python main.py export --source clean_tech
+python main.py export --source energy_use
 
 # === SELECTIVE EXPORT (by pattern) ===
 python main.py export --vectors "capex_*"       # All capex vectors
+python main.py export --vectors "oee_neud_*"    # Energy use (OEE NEUD) vectors
 python main.py export --vectors "cea_*"         # All CEA vectors
 python main.py export --vectors "*_total"       # All total vectors
 

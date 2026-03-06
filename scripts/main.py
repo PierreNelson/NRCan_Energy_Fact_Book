@@ -37,7 +37,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from config_loader import get_config, Config
 from db.connection import get_connection, DatabaseConnection
 from db.models import DataRepository
-from sections import Section1Indicators, Section2Investment, Section5CleanPower
+from sections import Section1Indicators, Section2Investment, Section4Indicators, Section5CleanPower
 from export.website_files import export_website_files
 
 
@@ -45,6 +45,7 @@ from export.website_files import export_website_files
 SECTION_PROCESSORS = {
     'section1_indicators': Section1Indicators,
     'section2_investment': Section2Investment,
+    'section4_indicators': Section4Indicators,
     'section5_clean_power': Section5CleanPower,
 }
 
