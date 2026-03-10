@@ -137,6 +137,22 @@ sections:
         # Paths relative to scripts/ or absolute. Set both to run refresh --source energy_use.
         oee_neud_file_path: ""    # e.g. OEE_NEUD_export.xlsx (sector R,C,I,T,A in PJ)
         primary_demand_file_path: ""  # e.g. Primary_Energy_Use_Demand.xlsx (P,NPC,FK,EL in PJ)
+      seu_by_fuel:
+        enabled: true
+        description: "Secondary energy use (final demand) by fuel type for page 49"
+        source_type: "file"
+        seu_final_demand_file_path: ""  # Project root SEU Final Demand.xlsx if empty
+      residential_daily_lives:
+        enabled: true
+        description: "Residential energy (energy in our daily lives) - EE Improvement + optional Residential sheet"
+        source_type: "file"
+        ee_improvement_file_path: ""  # Project root EE Improvement.xlsx if empty
+      residential_pie_charts:
+        enabled: true
+        description: "Residential by type and space/water heating by source (page 51) from OEE HB, Table 7, Table 14"
+      commercial_institutional:
+        enabled: true
+        description: "Commercial and institutional energy use by end use (page 52) from OEE HB, AN, and EE Improvement"
 
   # Section 5: Clean Power and Low Carbon Fuels
   section5_clean_power:

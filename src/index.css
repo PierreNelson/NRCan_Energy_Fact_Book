@@ -1064,6 +1064,12 @@ details .table-responsive {
   margin-top: 20px;
 }
 
+.section-four-container .section-four-page {
+  border-top: 3px solid #e0e0e0;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
 /* Remove border from last page in section */
 .stacked-page-wrapper:last-child {
   border-bottom: none;
@@ -1122,4 +1128,86 @@ details .table-responsive {
     width: 20px !important;
     height: 20px !important;
   }
+}
+
+.page49-root {
+  font-family: var(--font-body);
+}
+
+
+.page49-bullets {
+  margin: 0 0 1rem 0;
+  padding-left: 1.25rem;
+  list-style-type: disc;
+}
+
+.page49-bullets li {
+  margin-bottom: 0.5rem;
+}
+
+.page49-chart-title {
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--gc-text);
+  margin: 0 0 12px 0;
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  box-sizing: border-box;
+  padding: 0 8px;
+}
+
+.page49-chart-title a {
+  color: #26374a;
+  text-decoration: underline;
+}
+
+.page49-chart-block .wb-fnote {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.page49-chart-block .wb-fnote h2 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.page49-chart-frame {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  box-sizing: border-box;
+  min-height: 500px;
+}
+
+.page49-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 24px;
+  margin-bottom: 0;
+}
+
+.page48-footnote,
+.page49-footnote {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 12px;
+  margin-top: 24px;
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--gc-text);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.page49-loading,
+.page49-error {
+  padding: 24px;
+  font-family: var(--font-body);
 }

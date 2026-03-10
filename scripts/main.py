@@ -126,13 +126,15 @@ def cmd_refresh(args, config: Config, db: DatabaseConnection):
         
         if not found:
             print(f"Error: Source '{source_key}' not found.")
-            # List available sources
-            print("\nAvailable sources:")
-            for section_key, processor in processors.items():
-                handlers = processor.get_source_handlers()
-                for src in handlers.keys():
-                    status = "enabled" if config.is_source_enabled(section_key, src) else "disabled"
-                    print(f"  - {src} ({status})")
+            if source_key in processors:
+                print(f"\nHint: '{source_key}' is a section. Use: python main.py refresh --section {source_key}")
+            else:
+                print("\nAvailable sources:")
+                for section_key, processor in processors.items():
+                    handlers = processor.get_source_handlers()
+                    for src in handlers.keys():
+                        status = "enabled" if config.is_source_enabled(section_key, src) else "disabled"
+                        print(f"  - {src} ({status})")
             return 1
     
     else:

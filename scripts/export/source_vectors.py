@@ -22,6 +22,10 @@ SOURCE_VECTOR_PREFIXES = {
     'environmental_clean_tech': ['envcleantech_'],
     'ghg_emissions': ['ghg_'],
     'energy_use': ['oee_neud_'],
+    'seu_by_fuel': ['seu_'],
+    'residential_daily_lives': ['res_'],
+    'residential_pie_charts': ['res_'],
+    'commercial_institutional': ['com_'],
 }
 
 # Source name to display name mapping (human-readable)
@@ -42,6 +46,10 @@ SOURCE_DISPLAY_NAMES = {
     'environmental_clean_tech': 'Environmental and Clean Technology',
     'ghg_emissions': 'GHG Emissions by Economic Sector',
     'energy_use': 'Energy Use (OEE NEUD)',
+    'seu_by_fuel': 'Secondary energy use by fuel type (SEU final demand)',
+    'residential_daily_lives': 'Residential energy (energy in our daily lives)',
+    'residential_pie_charts': 'Residential pie charts (by type, space/water heating by source)',
+    'commercial_institutional': 'Commercial and institutional energy use by end use (page 52)',
 }
 
 

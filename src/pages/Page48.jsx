@@ -278,7 +278,9 @@ const Page48 = () => {
             x: 0.5,
             xanchor: 'center',
             yanchor: 'top',
-            font: { size: 11 }
+            font: { size: 11 },
+            itemclick: false,
+            itemdoubleclick: false
         } : undefined,
         margin: { 
             t: 60, 
@@ -328,22 +330,81 @@ const Page48 = () => {
         dragmode: windowWidth <= 768 ? false : 'zoom'
     }), [windowWidth]);
 
-    const config = {
+    const downloadChartPng = async (plotContainerRef, filenameTitle) => {
+        const plotEl = plotContainerRef?.current?.querySelector?.('.js-plotly-plot');
+        if (!plotEl || !window.Plotly) return;
+        const year = selectedYear != null ? selectedYear : '';
+        const displayTitle = (filenameTitle + ' ' + year).trim();
+        const safeName = (filenameTitle + ' ' + year).replace(/[^\w\s,-]/g, '').replace(/\s+/g, '_').trim() || 'chart';
+        const filename = safeName + '.png';
+        try {
+            await window.Plotly.relayout(plotEl, { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff' });
+            const imgData = await window.Plotly.toImage(plotEl, { format: 'png', width: 1200, height: 800, scale: 2 });
+            await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                const titleHeight = 60;
+                canvas.width = img.width;
+                canvas.height = img.height + titleHeight;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#26374a';
+                ctx.font = 'bold 20px "Noto Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(displayTitle, canvas.width / 2, 40);
+                ctx.drawImage(img, 0, titleHeight);
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = filename;
+                link.click();
+            };
+            img.src = imgData;
+        } catch (e) {
+            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch (_) {}
+        }
+    };
+    const pieChartRef = useRef(null);
+    const barChartRef = useRef(null);
+    const configPie = useMemo(() => ({
         displayModeBar: true,
         displaylogo: false,
         responsive: true,
-        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
-    };
+        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
+        modeBarButtonsToAdd: [{
+            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
+            click: () => downloadChartPng(pieChartRef, lang === 'en' ? 'Primary and secondary energy use by sector' : "Consommation d'énergie primaire et secondaire par secteur")
+        }]
+    }), [lang, selectedYear]);
+    const configBar = useMemo(() => ({
+        displayModeBar: true,
+        displaylogo: false,
+        responsive: true,
+        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
+        modeBarButtonsToAdd: [{
+            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
+            click: () => downloadChartPng(barChartRef, lang === 'en' ? 'Secondary energy use by sector' : "Consommation d'énergie secondaire par secteur")
+        }]
+    }), [lang, selectedYear]);
 
     const downloadPieTableCSV = () => {
         if (!data.data || data.data.length === 0) return;
-        const pieHeaders = [lang === 'en' ? 'Year' : 'Année', ...PAGE48_PIE_KEYS.map((k) => stripHtml(getText('page48_' + k, lang)) + ' (PJ)'), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
+        const pieLabels = PAGE48_PIE_KEYS.map((k) => stripHtml(getText('page48_' + k, lang)));
+        const pieHeaders = [lang === 'en' ? 'Year' : 'Année', ...pieLabels.flatMap((l) => [l + ' (PJ)', l + ' (%)']), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
         const pieRows = data.data.map((r) => {
             const R = Number(r.R); const C = Number(r.C); const I = Number(r.I); const T = Number(r.T); const A = Number(r.A);
             const TSEU = R + C + I + T + A;
             const P = Number(r.P); const NPC = Number(r.NPC); const FK = Number(r.FK); const EL = Number(r.EL);
             const TPD = TSEU + P + NPC + FK + EL;
-            return [r.year, Math.round(TSEU), Math.round(EL), Math.round(NPC), Math.round(FK), Math.round(P), Math.round(TPD)];
+            const pieVals = [TSEU, EL, NPC, FK, P];
+            const piePcts = TPD > 0 ? pieVals.map((v) => Math.round((v / TPD) * 100)) : [0, 0, 0, 0, 0];
+            const row = [r.year];
+            pieVals.forEach((v, i) => { row.push(Math.round(v)); row.push(piePcts[i] + '%'); });
+            row.push(Math.round(TPD));
+            return row;
         });
         const csvContent = [pieHeaders.join(','), ...pieRows.map((row) => row.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -356,7 +417,7 @@ const Page48 = () => {
     const downloadPieTableDocx = async () => {
         if (!data.data || data.data.length === 0) return;
         const pieLabels = PAGE48_PIE_KEYS.map((k) => stripHtml(getText('page48_' + k, lang)));
-        const headers = [lang === 'en' ? 'Year' : 'Année', ...pieLabels.map((l) => l + ' (PJ)'), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
+        const headers = [lang === 'en' ? 'Year' : 'Année', ...pieLabels.flatMap((l) => [l + ' (PJ)', l + ' (%)']), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
         const headerRow = new TableRow({
             children: headers.map((h) => new TableCell({
                 children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18 })], alignment: AlignmentType.CENTER })],
@@ -368,16 +429,20 @@ const Page48 = () => {
             const TSEU = R + C + I + T + A;
             const P = Number(r.P); const NPC = Number(r.NPC); const FK = Number(r.FK); const EL = Number(r.EL);
             const TPD = TSEU + P + NPC + FK + EL;
-            const cells = [r.year, Math.round(TSEU), Math.round(EL), Math.round(NPC), Math.round(FK), Math.round(P), Math.round(TPD)];
+            const pieVals = [TSEU, EL, NPC, FK, P];
+            const piePcts = TPD > 0 ? pieVals.map((v) => Math.round((v / TPD) * 100)) : [0, 0, 0, 0, 0];
+            const cells = [r.year, ...pieVals.flatMap((v, i) => [Math.round(v), piePcts[i] + '%']), Math.round(TPD)];
             return new TableRow({
-                children: [
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(cells[0]), size: 20 })], alignment: AlignmentType.CENTER })] }),
-                    ...cells.slice(1).map((val) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(val), size: 20 })], alignment: AlignmentType.RIGHT })] }))
-                ]
+                children: cells.map((val, i) => new TableCell({
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: String(val), size: 20 })],
+                        alignment: i === 0 ? AlignmentType.CENTER : AlignmentType.RIGHT
+                    })]
+                }))
             });
         });
         const title = stripHtml(getText('page48_chart_title', lang));
-        const pieColumnWidths = [1100, 1150, 1150, 1150, 1150, 1150, 1150];
+        const pieColumnWidths = [1100, 1150, 1150, 1150, 1150, 1150, 1150, 1150, 1150, 1150, 1150, 1150];
         const doc = new Document({
             sections: [{
                 children: [
@@ -704,7 +769,7 @@ const Page48 = () => {
 
                         <div className="page48-chart-wrap" ref={chartRef}>
                             <div className="page48-chart-frame">
-                            <div className="page48-pie-wrap" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                            <div className="page48-pie-wrap" ref={pieChartRef} style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                                 <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 380, margin: '0 auto', position: 'relative' }}>
                                     {selectedSlices !== null && (
                                         <button type="button" onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 20, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
@@ -713,7 +778,7 @@ const Page48 = () => {
                                         key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}
                                         data={pieData}
                                         layout={pieLayout}
-                                        config={config}
+                                        config={configPie}
                                         style={{ width: '100%', minWidth: 360, minHeight: 380 }}
                                         useResizeHandler
                                         onClick={(eventData) => {
@@ -782,13 +847,16 @@ const Page48 = () => {
                                     >
                                         <table className="table table-striped table-hover">
                                             <caption id="page48-pie-caption" className="wb-inv">
-                                                {getText('page48_chart_title', lang)} {lang === 'en' ? '– Primary breakdown (PJ)' : '– Répartition primaire (PJ)'}
+                                                {getText('page48_chart_title', lang)} {lang === 'en' ? '– Primary breakdown (PJ and %)' : '– Répartition primaire (PJ et %)'}
                                             </caption>
                                             <thead>
                                                 <tr>
                                                     <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
                                                     {PAGE48_PIE_KEYS.map((k) => (
-                                                        <th key={k} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{getText('page48_' + k, lang)} (PJ)</th>
+                                                        <React.Fragment key={k}>
+                                                            <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{getText('page48_' + k, lang)} (PJ)</th>
+                                                            <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{getText('page48_' + k, lang)} (%)</th>
+                                                        </React.Fragment>
                                                     ))}
                                                     <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'}</th>
                                                 </tr>
@@ -799,14 +867,17 @@ const Page48 = () => {
                                                     const TSEU = R + C + I + T + A;
                                                     const P = Number(r.P); const NPC = Number(r.NPC); const FK = Number(r.FK); const EL = Number(r.EL);
                                                     const TPD = TSEU + P + NPC + FK + EL;
+                                                    const pieVals = [TSEU, EL, NPC, FK, P];
+                                                    const piePcts = TPD > 0 ? pieVals.map((v) => Math.round((v / TPD) * 100)) : [0, 0, 0, 0, 0];
                                                     return (
                                                         <tr key={r.year}>
                                                             <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{r.year}</th>
-                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(TSEU)}</td>
-                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(EL)}</td>
-                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(NPC)}</td>
-                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(FK)}</td>
-                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(P)}</td>
+                                                            {pieVals.map((v, i) => (
+                                                                <React.Fragment key={i}>
+                                                                    <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(v)}</td>
+                                                                    <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{piePcts[i]}%</td>
+                                                                </React.Fragment>
+                                                            ))}
                                                             <td style={{ textAlign: 'right', border: '1px solid #ddd' }}><strong>{formatPJ(TPD)}</strong></td>
                                                         </tr>
                                                     );
@@ -835,7 +906,7 @@ const Page48 = () => {
                             </div>
 
                             <div className="page48-chart-frame">
-                            <div className="page48-bar-wrap" style={{ width: '100%', maxWidth: 1140, margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
+                            <div className="page48-bar-wrap" ref={barChartRef} style={{ width: '100%', maxWidth: 1140, margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
                                 <figure style={{ width: '100%', minHeight: 250, margin: '0 auto', position: 'relative' }}>
                                     {selectedBars !== null && (
                                         <button type="button" onClick={() => setSelectedBars(null)} style={{ position: 'absolute', top: 0, right: 20, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
@@ -843,7 +914,7 @@ const Page48 = () => {
                                     <Plot
                                         data={barData}
                                         layout={barLayout}
-                                        config={config}
+                                        config={configBar}
                                         style={{ width: '100%', minHeight: 250 }} 
                                         useResizeHandler
                                         onClick={(eventData) => {

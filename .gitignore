@@ -39,4 +39,6 @@ venv/
 
 # Legacy data retrieval script (kept for reference but not tracked)
 scripts/data_retrieval.py
-
+pages/Page52.jsx
+page52.png
+page52fr.png

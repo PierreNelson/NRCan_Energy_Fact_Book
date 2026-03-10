@@ -104,8 +104,31 @@ python main.py refresh --section section4_indicators
 
 **Data sources in this section:**
 - Energy use (OEE NEUD: R,C,I,T,A; Primary Energy Use Demand: P,NPC,FK,EL), PJ
+- **Page 49 (Secondary energy by fuel):** SEU by fuel (`seu_by_fuel`) – reads from Excel, writes to SQL via `store_raw_data('seu_by_fuel', ...)`, then export writes `seu_*` vectors to `data.csv`. Same pipeline as all other pages.
+- **Page 50 (Energy in our daily lives):** Residential daily lives (`residential_daily_lives`) – reads from `EE Improvement.xlsx`, writes to SQL via `store_raw_data('residential_daily_lives', ...)`, then export writes `res_*` vectors to `data.csv`. Total residential energy (TEr) uses `oee_neud_R` from the energy_use source when available; optionally `res_ter` from the Residential sheet if present. Same pipeline as all other pages.
 
 **For Page 48 (Primary and secondary energy use by sector):** Place `Primary Energy Use Demand.xlsx` at the project root with columns `YEAR`, `PRODUCT`, `VALUE` (products: Pipeline, Non-energy (feedstock), Noncovered producer consumption, Energy losses (conversion)). After refreshing Section 4, run **Export** so `data.csv` includes the Primary vectors; otherwise the pie chart will only show Secondary.
+
+**For Page 50 (Energy in our daily lives)** – data instructions and sources:
+
+1. **Total Energy Use (PJ) = TEr:** From Residential end use (OEE NEUD). Pipeline: `oee_neud_R` from energy_use (Section 4). Optional: add a **ter** or **Total Energy Use (PJ)** column to the **Residential** sheet in `EE Improvement.xlsx` to output `res_ter`; the frontend uses `oee_neud_R` first, then `res_ter` as fallback so the chart data table can show TEr for all years.
+2. **Energy Efficiency Effect (PJ) = EEE:** From Energy Indicator Analysis (Change in Energy Use due to). In `EE Improvement.xlsx`, **Residential** sheet column **eee** (or “Energy efficiency effect”, “EEE”) → `res_eee`.
+3. **Energy Use Excluding EE Effect = EUx:** Calculated as TEr − EEE (done in frontend from `oee_neud_R`/`res_ter` and `res_eee`).
+4. **TEr% and EUx%:** Change in TEr and change in EUx from 2000 to selected year (e.g. 2022), expressed as percentage. Narratives: “Residential energy use increased [TEr%] since 2000, but would have increased by [EUx%] without energy efficiency improvements.”
+5. **Total Space Heating (PJ):** Table 7 (OEE). In **Residential** sheet column **space_heating_pj** (or “Space Heating (PJ)”) → `res_space_heating_pj`.
+6. **Total Water Heating (PJ):** Table 14 (OEE). In **Residential** sheet column **water_heating_pj** (or “Water Heating (PJ)”) → `res_water_heating_pj`.
+7. **SWEU:** Space and water heating energy use = space_heating_pj + water_heating_pj (calculated in frontend).
+8. **SWTE%:** Share of residential energy = SWEU / TEr × 100. Narrative: “[SWTE%] of residential energy consumption is used for space and water heating.”
+9. **EE Improvement sheet:** In `EE Improvement.xlsx`, sheet **EE Improvement**, rows where **SECTOR = Residential**: **Improvement** (%) → `res_ee_improvement_pct`, **Energy Savings** (UOM = PJ) → `res_ee_savings_pj`, **Energy Savings** (UOM = $ billion) → `res_ee_savings_billion`. Narrative: “Residential energy efficiency improved by [%] between 2000 and [year], saving [PJ] of energy and $[B] billion in energy costs.” If the sheet does not provide `res_ee_savings_pj` for a year, the frontend may use `res_eee` (EEE) as the savings in PJ for that year.
+
+**Residential sheet columns (EE Improvement.xlsx):** **year** (required); **space_heating_pj**, **water_heating_pj** (for SWTE%); **eee** (optional, for EEE and derived EUx); **ter** or **Total Energy Use (PJ)** (optional, for `res_ter` when `oee_neud_R` is missing). After refreshing Section 4 and exporting, the pipeline writes these vectors and the page narratives and chart data table populate.
+
+**Page 51 (Residential energy use – pie charts):** Data comes from the **residential_pie_charts** source in Section 4. The pipeline scrapes:
+- **Chart 1 (by end-use):** OEE “Residential Secondary Energy Use (Final Demand) by Energy Source and End Use” (HB tables, 3 pages) → `res_reu_total`, `res_reu_space_heating`, `res_reu_water_heating`, `res_appliances_pj`, `res_lighting_pj`, `res_space_cooling_pj`.
+- **Chart 2 (water heating by source):** OEE Table 14 (2 pages) → `res_wh_total`, `res_wh_ele`, `res_wh_ng`, `res_wh_ho`, `res_wh_ot`, `res_wh_wd`.
+- **Chart 3 (space heating by source):** OEE Table 7 (2 pages) → `res_sh_total`, `res_sh_ele`, `res_sh_ng`, `res_sh_ho`, `res_sh_ot`, `res_sh_wd`.
+
+Run **Section 4** refresh and then **Export** so these vectors are written to `data.csv`. If they are missing, Page 51 will use fallbacks (`res_ter`, `res_space_heating_pj`, `res_water_heating_pj` from residential_daily_lives) for totals only; the three pie charts and data tables will only be fully populated after a successful Section 4 run and export.
 
 ---
 
