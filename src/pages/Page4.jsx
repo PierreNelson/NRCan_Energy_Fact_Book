@@ -480,7 +480,7 @@ const Page4 = () => {
             {
                 text: `<b>${getText('page4_total', lang)}</b>`,
                 x: 0.5,
-                y: 0.55,
+                y: 0.57,
                 font: { size: windowWidth <= 480 ? 14 : 16, family: 'Lato, sans-serif', color: '#333' },
                 showarrow: false,
                 xanchor: 'center',
@@ -489,7 +489,7 @@ const Page4 = () => {
             {
                 text: `<b>${formatNumber(data.total)}</b>`,
                 x: 0.5,
-                y: 0.5,
+                y: 0.48,
                 font: { size: windowWidth <= 480 ? 24 : 32, family: 'Lato, sans-serif', color: '#333' },
                 showarrow: false,
                 xanchor: 'center',
@@ -498,7 +498,7 @@ const Page4 = () => {
             {
                 text: getText('page4_pj', lang),
                 x: 0.5,
-                y: 0.42,
+                y: 0.40,
                 font: { size: windowWidth <= 480 ? 14 : 16, family: 'Lato, sans-serif', color: '#333' },
                 showarrow: false,
                 xanchor: 'center',
@@ -726,30 +726,12 @@ const Page4 = () => {
                                 tabIndex="0"
                             >
                                 <div className="page4-chart-wrapper">
-                                    <figure ref={chartRef1} style={{ margin: 0, width: '100%', height: '100%', position: 'relative' }}>
-                                        {selectedSlices1 !== null && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setSelectedSlices1(null)}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    right: 295,
-                                                    zIndex: 20,
-                                                    padding: '6px 12px',
-                                                    backgroundColor: '#26374a',
-                                                    border: '1px solid #26374a',
-                                                    borderRadius: '4px',
-                                                    color: '#ffffff',
-                                                    fontFamily: 'Arial, sans-serif',
-                                                    fontWeight: 'bold',
-                                                    fontSize: '14px',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                {lang === 'en' ? 'Clear' : 'Effacer'}
-                                            </button>
+                                    {selectedSlices1 !== null && (
+                                            <div style={{ marginBottom: 8 }}>
+                                                <button type="button" onClick={() => setSelectedSlices1(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            </div>
                                         )}
+                                        <figure ref={chartRef1} style={{ margin: 0, width: '100%', height: '100%', position: 'relative' }}>
                                         <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                             <Plot
                                                 key={`pie1-${selectedSlices1 ? selectedSlices1.join('-') : 'none'}`}
@@ -799,30 +781,12 @@ const Page4 = () => {
                                 tabIndex="0"
                             >
                                 <div className="page4-chart-wrapper">
-                                    <figure ref={chartRef2} style={{ margin: 0, width: '100%', height: '100%', position: 'relative' }}>
-                                        {selectedSlices2 !== null && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setSelectedSlices2(null)}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    right: 295,
-                                                    zIndex: 20,
-                                                    padding: '6px 12px',
-                                                    backgroundColor: '#26374a',
-                                                    border: '1px solid #26374a',
-                                                    borderRadius: '4px',
-                                                    color: '#ffffff',
-                                                    fontFamily: 'Arial, sans-serif',
-                                                    fontWeight: 'bold',
-                                                    fontSize: '14px',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                {lang === 'en' ? 'Clear' : 'Effacer'}
-                                            </button>
+                                    {selectedSlices2 !== null && (
+                                            <div style={{ marginBottom: 8 }}>
+                                                <button type="button" onClick={() => setSelectedSlices2(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            </div>
                                         )}
+                                        <figure ref={chartRef2} style={{ margin: 0, width: '100%', height: '100%', position: 'relative' }}>
                                         <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                             <Plot
                                                 key={`pie2-${selectedSlices2 ? selectedSlices2.join('-') : 'none'}`}

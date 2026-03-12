@@ -1342,10 +1342,12 @@ const getAccessibleDataTable = () => {
                                 style={{ width: '100%' }} 
                                 tabIndex="0"
                             >
-                                <figure ref={chartRef} className="page37h-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
-                                    {selectedSlices !== null && (
-                                        <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                                {selectedSlices !== null && (
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
+                                <figure ref={chartRef} className="page37h-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>
                                     <div aria-hidden="true">
                                     <Plot
                                         key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}

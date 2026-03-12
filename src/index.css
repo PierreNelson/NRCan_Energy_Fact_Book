@@ -27,7 +27,6 @@
   
   /* Layout */
   --max-content-width: 1140px;
-  --max-line-length: 80ch;
   --sidebar-width: 340px;
   --sidebar-width-collapsed: 40px;
   --transition-speed: 0.3s;
@@ -190,7 +189,6 @@ p, .gc-body {
   font-family: var(--font-body);
   font-size: 20px;
   line-height: 1.5;
-  max-width: var(--max-line-length);
 }
 
 /* Smaller device default font specification */
@@ -1082,8 +1080,13 @@ details .table-responsive {
    Ensure modebar is always visible on all devices
    =============================================== */
 
-.js-plotly-plot .plotly .modebar {
-  display: flex !important;
+/* Shrink modebar to content width so single-download layout has no excess lighter background */
+.js-plotly-plot .plotly .modebar,
+.js-plotly-plot .modebar {
+  display: inline-flex !important;
+  width: min-content !important;
+  min-width: unset !important;
+  max-width: min-content !important;
   opacity: 1 !important;
   visibility: visible !important;
   position: absolute !important;
@@ -1092,22 +1095,53 @@ details .table-responsive {
   z-index: 1000 !important;
 }
 
-.js-plotly-plot .plotly .modebar-container {
-  display: flex !important;
+.js-plotly-plot .plotly .modebar-container,
+.js-plotly-plot .modebar-container {
+  display: inline-flex !important;
+  width: min-content !important;
+  min-width: unset !important;
+  max-width: min-content !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-.js-plotly-plot .plotly .modebar-group {
-  display: flex !important;
+/* Hide empty button groups (from removed default buttons) so only visible buttons take space */
+.js-plotly-plot .plotly .modebar-group:empty,
+.js-plotly-plot .modebar-group:empty {
+  display: none !important;
 }
 
-.js-plotly-plot .plotly .modebar-btn {
+.js-plotly-plot .plotly .modebar-group,
+.js-plotly-plot .modebar-group {
   display: inline-flex !important;
+  flex: 0 0 auto !important;
+  min-width: unset !important;
+  padding-left: 0 !important;
+}
+
+/* First group needs no left padding; keeps single-button modebar tight */
+.js-plotly-plot .plotly .modebar-group:first-child,
+.js-plotly-plot .modebar-group:first-child {
+  padding-left: 0 !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn,
+.js-plotly-plot .modebar-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   opacity: 1 !important;
   visibility: visible !important;
   cursor: pointer !important;
   padding: 3px !important;
+}
+
+/* Center the download icon within the button (nudge right to correct visual offset) */
+.js-plotly-plot .plotly .modebar-btn svg,
+.js-plotly-plot .modebar-btn svg {
+  display: block !important;
+  margin: 0 auto !important;
+  transform: translateX(2px) !important;
 }
 
 @media (max-width: 768px) {
@@ -1210,4 +1244,11 @@ details .table-responsive {
 .page49-error {
   padding: 24px;
   font-family: var(--font-body);
+}
+
+/* Page 52: tight spacing for the three narrative lines (arrow + text) */
+.page52-visual-narrative-wrap .page52-visual-row .page52-visual-text,
+.page52-visual-narrative-wrap .page52-visual-row p {
+  margin: 0 !important;
+  padding: 0 !important;
 }

@@ -80,7 +80,6 @@ const Page21 = () => {
     color: #332f30;
     margin: 0 0 32px 0;
     line-height: 1.5;
-    max-width: 80ch;
 }
 .page21-four-col {
     display: grid;

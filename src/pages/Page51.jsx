@@ -50,7 +50,11 @@ const Page51 = () => {
         getPage51Data()
             .then((d) => {
                 setResult(d);
-                if (d?.years?.length) setSelectedYear(d.latestYear ?? d.years[d.years.length - 1]);
+                if (d?.years?.length) {
+                    const no2000 = d.years.filter((y) => y !== 2000);
+                    const pick = no2000.length ? (d.latestYear !== 2000 ? d.latestYear : no2000[no2000.length - 1]) : d.years[d.years.length - 1];
+                    setSelectedYear(pick);
+                }
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -76,7 +80,7 @@ const Page51 = () => {
         setSelectedSlices3(null);
     }, [selectedYear]);
 
-    const years = useMemo(() => (result?.years ? [...result.years].sort((a, b) => b - a) : []), [result?.years]);
+    const years = useMemo(() => (result?.years ? [...result.years].filter((y) => y !== 2000).sort((a, b) => b - a) : []), [result?.years]);
     const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
 
     const reuByTypeCategories = useMemo(() => {
@@ -127,7 +131,7 @@ const Page51 = () => {
     }, [result?.data]);
     const table2AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => r.year !== 2000).sort((a, b) => a.year - b.year).map((r) => {
             const wh = r.waterHeating || {};
             const total = wh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(wh[k]) || 0), 0);
             const row = { year: r.year, total };
@@ -141,7 +145,7 @@ const Page51 = () => {
     }, [result?.data]);
     const table3AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => r.year !== 2000).sort((a, b) => a.year - b.year).map((r) => {
             const sh = r.spaceHeating || {};
             const total = sh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(sh[k]) || 0), 0);
             const row = { year: r.year, total };
@@ -544,7 +548,7 @@ const Page51 = () => {
                 .page51-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
                 .page51-chart-title { font-family: 'Noto Sans', sans-serif; font-size: 20px; font-weight: bold; color: var(--gc-text, #333); margin: 0 0 12px 0; text-align: center; max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; white-space: normal; box-sizing: border-box; padding: 0 8px; }
                 .page51-chart-title a { color: #26374a; text-decoration: underline; }
-                .page51-footnotes { font-family: 'Noto Sans', sans-serif; font-size: 20px; color: #555; margin-top: 10px; line-height: 1.4; max-width: 80ch; }
+                .page51-footnotes { font-family: 'Noto Sans', sans-serif; font-size: 20px; color: #555; margin-top: 10px; line-height: 1.4; }
                 .page51-footnotes h2 { font-size: 1rem; margin-bottom: 0.5rem; }
                 @media (max-width: 768px) { .page51-chart-title { font-size: 18px; } .page51-footnotes { font-size: 18px; } }
             `}</style>
@@ -639,7 +643,8 @@ const Page51 = () => {
                                             style={{ width: '100%', height: PAGE51_CHART_HEIGHT }}
                                             useResizeHandler
                                             onClick={(data) => {
-                                            const idx = data.points?.[0]?.pointIndex;
+                                            const pt = data.points?.[0];
+                                            const idx = pt && (pt.pointNumber !== undefined ? pt.pointNumber : pt.pointIndex);
                                             if (idx == null) return;
                                             if (windowWidth <= 768) {
                                                 const now = Date.now();
@@ -720,7 +725,8 @@ const Page51 = () => {
                                             style={{ width: '100%', height: PAGE51_CHART_HEIGHT }}
                                             useResizeHandler
                                             onClick={(data) => {
-                                            const idx = data.points?.[0]?.pointIndex;
+                                            const pt = data.points?.[0];
+                                            const idx = pt && (pt.pointNumber !== undefined ? pt.pointNumber : pt.pointIndex);
                                             if (idx == null) return;
                                             if (windowWidth <= 768) {
                                                 const now = Date.now();
@@ -801,7 +807,8 @@ const Page51 = () => {
                                             style={{ width: '100%', height: PAGE51_CHART_HEIGHT }}
                                             useResizeHandler
                                             onClick={(data) => {
-                                            const idx = data.points?.[0]?.pointIndex;
+                                            const pt = data.points?.[0];
+                                            const idx = pt && (pt.pointNumber !== undefined ? pt.pointNumber : pt.pointIndex);
                                             if (idx == null) return;
                                             if (windowWidth <= 768) {
                                                 const now = Date.now();

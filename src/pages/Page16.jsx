@@ -338,7 +338,6 @@ const Page16 = () => {
     color: var(--gc-text);
     margin-top: 0;
     margin-bottom: 20px;
-    max-width: 80ch;
 }
 .page16-content-row {
     display: flex;
@@ -380,7 +379,6 @@ const Page16 = () => {
     line-height: 1.5;
     color: var(--gc-text);
     margin-bottom: 15px;
-    max-width: 80ch;
 }
 .page16-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }
 .page16-table-wrapper details > summary {
@@ -443,13 +441,9 @@ const Page16 = () => {
                             <div role="region" aria-label={getChartSummary()} tabIndex="0">
                                 <figure ref={chartRef} className="page16-chart" style={{ margin: 0, position: 'relative' }}>
                                     {selectedSlices !== null && selectedSlices.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setSelectedSlices(null)}
-                                            style={{ position: 'absolute', top: 0, right: 295, zIndex: 20, padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', color: '#ffffff', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
-                                        >
-                                            {lang === 'en' ? 'Clear' : 'Effacer'}
-                                        </button>
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
                                     <Plot
                                         key={selectedSlices ? selectedSlices.join('-') : 'none'}

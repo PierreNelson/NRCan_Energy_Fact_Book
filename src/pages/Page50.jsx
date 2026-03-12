@@ -7,6 +7,7 @@ import { getText } from '../utils/translations';
 import page50Bg1 from '../assets/page50_bg1.png';
 import page50Bg2 from '../assets/page50_bg2.png';
 import page50Bg3 from '../assets/page50_bg3.png';
+import page50Bg4 from '../assets/page50_bg4.png';
 
 const substitute = (str, vars) => {
     if (!str || typeof str !== 'string') return str;
@@ -173,7 +174,7 @@ const Page50 = () => {
             r.water_heating_pj != null ? r.water_heating_pj : '',
             r.swte_pct != null ? r.swte_pct : '',
             r.terPct != null ? r.terPct : '',
-            r.euxPct != null ? r.euxPct : '',
+            r.euxPct != null ? Math.abs(r.euxPct) : '',
             r.ee_improvement_pct != null ? r.ee_improvement_pct : '',
             r.ee_savings_pj != null ? r.ee_savings_pj : '',
             r.ee_savings_billion != null ? r.ee_savings_billion : ''
@@ -220,7 +221,7 @@ const Page50 = () => {
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.water_heating_pj != null ? String(r.water_heating_pj) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.swte_pct != null ? String(r.swte_pct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.terPct != null ? String(r.terPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.euxPct != null ? String(r.euxPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.euxPct != null ? String(Math.abs(r.euxPct)) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_improvement_pct != null ? String(r.ee_improvement_pct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_pj != null ? String(r.ee_savings_pj) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_billion != null ? String(r.ee_savings_billion) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] })
@@ -288,7 +289,7 @@ const Page50 = () => {
 }
 .page50-bullets li {
     margin-bottom: 1rem;
-    font-size: 1.1rem;
+    font-size: 1.em;
     color: #221e1f;
     line-height: 1.5;
 }
@@ -437,10 +438,10 @@ const Page50 = () => {
                                 <div className="page50-visual-imgs">
                                     <img src={page50Bg1} alt="" className="page50-visual-img page50-visual-img-first" aria-hidden="true" />
                                     <div className="page50-visual-row">
-                                        <img src={page50Bg2} alt="" className="page50-visual-img" aria-hidden="true" />
+                                        <img src={terPct != null && terPct < 0 ? page50Bg4 : page50Bg2} alt="" className="page50-visual-img" aria-hidden="true" />
                                         <p className="page50-visual-text">
-                                            <span className="page50-visual-lead">{getText('page50_visual1_lead', lang)}</span>{' '}
-                                            <span className="page50-visual-pct">{terPct != null ? `${terPct}%` : '–'}</span>{' '}
+                                            <span className="page50-visual-lead">{terPct != null && terPct < 0 ? getText('page50_visual1_lead_decreased', lang) : getText('page50_visual1_lead', lang)}</span>{' '}
+                                            <span className="page50-visual-pct">{terPct != null ? `${terPct < 0 ? Math.abs(terPct) : terPct}%` : '–'}</span>{' '}
                                             {getText('page50_visual1_since', lang)}
                                         </p>
                                     </div>
@@ -451,7 +452,7 @@ const Page50 = () => {
                                     <img src={page50Bg3} alt="" className="page50-visual-img" aria-hidden="true" />
                                     <p className="page50-visual-text">
                                         <span className="page50-visual-lead">{getText('page50_visual2_lead', lang)}</span>{' '}
-                                        <span className="page50-visual-pct">{euxPct != null ? `${euxPct}%` : '–'}</span>{' '}
+                                        <span className="page50-visual-pct">{euxPct != null ? `${Math.abs(euxPct)}%` : '–'}</span>{' '}
                                         {getText('page50_visual2_without', lang)}
                                     </p>
                                 </div>
@@ -517,7 +518,7 @@ const Page50 = () => {
                                             <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.water_heating_pj != null ? r.water_heating_pj : '–'}</td>
                                             <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.swte_pct != null ? `${r.swte_pct}%` : '–'}</td>
                                             <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.terPct != null ? `${r.terPct}%` : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.euxPct != null ? `${r.euxPct}%` : '–'}</td>
+                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.euxPct != null ? `${Math.abs(r.euxPct)}%` : '–'}</td>
                                             <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.ee_improvement_pct != null ? `${r.ee_improvement_pct}%` : '–'}</td>
                                             <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.ee_savings_pj != null ? r.ee_savings_pj : '–'}</td>
                                             <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.ee_savings_billion != null ? r.ee_savings_billion : '–'}</td>

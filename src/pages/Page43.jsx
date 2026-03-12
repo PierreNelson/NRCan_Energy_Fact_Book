@@ -297,7 +297,6 @@ const Page43 = () => {
     color: var(--gc-text);
     margin-top: 0;
     margin-bottom: 20px;
-    max-width: 80ch;
 }
 .page43-chart-frame {
     background-color: #f5f5f5;
@@ -367,28 +366,15 @@ const Page43 = () => {
                     <div role="region" aria-label={getChartSummary()} tabIndex="0">
                         <figure ref={chartRef} className="page43-chart" style={{ margin: 0, position: 'relative' }}>
                             {selectedPoints !== null && (
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedPoints(null)}
-                                    className="page43-clear-focus"
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        right: 50,
-                                        zIndex: 20,
-                                        padding: '6px 12px',
-                                        backgroundColor: '#26374a',
-                                        border: '1px solid #26374a',
-                                        borderRadius: '4px',
-                                        color: '#ffffff',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontWeight: 'bold',
-                                        fontSize: '14px',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    {lang === 'en' ? 'Clear' : 'Effacer'}
-                                </button>
+                                <div style={{ marginBottom: 8 }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedPoints(null)}
+                                        style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
+                                    >
+                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
+                                    </button>
+                                </div>
                             )}
                             <Plot
                                 data={[barTrace]}

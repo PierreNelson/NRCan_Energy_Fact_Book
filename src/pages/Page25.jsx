@@ -741,13 +741,11 @@ const Page25 = () => {
                 .page25-subtitle {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 80ch;
                 }
 
                 .page25-body-text {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 80ch;
                 }
 
                 .page25-container {
@@ -1290,10 +1288,13 @@ const Page25 = () => {
                         tabIndex="0"
                     >
                         {chartData && (
-                            <figure ref={chartRef} className="page25-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
-                                {selectedSlices !== null && (
-                                    <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                            <>
+                                {selectedSlices !== null && selectedSlices.length > 0 && (
+                                    <div style={{ marginBottom: 8 }}>
+                                        <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    </div>
                                 )}
+                                <figure ref={chartRef} className="page25-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
                                 <Plot
                                     key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}
                                     data={[{
@@ -1458,6 +1459,7 @@ const Page25 = () => {
                                     }}
                                 />
                             </figure>
+                            </>
                         )}
 
                         <div className="page25-table-wrapper">
@@ -1477,31 +1479,9 @@ const Page25 = () => {
                                 {getText('infra_definition_title', lang)}
                             </h2>
                             <div style={{ textAlign: 'center' }}>
-                                <span className="decorative-quote" aria-hidden="true" style={{ 
-                                    position: 'absolute',
-                                    top: '-5px',
-                                    left: '10px',
-                                    fontSize: '6rem', 
-                                    color: '#292419', 
-                                    fontFamily: 'Georgia, serif', 
-                                    lineHeight: '1',
-                                    pointerEvents: 'none'
-                                }}>❞</span>
-
                                 <p className="page25-body-text" style={{ color: '#333', lineHeight: '1.6', whiteSpace: 'pre-line', textAlign: 'center', margin: 0, padding: '0 10px' }}>
                                     {getText('infra_definition_text', lang)}
                                 </p>
-
-                                <span className="decorative-quote" aria-hidden="true" style={{ 
-                                    position: 'absolute',
-                                    bottom: '-35px',
-                                    left: 'calc(100% - 70px)',
-                                    fontSize: '6rem', 
-                                    color: '#292419', 
-                                    fontFamily: 'Georgia, serif', 
-                                    lineHeight: '1',
-                                    pointerEvents: 'none'
-                                }}>❞</span>
                             </div>
                         </div>
                         <p className="page25-body-text" aria-hidden="true" style={{ color: '#333', lineHeight: '1.5', marginTop: '10px', marginLeft: '0', textAlign: 'center', whiteSpace: 'pre-line' }}>

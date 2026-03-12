@@ -556,7 +556,6 @@ const Page28 = () => {
                     line-height: 1.6;
                     margin-bottom: 20px;
                     color: var(--gc-text);
-                    max-width: 80ch;
                 }
 
                 .page28-sidebar {
@@ -567,7 +566,6 @@ const Page28 = () => {
                     font-size: 20px;
                     line-height: 1.6;
                     color: var(--gc-text);
-                    max-width: 80ch;
                 }
 
                 .page28-sidebar-title {
@@ -863,10 +861,12 @@ const Page28 = () => {
                                 aria-label={`${chartTitle}. ${getChartSummary()}`} 
                                 tabIndex="0"
                             >
-                                <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
-                                    {selectedPoints !== null && (
-                                        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                                {selectedPoints !== null && (
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
+                                    <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                                     <div aria-hidden="true">
                                     <Plot
                                         data={[

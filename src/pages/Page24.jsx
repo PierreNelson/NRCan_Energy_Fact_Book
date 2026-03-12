@@ -695,7 +695,7 @@ backgroundColor: '#26374a',
                     gap: 15px;
                     margin-top: 15px;
                     cursor: default;
-                    justify-content: center;
+                    justify-content: flex-start;
                     width: 100%;
                     box-sizing: border-box;
                 }
@@ -748,13 +748,14 @@ backgroundColor: '#26374a',
                     color: var(--gc-text);
                     cursor: pointer;
                     user-select: none;
+                    min-width: 0;
                 }
-                .page24-legend-color { width: 15px; height: 15px; margin-right: 8px; display: inline-block; }
+                .page24-legend-item .page24-legend-color { width: 15px; height: 15px; margin-right: 8px; flex-shrink: 0; display: inline-block; vertical-align: middle; }
+                .page24-legend-item > span:last-child { text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
 
                 .page24-bullet {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 80ch;
                 }
 
                 .page24-footnote {
@@ -927,10 +928,12 @@ backgroundColor: '#26374a',
                         </h2>
 
                         <div role="region" aria-label={getChartSummary()} tabIndex="0">
-                            <figure ref={chartRef} className="page24-chart-wrapper">
-                                {selectedPoints !== null && (
-                                    <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                            {selectedPoints !== null && (
+                                    <div style={{ marginBottom: 8 }}>
+                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    </div>
                                 )}
+                                <figure ref={chartRef} className="page24-chart-wrapper">
                             <Plot
                                 data={[
                                     { 

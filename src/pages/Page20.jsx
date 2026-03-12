@@ -594,7 +594,6 @@ const Page20 = () => {
                 .page20-bullet {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 80ch;
                 }
 
                 .page20-source {
@@ -742,9 +741,9 @@ const Page20 = () => {
                             <div role="region" aria-label={getChartSummary()} tabIndex="0">
                                 <figure ref={chartRef} className="page20-chart-wrapper">
                                     {selectedPoints !== null && (
-                                        <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>
-                                            {lang === 'en' ? 'Clear' : 'Effacer'}
-                                        </button>
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
                                     <Plot
                                         data={seriesConfig.map((series, idx) => ({

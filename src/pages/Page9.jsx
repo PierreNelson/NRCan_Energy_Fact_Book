@@ -816,12 +816,25 @@ const Page9 = () => {
                     padding-left: 50px;
                 }
 
+                .page9-map-title-and-map {
+                    width: 100%;
+                }
+
                 .page9-map-section-title {
                     font-family: 'Lato', sans-serif;
                     font-size: 20px;
                     font-weight: bold;
                     color: #463825;
-                    margin-bottom: 10px;
+                    margin-left: 5%;
+                    text-align: center;
+                }
+                .page9-map-title-overlay {
+                    position: absolute;
+                    top: 70px;
+                    left: 0;
+                    right: 0;
+                    z-index: 10;
+                    pointer-events: none;
                 }
 
                 .page9-map-container {
@@ -843,7 +856,7 @@ const Page9 = () => {
 
                 .page9-map-container .js-plotly-plot .plotly .modebar {
                     right: 20% !important;
-                    top: 100px !important;
+                    top: 0 !important;
                 }
 
                 .page9-indigenous-bullet {
@@ -1229,24 +1242,28 @@ const Page9 = () => {
                                 </div>
                             </div>
 
-                            <div className="page9-map-section-title">
-                                {getText('page9_map_title', lang)}
-                                <span id="fn-asterisk-rf-page9" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
-                                    <a href="#fn-asterisk-page9" onClick={scrollToFootnote} className="fn-lnk">
-                                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
-                                    </a>
-                                </span>
-                            </div>
-
-                            <div 
-                                role="region" 
-                                aria-label={getMapSRSummary()}
-                                tabIndex="0"
-                            >
-                                <figure ref={mapChartRef} className="page9-map-container" style={{ margin: 0, position: 'relative' }}>
+                            <div className="page9-map-title-and-map">
+                                <div 
+                                    role="region" 
+                                    aria-label={getMapSRSummary()}
+                                    tabIndex="0"
+                                >
                                     {selectedProvinces !== null && (
-                                        <button onClick={() => setSelectedProvinces(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
-                                    )}
+                                            <div style={{ marginBottom: 8 }}>
+                                                <button type="button" onClick={() => setSelectedProvinces(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            </div>
+                                        )}
+                                    <figure ref={mapChartRef} className="page9-map-container" style={{ margin: 0, position: 'relative' }}>
+                                        <div className="page9-map-title-overlay" aria-hidden="true">
+                                            <h2 className="page9-map-section-title">
+                                                {getText('page9_map_title', lang)}
+                                                <span id="fn-asterisk-rf-page9" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0', pointerEvents: 'auto' }}>
+                                                    <a href="#fn-asterisk-page9" onClick={scrollToFootnote} className="fn-lnk">
+                                                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
+                                                    </a>
+                                                </span>
+                                            </h2>
+                                        </div>
                                     <Plot
                                         key={`map-${selectedProvinces ? selectedProvinces.join('-') : 'none'}`}
                                         data={[
@@ -1335,7 +1352,7 @@ const Page9 = () => {
                                                 lakecolor: '#f5f5f5',
                                                 bgcolor: 'rgba(0,0,0,0)'
                                             },
-                                            margin: { l: 0, r: 0, t: 0, b: 0 },
+                                            margin: { l: 0, r: 0, t: 100, b: 0 },
                                             height: mapHeight,
                                             clickmode: 'event',
                                             dragmode: windowWidth <= 768 ? false : 'zoom',
@@ -1397,6 +1414,7 @@ const Page9 = () => {
                                         style={{ width: '100%', height: '100%' }}
                                     />
                                 </figure>
+                                </div>
                             </div>
                         </div>
 

@@ -533,15 +533,12 @@ const Page11 = () => {
                         aria-label={getChartSummary()}
                         tabIndex="0"
                     >
-                        <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
-                            {selectedPoints !== null && (
-                                <button 
-                                    onClick={() => setSelectedPoints(null)} 
-                                    style={{ position: 'absolute', top: 0, right: 50, zIndex: 20, padding: '5px 10px', cursor: 'pointer' }}
-                                >
-                                    {lang === 'en' ? 'Clear' : 'Effacer'}
-                                </button>
+                        {selectedPoints !== null && (
+                                <div style={{ marginBottom: 8 }}>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                </div>
                             )}
+                            <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                             <div aria-hidden="true">
                                 <Plot
                                     data={[
@@ -655,15 +652,12 @@ const Page11 = () => {
                                         }
 
                                         setSelectedPoints(prev => {
-                                            const newSelection = prev ? [...prev] : [[], [], []];
-                                            if (!newSelection[traceIndex]) newSelection[traceIndex] = [];
-                                            
-                                            const idx = newSelection[traceIndex].indexOf(pointIndex);
-                                            if (idx > -1) {
-                                                newSelection[traceIndex].splice(idx, 1);
-                                            } else {
-                                                newSelection[traceIndex].push(pointIndex);
-                                            }
+                                            const newSelection = prev ? prev.map(arr => [...arr]) : [[], [], []];
+                                            const currentTraceSelection = newSelection[traceIndex] || [];
+                                            const isSelected = currentTraceSelection.includes(pointIndex);
+                                            newSelection[traceIndex] = isSelected
+                                                ? currentTraceSelection.filter(i => i !== pointIndex)
+                                                : [...currentTraceSelection, pointIndex];
                                             const allEmpty = newSelection.every(arr => !arr || arr.length === 0);
                                             return allEmpty ? null : newSelection;
                                         });

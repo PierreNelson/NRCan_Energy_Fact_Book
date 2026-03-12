@@ -149,7 +149,6 @@ const Page61 = () => {
                     font-size: 20px;
                     color: #332f30;
                     line-height: 1.5;
-                    max-width: 80ch;
                 }
                 .page61-tsx strong { color: #819476; }
                 .page61-year-selector {

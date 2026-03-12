@@ -335,30 +335,12 @@ const Page17 = () => {
                     <h2 id="page17-chart-title" className="page17-chart-title" aria-hidden="true">{getText('page17_title', lang)}</h2>
                     <h1 className="wb-inv">{stripHtml(getText('page17_title', lang))}</h1>
                     <div role="region" aria-label={getText('page17_title', lang)} tabIndex="0">
-                        <figure ref={chartRef} className="page17-chart" style={{ margin: 0, position: 'relative' }}>
-                            {selectedPoints !== null && selectedPoints.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedPoints(null)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        right: 295,
-                                        zIndex: 20,
-                                        padding: '6px 12px',
-                                        backgroundColor: '#26374a',
-                                        border: '1px solid #26374a',
-                                        borderRadius: '4px',
-                                        color: '#ffffff',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontWeight: 'bold',
-                                        fontSize: '14px',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    {lang === 'en' ? 'Clear' : 'Effacer'}
-                                </button>
+                        {selectedPoints !== null && selectedPoints.length > 0 && (
+                                <div style={{ marginBottom: 8 }}>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                </div>
                             )}
+                        <figure ref={chartRef} className="page17-chart" style={{ margin: 0, position: 'relative' }}>
                             <div aria-hidden="true">
                                 <Plot
                                     data={chartTraces}

@@ -101,23 +101,24 @@ const Page27 = () => {
     }, []);
 
     const legendSettings = useMemo(() => {
+        // entrywidth = 1/numColumns so legend spans full width (left anchor to right anchor) with evenly spaced columns
         if (windowWidth <= 480) {
             return { width: 1.0, margin: 120, fontSize: 9, y: -0.25, x: 0, xanchor: 'left' };
         }
         else if (windowWidth <= 640) {
-            return { width: 0.85, margin: 120, fontSize: 11, y: -0.24, x: 0, xanchor: 'left' };
+            return { width: 1.0, margin: 120, fontSize: 11, y: -0.24, x: 0, xanchor: 'left' };
         }
         else if (windowWidth <= 960) {
-            return { width: 0.49, margin: 120, fontSize: 12, y: -0.22, x: 0, xanchor: 'left' };
+            return { width: 0.5, margin: 120, fontSize: 12, y: -0.22, x: 0, xanchor: 'left' };
         }
         else if (windowWidth <= 1097) {
-            return { width: 0.49, margin: 120, fontSize: 14, y: -0.18, x: 0, xanchor: 'left' };
+            return { width: 0.33, margin: 120, fontSize: 14, y: -0.18, x: 0, xanchor: 'left' };
         }
         else if (windowWidth <= 1536) {
-            return { width: 0.32, margin: 120, fontSize: 14, y: -0.18, x: 0, xanchor: 'left' };
+            return { width: 0.33, margin: 120, fontSize: 14, y: -0.18, x: 0, xanchor: 'left' };
         }
         else {
-            return { width: 0.25, margin: 120, fontSize: 14, y: -0.15, x: 0, xanchor: 'left' };
+            return { width: 0.33, margin: 120, fontSize: 14, y: -0.15, x: 0, xanchor: 'left' };
         }
     }, [windowWidth]);
 
@@ -953,10 +954,12 @@ const Page27 = () => {
                     aria-label={getChartDataSummary()}
                     tabIndex="0"
                 >
-                    <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
-                        {selectedPoints !== null && (
-                            <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                    {selectedPoints !== null && (
+                            <div style={{ marginBottom: 8 }}>
+                                <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                            </div>
                         )}
+                        <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                         <div aria-hidden="true">
                         <Plot
                             data={chartData.traces}

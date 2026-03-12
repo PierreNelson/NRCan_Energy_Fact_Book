@@ -185,6 +185,30 @@ const Page31 = () => {
         'fdi': '#2EA3AD',  
     };
 
+    const bulletValues = useMemo(() => {
+        if (pageData.length < 2) return null;
+        const latestYear = pageData[pageData.length - 1];
+        const prevYear = pageData[pageData.length - 2];
+        const fdiLatest = latestYear.fdi_billions ?? ((latestYear.fdi || 0) / 1000);
+        const fdiPrev = prevYear.fdi_billions ?? ((prevYear.fdi || 0) / 1000);
+        const cdiaLatest = latestYear.cdia_billions ?? ((latestYear.cdia || 0) / 1000);
+        const cdiaPrev = prevYear.cdia_billions ?? ((prevYear.cdia || 0) / 1000);
+        const fdiGrowth = fdiPrev > 0 ? ((fdiLatest - fdiPrev) / fdiPrev * 100) : 0;
+        const cdiaGrowth = cdiaPrev > 0 ? ((cdiaLatest - cdiaPrev) / cdiaPrev * 100) : 0;
+        const energyShare = 10;
+        const oilGasCdia = Math.round(cdiaLatest * 0.168);
+        return {
+            year: latestYear.year,
+            prevYear: prevYear.year,
+            fdi: Math.round(fdiLatest),
+            fdiGrowth: fdiGrowth.toFixed(1),
+            energyShare,
+            cdia: Math.round(cdiaLatest),
+            cdiaGrowth: Math.round(cdiaGrowth),
+            oilGasCdia
+        };
+    }, [pageData]);
+
     const chartData = useMemo(() => {
         if (pageData.length === 0) return null;
 
@@ -665,7 +689,29 @@ backgroundColor: '#26374a',
                     font-size: 20px;
                     margin-bottom: 15px;
                     line-height: 1.5;
-                    max-width: 80ch;
+                    max-width: 100%;
+                }
+
+                .page31-bullets {
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
+                    margin-bottom: 15px;
+                    line-height: 1.6;
+                    list-style-type: disc;
+                    padding-left: 20px;
+                }
+
+                .page31-bullets li {
+                    margin-bottom: 8px;
+                }
+
+                .page31-bullets li::marker {
+                    font-size: 1rem;
+                }
+
+                .page31-bullets .visual-bold {
+                    font-weight: bold;
                 }
 
                 .page31-chart-title {
@@ -693,7 +739,7 @@ backgroundColor: '#26374a',
                     color: #555;
                     margin-top: 10px;
                     line-height: 1.4;
-                    max-width: 80ch;
+                    max-width: 100%;
                 }
 
                 @media (max-width: 1536px) {
@@ -735,6 +781,9 @@ backgroundColor: '#26374a',
                     .page31-subtitle {
                         font-size: 18px;
                         text-align: left !important;
+                    }
+                    .page31-bullets {
+                        font-size: 18px;
                     }
                     .page31-chart-title {
                         font-size: 26px;
@@ -894,6 +943,84 @@ backgroundColor: '#26374a',
                     </p>
                 </header>
 
+                {bulletValues && (
+                    <ul className="page31-bullets" role="list">
+                        <li role="listitem" aria-label={lang === 'en'
+                            ? `${getText('page32_bullet1_part1', lang)}${getText('page32_bullet1_part2', lang)}${getText('page32_bullet1_part3', lang)}${bulletValues.year}${getText('page32_bullet1_part4', lang)}${bulletValues.fdi}${getText('page32_bullet1_part5', lang)} (+${bulletValues.fdiGrowth}% over the previous year)`
+                            : `${getText('page32_bullet1_part1', lang)}${getText('page32_bullet1_part2', lang)}${getText('page32_bullet1_part3', lang)}${bulletValues.fdi}${getText('page32_bullet1_part4', lang)}${getText('page32_bullet1_part5', lang)}${bulletValues.year} (+${bulletValues.fdiGrowth}% par rapport à l'année précédente)`
+                        }>
+                            <span aria-hidden="true">
+                                {lang === 'en' ? (
+                                    <>
+                                        {getText('page32_bullet1_part1', lang)}
+                                        <span className="visual-bold">{getText('page32_bullet1_part2', lang)}</span>
+                                        {getText('page32_bullet1_part3', lang)}
+                                        {bulletValues.year}
+                                        {getText('page32_bullet1_part4', lang)}
+                                        <span className="visual-bold">${bulletValues.fdi}{getText('page32_bullet1_part5', lang)}</span>
+                                        {' (+'}
+                                        {bulletValues.fdiGrowth}
+                                        {'% over the previous year).'}
+                                    </>
+                                ) : (
+                                    <>
+                                        {getText('page32_bullet1_part1', lang)}
+                                        <span className="visual-bold">{getText('page32_bullet1_part2', lang)}</span>
+                                        {getText('page32_bullet1_part3', lang)}
+                                        <span className="visual-bold">{bulletValues.fdi}{getText('page32_bullet1_part4', lang)}</span>
+                                        {getText('page32_bullet1_part5', lang)}
+                                        {bulletValues.year}
+                                        {' (+'}
+                                        {bulletValues.fdiGrowth}
+                                        {"% par rapport à l'année précédente)."}
+                                    </>
+                                )}
+                            </span>
+                        </li>
+                        <li role="listitem" aria-label={`${getText('page32_bullet2_part1', lang)} ${bulletValues.energyShare}${getText('page32_bullet2_part2', lang)}${bulletValues.year}${getText('page32_bullet2_part3', lang)}${bulletValues.prevYear}${getText('page32_bullet2_part4', lang)}`}>
+                            <span aria-hidden="true">
+                                {getText('page32_bullet2_part1', lang)}
+                                <span className="visual-bold">{bulletValues.energyShare}</span>
+                                {getText('page32_bullet2_part2', lang)}
+                                {bulletValues.year}
+                                {getText('page32_bullet2_part3', lang)}
+                                {bulletValues.prevYear}
+                                {getText('page32_bullet2_part4', lang)}
+                            </span>
+                        </li>
+                        <li role="listitem" aria-label={lang === 'en'
+                            ? `${getText('page32_bullet3_part1', lang)}${getText('page32_bullet3_part2', lang)}${getText('page32_bullet3_part3', lang)}${bulletValues.cdia}${getText('page32_bullet3_part4', lang)}${getText('page32_bullet3_part5', lang)}${bulletValues.year}${getText('page32_bullet3_part6', lang)}${bulletValues.cdiaGrowth}${getText('page32_bullet3_part7', lang)}${bulletValues.prevYear}${getText('page32_bullet3_part8', lang)}`
+                            : `${getText('page32_bullet3_part1', lang)}${getText('page32_bullet3_part2', lang)}${getText('page32_bullet3_part3', lang)}${bulletValues.cdia}${getText('page32_bullet3_part4', lang)}${getText('page32_bullet3_part5', lang)}${bulletValues.year}${getText('page32_bullet3_part6', lang)}${bulletValues.cdiaGrowth}${getText('page32_bullet3_part7', lang)}${bulletValues.prevYear}${getText('page32_bullet3_part8', lang)}`
+                        }>
+                            <span aria-hidden="true">
+                                {getText('page32_bullet3_part1', lang)}
+                                <span className="visual-bold">{getText('page32_bullet3_part2', lang)}</span>
+                                {getText('page32_bullet3_part3', lang)}
+                                <span className="visual-bold">${bulletValues.cdia}{getText('page32_bullet3_part4', lang)}</span>
+                                {getText('page32_bullet3_part5', lang)}
+                                {bulletValues.year}
+                                {getText('page32_bullet3_part6', lang)}
+                                {bulletValues.cdiaGrowth}
+                                {getText('page32_bullet3_part7', lang)}
+                                {bulletValues.prevYear}
+                                {getText('page32_bullet3_part8', lang)}
+                            </span>
+                        </li>
+                        <li role="listitem" aria-label={lang === 'en'
+                            ? `${getText('page32_bullet4_part1', lang)}${bulletValues.oilGasCdia}${getText('page32_bullet4_part2', lang)}${getText('page32_bullet4_part3', lang)}${bulletValues.year}${getText('page32_bullet4_part4', lang)}`
+                            : `${getText('page32_bullet4_part1', lang)}${bulletValues.oilGasCdia}${getText('page32_bullet4_part2', lang)}${getText('page32_bullet4_part3', lang)}${bulletValues.year}${getText('page32_bullet4_part4', lang)}`
+                        }>
+                            <span aria-hidden="true">
+                                {getText('page32_bullet4_part1', lang)}
+                                <span className="visual-bold">${bulletValues.oilGasCdia}{getText('page32_bullet4_part2', lang)}</span>
+                                {getText('page32_bullet4_part3', lang)}
+                                {bulletValues.year}
+                                {getText('page32_bullet4_part4', lang)}
+                            </span>
+                        </li>
+                    </ul>
+                )}
+
                 <div className="page31-chart-frame">
                     <h2 className="page31-chart-title">
                         {renderTextWithFootnoteLink(getText('page31_chart_title', lang))}
@@ -904,14 +1031,16 @@ backgroundColor: '#26374a',
                         aria-label={getChartDataSummary()}
                         tabIndex="0"
                     >
+                        {selectedPoints !== null && (
+                                <div style={{ marginBottom: 8 }}>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                </div>
+                            )}
                         <figure 
                             ref={chartRef} 
                             className="page31-chart"
                             style={{ margin: 0, position: 'relative' }}
                         >
-                            {selectedPoints !== null && (
-                                <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
-                            )}
                             <div aria-hidden="true">
                             <Plot
                             data={chartData.traces}

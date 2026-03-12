@@ -932,15 +932,16 @@ const Page8 = () => {
                     <h1 className="page8-title" aria-hidden="true">
                         {getText('page8_title', lang)}
                     </h1>
-                    <p className="page8-subtitle" aria-hidden="true">
+                    <p className="page8-subtitle" aria-hidden="true" style={{ whiteSpace: 'pre-line' }}>
                         {getText('page8_subtitle', lang).split('*')[0]}
+                        {'\n'}
                         {getText('page8_subtitle', lang).split('*').slice(1).join('*')}
+                        <span id="fn-asterisk-rf-page8" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0', marginLeft: '0.15em' }}>
+                            <a href="#fn-asterisk-page8" onClick={scrollToFootnote} className="fn-lnk">
+                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
+                            </a>
+                        </span>
                     </p>
-                    <span id="fn-asterisk-rf-page8" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
-                        <a href="#fn-asterisk-page8" onClick={scrollToFootnote} className="fn-lnk">
-                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
-                        </a>
-                    </span>
                 </header>
                 {/* Chart Frame with Year Selector and Chart */}
                 <div className="page8-chart-frame">
@@ -1071,28 +1072,15 @@ const Page8 = () => {
                 >
                     <figure ref={chartRef} className="page8-map-container" style={{ margin: 0, position: 'relative' }}>
                     {selectedProvinces !== null && (
-                        <button
-                            type="button"
-                            onClick={() => setSelectedProvinces(null)}
-                            className="page8-clear-btn"
-                            style={{
-                                position: 'absolute',
-                                top: 0,
-                                right: 295,
-                                zIndex: 20,
-                                padding: '6px 12px',
-                                backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
-                                borderRadius: '4px',
-                                color: '#ffffff',
-                                fontFamily: 'Arial, sans-serif',
-                                fontWeight: 'bold',
-                                fontSize: '14px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            {lang === 'en' ? 'Clear' : 'Effacer'}
-                        </button>
+                        <div style={{ marginBottom: 8 }}>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedProvinces(null)}
+                                style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
+                            >
+                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
+                            </button>
+                        </div>
                     )}
                     {chartData && (
                         <Plot

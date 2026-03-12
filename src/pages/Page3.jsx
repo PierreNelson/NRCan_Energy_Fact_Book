@@ -24,7 +24,6 @@ const Page3 = () => {
                     padding-left: ${layoutPadding?.left || 55}px;
                     padding-right: ${layoutPadding?.right || 15}px;
                     padding-top: 40px;
-                    padding-bottom: 300px;
                     width: 100%;
                     box-sizing: border-box;
                 }
@@ -58,7 +57,6 @@ const Page3 = () => {
                     color: var(--gc-text);
                     margin-top: 0;
                     margin-bottom: 20px;
-                    max-width: 80ch;
                 }
 
                 .page3-paragraph em {
@@ -72,10 +70,6 @@ const Page3 = () => {
 
                     .page3-paragraph {
                         font-size: 18px;
-                    }
-
-                    .page3-container {
-                        padding-bottom: 200px;
                     }
                 }
             `}</style>

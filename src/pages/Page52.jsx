@@ -5,10 +5,12 @@ import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, Width
 import { saveAs } from 'file-saver';
 import { getPage52Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import page52Bg1 from '../assets/page52_bg1.png';
 import page52Bg2 from '../assets/page52_bg2.png';
 import page52Bg3 from '../assets/page52_bg3.png';
 import page52Bg4 from '../assets/page52_bg4.png';
 import page52Bg5 from '../assets/page52_bg5.png';
+import page52Bg6 from '../assets/page52_bg6.png';
 
 const CIEU_SLICE_ORDER = ['sh', 'ae', 'lt', 'wh', 'am', 'sc'];
 const CIEU_COLORS = ['#CE8003', '#4b4c4d', '#6b5b95', '#6b666a', '#1f8093', '#7db8d4'];
@@ -17,9 +19,32 @@ const PAGE52_MAX_YEAR = 2023;
 /** Fixed filename for CSV/DOCX (no year). */
 const PAGE52_TABLE_FILENAME_BASE = 'commercial_institutional_energy_by_end_use';
 
+const hexToRgba = (hex, opacity = 1) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
+    return hex;
+};
+
 const substitute = (str, vars) => {
     if (!str || typeof str !== 'string') return str;
     return Object.keys(vars || {}).reduce((s, k) => s.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(vars[k] ?? '–')), str);
+};
+
+const boldNumbersInBullet = (str) => {
+    if (!str || typeof str !== 'string') return str;
+    const re = /(\d+\s*%|–\s*%|\d+(?:[.,]\d+)?\s*PJ|\$?[\d.,]+\s*(?:billion|milliards(?:\s+de\s+dollars)?))/gi;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    const s = str;
+    re.lastIndex = 0;
+    while ((match = re.exec(s)) !== null) {
+        parts.push(s.slice(lastIndex, match.index));
+        parts.push(<strong key={match.index}>{match[1]}</strong>);
+        lastIndex = match.index + match[1].length;
+    }
+    parts.push(s.slice(lastIndex));
+    return parts;
 };
 
 const Page52 = () => {
@@ -32,10 +57,12 @@ const Page52 = () => {
     const [selectedYear, setSelectedYear] = useState(null);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [isTableOpen, setIsTableOpen] = useState(false);
+    const [selectedSlices, setSelectedSlices] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const yearDropdownRef = useRef(null);
     const yearButtonRef = useRef(null);
     const chartRef = useRef(null);
+    const lastPieClickRef = useRef({ time: 0, index: null });
     const tableTopRef = useRef(null);
     const tableScrollRef = useRef(null);
 
@@ -45,12 +72,12 @@ const Page52 = () => {
                 setResult(d ?? null);
                 const data = d?.data;
                 if (Array.isArray(data) && data.length > 0) {
-                    const validYears = data.filter((r) => r.year <= PAGE52_MAX_YEAR && r.teu != null && r.teu > 0).map((r) => r.year);
+                    const validYears = data.filter((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000 && r.teu != null && r.teu > 0).map((r) => r.year);
                     const latestValid = validYears.length ? Math.max(...validYears) : null;
-                    const upToMax = data.filter((r) => r.year <= PAGE52_MAX_YEAR).map((r) => r.year).sort((a, b) => b - a);
+                    const upToMax = data.filter((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000).map((r) => r.year).sort((a, b) => b - a);
                     const fallback = upToMax[0];
-                    const lastRow = data[data.length - 1];
-                    setSelectedYear(latestValid ?? fallback ?? data.find((r) => r.year <= PAGE52_MAX_YEAR)?.year ?? lastRow?.year);
+                    const lastRow = data.find((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000) || data[data.length - 1];
+                    setSelectedYear(latestValid ?? fallback ?? lastRow?.year);
                 }
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
@@ -113,7 +140,7 @@ const Page52 = () => {
     const pad = layoutPadding && typeof layoutPadding === 'object' ? layoutPadding : { left: 55, right: 15 };
     const years = useMemo(() => {
         const raw = result?.years ?? [];
-        return [...raw].filter((y) => y <= PAGE52_MAX_YEAR).sort((a, b) => b - a);
+        return [...raw].filter((y) => y <= PAGE52_MAX_YEAR && y !== 2000).sort((a, b) => b - a);
     }, [result?.years]);
 
     useEffect(() => {
@@ -121,6 +148,11 @@ const Page52 = () => {
             setSelectedYear(years[0]);
     }, [years, selectedYear]);
     const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
+    const latestWithEe = useMemo(() => {
+        if (!result?.data?.length) return null;
+        const filtered = result.data.filter((r) => r.year !== 2000);
+        return [...filtered].reverse().find((r) => r.ee_improvement_pct != null && r.ee_savings_pj != null) || filtered[filtered.length - 1] || null;
+    }, [result?.data]);
 
     const getSliceLabelKey = (key) => {
         const m = { sh: 'page52_label_space_heating', wh: 'page52_label_water_heating', ae: 'page52_label_auxiliary_equipment', am: 'page52_label_auxiliary_motors', lt: 'page52_label_lighting', sc: 'page52_label_space_cooling' };
@@ -133,6 +165,8 @@ const Page52 = () => {
     }, [selectedRow?.slices]);
 
     const textSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 18;
+    const selectEnabled = windowWidth > 768;
+    const effectiveSlices = selectEnabled ? selectedSlices : null;
     const pieTrace = useMemo(() => {
         if (!orderedSlices.length || orderedSlices.length !== 6) return null;
         const total = selectedRow?.teu;
@@ -144,6 +178,13 @@ const Page52 = () => {
             const label = getText(getSliceLabelKey(s.key), lang);
             return `<b>${label}</b><br>${Number(s.pj).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 1 })} PJ<br>${Number(s.pct).toFixed(1)}%`;
         });
+        const baseColors = CIEU_COLORS.slice(0, values.length);
+        const effectiveColors = effectiveSlices && effectiveSlices.length > 0
+            ? baseColors.map((c, i) => (effectiveSlices.includes(i) ? c : hexToRgba(c, 0.3)))
+            : baseColors;
+        const pull = effectiveSlices && effectiveSlices.length > 0
+            ? values.map((_, i) => (effectiveSlices.includes(i) ? 0.08 : 0.02))
+            : values.map(() => 0.02);
         return {
             type: 'pie',
             values,
@@ -153,30 +194,39 @@ const Page52 = () => {
             textinfo: 'label+percent',
             textposition: 'outside',
             texttemplate: '%{label}<br>%{customdata:.1f}%',
-            textfont: { size: textSize, family: 'Arial, sans-serif', color: CIEU_COLORS },
-            outsidetextfont: { size: textSize, color: CIEU_COLORS },
-            hovertemplate: '%{customdata}<extra></extra>',
-            hovertext: hoverTexts,
-            hoverinfo: 'text',
-            hoverlabel: { bgcolor: '#fff', font: { color: '#333', size: 14 } },
-            marker: { colors: CIEU_COLORS, line: { color: '#fff', width: 1 } },
+            textfont: { size: textSize, family: 'Arial, sans-serif', color: effectiveColors },
+            outsidetextfont: { size: textSize, color: effectiveColors },
+            marker: { colors: effectiveColors, line: { color: '#fff', width: 1 } },
+            pull,
             direction: 'clockwise',
             sort: false,
+            hovertext: hoverTexts,
+            hoverinfo: 'text',
+            hoverlabel: { bgcolor: 'white', font: { color: '#333', size: 14, family: 'Arial, sans-serif' } },
         };
-    }, [selectedRow, orderedSlices, lang, textSize]);
+    }, [selectedRow, orderedSlices, lang, textSize, effectiveSlices]);
 
     const chartTitle = substitute(getText('page52_chart_title', lang), { year: selectedYear ?? '' });
     const centerLabel = getText('page52_center_total', lang);
-    const teuFormatted = selectedRow?.teu != null ? Number(selectedRow.teu).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 1 }) : '–';
+    const teuFormatted = selectedRow?.teu != null ? Math.round(Number(selectedRow.teu)).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 }) : '–';
 
     const tableAllYearsRows = useMemo(() => {
         const data = result?.data;
         if (!Array.isArray(data) || data.length === 0) return [];
         return [...data]
-            .filter((r) => r.year <= PAGE52_MAX_YEAR)
+            .filter((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000)
             .sort((a, b) => a.year - b.year)
             .map((r) => {
-                const row = { year: r.year, total: r.teu };
+                const row = {
+                    year: r.year,
+                    total: r.teu,
+                    chEuPct: r.chEuPct != null ? r.chEuPct : null,
+                    chEuWeiPct: r.chEuWeiPct != null ? r.chEuWeiPct : null,
+                    eiPct: r.eiPct != null ? r.eiPct : null,
+                    ee_improvement_pct: r.ee_improvement_pct != null ? r.ee_improvement_pct : null,
+                    ee_savings_pj: r.ee_savings_pj != null ? r.ee_savings_pj : null,
+                    ee_savings_billion: r.ee_savings_billion != null ? r.ee_savings_billion : null
+                };
                 CIEU_SLICE_ORDER.forEach((k) => {
                     const slice = r.slices?.find((s) => s.key === k);
                     row[k] = slice?.pj != null ? slice.pj : null;
@@ -235,8 +285,14 @@ const Page52 = () => {
     const downloadTableCSV = () => {
         if (!tableAllYearsRows.length) return;
         const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const headers = [yearCol, ...CIEU_SLICE_ORDER.map((k) => getText(getSliceLabelKey(k), lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
-        const rows = tableAllYearsRows.map((r) => [r.year, ...CIEU_SLICE_ORDER.map((k) => r[k] != null ? Number(r[k]).toFixed(2) : ''), r.total != null ? Number(r.total).toFixed(2) : '']);
+        const chSinceCol = lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)';
+        const chWithoutCol = lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)';
+        const eiCol = lang === 'en' ? 'Change in energy intensity (%)' : 'Variation de l\'intensité énergétique (%)';
+        const eeImpCol = lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)';
+        const eePjCol = lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)';
+        const eeBCol = lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)';
+        const headers = [yearCol, ...CIEU_SLICE_ORDER.map((k) => getText(getSliceLabelKey(k), lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)', chSinceCol, chWithoutCol, eiCol, eeImpCol, eePjCol, eeBCol];
+        const rows = tableAllYearsRows.map((r) => [r.year, ...CIEU_SLICE_ORDER.map((k) => r[k] != null ? Number(r[k]).toFixed(2) : ''), r.total != null ? Number(r.total).toFixed(2) : '', r.chEuPct != null ? String(r.chEuPct) : '', r.chEuWeiPct != null ? String(r.chEuWeiPct) : '', r.eiPct != null ? String(r.eiPct) : '', r.ee_improvement_pct != null ? String(r.ee_improvement_pct) : '', r.ee_savings_pj != null ? String(r.ee_savings_pj) : '', r.ee_savings_billion != null ? String(r.ee_savings_billion) : '']);
         const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -249,7 +305,13 @@ const Page52 = () => {
     const downloadTableDocx = async () => {
         if (!tableAllYearsRows.length) return;
         const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const headers = [yearCol, ...CIEU_SLICE_ORDER.map((k) => getText(getSliceLabelKey(k), lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
+        const chSinceCol = lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)';
+        const chWithoutCol = lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)';
+        const eiCol = lang === 'en' ? 'Change in energy intensity (%)' : 'Variation de l\'intensité énergétique (%)';
+        const eeImpCol = lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)';
+        const eePjCol = lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)';
+        const eeBCol = lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)';
+        const headers = [yearCol, ...CIEU_SLICE_ORDER.map((k) => getText(getSliceLabelKey(k), lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)', chSinceCol, chWithoutCol, eiCol, eeImpCol, eePjCol, eeBCol];
         const headerRow = new TableRow({
             children: headers.map((h) => new TableCell({
                 children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
@@ -266,9 +328,15 @@ const Page52 = () => {
                     })]
                 })),
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.total != null ? Number(r.total).toFixed(2) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.chEuPct != null ? String(r.chEuPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.chEuWeiPct != null ? String(r.chEuWeiPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.eiPct != null ? String(r.eiPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_improvement_pct != null ? String(r.ee_improvement_pct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_pj != null ? String(r.ee_savings_pj) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_billion != null ? String(r.ee_savings_billion) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
             ],
         }));
-        const columnWidths = [800, ...CIEU_SLICE_ORDER.map(() => 1500), 1500];
+        const columnWidths = [800, ...CIEU_SLICE_ORDER.map(() => 1500), 1500, 1800, 1800, 2200, 1600, 1400, 1400];
         const doc = new Document({
             sections: [{
                 children: [
@@ -287,10 +355,11 @@ const Page52 = () => {
 
     const layout = useMemo(() => ({
         showlegend: false,
-        margin: { t: 40, b: 60, l: 80, r: 80 },
+        margin: { t: 120, b: 60, l: 80, r: 80 },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        height: 420,
+        height: 520,
+        clickmode: 'event',
         annotations: selectedRow?.teu != null ? [{
             text: `${centerLabel}<br>${teuFormatted} PJ`,
             showarrow: false,
@@ -338,13 +407,18 @@ const Page52 = () => {
 .page52-year-dropdown [role="option"] { display: flex; align-items: center; width: 100%; text-align: left; padding: 10px 15px; cursor: pointer; border: none; border-bottom: 1px solid #eee; background-color: #fff; font-family: Arial, sans-serif; }
 .page52-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
 .page52-chart-title { font-family: 'Noto Sans', sans-serif; font-size: 20px; font-weight: bold; color: var(--gc-text, #333); margin: 0 0 12px 0; text-align: center; }
-.page52-chart { width: 100%; height: 420px; position: relative; z-index: 1; }
-.page52-narrative { font-size: 1.1rem; color: #333; line-height: 1.6; margin-top: 1.5rem; max-width: 80ch; }
-.page52-narrative p { margin-bottom: 1rem; }
-.page52-narrative-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35em 0.5rem; margin-bottom: 0.75rem; }
-.page52-narrative-line .page52-narrative-text { flex: 1 1 12ch; min-width: 0; }
-.page52-narrative-line .page52-narrative-pct { font-weight: bold; color: #c8782a; font-size: 1.25em; }
-.page52-narrative-icon { flex-shrink: 0; width: 28px; height: 28px; object-fit: contain; vertical-align: middle; }
+.page52-chart { width: 100%; height: 520px; position: relative; z-index: 1; }
+.page52-visual-narrative-wrap { display: flex; flex-direction: column; width: 100%; gap: 0; }
+.page52-visual-img { max-width: 180px; height: auto; object-fit: contain; }
+.page52-visual-img-first { max-width: 360px; width: 360px; height: auto; object-fit: contain; }
+.page52-visual-narrative-wrap .page52-visual-row { margin: 0; padding: 0; }
+.page52-visual-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; min-width: 0; flex: 1 1 16rem; max-width: 100%; }
+.page52-visual-narrative-wrap .page52-visual-row .page52-visual-text { min-width: 0; flex: 1 1 0; max-width: 100%; margin: 0 !important; padding: 0 !important; }
+.page52-visual-text { display: block; font-size: 1.25rem; color: #333; line-height: 1.4; overflow-wrap: anywhere; word-wrap: break-word; word-break: break-word; max-width: 100%; box-sizing: border-box; margin: 0; }
+.page52-visual-text .page52-visual-lead { font-weight: bold; color: var(--gc-text, #26374a); }
+.page52-visual-pct { font-size: 2.5rem; font-weight: bold; color: #c8782a; }
+.page52-narrative { margin-top: 1.5rem; }
+.page52-narrative p { margin-top: -50px; margin-bottom: 0; font-size: 1.2rem; color: #333; line-height: 1.6; }
 .page52-table-responsive { display: block; width: 100%; overflow-x: auto; }
 .page52-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
             `}</style>
@@ -397,14 +471,40 @@ const Page52 = () => {
 
                     <div className="page52-chart-frame">
                         <h3 className="page52-chart-title">{chartTitle}</h3>
+                        {effectiveSlices != null && effectiveSlices.length > 0 && (
+                            <div style={{ marginBottom: 8 }}>
+                                <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
+                                    {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
+                                </button>
+                            </div>
+                        )}
                         <div className="page52-chart" ref={chartRef} role="region" aria-label={chartTitle}>
                             {pieTrace ? (
                                 <Plot
+                                    key={`pie-${effectiveSlices ? effectiveSlices.join('-') : 'none'}`}
                                     data={[pieTrace]}
                                     layout={layout}
                                     config={config}
                                     style={{ width: '100%', height: '100%' }}
                                     useResizeHandler
+                                    onClick={(data) => {
+                                        const pt = data.points?.[0];
+                                        const idx = pt && (pt.pointNumber !== undefined ? pt.pointNumber : pt.pointIndex);
+                                        if (idx == null) return;
+                                        if (windowWidth <= 768) {
+                                            const now = Date.now();
+                                            const last = lastPieClickRef.current;
+                                            const samePoint = idx === last.index;
+                                            const doubleTap = samePoint && (now - last.time < 300);
+                                            lastPieClickRef.current = { time: now, index: idx };
+                                            if (!doubleTap) return;
+                                        }
+                                        setSelectedSlices((prev) => {
+                                            if (prev === null) return [idx];
+                                            if (prev.includes(idx)) return prev.length <= 1 ? null : prev.filter((i) => i !== idx);
+                                            return [...prev, idx];
+                                        });
+                                    }}
                                 />
                             ) : (
                                 <p style={{ padding: '2rem', textAlign: 'center', color: '#555' }}>
@@ -442,6 +542,12 @@ const Page52 = () => {
                                                 <th key={k} scope="col">{getText(getSliceLabelKey(k), lang)} (PJ)</th>
                                             ))}
                                             <th scope="col">{lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'}</th>
+                                            <th scope="col">{lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)'}</th>
+                                            <th scope="col">{lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)'}</th>
+                                            <th scope="col">{lang === 'en' ? 'Change in energy intensity (%)' : 'Variation de l\'intensité énergétique (%)'}</th>
+                                            <th scope="col">{lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)'}</th>
+                                            <th scope="col">{lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)'}</th>
+                                            <th scope="col">{lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)'}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -449,9 +555,15 @@ const Page52 = () => {
                                             <tr key={r.year}>
                                                 <td>{r.year}</td>
                                                 {CIEU_SLICE_ORDER.map((k) => (
-                                                    <td key={k}>{r[k] != null ? Number(r[k]).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }) : '–'}</td>
+                                                    <td key={k} style={{ textAlign: 'right' }}>{r[k] != null ? Number(r[k]).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }) : '–'}</td>
                                                 ))}
-                                                <td>{r.total != null ? Number(r.total).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }) : '–'}</td>
+                                                <td style={{ textAlign: 'right' }}>{r.total != null ? Number(r.total).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }) : '–'}</td>
+                                                <td style={{ textAlign: 'right' }}>{r.chEuPct != null ? r.chEuPct : '–'}</td>
+                                                <td style={{ textAlign: 'right' }}>{r.chEuWeiPct != null ? r.chEuWeiPct : '–'}</td>
+                                                <td style={{ textAlign: 'right' }}>{r.eiPct != null ? r.eiPct : '–'}</td>
+                                                <td style={{ textAlign: 'right' }}>{r.ee_improvement_pct != null ? `${r.ee_improvement_pct}%` : '–'}</td>
+                                                <td style={{ textAlign: 'right' }}>{r.ee_savings_pj != null ? (Number(r.ee_savings_pj) === Math.round(r.ee_savings_pj) ? r.ee_savings_pj : Number(r.ee_savings_pj).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 })) : '–'}</td>
+                                                <td style={{ textAlign: 'right' }}>{r.ee_savings_billion != null ? r.ee_savings_billion : '–'}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -468,45 +580,61 @@ const Page52 = () => {
                         </details>
                     </div>
 
-                    <div className="page52-narrative">
-                            {selectedRow && (
-                                <>
-                                    <div className="page52-narrative-line">
-                                        <span className="page52-narrative-text">{substitute(getText('page52_narrative_1', lang), { year: selectedYear })}</span>
-                                        {selectedRow.chEuPct != null && selectedRow.chEuWeiPct != null && (
-                                            <>
-                                                <img src={page52Bg2} alt="" className="page52-narrative-icon" aria-hidden="true" />
-                                                <img src={page52Bg3} alt="" className="page52-narrative-icon" aria-hidden="true" />
-                                                <span className="page52-narrative-pct">{selectedRow.chEuPct}%</span>
-                                            </>
+                    {selectedRow && (
+                        <>
+                            <div className="page52-visual-narrative-wrap" style={{ display: 'flex', flexDirection: 'column', gap: 0, width: '100%' }}>
+                                {/* Large header graphic */}
+                                <img src={page52Bg1} alt="" className="page52-visual-img page52-visual-img-first" aria-hidden="true" style={{ marginTop: '1.5rem' }} />
+
+                                {/* Row 1 - large negative margin pulls row 2 up to reduce visible gap */}
+                                <div className="page52-visual-row" style={{ margin: 0, padding: 0, marginBottom: -90 }}>
+                                    <img src={selectedRow.chEuPct != null && selectedRow.chEuPct < 0 ? page52Bg6 : page52Bg2} alt="" className="page52-visual-img" aria-hidden="true" />
+                                    <p className="page52-visual-text" style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>
+                                        {selectedRow.chEuPct != null ? (
+                                            <span className="page52-visual-lead">
+                                                {getText(selectedRow.chEuPct < 0 ? 'page52_narrative_1_prefix_dec' : 'page52_narrative_1_prefix_inc', lang)}
+                                                <span className="page52-visual-pct">{Math.abs(selectedRow.chEuPct)}%</span>
+                                                {substitute(getText('page52_narrative_1_suffix', lang), { year: selectedYear })}
+                                            </span>
+                                        ) : (
+                                            <span className="page52-visual-lead">{substitute(getText('page52_narrative_1', lang), { year: selectedYear })}</span>
                                         )}
-                                    </div>
-                                    <div className="page52-narrative-line">
-                                        <span className="page52-narrative-text">{getText('page52_narrative_1_but', lang)}</span>
-                                        <img src={page52Bg4} alt="" className="page52-narrative-icon" aria-hidden="true" />
-                                        {selectedRow.chEuWeiPct != null && <span className="page52-narrative-pct">{selectedRow.chEuWeiPct}%</span>}
-                                        <img src={page52Bg5} alt="" className="page52-narrative-icon" aria-hidden="true" />
-                                        <span className="page52-narrative-text">{getText('page52_narrative_1_without', lang)}</span>
-                                    </div>
-                                    {selectedRow.eiPct != null && (
-                                        <div className="page52-narrative-line">
-                                            <span className="page52-narrative-text">{getText('page52_narrative_2', lang)}</span>
-                                            <span className="page52-narrative-pct">{substitute(getText('page52_narrative_2_by', lang), { pct: selectedRow.eiPct })}</span>
-                                        </div>
-                                    )}
-                                    {selectedRow.ee_improvement_pct != null && selectedRow.ee_savings_pj != null && selectedRow.ee_savings_billion != null && (
-                                        <p style={{ marginTop: '1rem', marginBottom: 0 }}>
-                                            {substitute(getText('page52_narrative_3', lang), {
-                                                improvement: selectedRow.ee_improvement_pct,
-                                                pj: Number(selectedRow.ee_savings_pj).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 }),
-                                                billion: Number(selectedRow.ee_savings_billion).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
-                                                year: selectedYear
-                                            })}
-                                        </p>
-                                    )}
-                                </>
-                            )}
-                    </div>
+                                    </p>
+                                </div>
+
+                                {/* Row 2 - large negative margin pulls row 3 up */}
+                                <div className="page52-visual-row" style={{ margin: 0, padding: 0, marginBottom: -90 }}>
+                                    <img src={page52Bg3} alt="" className="page52-visual-img" aria-hidden="true" />
+                                    <p className="page52-visual-text" style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>
+                                        <span className="page52-visual-lead">{getText('page52_narrative_1_but', lang)}</span>
+                                        {selectedRow.chEuWeiPct != null && <> <span className="page52-visual-pct">{selectedRow.chEuWeiPct}%</span></>}
+                                        {' '}{getText('page52_narrative_1_without', lang)}
+                                    </p>
+                                </div>
+
+                                {/* Row 3 - no negative margin */}
+                                <div className="page52-visual-row" style={{ margin: 0, padding: 0 }}>
+                                    <img src={selectedRow.eiPct != null && selectedRow.eiPct > 0 ? page52Bg4 : page52Bg5} alt="" className="page52-visual-img" aria-hidden="true" />
+                                    <p className="page52-visual-text" style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>
+                                        <span className="page52-visual-lead">
+                                            {getText(selectedRow.eiPct != null && selectedRow.eiPct > 0 ? 'page52_narrative_2_increased' : 'page52_narrative_2', lang)}
+                                            {selectedRow.eiPct != null && <> <span className="page52-visual-pct">{substitute(getText('page52_narrative_2_by', lang), { pct: Math.abs(selectedRow.eiPct) })}</span></>}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="page52-narrative">
+                                <p>
+                                    {boldNumbersInBullet(substitute(getText('page52_narrative_3', lang), {
+                                        improvement: selectedRow.ee_improvement_pct ?? latestWithEe?.ee_improvement_pct ?? '–',
+                                        pj: (selectedRow.ee_savings_pj ?? latestWithEe?.ee_savings_pj) != null ? Number(selectedRow.ee_savings_pj ?? latestWithEe?.ee_savings_pj).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 }) : '–',
+                                        billion: (selectedRow.ee_savings_billion ?? latestWithEe?.ee_savings_billion) != null ? Number(selectedRow.ee_savings_billion ?? latestWithEe?.ee_savings_billion).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '–',
+                                        year: selectedYear
+                                    }))}
+                                </p>
+                            </div>
+                        </>
+                    )}
             </div>
         </div>
     );

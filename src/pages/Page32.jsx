@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
-import { getForeignControlData, getInternationalInvestmentData } from '../utils/dataLoader';
+import { getForeignControlData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 const Page32 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [chartData, setChartData] = useState([]);
-    const [investmentData, setInvestmentData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -101,13 +100,9 @@ const Page32 = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
     useEffect(() => {
-        Promise.all([
-            getForeignControlData(),
-            getInternationalInvestmentData()
-        ])
-            .then(([foreignData, intlData]) => {
+        getForeignControlData()
+            .then(foreignData => {
                 setChartData(foreignData);
-                setInvestmentData(intlData);
             })
             .catch(err => {
                 console.error("Failed to load page 32 data:", err);
@@ -177,34 +172,6 @@ const Page32 = () => {
         'oil_gas': '#419563',
         'all_non_financial': '#8B7355',
     };
-    const bulletValues = useMemo(() => {
-        if (investmentData.length < 2) return null;
-
-        const latestYear = investmentData[investmentData.length - 1];
-        const prevYear = investmentData[investmentData.length - 2];
-
-        // Use pre-calculated billions from database
-        const fdiLatest = latestYear.fdi_billions ?? ((latestYear.fdi || 0) / 1000);
-        const fdiPrev = prevYear.fdi_billions ?? ((prevYear.fdi || 0) / 1000);
-        const cdiaLatest = latestYear.cdia_billions ?? ((latestYear.cdia || 0) / 1000);
-        const cdiaPrev = prevYear.cdia_billions ?? ((prevYear.cdia || 0) / 1000);
-
-        const fdiGrowth = fdiPrev > 0 ? ((fdiLatest - fdiPrev) / fdiPrev * 100) : 0;
-        const cdiaGrowth = cdiaPrev > 0 ? ((cdiaLatest - cdiaPrev) / cdiaPrev * 100) : 0;
-        const energyShare = 10;
-        const oilGasCdia = Math.round(cdiaLatest * 0.168);
-
-        return {
-            year: latestYear.year,
-            prevYear: prevYear.year,
-            fdi: Math.round(fdiLatest),
-            fdiGrowth: fdiGrowth.toFixed(1),
-            energyShare,
-            cdia: Math.round(cdiaLatest),
-            cdiaGrowth: Math.round(cdiaGrowth),
-            oilGasCdia
-        };
-    }, [investmentData]);
     const processedChartData = useMemo(() => {
         if (chartData.length === 0) return null;
 
@@ -684,7 +651,6 @@ const Page32 = () => {
                     line-height: 1.6;
                     list-style-type: disc;
                     padding-left: 20px;
-                    max-width: 80ch;
                 }
 
                 .page32-bullets li {
@@ -699,23 +665,13 @@ const Page32 = () => {
                     font-weight: bold;
                 }
 
-                .page32-section-title {
-                    font-family: 'Lato', sans-serif;
-                    color: var(--gc-text);
-                    font-size: 29px;
-                    font-weight: bold;
-                    margin-bottom: 0;
-                    margin-top: 15px;
-                }
-
                 .page32-section-text {
                     font-family: 'Noto Sans', sans-serif;
                     color: var(--gc-text);
                     font-size: 20px;
-                    margin-bottom: 0;
+                    margin-bottom: 20px;
                     line-height: 1.5;
                     position: relative;
-                    max-width: 80ch;
                 }
 
                 .page32-chart-title {
@@ -746,7 +702,7 @@ const Page32 = () => {
 
                 .page32-data-table {
                     width: 100%;
-                    margin-top: 200px;
+                    margin-top: 160px;
                     margin-bottom: 0;
                     margin-left: 0;
                     margin-right: 0;
@@ -809,9 +765,6 @@ const Page32 = () => {
                     }
                     .page32-bullets {
                         font-size: 18px;
-                    }
-                    .page32-section-title {
-                        font-size: 26px;
                     }
                     .page32-section-text {
                         font-size: 18px;
@@ -916,86 +869,6 @@ const Page32 = () => {
                 <h1 className="page32-title">
                     {getText('page32_title', lang)}
                 </h1>
-                {bulletValues && (
-                    <ul className="page32-bullets" role="list">
-                        <li role="listitem" aria-label={lang === 'en' 
-                            ? `${getText('page32_bullet1_part1', lang)}${getText('page32_bullet1_part2', lang)}${getText('page32_bullet1_part3', lang)}${bulletValues.year}${getText('page32_bullet1_part4', lang)}${bulletValues.fdi}${getText('page32_bullet1_part5', lang)} (+${bulletValues.fdiGrowth}% over the previous year)`
-                            : `${getText('page32_bullet1_part1', lang)}${getText('page32_bullet1_part2', lang)}${getText('page32_bullet1_part3', lang)}${bulletValues.fdi}${getText('page32_bullet1_part4', lang)}${getText('page32_bullet1_part5', lang)}${bulletValues.year} (+${bulletValues.fdiGrowth}% par rapport à l'année précédente)`
-                        }>
-                            <span aria-hidden="true">
-                                {lang === 'en' ? (
-                                    <>
-                                        {getText('page32_bullet1_part1', lang)}
-                                        <span className="visual-bold">{getText('page32_bullet1_part2', lang)}</span>
-                                        {getText('page32_bullet1_part3', lang)}
-                                        {bulletValues.year}
-                                        {getText('page32_bullet1_part4', lang)}
-                                        <span className="visual-bold">${bulletValues.fdi}{getText('page32_bullet1_part5', lang)}</span>
-                                        {' (+'}
-                                        {bulletValues.fdiGrowth}
-                                        {'% over the previous year).'}
-                                    </>
-                                ) : (
-                                    <>
-                                        {getText('page32_bullet1_part1', lang)}
-                                        <span className="visual-bold">{getText('page32_bullet1_part2', lang)}</span>
-                                        {getText('page32_bullet1_part3', lang)}
-                                        <span className="visual-bold">{bulletValues.fdi}{getText('page32_bullet1_part4', lang)}</span>
-                                        {getText('page32_bullet1_part5', lang)}
-                                        {bulletValues.year}
-                                        {' (+'}
-                                        {bulletValues.fdiGrowth}
-                                        {"% par rapport à l'année précédente)."}
-                                    </>
-                                )}
-                            </span>
-                        </li>
-                        <li role="listitem" aria-label={`${getText('page32_bullet2_part1', lang)} ${bulletValues.energyShare}${getText('page32_bullet2_part2', lang)}${bulletValues.year}${getText('page32_bullet2_part3', lang)}${bulletValues.prevYear}${getText('page32_bullet2_part4', lang)}`}>
-                            <span aria-hidden="true">
-                                {getText('page32_bullet2_part1', lang)}
-                                <span className="visual-bold">{bulletValues.energyShare}</span>
-                                {getText('page32_bullet2_part2', lang)}
-                                {bulletValues.year}
-                                {getText('page32_bullet2_part3', lang)}
-                                {bulletValues.prevYear}
-                                {getText('page32_bullet2_part4', lang)}
-                            </span>
-                        </li>
-                        <li role="listitem" aria-label={lang === 'en'
-                            ? `${getText('page32_bullet3_part1', lang)}${getText('page32_bullet3_part2', lang)}${getText('page32_bullet3_part3', lang)}${bulletValues.cdia}${getText('page32_bullet3_part4', lang)}${getText('page32_bullet3_part5', lang)}${bulletValues.year}${getText('page32_bullet3_part6', lang)}${bulletValues.cdiaGrowth}${getText('page32_bullet3_part7', lang)}${bulletValues.prevYear}${getText('page32_bullet3_part8', lang)}`
-                            : `${getText('page32_bullet3_part1', lang)}${getText('page32_bullet3_part2', lang)}${getText('page32_bullet3_part3', lang)}${bulletValues.cdia}${getText('page32_bullet3_part4', lang)}${getText('page32_bullet3_part5', lang)}${bulletValues.year}${getText('page32_bullet3_part6', lang)}${bulletValues.cdiaGrowth}${getText('page32_bullet3_part7', lang)}${bulletValues.prevYear}${getText('page32_bullet3_part8', lang)}`
-                        }>
-                            <span aria-hidden="true">
-                                {getText('page32_bullet3_part1', lang)}
-                                <span className="visual-bold">{getText('page32_bullet3_part2', lang)}</span>
-                                {getText('page32_bullet3_part3', lang)}
-                                <span className="visual-bold">${bulletValues.cdia}{getText('page32_bullet3_part4', lang)}</span>
-                                {getText('page32_bullet3_part5', lang)}
-                                {bulletValues.year}
-                                {getText('page32_bullet3_part6', lang)}
-                                {bulletValues.cdiaGrowth}
-                                {getText('page32_bullet3_part7', lang)}
-                                {bulletValues.prevYear}
-                                {getText('page32_bullet3_part8', lang)}
-                            </span>
-                        </li>
-                        <li role="listitem" aria-label={lang === 'en'
-                            ? `${getText('page32_bullet4_part1', lang)}${bulletValues.oilGasCdia}${getText('page32_bullet4_part2', lang)}${getText('page32_bullet4_part3', lang)}${bulletValues.year}${getText('page32_bullet4_part4', lang)}`
-                            : `${getText('page32_bullet4_part1', lang)}${bulletValues.oilGasCdia}${getText('page32_bullet4_part2', lang)}${getText('page32_bullet4_part3', lang)}${bulletValues.year}${getText('page32_bullet4_part4', lang)}`
-                        }>
-                            <span aria-hidden="true">
-                                {getText('page32_bullet4_part1', lang)}
-                                <span className="visual-bold">${bulletValues.oilGasCdia}{getText('page32_bullet4_part2', lang)}</span>
-                                {getText('page32_bullet4_part3', lang)}
-                                {bulletValues.year}
-                                {getText('page32_bullet4_part4', lang)}
-                            </span>
-                        </li>
-                    </ul>
-                )}
-                <h2 className="page32-section-title">
-                    {getText('page32_section_title', lang)}
-                </h2>
                 <p 
                     className="page32-section-text"
                     role="region"
@@ -1022,10 +895,12 @@ const Page32 = () => {
 
                         <div role="region" aria-label={getChartDataSummary()} tabIndex="0">
                         <div className="page32-chart-wrapper">
-                            <figure ref={chartRef} className="page32-chart" style={{ margin: 0, position: 'relative' }}>
-                                {selectedPoints !== null && (
-                                    <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                            {selectedPoints !== null && (
+                                    <div style={{ marginBottom: 8 }}>
+                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    </div>
                                 )}
+                                <figure ref={chartRef} className="page32-chart" style={{ margin: 0, position: 'relative' }}>
                                 <div aria-hidden="true">
                                 <Plot
                                     data={processedChartData.traces}

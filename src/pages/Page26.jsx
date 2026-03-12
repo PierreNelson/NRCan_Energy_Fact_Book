@@ -525,7 +525,6 @@ const Page26 = () => {
                 .page26-body-text {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    max-width: 80ch;
                 }
 
                 .page26-bg-image {

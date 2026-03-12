@@ -568,7 +568,7 @@ const Page48 = () => {
                     color: #58585a;
                     margin: 0 0 15px 0;
                 }
-                .page48-bullets { margin: 0 0 24px 0; padding-left: 1.2em; max-width: 80ch; }
+                .page48-bullets { margin: 0 0 24px 0; padding-left: 1.2em; }
                 .page48-bullets li { margin-bottom: 10px; font-family: 'Noto Sans', sans-serif; font-size: 20px; line-height: 1.6; color: var(--gc-text); }
                 .page48-year-selector { display: flex; align-items: center; margin-bottom: 20px; }
                 .page48-year-selector label { font-weight: bold; margin-right: 15px; font-size: 20px; font-family: 'Noto Sans', sans-serif; }
@@ -770,10 +770,12 @@ const Page48 = () => {
                         <div className="page48-chart-wrap" ref={chartRef}>
                             <div className="page48-chart-frame">
                             <div className="page48-pie-wrap" ref={pieChartRef} style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                                <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 380, margin: '0 auto', position: 'relative' }}>
-                                    {selectedSlices !== null && (
-                                        <button type="button" onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 20, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                                {selectedSlices !== null && (
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
+                                    <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 380, margin: '0 auto', position: 'relative' }}>
                                     <Plot
                                         key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}
                                         data={pieData}
@@ -907,10 +909,12 @@ const Page48 = () => {
 
                             <div className="page48-chart-frame">
                             <div className="page48-bar-wrap" ref={barChartRef} style={{ width: '100%', maxWidth: 1140, margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
-                                <figure style={{ width: '100%', minHeight: 250, margin: '0 auto', position: 'relative' }}>
-                                    {selectedBars !== null && (
-                                        <button type="button" onClick={() => setSelectedBars(null)} style={{ position: 'absolute', top: 0, right: 20, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                                {selectedBars !== null && (
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedBars(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
+                                    <figure style={{ width: '100%', minHeight: 250, margin: '0 auto', position: 'relative' }}>
                                     <Plot
                                         data={barData}
                                         layout={barLayout}

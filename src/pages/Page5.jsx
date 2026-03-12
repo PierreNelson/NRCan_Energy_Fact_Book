@@ -476,30 +476,12 @@ const Page5 = () => {
                     {hasData ? (
                         <>
                             <div role="region" aria-label={getText('page5_chart1_title', lang)} tabIndex="0">
-                                <figure ref={chartRef1} className="page5-chart" style={{ margin: 0, position: 'relative' }}>
-                                    {selectedPoints1 !== null && selectedPoints1.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setSelectedPoints1(null)}
-                                            style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                right: 295,
-                                                zIndex: 20,
-                                                padding: '6px 12px',
-                                                backgroundColor: '#26374a',
-                                                border: '1px solid #26374a',
-                                                borderRadius: '4px',
-                                                color: '#ffffff',
-                                                fontFamily: 'Arial, sans-serif',
-                                                fontWeight: 'bold',
-                                                fontSize: '14px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {lang === 'en' ? 'Clear' : 'Effacer'}
-                                        </button>
+                                {selectedPoints1 !== null && selectedPoints1.length > 0 && (
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedPoints1(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
+                                    <figure ref={chartRef1} className="page5-chart" style={{ margin: 0, position: 'relative' }}>
                                     <div aria-hidden="true">
                                         <Plot
                                             data={chart1Traces}
@@ -584,30 +566,12 @@ const Page5 = () => {
                     {hasData ? (
                         <>
                             <div role="region" aria-label={getText('page5_chart2_title', lang)} tabIndex="0">
-                                <figure ref={chartRef2} className="page5-chart" style={{ margin: 0, position: 'relative' }}>
-                                    {selectedPoints2 !== null && selectedPoints2.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setSelectedPoints2(null)}
-                                            style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                right: 295,
-                                                zIndex: 20,
-                                                padding: '6px 12px',
-                                                backgroundColor: '#26374a',
-                                                border: '1px solid #26374a',
-                                                borderRadius: '4px',
-                                                color: '#ffffff',
-                                                fontFamily: 'Arial, sans-serif',
-                                                fontWeight: 'bold',
-                                                fontSize: '14px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {lang === 'en' ? 'Clear' : 'Effacer'}
-                                        </button>
+                                {selectedPoints2 !== null && selectedPoints2.length > 0 && (
+                                        <div style={{ marginBottom: 8 }}>
+                                            <button type="button" onClick={() => setSelectedPoints2(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        </div>
                                     )}
+                                    <figure ref={chartRef2} className="page5-chart" style={{ margin: 0, position: 'relative' }}>
                                     <div aria-hidden="true">
                                         <Plot
                                             data={chart2Traces}

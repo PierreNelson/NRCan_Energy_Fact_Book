@@ -836,6 +836,9 @@ export async function getPage52Data() {
             pj: endUsePj[k] != null ? endUsePj[k] : 0,
             pct: endUsePj[k] != null && totalPie > 0 ? Number(((endUsePj[k] / totalPie) * 100).toFixed(1)) : 0
         })) : [];
+        const ee_savings_pj = r.ee_savings_pj != null ? r.ee_savings_pj : (r.eee != null ? r.eee : null);
+        const ee_improvement_pct_calc = (chEuWeiPct != null && chEuPct != null) ? chEuWeiPct - chEuPct : null;
+        const ee_improvement_pct = ee_improvement_pct_calc != null ? ee_improvement_pct_calc : (r.ee_improvement_pct != null ? r.ee_improvement_pct : null);
         return {
             year: y,
             teu,
@@ -846,8 +849,8 @@ export async function getPage52Data() {
             chEuWeiPct,
             eiPct,
             slices,
-            ee_improvement_pct: r.ee_improvement_pct != null ? r.ee_improvement_pct : null,
-            ee_savings_pj: r.ee_savings_pj != null ? r.ee_savings_pj : null,
+            ee_improvement_pct,
+            ee_savings_pj,
             ee_savings_billion: r.ee_savings_billion != null ? r.ee_savings_billion : null
         };
     });

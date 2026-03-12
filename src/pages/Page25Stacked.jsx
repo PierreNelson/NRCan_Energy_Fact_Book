@@ -1080,7 +1080,6 @@ const Page25Stacked = () => {
                 .page25h-text-column > p {
                     margin-left: auto !important;
                     margin-right: auto !important;
-                    max-width: 80ch; 
                 }
             `}</style>
 
@@ -1249,10 +1248,13 @@ const Page25Stacked = () => {
                         tabIndex="0"
                     >
                         {chartData && (
-                            <figure ref={chartRef} className="page25h-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
-                                {selectedSlices !== null && (
-                                    <button onClick={() => setSelectedSlices(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                            <>
+                                {selectedSlices !== null && selectedSlices.length > 0 && (
+                                    <div style={{ marginBottom: 8 }}>
+                                        <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    </div>
                                 )}
+                                <figure ref={chartRef} className="page25h-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
                                 <Plot
                                     key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}
                                     data={[{
@@ -1417,6 +1419,7 @@ const Page25Stacked = () => {
                                     }}
                                 />
                             </figure>
+                            </>
                         )}
 
                         <div className="page25h-table-wrapper">

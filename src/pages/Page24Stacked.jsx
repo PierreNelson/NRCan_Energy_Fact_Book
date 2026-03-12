@@ -898,10 +898,12 @@ const Page24Stacked = () => {
                         </h2>
 
                         <div role="region" aria-label={getChartSummary()} tabIndex="0">
-                            <figure ref={chartRef} className="page24h-chart-wrapper">
-                                {selectedPoints !== null && (
-                                <button onClick={() => setSelectedPoints(null)} style={{ position: 'absolute', top: 0, right: 295, zIndex: 20 }}>{lang === 'en' ? 'Clear' : 'Effacer'}</button>
+                            {selectedPoints !== null && (
+                                <div style={{ marginBottom: 8 }}>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                </div>
                             )}
+                                <figure ref={chartRef} className="page24h-chart-wrapper">
                             <Plot
                                 data={[
                                     { 
