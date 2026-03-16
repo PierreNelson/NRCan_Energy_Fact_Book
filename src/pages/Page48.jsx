@@ -546,7 +546,7 @@ const Page48 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 50px;
                     font-weight: bold;
-                    color: #245e7f;
+                    color: #C58516;
                     margin: 0 0 10px 0;
                     line-height: 1.2;
                     position: relative;
@@ -617,10 +617,10 @@ const Page48 = () => {
                     border-radius: 8px;
                     margin-bottom: 24px;
                     box-sizing: border-box;
+                    min-width: 400px;
+                    min-height: 420px;
                 }
-                .page48-chart-frame:first-of-type { min-width: 400px; min-height: 420px; }
-                .page48-chart-frame:last-of-type { margin-bottom: 0; }
-                .page48-chart-wrap { display: flex; flex-direction: column; width: 100%; gap: 24px; margin-bottom: 0; }
+                .page48-chart-wrap { display: flex; flex-direction: column; width: 100%; margin-bottom: 0; }
                 .page48-pie-wrap { width: 100%; }
                 .page48-bar-wrap { width: 100%; }
                 .page-48 .table-responsive { display: block; width: 100%; overflow-x: auto; }
@@ -629,6 +629,9 @@ const Page48 = () => {
                 .page48-footnote { margin-top: 24px; font-family: 'Noto Sans', sans-serif; font-size: 20px; line-height: 1.6; color: var(--gc-text); }
                 .page48-loading, .page48-error { padding: 24px; font-family: 'Noto Sans', sans-serif; }
                 .page48-pie-wrap .js-plotly-plot .plotly .modebar { right: 20px !important; }
+                .page48-chart-frame details > summary:hover { background-color: #404040 !important; }
+                .page48-chart-frame button[type="button"]:hover,
+                .page48-chart-frame button:hover { background-color: #404040 !important; }
             `}</style>
 
             <div className="page48-inner">
@@ -769,10 +772,10 @@ const Page48 = () => {
 
                         <div className="page48-chart-wrap" ref={chartRef}>
                             <div className="page48-chart-frame">
-                            <div className="page48-pie-wrap" ref={pieChartRef} style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                            <div className="page48-pie-wrap" ref={pieChartRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                                 {selectedSlices !== null && (
                                         <div style={{ marginBottom: 8 }}>
-                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                         </div>
                                     )}
                                     <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 380, margin: '0 auto', position: 'relative' }}>
@@ -823,8 +826,8 @@ const Page48 = () => {
                                             color: '#ffffff',
                                             fontWeight: 'bold',
                                             padding: '10px',
-                                            border: '1px solid #26374a',
-                                            backgroundColor: '#26374a',
+                                            border: '1px solid #404040',
+                                            backgroundColor: '#8C8C8C',
                                             borderRadius: '4px',
                                             listStyle: 'none'
                                         }}
@@ -891,27 +894,29 @@ const Page48 = () => {
                                         <button
                                             type="button"
                                             onClick={() => downloadPieTableCSV()}
-                                            style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
+                                            style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
                                         >
                                             {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => downloadPieTableDocx()}
-                                            style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
+                                            style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
                                         >
                                             {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                         </button>
                                     </div>
                                 </details>
                             )}
-                            </div>
 
-                            <div className="page48-chart-frame">
-                            <div className="page48-bar-wrap" ref={barChartRef} style={{ width: '100%', maxWidth: 1140, margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
+                            <p className="page48-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', marginTop: 24, marginBottom: 12 }}>
+                                {getText('page48_bar_chart_title', lang)}
+                            </p>
+
+                            <div className="page48-bar-wrap" ref={barChartRef} style={{ width: '100%', maxWidth: 1140, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 {selectedBars !== null && (
                                         <div style={{ marginBottom: 8 }}>
-                                            <button type="button" onClick={() => setSelectedBars(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            <button type="button" onClick={() => setSelectedBars(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                         </div>
                                     )}
                                     <figure style={{ width: '100%', minHeight: 250, margin: '0 auto', position: 'relative' }}>
@@ -953,8 +958,8 @@ const Page48 = () => {
                                             color: '#ffffff',
                                             fontWeight: 'bold',
                                             padding: '10px',
-                                            border: '1px solid #26374a',
-                                            backgroundColor: '#26374a',
+                                            border: '1px solid #404040',
+                                            backgroundColor: '#8C8C8C',
                                             borderRadius: '4px',
                                             listStyle: 'none'
                                         }}
@@ -1019,14 +1024,14 @@ const Page48 = () => {
                                         <button
                                             type="button"
                                             onClick={() => downloadBarTableCSV()}
-                                            style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
+                                            style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
                                         >
                                             {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => downloadBarTableDocx()}
-                                            style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
+                                            style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
                                         >
                                             {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                         </button>

@@ -314,15 +314,18 @@ const Page17 = () => {
 .page17-chart-title { font-family: 'Lato', sans-serif; font-size: 29px; font-weight: bold; color: var(--gc-text, #332f30); text-align: center; margin: 0 0 10px 0; }
 .page17-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
 .page17-chart { width: 100%; height: 420px; position: relative; z-index: 1; }
-.page17-chart button[type="button"]:hover { background-color: #1e2a3a !important; }
+.page17-chart button[type="button"]:hover,
+.page17-chart button:hover { background-color: #404040 !important; }
 .page17-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px 24px; margin-top: 16px; margin-bottom: 10px; font-family: Arial, sans-serif; position: relative; z-index: 10; background-color: #f5f5f5; padding: 10px 0; }
 .page17-legend-item { display: flex; align-items: center; gap: 8px; }
 .page17-legend-color { width: 20px; height: 12px; display: inline-block; }
 .page17-legend-label { font-size: 18px; color: #333333; }
 .page17-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }
-.page17-table-wrapper details > summary { display: block; width: 100%; padding: 12px 15px; background-color: #26374a; border: 1px solid #26374a; border-radius: 4px; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; list-style: none; }
+.page17-table-wrapper details > summary { display: block; width: 100%; padding: 12px 15px; background-color: #8C8C8C; border: 1px solid #404040; border-radius: 4px; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; list-style: none; }
 .page17-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.page17-table-wrapper details > summary:hover { background-color: #1e2a3a; }
+.page17-table-wrapper details > summary:hover { background-color: #404040 !important; }
+.page17-table-wrapper button[type="button"]:hover,
+.page17-table-wrapper button:hover { background-color: #404040 !important; }
 .page17-table-wrapper .table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; }
 .page17-table-wrapper .table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
 @media (max-width: 768px) {
@@ -337,7 +340,7 @@ const Page17 = () => {
                     <div role="region" aria-label={getText('page17_title', lang)} tabIndex="0">
                         {selectedPoints !== null && selectedPoints.length > 0 && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                 </div>
                             )}
                         <figure ref={chartRef} className="page17-chart" style={{ margin: 0, position: 'relative' }}>
@@ -403,10 +406,10 @@ const Page17 = () => {
                                     </tbody>
                                 </table>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                     </button>
-                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                     </button>
                                 </div>

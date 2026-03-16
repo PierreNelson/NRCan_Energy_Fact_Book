@@ -367,6 +367,9 @@ const Page50 = () => {
 }
 .page50-data-table-wrapper { margin-top: 50px; }
 .page50-data-table { margin-top: 0; margin-bottom: 24px; }
+.page50-data-table-wrapper details > summary:hover { background-color: #404040 !important; }
+.page50-data-table-wrapper button[type="button"]:hover,
+.page50-data-table-wrapper button:hover { background-color: #404040 !important; }
             `}</style>
 
             <div className="page50-stack">
@@ -477,8 +480,8 @@ const Page50 = () => {
                                 color: '#ffffff',
                                 fontWeight: 'bold',
                                 padding: '10px',
-                                border: '1px solid #26374a',
-                                backgroundColor: '#26374a',
+                                border: '1px solid #404040',
+                                backgroundColor: '#8C8C8C',
                                 borderRadius: '4px',
                                 listStyle: 'none'
                             }}
@@ -528,10 +531,10 @@ const Page50 = () => {
                             </table>
                         </div>
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                            <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                            <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                 {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                             </button>
-                            <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                            <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                 {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                             </button>
                         </div>

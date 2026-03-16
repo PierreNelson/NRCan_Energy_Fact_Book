@@ -695,7 +695,7 @@ const Page8 = () => {
                 }
 
                 .page8-clear-btn:hover {
-                    background-color: #1e2a3a !important;
+                    background-color: #404040 !important;
                 }
 
                 .page8-data-table {
@@ -708,12 +708,12 @@ const Page8 = () => {
                 .page8-data-table summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #26374a;
+                    background-color: #8C8C8C;
                     color: #ffffff;
                     font-weight: bold;
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
-                    border: 1px solid #26374a;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     display: flex;
                     align-items: center;
@@ -724,7 +724,7 @@ const Page8 = () => {
                 }
 
                 .page8-data-table summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
                 }
 
                 .page8-data-table summary:focus {
@@ -879,8 +879,8 @@ const Page8 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     color: #ffffff;
                     border-radius: 4px;
                     cursor: pointer;
@@ -894,7 +894,12 @@ const Page8 = () => {
                 }
 
                 .page8-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page8-table-wrapper button[type="button"]:hover,
+                .page8-table-wrapper button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -1076,7 +1081,7 @@ const Page8 = () => {
                             <button
                                 type="button"
                                 onClick={() => setSelectedProvinces(null)}
-                                style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
+                                style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
                             >
                                 {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
                             </button>
@@ -1345,8 +1350,8 @@ const Page8 = () => {
                             onClick={() => downloadTableAsCSV()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+                                backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
@@ -1360,8 +1365,8 @@ const Page8 = () => {
                             onClick={() => downloadTableAsDocx()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+                                backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',

@@ -25,12 +25,12 @@ const Page7 = () => {
 
     const scrollToFootnote = (e) => {
         e.preventDefault();
-        document.getElementById('fn1')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('fn-asterisk')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     const scrollToRef = (e) => {
         e.preventDefault();
-        document.getElementById('fn1-rf')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('fn-asterisk-rf')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     // Close dropdown when clicking outside
@@ -519,7 +519,7 @@ const Page7 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 29px;
                     font-weight: bold;
-                    color: #527291;
+                    color: #245e7f;
                     margin-top: 0;
                     margin-bottom: 20px;
                 }
@@ -661,8 +661,8 @@ const Page7 = () => {
                 .data-table-wrapper summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     list-style: none;
                     font-weight: bold;
@@ -672,7 +672,7 @@ const Page7 = () => {
                 }
 
                 .data-table-wrapper summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
                 }
                 .data-table-wrapper summary::-webkit-details-marker {
                     display: none;
@@ -751,8 +751,8 @@ const Page7 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -766,7 +766,12 @@ const Page7 = () => {
                 }
 
                 .page7-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page7-table-wrapper button[type="button"]:hover,
+                .page7-table-wrapper button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -942,9 +947,9 @@ const Page7 = () => {
 
             <h4 className="page7-chart-title">
                 {getText('page7_chart_title', lang)}
-                <span id="fn1-rf" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
-                    <a href="#fn1" onClick={scrollToFootnote} className="fn-lnk">
-                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">1</span>
+                <span id="fn-asterisk-rf" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
+                    <a href="#fn-asterisk" onClick={scrollToFootnote} className="fn-lnk">
+                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
                     </a>
                 </span>
             </h4>
@@ -1133,8 +1138,8 @@ const Page7 = () => {
                             onClick={downloadTableAsCSV}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+                                backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
@@ -1148,8 +1153,8 @@ const Page7 = () => {
                             onClick={downloadTableAsDocx}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+                                backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
@@ -1168,10 +1173,10 @@ const Page7 = () => {
             <aside className="wb-fnote" role="note">
                 <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                 <dl>
-                    <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                    <dd id="fn1">
-                        <a href="#fn1-rf" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote 1 referrer' : 'Retour à la référence de la note de bas de page 1'}>
-                            <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>1
+                    <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                    <dd id="fn-asterisk">
+                        <a href="#fn-asterisk-rf" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                            <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                         </a>
                         <p>
                             {getText('page7_footnote', lang)}

@@ -355,8 +355,8 @@ const Page31 = () => {
                         color: '#ffffff', 
                         fontWeight: 'bold', 
                         padding: '10px',
-                        border: '1px solid #26374a',
-                        backgroundColor: '#26374a',
+                        border: '1px solid #404040',
+                        backgroundColor: '#8C8C8C',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -439,8 +439,8 @@ const Page31 = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
@@ -454,8 +454,8 @@ backgroundColor: '#26374a',
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
@@ -664,7 +664,7 @@ backgroundColor: '#26374a',
 
                 .page31-title {
                     font-family: 'Lato', sans-serif;
-                    color: #245e7f;
+                    color: #8a7d5a;
                     font-size: 50px;
                     font-weight: bold;
                     margin-top: 0;
@@ -734,11 +734,12 @@ backgroundColor: '#26374a',
                 }
 
                 .page31-footnotes {
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
-                    color: #555;
-                    margin-top: 10px;
-                    line-height: 1.4;
+                    font-family: var(--font-body);
+                    font-size: 1rem;
+                    color: var(--gc-text);
+                    margin-top: 2rem;
+                    margin-bottom: 0;
+                    line-height: 1.65;
                     max-width: 100%;
                 }
 
@@ -789,7 +790,7 @@ backgroundColor: '#26374a',
                         font-size: 26px;
                     }
                     .page31-footnotes {
-                        font-size: 18px;
+                        font-size: 0.9rem;
                     }
                 }
 
@@ -898,8 +899,8 @@ backgroundColor: '#26374a',
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -913,7 +914,14 @@ backgroundColor: '#26374a',
                 }
 
                 .page31-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page31-table-wrapper button[type="button"]:hover,
+                .page31-table-wrapper button:hover,
+                .page31-chart-frame button[type="button"]:hover,
+                .page31-chart-frame button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -1033,7 +1041,7 @@ backgroundColor: '#26374a',
                     >
                         {selectedPoints !== null && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                 </div>
                             )}
                         <figure 

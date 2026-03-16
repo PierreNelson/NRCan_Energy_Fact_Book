@@ -934,8 +934,8 @@ const Page9 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     color: #ffffff;
                     border-radius: 4px;
                     cursor: pointer;
@@ -949,7 +949,12 @@ const Page9 = () => {
                 }
 
                 .page9-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page9-table-wrapper button[type="button"]:hover,
+                .page9-table-wrapper button:hover {
+                    background-color: #404040 !important;
                 }
 
                 .table-responsive {
@@ -1250,7 +1255,7 @@ const Page9 = () => {
                                 >
                                     {selectedProvinces !== null && (
                                             <div style={{ marginBottom: 8 }}>
-                                                <button type="button" onClick={() => setSelectedProvinces(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                                <button type="button" onClick={() => setSelectedProvinces(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                             </div>
                                         )}
                                     <figure ref={mapChartRef} className="page9-map-container" style={{ margin: 0, position: 'relative' }}>
@@ -1642,8 +1647,8 @@ const Page9 = () => {
                                     onClick={() => downloadTableAsCSV()}
                                     style={{
                                         padding: '8px 16px',
-                                        backgroundColor: '#26374a',
-                                        border: '1px solid #26374a',
+                                        backgroundColor: '#8C8C8C',
+                                        border: '1px solid #404040',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',
@@ -1657,8 +1662,8 @@ const Page9 = () => {
                                     onClick={() => downloadTableAsDocx()}
                                     style={{
                                         padding: '8px 16px',
-                                        backgroundColor: '#26374a',
-                                        border: '1px solid #26374a',
+                                        backgroundColor: '#8C8C8C',
+                                        border: '1px solid #404040',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',

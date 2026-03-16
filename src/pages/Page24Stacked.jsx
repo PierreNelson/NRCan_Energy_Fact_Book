@@ -290,8 +290,8 @@ const Page24Stacked = () => {
                         cursor: 'pointer', 
                         fontWeight: 'bold', 
                         padding: '10px', 
-                        border: '1px solid #26374a', 
-                        backgroundColor: '#26374a',
+                        border: '1px solid #404040', 
+                        backgroundColor: '#8C8C8C',
                         color: '#ffffff',
                         display: 'flex', 
                         alignItems: 'center',
@@ -396,8 +396,8 @@ const Page24Stacked = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -411,8 +411,8 @@ const Page24Stacked = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -794,8 +794,8 @@ const Page24Stacked = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -809,8 +809,17 @@ const Page24Stacked = () => {
                 }
 
                 .page24h-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
                     width: 100%;
+                }
+
+                .page24h-table-wrapper button[type="button"]:hover,
+                .page24h-table-wrapper button:hover,
+                .page24h-chart-frame button[type="button"]:hover,
+                .page24h-chart-frame button:hover,
+                .page24h-chart-wrapper button[type="button"]:hover,
+                .page24h-chart-wrapper button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -900,7 +909,7 @@ const Page24Stacked = () => {
                         <div role="region" aria-label={getChartSummary()} tabIndex="0">
                             {selectedPoints !== null && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                 </div>
                             )}
                                 <figure ref={chartRef} className="page24h-chart-wrapper">

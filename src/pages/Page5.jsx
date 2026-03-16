@@ -447,16 +447,21 @@ const Page5 = () => {
 .page5-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
 .page5-chart-title { font-family: 'Lato', sans-serif; font-size: 29px; font-weight: bold; color: #333333; margin-top: 0; margin-bottom: 10px; }
 .page5-chart { width: 100%; height: 420px; position: relative; z-index: 1; }
-.page5-chart button[type="button"]:hover { background-color: #1e2a3a !important; }
+.page5-chart button[type="button"]:hover,
+.page5-chart button:hover,
+.page5-chart-frame button[type="button"]:hover,
+.page5-chart-frame button:hover { background-color: #404040 !important; }
 .page5-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px 24px; margin-top: 16px; margin-bottom: 10px; font-family: Arial, sans-serif; position: relative; z-index: 10; background-color: #f5f5f5; padding: 10px 0; }
 .page5-legend-item { display: flex; align-items: center; gap: 8px; }
 .page5-legend-color { width: 20px; height: 12px; display: inline-block; }
 .page5-legend-label { font-size: 18px; color: #333333; }
 .page5-no-data { font-family: 'Noto Sans', sans-serif; font-size: 18px; color: #555; padding: 24px; text-align: center; }
 .page5-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }
-.page5-table-wrapper details > summary { display: block; width: 100%; padding: 12px 15px; background-color: #26374a; border: 1px solid #26374a; border-radius: 4px; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; list-style: none; }
+.page5-table-wrapper details > summary { display: block; width: 100%; padding: 12px 15px; background-color: #8C8C8C; border: 1px solid #404040; border-radius: 4px; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; list-style: none; }
 .page5-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.page5-table-wrapper details > summary:hover { background-color: #1e2a3a; }
+.page5-table-wrapper details > summary:hover { background-color: #404040 !important; }
+.page5-table-wrapper button[type="button"]:hover,
+.page5-table-wrapper button:hover { background-color: #404040 !important; }
 .page5-table-wrapper .table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; }
 .page5-table-wrapper .table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
 @media (max-width: 768px) {
@@ -478,7 +483,7 @@ const Page5 = () => {
                             <div role="region" aria-label={getText('page5_chart1_title', lang)} tabIndex="0">
                                 {selectedPoints1 !== null && selectedPoints1.length > 0 && (
                                         <div style={{ marginBottom: 8 }}>
-                                            <button type="button" onClick={() => setSelectedPoints1(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            <button type="button" onClick={() => setSelectedPoints1(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                         </div>
                                     )}
                                     <figure ref={chartRef1} className="page5-chart" style={{ margin: 0, position: 'relative' }}>
@@ -545,10 +550,10 @@ const Page5 = () => {
                                             </tbody>
                                         </table>
                                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                            <button type="button" onClick={downloadTableAsCSV1} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                            <button type="button" onClick={downloadTableAsCSV1} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                                 {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                             </button>
-                                            <button type="button" onClick={downloadTableAsDocx1} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                            <button type="button" onClick={downloadTableAsDocx1} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                                 {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                             </button>
                                         </div>
@@ -568,7 +573,7 @@ const Page5 = () => {
                             <div role="region" aria-label={getText('page5_chart2_title', lang)} tabIndex="0">
                                 {selectedPoints2 !== null && selectedPoints2.length > 0 && (
                                         <div style={{ marginBottom: 8 }}>
-                                            <button type="button" onClick={() => setSelectedPoints2(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            <button type="button" onClick={() => setSelectedPoints2(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                         </div>
                                     )}
                                     <figure ref={chartRef2} className="page5-chart" style={{ margin: 0, position: 'relative' }}>
@@ -635,10 +640,10 @@ const Page5 = () => {
                                             </tbody>
                                         </table>
                                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                            <button type="button" onClick={downloadTableAsCSV2} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                            <button type="button" onClick={downloadTableAsCSV2} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                                 {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                             </button>
-                                            <button type="button" onClick={downloadTableAsDocx2} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                            <button type="button" onClick={downloadTableAsDocx2} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                                 {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                             </button>
                                         </div>

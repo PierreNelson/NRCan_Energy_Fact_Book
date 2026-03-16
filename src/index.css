@@ -30,6 +30,7 @@
   --sidebar-width: 340px;
   --sidebar-width-collapsed: 40px;
   --transition-speed: 0.3s;
+  --page-gap: 80px; /* Consistent whitespace between every page (2× previous) */
 }
 
 /* Prevent horizontal overflow at high zoom */
@@ -109,26 +110,6 @@ a:visited {
   position: absolute;
   width: 1px;
   white-space: nowrap;
-}
-
-/* ===============================================
-   WET FOOTNOTES STYLES
-   Linked footnotes with return links
-   =============================================== */
-
-.fn-lnk {
-  text-decoration: none;
-  font-size: 0.85em;
-  vertical-align: super;
-}
-
-.fn-rtn {
-  font-size: 0.9em;
-  margin-top: 0.5em;
-}
-
-.fn-rtn a {
-  text-decoration: underline;
 }
 
 /* ===============================================
@@ -238,6 +219,38 @@ p, .gc-body {
   width: 72px;
   height: 6px;
   background-color: var(--gc-red);
+}
+
+/* ===============================================
+   PAGE CONTENT - Standardised typography for all sections
+   Use for main content area to ensure consistent fonts and colours
+   =============================================== */
+
+.gc-page-content,
+.page-content {
+  font-family: var(--font-body);
+  color: var(--gc-text);
+}
+
+.gc-page-content p,
+.page-content p {
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--gc-text);
+}
+
+.gc-page-content ul,
+.gc-page-content ol,
+.page-content ul,
+.page-content ol {
+  font-family: var(--font-body);
+  color: var(--gc-text);
+}
+
+@media (max-width: 768px) {
+  .gc-page-content p,
+  .page-content p { font-size: 18px; }
 }
 
 /* ===============================================
@@ -893,19 +906,49 @@ details .table-responsive {
   }
 }
 
-/* WET Footnotes - GC Canada.ca Style */
+/* ===============================================
+   PAGE SECTION TYPOGRAPHY (use for consistency)
+   =============================================== */
+.gc-section-title {
+  font-family: var(--font-heading);
+  font-size: 29px;
+  font-weight: bold;
+  color: var(--gc-text);
+  margin: 0 0 0.5em 0;
+  line-height: 1.3;
+}
+.gc-section-body {
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--gc-text);
+}
+@media (max-width: 768px) {
+  .gc-section-title { font-size: 26px; }
+  .gc-section-body { font-size: 18px; }
+}
+
+/* ===============================================
+   WET FOOTNOTES - Standardised GC Canada.ca style
+   Use .wb-fnote on <aside role="note"> for consistency
+   =============================================== */
+
 .wb-fnote {
   margin-top: 2rem;
+  margin-bottom: 0;
   padding-top: 1.5rem;
   border-top: 1px solid #ccc;
   width: 100%;
+  font-family: var(--font-body);
+  color: var(--gc-text);
 }
 
 .wb-fnote h2 {
-  font-family: 'Lato', sans-serif;
+  font-family: var(--font-heading);
   font-size: 1.4rem;
   font-weight: 700;
-  color: #333;
+  color: var(--gc-text);
+  margin-top: 0;
   margin-bottom: 1rem;
 }
 
@@ -934,13 +977,23 @@ details .table-responsive {
   margin-bottom: 1rem;
 }
 
+.wb-fnote dd:last-child {
+  margin-bottom: 0;
+}
+
 .wb-fnote dd p {
   margin: 0;
-  font-family: 'Noto Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   line-height: 1.65;
-  color: #333;
+  color: var(--gc-text);
   max-width: none;
+}
+
+@media (max-width: 768px) {
+  .wb-fnote { font-size: 0.9rem; }
+  .wb-fnote h2 { font-size: 1.2rem; margin-bottom: 0.75rem; }
+  .wb-fnote dd p { font-size: 0.9rem; }
 }
 
 /* Footnote number box - GC style */
@@ -951,10 +1004,10 @@ details .table-responsive {
   min-width: 1.5rem;
   height: 1.5rem;
   padding: 0 0.25rem;
-  font-family: 'Noto Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.875rem;
   font-weight: 400;
-  color: #333;
+  color: var(--gc-text);
   background-color: #fff;
   border: 1px solid #6f6f6f;
   border-radius: 2px;
@@ -965,10 +1018,10 @@ details .table-responsive {
 .fn-num:hover,
 .fn-num:focus {
   background-color: #f5f5f5;
-  border-color: #333;
+  border-color: var(--gc-text);
 }
 
-/* Inline footnote reference link (superscript in content) */
+/* Inline footnote reference link (superscript in content) - no underline on asterisk/number */
 .fn-lnk {
   display: inline-flex;
   align-items: center;
@@ -976,14 +1029,14 @@ details .table-responsive {
   min-width: 1.1rem;
   height: 1.1rem;
   padding: 0 0.15rem;
-  font-family: 'Noto Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.7rem;
   font-weight: 400;
-  color: #333;
+  color: var(--gc-text);
   background-color: #fff;
   border: 1px solid #6f6f6f;
   border-radius: 2px;
-  text-decoration: none;
+  text-decoration: none !important;
   vertical-align: super;
   margin-left: 1px;
 }
@@ -991,7 +1044,7 @@ details .table-responsive {
 .fn-lnk:hover,
 .fn-lnk:focus {
   background-color: #f5f5f5;
-  border-color: #333;
+  border-color: var(--gc-text);
 }
 
 /* Return to footnote referrer link */
@@ -1000,14 +1053,15 @@ details .table-responsive {
 }
 
 .fn-rtn a {
-  color: #2b4380;
+  color: var(--gc-link);
   text-decoration: underline;
   font-size: 0.875rem;
+  font-family: var(--font-body);
 }
 
 .fn-rtn a:hover,
 .fn-rtn a:focus {
-  color: #0535d2;
+  color: var(--gc-link-hover);
 }
 
 /* Screen reader only (sr-only) - alternative class */
@@ -1034,45 +1088,129 @@ details .table-responsive {
   width: 100%;
   display: flex;
   flex-direction: column;
+  gap: var(--page-gap); /* Single source of spacing between pages */
+}
+
+/* Section One wraps pages in an inner div - apply same gap there */
+.stacked-section-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
+  width: 100%;
 }
 
 /* Target the <main> element inside page components */
-.stacked-page-wrapper main {
+.stacked-page-wrapper main,
+.section-four-page main {
   /* Allow content to flow naturally - remove internal scroll */
   overflow-y: visible !important;
   
   /* Allow height to grow with content */
   height: auto !important;
   min-height: auto !important;
+  
+  /* Single source of gap: only the wrapper provides spacing between pages */
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
 }
 
-/* Individual page wrappers */
+/* Prevent last block inside page from adding extra gap – only the flex gap between wrappers creates space. */
+.stacked-page-wrapper main > *:last-child,
+.section-four-page main > *:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Zero bottom padding on the top-level page container so gap is only from wrapper */
+.stacked-page-wrapper main > *:first-child,
+.section-four-page main > *:first-child {
+  padding-bottom: 0 !important;
+}
+
+/* All page-level *-container elements: no bottom spacing (wrapper provides the gap) */
+.stacked-page-wrapper main [class$="-container"],
+.section-four-page main [class$="-container"] {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Last direct child of a page container must not add gap */
+.stacked-page-wrapper main [class$="-container"] > *:last-child,
+.section-four-page main [class$="-container"] > *:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Zero every common page bottom-spacer so ONLY the flex gap between wrappers creates space.
+   Override all page-level margin/padding (including !important) so spacing is consistent. */
+.stacked-page-wrapper main .page37-chart-area,
+.stacked-page-wrapper main .page37-chart-column,
+.stacked-page-wrapper main .page28h-container,
+.stacked-page-wrapper main .page24h-container,
+.stacked-page-wrapper main .page16-chart-column,
+.stacked-page-wrapper main .page20-chart-column,
+.stacked-page-wrapper main .page24-chart-column,
+.stacked-page-wrapper main .page25-chart-column,
+.stacked-page-wrapper main .page33-chart-column,
+.section-four-page main .page37-chart-area,
+.section-four-page main .page37-chart-column,
+.stacked-page-wrapper main [class*="-chart-column"],
+.stacked-page-wrapper main [class*="-chart-area"],
+.stacked-page-wrapper main [class*="-chart-frame"],
+.stacked-page-wrapper main [class*="-table-wrapper"],
+.stacked-page-wrapper main [class*="-content-row"],
+.section-four-page main [class*="-chart-column"],
+.section-four-page main [class*="-chart-area"],
+.section-four-page main [class*="-chart-frame"],
+.section-four-page main [class*="-table-wrapper"],
+.section-four-page main [class*="-content-row"],
+.stacked-page-wrapper main [class*="-data-table-section"],
+.stacked-page-wrapper main [class*="-footer"],
+.section-four-page main [class*="-data-table-section"],
+.section-four-page main [class*="-footer"] {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Nested last children: zero bottom space at 2nd and 3rd level so no structure adds gap */
+.stacked-page-wrapper main > *:last-child > *:last-child,
+.section-four-page main > *:last-child > *:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+.stacked-page-wrapper main > *:last-child > *:last-child > *:last-child,
+.section-four-page main > *:last-child > *:last-child > *:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Individual page wrappers - no margin; gap comes from container */
 .stacked-page-wrapper {
   width: 100%;
-  /* Add a subtle separator between stacked pages */
-  border-bottom: 3px solid #e0e0e0;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
-}
-
-/* Divider above stacked pages that follow another block (e.g. Section 3 overview then Energy affordability) */
-.section-three-container .stacked-page-wrapper {
-  border-top: 3px solid #e0e0e0;
-  padding-top: 20px;
-  margin-top: 20px;
-}
-
-.section-four-container .section-four-page {
-  border-top: 3px solid #e0e0e0;
-  padding-top: 20px;
-  margin-top: 20px;
-}
-
-/* Remove border from last page in section */
-.stacked-page-wrapper:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
   margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Subsection pages: grey border at top of wrapper. Same 40px gap above as non-subsection pages. */
+.stacked-page-wrapper.page-with-title-divider,
+.section-four-page.page-with-title-divider {
+  border-top: 3px solid #e0e0e0;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* Section 4 uses its own wrapper class - same gap-based spacing */
+.section-four-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
+}
+
+.section-four-page {
+  width: 100%;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 /* ==============================================
@@ -1136,6 +1274,12 @@ details .table-responsive {
   padding: 3px !important;
 }
 
+/* Plotly modebar button hover - match chart data table / download button hover (#404040) */
+.js-plotly-plot .plotly .modebar-btn:hover,
+.js-plotly-plot .modebar-btn:hover {
+  background-color: #404040 !important;
+}
+
 /* Center the download icon within the button (nudge right to correct visual offset) */
 .js-plotly-plot .plotly .modebar-btn svg,
 .js-plotly-plot .modebar-btn svg {
@@ -1180,7 +1324,7 @@ details .table-responsive {
 }
 
 .page49-chart-title {
-  font-family: 'Noto Sans', sans-serif;
+  font-family: var(--font-body);
   font-size: 20px;
   font-weight: bold;
   color: var(--gc-text);
@@ -1196,18 +1340,24 @@ details .table-responsive {
 }
 
 .page49-chart-title a {
-  color: #26374a;
+  color: var(--gc-link);
   text-decoration: underline;
 }
 
+/* Page 49: footnote inside chart block - same typography, tighter spacing */
 .page49-chart-block .wb-fnote {
   margin-top: 1rem;
-  font-size: 0.9rem;
+  margin-bottom: 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--gc-text);
 }
 
 .page49-chart-block .wb-fnote h2 {
+  font-family: var(--font-heading);
   font-size: 1rem;
   margin-bottom: 0.5rem;
+  color: var(--gc-text);
 }
 
 .page49-chart-frame {
@@ -1227,14 +1377,16 @@ details .table-responsive {
   margin-bottom: 0;
 }
 
+/* Standardised footnote appearance for page 48/49 when using .page48-footnote or .page49-footnote with .wb-fnote */
 .page48-footnote,
 .page49-footnote {
   border-top: 1px solid #e0e0e0;
   padding-top: 12px;
   margin-top: 24px;
+  margin-bottom: 0;
   font-family: var(--font-body);
-  font-size: 20px;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.65;
   color: var(--gc-text);
   max-width: 100%;
   box-sizing: border-box;

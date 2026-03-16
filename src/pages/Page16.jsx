@@ -372,7 +372,10 @@ const Page16 = () => {
     margin: 0 0 15px 0;
 }
 .page16-chart { width: 100%; height: 340px; }
-.page16-chart button[type="button"]:hover { background-color: #1e2a3a !important; }
+.page16-chart button[type="button"]:hover,
+.page16-chart button:hover,
+.page16-chart-frame button[type="button"]:hover,
+.page16-chart-frame button:hover { background-color: #404040 !important; }
 .page16-bullet {
     font-family: 'Noto Sans', sans-serif;
     font-size: 20px;
@@ -385,8 +388,8 @@ const Page16 = () => {
     display: block;
     width: 100%;
     padding: 12px 15px;
-    background-color: #26374a;
-    border: 1px solid #26374a;
+    background-color: #8C8C8C;
+    border: 1px solid #404040;
     border-radius: 4px;
     cursor: pointer;
     font-family: Arial, sans-serif;
@@ -395,14 +398,17 @@ const Page16 = () => {
     list-style: none;
 }
 .page16-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.page16-table-wrapper details > summary:hover { background-color: #1e2a3a; }
+.page16-table-wrapper details > summary:hover { background-color: #404040 !important; }
+.page16-table-wrapper button[type="button"]:hover,
+.page16-table-wrapper button:hover { background-color: #404040 !important; }
 .page16-table-wrapper .table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; }
 .page16-table-wrapper .table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
 .page16-footnote {
-    font-family: 'Noto Sans', sans-serif;
-    font-size: 16px;
-    color: #666;
-    margin-top: 20px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--gc-text);
+    margin-top: 2rem;
+    margin-bottom: 0;
 }
 .layout-stacked { flex-direction: column !important; height: auto !important; align-items: center !important; }
 .layout-stacked .page16-chart-column { width: 100% !important; margin-bottom: 30px !important; overflow: visible !important; }
@@ -442,7 +448,7 @@ const Page16 = () => {
                                 <figure ref={chartRef} className="page16-chart" style={{ margin: 0, position: 'relative' }}>
                                     {selectedSlices !== null && selectedSlices.length > 0 && (
                                         <div style={{ marginBottom: 8 }}>
-                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                         </div>
                                     )}
                                     <Plot
@@ -528,10 +534,10 @@ const Page16 = () => {
                                             </tbody>
                                         </table>
                                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                            <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                            <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                                 {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                             </button>
-                                            <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                            <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                                 {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                             </button>
                                         </div>

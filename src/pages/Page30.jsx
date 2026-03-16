@@ -1110,7 +1110,6 @@ const Page30 = () => {
                     color: var(--gc-text);
                     margin: 0;
                     padding-bottom: 0.5em;
-                    border-bottom: 2px solid #b6b7ba;
                     position: relative;
                 }
 
@@ -1203,8 +1202,8 @@ const Page30 = () => {
                 .page30-data-table summary {
                     cursor: pointer;
                     padding: 10px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     font-family: Arial, sans-serif;
                     font-weight: bold;
@@ -1213,7 +1212,19 @@ const Page30 = () => {
                 }
 
                 .page30-data-table summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page30-data-table button[type="button"]:hover,
+                .page30-data-table button:hover,
+                .page30-table-wrapper button[type="button"]:hover,
+                .page30-table-wrapper button:hover {
+                    background-color: #404040 !important;
+                }
+
+                .page30-chart-frame button[type="button"]:hover,
+                .page30-chart-frame button:hover {
+                    background-color: #404040 !important;
                 }
 
                 .page30-data-table summary::-webkit-details-marker {
@@ -1360,7 +1371,7 @@ const Page30 = () => {
                             >
                                 {selectedProvinces !== null && (
                                     <div style={{ marginBottom: 8 }}>
-                                        <button type="button" onClick={() => setSelectedProvinces(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        <button type="button" onClick={() => setSelectedProvinces(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                     </div>
                                 )}
                                 <div aria-hidden="true">
@@ -2178,8 +2189,8 @@ const Page30 = () => {
                             onClick={() => downloadTableAsCSV()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+                                backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',
@@ -2193,8 +2204,8 @@ const Page30 = () => {
                             onClick={() => downloadTableAsDocx()}
                             style={{
                                 padding: '8px 16px',
-                                backgroundColor: '#26374a',
-                                border: '1px solid #26374a',
+                                backgroundColor: '#8C8C8C',
+                                border: '1px solid #404040',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 fontFamily: 'Arial, sans-serif',

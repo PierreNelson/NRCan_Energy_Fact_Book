@@ -15,6 +15,9 @@ const PAGE51_CHART_HEIGHT = 420;
 const PAGE51_CHART_MARGIN = { t: 165, b: 55, l: 245, r: 245 };
 /** Min width so pie doesn't shrink when viewport is narrow at high zoom. Wrapper keeps chart centered. */
 const PAGE51_CHART_MIN_WIDTH = 800;
+/** Year dropdown and chart data tables only show years in this range (when all source data is available). Update when new year's data is complete. */
+const PAGE51_MIN_YEAR = 2022;
+const PAGE51_MAX_YEAR = 2022;
 
 const hexToRgba = (hex, opacity = 1) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -50,11 +53,8 @@ const Page51 = () => {
         getPage51Data()
             .then((d) => {
                 setResult(d);
-                if (d?.years?.length) {
-                    const no2000 = d.years.filter((y) => y !== 2000);
-                    const pick = no2000.length ? (d.latestYear !== 2000 ? d.latestYear : no2000[no2000.length - 1]) : d.years[d.years.length - 1];
-                    setSelectedYear(pick);
-                }
+                const available = (d?.years || []).filter((y) => y !== 2000 && y >= PAGE51_MIN_YEAR && y <= PAGE51_MAX_YEAR);
+                if (available.length) setSelectedYear(Math.max(...available));
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -80,7 +80,13 @@ const Page51 = () => {
         setSelectedSlices3(null);
     }, [selectedYear]);
 
-    const years = useMemo(() => (result?.years ? [...result.years].filter((y) => y !== 2000).sort((a, b) => b - a) : []), [result?.years]);
+    const years = useMemo(() => (result?.years ? [...result.years].filter((y) => y !== 2000 && y >= PAGE51_MIN_YEAR && y <= PAGE51_MAX_YEAR).sort((a, b) => b - a) : []), [result?.years]);
+
+    useEffect(() => {
+        if (years.length > 0 && (selectedYear == null || selectedYear < PAGE51_MIN_YEAR || selectedYear > PAGE51_MAX_YEAR || !years.includes(selectedYear)))
+            setSelectedYear(years[0]);
+    }, [years, selectedYear]);
+
     const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
 
     const reuByTypeCategories = useMemo(() => {
@@ -117,7 +123,7 @@ const Page51 = () => {
 
     const table1AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => r.year >= PAGE51_MIN_YEAR && r.year <= PAGE51_MAX_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const reu = r.reuByType || {};
             const total = reu.total ?? 0;
             const row = { year: r.year, total };
@@ -131,7 +137,7 @@ const Page51 = () => {
     }, [result?.data]);
     const table2AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => r.year !== 2000).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => r.year !== 2000 && r.year >= PAGE51_MIN_YEAR && r.year <= PAGE51_MAX_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const wh = r.waterHeating || {};
             const total = wh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(wh[k]) || 0), 0);
             const row = { year: r.year, total };
@@ -145,7 +151,7 @@ const Page51 = () => {
     }, [result?.data]);
     const table3AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => r.year !== 2000).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => r.year !== 2000 && r.year >= PAGE51_MIN_YEAR && r.year <= PAGE51_MAX_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const sh = r.spaceHeating || {};
             const total = sh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(sh[k]) || 0), 0);
             const row = { year: r.year, total };
@@ -546,11 +552,12 @@ const Page51 = () => {
                 .page-51 { width: 100%; }
                 .page51-container { width: 100%; padding: 15px 0 0 0; display: flex; flex-direction: column; box-sizing: border-box; flex: 1; overflow: visible; }
                 .page51-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
-                .page51-chart-title { font-family: 'Noto Sans', sans-serif; font-size: 20px; font-weight: bold; color: var(--gc-text, #333); margin: 0 0 12px 0; text-align: center; max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; white-space: normal; box-sizing: border-box; padding: 0 8px; }
-                .page51-chart-title a { color: #26374a; text-decoration: underline; }
-                .page51-footnotes { font-family: 'Noto Sans', sans-serif; font-size: 20px; color: #555; margin-top: 10px; line-height: 1.4; }
-                .page51-footnotes h2 { font-size: 1rem; margin-bottom: 0.5rem; }
-                @media (max-width: 768px) { .page51-chart-title { font-size: 18px; } .page51-footnotes { font-size: 18px; } }
+                .page51-chart-title { font-family: var(--font-body); font-size: 20px; font-weight: bold; color: var(--gc-text); margin: 0 0 12px 0; text-align: center; max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; white-space: normal; box-sizing: border-box; padding: 0 8px; }
+                .page51-chart-title a { color: var(--gc-link); text-decoration: underline; }
+                @media (max-width: 768px) { .page51-chart-title { font-size: 18px; } }
+                .page51-chart-frame details > summary:hover { background-color: #404040 !important; }
+                .page51-chart-frame button[type="button"]:hover,
+                .page51-chart-frame button:hover { background-color: #404040 !important; }
             `}</style>
             <div className="page51-container">
                 {loading && <p>{lang === 'en' ? 'Loading…' : 'Chargement…'}</p>}
@@ -628,7 +635,7 @@ const Page51 = () => {
                             </p>
                             {effectiveSlices1 != null && effectiveSlices1.length > 0 && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedSlices1(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
+                                    <button type="button" onClick={() => setSelectedSlices1(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
                                         {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
                                     </button>
                                 </div>
@@ -665,7 +672,7 @@ const Page51 = () => {
                                 </div>
                             </div>
                             <details open={isTable1Open} onToggle={(e) => setIsTable1Open(e.currentTarget.open)} style={{ marginTop: 12, width: '100%' }}>
-                                <summary role="button" aria-expanded={isTable1Open} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #26374a', backgroundColor: '#26374a', borderRadius: '4px', listStyle: 'none' }}>
+                                <summary role="button" aria-expanded={isTable1Open} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #404040', backgroundColor: '#8C8C8C', borderRadius: '4px', listStyle: 'none' }}>
                                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTable1Open ? '▼' : '▶'}</span>
                                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
@@ -696,10 +703,10 @@ const Page51 = () => {
                                     </table>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                    <button type="button" onClick={downloadTable1CSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTable1CSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                     </button>
-                                    <button type="button" onClick={downloadTable1Docx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTable1Docx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                     </button>
                                 </div>
@@ -710,7 +717,7 @@ const Page51 = () => {
                             <p className="page51-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', margin: '0 0 1rem 0' }}>{chart2Title}</p>
                             {effectiveSlices2 != null && effectiveSlices2.length > 0 && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedSlices2(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
+                                    <button type="button" onClick={() => setSelectedSlices2(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
                                         {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
                                     </button>
                                 </div>
@@ -747,7 +754,7 @@ const Page51 = () => {
                                 </div>
                             </div>
                             <details open={isTable2Open} onToggle={(e) => setIsTable2Open(e.currentTarget.open)} style={{ marginTop: 12, width: '100%' }}>
-                                <summary role="button" aria-expanded={isTable2Open} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #26374a', backgroundColor: '#26374a', borderRadius: '4px', listStyle: 'none' }}>
+                                <summary role="button" aria-expanded={isTable2Open} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #404040', backgroundColor: '#8C8C8C', borderRadius: '4px', listStyle: 'none' }}>
                                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTable2Open ? '▼' : '▶'}</span>
                                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
@@ -778,10 +785,10 @@ const Page51 = () => {
                                     </table>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                    <button type="button" onClick={downloadTable2CSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTable2CSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                     </button>
-                                    <button type="button" onClick={downloadTable2Docx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTable2Docx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                     </button>
                                 </div>
@@ -792,7 +799,7 @@ const Page51 = () => {
                             <p className="page51-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', margin: '0 0 1rem 0' }}>{chart3Title}</p>
                             {effectiveSlices3 != null && effectiveSlices3.length > 0 && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedSlices3(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
+                                    <button type="button" onClick={() => setSelectedSlices3(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
                                         {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
                                     </button>
                                 </div>
@@ -829,7 +836,7 @@ const Page51 = () => {
                                 </div>
                             </div>
                             <details open={isTable3Open} onToggle={(e) => setIsTable3Open(e.currentTarget.open)} style={{ marginTop: 12, width: '100%' }}>
-                                <summary role="button" aria-expanded={isTable3Open} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #26374a', backgroundColor: '#26374a', borderRadius: '4px', listStyle: 'none' }}>
+                                <summary role="button" aria-expanded={isTable3Open} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #404040', backgroundColor: '#8C8C8C', borderRadius: '4px', listStyle: 'none' }}>
                                     <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTable3Open ? '▼' : '▶'}</span>
                                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
@@ -860,17 +867,17 @@ const Page51 = () => {
                                     </table>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                    <button type="button" onClick={downloadTable3CSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTable3CSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                     </button>
-                                    <button type="button" onClick={downloadTable3Docx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTable3Docx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                     </button>
                                 </div>
                             </details>
                         </div>
 
-                        <aside className="wb-fnote page51-footnotes" role="note">
+                        <aside className="wb-fnote" role="note">
                             <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                             <dl>
                                 <dt className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</dt>

@@ -14,8 +14,9 @@ import page52Bg6 from '../assets/page52_bg6.png';
 
 const CIEU_SLICE_ORDER = ['sh', 'ae', 'lt', 'wh', 'am', 'sc'];
 const CIEU_COLORS = ['#CE8003', '#4b4c4d', '#6b5b95', '#6b666a', '#1f8093', '#7db8d4'];
-/** Chart and table only show data up to this year (no 2024–2026). */
-const PAGE52_MAX_YEAR = 2023;
+/** Year dropdown and chart data table only show years in this range (when all source data is available). Update when new year's data is complete. */
+const PAGE52_MIN_YEAR = 2022;
+const PAGE52_MAX_YEAR = 2022;
 /** Fixed filename for CSV/DOCX (no year). */
 const PAGE52_TABLE_FILENAME_BASE = 'commercial_institutional_energy_by_end_use';
 
@@ -72,11 +73,11 @@ const Page52 = () => {
                 setResult(d ?? null);
                 const data = d?.data;
                 if (Array.isArray(data) && data.length > 0) {
-                    const validYears = data.filter((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000 && r.teu != null && r.teu > 0).map((r) => r.year);
+                    const validYears = data.filter((r) => r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR && r.year !== 2000 && r.teu != null && r.teu > 0).map((r) => r.year);
                     const latestValid = validYears.length ? Math.max(...validYears) : null;
-                    const upToMax = data.filter((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000).map((r) => r.year).sort((a, b) => b - a);
-                    const fallback = upToMax[0];
-                    const lastRow = data.find((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000) || data[data.length - 1];
+                    const inRange = data.filter((r) => r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR && r.year !== 2000).map((r) => r.year).sort((a, b) => b - a);
+                    const fallback = inRange[0];
+                    const lastRow = data.find((r) => r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR && r.year !== 2000) || data[data.length - 1];
                     setSelectedYear(latestValid ?? fallback ?? lastRow?.year);
                 }
             })
@@ -140,11 +141,11 @@ const Page52 = () => {
     const pad = layoutPadding && typeof layoutPadding === 'object' ? layoutPadding : { left: 55, right: 15 };
     const years = useMemo(() => {
         const raw = result?.years ?? [];
-        return [...raw].filter((y) => y <= PAGE52_MAX_YEAR && y !== 2000).sort((a, b) => b - a);
+        return [...raw].filter((y) => y >= PAGE52_MIN_YEAR && y <= PAGE52_MAX_YEAR && y !== 2000).sort((a, b) => b - a);
     }, [result?.years]);
 
     useEffect(() => {
-        if (years.length > 0 && (selectedYear == null || selectedYear > PAGE52_MAX_YEAR || !years.includes(selectedYear)))
+        if (years.length > 0 && (selectedYear == null || selectedYear < PAGE52_MIN_YEAR || selectedYear > PAGE52_MAX_YEAR || !years.includes(selectedYear)))
             setSelectedYear(years[0]);
     }, [years, selectedYear]);
     const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
@@ -214,7 +215,7 @@ const Page52 = () => {
         const data = result?.data;
         if (!Array.isArray(data) || data.length === 0) return [];
         return [...data]
-            .filter((r) => r.year <= PAGE52_MAX_YEAR && r.year !== 2000)
+            .filter((r) => r.year !== 2000 && r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR)
             .sort((a, b) => a.year - b.year)
             .map((r) => {
                 const row = {
@@ -421,6 +422,9 @@ const Page52 = () => {
 .page52-narrative p { margin-top: -50px; margin-bottom: 0; font-size: 1.2rem; color: #333; line-height: 1.6; }
 .page52-table-responsive { display: block; width: 100%; overflow-x: auto; }
 .page52-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
+.page52-chart-frame details > summary:hover { background-color: #404040 !important; }
+.page52-chart-frame button[type="button"]:hover,
+.page52-chart-frame button:hover { background-color: #404040 !important; }
             `}</style>
 
             <div className="page52-stack">
@@ -473,7 +477,7 @@ const Page52 = () => {
                         <h3 className="page52-chart-title">{chartTitle}</h3>
                         {effectiveSlices != null && effectiveSlices.length > 0 && (
                             <div style={{ marginBottom: 8 }}>
-                                <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
+                                <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
                                     {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
                                 </button>
                             </div>
@@ -513,7 +517,7 @@ const Page52 = () => {
                             )}
                         </div>
                         <details open={isTableOpen} onToggle={(e) => setIsTableOpen(e.currentTarget.open)} style={{ marginTop: 12, width: '100%' }}>
-                            <summary role="button" aria-expanded={isTableOpen} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #26374a', backgroundColor: '#26374a', borderRadius: '4px', listStyle: 'none' }}>
+                            <summary role="button" aria-expanded={isTableOpen} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #404040', backgroundColor: '#8C8C8C', borderRadius: '4px', listStyle: 'none' }}>
                                 <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
                                 {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                                 <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
@@ -570,10 +574,10 @@ const Page52 = () => {
                                 </table>
                             </div>
                             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                <button type="button" onClick={downloadTableCSV} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', color: '#fff', fontSize: 14 }}>
+                                <button type="button" onClick={downloadTableCSV} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', color: '#fff', fontSize: 14 }}>
                                     {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                 </button>
-                                <button type="button" onClick={downloadTableDocx} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', color: '#fff', fontSize: 14 }}>
+                                <button type="button" onClick={downloadTableDocx} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', color: '#fff', fontSize: 14 }}>
                                     {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                 </button>
                             </div>

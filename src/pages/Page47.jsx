@@ -66,7 +66,7 @@ const Page47 = () => {
 
 .page47-list {
     width: 100%;
-    background-color: #edb95e;
+    background-color: #C58516;
     padding: 30px ${layoutPadding?.right || 15}px 30px ${layoutPadding?.left || 55}px;
     box-sizing: border-box;
 }

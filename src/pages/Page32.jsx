@@ -302,8 +302,8 @@ const Page32 = () => {
                         color: '#ffffff', 
                         fontWeight: 'bold', 
                         padding: '10px', 
-                        border: '1px solid #26374a',
-                        backgroundColor: '#26374a',
+                        border: '1px solid #404040',
+                        backgroundColor: '#8C8C8C',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -393,8 +393,8 @@ const Page32 = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -408,8 +408,8 @@ const Page32 = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -830,8 +830,8 @@ const Page32 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -845,7 +845,17 @@ const Page32 = () => {
                 }
 
                 .page32-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page32-table-wrapper button[type="button"]:hover,
+                .page32-table-wrapper button:hover {
+                    background-color: #404040 !important;
+                }
+
+                .page32-chart-frame button[type="button"]:hover,
+                .page32-chart-frame button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -897,7 +907,7 @@ const Page32 = () => {
                         <div className="page32-chart-wrapper">
                             {selectedPoints !== null && (
                                     <div style={{ marginBottom: 8 }}>
-                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                     </div>
                                 )}
                                 <figure ref={chartRef} className="page32-chart" style={{ margin: 0, position: 'relative' }}>

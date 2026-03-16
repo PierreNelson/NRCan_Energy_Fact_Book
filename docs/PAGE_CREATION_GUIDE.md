@@ -28,7 +28,7 @@ The `id` is used for sidebar navigation (hash links).
    - Add: `import PageNN from '../pages/PageNN';`
    - Add a wrapper in the JSX: `<div id="your-anchor-id" className="stacked-page-wrapper"><PageNN /></div>`. Use a unique, kebab-case `id` that matches the page’s topic (e.g. `employment`, `primary-energy-by-region`).
 3. **Add the sidebar link** in `src/components/Sidebar.jsx`: inside the appropriate section’s NavLinks, add a link to the same section path with hash, e.g. `to="/section-1#your-anchor-id"` and label from translations.
-4. **Add nav text** in `src/utils/translations.js` (e.g. `nav_employment`, `nav_primary_energy_region`) in both `en` and `fr` if the sidebar label is translated.
+4. **Add nav text** in `src/utils/translations.js` (e.g. `nav_employment`, `nav_primary_energy_region`) in both `en` and `fr.
 
 **Reference:** `src/App.jsx`, `src/components/Layout.jsx`, `src/components/SectionOne.jsx`, `src/components/Sidebar.jsx`.
 

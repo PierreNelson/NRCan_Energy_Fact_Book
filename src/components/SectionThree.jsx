@@ -21,11 +21,11 @@ const SectionThree = () => {
     }, [location]);
 
     return (
-        <div className="section-three-container">
-            <div id="skills-diversity-community-overview">
+        <div className="section-three-container stacked-section-container">
+            <div id="skills-diversity-community-overview" className="stacked-page-wrapper">
                 <Page39 />
             </div>
-            <div id="energy-affordability" className="stacked-page-wrapper">
+            <div id="energy-affordability" className="stacked-page-wrapper page-with-title-divider">
                 <Page43 />
             </div>
         </div>

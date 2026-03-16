@@ -40,11 +40,11 @@ const SectionOne = () => {
 
     return (
         <div className="stacked-section-container" style={{ backgroundColor: '#ccc' }}>
-            <div style={{ maxWidth: nativeWidth, margin: '0 0', backgroundColor: 'white', transition: 'max-width 0.3s ease-in-out', boxShadow: 'none' }}>
-                <div id="energy-overview" className="stacked-page-wrapper">
+            <div className="stacked-section-inner" style={{ maxWidth: nativeWidth, margin: '0 0', backgroundColor: 'white', transition: 'max-width 0.3s ease-in-out', boxShadow: 'none' }}>
+                <div id="energy-overview" className="stacked-page-wrapper page-with-title-divider">
                     <Page1 />
                 </div>
-                <div id="energy-production" className="stacked-page-wrapper">
+                <div id="energy-production" className="stacked-page-wrapper page-with-title-divider">
                     <Page2 />
                 </div>
                 <div id="canadian-energy-production" className="stacked-page-wrapper">
@@ -56,13 +56,13 @@ const SectionOne = () => {
                 <div id="primary-energy-by-region" className="stacked-page-wrapper">
                     <Page5 />
                 </div>
-                <div id="economic-contributions" className="stacked-page-wrapper">
+                <div id="economic-contributions" className="stacked-page-wrapper page-with-title-divider">
                     <Page7 />
                 </div>
                 <div id="provincial-gdp" className="stacked-page-wrapper">
                     <Page8 />
                 </div>
-                <div id="employment" className="stacked-page-wrapper">
+                <div id="employment" className="stacked-page-wrapper page-with-title-divider">
                     <Page9 />
                 </div>
                 <div id="employment-chart" className="stacked-page-wrapper">

@@ -379,8 +379,8 @@ const Page24 = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-backgroundColor: '#26374a',
-                                        border: '1px solid #26374a',
+backgroundColor: '#8C8C8C',
+                                        border: '1px solid #404040',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',
@@ -394,8 +394,8 @@ backgroundColor: '#26374a',
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-backgroundColor: '#26374a',
-                                        border: '1px solid #26374a',
+backgroundColor: '#8C8C8C',
+                                        border: '1px solid #404040',
                                         borderRadius: '4px',
                                         cursor: 'pointer',
                                         fontFamily: 'Arial, sans-serif',
@@ -639,7 +639,7 @@ backgroundColor: '#26374a',
                     font-weight: bold;
                     margin-top: 0;
                     margin-bottom: 25px;
-                    color: #245e7f;
+                    color: #8a7d5a;
                     margin: 0 0 20px 0;
                     line-height: 1.2;
                     position: relative;
@@ -868,8 +868,8 @@ backgroundColor: '#26374a',
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -879,7 +879,18 @@ backgroundColor: '#26374a',
                 }
 
                 .page24-data-table > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page24-data-table button[type="button"]:hover,
+                .page24-data-table button:hover,
+                .page24-table-wrapper button[type="button"]:hover,
+                .page24-table-wrapper button:hover,
+                .page24-chart-frame button[type="button"]:hover,
+                .page24-chart-frame button:hover,
+                .page24-chart-wrapper button[type="button"]:hover,
+                .page24-chart-wrapper button:hover {
+                    background-color: #404040 !important;
                 }
 
                 .page24-data-table > summary::-webkit-details-marker {
@@ -930,7 +941,7 @@ backgroundColor: '#26374a',
                         <div role="region" aria-label={getChartSummary()} tabIndex="0">
                             {selectedPoints !== null && (
                                     <div style={{ marginBottom: 8 }}>
-                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                     </div>
                                 )}
                                 <figure ref={chartRef} className="page24-chart-wrapper">

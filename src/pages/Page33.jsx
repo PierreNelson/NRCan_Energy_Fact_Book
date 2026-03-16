@@ -684,7 +684,7 @@ const Page33 = () => {
                     font-weight: bold;
                     margin-top: 0;
                     margin-bottom: 25px;
-                    color: #245e7f;
+                    color: #8a7d5a;
                     margin: 30px 0 20px 0;
                     line-height: 1.2;
                     position: relative;
@@ -790,18 +790,19 @@ const Page33 = () => {
                 }
 
                 .page33-footnote {
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
-                    color: #666;
+                    font-family: var(--font-body);
+                    font-size: 1rem;
+                    color: var(--gc-text);
                     margin: 0;
-                    line-height: 1.5;
+                    line-height: 1.65;
                 }
                 
                 .page33-footnote-container {
                     position: relative;
                     z-index: 5;
                     background-color: white;
-                    margin-top: 20px;
+                    margin-top: 2rem;
+                    margin-bottom: 0;
                 }
                 
                 .page33-footnote-container dl {
@@ -813,7 +814,8 @@ const Page33 = () => {
                 .page33-footnote-container dt {
                     margin-right: 4px;
                     font-size: 0.9rem;
-                    color: #666;
+                    color: var(--gc-text);
+                    font-family: var(--font-body);
                 }
                 
                 .page33-footnote-container dd {
@@ -833,8 +835,8 @@ const Page33 = () => {
                     cursor: pointer;
                     font-weight: bold;
                     padding: 10px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     font-family: Arial, sans-serif;
                     list-style: none;
@@ -850,7 +852,7 @@ const Page33 = () => {
                 }
                 
                 .data-table-wrapper summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
                 }
                 
                 .data-table-wrapper .table-responsive {
@@ -1031,7 +1033,7 @@ const Page33 = () => {
                         font-size: 26px;
                     }
                     .page33-footnote {
-                        font-size: 18px;
+                        font-size: 0.9rem;
                     }
                 }
 
@@ -1084,8 +1086,8 @@ const Page33 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -1099,7 +1101,14 @@ const Page33 = () => {
                 }
 
                 .page33-data-table > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page33-data-table button[type="button"]:hover,
+                .page33-data-table button:hover,
+                .data-table-wrapper button[type="button"]:hover,
+                .data-table-wrapper button:hover {
+                    background-color: #404040 !important;
                 }
             `}</style>
 
@@ -1403,8 +1412,8 @@ const Page33 = () => {
                             onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -1418,8 +1427,8 @@ const Page33 = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',

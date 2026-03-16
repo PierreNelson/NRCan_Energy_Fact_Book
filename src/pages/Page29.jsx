@@ -340,8 +340,8 @@ const Page29 = () => {
 
                 .page29-download-btn {
                     padding: 8px 16px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
@@ -350,15 +350,16 @@ const Page29 = () => {
                 }
 
                 .page29-download-btn:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
                 }
 
                 .page29-footnotes {
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
-                    color: #555;
-                    margin-top: 20px;
-                    line-height: 1.4;
+                    font-family: var(--font-body);
+                    font-size: 1rem;
+                    color: var(--gc-text);
+                    margin-top: 2rem;
+                    margin-bottom: 0;
+                    line-height: 1.65;
                     max-width: 80ch;
                 }
 
@@ -423,7 +424,7 @@ const Page29 = () => {
                     }
 
                     .page29-footnotes {
-                        font-size: 18px;
+                        font-size: 0.9rem;
                     }
                 }
 

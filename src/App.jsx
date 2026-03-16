@@ -25,7 +25,7 @@ const LoadingSpinner = () => (
     <div style={{
       textAlign: 'center',
       color: '#857550',
-      fontFamily: 'Georgia, serif'
+      fontFamily: "'Noto Sans', sans-serif"
     }}>
       <div style={{
         width: '50px',

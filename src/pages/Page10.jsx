@@ -156,12 +156,12 @@ const Page10 = () => {
 
     const scrollToFootnote = (e) => {
         e.preventDefault();
-        document.getElementById('fn1-page10')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('fn-asterisk-page10')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     const scrollToRef = (e) => {
         e.preventDefault();
-        document.getElementById('fn1-rf-page10')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('fn-asterisk-rf-page10')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     const hoverTemplate = (label, values) => {
@@ -428,8 +428,8 @@ const Page10 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
@@ -443,7 +443,14 @@ const Page10 = () => {
                 }
 
                 .page10-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page10-table-wrapper button[type="button"]:hover,
+                .page10-table-wrapper button:hover,
+                .page10-chart-frame button[type="button"]:hover,
+                .page10-chart-frame button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -509,9 +516,9 @@ const Page10 = () => {
                 <div className="page10-chart-frame">
                     <h2 className="page10-chart-title" aria-hidden="true">
                         {getText('page10_chart_title', lang)}
-                        <sup id="fn1-rf-page10" style={{ verticalAlign: 'super', fontSize: '0.6em', lineHeight: 0 }}>
-                            <a className="fn-lnk" href="#fn1-page10" onClick={scrollToFootnote}>
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>1
+                        <sup id="fn-asterisk-rf-page10" style={{ verticalAlign: 'super', fontSize: '0.6em', lineHeight: 0 }}>
+                            <a className="fn-lnk" href="#fn-asterisk-page10" onClick={scrollToFootnote}>
+                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
                             </a>
                         </sup>
                     </h2>
@@ -526,7 +533,7 @@ const Page10 = () => {
                     >
                         {selectedPoints !== null && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                 </div>
                             )}
                             <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
@@ -735,13 +742,13 @@ const Page10 = () => {
                             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
                                 <button 
                                     onClick={downloadTableAsCSV} 
-                                    style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
+                                    style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
                                 >
                                     {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                 </button>
                                 <button 
                                     onClick={downloadTableAsDocx} 
-                                    style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
+                                    style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}
                                 >
                                     {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                 </button>
@@ -753,10 +760,10 @@ const Page10 = () => {
                 <aside className="wb-fnote" role="note" style={{ marginTop: '20px', marginBottom: 0 }}>
                     <h2 id="fn-page10">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>
-                        <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-page10" style={{ marginBottom: 0 }}>
-                            <a href="#fn1-rf-page10" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote 1 referrer' : 'Retour à la référence de la note de bas de page 1'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>1
+                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                        <dd id="fn-asterisk-page10" style={{ marginBottom: 0 }}>
+                            <a href="#fn-asterisk-rf-page10" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                             </a>
                             <p>
                                 {getText('page10_footnote', lang)}

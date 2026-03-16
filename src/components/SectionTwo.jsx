@@ -51,11 +51,11 @@ const SectionTwo = () => {
                 <Page23 />
             </div>
 
-            <div id="capital-expenditure" className="stacked-page-wrapper">
+            <div id="capital-expenditure" className="stacked-page-wrapper page-with-title-divider">
                 <Page24 />
             </div>
 
-            <div id="infrastructure-stock" className="stacked-page-wrapper">
+            <div id="infrastructure-stock" className="stacked-page-wrapper page-with-title-divider">
                 <Page25 />
             </div>
 
@@ -79,7 +79,7 @@ const SectionTwo = () => {
                 <Page30 />
             </div>
 
-            <div id="international-investment" className="stacked-page-wrapper">
+            <div id="international-investment" className="stacked-page-wrapper page-with-title-divider">
                 <Page31 />
             </div>
 
@@ -87,11 +87,11 @@ const SectionTwo = () => {
                 <Page32 />
             </div>
 
-            <div id="canadian-energy-assets" className="stacked-page-wrapper">
+            <div id="canadian-energy-assets" className="stacked-page-wrapper page-with-title-divider">
                 <Page33 />
             </div>
 
-            <div id="environmental-protection" className="stacked-page-wrapper">
+            <div id="environmental-protection" className="stacked-page-wrapper page-with-title-divider">
                 <Page37 />
             </div>
         </div>

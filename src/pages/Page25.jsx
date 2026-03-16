@@ -382,7 +382,7 @@ const Page25 = () => {
             <span>
                 <strong>{getText('page25_subtitle_part1', lang)}</strong>
                 {getText('page25_subtitle_part2', lang)}
-                <strong>{fuelPct.toFixed(1)}%</strong>
+                <strong style={{ color: '#8a7d5a' }}>{fuelPct.toFixed(1)}%</strong>
                 {getText('page25_subtitle_part3', lang)}
                 <strong>{year}</strong>
                 {' '}
@@ -470,8 +470,8 @@ const Page25 = () => {
                         color: '#ffffff', 
                         fontWeight: 'bold', 
                         padding: '10px',
-                        border: '1px solid #26374a',
-                        backgroundColor: '#26374a',
+                        border: '1px solid #404040',
+                        backgroundColor: '#8C8C8C',
                         borderRadius: '4px',
                         listStyle: 'none'
                     }}
@@ -554,8 +554,8 @@ const Page25 = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -569,8 +569,8 @@ const Page25 = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -721,7 +721,7 @@ const Page25 = () => {
                     font-family: 'Lato', sans-serif;
                     font-size: 50px;
                     font-weight: bold;
-                    color: #245e7f;
+                    color: #8a7d5a;
                     margin: 0 0 3px 0;
                     line-height: 1.2;
                     position: relative;
@@ -1101,8 +1101,8 @@ const Page25 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -1116,7 +1116,17 @@ const Page25 = () => {
                 }
 
                 .page25-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page25-table-wrapper button[type="button"]:hover,
+                .page25-table-wrapper button:hover {
+                    background-color: #404040 !important;
+                }
+
+                .page25-chart-column button[type="button"]:hover,
+                .page25-chart-column button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -1291,7 +1301,7 @@ const Page25 = () => {
                             <>
                                 {selectedSlices !== null && selectedSlices.length > 0 && (
                                     <div style={{ marginBottom: 8 }}>
-                                        <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                        <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                     </div>
                                 )}
                                 <figure ref={chartRef} className="page25-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>

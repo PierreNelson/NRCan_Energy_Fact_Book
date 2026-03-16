@@ -53,12 +53,12 @@ const Page11 = () => {
 
     const scrollToFootnote = (e) => {
         e.preventDefault();
-        document.getElementById('fn1-page11')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('fn-asterisk-page11')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     const scrollToRef = (e) => {
         e.preventDefault();
-        document.getElementById('fn1-rf-page11')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('fn-asterisk-rf-page11')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     useEffect(() => {
@@ -431,8 +431,8 @@ const Page11 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
@@ -446,7 +446,7 @@ const Page11 = () => {
                 }
 
                 .page11-table-wrapper details > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
                 }
 
                 .page11-table-wrapper .table-responsive {
@@ -479,17 +479,21 @@ const Page11 = () => {
 
                 .page11-download-buttons button {
                     padding: 8px 16px;
-                    border: 1px solid #26374a;
+                    border: 1px solid #404040;
                     border-radius: 4px;
-                    background: #26374a;
+                    background: #8C8C8C;
                     cursor: pointer;
                     font-family: Arial, sans-serif;
                     font-weight: bold;
                     color: #ffffff;
                 }
 
-                .page11-download-buttons button:hover {
-                    background: #1e2a3a;
+                .page11-download-buttons button:hover,
+                .page11-table-wrapper button:hover,
+                .page11-chart-frame button[type="button"]:hover,
+                .page11-chart-frame button:hover {
+                    background: #404040 !important;
+                    background-color: #404040 !important;
                 }
 
                 @media (max-width: 1097px) {
@@ -518,9 +522,9 @@ const Page11 = () => {
                 <div className="page11-chart-frame">
                     <h2 className="page11-chart-title" aria-hidden="true">
                         {getText('page11_chart_title', lang)}
-                        <sup id="fn1-rf-page11" style={{ verticalAlign: 'super', fontSize: '0.6em', lineHeight: 0 }}>
-                            <a className="fn-lnk" href="#fn1-page11" onClick={scrollToFootnote}>
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>1
+                        <sup id="fn-asterisk-rf-page11" style={{ verticalAlign: 'super', fontSize: '0.6em', lineHeight: 0 }}>
+                            <a className="fn-lnk" href="#fn-asterisk-page11" onClick={scrollToFootnote}>
+                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
                             </a>
                         </sup>
                     </h2>
@@ -535,7 +539,7 @@ const Page11 = () => {
                     >
                         {selectedPoints !== null && (
                                 <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                 </div>
                             )}
                             <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
@@ -764,10 +768,10 @@ const Page11 = () => {
                 <aside className="wb-fnote" role="note" style={{ marginTop: '20px', marginBottom: 0 }}>
                     <h2 id="fn-page11">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>
-                        <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-page11" style={{ marginBottom: 0 }}>
-                            <a href="#fn1-rf-page11" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote 1 referrer' : 'Retour à la référence de la note de bas de page 1'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>1
+                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
+                        <dd id="fn-asterisk-page11" style={{ marginBottom: 0 }}>
+                            <a href="#fn-asterisk-rf-page11" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
+                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                             </a>
                             <p>
                                 {getText('page11_footnote', lang)}

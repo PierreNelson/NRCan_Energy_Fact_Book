@@ -575,8 +575,8 @@ const getAccessibleDataTable = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -590,8 +590,8 @@ const getAccessibleDataTable = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -1081,8 +1081,8 @@ const getAccessibleDataTable = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -1096,7 +1096,17 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37h-data-table > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page37h-data-table button[type="button"]:hover,
+                .page37h-data-table button:hover {
+                    background-color: #404040 !important;
+                }
+
+                .page37h-chart-frame button[type="button"]:hover,
+                .page37h-chart-frame button:hover {
+                    background-color: #404040 !important;
                 }
 
                 /* Table horizontal scroll */
@@ -1344,7 +1354,7 @@ const getAccessibleDataTable = () => {
                             >
                                 {selectedSlices !== null && (
                                         <div style={{ marginBottom: 8 }}>
-                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                         </div>
                                     )}
                                 <figure ref={chartRef} className="page37h-chart" style={{ width: '100%', height: '100%', margin: 0, position: 'relative' }}>

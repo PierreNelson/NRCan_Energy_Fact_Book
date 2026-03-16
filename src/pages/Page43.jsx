@@ -275,7 +275,7 @@ const Page43 = () => {
     font-family: 'Lato', sans-serif;
     font-size: 50px;
     font-weight: bold;
-    color: #245e7f;
+    color: #a0346e;
     margin: 0 0 10px 0;
     line-height: 1.2;
     position: relative;
@@ -319,8 +319,8 @@ const Page43 = () => {
     display: block;
     width: 100%;
     padding: 12px 15px;
-    background-color: #26374a;
-    border: 1px solid #26374a;
+    background-color: #8C8C8C;
+    border: 1px solid #404040;
     border-radius: 4px;
     cursor: pointer;
     font-family: Arial, sans-serif;
@@ -329,16 +329,20 @@ const Page43 = () => {
     list-style: none;
 }
 .page43-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.page43-table-wrapper details > summary:hover { background-color: #1e2a3a; }
+.page43-table-wrapper details > summary:hover { background-color: #404040 !important; }
+.page43-table-wrapper button[type="button"]:hover,
+.page43-table-wrapper button:hover,
+.page43-chart-frame button[type="button"]:hover,
+.page43-chart-frame button:hover { background-color: #404040 !important; }
 .page43-table-wrapper .table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; }
 .page43-table-wrapper .table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-/* Footer uses global .wb-fnote styles (Lato 1.4rem h2, Noto Sans 1rem #333 body) */
+/* Footer uses global .wb-fnote typography (see index.css) */
 .page43-footer p {
     margin: 0 0 1rem 0;
-    font-family: 'Noto Sans', sans-serif;
+    font-family: var(--font-body);
     font-size: 1rem;
     line-height: 1.65;
-    color: #333;
+    color: var(--gc-text);
 }
 .page43-footer p:last-child { margin-bottom: 0; }
 @media (max-width: 768px) {
@@ -370,7 +374,7 @@ const Page43 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedPoints(null)}
-                                        style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
+                                        style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
                                     >
                                         {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
                                     </button>
@@ -435,10 +439,10 @@ const Page43 = () => {
                                     </tbody>
                                 </table>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                     </button>
-                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                     </button>
                                 </div>

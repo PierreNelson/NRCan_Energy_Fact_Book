@@ -26,10 +26,10 @@ const SectionFour = () => {
 
     return (
         <div className="section-four-container">
-            <div id="energy-efficiency-overview">
+            <div id="energy-efficiency-overview" className="section-four-page">
                 <Page47 />
             </div>
-            <div id="energy-use" className="section-four-page">
+            <div id="energy-use" className="section-four-page page-with-title-divider">
                 <Page48 />
             </div>
             <div id="secondary-energy-by-fuel" className="section-four-page">

@@ -313,6 +313,11 @@ const Page49 = () => {
 
     return (
         <div className="page49-root" style={{ padding: layoutPadding }}>
+            <style>{`
+.page49-chart-frame details > summary:hover { background-color: #404040 !important; }
+.page49-chart-frame button[type="button"]:hover,
+.page49-chart-frame button:hover { background-color: #404040 !important; }
+            `}</style>
             <ul className="page49-bullets">
                 <li>{getText('page49_bullet1', lang)}</li>
                 {hasData && TE != null && (
@@ -439,7 +444,7 @@ const Page49 = () => {
                                 <div className="page49-donut-wrap" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', minHeight: 480 }}>
                                     {effectiveSelectedSlices !== null && (
                                             <div style={{ marginBottom: 8 }}>
-                                                <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                                <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                             </div>
                                         )}
                                         <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 450, height: 450, margin: 0, position: 'relative' }}>
@@ -486,8 +491,8 @@ const Page49 = () => {
                                         color: '#ffffff',
                                         fontWeight: 'bold',
                                         padding: '10px',
-                                        border: '1px solid #26374a',
-                                        backgroundColor: '#26374a',
+                                        border: '1px solid #404040',
+                                        backgroundColor: '#8C8C8C',
                                         borderRadius: '4px',
                                         listStyle: 'none'
                                     }}
@@ -519,10 +524,10 @@ const Page49 = () => {
                                     </table>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                     </button>
-                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
+                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
                                         {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                     </button>
                                 </div>

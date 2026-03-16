@@ -276,8 +276,8 @@ const Page20 = () => {
                         onClick={() => downloadTableAsCSV()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -291,8 +291,8 @@ const Page20 = () => {
                         onClick={() => downloadTableAsDocx()}
                         style={{
                             padding: '8px 16px',
-                            backgroundColor: '#26374a',
-                            border: '1px solid #26374a',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontFamily: 'Arial, sans-serif',
@@ -696,8 +696,8 @@ const Page20 = () => {
                     display: block;
                     width: 100%;
                     padding: 12px 15px;
-                    background-color: #26374a;
-                    border: 1px solid #26374a;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: bold;
@@ -707,7 +707,16 @@ const Page20 = () => {
                 }
 
                 .page20-data-table > summary:hover {
-                    background-color: #1e2a3a;
+                    background-color: #404040 !important;
+                }
+
+                .page20-data-table button[type="button"]:hover,
+                .page20-data-table button:hover,
+                .page20-chart-frame button[type="button"]:hover,
+                .page20-chart-frame button:hover,
+                .page20-chart-wrapper button[type="button"]:hover,
+                .page20-chart-wrapper button:hover {
+                    background-color: #404040 !important;
                 }
 
                 .page20-data-table > summary::-webkit-details-marker {
@@ -742,7 +751,7 @@ const Page20 = () => {
                                 <figure ref={chartRef} className="page20-chart-wrapper">
                                     {selectedPoints !== null && (
                                         <div style={{ marginBottom: 8 }}>
-                                            <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#26374a', border: '1px solid #26374a', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                            <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
                                         </div>
                                     )}
                                     <Plot
