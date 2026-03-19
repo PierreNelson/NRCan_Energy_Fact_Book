@@ -572,6 +572,29 @@ const Page8 = () => {
                     margin-bottom: 20px;
                     box-sizing: border-box;
                 }
+                .page8-chart-frame .page8-chart-title-block {
+                    margin-bottom: 20px;
+                }
+                .page8-chart-frame .page8-chart-title-block h1 {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
+                    font-weight: bold;
+                    color: var(--gc-text);
+                    margin: 0 0 0.25em 0;
+                    white-space: pre-line;
+                }
+                .page8-chart-frame .page8-chart-title-block .page8-subtitle {
+                    margin: 0;
+                }
+                .page8-chart-frame .page8-chart-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
+                    font-weight: bold;
+                    color: var(--gc-text);
+                    text-align: center;
+                    margin: 0 0 1em 0;
+                    white-space: pre-line;
+                }
 
                 .page8-year-selector {
                     display: flex;
@@ -782,6 +805,9 @@ const Page8 = () => {
                     .page8-subtitle {
                         font-size: 26px;
                     }
+                    .page8-chart-frame .page8-chart-title {
+                        font-size: 26px;
+                    }
                     .page8-year-label {
                         font-size: 18px;
                     }
@@ -928,16 +954,16 @@ const Page8 = () => {
                 <header 
                     className="page8-header"
                     role="region"
-                    aria-label={lang === 'en' 
-                        ? `${stripHtml(getText('page8_title', lang))} - Energy sector direct nominal GDP (millions of dollars)`
-                        : `${stripHtml(getText('page8_title', lang))} - PIB nominal direct du secteur de l'énergie (millions de dollars)`
-                    }
+                    aria-label={getText('page8_title', lang)}
                     tabIndex="0"
                 >
                     <h1 className="page8-title" aria-hidden="true">
                         {getText('page8_title', lang)}
                     </h1>
-                    <p className="page8-subtitle" aria-hidden="true" style={{ whiteSpace: 'pre-line' }}>
+                </header>
+                {/* Chart frame: chart title inside (centered), then year selector and chart */}
+                <div className="page8-chart-frame">
+                    <p className="page8-chart-title" aria-hidden="true">
                         {getText('page8_subtitle', lang).split('*')[0]}
                         {'\n'}
                         {getText('page8_subtitle', lang).split('*').slice(1).join('*')}
@@ -947,9 +973,6 @@ const Page8 = () => {
                             </a>
                         </span>
                     </p>
-                </header>
-                {/* Chart Frame with Year Selector and Chart */}
-                <div className="page8-chart-frame">
                 {/* SINGLE-SELECT RADIO DROPDOWN */}
                 <div 
                     ref={yearDropdownRef} 

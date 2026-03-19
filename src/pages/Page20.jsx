@@ -578,6 +578,7 @@ const Page20 = () => {
                     color: var(--gc-text);
                     line-height: 1.2;
                     max-width: 100%;
+                    text-align: center;
                 }
 
                 .page20-legend-item {

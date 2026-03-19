@@ -445,7 +445,7 @@ const Page5 = () => {
 .page5-title { font-family: 'Lato', sans-serif; font-size: 41px; font-weight: bold; color: var(--gc-text, #332f30); margin-top: 0; margin-bottom: 25px; line-height: 1.2; position: relative; padding-bottom: 0.5em; }
 .page5-title::after { content: ''; position: absolute; left: 0; bottom: 0.2em; width: 72px; height: 6px; background-color: var(--gc-red, #A62A1E); }
 .page5-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
-.page5-chart-title { font-family: 'Lato', sans-serif; font-size: 29px; font-weight: bold; color: #333333; margin-top: 0; margin-bottom: 10px; }
+.page5-chart-title { font-family: 'Lato', sans-serif; font-size: 29px; font-weight: bold; color: #333333; margin-top: 0; margin-bottom: 10px; text-align: center; }
 .page5-chart { width: 100%; height: 420px; position: relative; z-index: 1; }
 .page5-chart button[type="button"]:hover,
 .page5-chart button:hover,

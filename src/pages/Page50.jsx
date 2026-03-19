@@ -300,15 +300,14 @@ const Page50 = () => {
     gap: 2rem;
     margin-top: 0;
 }
-.page50-visual { display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; width: 100%; min-width: 0; }
-.page50-visual-imgs { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; min-width: 0; flex-shrink: 0; }
+.page50-visual-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 0.85rem; width: 100%; min-width: 0; }
 .page50-visual-img { max-width: 180px; height: auto; object-fit: contain; }
 .page50-visual-img-first { max-width: 360px; width: 360px; height: auto; object-fit: contain; }
 .page50-visual-img, .page50-visual-img-first {
     transform: scale(var(--page50-img-scale, 1));
     transform-origin: top left;
 }
-.page50-visual-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; min-width: 0; flex: 1 1 16rem; max-width: 100%; }
+.page50-visual-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; min-width: 0; width: 100%; max-width: 100%; }
 .page50-visual-row .page50-visual-text { min-width: 0; flex: 1 1 0; max-width: 100%; }
 .page50-visual-text {
     display: block;
@@ -436,31 +435,25 @@ const Page50 = () => {
                     {error && <p style={{ color: '#c00' }}>{error}</p>}
                     {!loading && !error && !hasData && <p>{getText('page50_no_data', lang)}</p>}
                     {!loading && !error && hasData && (
-                        <>
-                            <div className="page50-visual">
-                                <div className="page50-visual-imgs">
-                                    <img src={page50Bg1} alt="" className="page50-visual-img page50-visual-img-first" aria-hidden="true" />
-                                    <div className="page50-visual-row">
-                                        <img src={terPct != null && terPct < 0 ? page50Bg4 : page50Bg2} alt="" className="page50-visual-img" aria-hidden="true" />
-                                        <p className="page50-visual-text">
-                                            <span className="page50-visual-lead">{terPct != null && terPct < 0 ? getText('page50_visual1_lead_decreased', lang) : getText('page50_visual1_lead', lang)}</span>{' '}
-                                            <span className="page50-visual-pct">{terPct != null ? `${terPct < 0 ? Math.abs(terPct) : terPct}%` : '–'}</span>{' '}
-                                            {getText('page50_visual1_since', lang)}
-                                        </p>
-                                    </div>
-                                </div>
+                        <div className="page50-visual-wrap">
+                            <img src={page50Bg1} alt="" className="page50-visual-img page50-visual-img-first" aria-hidden="true" />
+                            <div className="page50-visual-row">
+                                <img src={terPct != null && terPct < 0 ? page50Bg4 : page50Bg2} alt="" className="page50-visual-img" aria-hidden="true" />
+                                <p className="page50-visual-text">
+                                    <span className="page50-visual-lead">{terPct != null && terPct < 0 ? getText('page50_visual1_lead_decreased', lang) : getText('page50_visual1_lead', lang)}</span>{' '}
+                                    <span className="page50-visual-pct">{terPct != null ? `${terPct < 0 ? Math.abs(terPct) : terPct}%` : '–'}</span>{' '}
+                                    {getText('page50_visual1_since', lang)}
+                                </p>
                             </div>
-                            <div className="page50-visual">
-                                <div className="page50-visual-row">
-                                    <img src={page50Bg3} alt="" className="page50-visual-img" aria-hidden="true" />
-                                    <p className="page50-visual-text">
-                                        <span className="page50-visual-lead">{getText('page50_visual2_lead', lang)}</span>{' '}
-                                        <span className="page50-visual-pct">{euxPct != null ? `${Math.abs(euxPct)}%` : '–'}</span>{' '}
-                                        {getText('page50_visual2_without', lang)}
-                                    </p>
-                                </div>
+                            <div className="page50-visual-row">
+                                <img src={page50Bg3} alt="" className="page50-visual-img" aria-hidden="true" />
+                                <p className="page50-visual-text">
+                                    <span className="page50-visual-lead">{getText('page50_visual2_lead', lang)}</span>{' '}
+                                    <span className="page50-visual-pct">{euxPct != null ? `${Math.abs(euxPct)}%` : '–'}</span>{' '}
+                                    {getText('page50_visual2_without', lang)}
+                                </p>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
 

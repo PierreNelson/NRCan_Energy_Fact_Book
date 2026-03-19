@@ -312,6 +312,7 @@ const Page43 = () => {
     font-weight: bold;
     color: var(--gc-text);
     margin: 0 0 15px 0;
+    text-align: center;
 }
 .page43-chart { width: 100%; height: 480px; }
 .page43-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }

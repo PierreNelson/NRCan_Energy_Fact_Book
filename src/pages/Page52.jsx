@@ -409,17 +409,17 @@ const Page52 = () => {
 .page52-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
 .page52-chart-title { font-family: 'Noto Sans', sans-serif; font-size: 20px; font-weight: bold; color: var(--gc-text, #333); margin: 0 0 12px 0; text-align: center; }
 .page52-chart { width: 100%; height: 520px; position: relative; z-index: 1; }
-.page52-visual-narrative-wrap { display: flex; flex-direction: column; width: 100%; gap: 0; }
+.page52-visual-narrative-wrap { display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: 0.85rem; }
 .page52-visual-img { max-width: 180px; height: auto; object-fit: contain; }
 .page52-visual-img-first { max-width: 360px; width: 360px; height: auto; object-fit: contain; }
-.page52-visual-narrative-wrap .page52-visual-row { margin: 0; padding: 0; }
-.page52-visual-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; min-width: 0; flex: 1 1 16rem; max-width: 100%; }
+.page52-visual-narrative-wrap .page52-visual-row { margin: 0; padding: 0; width: 100%; }
+.page52-visual-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; min-width: 0; max-width: 100%; }
 .page52-visual-narrative-wrap .page52-visual-row .page52-visual-text { min-width: 0; flex: 1 1 0; max-width: 100%; margin: 0 !important; padding: 0 !important; }
 .page52-visual-text { display: block; font-size: 1.25rem; color: #333; line-height: 1.4; overflow-wrap: anywhere; word-wrap: break-word; word-break: break-word; max-width: 100%; box-sizing: border-box; margin: 0; }
 .page52-visual-text .page52-visual-lead { font-weight: bold; color: var(--gc-text, #26374a); }
 .page52-visual-pct { font-size: 2.5rem; font-weight: bold; color: #c8782a; }
-.page52-narrative { margin-top: 1.5rem; }
-.page52-narrative p { margin-top: -50px; margin-bottom: 0; font-size: 1.2rem; color: #333; line-height: 1.6; }
+.page52-narrative { margin-top: 1.25rem; margin-bottom: 0; }
+.page52-narrative p { margin: 0; font-size: 1.2rem; color: #333; line-height: 1.6; }
 .page52-table-responsive { display: block; width: 100%; overflow-x: auto; }
 .page52-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
 .page52-chart-frame details > summary:hover { background-color: #404040 !important; }
@@ -586,12 +586,9 @@ const Page52 = () => {
 
                     {selectedRow && (
                         <>
-                            <div className="page52-visual-narrative-wrap" style={{ display: 'flex', flexDirection: 'column', gap: 0, width: '100%' }}>
-                                {/* Large header graphic */}
-                                <img src={page52Bg1} alt="" className="page52-visual-img page52-visual-img-first" aria-hidden="true" style={{ marginTop: '1.5rem' }} />
-
-                                {/* Row 1 - large negative margin pulls row 2 up to reduce visible gap */}
-                                <div className="page52-visual-row" style={{ margin: 0, padding: 0, marginBottom: -90 }}>
+                            <div className="page52-visual-narrative-wrap">
+                                <img src={page52Bg1} alt="" className="page52-visual-img page52-visual-img-first" aria-hidden="true" />
+                                <div className="page52-visual-row">
                                     <img src={selectedRow.chEuPct != null && selectedRow.chEuPct < 0 ? page52Bg6 : page52Bg2} alt="" className="page52-visual-img" aria-hidden="true" />
                                     <p className="page52-visual-text" style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>
                                         {selectedRow.chEuPct != null ? (
@@ -605,9 +602,7 @@ const Page52 = () => {
                                         )}
                                     </p>
                                 </div>
-
-                                {/* Row 2 - large negative margin pulls row 3 up */}
-                                <div className="page52-visual-row" style={{ margin: 0, padding: 0, marginBottom: -90 }}>
+                                <div className="page52-visual-row">
                                     <img src={page52Bg3} alt="" className="page52-visual-img" aria-hidden="true" />
                                     <p className="page52-visual-text" style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>
                                         <span className="page52-visual-lead">{getText('page52_narrative_1_but', lang)}</span>
@@ -615,9 +610,7 @@ const Page52 = () => {
                                         {' '}{getText('page52_narrative_1_without', lang)}
                                     </p>
                                 </div>
-
-                                {/* Row 3 - no negative margin */}
-                                <div className="page52-visual-row" style={{ margin: 0, padding: 0 }}>
+                                <div className="page52-visual-row">
                                     <img src={selectedRow.eiPct != null && selectedRow.eiPct > 0 ? page52Bg4 : page52Bg5} alt="" className="page52-visual-img" aria-hidden="true" />
                                     <p className="page52-visual-text" style={{ margin: 0, padding: 0, lineHeight: 1.2 }}>
                                         <span className="page52-visual-lead">

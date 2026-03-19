@@ -370,6 +370,7 @@ const Page16 = () => {
     color: var(--gc-text);
     line-height: 1.2;
     margin: 0 0 15px 0;
+    text-align: center;
 }
 .page16-chart { width: 100%; height: 340px; }
 .page16-chart button[type="button"]:hover,

@@ -1404,3 +1404,69 @@ details .table-responsive {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* ===============================================
+   CHART TITLES – same as Page 5 (all pages)
+   font: Lato 29px bold, color #333333, centered
+   =============================================== */
+.page2-chart-title,
+.page2-rankings-title,
+.page4-chart-title,
+.page5-chart-title,
+.page8-chart-frame .page8-chart-title,
+.page10-chart-title,
+.page11-chart-title,
+.page16-chart-title,
+.page17-chart-title,
+.page20-chart-title,
+.page24-chart-title,
+.page24h-chart-title,
+.page28-chart-title,
+.page28h-chart-title,
+.page30-chart-title,
+.page31-chart-title,
+.page32-chart-title,
+.page37-chart-title,
+.page37h-chart-title,
+.page43-chart-title,
+.page48-chart-title,
+.page49-chart-title,
+.page51-chart-title,
+.page52-chart-title {
+  font-family: 'Lato', sans-serif !important;
+  font-size: 29px !important;
+  font-weight: bold !important;
+  color: #333333 !important;
+  margin-top: 0 !important;
+  margin-bottom: 10px !important;
+  text-align: center !important;
+}
+
+@media (max-width: 768px) {
+  .page2-chart-title,
+  .page2-rankings-title,
+  .page4-chart-title,
+  .page5-chart-title,
+  .page8-chart-frame .page8-chart-title,
+  .page10-chart-title,
+  .page11-chart-title,
+  .page16-chart-title,
+  .page17-chart-title,
+  .page20-chart-title,
+  .page24-chart-title,
+  .page24h-chart-title,
+  .page28-chart-title,
+  .page28h-chart-title,
+  .page30-chart-title,
+  .page31-chart-title,
+  .page32-chart-title,
+  .page37-chart-title,
+  .page37h-chart-title,
+  .page43-chart-title,
+  .page48-chart-title,
+  .page49-chart-title,
+  .page51-chart-title,
+  .page52-chart-title {
+    font-size: 26px !important;
+  }
+}

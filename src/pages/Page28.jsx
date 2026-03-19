@@ -865,6 +865,7 @@ const Page28 = () => {
                         </ul>
 
                         <div className="page28-chart-frame">
+                            <h2 className="page28-chart-title" aria-hidden="true">{chartTitle}</h2>
                         <div className="page28-chart" style={{ position: 'relative' }}>
                             <div 
                                 role="region" 
@@ -967,13 +968,7 @@ const Page28 = () => {
                                             showlegend: false,
                                             clickmode: 'event',
                                             dragmode: windowWidth <= 768 ? false : 'zoom',
-                                            title: {
-                                                text: `<b>${getWrappedTitle(chartTitle, windowWidth)}</b>`,
-                                                font: { size: 18, family: 'Arial, sans-serif', color: '#333' },
-                                                x: 0.5,
-                                                xanchor: 'center',
-                                                y: 0.95
-                                            },
+                                            title: { text: '', font: { size: 1 } },
                                             margin: { l: 60, r: 60, t: 50, b: 40 },
                                             xaxis: {
                                                 tickvals: years,

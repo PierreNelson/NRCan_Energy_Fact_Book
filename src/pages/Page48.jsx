@@ -760,18 +760,17 @@ const Page48 = () => {
                         </div>
 
                         <div className="page48-charts-anchor">
-                        <p className="page48-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
-                            {getText('page48_chart_title', lang)}
-                            <span id="fn-asterisk-rf-page48" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
-                                <a className="fn-lnk" href="#fn-asterisk-page48" onClick={scrollToFootnote}>
-                                    <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                                    <span aria-hidden="true">*</span>
-                                </a>
-                            </span>
-                        </p>
-
                         <div className="page48-chart-wrap" ref={chartRef}>
                             <div className="page48-chart-frame">
+                            <p className="page48-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', marginTop: 0, marginBottom: '1rem' }}>
+                                {getText('page48_chart_title', lang)}
+                                <span id="fn-asterisk-rf-page48" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
+                                    <a className="fn-lnk" href="#fn-asterisk-page48" onClick={scrollToFootnote}>
+                                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
+                                        <span aria-hidden="true">*</span>
+                                    </a>
+                                </span>
+                            </p>
                             <div className="page48-pie-wrap" ref={pieChartRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                                 {selectedSlices !== null && (
                                         <div style={{ marginBottom: 8 }}>

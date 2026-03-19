@@ -1014,6 +1014,10 @@ const Page9 = () => {
                         margin-left: 0% !important;
                     }
 
+                    .page9-map-section-title {
+                        margin-top: -15px !important;
+                    }
+
                     .page9-legend {
                         text-align: center;
                         margin-left: 20px !important;
@@ -1163,7 +1167,7 @@ const Page9 = () => {
                                 backgroundColor: '#fff',
                                 border: '1px solid #ccc',
                                 borderRadius: '4px',
-                                zIndex: 100,
+                                zIndex: 1000,
                                 boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                             }}>
                                 {years.map((yr) => {

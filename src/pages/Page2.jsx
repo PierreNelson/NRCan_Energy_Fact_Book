@@ -4,7 +4,6 @@ import { getWorldEnergyProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import capsuleGraphic from '../assets/page2_capsule_graphic.jpg';
 
 const Page2 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -998,59 +997,95 @@ const Page2 = () => {
                 .custom-chart-container {
                     position: relative;
                     width: 100%;
-                    max-width: 600px;
-                    margin-left: 0;
+                    max-width: 380px;
+                    margin-left: auto;
                     margin-right: auto;
                 }
 
-                .chart-bg-image {
-                    width: 120%;
-                    height: auto;
-                    margin-left: -21.5%;
-                    display: block;
-                }
-
-                .chart-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
+                .page2-capsule-graphic {
                     display: flex;
                     flex-direction: column;
-                    justify-content: space-between;
-                    padding: 1% 0 2% 0;
-                }
-
-                .chart-row {
-                    display: flex;
-                    align-items: center;
+                    gap: 8px;
                     width: 100%;
-                    height: 14%;
+                    font-family: 'Noto Sans', sans-serif;
                 }
 
-                .chart-text-left {
-                    width: 50%;
-                    padding-left: 3%;
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: clamp(12px, 2.2vw, 16px);
-                    color: #000000;
+                .page2-capsule-row {
                     display: flex;
                     align-items: center;
-                    white-space: nowrap;
+                    min-height: 52px;
+                    gap: 0;
+                    min-width: 0;
                 }
 
-                .chart-text-right {
-                    width: 15%;
-                    margin-left: auto;
-                    margin-right: 1%;
+                .page2-capsule-bar-wrap {
+                    flex: 0 0 28%;
+                    min-width: 0;
                     display: flex;
+                    align-items: center;
+                }
+
+                .page2-capsule-bar {
+                    min-height: 44px;
+                    min-width: 82px;
+                    border-radius: 999px;
+                    background-color: #d1d1d1;
+                    display: flex;
+                    align-items: center;
                     justify-content: center;
+                    text-align: center;
+                    padding: 10px 12px;
+                    font-size: clamp(13px, 1.5vw, 15px);
+                    color: #333;
+                    box-sizing: border-box;
+                    width: 100%;
+                    max-width: 100%;
+                }
+
+                .page2-capsule-bar .page2-capsule-bar-text {
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    word-break: break-word;
+                    white-space: normal;
+                    line-height: 1.3;
+                }
+
+                .page2-capsule-row-canada .page2-capsule-bar {
+                    background-color: var(--gc-accent);
+                    color: #fff;
+                }
+
+                .page2-capsule-connector {
+                    flex: 1 1 0;
+                    min-width: 10px;
+                    height: 2px;
+                    background-color: #b0b0b0;
+                }
+
+                .page2-capsule-row-canada .page2-capsule-connector {
+                    background-color: var(--gc-accent);
+                }
+
+                .page2-capsule-pill {
+                    flex: 0 0 64px;
+                    height: 36px;
+                    min-width: 64px;
+                    border-radius: 999px;
+                    border: 1px solid #b0b0b0;
+                    background-color: #fff;
+                    display: flex;
                     align-items: center;
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: clamp(12px, 2.5vw, 18px);
-                    color: #000000;
-                    white-space: nowrap;
+                    justify-content: center;
+                    font-size: 15px;
+                    color: #333;
+                    box-sizing: border-box;
+                }
+
+                .page2-capsule-row-canada .page2-capsule-pill {
+                    border-width: 2px;
+                    border-color: var(--gc-accent);
+                    font-weight: bold;
+                    font-size: 16px;
                 }
 
                 .layout-stacked {
@@ -1063,36 +1098,8 @@ const Page2 = () => {
 
                 .layout-stacked .custom-chart-container {
                     width: 100% !important;
-                    /* 1. Set the exact max-width you requested */
-                    max-width: 1280px !important; 
-                    /* 2. Set height to match the approximate height of the 6-row data table */
-                    height: 350px !important;     
+                    max-width: 1280px !important;
                     margin: 0 auto !important;
-                    /* Prevent the cropped image edges from spilling out */
-                    overflow: hidden !important;  
-                }
-
-                .layout-stacked .chart-bg-image {
-                    width: 124% !important;
-                    margin-left: -22.5% !important;
-                    /* 3. Force the image to shrink to the 350px height */
-                    height: 100% !important;      
-                    /* 4. Allow the aspect ratio to squish vertically */
-                    object-fit: fill !important;  
-                }
-
-                .layout-stacked .chart-overlay {
-                    padding: 1% 0 2% 0 !important;
-                }
-
-                .layout-stacked .chart-text-left {
-                    width: 45% !important;
-                    padding-left: 2% !important;
-                }
-
-                .layout-stacked .chart-text-right {
-                    width: 18% !important;
-                    margin-right: -5% !important;
                 }
 
                 .layout-stacked .page2-rankings-section {
@@ -1350,33 +1357,28 @@ const Page2 = () => {
                             }
                             tabIndex="0"
                         >
-                            <img 
-                                src={capsuleGraphic} 
-                                alt="" 
-                                aria-hidden="true" 
-                                className="chart-bg-image"
-                            />
-                            {/* Visual display hidden from screen readers */}
-                            <div className="chart-overlay" aria-hidden="true">
+                            <div className="page2-capsule-graphic" aria-hidden="true">
                                 {topProducers.map((producer, index) => {
                                     const isCanada = producer.key === 'canada';
+                                    const maxPct = topProducers[0]?.pct || 1;
+                                    const rawRatio = maxPct > 0 ? producer.pct / maxPct : 1;
+                                    const barWidthPct = 62 + 18 * rawRatio;
                                     return (
-                                        <div key={producer.key} className="chart-row">
-                                            <div 
-                                                className="chart-text-left"
-                                                style={{ 
-                                                    fontWeight: isCanada ? 'bold' : 'normal'
-                                                }}
-                                            >
-                                                {index + 1} {producer.name}
+                                        <div
+                                            key={producer.key}
+                                            className={`page2-capsule-row ${isCanada ? 'page2-capsule-row-canada' : ''}`}
+                                        >
+                                            <div className="page2-capsule-bar-wrap">
+                                                <div
+                                                    className="page2-capsule-bar"
+                                                    style={{ width: `${barWidthPct}%` }}
+                                                >
+                                                    <span className="page2-capsule-bar-text">{index + 1} {producer.name}</span>
+                                                </div>
                                             </div>
-                                            <div 
-                                                className="chart-text-right"
-                                                style={{
-                                                    fontWeight: isCanada ? 'bold' : 'normal'
-                                                }}
-                                            >
-                                                {producer.pctRounded}%
+                                            <div className="page2-capsule-connector" />
+                                            <div className="page2-capsule-pill">
+                                                <span className="page2-capsule-pill-text">{producer.pctRounded}%</span>
                                             </div>
                                         </div>
                                     );

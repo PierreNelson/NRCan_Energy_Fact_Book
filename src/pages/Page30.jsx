@@ -1123,13 +1123,13 @@ const Page30 = () => {
                     background-color: var(--gc-red);
                 }
 
-                .page30-subtitle {
+                .page30-chart-title {
                     font-family: 'Lato', sans-serif;
                     font-size: 39px;
                     font-weight: bold;
                     color: #58585a;
-                    margin: 0;
-                    padding-top: 5px;
+                    text-align: center;
+                    margin: 0 0 1em 0;
                 }
 
                 .page30-chart-frame {
@@ -1253,7 +1253,7 @@ const Page30 = () => {
                     .page30-title {
                         font-size: 37px;
                     }
-                    .page30-subtitle {
+                    .page30-chart-title {
                         font-size: 35px;
                     }
 
@@ -1279,7 +1279,7 @@ const Page30 = () => {
                     .page30-title {
                         font-size: 1.4rem;
                     }
-                    .page30-subtitle {
+                    .page30-chart-title {
                         font-size: 1.1rem;
                     }
                     .page30-legend {
@@ -1353,12 +1353,12 @@ const Page30 = () => {
                     <h1 className="page30-title">
                         {getText('page30_title', lang)}
                     </h1>
-                    <p className="page30-subtitle">
-                        {getText('page30_subtitle', lang)}
-                    </p>
                 </header>
 
                 <div className="page30-chart-frame">
+                    <p className="page30-chart-title">
+                        {getText('page30_subtitle', lang)}
+                    </p>
                     <div className="page30-content">
                         <div className="page30-map-wrapper">
                             <div 

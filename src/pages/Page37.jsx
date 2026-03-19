@@ -934,6 +934,8 @@ const getAccessibleDataTable = () => {
                     height: calc(100vh - 550px); 
                     min-height: 400px;
                     margin-bottom: 50px;
+                    position: relative;
+                    z-index: 1;
                 }
 
                 .page37-text-column {
@@ -968,14 +970,14 @@ const getAccessibleDataTable = () => {
                 }
 
                 .page37-data-table {
-                    margin-top: -50px;
+                    margin-top: 0px;
                     margin-bottom: 0;
                     font-family: Arial, sans-serif;
                     width: 100%;
                 }
 
                 .layout-stacked .page37-data-table {
-                    margin-top: 0px;
+                    margin-top: 50px;
                 }
 
                 .page37-data-table > summary {
@@ -1057,7 +1059,11 @@ const getAccessibleDataTable = () => {
                     }
 
                     .page37-data-table {
-                        margin-top: -80px;
+                        margin-top: -50px;
+                    }
+
+                    .layout-stacked .page37-data-table {
+                        margin-top: -50px;
                     }
 
                 }
@@ -1086,10 +1092,6 @@ const getAccessibleDataTable = () => {
                     }
                     .page37-chart-area {
                         height: 550px;
-                    }
-
-                     .page37-data-table {
-                        margin-top: -140px;
                     }
                 }
 
@@ -1138,7 +1140,11 @@ const getAccessibleDataTable = () => {
                     }
 
                      .page37-data-table {
-                        margin-top: 0px;
+                        margin-top: 50px;
+                    }
+
+                    .layout-stacked .page37-data-table {
+                        margin-top: 50px;
                     }
                 }
 
@@ -1151,7 +1157,11 @@ const getAccessibleDataTable = () => {
                     }
 
                       .page37-data-table {
-                        margin-top: -40px;
+                        margin-top: -20px;
+                    }
+
+                    .layout-stacked .page37-data-table {
+                        margin-top: -20px;
                     }
                 }
 
@@ -1164,6 +1174,12 @@ const getAccessibleDataTable = () => {
                     }
                     .page37-title {
                         font-size: 1.3rem;
+                    }
+                    .page37-data-table {
+                        margin-top: 0px;
+                    }
+                    .layout-stacked .page37-data-table {
+                        margin-top: 0px;
                     }
                 }
 
@@ -1193,6 +1209,8 @@ const getAccessibleDataTable = () => {
                     display: block;
                     width: 100%;
                     margin: 0;
+                    position: relative;
+                    z-index: 10;
                 }
 
                 .table-responsive {
