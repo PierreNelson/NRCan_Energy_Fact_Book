@@ -85,6 +85,10 @@ python scripts/data_retrieval.py
 
 This will download fresh data from the StatCan API and save it directly to `public/data/`.
 
+## Symphony + Linear + Codex (parallel agents)
+
+**Start here (beginner):** **[`docs/SYMPHONY-BEGINNER-GUIDE.md`](./docs/SYMPHONY-BEGINNER-GUIDE.md)** — full click-by-click setup. Then **[SYMPHONY-SETUP.md](./SYMPHONY-SETUP.md)** for the shorter reference. Agent rules: **[AGENTS.md](./AGENTS.md)**. Config: **`WORKFLOW.md`**. Optional Windows check: `powershell -ExecutionPolicy Bypass -File scripts/check-symphony-prereqs.ps1`.
+
 ## Accessibility
 
 This application follows WCAG 2.1 AA guidelines and Web Experience Toolkit (WET) standards.

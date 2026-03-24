@@ -41,3 +41,14 @@ venv/
 scripts/data_retrieval.py
 page52.png
 page52fr.png
+
+# Symphony + Codex orchestration (local paths, API keys via env; optional Windows runner)
+symphony_windows/
+scripts/run-symphony.ps1
+scripts/check-symphony-prereqs.ps1
+WORKFLOW.md
+.codex/
+SYMPHONY*.md
+docs/SYMPHONY*.md
+log/symphony.log
+log/symphony.log*

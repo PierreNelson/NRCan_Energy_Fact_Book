@@ -12,7 +12,6 @@ The website uses a **maximum width of 1140px** for all content. This is enforced
 | Property | Value | Notes |
 |----------|-------|-------|
 | Max content width | `1140px` | Controlled by `Layout.jsx` |
-| Max line length | `80ch` | For readability (StatCan recommendation) |
 | Side padding | Dynamic | Aligns with header anchors |
 
 Pages should **not** override these widths. The `Layout.jsx` component handles:

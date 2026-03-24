@@ -451,6 +451,36 @@ export async function getGHGEmissionsData() {
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
 }
 
+export async function getOilGasGhgSpotlightData() {
+    const allData = await loadAllData();
+    const vectors = [
+        'ghg_oilgas_spotlight_oil_sands',
+        'ghg_oilgas_spotlight_natural_gas',
+        'ghg_oilgas_spotlight_conventional_oil',
+        'ghg_oilgas_spotlight_other'
+    ];
+    const rows = allData.filter((row) => vectors.includes(row.vector));
+    const yearMap = {};
+    rows.forEach((row) => {
+        const y = row.ref_date;
+        if (!yearMap[y]) {
+            yearMap[y] = { year: y };
+        }
+        if (row.vector === 'ghg_oilgas_spotlight_oil_sands') {
+            yearMap[y].oil_sands = row.value;
+        } else if (row.vector === 'ghg_oilgas_spotlight_natural_gas') {
+            yearMap[y].natural_gas = row.value;
+        } else if (row.vector === 'ghg_oilgas_spotlight_conventional_oil') {
+            yearMap[y].conventional_oil = row.value;
+        } else if (row.vector === 'ghg_oilgas_spotlight_other') {
+            yearMap[y].other = row.value;
+        }
+    });
+    return Object.values(yearMap)
+        .filter((r) => r.oil_sands != null && r.natural_gas != null && r.conventional_oil != null && r.other != null)
+        .sort((a, b) => a.year - b.year);
+}
+
 /**
  * Get environmental and clean technology snapshot data.
  * Returns { snapshots, years, tmx }. snapshots: array of snapshot objects (one per year 2007..latest);

@@ -37,7 +37,7 @@ const Sidebar = ({ lang }) => {
     // Close sidebar when mouse leaves
     // At tablet/mobile (1366px and below), don't close on mouse leave - user must click button
     // At desktop (above 1366px), CSS hover handles everything, JS state not used
-    const handleMouseLeave = (event) => {
+    const handleMouseLeave = () => {
         // Don't close on mouse leave - at desktop CSS handles it, at tablet user clicks button
         // This function is kept for potential future use but currently does nothing
     };
@@ -459,6 +459,30 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section6_title', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-6#refined-petroleum-products"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section6_refined_petroleum', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-6#crude-oil-international"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section6_crude_international', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-6#natural-gas-international"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section6_natural_gas', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-6#coal-international"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section6_coal_international', lang)}
                             </NavLink>
                         </div>
                     )}

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { NavLink, useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import page103Image from '../assets/page103_bg.jpg';
 
@@ -89,6 +89,27 @@ const Page103 = () => {
     color: #ebe8e1;
 }
 
+.page103-list-item a {
+    color: #ebe8e1;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.page103-list-item a:hover,
+.page103-list-item a:focus {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.page103-list-item a:visited {
+    color: #ebe8e1;
+}
+
+.page103-list-item a:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
 @media (max-width: 1745px) { .page103-title-text { font-size: 4.2rem; } }
 @media (max-width: 1536px) { .page103-title-text { font-size: 4.0rem; } }
 @media (max-width: 1280px) { .page103-title-text { font-size: 3.8rem; } }
@@ -142,11 +163,19 @@ const Page103 = () => {
 
                 <nav className="page103-list" aria-label={getText('page103_nav_label', lang)}>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontFamily: "'Noto Sans', sans-serif" }}>
-                        <li className="page103-list-item">{getText('page103_item1', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item2', lang)}</li>
+                        <li className="page103-list-item">
+                            <NavLink to="/section-6#crude-oil-international">{getText('page103_item1', lang)}</NavLink>
+                        </li>
+                        <li className="page103-list-item">
+                            <NavLink to="/section-6#natural-gas-international">{getText('page103_item2', lang)}</NavLink>
+                        </li>
                         <li className="page103-list-item">{getText('page103_item3', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item4', lang)}</li>
-                        <li className="page103-list-item">{getText('page103_item5', lang)}</li>
+                        <li className="page103-list-item">
+                            <NavLink to="/section-6#refined-petroleum-products">{getText('page103_item4', lang)}</NavLink>
+                        </li>
+                        <li className="page103-list-item">
+                            <NavLink to="/section-6#coal-international">{getText('page103_item5', lang)}</NavLink>
+                        </li>
                         <li className="page103-list-item">{getText('page103_item6', lang)}</li>
                     </ul>
                 </nav>

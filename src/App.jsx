@@ -112,6 +112,7 @@ function App() {
               <Glossary />
             </Suspense>
           } />
+
         </Route>
       </Routes>
     </HashRouter>

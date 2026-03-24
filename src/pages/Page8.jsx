@@ -764,8 +764,7 @@ const Page8 = () => {
                     border-collapse: collapse;
                     margin-top: 0;
                     border: 1px solid #ccc;
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
+                    font-family: var(--font-body);
                 }
 
                 .page8-data-table th,
@@ -815,9 +814,6 @@ const Page8 = () => {
                         font-size: 18px;
                     }
                     .page8-data-table summary {
-                        font-size: 18px;
-                    }
-                    .page8-data-table table {
                         font-size: 18px;
                     }
 
@@ -919,6 +915,11 @@ const Page8 = () => {
                     display: none;
                 }
 
+                .page8-table-wrapper details > summary::marker {
+                    display: none;
+                    content: '';
+                }
+
                 .page8-table-wrapper details > summary:hover {
                     background-color: #404040 !important;
                 }
@@ -948,6 +949,17 @@ const Page8 = () => {
                 .table-responsive table td {
                     white-space: nowrap;
                     padding: 8px 12px;
+                }
+
+                .page8-table-wrapper .table-responsive table.table {
+                    font-family: var(--font-body);
+                    color: var(--gc-text);
+                }
+
+                .page8-table-wrapper .table-responsive table th,
+                .page8-table-wrapper .table-responsive table td {
+                    font-family: var(--font-body);
+                    color: var(--gc-text);
                 }
             `}</style>
             <div className="page8-container">

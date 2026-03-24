@@ -2377,6 +2377,47 @@ def process_ghg_emissions_data():
             ('ghg_waste_others', 'GHG Emissions - Waste and Others', 'Mt CO2 eq', 'megatonnes', source_org, source_url),
         ]
         
+        oil_gas_by_year = sector_data.get('oil_gas', {})
+        if oil_gas_by_year:
+            nrcan_url = (
+                'https://natural-resources.canada.ca/science-data/data-analysis/'
+                'natural-resources-major-projects-planned-under-construction-2024-2034'
+            )
+            spotlight_org = 'Natural Resources Canada'
+            spotlight_source = 'Oil and gas GHG spotlight (interim modeled split)'
+            spotlight_meta = [
+                ('ghg_oilgas_spotlight_oil_sands', 'GHG oil and gas spotlight - Oil sands', 'Mt CO2 eq', 'megatonnes', spotlight_source, spotlight_org, nrcan_url),
+                ('ghg_oilgas_spotlight_natural_gas', 'GHG oil and gas spotlight - Natural gas', 'Mt CO2 eq', 'megatonnes', spotlight_source, spotlight_org, nrcan_url),
+                ('ghg_oilgas_spotlight_conventional_oil', 'GHG oil and gas spotlight - Conventional oil', 'Mt CO2 eq', 'megatonnes', spotlight_source, spotlight_org, nrcan_url),
+                ('ghg_oilgas_spotlight_other', 'GHG oil and gas spotlight - Other', 'Mt CO2 eq', 'megatonnes', spotlight_source, spotlight_org, nrcan_url),
+            ]
+            metadata_rows.extend(spotlight_meta)
+            for year in sorted(oil_gas_by_year.keys()):
+                if year < 2000 or year > 2023:
+                    continue
+                try:
+                    T = float(oil_gas_by_year[year])
+                except (TypeError, ValueError):
+                    continue
+                t = min(1.0, max(0.0, (year - 2000) / 23.0))
+                sands_raw = 29.8 + t * 59.6
+                cg_raw = 135.8 + t * (104.5 - 135.8)
+                oth_raw = 12.0 + t * 2.0
+                sum_raw = sands_raw + cg_raw + oth_raw
+                if sum_raw <= 0:
+                    continue
+                f_scale = T / sum_raw
+                sands = sands_raw * f_scale
+                cg = cg_raw * f_scale
+                oth = oth_raw * f_scale
+                conv_share = 0.515 + t * (0.363 - 0.515)
+                conv = cg * conv_share
+                gas = cg - conv
+                data_rows.append(('ghg_oilgas_spotlight_oil_sands', year, round(sands, 1)))
+                data_rows.append(('ghg_oilgas_spotlight_natural_gas', year, round(gas, 1)))
+                data_rows.append(('ghg_oilgas_spotlight_conventional_oil', year, round(conv, 1)))
+                data_rows.append(('ghg_oilgas_spotlight_other', year, round(oth, 1)))
+        
         print(f"  Processed {len(data_rows)} data rows for GHG emissions")
         return data_rows, metadata_rows
         
