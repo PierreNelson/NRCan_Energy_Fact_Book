@@ -142,8 +142,8 @@ class Section1Indicators(SectionProcessor):
         Process economic contributions data (GDP, Jobs, Income).
         
         Data flow:
-        1. Fetch raw StatCan data → store in raw_statcan_data
-        2. Calculate aggregates → store in calc_economic_contributions
+        1. Fetch raw StatCan data → store in EEDAS ingest table (registry)
+        2. Calculate aggregates → store in nrcan_fb_s1_economic_contributions
         3. Export will pull from calc table with semantic vector names
         
         Returns:
@@ -191,7 +191,7 @@ class Section1Indicators(SectionProcessor):
             df_capex['year'] = pd.to_numeric(df_capex[capex_ref_date], errors='coerce')
         
         years = sorted(df_filtered['year'].dropna().unique())
-        calc_data = []  # For calc_economic_contributions table
+        calc_data = []  # For nrcan_fb_s1_economic_contributions
         data_rows = []  # For semantic vector export (backwards compatibility)
         
         for year in years:
@@ -272,10 +272,10 @@ class Section1Indicators(SectionProcessor):
             ('econ_investment_value_billions', 'Annual investment (billions)', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
-        # STEP 2: Store calculated data in calc_economic_contributions table
+        # STEP 2: Store calculated data in nrcan_fb_s1_economic_contributions
         if calc_data:
             self.repo.upsert_economic_contributions(calc_data)
-            print(f"    Stored {len(calc_data)} years in calc_economic_contributions")
+            print(f"    Stored {len(calc_data)} years in nrcan_fb_s1_economic_contributions")
         
         # Store semantic vectors for backwards compatibility
         return self.store_raw_data('economic_contributions', data_rows, metadata_rows)

@@ -1,15 +1,24 @@
 filename,title_en,title_fr
-glossary_calc_capital_expenditures.csv,Calculated table: calc_capital_expenditures,Table calculée : calc_capital_expenditures
-glossary_calc_clean_tech.csv,Calculated table: calc_clean_tech,Table calculée : calc_clean_tech
-glossary_calc_economic_contributions.csv,Calculated table: calc_economic_contributions,Table calculée : calc_economic_contributions
-glossary_calc_energy_use.csv,Calculated table: calc_energy_use,Table calculée : calc_energy_use
-glossary_calc_environmental_protection.csv,Calculated table: calc_environmental_protection,Table calculée : calc_environmental_protection
-glossary_calc_infrastructure.csv,Calculated table: calc_infrastructure,Table calculée : calc_infrastructure
-glossary_calc_international_investment.csv,Calculated table: calc_international_investment,Table calculée : calc_international_investment
-glossary_calc_provincial_gdp.csv,Calculated table: calc_provincial_gdp,Table calculée : calc_provincial_gdp
-glossary_calc_world_energy_production.csv,Calculated table: calc_world_energy_production,Table calculée : calc_world_energy_production
+glossary_calc_capital_expenditures.csv,Glossary Calc Capital Expenditures,Glossary Calc Capital Expenditures
+glossary_calc_clean_tech.csv,Glossary Calc Clean Tech,Glossary Calc Clean Tech
+glossary_calc_economic_contributions.csv,Glossary Calc Economic Contributions,Glossary Calc Economic Contributions
+glossary_calc_energy_use.csv,Glossary Calc Energy Use,Glossary Calc Energy Use
+glossary_calc_environmental_protection.csv,Glossary Calc Environmental Protection,Glossary Calc Environmental Protection
+glossary_calc_infrastructure.csv,Glossary Calc Infrastructure,Glossary Calc Infrastructure
+glossary_calc_international_investment.csv,Glossary Calc International Investment,Glossary Calc International Investment
+glossary_calc_provincial_gdp.csv,Glossary Calc Provincial Gdp,Glossary Calc Provincial Gdp
+glossary_calc_world_energy_production.csv,Glossary Calc World Energy Production,Glossary Calc World Energy Production
 glossary_data_sources.csv,Data sources registry,Registre des sources de données
 glossary_major_projects.csv,Major projects map (raw),Carte des grands projets (brut)
 glossary_metadata.csv,"Export metadata (vectors, units, sources)","Métadonnées d'export (vecteurs, unités, sources)"
+glossary_nrcan_fb_s1_economic_contributions.csv,Calculated table: nrcan_fb_s1_economic_contributions,Table calculée : nrcan_fb_s1_economic_contributions
+glossary_nrcan_fb_s1_provincial_gdp.csv,Calculated table: nrcan_fb_s1_provincial_gdp,Table calculée : nrcan_fb_s1_provincial_gdp
+glossary_nrcan_fb_s1_world_energy_production.csv,Calculated table: nrcan_fb_s1_world_energy_production,Table calculée : nrcan_fb_s1_world_energy_production
+glossary_nrcan_fb_s2_capital_expenditures.csv,Calculated table: nrcan_fb_s2_capital_expenditures,Table calculée : nrcan_fb_s2_capital_expenditures
+glossary_nrcan_fb_s2_clean_tech.csv,Calculated table: nrcan_fb_s2_clean_tech,Table calculée : nrcan_fb_s2_clean_tech
+glossary_nrcan_fb_s2_environmental_protection.csv,Calculated table: nrcan_fb_s2_environmental_protection,Table calculée : nrcan_fb_s2_environmental_protection
+glossary_nrcan_fb_s2_infrastructure.csv,Calculated table: nrcan_fb_s2_infrastructure,Table calculée : nrcan_fb_s2_infrastructure
+glossary_nrcan_fb_s2_international_investment.csv,Calculated table: nrcan_fb_s2_international_investment,Table calculée : nrcan_fb_s2_international_investment
+glossary_nrcan_fb_s4_energy_use.csv,Calculated table: nrcan_fb_s4_energy_use,Table calculée : nrcan_fb_s4_energy_use
 glossary_run_history.csv,Run history (audit log),Historique des exécutions (journal d'audit)
-glossary_series.csv,Time series (export_data),Séries temporelles (export_data)
+glossary_series.csv,Time series (nrcan_fb_export_data),Séries temporelles (nrcan_fb_export_data)

@@ -1,4 +1,25 @@
 run_id,source_key,run_type,status,rows_affected,error_message,started_at,completed_at,duration_seconds
+1295,environmental_clean_tech,fetch,success,60.0,,2026-03-27 08:15:42.973333,2026-03-27 08:17:24.213333,102
+1294,commercial_institutional,fetch,success,219.0,,2026-03-27 08:15:38.800000,2026-03-27 08:15:42.970000,4
+1293,residential_pie_charts,fetch,success,432.0,,2026-03-27 08:15:32.556666,2026-03-27 08:15:38.796666,6
+1292,residential_daily_lives,fetch,success,3.0,,2026-03-27 08:15:31.643333,2026-03-27 08:15:32.553333,1
+1291,seu_by_fuel,fetch,success,11.0,,2026-03-27 08:15:31.530000,2026-03-27 08:15:31.640000,0
+1290,energy_use,fetch,success,9.0,,2026-03-27 08:15:27.420000,2026-03-27 08:15:31.526666,4
+1289,major_projects_map,fetch,success,464.0,,2026-03-27 08:15:16.723333,2026-03-27 08:15:27.416666,11
+1288,clean_tech,fetch,success,93.0,,2026-03-27 08:15:15.926666,2026-03-27 08:15:16.720000,1
+1287,major_projects,fetch,success,32.0,,2026-03-27 08:15:15.226666,2026-03-27 08:15:15.923333,0
+1286,environmental_protection,fetch,failed,,"('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))",2026-03-27 08:14:55.563333,2026-03-27 08:15:15.220000,20
+1285,foreign_control,fetch,success,42.0,,2026-03-27 08:14:53.066666,2026-03-27 08:14:55.560000,2
+1284,international_investment,fetch,success,72.0,,2026-03-27 08:14:50.676666,2026-03-27 08:14:53.063333,3
+1283,investment_by_asset,fetch,success,272.0,,2026-03-27 08:14:20.640000,2026-03-27 08:14:50.673333,30
+1282,infrastructure,fetch,success,380.0,,2026-03-27 08:14:09.840000,2026-03-27 08:14:20.636666,11
+1281,capital_expenditures,fetch,success,0.0,,2026-03-27 08:13:50.066666,2026-03-27 08:14:09.833333,19
+1280,ghg_emissions,fetch,success,264.0,,2026-03-27 08:13:49.610000,2026-03-27 08:13:50.063333,1
+1279,canadian_energy_assets,fetch,success,120.0,,2026-03-27 08:13:48.933333,2026-03-27 08:13:49.610000,1
+1278,world_energy_production,fetch,success,595.0,,2026-03-27 08:13:42.203333,2026-03-27 08:13:48.930000,6
+1277,provincial_gdp,fetch,failed,,"Failed to fetch data from StatCan: ('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))",2026-03-27 08:13:22.473333,2026-03-27 08:13:42.196666,20
+1276,nominal_gdp,fetch,success,60.0,,2026-03-27 08:13:20.290000,2026-03-27 08:13:22.470000,2
+1275,economic_contributions,fetch,success,152.0,,2026-03-27 08:12:50.016666,2026-03-27 08:13:20.286666,30
 1274,commercial_institutional,fetch,success,219.0,,2026-03-11 06:57:48.033333,2026-03-11 06:57:51.260000,3
 1273,residential_pie_charts,fetch,success,432.0,,2026-03-11 06:57:43.210000,2026-03-11 06:57:48.030000,5
 1272,residential_daily_lives,fetch,success,99.0,,2026-03-11 06:57:40.103333,2026-03-11 06:57:43.206666,3

@@ -90,6 +90,40 @@
       padding-top: 1rem;
       border-top: 1px solid var(--gc-border);
     }
+    .global-search-wrap {
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: #f5f5f5;
+      border: 1px solid var(--gc-border);
+      border-radius: 4px;
+    }
+    .global-search-wrap label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--gc-header);
+    }
+    .global-search-wrap input[type="search"] {
+      width: 100%;
+      max-width: 560px;
+      padding: 0.65rem 0.85rem;
+      font-size: 1rem;
+      border: 2px solid var(--gc-header);
+      border-radius: 4px;
+    }
+    .global-search-wrap input[type="search"]:focus {
+      outline: 3px solid #ffbf47;
+      outline-offset: 2px;
+    }
+    .global-search-hint {
+      font-size: 0.85rem;
+      color: #555;
+      margin-top: 0.5rem;
+      max-width: 65ch;
+    }
+    section.glossary-section.hidden-no-match {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -105,6 +139,11 @@
   </header>
   <main>
     <div id="load-error" class="error-banner" role="alert"></div>
+    <div class="global-search-wrap" id="global-search-wrap" hidden>
+      <label for="global-search" id="global-search-label">Search all tables</label>
+      <input type="search" id="global-search" autocomplete="off" />
+      <p class="global-search-hint" id="global-search-hint"></p>
+    </div>
     <div id="sections"></div>
     <p class="footnote" id="footnote"></p>
   </main>
@@ -121,7 +160,11 @@
       langLabel: 'Language:',
       manifestError: 'Could not load glossary_manifest.csv. Ensure this page is served from the glossary folder next to the CSV exports.',
       sectionLoadError: 'Failed to load table:',
-      footnote: 'Note: content is shown from CSV exports only; it is not queried live from the database.'
+      footnote: 'Note: content is shown from CSV exports only; it is not queried live from the database.',
+      searchAllLabel: 'Search all tables',
+      searchAllHint: 'Filters every dataset below at once (same idea as the in-app glossary). Tables with no matches are hidden until you clear the search.',
+      searchAllPlaceholder: 'e.g. oil, vector id, province…',
+      lengthAll: 'All'
     },
     fr: {
       pageTitle: 'Glossaire des données (export SQL)',
@@ -129,13 +172,19 @@
       langLabel: 'Langue :',
       manifestError: 'Impossible de charger glossary_manifest.csv. Vérifiez que cette page est servie depuis le dossier glossary à côté des exportations CSV.',
       sectionLoadError: 'Échec du chargement du tableau :',
-      footnote: 'Remarque : le contenu provient uniquement des exportations CSV ; il n\'est pas interrogé en direct dans la base de données.'
+      footnote: 'Remarque : le contenu provient uniquement des exportations CSV ; il n\'est pas interrogé en direct dans la base de données.',
+      searchAllLabel: 'Rechercher dans tous les tableaux',
+      searchAllHint: 'Filtre tous les jeux de données ci-dessous en même temps (comme l’ancien glossaire). Les tableaux sans résultat sont masqués tant que la recherche n’est pas effacée.',
+      searchAllPlaceholder: 'ex. pétrole, identifiant, province…',
+      lengthAll: 'Tous'
     }
   };
 
   var uiLang = 'en';
   var manifestRows = [];
   var sectionMetas = [];
+  var allTables = [];
+  var globalSearchDebounce = null;
 
   function t(key) {
     return UI[uiLang][key] || UI.en[key] || key;
@@ -146,6 +195,19 @@
     document.getElementById('page-heading').textContent = t('pageHeading');
     document.getElementById('lang-label').textContent = t('langLabel');
     document.getElementById('footnote').textContent = t('footnote');
+    var glabel = document.getElementById('global-search-label');
+    var ghint = document.getElementById('global-search-hint');
+    var ginput = document.getElementById('global-search');
+    if (glabel) glabel.textContent = t('searchAllLabel');
+    if (ghint) ghint.textContent = t('searchAllHint');
+    if (ginput) ginput.setAttribute('placeholder', t('searchAllPlaceholder'));
+    updateLengthAllLabels();
+  }
+
+  function updateLengthAllLabels() {
+    document.querySelectorAll('.dataTables_length select option').forEach(function (opt) {
+      if (opt.value === '-1') opt.textContent = t('lengthAll');
+    });
   }
 
   function tableIdFromFilename(filename) {
@@ -162,6 +224,7 @@
       var h2 = document.getElementById(meta.h2Id);
       if (h2) h2.textContent = title;
     });
+    updateLengthAllLabels();
   }
 
   function showError(msg) {
@@ -198,17 +261,49 @@
     wrap.appendChild(tw);
     document.getElementById('sections').appendChild(wrap);
 
+    var defaultLen = rows.length > 100 ? 100 : 25;
     var dtOpts = {
       data: rows,
       columns: columns,
-      pageLength: 25,
+      pageLength: defaultLen,
+      lengthMenu: [[25, 50, 100, -1], [25, 50, 100, t('lengthAll')]],
       deferRender: true,
-      scrollX: true
+      scrollX: true,
+      dom: 'lrtip'
     };
-    if (rows.length > 500) {
-      dtOpts.deferRender = true;
-    }
-    $('#' + meta.tableId).DataTable(dtOpts);
+    var dt = $('#' + meta.tableId).DataTable(dtOpts);
+    meta.dt = dt;
+    meta.sectionEl = wrap;
+    allTables.push(dt);
+  }
+
+  function applyGlobalSearch() {
+    var raw = document.getElementById('global-search').value;
+    var q = raw.trim();
+    allTables.forEach(function (dt) {
+      dt.search(raw);
+      dt.draw(false);
+    });
+    sectionMetas.forEach(function (meta) {
+      if (!meta.dt || !meta.sectionEl) return;
+      var n = meta.dt.rows({ search: 'applied' }).count();
+      if (q && n === 0) {
+        meta.sectionEl.classList.add('hidden-no-match');
+      } else {
+        meta.sectionEl.classList.remove('hidden-no-match');
+      }
+    });
+  }
+
+  function wireGlobalSearch() {
+    var wrap = document.getElementById('global-search-wrap');
+    var input = document.getElementById('global-search');
+    if (!wrap || !input) return;
+    wrap.hidden = false;
+    input.addEventListener('input', function () {
+      if (globalSearchDebounce) clearTimeout(globalSearchDebounce);
+      globalSearchDebounce = setTimeout(applyGlobalSearch, 200);
+    });
   }
 
   function loadManifestAndTables() {
@@ -249,7 +344,11 @@
               });
           });
         });
-        return chain;
+        return chain.then(function () {
+          applyChromeStrings();
+          updateLengthAllLabels();
+          wireGlobalSearch();
+        });
       })
       .catch(function (err) {
         console.error(err);

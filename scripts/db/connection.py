@@ -19,7 +19,7 @@ class DatabaseConnection:
         db = DatabaseConnection(config)
         with db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM data_sources")
+            cursor.execute("SELECT * FROM nrcan_fb_data_sources")
     """
     
     def __init__(self, config: Dict[str, Any]):

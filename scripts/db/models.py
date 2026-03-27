@@ -9,6 +9,24 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from .connection import DatabaseConnection
+from .eedas_registry import (
+    get_raw_tables,
+    unique_raw_data_tables,
+    unique_raw_metadata_tables,
+    TABLE_CALC_CAPITAL_EXPENDITURES,
+    TABLE_CALC_CLEAN_TECH,
+    TABLE_CALC_ECONOMIC_CONTRIBUTIONS,
+    TABLE_CALC_ENERGY_USE,
+    TABLE_CALC_ENVIRONMENTAL_PROTECTION,
+    TABLE_CALC_INFRASTRUCTURE,
+    TABLE_CALC_INTERNATIONAL_INVESTMENT,
+    TABLE_CALC_PROVINCIAL_GDP,
+    TABLE_DATA_SOURCES,
+    TABLE_EXPORT_DATA,
+    TABLE_EXPORT_METADATA,
+    TABLE_MAJOR_PROJECTS_MAP,
+    TABLE_RUN_HISTORY,
+)
 
 
 def to_python_type(value):
@@ -67,8 +85,8 @@ class DataRepository:
         Returns:
             run_id for tracking completion
         """
-        query = """
-            INSERT INTO run_history (source_key, run_type, status)
+        query = f"""
+            INSERT INTO [{TABLE_RUN_HISTORY}] (source_key, run_type, status)
             OUTPUT INSERTED.run_id
             VALUES (?, ?, 'started')
         """
@@ -90,9 +108,9 @@ class DataRepository:
             rows_affected: Number of rows processed
             error_message: Error details if failed
         """
-        query = """
-            UPDATE run_history
-            SET status = ?, rows_affected = ?, error_message = ?, 
+        query = f"""
+            UPDATE [{TABLE_RUN_HISTORY}]
+            SET status = ?, rows_affected = ?, error_message = ?,
                 completed_at = GETUTCDATE()
             WHERE run_id = ?
         """
@@ -100,8 +118,8 @@ class DataRepository:
     
     def update_source_last_refresh(self, source_key: str):
         """Update the last refresh timestamp for a data source."""
-        query = """
-            UPDATE data_sources
+        query = f"""
+            UPDATE [{TABLE_DATA_SOURCES}]
             SET last_refresh_at = GETUTCDATE(), updated_at = GETUTCDATE()
             WHERE source_key = ?
         """
@@ -118,13 +136,14 @@ class DataRepository:
         Args:
             source_key: Identifier for the data source
         """
+        data_table, meta_table = get_raw_tables(source_key)
         self.db.execute_non_query(
-            "DELETE FROM raw_statcan_data WHERE source_key = ?", 
-            (source_key,)
+            f"DELETE FROM [{data_table}] WHERE source_key = ?",
+            (source_key,),
         )
         self.db.execute_non_query(
-            "DELETE FROM raw_statcan_metadata WHERE source_key = ?",
-            (source_key,)
+            f"DELETE FROM [{meta_table}] WHERE source_key = ?",
+            (source_key,),
         )
     
     def insert_raw_statcan_data(self, source_key: str, 
@@ -139,13 +158,13 @@ class DataRepository:
         if not data:
             return 0
         
-        # Use MERGE to handle duplicates (update existing, insert new)
-        query = """
-            MERGE INTO raw_statcan_data AS target
+        data_table, _ = get_raw_tables(source_key)
+        query = f"""
+            MERGE INTO [{data_table}] AS target
             USING (VALUES (?, ?, ?, ?)) AS source (vector, ref_date, value, source_key)
             ON target.vector = source.vector AND target.ref_date = source.ref_date
             WHEN MATCHED THEN
-                UPDATE SET value = source.value, 
+                UPDATE SET value = source.value,
                            source_key = source.source_key,
                            fetched_at = GETUTCDATE()
             WHEN NOT MATCHED THEN
@@ -178,8 +197,9 @@ class DataRepository:
         if not metadata:
             return 0
         
-        query = """
-            MERGE INTO raw_statcan_metadata AS target
+        _, meta_table = get_raw_tables(source_key)
+        query = f"""
+            MERGE INTO [{meta_table}] AS target
             USING (VALUES (?, ?, ?, ?, ?, ?, ?)) AS source (vector, title, uom, scalar_factor, source_org, source_url, source_key)
             ON target.vector = source.vector
             WHEN MATCHED THEN
@@ -215,10 +235,10 @@ class DataRepository:
             return 0
         
         # Clear existing and insert fresh
-        self.db.execute_non_query("DELETE FROM raw_major_projects_map")
-        
-        query = """
-            INSERT INTO raw_major_projects_map 
+        self.db.execute_non_query(f"DELETE FROM [{TABLE_MAJOR_PROJECTS_MAP}]")
+
+        query = f"""
+            INSERT INTO [{TABLE_MAJOR_PROJECTS_MAP}]
             (lang, feature_id, company, project_name, province, location, 
              capital_cost, capital_cost_range, status, clean_technology, 
              clean_technology_type, line_type, lat, lon, paths, feature_type)
@@ -256,11 +276,11 @@ class DataRepository:
         Returns:
             List of row dictionaries
         """
-        return self.db.execute_query("""
+        return self.db.execute_query(f"""
             SELECT lang, feature_id as id, company, project_name, province, location,
                    capital_cost, capital_cost_range, status, clean_technology,
                    clean_technology_type, line_type, lat, lon, paths, feature_type as type
-            FROM raw_major_projects_map
+            FROM [{TABLE_MAJOR_PROJECTS_MAP}]
             ORDER BY lang, feature_type, province, project_name
         """)
     
@@ -278,8 +298,8 @@ class DataRepository:
         if not data:
             return 0
         
-        query = """
-            MERGE INTO calc_capital_expenditures AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_CAPITAL_EXPENDITURES}] AS target
             USING (VALUES (?, ?, ?, ?, ?)) AS source 
                   (ref_year, oil_gas, electricity, other_energy, total)
             ON target.ref_year = source.ref_year
@@ -315,8 +335,8 @@ class DataRepository:
         if not data:
             return 0
         
-        query = """
-            MERGE INTO calc_infrastructure AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_INFRASTRUCTURE}] AS target
             USING (VALUES (?, ?, ?, ?, ?, ?, ?, ?)) AS source 
                   (ref_year, fuel_energy_pipelines, transport, education, 
                    health_housing, environmental, public_safety, total)
@@ -361,8 +381,8 @@ class DataRepository:
         if not data:
             return 0
         
-        query = """
-            MERGE INTO calc_economic_contributions AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_ECONOMIC_CONTRIBUTIONS}] AS target
             USING (VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)) AS source 
                   (ref_year, gdp_direct, gdp_indirect, gdp_total,
                    jobs_direct, jobs_indirect, jobs_total,
@@ -408,8 +428,8 @@ class DataRepository:
         if not data:
             return 0
         
-        query = """
-            MERGE INTO calc_international_investment AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_INTERNATIONAL_INVESTMENT}] AS target
             USING (VALUES (?, ?, ?, ?)) AS source 
                   (ref_year, investment_type, industry_category, value)
             ON target.ref_year = source.ref_year 
@@ -441,8 +461,8 @@ class DataRepository:
         if not data:
             return 0
         
-        query = """
-            MERGE INTO calc_environmental_protection AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_ENVIRONMENTAL_PROTECTION}] AS target
             USING (VALUES (?, ?, ?, ?, ?, ?, ?, ?)) AS source 
                   (ref_year, industry_category, wastewater, soil_groundwater, 
                    air_pollution, solid_waste, other, total)
@@ -487,8 +507,8 @@ class DataRepository:
         if not data:
             return 0
         
-        query = """
-            MERGE INTO calc_provincial_gdp AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_PROVINCIAL_GDP}] AS target
             USING (VALUES (?, ?, ?, ?, ?, ?)) AS source 
                   (ref_year, province_code, province_name, energy_gdp, total_gdp, energy_share_pct)
             ON target.ref_year = source.ref_year 
@@ -526,8 +546,8 @@ class DataRepository:
         if not data:
             return 0
         
-        query = """
-            MERGE INTO calc_clean_tech AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_CLEAN_TECH}] AS target
             USING (VALUES (?, ?, ?, ?)) AS source 
                   (ref_year, category, project_count, total_investment)
             ON target.ref_year = source.ref_year AND target.category = source.category
@@ -560,8 +580,8 @@ class DataRepository:
         """
         if not data:
             return 0
-        query = """
-            MERGE INTO calc_energy_use AS target
+        query = f"""
+            MERGE INTO [{TABLE_CALC_ENERGY_USE}] AS target
             USING (VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)) AS source
                   (ref_year, R, C, I, T, A, P, NPC, FK, EL)
             ON target.ref_year = source.ref_year
@@ -588,13 +608,13 @@ class DataRepository:
     def upsert_foreign_control(self, data: List[Dict[str, Any]]):
         """
         Insert or update foreign control data.
-        Stores in raw_statcan_data with semantic vector names for simplicity.
+        Stores semantic vectors in the registry table for foreign_control.
         """
         if not data:
             return 0
         
-        # Foreign control doesn't have a dedicated calc table, 
-        # store with semantic vectors in raw_statcan_data
+        # Foreign control doesn't have a dedicated calc table;
+        # store with semantic vectors in the registry table for foreign_control.
         rows = []
         for row in data:
             year = str(row['year'])
@@ -611,36 +631,38 @@ class DataRepository:
     
     def prepare_export_data(self):
         """
-        Prepare export tables by aggregating all raw and calculated data.
-        
-        Data flow:
-        - raw_statcan_data contains BOTH original StatCan vectors AND calculated 
-          semantic vectors (capex_*, infra_*, econ_*, etc.)
-        - calc_* tables contain normalized calculated data (for querying)
-        - Export pulls from raw_statcan_data since it already has semantic vectors
-        
-        All data is converted to the export format: (vector, ref_date, value)
+        Prepare export tables by aggregating all per-source ingest tables.
+
+        Physical raw/semantic series live in tables listed in eedas_registry.yaml
+        (unioned here). Calculated nrcan_fb_s* tables are normalized stores; export
+        continues to use semantic vectors from the ingest layer where present.
         """
-        # Clear export tables
-        self.db.execute_non_query("DELETE FROM export_data")
-        self.db.execute_non_query("DELETE FROM export_metadata")
-        
-        # Copy raw StatCan data to export (already has semantic vector names)
-        # This includes both original vectors (v123...) and calculated semantic vectors (capex_*, infra_*, etc.)
-        # Note: calc_* tables store the same data in normalized form for querying,
-        # but we don't need to insert from them since raw_statcan_data already has the semantic vectors
-        self.db.execute_non_query("""
-            INSERT INTO export_data (vector, ref_date, value)
-            SELECT vector, ref_date, CAST(value AS NVARCHAR(100))
-            FROM raw_statcan_data
-        """)
-        
-        # Copy metadata (including source_org, source_url)
-        self.db.execute_non_query("""
-            INSERT INTO export_metadata (vector, title, uom, scalar_factor, source_org, source_url)
-            SELECT vector, title, uom, scalar_factor, source_org, source_url
-            FROM raw_statcan_metadata
-        """)
+        self.db.execute_non_query(f"DELETE FROM [{TABLE_EXPORT_DATA}]")
+        self.db.execute_non_query(f"DELETE FROM [{TABLE_EXPORT_METADATA}]")
+
+        data_tables = unique_raw_data_tables()
+        if data_tables:
+            parts = [
+                f"SELECT vector, ref_date, CAST(value AS NVARCHAR(100)) AS value FROM [{t}]"
+                for t in data_tables
+            ]
+            union_sql = " UNION ALL ".join(parts)
+            self.db.execute_non_query(
+                f"INSERT INTO [{TABLE_EXPORT_DATA}] (vector, ref_date, value) {union_sql}"
+            )
+
+        meta_tables = unique_raw_metadata_tables()
+        if meta_tables:
+            mparts = [
+                "SELECT vector, title, uom, scalar_factor, source_org, source_url "
+                f"FROM [{t}]"
+                for t in meta_tables
+            ]
+            munion = " UNION ALL ".join(mparts)
+            self.db.execute_non_query(
+                f"INSERT INTO [{TABLE_EXPORT_METADATA}] "
+                f"(vector, title, uom, scalar_factor, source_org, source_url) {munion}"
+            )
     
     def get_export_data(self) -> List[Tuple[str, str, str]]:
         """
@@ -650,7 +672,7 @@ class DataRepository:
             List of (vector, ref_date, value) tuples
         """
         results = self.db.execute_query(
-            "SELECT vector, ref_date, value FROM export_data ORDER BY vector, ref_date"
+            f"SELECT vector, ref_date, value FROM [{TABLE_EXPORT_DATA}] ORDER BY vector, ref_date"
         )
         return [(r['vector'], r['ref_date'], r['value']) for r in results]
     
@@ -662,7 +684,8 @@ class DataRepository:
             List of (vector, title, uom, scalar_factor, source_org, source_url) tuples
         """
         results = self.db.execute_query(
-            "SELECT vector, title, uom, scalar_factor, source_org, source_url FROM export_metadata ORDER BY vector"
+            f"SELECT vector, title, uom, scalar_factor, source_org, source_url "
+            f"FROM [{TABLE_EXPORT_METADATA}] ORDER BY vector"
         )
         return [(r['vector'], r['title'], r['uom'], r['scalar_factor'], r.get('source_org') or '', r.get('source_url') or '') for r in results]
     
@@ -682,26 +705,30 @@ class DataRepository:
         """
         if section_id:
             return self.db.execute_query(
-                "SELECT * FROM data_sources WHERE is_enabled = 1 AND section_id = ? ORDER BY source_key",
-                (section_id,)
+                f"SELECT * FROM [{TABLE_DATA_SOURCES}] WHERE is_enabled = 1 AND section_id = ? "
+                f"ORDER BY source_key",
+                (section_id,),
             )
         return self.db.execute_query(
-            "SELECT * FROM data_sources WHERE is_enabled = 1 ORDER BY section_id, source_key"
+            f"SELECT * FROM [{TABLE_DATA_SOURCES}] WHERE is_enabled = 1 ORDER BY section_id, source_key"
         )
     
     def get_source_by_key(self, source_key: str) -> Optional[Dict[str, Any]]:
         """Get a single data source by its key."""
         results = self.db.execute_query(
-            "SELECT * FROM data_sources WHERE source_key = ?",
-            (source_key,)
+            f"SELECT * FROM [{TABLE_DATA_SOURCES}] WHERE source_key = ?",
+            (source_key,),
         )
         return results[0] if results else None
     
     def get_last_run_info(self, source_key: str) -> Optional[Dict[str, Any]]:
         """Get information about the last run for a data source."""
-        results = self.db.execute_query("""
-            SELECT TOP 1 * FROM run_history 
+        results = self.db.execute_query(
+            f"""
+            SELECT TOP 1 * FROM [{TABLE_RUN_HISTORY}]
             WHERE source_key = ? AND status = 'success'
             ORDER BY completed_at DESC
-        """, (source_key,))
+            """,
+            (source_key,),
+        )
         return results[0] if results else None

@@ -288,7 +288,7 @@ class Section4Indicators(SectionProcessor):
     def _process_energy_use(self) -> int:
         """
         Extract from OEE NEUD (five sector XLS URLs) and Primary Energy Use Demand (project-root Excel),
-        write to calc_energy_use and raw_statcan_data, then export to data.csv.
+        write to nrcan_fb_s4_energy_use and per-source ingest tables, then export to data.csv.
         """
         section_cfg = self.config.sections.get(self.SECTION_KEY, {})
         sources_cfg = section_cfg.get('sources', {})
@@ -363,7 +363,7 @@ class Section4Indicators(SectionProcessor):
         n = self.store_raw_data('energy_use', data_rows, metadata_rows)
         if calc_data:
             self.repo.upsert_energy_use(calc_data)
-        print(f"    Stored {n} rows in raw_statcan_data + calc_energy_use ({len(all_years)} years)")
+        print(f"    Stored {n} rows in ingest tables + nrcan_fb_s4_energy_use ({len(all_years)} years)")
         return n
 
     def _parse_oee_residential_analysis_xls(self, content: bytes) -> Dict[int, Dict[str, float]]:

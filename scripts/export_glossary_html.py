@@ -22,6 +22,14 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from config_loader import Config  # noqa: E402
 from db import DataRepository, DatabaseConnection, get_connection  # noqa: E402
+from db.eedas_registry import (  # noqa: E402
+    TABLE_EXPORT_DATA,
+    TABLE_EXPORT_METADATA,
+    TABLE_DATA_SOURCES,
+    TABLE_MAJOR_PROJECTS_MAP,
+    TABLE_RUN_HISTORY,
+    unique_raw_metadata_tables,
+)
 
 DEFAULT_OUT = REPO_ROOT / "public" / "glossary"
 TEMPLATE_PATH = SCRIPT_DIR / "templates" / "data-gallery.html"
@@ -32,8 +40,8 @@ MANIFEST_TITLES: Dict[str, Tuple[str, str]] = {
         "Métadonnées d'export (vecteurs, unités, sources)",
     ),
     "glossary_series.csv": (
-        "Time series (export_data)",
-        "Séries temporelles (export_data)",
+        "Time series (nrcan_fb_export_data)",
+        "Séries temporelles (nrcan_fb_export_data)",
     ),
     "glossary_major_projects.csv": (
         "Major projects map (raw)",
@@ -50,15 +58,15 @@ MANIFEST_TITLES: Dict[str, Tuple[str, str]] = {
 }
 
 
-def _is_safe_calc_table(name: str) -> bool:
-    # Must be dbo calc_* tables only (exclude names like "calculator").
-    return bool(re.fullmatch(r"calc_[A-Za-z][A-Za-z0-9_]*", name))
+def _is_safe_section_calc_table(name: str) -> bool:
+    # Section-scoped calculated tables only (nrcan_fb_sN_*).
+    return bool(re.fullmatch(r"nrcan_fb_s[0-9]_[a-z][a-z0-9_]*", name))
 
 
 def _titles_for_csv_filename(filename: str) -> Tuple[str, str]:
     if filename in MANIFEST_TITLES:
         return MANIFEST_TITLES[filename]
-    m = re.fullmatch(r"glossary_(calc[A-Za-z0-9_]+)\.csv", filename)
+    m = re.fullmatch(r"glossary_(nrcan_fb_s[0-9]_[a-z0-9_]+)\.csv", filename)
     if m:
         tab = m.group(1)
         return (f"Calculated table: {tab}", f"Table calculée : {tab}")
@@ -96,29 +104,34 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
     if not skip_prepare:
         repo.prepare_export_data()
 
-    metadata_sql = """
+    meta_union = " UNION ALL ".join(
+        f"SELECT vector, source_key FROM [{t}]" for t in unique_raw_metadata_tables()
+    )
+    metadata_sql = f"""
         SELECT e.vector, e.title, e.uom, e.scalar_factor,
-               COALESCE(r.source_key,'') AS data_source, e.source_org, e.source_url
-        FROM export_metadata e
-        LEFT JOIN raw_statcan_metadata r ON r.vector = e.vector
+               COALESCE(m.source_key,'') AS data_source, e.source_org, e.source_url
+        FROM [{TABLE_EXPORT_METADATA}] e
+        LEFT JOIN (
+            {meta_union}
+        ) m ON m.vector = e.vector
         ORDER BY e.vector
     """
-    series_sql = """
+    series_sql = f"""
         SELECT vector, ref_date, value
-        FROM export_data
+        FROM [{TABLE_EXPORT_DATA}]
         ORDER BY vector, ref_date
     """
-    major_sql = """
-        SELECT * FROM raw_major_projects_map
+    major_sql = f"""
+        SELECT * FROM [{TABLE_MAJOR_PROJECTS_MAP}]
         ORDER BY lang, id
     """
-    sources_sql = """
-        SELECT * FROM data_sources
+    sources_sql = f"""
+        SELECT * FROM [{TABLE_DATA_SOURCES}]
         ORDER BY section_id, source_key
     """
-    run_history_sql = """
+    run_history_sql = f"""
         SELECT TOP 20000 *
-        FROM run_history
+        FROM [{TABLE_RUN_HISTORY}]
         ORDER BY started_at DESC
     """
 
@@ -145,13 +158,13 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
             FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_TYPE = 'BASE TABLE'
               AND TABLE_SCHEMA = 'dbo'
-              AND TABLE_NAME LIKE 'calc%'
+              AND TABLE_NAME LIKE 'nrcan_fb_s[0-9]_%'
             ORDER BY TABLE_NAME
             """,
             conn,
         )
         for table_name in tables_df["TABLE_NAME"].astype(str):
-            if not _is_safe_calc_table(table_name):
+            if not _is_safe_section_calc_table(table_name):
                 continue
             quoted = "[" + table_name.replace("]", "]]") + "]"
             out_name = f"glossary_{table_name.lower()}.csv"

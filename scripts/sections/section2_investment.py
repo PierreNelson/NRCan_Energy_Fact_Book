@@ -149,8 +149,8 @@ class Section2Investment(SectionProcessor):
         Process capital expenditures data.
         
         Data flow:
-        1. Fetch raw StatCan data → store in raw_statcan_data
-        2. Calculate aggregates → store in calc_capital_expenditures
+        1. Fetch raw StatCan data → store in EEDAS ingest table (registry)
+        2. Calculate aggregates → store in nrcan_fb_s2_capital_expenditures
         3. Export will pull from calc table with semantic vector names
         
         Returns:
@@ -202,7 +202,7 @@ class Section2Investment(SectionProcessor):
             print(f"    Warning: No NAICS/Industry column found. Columns: {df.columns.tolist()[:10]}")
             return 0
         
-        calc_data = []  # For calc_capital_expenditures table
+        calc_data = []  # For nrcan_fb_s2_capital_expenditures
         data_rows = []  # For semantic vector export (backwards compatibility)
         
         for year in years:
@@ -286,10 +286,10 @@ class Section2Investment(SectionProcessor):
             ('capex_total_billions', 'Capital expenditures - Total energy sector', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
-        # STEP 2: Store calculated data in calc_capital_expenditures table
+        # STEP 2: Store calculated data in nrcan_fb_s2_capital_expenditures
         if calc_data:
             self.repo.upsert_capital_expenditures(calc_data)
-            print(f"    Stored {len(calc_data)} years in calc_capital_expenditures")
+            print(f"    Stored {len(calc_data)} years in nrcan_fb_s2_capital_expenditures")
         
         # Store semantic vectors for backwards compatibility
         return self.store_raw_data('capital_expenditures', data_rows, metadata_rows)
@@ -299,8 +299,8 @@ class Section2Investment(SectionProcessor):
         Process infrastructure stock data.
         
         Data flow:
-        1. Fetch raw StatCan data → store in raw_statcan_data
-        2. Calculate aggregates → store in calc_infrastructure
+        1. Fetch raw StatCan data → store in EEDAS ingest table (registry)
+        2. Calculate aggregates → store in nrcan_fb_s2_infrastructure
         3. Export will pull from calc table with semantic vector names
         
         Returns:
@@ -330,7 +330,7 @@ class Section2Investment(SectionProcessor):
         df_filtered['year'] = pd.to_numeric(df_filtered[ref_date_col], errors='coerce') if ref_date_col else None
         
         years = sorted(df_filtered['year'].dropna().unique())
-        calc_data = []  # For calc_infrastructure table
+        calc_data = []  # For nrcan_fb_s2_infrastructure
         data_rows = []  # For semantic vector export (backwards compatibility)
         
         for year in years:
@@ -455,10 +455,10 @@ class Section2Investment(SectionProcessor):
             ('infra_total_billions', 'Infrastructure - Total net stock', 'Billions of dollars', 'billions', source_org, source_url),
         ]
         
-        # STEP 2: Store calculated data in calc_infrastructure table
+        # STEP 2: Store calculated data in nrcan_fb_s2_infrastructure
         if calc_data:
             self.repo.upsert_infrastructure(calc_data)
-            print(f"    Stored {len(calc_data)} years in calc_infrastructure")
+            print(f"    Stored {len(calc_data)} years in nrcan_fb_s2_infrastructure")
         
         return self.store_raw_data('infrastructure', data_rows, metadata_rows)
     

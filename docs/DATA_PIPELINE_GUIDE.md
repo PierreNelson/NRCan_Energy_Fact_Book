@@ -2,7 +2,7 @@
 
 This guide explains how to add and maintain data sources for the NRCan Energy Factbook so that data flows from the source (StatCan, Excel, HTML tables, APIs) into SQL Server, then into `data.csv` and `metadata.csv`, and finally to the website pages. Use it when adding a **new page** that needs a new data source or when integrating a new type of source.
 
-For **quick commands** (refresh, export, list), see [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md). For **building the page UI** (charts, tables, download), see [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md).
+For **quick commands** (refresh, export, list), see [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md). For **building the page UI** (charts, tables, download), see [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md). For **regenerating the glossary viewer** (`public/glossary/`), see [GLOSSARY_UPDATE_GUIDE.md](GLOSSARY_UPDATE_GUIDE.md).
 
 ---
 
