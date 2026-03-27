@@ -1,0 +1,18 @@
+source_id,source_key,source_name,section_id,section_name,statcan_table_id,source_url,is_enabled,last_refresh_at,created_at,updated_at
+22,canadian_energy_assets,Canadian Energy Assets (CEA),1,Key Indicators,,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+18,economic_contributions,"Economic Contributions (GDP, Jobs, Income)",1,Key Indicators,36-10-0610-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+19,nominal_gdp,Nominal GDP Contributions,1,Key Indicators,36-10-0103-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+20,provincial_gdp,Provincial GDP Data,1,Key Indicators,38-10-0285-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+21,world_energy_production,World Energy Production,1,Key Indicators,,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+23,capital_expenditures,Capital Expenditures,2,Investment,34-10-0036-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+30,clean_tech,Clean Technology Projects,2,Investment,,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+28,environmental_protection,Environmental Protection Expenditures,2,Investment,,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+27,foreign_control,Foreign Control,2,Investment,,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+24,infrastructure,Infrastructure Stock,2,Investment,36-10-0608-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+26,international_investment,International Investment (FDI/CDIA),2,Investment,36-10-0009-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+25,investment_by_asset,Investment by Asset Type,2,Investment,34-10-0036-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+29,major_projects,Major Projects Inventory,2,Investment,,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+31,skills_data,Skills and Employment Data,3,"Skills, Diversity and Community",,,False,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+32,energy_use,Energy use (OEE NEUD + Primary Energy Use Demand),4,Energy Efficiency,,,True,2026-03-11 06:57:39.970,2026-03-05 06:59:09.306666,2026-03-11 06:57:39.970000
+33,clean_power_data,Clean Power and Low Carbon Fuels,5,Clean Power and Low Carbon Fuels,,,False,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+34,oil_gas_data,"Oil, Natural Gas and Coal",6,"Oil, Natural Gas and Coal",,,False,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666

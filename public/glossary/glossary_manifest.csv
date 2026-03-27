@@ -1,0 +1,15 @@
+filename,title_en,title_fr
+glossary_calc_capital_expenditures.csv,Calculated table: calc_capital_expenditures,Table calculée : calc_capital_expenditures
+glossary_calc_clean_tech.csv,Calculated table: calc_clean_tech,Table calculée : calc_clean_tech
+glossary_calc_economic_contributions.csv,Calculated table: calc_economic_contributions,Table calculée : calc_economic_contributions
+glossary_calc_energy_use.csv,Calculated table: calc_energy_use,Table calculée : calc_energy_use
+glossary_calc_environmental_protection.csv,Calculated table: calc_environmental_protection,Table calculée : calc_environmental_protection
+glossary_calc_infrastructure.csv,Calculated table: calc_infrastructure,Table calculée : calc_infrastructure
+glossary_calc_international_investment.csv,Calculated table: calc_international_investment,Table calculée : calc_international_investment
+glossary_calc_provincial_gdp.csv,Calculated table: calc_provincial_gdp,Table calculée : calc_provincial_gdp
+glossary_calc_world_energy_production.csv,Calculated table: calc_world_energy_production,Table calculée : calc_world_energy_production
+glossary_data_sources.csv,Data sources registry,Registre des sources de données
+glossary_major_projects.csv,Major projects map (raw),Carte des grands projets (brut)
+glossary_metadata.csv,"Export metadata (vectors, units, sources)","Métadonnées d'export (vecteurs, unités, sources)"
+glossary_run_history.csv,Run history (audit log),Historique des exécutions (journal d'audit)
+glossary_series.csv,Time series (export_data),Séries temporelles (export_data)

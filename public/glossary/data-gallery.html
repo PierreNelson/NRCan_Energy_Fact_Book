@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data glossary (SQL export)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@1.13.7/css/jquery.dataTables.min.css" />
+  <style>
+    :root {
+      --gc-header: #26374a;
+      --gc-text: #333;
+      --gc-bg: #fff;
+      --gc-border: #ccc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      color: var(--gc-text);
+      background: var(--gc-bg);
+      line-height: 1.5;
+    }
+    header.site-header {
+      background: var(--gc-header);
+      color: #fff;
+      padding: 1rem 1.25rem;
+    }
+    header.site-header h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .lang-toggle button {
+      background: #fff;
+      color: var(--gc-header);
+      border: 2px solid #fff;
+      padding: 0.35rem 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .lang-toggle button[aria-pressed="true"] {
+      background: var(--gc-header);
+      color: #fff;
+      border-color: #fff;
+    }
+    .lang-toggle button:focus-visible {
+      outline: 3px solid #ffbf47;
+      outline-offset: 2px;
+    }
+    main {
+      padding: 1.25rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .error-banner {
+      display: none;
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 4px;
+    }
+    .error-banner.visible { display: block; }
+    section.glossary-section {
+      margin-bottom: 2.5rem;
+    }
+    section.glossary-section h2 {
+      font-size: 1.2rem;
+      color: var(--gc-header);
+      border-bottom: 2px solid var(--gc-header);
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.75rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table.dataTable { width: 100% !important; }
+    .footnote {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--gc-border);
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1 id="page-heading">Data glossary (SQL export)</h1>
+    <div class="toolbar">
+      <span id="lang-label" style="opacity:.95;font-size:.9rem;">Language:</span>
+      <div class="lang-toggle" role="group" aria-labelledby="lang-label">
+        <button type="button" id="btn-en" aria-pressed="true">EN</button>
+        <button type="button" id="btn-fr" aria-pressed="false">FR</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div id="load-error" class="error-banner" role="alert"></div>
+    <div id="sections"></div>
+    <p class="footnote" id="footnote"></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+(function () {
+  var UI = {
+    en: {
+      pageTitle: 'Data glossary (SQL export)',
+      pageHeading: 'Data glossary (SQL export)',
+      langLabel: 'Language:',
+      manifestError: 'Could not load glossary_manifest.csv. Ensure this page is served from the glossary folder next to the CSV exports.',
+      sectionLoadError: 'Failed to load table:',
+      footnote: 'Note: content is shown from CSV exports only; it is not queried live from the database.'
+    },
+    fr: {
+      pageTitle: 'Glossaire des données (export SQL)',
+      pageHeading: 'Glossaire des données (export SQL)',
+      langLabel: 'Langue :',
+      manifestError: 'Impossible de charger glossary_manifest.csv. Vérifiez que cette page est servie depuis le dossier glossary à côté des exportations CSV.',
+      sectionLoadError: 'Échec du chargement du tableau :',
+      footnote: 'Remarque : le contenu provient uniquement des exportations CSV ; il n\'est pas interrogé en direct dans la base de données.'
+    }
+  };
+
+  var uiLang = 'en';
+  var manifestRows = [];
+  var sectionMetas = [];
+
+  function t(key) {
+    return UI[uiLang][key] || UI.en[key] || key;
+  }
+
+  function applyChromeStrings() {
+    document.title = t('pageTitle');
+    document.getElementById('page-heading').textContent = t('pageHeading');
+    document.getElementById('lang-label').textContent = t('langLabel');
+    document.getElementById('footnote').textContent = t('footnote');
+  }
+
+  function tableIdFromFilename(filename) {
+    return 'dt-' + filename.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  function setLang(next) {
+    uiLang = next;
+    document.getElementById('btn-en').setAttribute('aria-pressed', next === 'en' ? 'true' : 'false');
+    document.getElementById('btn-fr').setAttribute('aria-pressed', next === 'fr' ? 'true' : 'false');
+    applyChromeStrings();
+    sectionMetas.forEach(function (meta) {
+      var title = next === 'fr' ? meta.titleFr : meta.titleEn;
+      var h2 = document.getElementById(meta.h2Id);
+      if (h2) h2.textContent = title;
+    });
+  }
+
+  function showError(msg) {
+    var el = document.getElementById('load-error');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function buildSection(meta, parseResult) {
+    var fields = parseResult.meta.fields || [];
+    var rows = parseResult.data || [];
+    var columns = fields.map(function (f) {
+      return { title: f, data: f, defaultContent: '' };
+    });
+    if (columns.length === 0) {
+      columns = [{ title: '(empty)', data: null, defaultContent: '' }];
+    }
+
+    var wrap = document.createElement('section');
+    wrap.className = 'glossary-section';
+    var h2 = document.createElement('h2');
+    h2.id = meta.h2Id;
+    h2.className = 'glossary-section-title';
+    h2.textContent = uiLang === 'fr' ? meta.titleFr : meta.titleEn;
+    wrap.appendChild(h2);
+
+    var tw = document.createElement('div');
+    tw.className = 'table-wrap';
+    var table = document.createElement('table');
+    table.id = meta.tableId;
+    table.className = 'display nowrap';
+    table.style.width = '100%';
+    tw.appendChild(table);
+    wrap.appendChild(tw);
+    document.getElementById('sections').appendChild(wrap);
+
+    var dtOpts = {
+      data: rows,
+      columns: columns,
+      pageLength: 25,
+      deferRender: true,
+      scrollX: true
+    };
+    if (rows.length > 500) {
+      dtOpts.deferRender = true;
+    }
+    $('#' + meta.tableId).DataTable(dtOpts);
+  }
+
+  function loadManifestAndTables() {
+    fetch('./glossary_manifest.csv')
+      .then(function (r) {
+        if (!r.ok) throw new Error(t('manifestError'));
+        return r.text();
+      })
+      .then(function (text) {
+        var parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        manifestRows = parsed.data.filter(function (row) {
+          return row.filename && String(row.filename).trim();
+        });
+        if (manifestRows.length === 0) throw new Error(t('manifestError'));
+
+        var chain = Promise.resolve();
+        manifestRows.forEach(function (row) {
+          var filename = row.filename.trim();
+          var titleEn = row.title_en || filename;
+          var titleFr = row.title_fr || row.title_en || filename;
+          var tableId = tableIdFromFilename(filename);
+          var h2Id = 'h2-' + tableId;
+          var meta = { filename: filename, titleEn: titleEn, titleFr: titleFr, tableId: tableId, h2Id: h2Id };
+          sectionMetas.push(meta);
+
+          chain = chain.then(function () {
+            return fetch('./' + encodeURI(filename))
+              .then(function (r) {
+                if (!r.ok) throw new Error(t('sectionLoadError') + ' ' + filename);
+                return r.text();
+              })
+              .then(function (csvText) {
+                var pr = Papa.parse(csvText, { header: true, skipEmptyLines: 'greedy' });
+                if (pr.errors && pr.errors.length) {
+                  console.warn('Parse warnings for', filename, pr.errors);
+                }
+                buildSection(meta, pr);
+              });
+          });
+        });
+        return chain;
+      })
+      .catch(function (err) {
+        console.error(err);
+        showError(err.message || String(err));
+      });
+  }
+
+  document.getElementById('btn-en').addEventListener('click', function () { setLang('en'); });
+  document.getElementById('btn-fr').addEventListener('click', function () { setLang('fr'); });
+
+  applyChromeStrings();
+  loadManifestAndTables();
+})();
+  </script>
+</body>
+</html>

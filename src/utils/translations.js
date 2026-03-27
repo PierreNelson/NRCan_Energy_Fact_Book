@@ -24,6 +24,11 @@ export const TRANSLATIONS = {
         'nav_section6_natural_gas': 'Natural gas',
         'nav_section6_coal_international': 'Coal',
         'nav_section6_refined_petroleum': 'Refined petroleum products (RPPs)',
+        'glossary_page_title': 'Data glossary',
+        'glossary_intro': 'The full data glossary opens in a new tab. It lists CSV exports from the factbook database (metadata, time series, major projects, source registry, run history, and calculated tables) with search and paging.',
+        'glossary_link_label': 'Open full data glossary',
+        'glossary_link_aria': 'Opens the full data glossary in a new tab',
+        'glossary_note': 'The standalone page reads only the public CSV files; it does not connect to a database.',
 
         // Page 1
         'page1_section': 'Section 1:',
@@ -1021,6 +1026,11 @@ export const TRANSLATIONS = {
         'nav_section6_natural_gas': 'Gaz naturel',
         'nav_section6_coal_international': 'Charbon',
         'nav_section6_refined_petroleum': 'Produits pétroliers raffinés (PPRs)',
+        'glossary_page_title': 'Glossaire des données',
+        'glossary_intro': 'Le glossaire complet des données s\'ouvre dans un nouvel onglet. Il présente les exportations CSV de la base du cahier (métadonnées, séries chronologiques, grands projets, registre des sources, historique d\'exécution et tables calculées), avec recherche et pagination.',
+        'glossary_link_label': 'Ouvrir le glossaire complet des données',
+        'glossary_link_aria': 'Ouvre le glossaire complet des données dans un nouvel onglet',
+        'glossary_note': 'La page autonome lit uniquement les fichiers CSV publics; elle ne se connecte pas à une base de données.',
 
         // Page 1
         'page1_section': 'Section 1 :',
