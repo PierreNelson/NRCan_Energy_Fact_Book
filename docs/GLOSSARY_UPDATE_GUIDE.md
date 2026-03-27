@@ -25,12 +25,14 @@ python main.py test-connection
 
 | Goal | Command |
 |------|---------|
-| Regenerate glossary from the database (default output) | `cd scripts` then `python export_glossary_html.py` |
-| Same, custom output folder | `python export_glossary_html.py --out path/to/folder` |
-| Skip rebuilding export tables before export | `python export_glossary_html.py --skip-prepare-export` |
-| Build glossary from `public/data` only (no SQL) | `python export_glossary_html.py --seed-from-public` |
+| Regenerate glossary from the database (default output) | From **`scripts/`**: `python export_glossary_html.py` — or from **repo root**: `python scripts/export_glossary_html.py` |
+| Same, custom output folder | `python scripts/export_glossary_html.py --out path/to/folder` (from repo root) |
+| Skip rebuilding export tables before export | `python scripts/export_glossary_html.py --skip-prepare-export` |
+| Build glossary from `public/data` only (no SQL) | `python scripts/export_glossary_html.py --seed-from-public` |
 
-Default output directory: **`public/glossary/`** (repo root relative to `scripts/`).
+Default output directory: **`public/glossary/`** (under the repo root).
+
+**Note (Windows):** The file is `scripts/export_glossary_html.py`. Running `export_glossary_html.py` or `python export_glossary_html.py` from the repo root will fail; either `cd scripts` first or pass the `scripts/…` path to `python`.
 
 ---
 
@@ -59,6 +61,12 @@ From the **`scripts/`** directory:
 
 ```bash
 python export_glossary_html.py
+```
+
+Or from the **repository root** (same effect):
+
+```bash
+python scripts/export_glossary_html.py
 ```
 
 This will:

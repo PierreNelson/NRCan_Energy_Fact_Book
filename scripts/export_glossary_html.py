@@ -70,8 +70,16 @@ def _titles_for_csv_filename(filename: str) -> Tuple[str, str]:
     if m:
         tab = m.group(1)
         return (f"Calculated table: {tab}", f"Table calculée : {tab}")
+    # Legacy calc_* exports (older DB / stale public/glossary files)
+    m = re.fullmatch(r"glossary_(calc_[a-z0-9_]+)\.csv", filename, re.IGNORECASE)
+    if m:
+        tab = m.group(1)
+        return (f"Calculated table: {tab}", f"Table calculée : {tab}")
     stem = Path(filename).stem
-    return (stem.replace("_", " ").title(), stem.replace("_", " ").title())
+    # Avoid "Glossary Calc Energy Use" — drop the filename prefix used for all exports
+    display = stem[9:] if stem.lower().startswith("glossary_") else stem
+    pretty = display.replace("_", " ").title()
+    return (pretty, pretty)
 
 
 def _write_manifest(out_dir: Path) -> None:

@@ -34,7 +34,7 @@ python main.py test-connection
 | Export by source | `python main.py export --source capital_expenditures` |
 | Export by pattern | `python main.py export --vectors "capex_*"` |
 | List all sources | `python main.py list` |
-| Regenerate glossary from SQL (writes `public/glossary/`) | `python export_glossary_html.py` (from `scripts/`) |
+| Regenerate glossary from SQL (writes `public/glossary/`) | `python export_glossary_html.py` in `scripts/`, or `python scripts/export_glossary_html.py` from repo root |
 
 ---
 
