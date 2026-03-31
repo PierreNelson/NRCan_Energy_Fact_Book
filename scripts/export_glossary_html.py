@@ -11,6 +11,7 @@ import csv
 import re
 import shutil
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -23,12 +24,11 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from config_loader import Config  # noqa: E402
 from db import DataRepository, DatabaseConnection, get_connection  # noqa: E402
 from db.eedas_registry import (  # noqa: E402
-    TABLE_EXPORT_DATA,
-    TABLE_EXPORT_METADATA,
+    TABLE_EXPORT,
     TABLE_DATA_SOURCES,
     TABLE_MAJOR_PROJECTS_MAP,
     TABLE_RUN_HISTORY,
-    unique_raw_metadata_tables,
+    unique_source_tables,
 )
 
 DEFAULT_OUT = REPO_ROOT / "public" / "glossary"
@@ -40,8 +40,8 @@ MANIFEST_TITLES: Dict[str, Tuple[str, str]] = {
         "Métadonnées d'export (vecteurs, unités, sources)",
     ),
     "glossary_series.csv": (
-        "Time series (nrcan_fb_export_data)",
-        "Séries temporelles (nrcan_fb_export_data)",
+        "Time series (nrcan_fb_export)",
+        "Séries temporelles (nrcan_fb_export)",
     ),
     "glossary_major_projects.csv": (
         "Major projects map (raw)",
@@ -63,15 +63,23 @@ def _is_safe_section_calc_table(name: str) -> bool:
     return bool(re.fullmatch(r"nrcan_fb_s[0-9]_[a-z][a-z0-9_]*", name))
 
 
+def _purge_legacy_calc_glossary_csvs(out_dir: Path) -> None:
+    """
+    Remove stale glossary_calc_*.csv files. Legacy DB table names were calc_*; the
+    exporter only writes glossary_nrcan_fb_s*.csv. Old files linger in public/glossary/
+    and the manifest listed them until removed.
+    """
+    for p in out_dir.glob("glossary_calc_*.csv"):
+        try:
+            p.unlink()
+        except OSError:
+            pass
+
+
 def _titles_for_csv_filename(filename: str) -> Tuple[str, str]:
     if filename in MANIFEST_TITLES:
         return MANIFEST_TITLES[filename]
     m = re.fullmatch(r"glossary_(nrcan_fb_s[0-9]_[a-z0-9_]+)\.csv", filename)
-    if m:
-        tab = m.group(1)
-        return (f"Calculated table: {tab}", f"Table calculée : {tab}")
-    # Legacy calc_* exports (older DB / stale public/glossary files)
-    m = re.fullmatch(r"glossary_(calc_[a-z0-9_]+)\.csv", filename, re.IGNORECASE)
     if m:
         tab = m.group(1)
         return (f"Calculated table: {tab}", f"Table calculée : {tab}")
@@ -87,6 +95,9 @@ def _write_manifest(out_dir: Path) -> None:
     for path in sorted(out_dir.glob("glossary_*.csv")):
         if path.name == "glossary_manifest.csv":
             continue
+        # Never list legacy calc_* exports (pre–nrcan_fb_s* schema).
+        if re.fullmatch(r"glossary_calc_[a-z0-9_]+\.csv", path.name, re.IGNORECASE):
+            continue
         title_en, title_fr = _titles_for_csv_filename(path.name)
         rows.append(
             {"filename": path.name, "title_en": title_en, "title_fr": title_fr}
@@ -101,10 +112,20 @@ def _write_manifest(out_dir: Path) -> None:
 def _copy_html_template(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(TEMPLATE_PATH, out_dir / "data-gallery.html")
+    # Helps hosts/browsers that cache HTML without revalidation (avoids stale viewer JS).
+    stamp_path = out_dir / "glossary_export_stamp.txt"
+    try:
+        stamp_path.write_text(
+            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
 
 
 def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
+    _purge_legacy_calc_glossary_csvs(out_dir)
     config = Config()
     db_mgr: DatabaseConnection = get_connection(config.database)
     repo = DataRepository(db_mgr)
@@ -113,12 +134,18 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
         repo.prepare_export_data()
 
     meta_union = " UNION ALL ".join(
-        f"SELECT vector, source_key FROM [{t}]" for t in unique_raw_metadata_tables()
+        f"SELECT vector, source_key FROM [{t}]" for t in unique_source_tables()
     )
     metadata_sql = f"""
         SELECT e.vector, e.title, e.uom, e.scalar_factor,
                COALESCE(m.source_key,'') AS data_source, e.source_org, e.source_url
-        FROM [{TABLE_EXPORT_METADATA}] e
+        FROM (
+            SELECT vector, MAX(title) AS title, MAX(uom) AS uom, MAX(scalar_factor) AS scalar_factor,
+                   MAX(source_org) AS source_org, MAX(source_url) AS source_url
+            FROM [{TABLE_EXPORT}]
+            WHERE title IS NOT NULL
+            GROUP BY vector
+        ) e
         LEFT JOIN (
             {meta_union}
         ) m ON m.vector = e.vector
@@ -126,7 +153,8 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
     """
     series_sql = f"""
         SELECT vector, ref_date, value
-        FROM [{TABLE_EXPORT_DATA}]
+        FROM [{TABLE_EXPORT}]
+        WHERE value IS NOT NULL AND ref_date <> N''
         ORDER BY vector, ref_date
     """
     major_sql = f"""
@@ -176,10 +204,18 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
                 continue
             quoted = "[" + table_name.replace("]", "]]") + "]"
             out_name = f"glossary_{table_name.lower()}.csv"
+            out_path = out_dir / out_name
+            cnt_df = pd.read_sql(f"SELECT COUNT(*) AS n FROM {quoted}", conn)
+            n = int(cnt_df.iloc[0]["n"]) if not cnt_df.empty else 0
+            if n == 0:
+                if out_path.is_file():
+                    try:
+                        out_path.unlink()
+                    except OSError:
+                        pass
+                continue
             q = f"SELECT * FROM {quoted}"
-            pd.read_sql(q, conn).to_csv(
-                out_dir / out_name, index=False, encoding="utf-8"
-            )
+            pd.read_sql(q, conn).to_csv(out_path, index=False, encoding="utf-8")
 
     _write_manifest(out_dir)
     _copy_html_template(out_dir)
@@ -188,7 +224,7 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
 
 DATA_SOURCES_HEADER = (
     "source_id,source_key,source_name,section_id,section_name,"
-    "statcan_table_id,source_url,is_enabled,last_refresh_at,created_at,updated_at\n"
+    "is_enabled,last_refresh_at,created_at,updated_at\n"
 )
 
 RUN_HISTORY_HEADER = (
@@ -199,6 +235,7 @@ RUN_HISTORY_HEADER = (
 
 def seed_from_public_data(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
+    _purge_legacy_calc_glossary_csvs(out_dir)
     data_dir = REPO_ROOT / "public" / "data"
     shutil.copy2(data_dir / "metadata.csv", out_dir / "glossary_metadata.csv")
     shutil.copy2(data_dir / "data.csv", out_dir / "glossary_series.csv")

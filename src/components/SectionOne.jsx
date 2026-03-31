@@ -7,6 +7,8 @@ import Page4 from '../pages/Page4';
 import Page5 from '../pages/Page5';
 import Page7 from '../pages/Page7';
 import Page8 from '../pages/Page8';
+import Page14 from '../pages/Page14';
+import Page15 from '../pages/Page15';
 import Page9 from '../pages/Page9';
 import Page10 from '../pages/Page10';
 import Page11 from '../pages/Page11';
@@ -17,7 +19,7 @@ import Page21 from '../pages/Page21';
 
 const SectionOne = () => {
     const location = useLocation();
-    const [nativeWidth, setNativeWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const [nativeWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
 
     useEffect(() => {
@@ -61,6 +63,12 @@ const SectionOne = () => {
                 </div>
                 <div id="provincial-gdp" className="stacked-page-wrapper">
                     <Page8 />
+                </div>
+                <div id="canadian-energy-exports-us-states" className="stacked-page-wrapper">
+                    <Page14 />
+                </div>
+                <div id="canada-global-energy-trade" className="stacked-page-wrapper">
+                    <Page15 />
                 </div>
                 <div id="employment" className="stacked-page-wrapper page-with-title-divider">
                     <Page9 />

@@ -10,9 +10,8 @@ import numpy as np
 import pandas as pd
 from .connection import DatabaseConnection
 from .eedas_registry import (
-    get_raw_tables,
-    unique_raw_data_tables,
-    unique_raw_metadata_tables,
+    get_source_table,
+    unique_source_tables,
     TABLE_CALC_CAPITAL_EXPENDITURES,
     TABLE_CALC_CLEAN_TECH,
     TABLE_CALC_ECONOMIC_CONTRIBUTIONS,
@@ -22,8 +21,7 @@ from .eedas_registry import (
     TABLE_CALC_INTERNATIONAL_INVESTMENT,
     TABLE_CALC_PROVINCIAL_GDP,
     TABLE_DATA_SOURCES,
-    TABLE_EXPORT_DATA,
-    TABLE_EXPORT_METADATA,
+    TABLE_EXPORT,
     TABLE_MAJOR_PROJECTS_MAP,
     TABLE_RUN_HISTORY,
 )
@@ -131,98 +129,126 @@ class DataRepository:
     
     def clear_raw_data(self, source_key: str):
         """
-        Clear raw data for a specific source before refresh.
-        
-        Args:
-            source_key: Identifier for the data source
+        Clear ingest rows for a specific source before refresh.
         """
-        data_table, meta_table = get_raw_tables(source_key)
+        table = get_source_table(source_key)
         self.db.execute_non_query(
-            f"DELETE FROM [{data_table}] WHERE source_key = ?",
+            f"DELETE FROM [{table}] WHERE source_key = ?",
             (source_key,),
         )
-        self.db.execute_non_query(
-            f"DELETE FROM [{meta_table}] WHERE source_key = ?",
-            (source_key,),
-        )
-    
-    def insert_raw_statcan_data(self, source_key: str, 
-                                 data: List[Tuple[str, str, float]]):
+
+    def merge_source_ingest(
+        self,
+        source_key: str,
+        data_rows: List[Tuple[str, str, float]],
+        metadata_rows: List[Tuple],
+    ) -> int:
         """
-        Insert raw StatCan data points.
-        
-        Args:
-            source_key: Identifier for the data source
-            data: List of (vector, ref_date, value) tuples
+        Upsert (vector, ref_date, value) rows into the unified ingest table,
+        joining metadata from metadata_rows (per vector).
         """
-        if not data:
+        if not data_rows:
             return 0
-        
-        data_table, _ = get_raw_tables(source_key)
-        query = f"""
-            MERGE INTO [{data_table}] AS target
-            USING (VALUES (?, ?, ?, ?)) AS source (vector, ref_date, value, source_key)
-            ON target.vector = source.vector AND target.ref_date = source.ref_date
+        table = get_source_table(source_key)
+        meta_by_v: Dict[str, Tuple] = {}
+        for row in metadata_rows or []:
+            v = str(row[0])
+            meta_by_v[v] = (
+                row[1] if len(row) > 1 else None,
+                row[2] if len(row) > 2 else None,
+                row[3] if len(row) > 3 else None,
+                row[4] if len(row) > 4 else None,
+                row[5] if len(row) > 5 else None,
+            )
+        merge_sql = f"""
+            MERGE INTO [{table}] AS t
+            USING (SELECT ? AS vector, ? AS ref_date, ? AS value, ? AS title, ? AS uom,
+                          ? AS scalar_factor, ? AS source_org, ? AS source_url, ? AS source_key) AS s
+            ON t.vector = s.vector AND t.ref_date = s.ref_date
             WHEN MATCHED THEN
-                UPDATE SET value = source.value,
-                           source_key = source.source_key,
+                UPDATE SET value = s.value,
+                           title = COALESCE(s.title, t.title),
+                           uom = COALESCE(s.uom, t.uom),
+                           scalar_factor = COALESCE(s.scalar_factor, t.scalar_factor),
+                           source_org = COALESCE(s.source_org, t.source_org),
+                           source_url = COALESCE(s.source_url, t.source_url),
+                           source_key = s.source_key,
                            fetched_at = GETUTCDATE()
             WHEN NOT MATCHED THEN
-                INSERT (vector, ref_date, value, source_key)
-                VALUES (source.vector, source.ref_date, source.value, source.source_key);
+                INSERT (vector, ref_date, value, title, uom, scalar_factor, source_org, source_url, source_key)
+                VALUES (s.vector, s.ref_date, s.value, s.title, s.uom, s.scalar_factor, s.source_org, s.source_url, s.source_key);
         """
-        
-        # Convert numpy types to Python native types
-        params_list = [
-            (str(row[0]), str(row[1]), to_python_type(row[2]), source_key) 
-            for row in data
-        ]
-        
+        n = 0
         with self.db.get_connection() as conn:
-            cursor = conn.cursor()
-            for params in params_list:
-                cursor.execute(query, params)
+            cur = conn.cursor()
+            for vector, ref_date, value in data_rows:
+                m = meta_by_v.get(str(vector), (None, None, None, None, None))
+                cur.execute(
+                    merge_sql,
+                    (
+                        str(vector),
+                        str(ref_date),
+                        to_python_type(value),
+                        m[0],
+                        m[1],
+                        m[2],
+                        m[3],
+                        m[4],
+                        source_key,
+                    ),
+                )
+                n += 1
             conn.commit()
-            return len(params_list)
-    
-    def insert_raw_statcan_metadata(self, source_key: str,
-                                     metadata: List[Tuple[str, str, str, str, str, str]]):
+        return n
+
+    def upsert_ingest_metadata_only(self, source_key: str, metadata: List[Tuple]) -> int:
         """
-        Insert raw StatCan metadata.
-        
-        Args:
-            source_key: Identifier for the data source
-            metadata: List of (vector, title, uom, scalar_factor, source_org, source_url) tuples
+        Update or insert metadata anchor rows (ref_date N'') for vectors without touching series rows.
         """
         if not metadata:
             return 0
-        
-        _, meta_table = get_raw_tables(source_key)
-        query = f"""
-            MERGE INTO [{meta_table}] AS target
-            USING (VALUES (?, ?, ?, ?, ?, ?, ?)) AS source (vector, title, uom, scalar_factor, source_org, source_url, source_key)
-            ON target.vector = source.vector
+        table = get_source_table(source_key)
+        merge_sql = f"""
+            MERGE INTO [{table}] AS t
+            USING (SELECT ? AS vector, N'' AS ref_date, CAST(NULL AS DECIMAL(18,4)) AS value,
+                          ? AS title, ? AS uom, ? AS scalar_factor, ? AS source_org, ? AS source_url,
+                          ? AS source_key) AS s
+            ON t.vector = s.vector AND t.ref_date = s.ref_date
             WHEN MATCHED THEN
-                UPDATE SET title = source.title,
-                           uom = source.uom,
-                           scalar_factor = source.scalar_factor,
-                           source_org = source.source_org,
-                           source_url = source.source_url,
-                           source_key = source.source_key,
-                           fetched_at = GETUTCDATE()
+                UPDATE SET title = s.title, uom = s.uom, scalar_factor = s.scalar_factor,
+                           source_org = s.source_org, source_url = s.source_url,
+                           source_key = s.source_key, fetched_at = GETUTCDATE()
             WHEN NOT MATCHED THEN
-                INSERT (vector, title, uom, scalar_factor, source_org, source_url, source_key)
-                VALUES (source.vector, source.title, source.uom, source.scalar_factor, source.source_org, source.source_url, source.source_key);
+                INSERT (vector, ref_date, value, title, uom, scalar_factor, source_org, source_url, source_key)
+                VALUES (s.vector, s.ref_date, s.value, s.title, s.uom, s.scalar_factor, s.source_org, s.source_url, s.source_key);
         """
-        
-        params_list = [(row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else None, row[5] if len(row) > 5 else None, source_key) for row in metadata]
-        
+        n = 0
         with self.db.get_connection() as conn:
-            cursor = conn.cursor()
-            for params in params_list:
-                cursor.execute(query, params)
+            cur = conn.cursor()
+            for row in metadata:
+                cur.execute(
+                    merge_sql,
+                    (
+                        row[0],
+                        row[1] if len(row) > 1 else None,
+                        row[2] if len(row) > 2 else None,
+                        row[3] if len(row) > 3 else None,
+                        row[4] if len(row) > 4 else None,
+                        row[5] if len(row) > 5 else None,
+                        source_key,
+                    ),
+                )
+                n += 1
             conn.commit()
-            return len(params_list)
+        return n
+
+    def insert_raw_statcan_data(self, source_key: str, data: List[Tuple[str, str, float]]):
+        """Insert data points only (no metadata). Prefer merge_source_ingest when metadata is available."""
+        return self.merge_source_ingest(source_key, data, [])
+
+    def insert_raw_statcan_metadata(self, source_key: str, metadata: List[Tuple]):
+        """Metadata-only upserts (anchor rows)."""
+        return self.upsert_ingest_metadata_only(source_key, metadata)
     
     def insert_major_projects_map(self, rows: List[Dict[str, Any]]):
         """
@@ -631,38 +657,25 @@ class DataRepository:
     
     def prepare_export_data(self):
         """
-        Prepare export tables by aggregating all per-source ingest tables.
+        Rebuild nrcan_fb_export from all unified ingest tables (wide copy).
 
-        Physical raw/semantic series live in tables listed in eedas_registry.yaml
-        (unioned here). Calculated nrcan_fb_s* tables are normalized stores; export
-        continues to use semantic vectors from the ingest layer where present.
+        Website CSVs are built from nrcan_fb_export; calc tables are not unioned here.
         """
-        self.db.execute_non_query(f"DELETE FROM [{TABLE_EXPORT_DATA}]")
-        self.db.execute_non_query(f"DELETE FROM [{TABLE_EXPORT_METADATA}]")
-
-        data_tables = unique_raw_data_tables()
-        if data_tables:
-            parts = [
-                f"SELECT vector, ref_date, CAST(value AS NVARCHAR(100)) AS value FROM [{t}]"
-                for t in data_tables
-            ]
-            union_sql = " UNION ALL ".join(parts)
-            self.db.execute_non_query(
-                f"INSERT INTO [{TABLE_EXPORT_DATA}] (vector, ref_date, value) {union_sql}"
-            )
-
-        meta_tables = unique_raw_metadata_tables()
-        if meta_tables:
-            mparts = [
-                "SELECT vector, title, uom, scalar_factor, source_org, source_url "
-                f"FROM [{t}]"
-                for t in meta_tables
-            ]
-            munion = " UNION ALL ".join(mparts)
-            self.db.execute_non_query(
-                f"INSERT INTO [{TABLE_EXPORT_METADATA}] "
-                f"(vector, title, uom, scalar_factor, source_org, source_url) {munion}"
-            )
+        self.db.execute_non_query(f"DELETE FROM [{TABLE_EXPORT}]")
+        tables = unique_source_tables()
+        if not tables:
+            return
+        parts = [
+            f"SELECT vector, ref_date, CAST(value AS NVARCHAR(100)) AS value, "
+            f"title, uom, scalar_factor, source_org, source_url FROM [{t}]"
+            for t in tables
+        ]
+        union_sql = " UNION ALL ".join(parts)
+        self.db.execute_non_query(
+            f"INSERT INTO [{TABLE_EXPORT}] "
+            f"(vector, ref_date, value, title, uom, scalar_factor, source_org, source_url) "
+            f"{union_sql}"
+        )
     
     def get_export_data(self) -> List[Tuple[str, str, str]]:
         """
@@ -672,7 +685,9 @@ class DataRepository:
             List of (vector, ref_date, value) tuples
         """
         results = self.db.execute_query(
-            f"SELECT vector, ref_date, value FROM [{TABLE_EXPORT_DATA}] ORDER BY vector, ref_date"
+            f"SELECT vector, ref_date, value FROM [{TABLE_EXPORT}] "
+            f"WHERE value IS NOT NULL AND ref_date <> N'' "
+            f"ORDER BY vector, ref_date"
         )
         return [(r['vector'], r['ref_date'], r['value']) for r in results]
     
@@ -684,8 +699,11 @@ class DataRepository:
             List of (vector, title, uom, scalar_factor, source_org, source_url) tuples
         """
         results = self.db.execute_query(
-            f"SELECT vector, title, uom, scalar_factor, source_org, source_url "
-            f"FROM [{TABLE_EXPORT_METADATA}] ORDER BY vector"
+            f"SELECT vector, "
+            f"MAX(title) AS title, MAX(uom) AS uom, MAX(scalar_factor) AS scalar_factor, "
+            f"MAX(source_org) AS source_org, MAX(source_url) AS source_url "
+            f"FROM [{TABLE_EXPORT}] WHERE title IS NOT NULL "
+            f"GROUP BY vector ORDER BY vector"
         )
         return [(r['vector'], r['title'], r['uom'], r['scalar_factor'], r.get('source_org') or '', r.get('source_url') or '') for r in results]
     

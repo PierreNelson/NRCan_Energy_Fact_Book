@@ -160,7 +160,7 @@
       langLabel: 'Language:',
       manifestError: 'Could not load glossary_manifest.csv. Ensure this page is served from the glossary folder next to the CSV exports.',
       sectionLoadError: 'Failed to load table:',
-      footnote: 'Note: content is shown from CSV exports only; it is not queried live from the database.',
+      footnote: 'Note: content is shown from CSV exports only; it is not queried live from the database. After regenerating files, use a hard refresh (Ctrl+F5) if headings or tables look outdated.',
       searchAllLabel: 'Search all tables',
       searchAllHint: 'Filters every dataset below at once (same idea as the in-app glossary). Tables with no matches are hidden until you clear the search.',
       searchAllPlaceholder: 'e.g. oil, vector id, province…',
@@ -172,7 +172,7 @@
       langLabel: 'Langue :',
       manifestError: 'Impossible de charger glossary_manifest.csv. Vérifiez que cette page est servie depuis le dossier glossary à côté des exportations CSV.',
       sectionLoadError: 'Échec du chargement du tableau :',
-      footnote: 'Remarque : le contenu provient uniquement des exportations CSV ; il n\'est pas interrogé en direct dans la base de données.',
+      footnote: 'Remarque : le contenu provient uniquement des exportations CSV ; il n\'est pas interrogé en direct dans la base de données. Après une nouvelle exportation, faites un rechargement forcé (Ctrl+F5) si les en-têtes semblent anciens.',
       searchAllLabel: 'Rechercher dans tous les tableaux',
       searchAllHint: 'Filtre tous les jeux de données ci-dessous en même temps (comme l’ancien glossaire). Les tableaux sans résultat sont masqués tant que la recherche n’est pas effacée.',
       searchAllPlaceholder: 'ex. pétrole, identifiant, province…',
@@ -185,6 +185,11 @@
   var sectionMetas = [];
   var allTables = [];
   var globalSearchDebounce = null;
+
+  /** Avoid stale glossary_manifest.csv / CSVs after re-export (browser HTTP cache). */
+  function fetchNoCache(url) {
+    return fetch(url, { cache: 'no-store' });
+  }
 
   function t(key) {
     return UI[uiLang][key] || UI.en[key] || key;
@@ -330,7 +335,7 @@
           sectionMetas.push(meta);
 
           chain = chain.then(function () {
-            return fetch('./' + encodeURI(filename))
+            return fetchNoCache('./' + encodeURI(filename))
               .then(function (r) {
                 if (!r.ok) throw new Error(t('sectionLoadError') + ' ' + filename);
                 return r.text();

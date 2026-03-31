@@ -16,6 +16,7 @@ from typing import Dict, Any, List, Tuple
 from datetime import datetime
 
 from .base import SectionProcessor
+from xlsx_paths import resolve_root_xlsx
 
 
 class Section1Indicators(SectionProcessor):
@@ -515,12 +516,7 @@ class Section1Indicators(SectionProcessor):
         """
         print("  Processing world energy production data...")
         
-        import os
-        from pathlib import Path
-        
-        # Path to IEA Excel file
-        script_dir = Path(__file__).parent.parent.parent
-        excel_path = script_dir / "World Energy Balances Highlights 2025.xlsx"
+        excel_path = resolve_root_xlsx("World Energy Balances Highlights 2025.xlsx")
         
         if not excel_path.exists():
             print(f"    Warning: IEA Excel file not found at {excel_path}")
@@ -664,11 +660,7 @@ class Section1Indicators(SectionProcessor):
         """
         print("  Processing CEA data from Excel...")
         
-        import os
-        from pathlib import Path
-        
-        script_dir = Path(__file__).parent.parent.parent
-        cea_path = script_dir / "CEA_2023.xlsx"
+        cea_path = resolve_root_xlsx("CEA_2023.xlsx")
         
         if not cea_path.exists():
             print(f"    Warning: CEA file not found at {cea_path}")

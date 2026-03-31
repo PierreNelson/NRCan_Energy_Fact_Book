@@ -37,6 +37,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from config_loader import get_config, Config
 from db.connection import get_connection, DatabaseConnection
 from db.models import DataRepository
+from db.ensure_schema import ensure_database_schema
 from sections import Section1Indicators, Section2Investment, Section4Indicators, Section5CleanPower
 from export.website_files import export_website_files
 
@@ -276,7 +277,7 @@ def cmd_test_connection(args, config: Config, db: DatabaseConnection):
         print("1. Ensure SQL Server is running")
         print("2. Check the config.yaml settings")
         print("3. Verify credentials (or use DB_USERNAME/DB_PASSWORD env vars)")
-        print("4. Run setup_database.sql to create the database")
+        print("4. Create database NRCanEnergyFactbook (empty), then run: python main.py refresh (creates tables)")
         return 1
 
 
@@ -328,6 +329,11 @@ Examples:
         '--export-after', '-e',
         action='store_true',
         help='Export website files after refresh'
+    )
+    refresh_parser.add_argument(
+        '--skip-ensure-schema',
+        action='store_true',
+        help='Do not run setup_database.sql batches before refresh (advanced)'
     )
     
     # Export command

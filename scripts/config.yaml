@@ -59,13 +59,13 @@ sections:
         enabled: true
         description: "Canadian Energy Assets from CEA Excel"
         source_type: "file"
-        file_path: "CEA_2023.xlsx"
+        file_path: "CEA_2023.xlsx"  # relative to EXTERNAL_XLSX_DATA_DIR or repo root
 
       ghg_emissions:
         enabled: true
         description: "GHG emissions by Canadian economic sector (ECCC)"
         source_type: "file"
-        file_path: "EN_Annex10_GHG_Econ_Canada.xlsx"
+        file_path: "EN_Annex10_GHG_Econ_Canada.xlsx"  # relative to EXTERNAL_XLSX_DATA_DIR or repo root
 
   # Section 2: Investment
   section2_investment:
@@ -141,12 +141,12 @@ sections:
         enabled: true
         description: "Secondary energy use (final demand) by fuel type for page 49"
         source_type: "file"
-        seu_final_demand_file_path: ""  # Project root SEU Final Demand.xlsx if empty
+        seu_final_demand_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
       residential_daily_lives:
         enabled: true
         description: "Residential energy (energy in our daily lives) - EE Improvement + optional Residential sheet"
         source_type: "file"
-        ee_improvement_file_path: ""  # Project root EE Improvement.xlsx if empty
+        ee_improvement_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
       residential_pie_charts:
         enabled: true
         description: "Residential by type and space/water heating by source (page 51) from OEE HB, Table 7, Table 14"

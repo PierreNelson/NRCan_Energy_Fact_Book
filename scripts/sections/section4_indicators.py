@@ -3,7 +3,7 @@ Section 4: Energy Efficiency / Indicators data processor.
 
 Handles data for:
 - Energy use (OEE NEUD sector totals R,C,I,T,A + Primary Energy Use Demand P,NPC,FK,EL).
-  OEE: five sector Table 1 XLS from NRCan OEE NEUD (URLs in code). Primary: local Excel at project root.
+  OEE: five sector Table 1 XLS from NRCan OEE NEUD (URLs in code). Primary: local Excel (EXTERNAL_XLSX_DATA_DIR or repo root).
 """
 
 import io
@@ -17,6 +17,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from .base import SectionProcessor
+from xlsx_paths import default_xlsx_base_dir
 
 # OEE NEUD: all sectors use comprehensive ZIPs (direct Excel XLS URLs often 404/500).
 OEE_NEUD_ZIP_BASE = "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/zip/2022"
@@ -54,7 +55,7 @@ class Section4Indicators(SectionProcessor):
     Processor for Section 4 (Energy Efficiency / Indicators).
 
     Data sources:
-    - energy_use: OEE NEUD (R,C,I,T,A) from five sector XLS URLs; Primary (P,NPC,FK,EL) from project-root Excel.
+    - energy_use: OEE NEUD (R,C,I,T,A) from five sector XLS URLs; Primary (P,NPC,FK,EL) from local Excel.
     """
 
     SECTION_KEY = "section4_indicators"
@@ -219,18 +220,12 @@ class Section4Indicators(SectionProcessor):
         return by_year
 
     def _get_primary_demand_path(self, energy_cfg: Dict[str, Any]) -> Path:
-        """Resolve Primary Energy Use Demand file: config override or project_root / DEFAULT_PRIMARY_DEMAND_FILENAME."""
+        """Resolve Primary Energy Use Demand file: config override or default dir / DEFAULT_PRIMARY_DEMAND_FILENAME."""
         primary_path = energy_cfg.get('primary_demand_file_path') or energy_cfg.get('primary_demand_path')
-        script_dir = Path(__file__).resolve().parent.parent
+        xlsx_base = default_xlsx_base_dir()
         if primary_path and str(primary_path).strip():
-            return self._resolve_path(primary_path.strip(), script_dir)
-        project_root = Path(__file__).resolve().parent.parent.parent
-        p = project_root / DEFAULT_PRIMARY_DEMAND_FILENAME
-        if not p.exists() and script_dir.parent.exists():
-            p_alt = script_dir.parent / DEFAULT_PRIMARY_DEMAND_FILENAME
-            if p_alt.exists():
-                return p_alt
-        return p
+            return self._resolve_path(primary_path.strip(), xlsx_base)
+        return xlsx_base / DEFAULT_PRIMARY_DEMAND_FILENAME
 
     def _find_year_col(self, df: pd.DataFrame) -> str:
         return self.get_column(df, 'ref_date', 'REF_DATE', 'year', 'Year', 'YEAR')
@@ -287,7 +282,7 @@ class Section4Indicators(SectionProcessor):
 
     def _process_energy_use(self) -> int:
         """
-        Extract from OEE NEUD (five sector XLS URLs) and Primary Energy Use Demand (project-root Excel),
+        Extract from OEE NEUD (five sector XLS URLs) and Primary Energy Use Demand (local Excel),
         write to nrcan_fb_s4_energy_use and per-source ingest tables, then export to data.csv.
         """
         section_cfg = self.config.sections.get(self.SECTION_KEY, {})
@@ -311,7 +306,7 @@ class Section4Indicators(SectionProcessor):
             print(f"    Primary: {len(primary_by_year)} years, vectors: {', '.join(sorted(vecs)) or 'none'}")
         else:
             print(f"    Primary file not found: {path_primary}")
-            print(f"    Place '{DEFAULT_PRIMARY_DEMAND_FILENAME}' at project root or set primary_demand_file_path in config.")
+            print(f"    Place '{DEFAULT_PRIMARY_DEMAND_FILENAME}' in EXTERNAL_XLSX_DATA_DIR or set primary_demand_file_path in config.")
             return 0
         if not primary_by_year:
             print("    Primary Energy Use Demand file is empty or has no recognized columns.")
@@ -809,7 +804,7 @@ class Section4Indicators(SectionProcessor):
         section_cfg = self.config.sections.get(self.SECTION_KEY, {})
         sources_cfg = section_cfg.get('sources', {})
         res_cfg = sources_cfg.get('residential_daily_lives', {}) or {}
-        base_dir = Path(__file__).resolve().parent.parent.parent
+        base_dir = default_xlsx_base_dir()
         path_str = (res_cfg.get('ee_improvement_file_path') or '').strip()
         if path_str:
             path = self._resolve_path(path_str, base_dir)
@@ -983,7 +978,7 @@ class Section4Indicators(SectionProcessor):
         section_cfg = self.config.sections.get(self.SECTION_KEY, {})
         sources_cfg = section_cfg.get('sources', {})
         res_cfg = sources_cfg.get('residential_daily_lives', {}) or {}
-        base_dir = Path(__file__).resolve().parent.parent.parent
+        base_dir = default_xlsx_base_dir()
         path_str = (res_cfg.get('ee_improvement_file_path') or '').strip()
         if path_str:
             path = self._resolve_path(path_str, base_dir)
@@ -1063,7 +1058,7 @@ class Section4Indicators(SectionProcessor):
         section_cfg = self.config.sections.get(self.SECTION_KEY, {})
         sources_cfg = section_cfg.get('sources', {})
         seu_cfg = sources_cfg.get('seu_by_fuel', {}) or {}
-        base_dir = Path(__file__).resolve().parent.parent.parent
+        base_dir = default_xlsx_base_dir()
         path_str = (seu_cfg.get('seu_final_demand_file_path') or '').strip()
         if path_str:
             path = self._resolve_path(path_str, base_dir)

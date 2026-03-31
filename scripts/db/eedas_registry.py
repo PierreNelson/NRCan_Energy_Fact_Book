@@ -1,7 +1,7 @@
 """
 EEDAS-style table name resolution for the NRCan Energy Factbook SQL layer.
 
-Physical raw/ingest table names come from eedas_registry.yaml (source_key -> pair).
+Physical per-source table names come from eedas_registry.yaml (source_key -> source_table).
 Calc, export, and system tables use fixed identifiers below.
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 import yaml
 
@@ -26,9 +26,10 @@ TABLE_CALC_ENVIRONMENTAL_PROTECTION = "nrcan_fb_s2_environmental_protection"
 TABLE_CALC_CLEAN_TECH = "nrcan_fb_s2_clean_tech"
 TABLE_CALC_ENERGY_USE = "nrcan_fb_s4_energy_use"
 
-# Export
-TABLE_EXPORT_DATA = "nrcan_fb_export_data"
-TABLE_EXPORT_METADATA = "nrcan_fb_export_metadata"
+# Export staging (single wide table: series + attribution columns)
+TABLE_EXPORT = "nrcan_fb_export"
+TABLE_EXPORT_DATA = TABLE_EXPORT
+TABLE_EXPORT_METADATA = TABLE_EXPORT
 
 # System / integration
 TABLE_DATA_SOURCES = "nrcan_fb_data_sources"
@@ -58,50 +59,41 @@ def load_source_tables() -> Dict[str, Dict[str, str]]:
         doc = _load_yaml()
         st = doc.get("source_tables") or {}
         _source_tables = {}
-        for key, pair in st.items():
-            if not isinstance(pair, dict):
+        for key, row in st.items():
+            if not isinstance(row, dict):
                 continue
-            dt = pair.get("data_table")
-            mt = pair.get("metadata_table")
-            if not dt or not mt:
+            tbl = row.get("source_table")
+            if not tbl:
                 continue
-            validate_sql_identifier(dt)
-            validate_sql_identifier(mt)
-            _source_tables[str(key)] = {"data_table": dt, "metadata_table": mt}
+            validate_sql_identifier(str(tbl))
+            _source_tables[str(key)] = {"source_table": str(tbl)}
     return _source_tables
 
 
-def get_raw_tables(source_key: str) -> Tuple[str, str]:
+def get_source_table(source_key: str) -> str:
     st = load_source_tables()
     if source_key not in st:
         raise KeyError(
             f"Unknown source_key for EEDAS registry: {source_key!r}. "
             f"Add it to scripts/db/eedas_registry.yaml."
         )
-    pair = st[source_key]
-    return validate_sql_identifier(pair["data_table"]), validate_sql_identifier(pair["metadata_table"])
+    return validate_sql_identifier(st[source_key]["source_table"])
 
 
-def unique_raw_data_tables() -> List[str]:
+def unique_source_tables() -> List[str]:
     seen: Set[str] = set()
     out: List[str] = []
-    for pair in load_source_tables().values():
-        t = pair["data_table"]
+    for row in load_source_tables().values():
+        t = row["source_table"]
         if t not in seen:
             seen.add(t)
             out.append(t)
     return sorted(out)
 
 
-def unique_raw_metadata_tables() -> List[str]:
-    seen: Set[str] = set()
-    out: List[str] = []
-    for pair in load_source_tables().values():
-        t = pair["metadata_table"]
-        if t not in seen:
-            seen.add(t)
-            out.append(t)
-    return sorted(out)
+# Backward-compatible aliases (older call sites / docs)
+get_ingest_table = get_source_table
+unique_ingest_tables = unique_source_tables
 
 
 def reset_cache() -> None:

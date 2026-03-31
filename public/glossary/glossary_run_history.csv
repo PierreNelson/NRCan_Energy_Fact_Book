@@ -1,4 +1,130 @@
 run_id,source_key,run_type,status,rows_affected,error_message,started_at,completed_at,duration_seconds
+1421,environmental_clean_tech,fetch,success,91.0,,2026-03-31 08:18:32.916666,2026-03-31 08:19:03.823333,31
+1420,commercial_institutional,fetch,success,219.0,,2026-03-31 08:18:29.810000,2026-03-31 08:18:32.916666,3
+1419,residential_pie_charts,fetch,success,432.0,,2026-03-31 08:18:25.286666,2026-03-31 08:18:29.810000,4
+1418,residential_daily_lives,fetch,success,3.0,,2026-03-31 08:18:24.660000,2026-03-31 08:18:25.283333,1
+1417,seu_by_fuel,fetch,success,11.0,,2026-03-31 08:18:24.570000,2026-03-31 08:18:24.660000,0
+1416,energy_use,fetch,success,9.0,,2026-03-31 08:18:20.996666,2026-03-31 08:18:24.566666,4
+1415,major_projects_map,fetch,success,464.0,,2026-03-31 08:18:18.506666,2026-03-31 08:18:20.996666,2
+1414,clean_tech,fetch,success,93.0,,2026-03-31 08:18:17.830000,2026-03-31 08:18:18.503333,1
+1413,major_projects,fetch,success,32.0,,2026-03-31 08:18:17.183333,2026-03-31 08:18:17.826666,0
+1412,environmental_protection,fetch,success,96.0,,2026-03-31 08:18:16.336666,2026-03-31 08:18:17.180000,1
+1411,foreign_control,fetch,success,42.0,,2026-03-31 08:18:15.740000,2026-03-31 08:18:16.333333,1
+1410,international_investment,fetch,success,72.0,,2026-03-31 08:18:15.063333,2026-03-31 08:18:15.740000,0
+1409,investment_by_asset,fetch,success,272.0,,2026-03-31 08:18:14.280000,2026-03-31 08:18:15.060000,1
+1408,infrastructure,fetch,success,380.0,,2026-03-31 08:18:12.636666,2026-03-31 08:18:14.280000,2
+1407,capital_expenditures,fetch,success,0.0,,2026-03-31 08:17:52.950000,2026-03-31 08:18:12.630000,20
+1406,ghg_emissions,fetch,success,264.0,,2026-03-31 08:17:52.713333,2026-03-31 08:17:52.946666,0
+1405,canadian_energy_assets,fetch,success,120.0,,2026-03-31 08:17:52.193333,2026-03-31 08:17:52.710000,0
+1404,world_energy_production,fetch,success,595.0,,2026-03-31 08:17:47.753333,2026-03-31 08:17:52.190000,5
+1403,provincial_gdp,fetch,success,224.0,,2026-03-31 08:17:46.990000,2026-03-31 08:17:47.750000,1
+1402,nominal_gdp,fetch,success,60.0,,2026-03-31 08:17:45.053333,2026-03-31 08:17:46.986666,1
+1401,economic_contributions,fetch,success,152.0,,2026-03-31 08:17:43.516666,2026-03-31 08:17:45.050000,2
+1400,environmental_clean_tech,fetch,success,91.0,,2026-03-31 07:57:04.506666,2026-03-31 07:57:35.690000,31
+1399,commercial_institutional,fetch,success,219.0,,2026-03-31 07:57:01.113333,2026-03-31 07:57:04.503333,3
+1398,residential_pie_charts,fetch,success,432.0,,2026-03-31 07:56:56.510000,2026-03-31 07:57:01.113333,5
+1397,residential_daily_lives,fetch,success,3.0,,2026-03-31 07:56:55.826666,2026-03-31 07:56:56.510000,1
+1396,seu_by_fuel,fetch,success,11.0,,2026-03-31 07:56:55.736666,2026-03-31 07:56:55.823333,0
+1395,energy_use,fetch,success,9.0,,2026-03-31 07:56:51.966666,2026-03-31 07:56:55.733333,4
+1394,major_projects_map,fetch,success,464.0,,2026-03-31 07:56:49.510000,2026-03-31 07:56:51.963333,2
+1393,clean_tech,fetch,success,93.0,,2026-03-31 07:56:48.783333,2026-03-31 07:56:49.506666,1
+1392,major_projects,fetch,success,32.0,,2026-03-31 07:56:47.900000,2026-03-31 07:56:48.780000,1
+1391,environmental_protection,fetch,success,96.0,,2026-03-31 07:56:47.043333,2026-03-31 07:56:47.900000,0
+1390,foreign_control,fetch,success,42.0,,2026-03-31 07:56:46.410000,2026-03-31 07:56:47.040000,1
+1389,international_investment,fetch,success,72.0,,2026-03-31 07:56:24.560000,2026-03-31 07:56:46.403333,22
+1388,investment_by_asset,fetch,success,272.0,,2026-03-31 07:56:23.760000,2026-03-31 07:56:24.556666,1
+1387,infrastructure,fetch,success,380.0,,2026-03-31 07:56:22.646666,2026-03-31 07:56:23.756666,1
+1386,capital_expenditures,fetch,success,220.0,,2026-03-31 07:56:21.790000,2026-03-31 07:56:22.643333,1
+1385,ghg_emissions,fetch,success,264.0,,2026-03-31 07:56:21.540000,2026-03-31 07:56:21.786666,0
+1384,canadian_energy_assets,fetch,success,120.0,,2026-03-31 07:56:21.000000,2026-03-31 07:56:21.540000,0
+1383,world_energy_production,fetch,success,595.0,,2026-03-31 07:56:16.430000,2026-03-31 07:56:20.996666,4
+1382,provincial_gdp,fetch,success,224.0,,2026-03-31 07:56:15.533333,2026-03-31 07:56:16.426666,1
+1381,nominal_gdp,fetch,success,60.0,,2026-03-31 07:56:13.173333,2026-03-31 07:56:15.530000,2
+1380,economic_contributions,fetch,success,152.0,,2026-03-31 07:56:11.613333,2026-03-31 07:56:13.170000,2
+1379,environmental_clean_tech,fetch,success,91.0,,2026-03-31 07:50:30.190000,2026-03-31 07:50:44.600000,14
+1378,commercial_institutional,fetch,success,219.0,,2026-03-31 07:50:27.206666,2026-03-31 07:50:30.186666,3
+1377,residential_pie_charts,fetch,success,432.0,,2026-03-31 07:50:22.523333,2026-03-31 07:50:27.206666,5
+1376,residential_daily_lives,fetch,success,3.0,,2026-03-31 07:50:21.783333,2026-03-31 07:50:22.506666,1
+1375,seu_by_fuel,fetch,success,11.0,,2026-03-31 07:50:21.583333,2026-03-31 07:50:21.766666,0
+1374,energy_use,fetch,success,9.0,,2026-03-31 07:50:17.750000,2026-03-31 07:50:21.580000,4
+1373,major_projects_map,fetch,success,464.0,,2026-03-31 07:50:14.333333,2026-03-31 07:50:17.730000,3
+1372,clean_tech,fetch,success,93.0,,2026-03-31 07:50:13.520000,2026-03-31 07:50:14.330000,1
+1371,major_projects,fetch,success,32.0,,2026-03-31 07:50:12.580000,2026-03-31 07:50:13.500000,1
+1370,environmental_protection,fetch,failed,,"('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))",2026-03-31 07:49:52.923333,2026-03-31 07:50:12.560000,20
+1369,foreign_control,fetch,success,42.0,,2026-03-31 07:49:52.256666,2026-03-31 07:49:52.920000,0
+1368,international_investment,fetch,success,72.0,,2026-03-31 07:49:51.580000,2026-03-31 07:49:52.253333,1
+1367,investment_by_asset,fetch,success,272.0,,2026-03-31 07:49:50.683333,2026-03-31 07:49:51.573333,1
+1366,infrastructure,fetch,success,380.0,,2026-03-31 07:49:49.520000,2026-03-31 07:49:50.680000,1
+1365,capital_expenditures,fetch,success,220.0,,2026-03-31 07:49:48.680000,2026-03-31 07:49:49.520000,1
+1364,ghg_emissions,fetch,success,264.0,,2026-03-31 07:49:48.420000,2026-03-31 07:49:48.676666,0
+1363,canadian_energy_assets,fetch,success,120.0,,2026-03-31 07:49:47.886666,2026-03-31 07:49:48.420000,1
+1362,world_energy_production,fetch,success,595.0,,2026-03-31 07:49:43.243333,2026-03-31 07:49:47.880000,4
+1361,provincial_gdp,fetch,success,224.0,,2026-03-31 07:49:42.443333,2026-03-31 07:49:43.240000,1
+1360,nominal_gdp,fetch,success,60.0,,2026-03-31 07:49:40.400000,2026-03-31 07:49:42.440000,2
+1359,economic_contributions,fetch,success,152.0,,2026-03-31 07:49:09.903333,2026-03-31 07:49:40.396666,31
+1358,environmental_clean_tech,fetch,success,91.0,,2026-03-31 07:31:42.423333,2026-03-31 07:31:54.566666,12
+1357,commercial_institutional,fetch,success,219.0,,2026-03-31 07:31:39.280000,2026-03-31 07:31:42.420000,3
+1356,residential_pie_charts,fetch,success,432.0,,2026-03-31 07:31:34.843333,2026-03-31 07:31:39.276666,5
+1355,residential_daily_lives,fetch,success,3.0,,2026-03-31 07:31:34.213333,2026-03-31 07:31:34.840000,0
+1354,seu_by_fuel,fetch,success,11.0,,2026-03-31 07:31:34.126666,2026-03-31 07:31:34.213333,0
+1353,energy_use,fetch,success,9.0,,2026-03-31 07:31:30.573333,2026-03-31 07:31:34.123333,4
+1352,major_projects_map,fetch,success,464.0,,2026-03-31 07:31:28.063333,2026-03-31 07:31:30.570000,2
+1351,clean_tech,fetch,success,93.0,,2026-03-31 07:31:27.320000,2026-03-31 07:31:28.060000,1
+1350,major_projects,fetch,success,32.0,,2026-03-31 07:31:26.446666,2026-03-31 07:31:27.320000,1
+1349,environmental_protection,fetch,success,96.0,,2026-03-31 07:31:25.650000,2026-03-31 07:31:26.443333,1
+1348,foreign_control,fetch,success,42.0,,2026-03-31 07:31:25.000000,2026-03-31 07:31:25.646666,0
+1347,international_investment,fetch,success,72.0,,2026-03-31 07:31:24.320000,2026-03-31 07:31:24.996666,0
+1346,investment_by_asset,fetch,success,272.0,,2026-03-31 07:31:23.500000,2026-03-31 07:31:24.320000,1
+1345,infrastructure,fetch,success,380.0,,2026-03-31 07:31:22.373333,2026-03-31 07:31:23.500000,1
+1344,capital_expenditures,fetch,success,220.0,,2026-03-31 07:31:21.546666,2026-03-31 07:31:22.373333,1
+1343,ghg_emissions,fetch,success,264.0,,2026-03-31 07:31:21.310000,2026-03-31 07:31:21.543333,0
+1342,canadian_energy_assets,fetch,success,120.0,,2026-03-31 07:31:20.763333,2026-03-31 07:31:21.310000,1
+1341,world_energy_production,fetch,success,595.0,,2026-03-31 07:31:16.510000,2026-03-31 07:31:20.763333,4
+1340,provincial_gdp,fetch,success,224.0,,2026-03-31 07:31:15.703333,2026-03-31 07:31:16.506666,1
+1339,nominal_gdp,fetch,success,60.0,,2026-03-31 07:31:13.796666,2026-03-31 07:31:15.700000,2
+1338,economic_contributions,fetch,success,152.0,,2026-03-31 07:31:12.183333,2026-03-31 07:31:13.793333,1
+1337,environmental_clean_tech,fetch,success,91.0,,2026-03-31 07:18:11.556666,2026-03-31 07:18:51.716666,40
+1336,commercial_institutional,fetch,success,219.0,,2026-03-31 07:18:08.450000,2026-03-31 07:18:11.553333,3
+1335,residential_pie_charts,fetch,success,432.0,,2026-03-31 07:18:03.870000,2026-03-31 07:18:08.446666,5
+1334,residential_daily_lives,fetch,success,3.0,,2026-03-31 07:18:03.190000,2026-03-31 07:18:03.866666,0
+1333,seu_by_fuel,fetch,success,11.0,,2026-03-31 07:18:03.096666,2026-03-31 07:18:03.190000,0
+1332,energy_use,fetch,success,9.0,,2026-03-31 07:17:59.516666,2026-03-31 07:18:03.093333,4
+1331,major_projects_map,fetch,success,464.0,,2026-03-31 07:17:56.966666,2026-03-31 07:17:59.513333,3
+1330,clean_tech,fetch,success,93.0,,2026-03-31 07:17:56.213333,2026-03-31 07:17:56.963333,0
+1329,major_projects,fetch,success,32.0,,2026-03-31 07:17:55.550000,2026-03-31 07:17:56.213333,1
+1328,environmental_protection,fetch,success,96.0,,2026-03-31 07:17:53.140000,2026-03-31 07:17:55.546666,2
+1327,foreign_control,fetch,success,42.0,,2026-03-31 07:17:50.763333,2026-03-31 07:17:53.140000,3
+1326,international_investment,fetch,success,72.0,,2026-03-31 07:17:48.303333,2026-03-31 07:17:50.760000,2
+1325,investment_by_asset,fetch,success,272.0,,2026-03-31 07:17:37.290000,2026-03-31 07:17:48.300000,11
+1324,infrastructure,fetch,success,380.0,,2026-03-31 07:17:25.923333,2026-03-31 07:17:37.290000,12
+1323,capital_expenditures,fetch,success,220.0,,2026-03-31 07:17:25.060000,2026-03-31 07:17:25.920000,0
+1322,ghg_emissions,fetch,success,264.0,,2026-03-31 07:17:24.816666,2026-03-31 07:17:25.056666,1
+1321,canadian_energy_assets,fetch,success,120.0,,2026-03-31 07:17:24.290000,2026-03-31 07:17:24.816666,0
+1320,world_energy_production,fetch,success,595.0,,2026-03-31 07:17:19.243333,2026-03-31 07:17:24.286666,5
+1319,provincial_gdp,fetch,success,224.0,,2026-03-31 07:17:16.690000,2026-03-31 07:17:19.240000,3
+1318,nominal_gdp,fetch,success,60.0,,2026-03-31 07:17:14.740000,2026-03-31 07:17:16.683333,2
+1317,economic_contributions,fetch,success,152.0,,2026-03-31 07:17:04.193333,2026-03-31 07:17:14.736666,10
+1316,environmental_clean_tech,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:08:22.930000,2026-03-31 07:09:00.420000,38
+1315,commercial_institutional,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:08:17.753333,2026-03-31 07:08:22.920000,5
+1314,residential_pie_charts,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:08:11.170000,2026-03-31 07:08:17.740000,6
+1313,residential_daily_lives,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:08:08.553333,2026-03-31 07:08:11.156666,3
+1312,seu_by_fuel,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:08:06.496666,2026-03-31 07:08:08.540000,2
+1311,energy_use,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:08:00.536666,2026-03-31 07:08:06.486666,6
+1310,major_projects_map,fetch,success,464.0,,2026-03-31 07:07:53.883333,2026-03-31 07:08:00.533333,7
+1309,clean_tech,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:07:51.193333,2026-03-31 07:07:53.873333,2
+1308,major_projects,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:07:48.570000,2026-03-31 07:07:51.186666,3
+1307,environmental_protection,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:07:44.156666,2026-03-31 07:07:48.566666,4
+1306,foreign_control,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:07:39.900000,2026-03-31 07:07:44.146666,5
+1305,international_investment,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:07:35.430000,2026-03-31 07:07:39.890000,4
+1304,investment_by_asset,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:07:23.236666,2026-03-31 07:07:35.420000,12
+1303,infrastructure,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:07:10.880000,2026-03-31 07:07:23.223333,13
+1302,capital_expenditures,fetch,success,0.0,,2026-03-31 07:06:51.180000,2026-03-31 07:07:10.866666,19
+1301,ghg_emissions,fetch,success,0.0,,2026-03-31 07:06:48.980000,2026-03-31 07:06:51.170000,3
+1300,canadian_energy_assets,fetch,success,0.0,,2026-03-31 07:06:46.366666,2026-03-31 07:06:48.976666,2
+1299,world_energy_production,fetch,success,0.0,,2026-03-31 07:06:38.730000,2026-03-31 07:06:46.360000,8
+1298,provincial_gdp,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:06:34.300000,2026-03-31 07:06:38.716666,4
+1297,nominal_gdp,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:06:30.460000,2026-03-31 07:06:34.286666,4
+1296,economic_contributions,fetch,failed,,generator didn't stop after throw(),2026-03-31 07:06:20.553333,2026-03-31 07:06:30.450000,10
 1295,environmental_clean_tech,fetch,success,60.0,,2026-03-27 08:15:42.973333,2026-03-27 08:17:24.213333,102
 1294,commercial_institutional,fetch,success,219.0,,2026-03-27 08:15:38.800000,2026-03-27 08:15:42.970000,4
 1293,residential_pie_charts,fetch,success,432.0,,2026-03-27 08:15:32.556666,2026-03-27 08:15:38.796666,6

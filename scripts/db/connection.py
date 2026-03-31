@@ -107,27 +107,30 @@ class DatabaseConnection:
         Raises:
             pyodbc.Error: If connection fails after all retries
         """
-        conn = None
+        conn: Optional[pyodbc.Connection] = None
         last_error = None
-        
+
         for attempt in range(1, self.max_retries + 1):
             try:
                 conn = pyodbc.connect(self._connection_string)
-                yield conn
-                return
+                break
             except pyodbc.Error as e:
                 last_error = e
                 if attempt < self.max_retries:
                     print(f"  Database connection failed (attempt {attempt}/{self.max_retries}): {e}")
                     time.sleep(self.retry_delay)
-            finally:
-                if conn:
-                    try:
-                        conn.close()
-                    except:
-                        pass
-        
-        raise last_error or pyodbc.Error("Failed to connect to database")
+                conn = None
+
+        if conn is None:
+            raise last_error or pyodbc.Error("Failed to connect to database")
+
+        try:
+            yield conn
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
     
     def test_connection(self) -> bool:
         """

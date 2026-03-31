@@ -1,6 +1,5 @@
-# EEDAS-style logical + physical mapping: source_key -> org_code, report_code, detail, tables
-# Physical ingest names: {org}_{report}_{detail}_data / _metadata (suffix _data / _metadata below).
-# Multiple source_keys may share one physical pair (e.g. *_raw + processed semantic).
+# EEDAS-style mapping: source_key -> org/report/detail + physical source_table name.
+# Multiple source_keys may share one physical table (e.g. *_raw + processed).
 # Calc / system tables: eedas_registry.py (TABLE_* constants).
 
 source_tables:
@@ -8,177 +7,133 @@ source_tables:
     org_code: stc
     report_code: nrsa
     detail: "3610061001"
-    data_table: stc_nrsa_3610061001_data
-    metadata_table: stc_nrsa_3610061001_metadata
+    source_table: stc_nrsa_3610061001
   economic_contributions:
     org_code: stc
     report_code: nrsa
     detail: "3610061001"
-    data_table: stc_nrsa_3610061001_data
-    metadata_table: stc_nrsa_3610061001_metadata
+    source_table: stc_nrsa_3610061001
 
   nominal_gdp:
     org_code: stc
     report_code: gdpnom
     detail: "3610010301"
-    data_table: stc_gdpnom_3610010301_data
-    metadata_table: stc_gdpnom_3610010301_metadata
+    source_table: stc_gdpnom_3610010301
 
   provincial_gdp:
     org_code: stc
     report_code: nrsa
     detail: "3810028501"
-    data_table: stc_nrsa_3810028501_data
-    metadata_table: stc_nrsa_3810028501_metadata
+    source_table: stc_nrsa_3810028501
 
   world_energy_production:
     org_code: iea
     report_code: web
     detail: rankings
-    data_table: iea_web_rankings_data
-    metadata_table: iea_web_rankings_metadata
+    source_table: iea_web_rankings
 
   canadian_energy_assets:
     org_code: nrcan
     report_code: cea
     detail: assets
-    data_table: nrcan_cea_assets_data
-    metadata_table: nrcan_cea_assets_metadata
+    source_table: nrcan_cea_assets
 
   capital_expenditures_raw:
     org_code: stc
     report_code: capex
     detail: "3410003601"
-    data_table: stc_capex_3410003601_data
-    metadata_table: stc_capex_3410003601_metadata
+    source_table: stc_capex_3410003601
   capital_expenditures:
     org_code: stc
     report_code: capex
     detail: "3410003601"
-    data_table: stc_capex_3410003601_data
-    metadata_table: stc_capex_3410003601_metadata
+    source_table: stc_capex_3410003601
 
   investment_by_asset:
     org_code: stc
     report_code: invasset
     detail: "3410003601"
-    data_table: stc_invasset_3410003601_data
-    metadata_table: stc_invasset_3410003601_metadata
+    source_table: stc_invasset_3410003601
 
   infrastructure_raw:
     org_code: stc
     report_code: infra
     detail: "3610060801"
-    data_table: stc_infra_3610060801_data
-    metadata_table: stc_infra_3610060801_metadata
+    source_table: stc_infra_3610060801
   infrastructure:
     org_code: stc
     report_code: infra
     detail: "3610060801"
-    data_table: stc_infra_3610060801_data
-    metadata_table: stc_infra_3610060801_metadata
+    source_table: stc_infra_3610060801
 
   international_investment:
     org_code: stc
     report_code: fdi
     detail: "3610000901"
-    data_table: stc_fdi_3610000901_data
-    metadata_table: stc_fdi_3610000901_metadata
+    source_table: stc_fdi_3610000901
 
   foreign_control:
     org_code: stc
     report_code: foreignctrl
     detail: misc
-    data_table: stc_foreignctrl_misc_data
-    metadata_table: stc_foreignctrl_misc_metadata
+    source_table: stc_foreignctrl_misc
 
   environmental_protection:
     org_code: stc
     report_code: epes
     detail: "3810013001"
-    data_table: stc_epes_3810013001_data
-    metadata_table: stc_epes_3810013001_metadata
+    source_table: stc_epes_3810013001
 
   major_projects:
     org_code: nrcan
     report_code: majorproj
     detail: semantic
-    data_table: nrcan_majorproj_semantic_data
-    metadata_table: nrcan_majorproj_semantic_metadata
+    source_table: nrcan_majorproj_semantic
 
   clean_tech:
     org_code: nrcan
     report_code: cleantech
     detail: semantic
-    data_table: nrcan_cleantech_semantic_data
-    metadata_table: nrcan_cleantech_semantic_metadata
+    source_table: nrcan_cleantech_semantic
 
   environmental_clean_tech:
     org_code: nrcan
     report_code: cleanenv
     detail: semantic
-    data_table: nrcan_cleanenv_semantic_data
-    metadata_table: nrcan_cleanenv_semantic_metadata
+    source_table: nrcan_cleanenv_semantic
 
   energy_use:
     org_code: nrcan
     report_code: oee
     detail: neud
-    data_table: nrcan_oee_neud_data
-    metadata_table: nrcan_oee_neud_metadata
+    source_table: nrcan_oee_neud
 
   residential_pie_charts:
     org_code: nrcan
     report_code: oee
     detail: res_pie
-    data_table: nrcan_oee_res_pie_data
-    metadata_table: nrcan_oee_res_pie_metadata
+    source_table: nrcan_oee_res_pie
 
   residential_daily_lives:
     org_code: nrcan
     report_code: oee
     detail: res_daily
-    data_table: nrcan_oee_res_daily_data
-    metadata_table: nrcan_oee_res_daily_metadata
+    source_table: nrcan_oee_res_daily
 
   commercial_institutional:
     org_code: nrcan
     report_code: oee
     detail: commercial
-    data_table: nrcan_oee_commercial_data
-    metadata_table: nrcan_oee_commercial_metadata
+    source_table: nrcan_oee_commercial
 
   seu_by_fuel:
     org_code: nrcan
     report_code: oee
     detail: seu
-    data_table: nrcan_oee_seu_data
-    metadata_table: nrcan_oee_seu_metadata
+    source_table: nrcan_oee_seu
 
   ghg_emissions:
     org_code: nrcan
     report_code: ghg
     detail: semantic
-    data_table: nrcan_ghg_semantic_data
-    metadata_table: nrcan_ghg_semantic_metadata
-
-  skills_data:
-    org_code: nrcan
-    report_code: fb
-    detail: skills_placeholder
-    data_table: nrcan_fb_skills_placeholder_data
-    metadata_table: nrcan_fb_skills_placeholder_metadata
-
-  clean_power_data:
-    org_code: nrcan
-    report_code: fb
-    detail: cleanpower_placeholder
-    data_table: nrcan_fb_cleanpower_placeholder_data
-    metadata_table: nrcan_fb_cleanpower_placeholder_metadata
-
-  oil_gas_data:
-    org_code: nrcan
-    report_code: fb
-    detail: oilgas_placeholder
-    data_table: nrcan_fb_oilgas_placeholder_data
-    metadata_table: nrcan_fb_oilgas_placeholder_metadata
+    source_table: nrcan_ghg_semantic

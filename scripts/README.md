@@ -11,9 +11,13 @@ scripts/
 ├── config_loader.py     # Configuration management
 ├── requirements.txt     # Python dependencies
 ├── db/
-│   ├── setup_database.sql  # SQL Server database setup
-│   ├── connection.py       # Database connection management
-│   └── models.py           # Data access layer
+│   ├── README.md             # Table naming and schema overview
+│   ├── setup_database.sql    # SQL Server DDL (also applied on `main.py refresh`)
+│   ├── eedas_registry.yaml   # source_key → physical source_table
+│   ├── eedas_registry.py     # TABLE_* constants and registry helpers
+│   ├── ensure_schema.py      # Runs setup batches against the connected DB
+│   ├── connection.py         # Database connection management
+│   └── models.py             # Data access layer
 ├── sections/
 │   ├── base.py                    # Base processor class
 │   ├── section1_indicators.py     # Key Indicators section
@@ -42,15 +46,16 @@ python -m pip install -r requirements.txt
 ### 2. Set Up SQL Server Database
 
 1. Install SQL Server Developer Edition
-2. Open SQL Server Management Studio (SSMS) or use sqlcmd
-3. Run the setup script:
+2. Create an **empty** database named `NRCanEnergyFactbook` (or the name in your config)
+3. Run **`python main.py refresh --section ...`** or **`python main.py refresh --all`** — refresh applies `db/setup_database.sql` (skips `CREATE DATABASE` and the destructive re-seed of `nrcan_fb_data_sources`; seeds default sources only if that table is empty).
+
+Optional full manual install (creates the database and replaces source rows):
 
 ```sql
 -- In SSMS or sqlcmd
 :r setup_database.sql
 ```
 
-Or via command line:
 ```bash
 sqlcmd -S localhost -i db/setup_database.sql
 ```
@@ -156,46 +161,28 @@ Set `enabled: false` to skip a section or specific source during refresh.
 
 ```
 1. FETCH
-   StatCan APIs / External Sources
+   StatCan APIs / IEA / NRCan / other sources
            ↓
 2. STORE
-   SQL Server Database
-   (raw_statcan_data, raw_statcan_metadata, etc.)
+   SQL Server — per-source series tables (see db/eedas_registry.yaml)
            ↓
 3. PROCESS
-   Calculated/Aggregated Tables
-   (calc_capital_expenditures, calc_infrastructure, etc.)
+   Section-scoped calculated tables (nrcan_fb_s1_*, nrcan_fb_s2_*, …)
            ↓
 4. EXPORT
-   CSV Files for Website
-   (public/data/data.csv, metadata.csv, etc.)
+   Staging: nrcan_fb_export → CSV files under public/data/, etc.
 ```
 
-## Database Tables
+## Database tables
 
-### Configuration Tables
-- `data_sources`: Registry of all data sources
-- `run_history`: Audit log of refresh operations
+Authoritative list and naming rules: **[`db/README.md`](db/README.md)**.
 
-### Raw Data Tables (staging for pipeline)
-- `raw_statcan_data`: Individual data points from StatCan (fed into export_data)
-- `raw_statcan_metadata`: Vector metadata (titles, units) (fed into export_metadata)
-- `raw_major_projects_map`: Major projects map data for map CSV (points/lines by lang)
+Summary:
 
-### Calculated Tables (staging for pipeline)
-- `calc_capital_expenditures`
-- `calc_infrastructure`
-- `calc_economic_contributions`
-- `calc_environmental_protection`
-- `calc_international_investment`
-- `calc_provincial_gdp`
-- `calc_world_energy_production`
-- `calc_clean_tech`
-
-### Consolidated Export Tables (data + metadata)
-All pipeline data that can be compiled is written into these two tables; they are the single source for the website CSVs. Other tables are used only during the pipeline run.
-- `export_data`: Consolidated data table → data.csv (vector, ref_date, value)
-- `export_metadata`: Consolidated metadata table → metadata.csv (vector, title, uom, etc.)
+- **Registry:** `nrcan_fb_data_sources`, `nrcan_fb_run_history`, `nrcan_fb_major_projects_map`
+- **Per-source staging:** physical names from `db/eedas_registry.yaml` (e.g. `stc_nrsa_3610061001`, `iea_web_rankings`, `nrcan_oee_neud`)
+- **Calculated:** `nrcan_fb_s1_*`, `nrcan_fb_s2_*`, `nrcan_fb_s4_*`
+- **Export:** single table `nrcan_fb_export`
 
 ## Troubleshooting
 
@@ -208,12 +195,12 @@ All pipeline data that can be compiled is written into these two tables; they ar
 ### Missing Data
 
 1. Check if the source is enabled in `config.yaml`
-2. Look at `run_history` table for errors
+2. Look at `nrcan_fb_run_history` for errors
 3. Run with verbose output to see HTTP errors
 
 ### Export Problems
 
-1. Ensure `export_data` and `export_metadata` tables are populated
+1. Ensure `nrcan_fb_export` is populated after a refresh
 2. Check file permissions in `public/data/` directory
 
 ## Adding New Data Sources
@@ -221,4 +208,4 @@ All pipeline data that can be compiled is written into these two tables; they ar
 1. Add source configuration to `config.yaml`
 2. Create handler method in the appropriate section processor
 3. Register handler in `get_source_handlers()` method
-4. Run database migrations if new tables are needed
+4. Add `source_table` (and DDL in `db/setup_database.sql` if needed) to `db/eedas_registry.yaml`, then refresh

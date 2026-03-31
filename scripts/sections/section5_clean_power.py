@@ -16,6 +16,7 @@ from typing import Dict, Optional, Tuple
 from datetime import datetime
 
 from .base import SectionProcessor
+from xlsx_paths import default_xlsx_base_dir
 
 
 class Section5CleanPower(SectionProcessor):
@@ -348,7 +349,7 @@ class Section5CleanPower(SectionProcessor):
             else:
                 print("    TMX skipped: XLSX parse failed (check sheet has Sector + Market Cap + HQ Region)")
         else:
-            print("    TMX skipped: no XLSX file found (place tsx-and-amp-tsxv-listed-companies-2026-02-17-en.xlsx in project root or set tmx_xlsx_path in config)")
+            print("    TMX skipped: no XLSX file found (place tsx-and-amp-tsxv-listed-companies-2026-02-17-en.xlsx in EXTERNAL_XLSX_DATA_DIR or set tmx_xlsx_path in config)")
         if data_rows:
             metadata_rows = [
                 ('envcleantech_employment_total', 'Employment, total all industries', 'Thousands', 'thousands', source_org_sc, url_labour),

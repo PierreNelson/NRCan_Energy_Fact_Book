@@ -8,29 +8,33 @@ For **quick commands** (refresh, export, list), see [DATA_UPDATE_GUIDE.md](DATA_
 
 ## 1. Pipeline Overview and Data Flow
 
-Data moves in one direction: **sources → section processors (fetch, parse, calculate) → SQL Server → export tables → CSV files → frontend.**
+Data moves in one direction: **sources → section processors (fetch, parse, calculate) → SQL Server (per-source series tables + optional section calc tables) → export staging → CSV files → frontend.**
 
 ```mermaid
 flowchart LR
     Sources[StatCan CSV, Excel, HTML, API]
     Processor[Section processor]
-    RawDB[raw_statcan_data, raw_statcan_metadata]
-    ExportDB[export_data, export_metadata]
+    SeriesDB[Per-source tables e.g. stc_*, nrcan_oee_*]
+    CalcDB[Optional nrcan_fb_s1_*, nrcan_fb_s2_*, nrcan_fb_s4_*]
+    ExportDB[nrcan_fb_export]
     CSV[data.csv, metadata.csv]
     Frontend[dataLoader.js, pages]
 
     Sources --> Processor
-    Processor --> RawDB
-    RawDB --> ExportDB
+    Processor --> SeriesDB
+    Processor --> CalcDB
+    SeriesDB --> ExportDB
     ExportDB --> CSV
     CSV --> Frontend
 ```
 
 - **Sources:** StatCan CSV download links, StatCan WDS (JSON) API, local Excel files, Excel from URL/ZIP, online HTML tables, external REST/ArcGIS APIs.
-- **Section processor:** A Python class (e.g. `Section2Investment`) that defines one handler per source. Each handler fetches data, parses it, optionally calculates aggregates, and writes to the database.
-- **SQL Server:** `raw_statcan_data` holds every (vector, ref_date, value) row; `raw_statcan_metadata` holds (vector, title, uom, scalar_factor, source_org, source_url). Optional `calc_*` tables store normalized per-year records; the **export** still reads only from `raw_statcan_*` (via the export tables).
-- **Export:** The export step runs `prepare_export_data()`, which copies `raw_statcan_data` → `export_data` and `raw_statcan_metadata` → `export_metadata`, then writes `export_data` and `export_metadata` to `public/data/data.csv` and `public/data/metadata.csv` (with optional filters by source or vector pattern).
-- **Frontend:** `dataLoader.js` fetches `data/data.csv`, parses it, and exposes getters (e.g. `getCapitalExpendituresData()`) that filter by vector prefix and reshape rows into arrays of per-year objects. Pages call these getters and use the data in charts and tables.
+- **Section processor:** A Python class (e.g. `Section2Investment`) that defines one handler per `source_key`. Each handler fetches data, parses it, optionally calculates aggregates, and writes rows via **`store_raw_data`** (which merges into the physical table for that source).
+- **SQL Server — series tables:** Each logical source maps to a **physical table name** in [`scripts/db/eedas_registry.yaml`](../scripts/db/eedas_registry.yaml) (`source_key` → `source_table`, e.g. `stc_capex_3410003601`, `iea_web_rankings`). Those tables store wide rows: `vector`, `ref_date`, `value`, `title`, `uom`, `scalar_factor`, `source_org`, `source_url`, `source_key`, etc. Legacy monolithic `raw_statcan_*` / split `*_data`/`*_metadata` pairs are removed by `setup_database.sql` when present.
+- **SQL Server — section calc tables:** Names like `nrcan_fb_s2_capital_expenditures` hold normalized per-year rows for analysis and the **glossary**; they are **not** unioned into `nrcan_fb_export`. Website series still come from the per-source series tables.
+- **Export:** `prepare_export_data()` **truncates `nrcan_fb_export`** and **INSERT … SELECT** unions **all** tables returned by `unique_source_tables()` in `eedas_registry`. The website exporter reads **`nrcan_fb_export`** to build `public/data/data.csv` and `metadata.csv` (with optional filters by source or vector pattern).
+- **Registry:** `nrcan_fb_data_sources` lists enabled sources, sections, **`source_url`** (for the data gallery), and refresh timestamps. `nrcan_fb_run_history` logs runs.
+- **Frontend:** `dataLoader.js` loads `data/data.csv`, parses it, and exposes getters that filter by vector prefix.
 
 **Terms:**
 
@@ -46,7 +50,9 @@ flowchart LR
 | Section/source config | `scripts/config.yaml` – sections, sources, enabled flags, file paths, StatCan table IDs |
 | Config loader | `scripts/config_loader.py` – is_section_enabled, is_source_enabled, get_source_config |
 | Section base class | `scripts/sections/base.py` – get_source_handlers, refresh_all/refresh_source, fetch_csv_from_url, store_raw_data, extract_data_and_metadata |
-| Database operations | `scripts/db/models.py` – insert_raw_statcan_data, insert_raw_statcan_metadata, upsert_calc_*, prepare_export_data, get_export_data/get_export_metadata |
+| Database operations | `scripts/db/models.py` – `merge_source_ingest` / `store_raw_data`, upserts into `nrcan_fb_s*`, `prepare_export_data`, export getters |
+| Table registry | `scripts/db/eedas_registry.yaml` + `scripts/db/eedas_registry.py` – `source_key` → `source_table`, `TABLE_*` constants |
+| Schema reference | `scripts/db/README.md`, `scripts/db/setup_database.sql` |
 | Export to CSV | `scripts/export/website_files.py` – prepare_export_data, write data.csv and metadata.csv (with optional source/vector filters) |
 | Source → vector mapping | `scripts/export/source_vectors.py` – SOURCE_VECTOR_PREFIXES, get_vectors_for_source |
 | Frontend data loading | `src/utils/dataLoader.js` – loadAllData(), getXxxData() by prefix |
@@ -57,7 +63,7 @@ flowchart LR
 
 **SQL Server**
 
-- SQL Server must be running. Create the database and tables by running `scripts/db/setup_database.sql` (creates database `NRCanEnergyFactbook`, tables: `data_sources`, `run_history`, `raw_statcan_data`, `raw_statcan_metadata`, `calc_*`, `export_data`, `export_metadata`, `raw_major_projects_map`, etc.).
+- SQL Server must be running. Create an **empty** database (e.g. `NRCanEnergyFactbook`) matching `config.yaml` / `.env`, then run `python main.py refresh ...` from `scripts/`; refresh applies DDL from `scripts/db/setup_database.sql` (creates missing tables, indexes, procedures). You can still run `setup_database.sql` manually in SSMS/sqlcmd for a full install including `CREATE DATABASE` and the destructive re-seed of `nrcan_fb_data_sources`.
 
 **Credentials**
 
@@ -97,9 +103,18 @@ Follow these steps to add a new data source and connect it to a page.
   - Return the number of rows stored.
   - In `get_source_handlers()`, add: `'my_new_source': self._process_my_new_source`.
 
+**3b. Register the physical table (EEDAS)**
+
+- Add `my_new_source` under **`source_tables`** in **`scripts/db/eedas_registry.yaml`** with a unique **`source_table`** SQL identifier (e.g. `nrcan_my_feature`). Multiple `source_key` rows may share one `source_table`.
+- Add a matching **`CREATE TABLE [source_table] (...)`** block in **`scripts/db/setup_database.sql`** if the table is new (copy the column list from an existing series table). Run refresh (or apply schema) so the table exists before merging data.
+
 **4. Use semantic vector names and register the prefix**
 
-- All vectors written to `raw_statcan_data` must use a **consistent prefix** (e.g. `mysource_`) so the frontend can filter. In `scripts/export/source_vectors.py`, add to `SOURCE_VECTOR_PREFIXES`: `'my_new_source': ['mysource_']`. Optionally add to `SOURCE_DISPLAY_NAMES`.
+- All vectors written via **`store_raw_data`** must use a **consistent prefix** (e.g. `mysource_`) so the frontend can filter. In `scripts/export/source_vectors.py`, add to `SOURCE_VECTOR_PREFIXES`: `'my_new_source': ['mysource_']`. Optionally add to `SOURCE_DISPLAY_NAMES`.
+
+**4b. Registry row and `source_url`**
+
+- Add or extend the **`INSERT`** / **`CASE`** defaults for **`nrcan_fb_data_sources`** in **`scripts/db/setup_database.sql`** and **`scripts/db/ensure_schema.py`** so the new **`source_key`** has a non-empty **`source_url`** (data gallery). For ad hoc installs, you can **`UPDATE`** the row in SSMS instead.
 
 **5. Run refresh and export**
 
@@ -157,28 +172,28 @@ export async function getMyNewSourceData() {
 
 ## 4. SQL Server: Tables and How Data Gets There
 
-| Table | Purpose | When it is written |
-|-------|--------|--------------------|
-| **data_sources** | Registry of source_key, section_id, last_refresh_at | Updated by `repo.update_source_last_refresh(source_key)` after a successful refresh. |
-| **run_history** | Audit log (source_key, run_type, status, rows_affected, error_message) | `repo.log_run_start` at start of handler; `repo.log_run_complete` on success/failure. |
-| **raw_statcan_data** | (vector, ref_date, value, source_key) | Written by handlers via `store_raw_data` or `repo.insert_raw_statcan_data`. Holds both raw StatCan vectors (v123...) and semantic vectors (capex_*, oee_neud_*, etc.). **All data that appears in data.csv must be in this table.** |
-| **raw_statcan_metadata** | (vector, title, uom, scalar_factor, source_org, source_url, source_key) | Written by handlers via `store_raw_data` or `repo.insert_raw_statcan_metadata`. One row per vector. |
-| **calc_*** | Normalized per-year records (e.g. calc_capital_expenditures: ref_year, oil_gas, electricity, other_energy, total) | Written by handlers via `repo.upsert_capital_expenditures(calc_data)` (or equivalent). Used for querying; **export does not read these**—only raw_statcan_data is copied to export_data. |
-| **export_data** / **export_metadata** | Copy of raw_statcan_data and raw_statcan_metadata | Filled by `prepare_export_data()` (DELETE then INSERT from raw_*). The exporter reads these tables to write data.csv and metadata.csv. |
+| Object | Purpose | When it is written |
+|--------|--------|--------------------|
+| **nrcan_fb_data_sources** | Registry: `source_key`, section, **`source_url`**, `is_enabled`, `last_refresh_at`, … | Seeded from `setup_database.sql` / `ensure_schema.py`; `update_source_last_refresh` after a successful refresh. |
+| **nrcan_fb_run_history** | Audit log (`source_key`, `run_type`, `status`, `rows_affected`, `error_message`, …) | `log_run_start` / `log_run_complete` around handlers. |
+| **Per-source series tables** (e.g. `stc_capex_3410003601`, `nrcan_oee_neud`, `iea_web_rankings`) | Wide rows: `vector`, `ref_date`, `value`, optional inline `title`, `uom`, `source_org`, `source_url`, … | **`store_raw_data` → `merge_source_ingest`** MERGEs into the table named by `get_source_table(source_key)` from `eedas_registry.yaml`. **Everything that should appear in `data.csv` must land here** (semantic vectors such as `capex_*`, `oee_neud_*`). |
+| **nrcan_fb_s1_*, nrcan_fb_s2_*, nrcan_fb_s4_*** | Section-scoped “calc” tables (normalized columns per year) | `repo.upsert_*` from handlers (e.g. capex, infrastructure, economic contributions, energy use). Used for glossary exports and ad hoc queries; **not** copied into `nrcan_fb_export`. |
+| **nrcan_fb_export** | Staging wide table: union of all per-source series tables | **`prepare_export_data()`** rebuilds from `unique_source_tables()`. Website exporter reads this table (or equivalent queries) for `data.csv` / `metadata.csv`. |
+| **nrcan_fb_major_projects_map** | Map features for `major_projects_map.csv` | Dedicated insert path from the major-projects map handler. |
 
-Full schema: `scripts/db/setup_database.sql`.
+Legacy **`calc_*`**, **`raw_statcan_*`**, and split **`nrcan_fb_export_data` / `nrcan_fb_export_metadata`** are dropped on upgrade when present. Full DDL: [`scripts/db/setup_database.sql`](../scripts/db/setup_database.sql). Overview: [`scripts/db/README.md`](../scripts/db/README.md).
 
 ---
 
 ## 5. Calculations: Where and How They Are Stored
 
-- **All calculations** for pipeline-sourced series are done **in the section handler** in Python (e.g. sums by NAICS, conversion to billions, percentages). The frontend does not recalculate these from raw vectors; it may do small derivations (e.g. “energy use excluding EE effect” from two vectors).
+- **All calculations** for pipeline-sourced series are done **in the section handler** in Python (e.g. sums by NAICS, conversion to billions, percentages). The frontend may do small derivations (e.g. residential EUx from two vectors).
 
 - **Two storage patterns:**
-  1. **Semantic vectors only:** Build `data_rows` as a list of `(vector, ref_date, value)` with names like `capex_oil_gas`, `capex_total_billions`, and call `store_raw_data(source_key, data_rows, metadata_rows)`. No calc_* table.
-  2. **Calc table + semantic vectors:** For structured per-year records, (1) build a list of dicts and call `self.repo.upsert_capital_expenditures(calc_data)` (or the matching upsert for that domain), and (2) also build `data_rows` with the same semantic vectors and call `store_raw_data(...)` so the export has the vectors. Example: capital_expenditures in `scripts/sections/section2_investment.py` does both.
+  1. **Semantic vectors in the series table only:** Build `data_rows` / `metadata_rows` and call **`store_raw_data(source_key, data_rows, metadata_rows)`**. That MERGEs into the YAML-defined `source_table` for `source_key`.
+  2. **Section calc table + semantic vectors:** For structured per-year records, call **`repo.upsert_capital_expenditures`** (or `upsert_infrastructure`, `upsert_economic_contributions`, `upsert_energy_use`, etc.) **and** call **`store_raw_data`** with the same semantic vectors so `prepare_export_data` can copy them from the series table into `nrcan_fb_export`. Example: `capital_expenditures` in `section2_investment.py` writes both `nrcan_fb_s2_capital_expenditures` and the `stc_capex_*` series table.
 
-- **Important:** The export step reads only from `raw_statcan_data` (via `prepare_export_data`). Any value that should appear in data.csv must be written to `raw_statcan_data` with the desired vector name. Writing only to a calc_* table is not enough for the website.
+- **Important:** **`prepare_export_data()` unions only per-source series tables** (`unique_source_tables()`), not `nrcan_fb_s*`. Any value that must appear in **`data.csv`** must be written through **`store_raw_data`** / **`merge_source_ingest`** into the correct physical series table.
 
 ---
 
@@ -186,24 +201,22 @@ Full schema: `scripts/db/setup_database.sql`.
 
 **prepare_export_data()** (`scripts/db/models.py`)
 
-- Clears `export_data` and `export_metadata`.
-- Inserts all rows from `raw_statcan_data` into `export_data` (vector, ref_date, value).
-- Inserts all rows from `raw_statcan_metadata` into `export_metadata` (vector, title, uom, scalar_factor, source_org, source_url).
+- `DELETE FROM nrcan_fb_export`.
+- `INSERT INTO nrcan_fb_export (...) SELECT ... UNION ALL SELECT ...` across every physical name in **`unique_source_tables()`** (from `eedas_registry.yaml`), pulling `vector`, `ref_date`, `value`, and attribution columns from each series table.
 
-**WebsiteExporter.export_all()** (`scripts/export/website_files.py`)
+**WebsiteExporter** (`scripts/export/website_files.py`)
 
-- Calls `repo.prepare_export_data()`.
-- Calls `_export_data_csv()` and `_export_metadata_csv()`. Output directory and filenames come from config: `export.output_dir` (e.g. `../public/data`), `export.files.data_csv`, `export.files.metadata_csv`.
+- Calls `repo.prepare_export_data()` (unless your workflow skips it).
+- Writes **`data.csv`** and **`metadata.csv`** from **`nrcan_fb_export`** (vector/ref_date/value vs aggregated metadata columns). Paths come from `config.yaml` (`export.output_dir`, `export.files.*`).
 
 **Selective export** (`--source` or `--vectors`)
 
-- When a filter is set, the exporter still runs `prepare_export_data()` (so export_data contains everything from raw_statcan_data). For **data.csv**: it loads the **existing** data.csv from disk (if present), then **merges** into it only the rows from export_data that match the source’s vector prefixes (or the vector pattern). So existing vectors from other sources stay; only the selected source’s vectors are updated. Same idea for **metadata.csv**: merge with existing file by vector.
-- So: full export overwrites data.csv/metadata.csv with the full DB content. Selective export updates only the matching vectors in the existing files.
+- Still runs **`prepare_export_data()`** so **`nrcan_fb_export`** holds the full union from SQL. For **data.csv** / **metadata.csv**, the exporter merges matching rows into any existing files on disk so other vectors are preserved.
 
 **File format**
 
-- **data.csv:** Header: `vector,ref_date,value`. One row per (vector, ref_date, value).
-- **metadata.csv:** Columns: vector, title, uom, scalar_factor, source_org, source_url (if present in export_metadata).
+- **data.csv:** `vector, ref_date, value`.
+- **metadata.csv:** `vector`, `title`, `uom`, `scalar_factor`, `source_org`, `source_url` (derived from `nrcan_fb_export` aggregates per vector).
 
 ---
 
@@ -225,7 +238,7 @@ Full schema: `scripts/db/setup_database.sql`.
 
 **Getting the URL**
 
-- Use the StatCan table viewer for the table (e.g. 34-10-0036-01). Use “Download” / “Download table” and copy the download link. Or build the URL from the same pattern used in the codebase: see `scripts/data_retrieval.py` (e.g. `get_capital_expenditures_url`) and `scripts/sections/section2_investment.py` (e.g. `_get_capital_expenditures_url`). Use a **future end date** (e.g. today + 2 years) so that when StatCan publishes new data, it is included.
+- Use the StatCan table viewer for the table (e.g. 34-10-0036-01). Use “Download” / “Download table” and copy the download link. Or build the URL from the same pattern used in the codebase: see **`scripts/sections/section2_investment.py`** (e.g. `_get_capital_expenditures_url`) and other section modules. Use a **future end date** (e.g. today + 2 years) so that when StatCan publishes new data, it is included.
 
 **Fetching**
 
@@ -234,12 +247,12 @@ Full schema: `scripts/db/setup_database.sql`.
 **Parsing**
 
 - Find columns case-insensitively with `self.get_column(df, 'REF_DATE', 'Ref_date', 'ref_date')` and similarly for VALUE, VECTOR, etc.
-- **Option A – Generic:** Use `self.extract_data_and_metadata(df, source_key)` to get (data_rows, metadata_rows) in StatCan’s native vector format, then store with `insert_raw_statcan_data` for a different source_key if you want to keep raw vectors. For the **website** you usually want semantic names, so Option B is typical.
-- **Option B – Custom:** Filter rows (e.g. where “Capital expenditures” is selected), group by year and category (e.g. NAICS), compute totals and derived series (percentages, billions). Build `data_rows` as a list of tuples `(semantic_vector, str(year), value)` (e.g. `capex_oil_gas`, `capex_total`, `capex_total_billions`) and `metadata_rows` as list of `(vector, title, uom, scalar_factor, source_org, source_url)`. Call `self.store_raw_data('capital_expenditures', data_rows, metadata_rows)`. If you also use a calc_* table, call `self.repo.upsert_capital_expenditures(calc_data)` with the same data in structured form.
+- **Option A – Generic:** Use `self.extract_data_and_metadata(df, source_key)` to get (data_rows, metadata_rows) in StatCan’s native vector format, then persist with **`store_raw_data`** / **`insert_raw_statcan_data`** if you need raw vector IDs. For the **website** you usually want semantic names, so Option B is typical.
+- **Option B – Custom:** Filter rows (e.g. where “Capital expenditures” is selected), group by year and category (e.g. NAICS), compute totals and derived series (percentages, billions). Build `data_rows` as a list of tuples `(semantic_vector, str(year), value)` (e.g. `capex_oil_gas`, `capex_total`, `capex_total_billions`) and `metadata_rows` as list of `(vector, title, uom, scalar_factor, source_org, source_url)`. Call `self.store_raw_data('capital_expenditures', data_rows, metadata_rows)`. If you also use a section calc table, call `self.repo.upsert_capital_expenditures(calc_data)` with the same data in structured form.
 
 **Example**
 
-- Capital expenditures: `scripts/sections/section2_investment.py`, method `_process_capital_expenditures`. It builds the URL, fetches CSV, filters to “Capital expenditures”, groups by year and NAICS (oil/gas, electricity, other), computes total and percentages and billions, builds data_rows and metadata_rows, calls `upsert_capital_expenditures(calc_data)` and `store_raw_data('capital_expenditures', data_rows, metadata_rows)`.
+- Capital expenditures: `scripts/sections/section2_investment.py`, method `_process_capital_expenditures`. It builds the URL, fetches CSV, filters to “Capital expenditures”, groups by year and NAICS (oil/gas, electricity, other), computes total and percentages and billions, builds data_rows and metadata_rows, calls **`upsert_capital_expenditures(calc_data)`** (writes **`nrcan_fb_s2_capital_expenditures`**) and **`store_raw_data('capital_expenditures', data_rows, metadata_rows)`** (writes the StatCan-linked series table from the registry).
 
 ---
 
@@ -259,7 +272,7 @@ Full schema: `scripts/db/setup_database.sql`.
 
 **Mapping to semantic vectors**
 
-- Keep a mapping of StatCan vector ID → your vector name (e.g. NRSA_VECTORS in `scripts/data_retrieval.py`). For each (vid, ref_per, value), derive the year from ref_per (e.g. take first four characters), look up the semantic name (e.g. `mysource_oil_extraction`), append `(semantic_vector, year_str, value)` to data_rows. Build metadata_rows for each semantic vector. Call **store_raw_data(source_key, data_rows, metadata_rows)**.
+- Keep a mapping of StatCan vector ID → your semantic vector name in the section processor (or a small shared module). For each (vid, ref_per, value), derive the year from ref_per (e.g. first four characters), look up the semantic name (e.g. `mysource_oil_extraction`), append `(semantic_vector, year_str, value)` to data_rows. Build metadata_rows for each semantic vector. Call **store_raw_data(source_key, data_rows, metadata_rows)**.
 
 ---
 
@@ -267,7 +280,7 @@ Full schema: `scripts/db/setup_database.sql`.
 
 **Config**
 
-- In `config.yaml`, under the source, set a path key. Either a generic `file_path: "Filename.xlsx"` (document whether it’s relative to scripts dir or project root) or a specific key like `seu_final_demand_file_path` or `ee_improvement_file_path` as in Section 4. Resolve the path in the handler relative to a known base (e.g. script dir or project root).
+- In `config.yaml`, under the source, set a path key. Either a generic `file_path: "Filename.xlsx"` or keys like `seu_final_demand_file_path` / `ee_improvement_file_path` (Section 4). Relative paths resolve against `EXTERNAL_XLSX_DATA_DIR` when set in `scripts/.env`, otherwise the repository root (see `scripts/xlsx_paths.py`).
 
 **Resolving the path**
 
@@ -347,9 +360,9 @@ Full schema: `scripts/db/setup_database.sql`.
 
 ## 14. Metadata and Units
 
-- **raw_statcan_metadata** (and export_metadata) stores: vector, title, uom, scalar_factor, source_org, source_url. **title** = human-readable description; **uom** = unit of measure (e.g. “Millions of dollars”, “PJ”); **scalar_factor** = e.g. “millions”, “billions”; **source_org** and **source_url** for attribution.
+- Per-vector attribution lives on **series table** rows (and thus in **`nrcan_fb_export`**): **title**, **uom**, **scalar_factor**, **source_org**, **source_url**. The registry table **`nrcan_fb_data_sources`** also stores a canonical **`source_url`** per logical `source_key` for the data gallery (see glossary export).
 
-- When calling **store_raw_data**, pass **metadata_rows** as a list of tuples. The repository expects **6 elements**: (vector, title, uom, scalar_factor, source_org, source_url). If you only have 4 (vector, title, uom, scalar_factor), the code pads with None for source_org and source_url (see `scripts/db/models.py`, insert_raw_statcan_metadata: `row[4] if len(row) > 4 else None`). So 4-element tuples work.
+- **`store_raw_data`** expects **metadata_rows** as tuples of **(vector, title, uom, scalar_factor, source_org, source_url)**. Shorter tuples may be padded in the repository layer; prefer supplying all six for consistent glossary and exports.
 
 ---
 
@@ -393,13 +406,13 @@ In `src/utils/dataLoader.js`:
 
 ## 16. Troubleshooting and Common Pitfalls
 
-- **Refresh succeeds but the page shows no data:** Run **export** after refresh (`python main.py export` or `--export-after`). Ensure the **vector prefix** in `source_vectors.py` matches what the handler writes and what the dataLoader getter filters on (e.g. `mysource_` everywhere).
+- **Refresh succeeds but the page shows no data:** Run **export** after refresh (`python main.py export` or `--export-after`). Ensure the **vector prefix** in `source_vectors.py` matches what the handler writes and what the dataLoader getter filters on (e.g. `mysource_` everywhere). Confirm **`eedas_registry.yaml`** maps your `source_key` to the series table that **`prepare_export_data`** unions.
 
 - **StatCan URL returns HTML or “Failed to get”:** Check the URL (dates, selectedMembers, table id). Try the alternative endpoint (downloadDbLoadingData-nonTraduit.action). Check for rate limiting or temporary StatCan errors.
 
 - **Excel parse fails:** Confirm sheet name and that the header row and anchor text (e.g. “Total Energy Use”) exist. Use `header=None` and search by cell value. Handle merged cells if present.
 
-- **Export seems to have old data:** prepare_export_data overwrites export_data from raw_statcan_data. So if the handler ran and wrote to raw_statcan_data with the correct source_key, the next full export should include it. Verify the handler actually ran (check run_history or logs) and that it writes the expected vector names.
+- **Export seems to have stale series:** `prepare_export_data` rebuilds **`nrcan_fb_export`** from the per-source series tables. If the handler ran and **`store_raw_data`** wrote the expected vectors, the next full export should include them. Verify the handler ran (`nrcan_fb_run_history` or logs) and that **`source_key`** is registered in **`eedas_registry.yaml`**.
 
 - **Selective export (--source X):** This **merges** the source’s vectors into the existing data.csv and metadata.csv. So other sources’ vectors remain; only vectors with the selected source’s prefix are updated from the current database.
 
@@ -411,7 +424,7 @@ In `src/utils/dataLoader.js`:
 
 | Section | Config key | Section file | Example sources | Vector prefixes | Example getters |
 |---------|------------|--------------|-----------------|-----------------|-----------------|
-| Key Indicators | section1_indicators | section1_indicators.py | economic_contributions, provincial_gdp, canadian_energy_assets | econ_, gdp_prov_, cea_ | getEconomicContributionsData, getProvincialGdpData, getCEAData |
+| Key Indicators | section1_indicators | section1_indicators.py | economic_contributions, provincial_gdp, canadian_energy_assets, world_energy_production, nominal_gdp, ghg_emissions | econ_, gdp_prov_, cea_, energy_prod_, gdp_nominal_, ghg_ | getEconomicContributionsData, getProvincialGdpData, getCEAData, getWorldEnergyProductionData, getNominalGDPData, getGHGEmissionsData |
 | Investment | section2_investment | section2_investment.py | capital_expenditures, infrastructure, international_investment, foreign_control, environmental_protection | capex_, infra_, intl_, foreign_, enviro_, asset_, projects_, cleantech_ | getCapitalExpendituresData, getInfrastructureData, getInternationalInvestmentData, getForeignControlData, getEnvironmentalProtectionData |
 | Energy Efficiency | section4_indicators | section4_indicators.py | energy_use, seu_by_fuel, residential_daily_lives, residential_pie_charts, commercial_institutional | oee_neud_, seu_, res_, com_ | getEnergyUseData, getSEUByFuelData, getPage50ResidentialData, getPage51Data, getPage52Data |
 | Clean Power | section5_clean_power | section5_clean_power.py | environmental_clean_tech | envcleantech_ | getEnvironmentalCleanTechData |

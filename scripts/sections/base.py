@@ -401,12 +401,12 @@ class SectionProcessor(ABC):
         Returns:
             Number of data rows stored
         """
-        # Store data
-        self.repo.insert_raw_statcan_data(source_key, data_rows)
-        
-        # Store metadata
-        self.repo.insert_raw_statcan_metadata(source_key, metadata_rows)
-        
+        self.repo.merge_source_ingest(source_key, data_rows, metadata_rows)
+        if metadata_rows:
+            data_vectors = {str(r[0]) for r in data_rows}
+            meta_only = [r for r in metadata_rows if str(r[0]) not in data_vectors]
+            if meta_only:
+                self.repo.upsert_ingest_metadata_only(source_key, meta_only)
         return len(data_rows)
     
     def store_calculated_data(self, source_key: str,

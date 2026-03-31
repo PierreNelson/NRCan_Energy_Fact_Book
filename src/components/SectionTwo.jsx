@@ -11,6 +11,7 @@ import Page30 from '../pages/Page30';
 import Page31 from '../pages/Page31';
 import Page32 from '../pages/Page32';
 import Page33 from '../pages/Page33';
+import Page34 from '../pages/Page34';
 import Page37 from '../pages/Page37';
 
 const SectionTwo = () => {
@@ -89,6 +90,10 @@ const SectionTwo = () => {
 
             <div id="canadian-energy-assets" className="stacked-page-wrapper page-with-title-divider">
                 <Page33 />
+            </div>
+
+            <div id="research-development-demonstration" className="stacked-page-wrapper">
+                <Page34 />
             </div>
 
             <div id="environmental-protection" className="stacked-page-wrapper page-with-title-divider">

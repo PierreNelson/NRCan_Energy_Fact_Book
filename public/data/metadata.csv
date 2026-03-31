@@ -115,7 +115,6 @@ enviro_petroleum_pollution,Petroleum and coal product manufacturing - Pollution 
 enviro_petroleum_total,Petroleum and coal product manufacturing - Total environmental protection expenditures,Millions of dollars,millions,Environmental Protection,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001
 foreign_all_non_financial,Foreign control - Total non-financial industries,Percent,percent,Foreign Control,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310002401
 foreign_oil_gas,Foreign control - Oil and gas extraction,Percent,percent,Foreign Control,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310002401
-foreign_total,Foreign control - Total non-financial industries,Percent,percent,Foreign Control,,
 foreign_utilities,Foreign control - Utilities,Percent,percent,Foreign Control,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310002401
 gdp_nominal_direct,Energy's nominal GDP contribution - Direct,Millions of dollars,millions,Nominal GDP,NRCan,https://docs.google.com/document/d/11ad-aqY6WjcQwHRWuSrZgQKxMD_U6jKaXlR5q-p0CXI/
 gdp_nominal_direct_billions,Energy's nominal GDP - Direct (billions),Billions of dollars,billions,Nominal GDP,NRCan,https://docs.google.com/document/d/11ad-aqY6WjcQwHRWuSrZgQKxMD_U6jKaXlR5q-p0CXI/

@@ -4,13 +4,16 @@
 -- This script creates the database and all required tables for the
 -- Energy Factbook data pipeline.
 --
--- EEDAS-style physical names: per-source ingest tables are listed in
--- eedas_registry.yaml; generated DDL lives in eedas_raw_tables_fragment.sql
--- (regenerate: python scripts/db/_gen_eedas_raw_sql.py).
+-- EEDAS-style physical names: per-source series tables are listed in
+-- eedas_registry.yaml. When adding a source, update that file and the matching
+-- CREATE TABLE blocks in this script (see scripts/db/eedas_registry.py).
 --
 -- Usage:
---   1. Connect to SQL Server as an admin user
---   2. Run this script to create the database and tables
+--   1. Preferred: create an empty database matching config, then run
+--      `python main.py refresh ...` — the refresh command applies this script's
+--      DDL (except CREATE DATABASE / destructive seed) automatically.
+--   2. Or connect as an admin and run this script in SSMS/sqlcmd for a full
+--      install including CREATE DATABASE and default data-source rows.
 --
 -- Requirements:
 --   - SQL Server 2019+ or SQL Server Developer Edition
@@ -44,8 +47,7 @@ BEGIN
         source_name NVARCHAR(255) NOT NULL,
         section_id INT NOT NULL,
         section_name NVARCHAR(100) NOT NULL,
-        statcan_table_id NVARCHAR(50) NULL,
-        source_url NVARCHAR(1000) NULL,
+        source_url NVARCHAR(1000) NOT NULL,
         is_enabled BIT NOT NULL DEFAULT 1,
         last_refresh_at DATETIME2 NULL,
         created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
@@ -81,1074 +83,668 @@ END
 GO
 
 -- ============================================================================
--- RAW / SEMANTIC INGEST TABLES (EEDAS registry)
+-- PER-SOURCE SERIES TABLES (single table per source; see eedas_registry.yaml)
 -- ============================================================================
 
--- EEDAS per-source raw / semantic ingest tables (generated from eedas_registry.yaml)
--- Regenerate: python scripts/db/_gen_eedas_raw_sql.py
+-- Upgrade: drop StatCan-only column; add source_url (separate batch from UPDATE — SQL Server
+-- compiles the whole batch before running DDL, so UPDATE cannot see a column added earlier in the same batch).
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_web_rankings_data')
+IF COL_LENGTH('dbo.nrcan_fb_data_sources', 'statcan_table_id') IS NOT NULL
+    ALTER TABLE dbo.nrcan_fb_data_sources DROP COLUMN statcan_table_id;
+IF COL_LENGTH('dbo.nrcan_fb_data_sources', 'source_url') IS NULL
+    ALTER TABLE dbo.nrcan_fb_data_sources ADD source_url NVARCHAR(1000) NULL;
+GO
+
+UPDATE dbo.nrcan_fb_data_sources SET source_url = CASE source_key
+    WHEN N'economic_contributions' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001'
+    WHEN N'nominal_gdp' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610010301'
+    WHEN N'provincial_gdp' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401'
+    WHEN N'world_energy_production' THEN N'https://www.iea.org/data-and-statistics/data-tools/world-energy-balances'
+    WHEN N'canadian_energy_assets' THEN N'https://www.nrcan.gc.ca/energy/energy-sources-distribution/energy-facts/canadian-energy-assets/20064'
+    WHEN N'capital_expenditures' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601'
+    WHEN N'infrastructure' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801'
+    WHEN N'investment_by_asset' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801'
+    WHEN N'international_investment' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610000901'
+    WHEN N'foreign_control' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310057001'
+    WHEN N'environmental_protection' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001'
+    WHEN N'major_projects' THEN N'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+    WHEN N'clean_tech' THEN N'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+    WHEN N'energy_use' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html'
+    WHEN N'residential_pie_charts' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1'
+    WHEN N'residential_daily_lives' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1'
+    WHEN N'commercial_institutional' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1'
+    WHEN N'seu_by_fuel' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2'
+    WHEN N'ghg_emissions' THEN N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html'
+    WHEN N'environmental_clean_tech' THEN N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology'
+    ELSE N'https://www.nrcan.gc.ca/energy'
+END
+WHERE source_url IS NULL OR RTRIM(ISNULL(source_url, N'')) = N'';
+UPDATE dbo.nrcan_fb_data_sources SET source_url = N'https://www.nrcan.gc.ca/energy'
+WHERE source_url IS NULL OR RTRIM(ISNULL(source_url, N'')) = N'';
+IF EXISTS (
+    SELECT 1 FROM sys.columns c
+    WHERE c.object_id = OBJECT_ID('dbo.nrcan_fb_data_sources') AND c.name = N'source_url' AND c.is_nullable = 1
+)
+    ALTER TABLE dbo.nrcan_fb_data_sources ALTER COLUMN source_url NVARCHAR(1000) NOT NULL;
+GO
+
+-- Legacy registry name (some installs): DDL only, then populate in the following batch
+IF OBJECT_ID('dbo.data_sources', 'U') IS NOT NULL
 BEGIN
-    CREATE TABLE iea_web_rankings_data (
+    IF COL_LENGTH('dbo.data_sources', 'statcan_table_id') IS NOT NULL
+        ALTER TABLE dbo.data_sources DROP COLUMN statcan_table_id;
+    IF COL_LENGTH('dbo.data_sources', 'source_url') IS NULL
+        ALTER TABLE dbo.data_sources ADD source_url NVARCHAR(1000) NULL;
+END
+GO
+
+IF OBJECT_ID('dbo.data_sources', 'U') IS NOT NULL
+BEGIN
+    UPDATE dbo.data_sources SET source_url = CASE source_key
+        WHEN N'economic_contributions' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001'
+        WHEN N'nominal_gdp' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610010301'
+        WHEN N'provincial_gdp' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401'
+        WHEN N'world_energy_production' THEN N'https://www.iea.org/data-and-statistics/data-tools/world-energy-balances'
+        WHEN N'canadian_energy_assets' THEN N'https://www.nrcan.gc.ca/energy/energy-sources-distribution/energy-facts/canadian-energy-assets/20064'
+        WHEN N'capital_expenditures' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601'
+        WHEN N'infrastructure' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801'
+        WHEN N'investment_by_asset' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801'
+        WHEN N'international_investment' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610000901'
+        WHEN N'foreign_control' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310057001'
+        WHEN N'environmental_protection' THEN N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001'
+        WHEN N'major_projects' THEN N'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+        WHEN N'clean_tech' THEN N'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034'
+        WHEN N'energy_use' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html'
+        WHEN N'residential_pie_charts' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1'
+        WHEN N'residential_daily_lives' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1'
+        WHEN N'commercial_institutional' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1'
+        WHEN N'seu_by_fuel' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2'
+        WHEN N'ghg_emissions' THEN N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html'
+        WHEN N'environmental_clean_tech' THEN N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology'
+        ELSE N'https://www.nrcan.gc.ca/energy'
+    END
+    WHERE source_url IS NULL OR RTRIM(ISNULL(source_url, N'')) = N'';
+    UPDATE dbo.data_sources SET source_url = N'https://www.nrcan.gc.ca/energy'
+    WHERE source_url IS NULL OR RTRIM(ISNULL(source_url, N'')) = N'';
+    IF EXISTS (
+        SELECT 1 FROM sys.columns c
+        WHERE c.object_id = OBJECT_ID('dbo.data_sources') AND c.name = N'source_url' AND c.is_nullable = 1
+    )
+        ALTER TABLE dbo.data_sources ALTER COLUMN source_url NVARCHAR(1000) NOT NULL;
+END
+GO
+
+-- Drop legacy calc_* tables (replaced by nrcan_fb_s* section-scoped tables)
+IF OBJECT_ID('dbo.calc_capital_expenditures', 'U') IS NOT NULL DROP TABLE dbo.calc_capital_expenditures;
+IF OBJECT_ID('dbo.calc_clean_tech', 'U') IS NOT NULL DROP TABLE dbo.calc_clean_tech;
+IF OBJECT_ID('dbo.calc_economic_contributions', 'U') IS NOT NULL DROP TABLE dbo.calc_economic_contributions;
+IF OBJECT_ID('dbo.calc_energy_use', 'U') IS NOT NULL DROP TABLE dbo.calc_energy_use;
+IF OBJECT_ID('dbo.calc_environmental_protection', 'U') IS NOT NULL DROP TABLE dbo.calc_environmental_protection;
+IF OBJECT_ID('dbo.calc_infrastructure', 'U') IS NOT NULL DROP TABLE dbo.calc_infrastructure;
+IF OBJECT_ID('dbo.calc_international_investment', 'U') IS NOT NULL DROP TABLE dbo.calc_international_investment;
+IF OBJECT_ID('dbo.calc_provincial_gdp', 'U') IS NOT NULL DROP TABLE dbo.calc_provincial_gdp;
+IF OBJECT_ID('dbo.calc_world_energy_production', 'U') IS NOT NULL DROP TABLE dbo.calc_world_energy_production;
+-- Legacy monolithic raw_statcan names
+IF OBJECT_ID('dbo.raw_statcan_metadata', 'U') IS NOT NULL DROP TABLE dbo.raw_statcan_metadata;
+IF OBJECT_ID('dbo.raw_statcan_data', 'U') IS NOT NULL DROP TABLE dbo.raw_statcan_data;
+-- Old split export staging
+IF OBJECT_ID('dbo.nrcan_fb_export_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_export_metadata;
+IF OBJECT_ID('dbo.nrcan_fb_export_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_export_data;
+GO
+
+-- Drop former per-source _data / _metadata pairs
+IF OBJECT_ID('dbo.iea_web_rankings_data', 'U') IS NOT NULL DROP TABLE dbo.iea_web_rankings_data;
+IF OBJECT_ID('dbo.iea_web_rankings_metadata', 'U') IS NOT NULL DROP TABLE dbo.iea_web_rankings_metadata;
+IF OBJECT_ID('dbo.nrcan_cea_assets_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cea_assets_data;
+IF OBJECT_ID('dbo.nrcan_cea_assets_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cea_assets_metadata;
+IF OBJECT_ID('dbo.nrcan_cleanenv_semantic_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cleanenv_semantic_data;
+IF OBJECT_ID('dbo.nrcan_cleanenv_semantic_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cleanenv_semantic_metadata;
+IF OBJECT_ID('dbo.nrcan_cleantech_semantic_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cleantech_semantic_data;
+IF OBJECT_ID('dbo.nrcan_cleantech_semantic_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cleantech_semantic_metadata;
+IF OBJECT_ID('dbo.nrcan_fb_cleanpower_placeholder_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_cleanpower_placeholder_data;
+IF OBJECT_ID('dbo.nrcan_fb_cleanpower_placeholder_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_cleanpower_placeholder_metadata;
+IF OBJECT_ID('dbo.nrcan_fb_oilgas_placeholder_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_oilgas_placeholder_data;
+IF OBJECT_ID('dbo.nrcan_fb_oilgas_placeholder_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_oilgas_placeholder_metadata;
+IF OBJECT_ID('dbo.nrcan_fb_skills_placeholder_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_skills_placeholder_data;
+IF OBJECT_ID('dbo.nrcan_fb_skills_placeholder_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_skills_placeholder_metadata;
+IF OBJECT_ID('dbo.nrcan_ghg_semantic_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_ghg_semantic_data;
+IF OBJECT_ID('dbo.nrcan_ghg_semantic_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_ghg_semantic_metadata;
+IF OBJECT_ID('dbo.nrcan_majorproj_semantic_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_majorproj_semantic_data;
+IF OBJECT_ID('dbo.nrcan_majorproj_semantic_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_majorproj_semantic_metadata;
+IF OBJECT_ID('dbo.nrcan_oee_commercial_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_commercial_data;
+IF OBJECT_ID('dbo.nrcan_oee_commercial_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_commercial_metadata;
+IF OBJECT_ID('dbo.nrcan_oee_neud_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_neud_data;
+IF OBJECT_ID('dbo.nrcan_oee_neud_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_neud_metadata;
+IF OBJECT_ID('dbo.nrcan_oee_res_daily_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_daily_data;
+IF OBJECT_ID('dbo.nrcan_oee_res_daily_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_daily_metadata;
+IF OBJECT_ID('dbo.nrcan_oee_res_pie_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_pie_data;
+IF OBJECT_ID('dbo.nrcan_oee_res_pie_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_pie_metadata;
+IF OBJECT_ID('dbo.nrcan_oee_seu_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_seu_data;
+IF OBJECT_ID('dbo.nrcan_oee_seu_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_seu_metadata;
+IF OBJECT_ID('dbo.stc_capex_3410003601_data', 'U') IS NOT NULL DROP TABLE dbo.stc_capex_3410003601_data;
+IF OBJECT_ID('dbo.stc_capex_3410003601_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_capex_3410003601_metadata;
+IF OBJECT_ID('dbo.stc_epes_3810013001_data', 'U') IS NOT NULL DROP TABLE dbo.stc_epes_3810013001_data;
+IF OBJECT_ID('dbo.stc_epes_3810013001_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_epes_3810013001_metadata;
+IF OBJECT_ID('dbo.stc_fdi_3610000901_data', 'U') IS NOT NULL DROP TABLE dbo.stc_fdi_3610000901_data;
+IF OBJECT_ID('dbo.stc_fdi_3610000901_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_fdi_3610000901_metadata;
+IF OBJECT_ID('dbo.stc_foreignctrl_misc_data', 'U') IS NOT NULL DROP TABLE dbo.stc_foreignctrl_misc_data;
+IF OBJECT_ID('dbo.stc_foreignctrl_misc_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_foreignctrl_misc_metadata;
+IF OBJECT_ID('dbo.stc_gdpnom_3610010301_data', 'U') IS NOT NULL DROP TABLE dbo.stc_gdpnom_3610010301_data;
+IF OBJECT_ID('dbo.stc_gdpnom_3610010301_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_gdpnom_3610010301_metadata;
+IF OBJECT_ID('dbo.stc_infra_3610060801_data', 'U') IS NOT NULL DROP TABLE dbo.stc_infra_3610060801_data;
+IF OBJECT_ID('dbo.stc_infra_3610060801_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_infra_3610060801_metadata;
+IF OBJECT_ID('dbo.stc_invasset_3410003601_data', 'U') IS NOT NULL DROP TABLE dbo.stc_invasset_3410003601_data;
+IF OBJECT_ID('dbo.stc_invasset_3410003601_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_invasset_3410003601_metadata;
+IF OBJECT_ID('dbo.stc_nrsa_3610061001_data', 'U') IS NOT NULL DROP TABLE dbo.stc_nrsa_3610061001_data;
+IF OBJECT_ID('dbo.stc_nrsa_3610061001_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_nrsa_3610061001_metadata;
+IF OBJECT_ID('dbo.stc_nrsa_3810028501_data', 'U') IS NOT NULL DROP TABLE dbo.stc_nrsa_3810028501_data;
+IF OBJECT_ID('dbo.stc_nrsa_3810028501_metadata', 'U') IS NOT NULL DROP TABLE dbo.stc_nrsa_3810028501_metadata;
+-- Prior schema: physical tables used a *_ingest suffix (removed; see eedas_registry.yaml)
+IF OBJECT_ID('dbo.iea_web_rankings_ingest', 'U') IS NOT NULL DROP TABLE dbo.iea_web_rankings_ingest;
+IF OBJECT_ID('dbo.nrcan_cea_assets_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cea_assets_ingest;
+IF OBJECT_ID('dbo.nrcan_cleanenv_semantic_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cleanenv_semantic_ingest;
+IF OBJECT_ID('dbo.nrcan_cleanev_semantic_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cleanev_semantic_ingest;
+IF OBJECT_ID('dbo.nrcan_cleantech_semantic_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_cleantech_semantic_ingest;
+IF OBJECT_ID('dbo.nrcan_ghg_semantic_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_ghg_semantic_ingest;
+IF OBJECT_ID('dbo.nrcan_majorproj_semantic_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_majorproj_semantic_ingest;
+IF OBJECT_ID('dbo.nrcan_oee_commercial_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_commercial_ingest;
+IF OBJECT_ID('dbo.nrcan_oee_neud_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_neud_ingest;
+IF OBJECT_ID('dbo.nrcan_oee_res_daily_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_daily_ingest;
+IF OBJECT_ID('dbo.nrcan_oee_res_pie_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_pie_ingest;
+IF OBJECT_ID('dbo.nrcan_oee_seu_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_seu_ingest;
+IF OBJECT_ID('dbo.stc_capex_3410003601_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_capex_3410003601_ingest;
+IF OBJECT_ID('dbo.stc_epes_3810013001_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_epes_3810013001_ingest;
+IF OBJECT_ID('dbo.stc_fdi_3610000901_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_fdi_3610000901_ingest;
+IF OBJECT_ID('dbo.stc_foreignctrl_misc_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_foreignctrl_misc_ingest;
+IF OBJECT_ID('dbo.stc_gdpnom_3610010301_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_gdpnom_3610010301_ingest;
+IF OBJECT_ID('dbo.stc_infra_3610060801_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_infra_3610060801_ingest;
+IF OBJECT_ID('dbo.stc_invasset_3410003601_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_invasset_3410003601_ingest;
+IF OBJECT_ID('dbo.stc_nrsa_3610061001_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_nrsa_3610061001_ingest;
+IF OBJECT_ID('dbo.stc_nrsa_3810028501_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_nrsa_3810028501_ingest;
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_web_rankings')
+BEGIN
+    CREATE TABLE [iea_web_rankings] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
         vector NVARCHAR(50) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_iea_web_rankings_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_iea_web_rankings_data_vector ON iea_web_rankings_data(vector);
-    CREATE INDEX IX_iea_web_rankings_data_source ON iea_web_rankings_data(source_key);
-    CREATE INDEX IX_iea_web_rankings_data_ref_date ON iea_web_rankings_data(ref_date);
-    PRINT 'Table iea_web_rankings_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cea_assets_data')
-BEGIN
-    CREATE TABLE nrcan_cea_assets_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_cea_assets_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_cea_assets_data_vector ON nrcan_cea_assets_data(vector);
-    CREATE INDEX IX_nrcan_cea_assets_data_source ON nrcan_cea_assets_data(source_key);
-    CREATE INDEX IX_nrcan_cea_assets_data_ref_date ON nrcan_cea_assets_data(ref_date);
-    PRINT 'Table nrcan_cea_assets_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleanenv_semantic_data')
-BEGIN
-    CREATE TABLE nrcan_cleanenv_semantic_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_cleanenv_semantic_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_cleanenv_semantic_data_vector ON nrcan_cleanenv_semantic_data(vector);
-    CREATE INDEX IX_nrcan_cleanenv_semantic_data_source ON nrcan_cleanenv_semantic_data(source_key);
-    CREATE INDEX IX_nrcan_cleanenv_semantic_data_ref_date ON nrcan_cleanenv_semantic_data(ref_date);
-    PRINT 'Table nrcan_cleanenv_semantic_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleantech_semantic_data')
-BEGIN
-    CREATE TABLE nrcan_cleantech_semantic_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_cleantech_semantic_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_cleantech_semantic_data_vector ON nrcan_cleantech_semantic_data(vector);
-    CREATE INDEX IX_nrcan_cleantech_semantic_data_source ON nrcan_cleantech_semantic_data(source_key);
-    CREATE INDEX IX_nrcan_cleantech_semantic_data_ref_date ON nrcan_cleantech_semantic_data(ref_date);
-    PRINT 'Table nrcan_cleantech_semantic_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_cleanpower_placeholder_data')
-BEGIN
-    CREATE TABLE nrcan_fb_cleanpower_placeholder_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_cleanpower_placeholder_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_fb_cleanpower_placeholder_data_vector ON nrcan_fb_cleanpower_placeholder_data(vector);
-    CREATE INDEX IX_nrcan_fb_cleanpower_placeholder_data_source ON nrcan_fb_cleanpower_placeholder_data(source_key);
-    CREATE INDEX IX_nrcan_fb_cleanpower_placeholder_data_ref_date ON nrcan_fb_cleanpower_placeholder_data(ref_date);
-    PRINT 'Table nrcan_fb_cleanpower_placeholder_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_oilgas_placeholder_data')
-BEGIN
-    CREATE TABLE nrcan_fb_oilgas_placeholder_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_oilgas_placeholder_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_fb_oilgas_placeholder_data_vector ON nrcan_fb_oilgas_placeholder_data(vector);
-    CREATE INDEX IX_nrcan_fb_oilgas_placeholder_data_source ON nrcan_fb_oilgas_placeholder_data(source_key);
-    CREATE INDEX IX_nrcan_fb_oilgas_placeholder_data_ref_date ON nrcan_fb_oilgas_placeholder_data(ref_date);
-    PRINT 'Table nrcan_fb_oilgas_placeholder_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_skills_placeholder_data')
-BEGIN
-    CREATE TABLE nrcan_fb_skills_placeholder_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_skills_placeholder_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_fb_skills_placeholder_data_vector ON nrcan_fb_skills_placeholder_data(vector);
-    CREATE INDEX IX_nrcan_fb_skills_placeholder_data_source ON nrcan_fb_skills_placeholder_data(source_key);
-    CREATE INDEX IX_nrcan_fb_skills_placeholder_data_ref_date ON nrcan_fb_skills_placeholder_data(ref_date);
-    PRINT 'Table nrcan_fb_skills_placeholder_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_ghg_semantic_data')
-BEGIN
-    CREATE TABLE nrcan_ghg_semantic_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_ghg_semantic_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_ghg_semantic_data_vector ON nrcan_ghg_semantic_data(vector);
-    CREATE INDEX IX_nrcan_ghg_semantic_data_source ON nrcan_ghg_semantic_data(source_key);
-    CREATE INDEX IX_nrcan_ghg_semantic_data_ref_date ON nrcan_ghg_semantic_data(ref_date);
-    PRINT 'Table nrcan_ghg_semantic_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_majorproj_semantic_data')
-BEGIN
-    CREATE TABLE nrcan_majorproj_semantic_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_majorproj_semantic_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_majorproj_semantic_data_vector ON nrcan_majorproj_semantic_data(vector);
-    CREATE INDEX IX_nrcan_majorproj_semantic_data_source ON nrcan_majorproj_semantic_data(source_key);
-    CREATE INDEX IX_nrcan_majorproj_semantic_data_ref_date ON nrcan_majorproj_semantic_data(ref_date);
-    PRINT 'Table nrcan_majorproj_semantic_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_commercial_data')
-BEGIN
-    CREATE TABLE nrcan_oee_commercial_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_oee_commercial_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_oee_commercial_data_vector ON nrcan_oee_commercial_data(vector);
-    CREATE INDEX IX_nrcan_oee_commercial_data_source ON nrcan_oee_commercial_data(source_key);
-    CREATE INDEX IX_nrcan_oee_commercial_data_ref_date ON nrcan_oee_commercial_data(ref_date);
-    PRINT 'Table nrcan_oee_commercial_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_neud_data')
-BEGIN
-    CREATE TABLE nrcan_oee_neud_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_oee_neud_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_oee_neud_data_vector ON nrcan_oee_neud_data(vector);
-    CREATE INDEX IX_nrcan_oee_neud_data_source ON nrcan_oee_neud_data(source_key);
-    CREATE INDEX IX_nrcan_oee_neud_data_ref_date ON nrcan_oee_neud_data(ref_date);
-    PRINT 'Table nrcan_oee_neud_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_daily_data')
-BEGIN
-    CREATE TABLE nrcan_oee_res_daily_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_oee_res_daily_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_oee_res_daily_data_vector ON nrcan_oee_res_daily_data(vector);
-    CREATE INDEX IX_nrcan_oee_res_daily_data_source ON nrcan_oee_res_daily_data(source_key);
-    CREATE INDEX IX_nrcan_oee_res_daily_data_ref_date ON nrcan_oee_res_daily_data(ref_date);
-    PRINT 'Table nrcan_oee_res_daily_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_pie_data')
-BEGIN
-    CREATE TABLE nrcan_oee_res_pie_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_oee_res_pie_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_oee_res_pie_data_vector ON nrcan_oee_res_pie_data(vector);
-    CREATE INDEX IX_nrcan_oee_res_pie_data_source ON nrcan_oee_res_pie_data(source_key);
-    CREATE INDEX IX_nrcan_oee_res_pie_data_ref_date ON nrcan_oee_res_pie_data(ref_date);
-    PRINT 'Table nrcan_oee_res_pie_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_seu_data')
-BEGIN
-    CREATE TABLE nrcan_oee_seu_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_oee_seu_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_nrcan_oee_seu_data_vector ON nrcan_oee_seu_data(vector);
-    CREATE INDEX IX_nrcan_oee_seu_data_source ON nrcan_oee_seu_data(source_key);
-    CREATE INDEX IX_nrcan_oee_seu_data_ref_date ON nrcan_oee_seu_data(ref_date);
-    PRINT 'Table nrcan_oee_seu_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_capex_3410003601_data')
-BEGIN
-    CREATE TABLE stc_capex_3410003601_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_capex_3410003601_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_capex_3410003601_data_vector ON stc_capex_3410003601_data(vector);
-    CREATE INDEX IX_stc_capex_3410003601_data_source ON stc_capex_3410003601_data(source_key);
-    CREATE INDEX IX_stc_capex_3410003601_data_ref_date ON stc_capex_3410003601_data(ref_date);
-    PRINT 'Table stc_capex_3410003601_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_epes_3810013001_data')
-BEGIN
-    CREATE TABLE stc_epes_3810013001_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_epes_3810013001_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_epes_3810013001_data_vector ON stc_epes_3810013001_data(vector);
-    CREATE INDEX IX_stc_epes_3810013001_data_source ON stc_epes_3810013001_data(source_key);
-    CREATE INDEX IX_stc_epes_3810013001_data_ref_date ON stc_epes_3810013001_data(ref_date);
-    PRINT 'Table stc_epes_3810013001_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_fdi_3610000901_data')
-BEGIN
-    CREATE TABLE stc_fdi_3610000901_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_fdi_3610000901_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_fdi_3610000901_data_vector ON stc_fdi_3610000901_data(vector);
-    CREATE INDEX IX_stc_fdi_3610000901_data_source ON stc_fdi_3610000901_data(source_key);
-    CREATE INDEX IX_stc_fdi_3610000901_data_ref_date ON stc_fdi_3610000901_data(ref_date);
-    PRINT 'Table stc_fdi_3610000901_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_foreignctrl_misc_data')
-BEGIN
-    CREATE TABLE stc_foreignctrl_misc_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_foreignctrl_misc_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_foreignctrl_misc_data_vector ON stc_foreignctrl_misc_data(vector);
-    CREATE INDEX IX_stc_foreignctrl_misc_data_source ON stc_foreignctrl_misc_data(source_key);
-    CREATE INDEX IX_stc_foreignctrl_misc_data_ref_date ON stc_foreignctrl_misc_data(ref_date);
-    PRINT 'Table stc_foreignctrl_misc_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_gdpnom_3610010301_data')
-BEGIN
-    CREATE TABLE stc_gdpnom_3610010301_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_gdpnom_3610010301_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_gdpnom_3610010301_data_vector ON stc_gdpnom_3610010301_data(vector);
-    CREATE INDEX IX_stc_gdpnom_3610010301_data_source ON stc_gdpnom_3610010301_data(source_key);
-    CREATE INDEX IX_stc_gdpnom_3610010301_data_ref_date ON stc_gdpnom_3610010301_data(ref_date);
-    PRINT 'Table stc_gdpnom_3610010301_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_infra_3610060801_data')
-BEGIN
-    CREATE TABLE stc_infra_3610060801_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_infra_3610060801_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_infra_3610060801_data_vector ON stc_infra_3610060801_data(vector);
-    CREATE INDEX IX_stc_infra_3610060801_data_source ON stc_infra_3610060801_data(source_key);
-    CREATE INDEX IX_stc_infra_3610060801_data_ref_date ON stc_infra_3610060801_data(ref_date);
-    PRINT 'Table stc_infra_3610060801_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_invasset_3410003601_data')
-BEGIN
-    CREATE TABLE stc_invasset_3410003601_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_invasset_3410003601_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_invasset_3410003601_data_vector ON stc_invasset_3410003601_data(vector);
-    CREATE INDEX IX_stc_invasset_3410003601_data_source ON stc_invasset_3410003601_data(source_key);
-    CREATE INDEX IX_stc_invasset_3410003601_data_ref_date ON stc_invasset_3410003601_data(ref_date);
-    PRINT 'Table stc_invasset_3410003601_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3610061001_data')
-BEGIN
-    CREATE TABLE stc_nrsa_3610061001_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_nrsa_3610061001_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_nrsa_3610061001_data_vector ON stc_nrsa_3610061001_data(vector);
-    CREATE INDEX IX_stc_nrsa_3610061001_data_source ON stc_nrsa_3610061001_data(source_key);
-    CREATE INDEX IX_stc_nrsa_3610061001_data_ref_date ON stc_nrsa_3610061001_data(ref_date);
-    PRINT 'Table stc_nrsa_3610061001_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3810028501_data')
-BEGIN
-    CREATE TABLE stc_nrsa_3810028501_data (
-        id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
-        ref_date NVARCHAR(20) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_stc_nrsa_3810028501_data_vd UNIQUE (vector, ref_date)
-    );
-    CREATE INDEX IX_stc_nrsa_3810028501_data_vector ON stc_nrsa_3810028501_data(vector);
-    CREATE INDEX IX_stc_nrsa_3810028501_data_source ON stc_nrsa_3810028501_data(source_key);
-    CREATE INDEX IX_stc_nrsa_3810028501_data_ref_date ON stc_nrsa_3810028501_data(ref_date);
-    PRINT 'Table stc_nrsa_3810028501_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_web_rankings_metadata')
-BEGIN
-    CREATE TABLE iea_web_rankings_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_web_rankings_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_iea_web_rankings_metadata_source ON iea_web_rankings_metadata(source_key);
-    PRINT 'Table iea_web_rankings_metadata created.';
+    CREATE INDEX IX_iea_web_rankings_vector ON [iea_web_rankings](vector);
+    CREATE INDEX IX_iea_web_rankings_source ON [iea_web_rankings](source_key);
+    CREATE INDEX IX_iea_web_rankings_ref_date ON [iea_web_rankings](ref_date);
+    PRINT 'Table iea_web_rankings created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cea_assets_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cea_assets')
 BEGIN
-    CREATE TABLE nrcan_cea_assets_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_cea_assets] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_cea_assets_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_cea_assets_metadata_source ON nrcan_cea_assets_metadata(source_key);
-    PRINT 'Table nrcan_cea_assets_metadata created.';
+    CREATE INDEX IX_nrcan_cea_assets_vector ON [nrcan_cea_assets](vector);
+    CREATE INDEX IX_nrcan_cea_assets_source ON [nrcan_cea_assets](source_key);
+    CREATE INDEX IX_nrcan_cea_assets_ref_date ON [nrcan_cea_assets](ref_date);
+    PRINT 'Table nrcan_cea_assets created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleanenv_semantic_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleanenv_semantic')
 BEGIN
-    CREATE TABLE nrcan_cleanenv_semantic_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_cleanenv_semantic] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_cleanenv_semantic_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_cleanenv_semantic_metadata_source ON nrcan_cleanenv_semantic_metadata(source_key);
-    PRINT 'Table nrcan_cleanenv_semantic_metadata created.';
+    CREATE INDEX IX_nrcan_cleanenv_semantic_vector ON [nrcan_cleanenv_semantic](vector);
+    CREATE INDEX IX_nrcan_cleanenv_semantic_source ON [nrcan_cleanenv_semantic](source_key);
+    CREATE INDEX IX_nrcan_cleanenv_semantic_ref_date ON [nrcan_cleanenv_semantic](ref_date);
+    PRINT 'Table nrcan_cleanenv_semantic created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleantech_semantic_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleantech_semantic')
 BEGIN
-    CREATE TABLE nrcan_cleantech_semantic_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_cleantech_semantic] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_cleantech_semantic_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_cleantech_semantic_metadata_source ON nrcan_cleantech_semantic_metadata(source_key);
-    PRINT 'Table nrcan_cleantech_semantic_metadata created.';
+    CREATE INDEX IX_nrcan_cleantech_semantic_vector ON [nrcan_cleantech_semantic](vector);
+    CREATE INDEX IX_nrcan_cleantech_semantic_source ON [nrcan_cleantech_semantic](source_key);
+    CREATE INDEX IX_nrcan_cleantech_semantic_ref_date ON [nrcan_cleantech_semantic](ref_date);
+    PRINT 'Table nrcan_cleantech_semantic created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_cleanpower_placeholder_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_ghg_semantic')
 BEGIN
-    CREATE TABLE nrcan_fb_cleanpower_placeholder_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_ghg_semantic] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_ghg_semantic_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_fb_cleanpower_placeholder_metadata_source ON nrcan_fb_cleanpower_placeholder_metadata(source_key);
-    PRINT 'Table nrcan_fb_cleanpower_placeholder_metadata created.';
+    CREATE INDEX IX_nrcan_ghg_semantic_vector ON [nrcan_ghg_semantic](vector);
+    CREATE INDEX IX_nrcan_ghg_semantic_source ON [nrcan_ghg_semantic](source_key);
+    CREATE INDEX IX_nrcan_ghg_semantic_ref_date ON [nrcan_ghg_semantic](ref_date);
+    PRINT 'Table nrcan_ghg_semantic created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_oilgas_placeholder_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_majorproj_semantic')
 BEGIN
-    CREATE TABLE nrcan_fb_oilgas_placeholder_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_majorproj_semantic] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_majorproj_semantic_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_fb_oilgas_placeholder_metadata_source ON nrcan_fb_oilgas_placeholder_metadata(source_key);
-    PRINT 'Table nrcan_fb_oilgas_placeholder_metadata created.';
+    CREATE INDEX IX_nrcan_majorproj_semantic_vector ON [nrcan_majorproj_semantic](vector);
+    CREATE INDEX IX_nrcan_majorproj_semantic_source ON [nrcan_majorproj_semantic](source_key);
+    CREATE INDEX IX_nrcan_majorproj_semantic_ref_date ON [nrcan_majorproj_semantic](ref_date);
+    PRINT 'Table nrcan_majorproj_semantic created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_skills_placeholder_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_commercial')
 BEGIN
-    CREATE TABLE nrcan_fb_skills_placeholder_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_oee_commercial] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_oee_commercial_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_fb_skills_placeholder_metadata_source ON nrcan_fb_skills_placeholder_metadata(source_key);
-    PRINT 'Table nrcan_fb_skills_placeholder_metadata created.';
+    CREATE INDEX IX_nrcan_oee_commercial_vector ON [nrcan_oee_commercial](vector);
+    CREATE INDEX IX_nrcan_oee_commercial_source ON [nrcan_oee_commercial](source_key);
+    CREATE INDEX IX_nrcan_oee_commercial_ref_date ON [nrcan_oee_commercial](ref_date);
+    PRINT 'Table nrcan_oee_commercial created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_ghg_semantic_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_neud')
 BEGIN
-    CREATE TABLE nrcan_ghg_semantic_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_oee_neud] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_oee_neud_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_ghg_semantic_metadata_source ON nrcan_ghg_semantic_metadata(source_key);
-    PRINT 'Table nrcan_ghg_semantic_metadata created.';
+    CREATE INDEX IX_nrcan_oee_neud_vector ON [nrcan_oee_neud](vector);
+    CREATE INDEX IX_nrcan_oee_neud_source ON [nrcan_oee_neud](source_key);
+    CREATE INDEX IX_nrcan_oee_neud_ref_date ON [nrcan_oee_neud](ref_date);
+    PRINT 'Table nrcan_oee_neud created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_majorproj_semantic_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_daily')
 BEGIN
-    CREATE TABLE nrcan_majorproj_semantic_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_oee_res_daily] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_oee_res_daily_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_majorproj_semantic_metadata_source ON nrcan_majorproj_semantic_metadata(source_key);
-    PRINT 'Table nrcan_majorproj_semantic_metadata created.';
+    CREATE INDEX IX_nrcan_oee_res_daily_vector ON [nrcan_oee_res_daily](vector);
+    CREATE INDEX IX_nrcan_oee_res_daily_source ON [nrcan_oee_res_daily](source_key);
+    CREATE INDEX IX_nrcan_oee_res_daily_ref_date ON [nrcan_oee_res_daily](ref_date);
+    PRINT 'Table nrcan_oee_res_daily created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_commercial_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_pie')
 BEGIN
-    CREATE TABLE nrcan_oee_commercial_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_oee_res_pie] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_oee_res_pie_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_oee_commercial_metadata_source ON nrcan_oee_commercial_metadata(source_key);
-    PRINT 'Table nrcan_oee_commercial_metadata created.';
+    CREATE INDEX IX_nrcan_oee_res_pie_vector ON [nrcan_oee_res_pie](vector);
+    CREATE INDEX IX_nrcan_oee_res_pie_source ON [nrcan_oee_res_pie](source_key);
+    CREATE INDEX IX_nrcan_oee_res_pie_ref_date ON [nrcan_oee_res_pie](ref_date);
+    PRINT 'Table nrcan_oee_res_pie created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_neud_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_seu')
 BEGIN
-    CREATE TABLE nrcan_oee_neud_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [nrcan_oee_seu] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_oee_seu_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_oee_neud_metadata_source ON nrcan_oee_neud_metadata(source_key);
-    PRINT 'Table nrcan_oee_neud_metadata created.';
+    CREATE INDEX IX_nrcan_oee_seu_vector ON [nrcan_oee_seu](vector);
+    CREATE INDEX IX_nrcan_oee_seu_source ON [nrcan_oee_seu](source_key);
+    CREATE INDEX IX_nrcan_oee_seu_ref_date ON [nrcan_oee_seu](ref_date);
+    PRINT 'Table nrcan_oee_seu created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_daily_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_capex_3410003601')
 BEGIN
-    CREATE TABLE nrcan_oee_res_daily_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_capex_3410003601] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_capex_3410003601_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_oee_res_daily_metadata_source ON nrcan_oee_res_daily_metadata(source_key);
-    PRINT 'Table nrcan_oee_res_daily_metadata created.';
+    CREATE INDEX IX_stc_capex_3410003601_vector ON [stc_capex_3410003601](vector);
+    CREATE INDEX IX_stc_capex_3410003601_source ON [stc_capex_3410003601](source_key);
+    CREATE INDEX IX_stc_capex_3410003601_ref_date ON [stc_capex_3410003601](ref_date);
+    PRINT 'Table stc_capex_3410003601 created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_pie_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_epes_3810013001')
 BEGIN
-    CREATE TABLE nrcan_oee_res_pie_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_epes_3810013001] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_epes_3810013001_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_oee_res_pie_metadata_source ON nrcan_oee_res_pie_metadata(source_key);
-    PRINT 'Table nrcan_oee_res_pie_metadata created.';
+    CREATE INDEX IX_stc_epes_3810013001_vector ON [stc_epes_3810013001](vector);
+    CREATE INDEX IX_stc_epes_3810013001_source ON [stc_epes_3810013001](source_key);
+    CREATE INDEX IX_stc_epes_3810013001_ref_date ON [stc_epes_3810013001](ref_date);
+    PRINT 'Table stc_epes_3810013001 created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_seu_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_fdi_3610000901')
 BEGIN
-    CREATE TABLE nrcan_oee_seu_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_fdi_3610000901] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_fdi_3610000901_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_oee_seu_metadata_source ON nrcan_oee_seu_metadata(source_key);
-    PRINT 'Table nrcan_oee_seu_metadata created.';
+    CREATE INDEX IX_stc_fdi_3610000901_vector ON [stc_fdi_3610000901](vector);
+    CREATE INDEX IX_stc_fdi_3610000901_source ON [stc_fdi_3610000901](source_key);
+    CREATE INDEX IX_stc_fdi_3610000901_ref_date ON [stc_fdi_3610000901](ref_date);
+    PRINT 'Table stc_fdi_3610000901 created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_capex_3410003601_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_foreignctrl_misc')
 BEGIN
-    CREATE TABLE stc_capex_3410003601_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_foreignctrl_misc] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_foreignctrl_misc_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_stc_capex_3410003601_metadata_source ON stc_capex_3410003601_metadata(source_key);
-    PRINT 'Table stc_capex_3410003601_metadata created.';
+    CREATE INDEX IX_stc_foreignctrl_misc_vector ON [stc_foreignctrl_misc](vector);
+    CREATE INDEX IX_stc_foreignctrl_misc_source ON [stc_foreignctrl_misc](source_key);
+    CREATE INDEX IX_stc_foreignctrl_misc_ref_date ON [stc_foreignctrl_misc](ref_date);
+    PRINT 'Table stc_foreignctrl_misc created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_epes_3810013001_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_gdpnom_3610010301')
 BEGIN
-    CREATE TABLE stc_epes_3810013001_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_gdpnom_3610010301] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_gdpnom_3610010301_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_stc_epes_3810013001_metadata_source ON stc_epes_3810013001_metadata(source_key);
-    PRINT 'Table stc_epes_3810013001_metadata created.';
+    CREATE INDEX IX_stc_gdpnom_3610010301_vector ON [stc_gdpnom_3610010301](vector);
+    CREATE INDEX IX_stc_gdpnom_3610010301_source ON [stc_gdpnom_3610010301](source_key);
+    CREATE INDEX IX_stc_gdpnom_3610010301_ref_date ON [stc_gdpnom_3610010301](ref_date);
+    PRINT 'Table stc_gdpnom_3610010301 created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_fdi_3610000901_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_infra_3610060801')
 BEGIN
-    CREATE TABLE stc_fdi_3610000901_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_infra_3610060801] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_infra_3610060801_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_stc_fdi_3610000901_metadata_source ON stc_fdi_3610000901_metadata(source_key);
-    PRINT 'Table stc_fdi_3610000901_metadata created.';
+    CREATE INDEX IX_stc_infra_3610060801_vector ON [stc_infra_3610060801](vector);
+    CREATE INDEX IX_stc_infra_3610060801_source ON [stc_infra_3610060801](source_key);
+    CREATE INDEX IX_stc_infra_3610060801_ref_date ON [stc_infra_3610060801](ref_date);
+    PRINT 'Table stc_infra_3610060801 created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_foreignctrl_misc_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_invasset_3410003601')
 BEGIN
-    CREATE TABLE stc_foreignctrl_misc_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_invasset_3410003601] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_invasset_3410003601_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_stc_foreignctrl_misc_metadata_source ON stc_foreignctrl_misc_metadata(source_key);
-    PRINT 'Table stc_foreignctrl_misc_metadata created.';
+    CREATE INDEX IX_stc_invasset_3410003601_vector ON [stc_invasset_3410003601](vector);
+    CREATE INDEX IX_stc_invasset_3410003601_source ON [stc_invasset_3410003601](source_key);
+    CREATE INDEX IX_stc_invasset_3410003601_ref_date ON [stc_invasset_3410003601](ref_date);
+    PRINT 'Table stc_invasset_3410003601 created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_gdpnom_3610010301_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3610061001')
 BEGIN
-    CREATE TABLE stc_gdpnom_3610010301_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_nrsa_3610061001] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_nrsa_3610061001_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_stc_gdpnom_3610010301_metadata_source ON stc_gdpnom_3610010301_metadata(source_key);
-    PRINT 'Table stc_gdpnom_3610010301_metadata created.';
+    CREATE INDEX IX_stc_nrsa_3610061001_vector ON [stc_nrsa_3610061001](vector);
+    CREATE INDEX IX_stc_nrsa_3610061001_source ON [stc_nrsa_3610061001](source_key);
+    CREATE INDEX IX_stc_nrsa_3610061001_ref_date ON [stc_nrsa_3610061001](ref_date);
+    PRINT 'Table stc_nrsa_3610061001 created.';
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_infra_3610060801_metadata')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3810028501')
 BEGIN
-    CREATE TABLE stc_infra_3610060801_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
+    CREATE TABLE [stc_nrsa_3810028501] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL,
         source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_nrsa_3810028501_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_stc_infra_3610060801_metadata_source ON stc_infra_3610060801_metadata(source_key);
-    PRINT 'Table stc_infra_3610060801_metadata created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_invasset_3410003601_metadata')
-BEGIN
-    CREATE TABLE stc_invasset_3410003601_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
-        title NVARCHAR(500) NULL,
-        uom NVARCHAR(100) NULL,
-        scalar_factor NVARCHAR(50) NULL,
-        source_org NVARCHAR(255) NULL,
-        source_url NVARCHAR(1000) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    CREATE INDEX IX_stc_invasset_3410003601_metadata_source ON stc_invasset_3410003601_metadata(source_key);
-    PRINT 'Table stc_invasset_3410003601_metadata created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3610061001_metadata')
-BEGIN
-    CREATE TABLE stc_nrsa_3610061001_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
-        title NVARCHAR(500) NULL,
-        uom NVARCHAR(100) NULL,
-        scalar_factor NVARCHAR(50) NULL,
-        source_org NVARCHAR(255) NULL,
-        source_url NVARCHAR(1000) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    CREATE INDEX IX_stc_nrsa_3610061001_metadata_source ON stc_nrsa_3610061001_metadata(source_key);
-    PRINT 'Table stc_nrsa_3610061001_metadata created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3810028501_metadata')
-BEGIN
-    CREATE TABLE stc_nrsa_3810028501_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL UNIQUE,
-        title NVARCHAR(500) NULL,
-        uom NVARCHAR(100) NULL,
-        scalar_factor NVARCHAR(50) NULL,
-        source_org NVARCHAR(255) NULL,
-        source_url NVARCHAR(1000) NULL,
-        source_key NVARCHAR(100) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    CREATE INDEX IX_stc_nrsa_3810028501_metadata_source ON stc_nrsa_3810028501_metadata(source_key);
-    PRINT 'Table stc_nrsa_3810028501_metadata created.';
-END
-GO
-
--- Major Projects Map Data (NRCan ArcGIS export)
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_major_projects_map')
-BEGIN
-    CREATE TABLE nrcan_fb_major_projects_map (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        lang NVARCHAR(10) NOT NULL,
-        feature_id NVARCHAR(100) NULL,
-        company NVARCHAR(500) NULL,
-        project_name NVARCHAR(500) NULL,
-        province NVARCHAR(100) NULL,
-        location NVARCHAR(255) NULL,
-        capital_cost NVARCHAR(100) NULL,
-        capital_cost_range NVARCHAR(100) NULL,
-        status NVARCHAR(100) NULL,
-        clean_technology NVARCHAR(100) NULL,
-        clean_technology_type NVARCHAR(255) NULL,
-        line_type NVARCHAR(100) NULL,
-        lat NVARCHAR(50) NULL,
-        lon NVARCHAR(50) NULL,
-        paths NVARCHAR(MAX) NULL,
-        feature_type NVARCHAR(20) NOT NULL,
-        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-
-    CREATE INDEX IX_nrcan_fb_major_projects_map_lang ON nrcan_fb_major_projects_map(lang);
-    CREATE INDEX IX_nrcan_fb_major_projects_map_type ON nrcan_fb_major_projects_map(feature_type);
-
-    PRINT 'Table nrcan_fb_major_projects_map created.';
-END
-GO
-
-
--- ============================================================================
--- CALCULATED DATA TABLES (section-scoped nrcan_fb_sN_*)
--- ============================================================================
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_capital_expenditures')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_capital_expenditures (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        oil_gas DECIMAL(18,2) NULL,
-        electricity DECIMAL(18,2) NULL,
-        other_energy DECIMAL(18,2) NULL,
-        total DECIMAL(18,2) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s2_capex_year UNIQUE (ref_year)
-    );
-    PRINT 'Table nrcan_fb_s2_capital_expenditures created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_infrastructure')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_infrastructure (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        fuel_energy_pipelines DECIMAL(18,2) NULL,
-        transport DECIMAL(18,2) NULL,
-        education DECIMAL(18,2) NULL,
-        health_housing DECIMAL(18,2) NULL,
-        environmental DECIMAL(18,2) NULL,
-        public_safety DECIMAL(18,2) NULL,
-        total DECIMAL(18,2) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s2_infra_year UNIQUE (ref_year)
-    );
-    PRINT 'Table nrcan_fb_s2_infrastructure created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_economic_contributions')
-BEGIN
-    CREATE TABLE nrcan_fb_s1_economic_contributions (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        gdp_direct DECIMAL(18,2) NULL,
-        gdp_indirect DECIMAL(18,2) NULL,
-        gdp_total DECIMAL(18,2) NULL,
-        jobs_direct DECIMAL(18,2) NULL,
-        jobs_indirect DECIMAL(18,2) NULL,
-        jobs_total DECIMAL(18,2) NULL,
-        income_direct DECIMAL(18,2) NULL,
-        income_indirect DECIMAL(18,2) NULL,
-        income_total DECIMAL(18,2) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s1_econ_year UNIQUE (ref_year)
-    );
-    PRINT 'Table nrcan_fb_s1_economic_contributions created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_environmental_protection')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_environmental_protection (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        industry_category NVARCHAR(100) NOT NULL,
-        wastewater DECIMAL(18,2) NULL,
-        soil_groundwater DECIMAL(18,2) NULL,
-        air_pollution DECIMAL(18,2) NULL,
-        solid_waste DECIMAL(18,2) NULL,
-        other DECIMAL(18,2) NULL,
-        total DECIMAL(18,2) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s2_envprot_year_cat UNIQUE (ref_year, industry_category)
-    );
-    CREATE INDEX IX_nrcan_fb_s2_envprot_year ON nrcan_fb_s2_environmental_protection(ref_year);
-    PRINT 'Table nrcan_fb_s2_environmental_protection created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_international_investment')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_international_investment (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        investment_type NVARCHAR(50) NOT NULL,
-        industry_category NVARCHAR(100) NOT NULL,
-        value DECIMAL(18,2) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s2_intlinv UNIQUE (ref_year, investment_type, industry_category)
-    );
-    CREATE INDEX IX_nrcan_fb_s2_intlinv_year ON nrcan_fb_s2_international_investment(ref_year);
-    PRINT 'Table nrcan_fb_s2_international_investment created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_provincial_gdp')
-BEGIN
-    CREATE TABLE nrcan_fb_s1_provincial_gdp (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        province_code NVARCHAR(10) NOT NULL,
-        province_name NVARCHAR(100) NOT NULL,
-        energy_gdp DECIMAL(18,2) NULL,
-        total_gdp DECIMAL(18,2) NULL,
-        energy_share_pct DECIMAL(8,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s1_provgdp UNIQUE (ref_year, province_code)
-    );
-    CREATE INDEX IX_nrcan_fb_s1_provgdp_year ON nrcan_fb_s1_provincial_gdp(ref_year);
-    PRINT 'Table nrcan_fb_s1_provincial_gdp created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_world_energy_production')
-BEGIN
-    CREATE TABLE nrcan_fb_s1_world_energy_production (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        country_code NVARCHAR(10) NOT NULL,
-        country_name NVARCHAR(100) NOT NULL,
-        energy_type NVARCHAR(50) NOT NULL,
-        production_value DECIMAL(18,2) NULL,
-        unit NVARCHAR(50) NULL,
-        global_rank INT NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s1_worldenergy UNIQUE (ref_year, country_code, energy_type)
-    );
-    CREATE INDEX IX_nrcan_fb_s1_worldenergy_year ON nrcan_fb_s1_world_energy_production(ref_year);
-    CREATE INDEX IX_nrcan_fb_s1_worldenergy_country ON nrcan_fb_s1_world_energy_production(country_code);
-    PRINT 'Table nrcan_fb_s1_world_energy_production created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_clean_tech')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_clean_tech (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        category NVARCHAR(100) NOT NULL,
-        project_count INT NULL,
-        total_investment DECIMAL(18,2) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT UQ_nrcan_fb_s2_cleantech UNIQUE (ref_year, category)
-    );
-    PRINT 'Table nrcan_fb_s2_clean_tech created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s4_energy_use')
-BEGIN
-    CREATE TABLE nrcan_fb_s4_energy_use (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL UNIQUE,
-        R DECIMAL(18,2) NULL,
-        C DECIMAL(18,2) NULL,
-        I DECIMAL(18,2) NULL,
-        T DECIMAL(18,2) NULL,
-        A DECIMAL(18,2) NULL,
-        P DECIMAL(18,2) NULL,
-        NPC DECIMAL(18,2) NULL,
-        FK DECIMAL(18,2) NULL,
-        EL DECIMAL(18,2) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    CREATE INDEX IX_nrcan_fb_s4_energy_use_year ON nrcan_fb_s4_energy_use(ref_year);
-    PRINT 'Table nrcan_fb_s4_energy_use created.';
+    CREATE INDEX IX_stc_nrsa_3810028501_vector ON [stc_nrsa_3810028501](vector);
+    CREATE INDEX IX_stc_nrsa_3810028501_source ON [stc_nrsa_3810028501](source_key);
+    CREATE INDEX IX_stc_nrsa_3810028501_ref_date ON [stc_nrsa_3810028501](ref_date);
+    PRINT 'Table stc_nrsa_3810028501 created.';
 END
 GO
 
 -- ============================================================================
--- CONSOLIDATED EXPORT TABLES
+-- EXPORT STAGING (wide table: replaces nrcan_fb_export_data + _metadata)
 -- ============================================================================
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_export_data')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_export')
 BEGIN
-    CREATE TABLE nrcan_fb_export_data (
+    CREATE TABLE nrcan_fb_export (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
         vector NVARCHAR(100) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value NVARCHAR(100) NULL,
-        CONSTRAINT UQ_nrcan_fb_export_vector_date UNIQUE (vector, ref_date)
-    );
-    PRINT 'Table nrcan_fb_export_data created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_export_metadata')
-BEGIN
-    CREATE TABLE nrcan_fb_export_metadata (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(100) NOT NULL UNIQUE,
         title NVARCHAR(500) NULL,
         uom NVARCHAR(100) NULL,
         scalar_factor NVARCHAR(50) NULL,
         source_org NVARCHAR(255) NULL,
         source_url NVARCHAR(1000) NULL
     );
-    PRINT 'Table nrcan_fb_export_metadata created.';
+    CREATE INDEX IX_nrcan_fb_export_vector ON nrcan_fb_export(vector);
+    CREATE INDEX IX_nrcan_fb_export_ref_date ON nrcan_fb_export(ref_date);
+    PRINT 'Table nrcan_fb_export created.';
 END
 GO
-
 
 -- Remove obsolete legacy tables if present (optional cleanup on re-run)
 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'raw_major_projects')
@@ -1161,28 +757,32 @@ GO
 -- ============================================================================
 -- INSERT DEFAULT DATA SOURCES
 -- ============================================================================
+-- Refresh skips destructive re-seed; see scripts/db/ensure_schema.py
 
 DELETE FROM nrcan_fb_data_sources;
 
-INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, statcan_table_id, is_enabled)
+INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
 VALUES
-('economic_contributions', 'Economic Contributions (GDP, Jobs, Income)', 1, 'Key Indicators', '36-10-0610-01', 1),
-('nominal_gdp', 'Nominal GDP Contributions', 1, 'Key Indicators', '36-10-0103-01', 1),
-('provincial_gdp', 'Provincial GDP Data', 1, 'Key Indicators', '38-10-0285-01', 1),
-('world_energy_production', 'World Energy Production', 1, 'Key Indicators', NULL, 1),
-('canadian_energy_assets', 'Canadian Energy Assets (CEA)', 1, 'Key Indicators', NULL, 1),
-('capital_expenditures', 'Capital Expenditures', 2, 'Investment', '34-10-0036-01', 1),
-('infrastructure', 'Infrastructure Stock', 2, 'Investment', '36-10-0608-01', 1),
-('investment_by_asset', 'Investment by Asset Type', 2, 'Investment', '34-10-0036-01', 1),
-('international_investment', 'International Investment (FDI/CDIA)', 2, 'Investment', '36-10-0009-01', 1),
-('foreign_control', 'Foreign Control', 2, 'Investment', NULL, 1),
-('environmental_protection', 'Environmental Protection Expenditures', 2, 'Investment', NULL, 1),
-('major_projects', 'Major Projects Inventory', 2, 'Investment', NULL, 1),
-('clean_tech', 'Clean Technology Projects', 2, 'Investment', NULL, 1),
-('skills_data', 'Skills and Employment Data', 3, 'Skills, Diversity and Community', NULL, 0),
-('energy_use', 'Energy use (OEE NEUD + Primary Energy Use Demand)', 4, 'Energy Efficiency', NULL, 1),
-('clean_power_data', 'Clean Power and Low Carbon Fuels', 5, 'Clean Power and Low Carbon Fuels', NULL, 0),
-('oil_gas_data', 'Oil, Natural Gas and Coal', 6, 'Oil, Natural Gas and Coal', NULL, 0);
+('economic_contributions', 'Economic Contributions (GDP, Jobs, Income)', 1, 'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001', 1),
+('nominal_gdp', 'Nominal GDP Contributions', 1, 'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610010301', 1),
+('provincial_gdp', 'Provincial GDP Data', 1, 'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401', 1),
+('world_energy_production', 'World Energy Production', 1, 'Key Indicators', N'https://www.iea.org/data-and-statistics/data-tools/world-energy-balances', 1),
+('canadian_energy_assets', 'Canadian Energy Assets (CEA)', 1, 'Key Indicators', N'https://www.nrcan.gc.ca/energy/energy-sources-distribution/energy-facts/canadian-energy-assets/20064', 1),
+('capital_expenditures', 'Capital Expenditures', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601', 1),
+('infrastructure', 'Infrastructure Stock', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801', 1),
+('investment_by_asset', 'Investment by Asset Type', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801', 1),
+('international_investment', 'International Investment (FDI/CDIA)', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610000901', 1),
+('foreign_control', 'Foreign Control', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310057001', 1),
+('environmental_protection', 'Environmental Protection Expenditures', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001', 1),
+('major_projects', 'Major Projects Inventory', 2, 'Investment', N'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034', 1),
+('clean_tech', 'Clean Technology Projects', 2, 'Investment', N'https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034', 1),
+('energy_use', 'Energy use (OEE NEUD + Primary Energy Use Demand)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
+('residential_pie_charts', 'Residential pie charts (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1', 1),
+('residential_daily_lives', 'Residential daily lives (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1', 1),
+('commercial_institutional', 'Commercial / institutional (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1', 1),
+('seu_by_fuel', 'SEU by fuel (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2', 1),
+('ghg_emissions', 'GHG emissions (ECCC)', 1, 'Key Indicators', N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html', 1),
+('environmental_clean_tech', 'Environmental and clean technology', 5, 'Clean Power and Low Carbon Fuels', N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology', 1);
 
 PRINT 'Default data sources inserted.';
 GO

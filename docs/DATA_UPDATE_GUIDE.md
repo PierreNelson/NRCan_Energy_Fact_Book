@@ -10,9 +10,10 @@ For **regenerating the glossary** (`public/glossary/`, `data-gallery.html`), see
 
 Before running any commands, ensure you have:
 
-1. **SQL Server running** with the `NRCanEnergyFactbook` database created
+1. **SQL Server running** with the `NRCanEnergyFactbook` database created (empty is fine). The first **`python main.py refresh`** applies table/procedure DDL from `scripts/db/setup_database.sql` and seeds `nrcan_fb_data_sources` only if that table is empty. The registry table includes a required **`source_url`** for each logical source (data gallery); see [`scripts/db/README.md`](../scripts/db/README.md).
 2. **Credentials configured** in `scripts/.env`
 3. **Dependencies installed**: `pip install -r scripts/requirements.txt`
+4. **Local Excel workbooks** used by the pipeline (CEA, IEA World Energy Balances, ECCC GHG Annex, `EE Improvement.xlsx`, `Primary Energy Use Demand.xlsx`, `SEU Final Demand.xlsx`, TSX listing export `tsx-and-amp-tsxv-listed-companies-2026-02-17-en.xlsx`) — place them in one folder on your machine and point `EXTERNAL_XLSX_DATA_DIR` in `scripts/.env` at that folder (see `scripts/.env.example`). If you omit it, the scripts still look for those filenames at the **repository root**.
 
 **Test your connection first:**
 ```bash
@@ -30,6 +31,7 @@ python main.py test-connection
 | Update Section 1 only | `python main.py refresh --section section1_indicators` |
 | Update Section 2 only | `python main.py refresh --section section2_investment` |
 | Update Section 4 only | `python main.py refresh --section section4_indicators` |
+| Update Section 5 only | `python main.py refresh --section section5_clean_power` |
 | Export all data | `python main.py export` |
 | Export by source | `python main.py export --source capital_expenditures` |
 | Export by pattern | `python main.py export --vectors "capex_*"` |
@@ -72,8 +74,9 @@ python main.py refresh --section section1_indicators
 - Economic contributions (GDP, jobs, income)
 - Nominal GDP by industry
 - Provincial GDP contributions
-- World energy production rankings
+- World energy production rankings (IEA tool / pipeline logic)
 - Canadian Energy Assets (CEA)
+- GHG emissions (ECCC / pipeline handler)
 
 ---
 
@@ -135,6 +138,20 @@ Run **Section 4** refresh and then **Export** so these vectors are written to `d
 
 ---
 
+### Section 5: Clean Power and Low Carbon Fuels
+
+Environmental and clean technology indicators (StatCan tables, optional TSX listing XLSX).
+
+```bash
+python main.py refresh --section section5_clean_power
+```
+
+**Data sources in this section:**
+
+- **environmental_clean_tech** — labour, GDP, jobs, exports (multiple StatCan feeds + optional local XLSX)
+
+---
+
 ## Update Individual Data Sources
 
 Use these commands to update a single data source without affecting others.
@@ -166,7 +183,7 @@ python main.py refresh --source world_energy_production
 ```
 
 **Canadian Energy Assets (CEA)**
-- Source: CEA_2023.xlsx file
+- Source: `CEA_2023.xlsx` in `EXTERNAL_XLSX_DATA_DIR` (or repo root)
 ```bash
 python main.py refresh --source canadian_energy_assets
 ```
@@ -231,12 +248,42 @@ python main.py refresh --source clean_tech
 
 ---
 
+### Section 5: Clean Power - Individual Sources
+
+**Environmental and clean technology**
+- Source: StatCan + optional TSX cleantech XLSX (see `scripts/config.yaml` → `section5_clean_power`)
+```bash
+python main.py refresh --source environmental_clean_tech
+```
+
+---
+
 ### Section 4: Energy Efficiency - Individual Sources
 
 **Energy use (OEE NEUD + Primary Energy Use Demand)**
 - Sources: OEE NEUD (sector R,C,I,T,A in PJ) and Primary Energy Use Demand / SharePoint–Excel (P,NPC,FK,EL in PJ). Set `oee_neud_file_path` and `primary_demand_file_path` under `sections.section4_indicators.sources.energy_use` in config.
 ```bash
 python main.py refresh --source energy_use
+```
+
+**Residential pie charts**
+```bash
+python main.py refresh --source residential_pie_charts
+```
+
+**Residential daily lives**
+```bash
+python main.py refresh --source residential_daily_lives
+```
+
+**Commercial / institutional**
+```bash
+python main.py refresh --source commercial_institutional
+```
+
+**SEU by fuel**
+```bash
+python main.py refresh --source seu_by_fuel
 ```
 
 ---
@@ -380,6 +427,7 @@ python main.py refresh --all --export-after     # Refresh all + export CSVs
 python main.py refresh --section section1_indicators    # Key Indicators
 python main.py refresh --section section2_investment    # Investment
 python main.py refresh --section section4_indicators    # Energy Efficiency
+python main.py refresh --section section5_clean_power  # Clean power / env–cleantech
 
 # === INDIVIDUAL SOURCE UPDATES (Section 1) ===
 python main.py refresh --source economic_contributions
@@ -387,6 +435,7 @@ python main.py refresh --source nominal_gdp
 python main.py refresh --source provincial_gdp
 python main.py refresh --source world_energy_production
 python main.py refresh --source canadian_energy_assets
+python main.py refresh --source ghg_emissions
 
 # === INDIVIDUAL SOURCE UPDATES (Section 2) ===
 python main.py refresh --source capital_expenditures
@@ -401,6 +450,13 @@ python main.py refresh --source clean_tech
 
 # === INDIVIDUAL SOURCE UPDATES (Section 4) ===
 python main.py refresh --source energy_use
+python main.py refresh --source residential_pie_charts
+python main.py refresh --source residential_daily_lives
+python main.py refresh --source commercial_institutional
+python main.py refresh --source seu_by_fuel
+
+# === INDIVIDUAL SOURCE UPDATES (Section 5) ===
+python main.py refresh --source environmental_clean_tech
 
 # === EXPORT ALL ===
 python main.py export                           # Export all CSVs from database

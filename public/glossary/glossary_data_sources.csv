@@ -1,18 +1,21 @@
-source_id,source_key,source_name,section_id,section_name,statcan_table_id,source_url,is_enabled,last_refresh_at,created_at,updated_at
-22,canadian_energy_assets,Canadian Energy Assets (CEA),1,Key Indicators,,,True,2026-03-27 08:13:49.606666,2026-03-05 06:59:09.306666,2026-03-27 08:13:49.606666
-18,economic_contributions,"Economic Contributions (GDP, Jobs, Income)",1,Key Indicators,36-10-0610-01,,True,2026-03-27 08:13:20.273333,2026-03-05 06:59:09.306666,2026-03-27 08:13:20.273333
-19,nominal_gdp,Nominal GDP Contributions,1,Key Indicators,36-10-0103-01,,True,2026-03-27 08:13:22.463333,2026-03-05 06:59:09.306666,2026-03-27 08:13:22.463333
-20,provincial_gdp,Provincial GDP Data,1,Key Indicators,38-10-0285-01,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
-21,world_energy_production,World Energy Production,1,Key Indicators,,,True,2026-03-27 08:13:48.926666,2026-03-05 06:59:09.306666,2026-03-27 08:13:48.926666
-23,capital_expenditures,Capital Expenditures,2,Investment,34-10-0036-01,,True,2026-03-27 08:14:09.830000,2026-03-05 06:59:09.306666,2026-03-27 08:14:09.830000
-30,clean_tech,Clean Technology Projects,2,Investment,,,True,2026-03-27 08:15:16.716666,2026-03-05 06:59:09.306666,2026-03-27 08:15:16.716666
-28,environmental_protection,Environmental Protection Expenditures,2,Investment,,,True,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
-27,foreign_control,Foreign Control,2,Investment,,,True,2026-03-27 08:14:55.560000,2026-03-05 06:59:09.306666,2026-03-27 08:14:55.560000
-24,infrastructure,Infrastructure Stock,2,Investment,36-10-0608-01,,True,2026-03-27 08:14:20.636666,2026-03-05 06:59:09.306666,2026-03-27 08:14:20.636666
-26,international_investment,International Investment (FDI/CDIA),2,Investment,36-10-0009-01,,True,2026-03-27 08:14:53.063333,2026-03-05 06:59:09.306666,2026-03-27 08:14:53.063333
-25,investment_by_asset,Investment by Asset Type,2,Investment,34-10-0036-01,,True,2026-03-27 08:14:50.670000,2026-03-05 06:59:09.306666,2026-03-27 08:14:50.670000
-29,major_projects,Major Projects Inventory,2,Investment,,,True,2026-03-27 08:15:15.920000,2026-03-05 06:59:09.306666,2026-03-27 08:15:15.920000
-31,skills_data,Skills and Employment Data,3,"Skills, Diversity and Community",,,False,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
-32,energy_use,Energy use (OEE NEUD + Primary Energy Use Demand),4,Energy Efficiency,,,True,2026-03-27 08:15:31.523333,2026-03-05 06:59:09.306666,2026-03-27 08:15:31.523333
-33,clean_power_data,Clean Power and Low Carbon Fuels,5,Clean Power and Low Carbon Fuels,,,False,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
-34,oil_gas_data,"Oil, Natural Gas and Coal",6,"Oil, Natural Gas and Coal",,,False,,2026-03-05 06:59:09.306666,2026-03-05 06:59:09.306666
+source_id,source_key,source_name,section_id,section_name,is_enabled,last_refresh_at,created_at,updated_at,source_url
+99,canadian_energy_assets,Canadian Energy Assets (CEA),1,Key Indicators,True,2026-03-31 08:17:52.710000,2026-03-31 08:16:41.133333,2026-03-31 08:17:52.710000,https://www.nrcan.gc.ca/energy/energy-sources-distribution/energy-facts/canadian-energy-assets/20064
+95,economic_contributions,"Economic Contributions (GDP, Jobs, Income)",1,Key Indicators,True,2026-03-31 08:17:45.046666,2026-03-31 08:16:41.133333,2026-03-31 08:17:45.046666,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
+113,ghg_emissions,GHG emissions (ECCC),1,Key Indicators,True,2026-03-31 08:17:52.946666,2026-03-31 08:16:41.133333,2026-03-31 08:17:52.946666,https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html
+96,nominal_gdp,Nominal GDP Contributions,1,Key Indicators,True,2026-03-31 08:17:46.986666,2026-03-31 08:16:41.133333,2026-03-31 08:17:46.986666,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610010301
+97,provincial_gdp,Provincial GDP Data,1,Key Indicators,True,2026-03-31 08:17:47.750000,2026-03-31 08:16:41.133333,2026-03-31 08:17:47.750000,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+98,world_energy_production,World Energy Production,1,Key Indicators,True,2026-03-31 08:17:52.190000,2026-03-31 08:16:41.133333,2026-03-31 08:17:52.190000,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
+100,capital_expenditures,Capital Expenditures,2,Investment,True,2026-03-31 08:18:12.616666,2026-03-31 08:16:41.133333,2026-03-31 08:18:12.616666,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601
+107,clean_tech,Clean Technology Projects,2,Investment,True,2026-03-31 08:18:18.500000,2026-03-31 08:16:41.133333,2026-03-31 08:18:18.500000,https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
+105,environmental_protection,Environmental Protection Expenditures,2,Investment,True,2026-03-31 08:18:17.180000,2026-03-31 08:16:41.133333,2026-03-31 08:18:17.180000,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001
+104,foreign_control,Foreign Control,2,Investment,True,2026-03-31 08:18:16.333333,2026-03-31 08:16:41.133333,2026-03-31 08:18:16.333333,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310057001
+101,infrastructure,Infrastructure Stock,2,Investment,True,2026-03-31 08:18:14.270000,2026-03-31 08:16:41.133333,2026-03-31 08:18:14.270000,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801
+103,international_investment,International Investment (FDI/CDIA),2,Investment,True,2026-03-31 08:18:15.740000,2026-03-31 08:16:41.133333,2026-03-31 08:18:15.740000,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610000901
+102,investment_by_asset,Investment by Asset Type,2,Investment,True,2026-03-31 08:18:15.060000,2026-03-31 08:16:41.133333,2026-03-31 08:18:15.060000,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801
+106,major_projects,Major Projects Inventory,2,Investment,True,2026-03-31 08:18:17.826666,2026-03-31 08:16:41.133333,2026-03-31 08:18:17.826666,https://natural-resources.canada.ca/science-data/data-analysis/natural-resources-major-projects-planned-under-construction-2024-2034
+111,commercial_institutional,Commercial / institutional (OEE),4,Energy Efficiency,True,2026-03-31 08:18:32.913333,2026-03-31 08:16:41.133333,2026-03-31 08:18:32.913333,https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1
+108,energy_use,Energy use (OEE NEUD + Primary Energy Use Demand),4,Energy Efficiency,True,2026-03-31 08:18:24.563333,2026-03-31 08:16:41.133333,2026-03-31 08:18:24.563333,https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+110,residential_daily_lives,Residential daily lives (OEE),4,Energy Efficiency,True,2026-03-31 08:18:25.283333,2026-03-31 08:16:41.133333,2026-03-31 08:18:25.283333,https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1
+109,residential_pie_charts,Residential pie charts (OEE),4,Energy Efficiency,True,2026-03-31 08:18:29.806666,2026-03-31 08:16:41.133333,2026-03-31 08:18:29.806666,https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1
+112,seu_by_fuel,SEU by fuel (OEE),4,Energy Efficiency,True,2026-03-31 08:18:24.656666,2026-03-31 08:16:41.133333,2026-03-31 08:18:24.656666,https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+114,environmental_clean_tech,Environmental and clean technology,5,Clean Power and Low Carbon Fuels,True,2026-03-31 08:19:03.820000,2026-03-31 08:16:41.133333,2026-03-31 08:19:03.820000,https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology

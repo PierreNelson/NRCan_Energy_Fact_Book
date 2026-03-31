@@ -14,6 +14,8 @@ import os
 import json
 from datetime import datetime, timedelta
 
+from xlsx_paths import resolve_root_xlsx
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "data")
 
 def get_future_end_date(years_ahead=2):
@@ -1836,7 +1838,7 @@ def process_cea_data():
     """
     print("Processing Canadian Energy Assets (CEA) data...")
     
-    excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "CEA_2023.xlsx")
+    excel_path = str(resolve_root_xlsx("CEA_2023.xlsx"))
     
     if not os.path.exists(excel_path):
         print(f"  ERROR: CEA Excel file not found at {excel_path}")
@@ -2225,12 +2227,12 @@ def process_ghg_emissions_data():
     
     # Use local file - download manually from:
     # https://data-donnees.az.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FEN_Annex10_GHG_Econ_Canada.xlsx
-    excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "EN_Annex10_GHG_Econ_Canada.xlsx")
+    excel_path = str(resolve_root_xlsx("EN_Annex10_GHG_Econ_Canada.xlsx"))
     
     try:
         if not os.path.exists(excel_path):
             print(f"  ERROR: GHG Excel file not found at {excel_path}")
-            print(f"  Please download from ECCC and place in project root.")
+            print(f"  Please download from ECCC and place in EXTERNAL_XLSX_DATA_DIR (see scripts/.env.example).")
             return [], []
         
         print(f"  Reading local file: {excel_path}")
@@ -2444,7 +2446,7 @@ def process_world_energy_production_data():
     """
     print("Processing World Energy Production data...")
     
-    excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "World Energy Balances Highlights 2025.xlsx")
+    excel_path = str(resolve_root_xlsx("World Energy Balances Highlights 2025.xlsx"))
     
     if not os.path.exists(excel_path):
         print(f"  WARNING: Excel file not found: {excel_path}")
