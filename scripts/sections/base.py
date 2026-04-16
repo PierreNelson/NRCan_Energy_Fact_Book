@@ -33,6 +33,17 @@ class SectionProcessor(ABC):
     
     # Timeout for HTTP requests
     REQUEST_TIMEOUT = 120
+
+    # StatCan occasionally resets long CSV connections; headers + retries match WDS fetch behavior.
+    STATCAN_CSV_HEADERS = {
+        "Accept": "text/csv,text/plain,*/*;q=0.8",
+        "Accept-Language": "en-CA,en;q=0.9",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://www.statcan.gc.ca/",
+    }
     
     def __init__(self, config: Config, db: DatabaseConnection):
         """
@@ -162,6 +173,9 @@ class SectionProcessor(ABC):
         """
         Fetch CSV data from a URL and return as DataFrame.
         
+        Retries transient connection failures and HTTP 502/503/504, then tries the
+        -nonTraduit StatCan URL when the primary download endpoint returns an error page.
+        
         Args:
             url: URL to fetch data from
             
@@ -172,39 +186,73 @@ class SectionProcessor(ABC):
             Exception: If fetch fails
         """
         print(f"  Fetching data from StatCan...")
-        
-        try:
-            response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
-            response.raise_for_status()
-            
-            text = response.text
-            if 'Failed to get' in text or '<html' in text.lower():
-                raise ValueError(f"StatCan returned error: {text[:200]}")
-            
-            df = pd.read_csv(io.StringIO(text))
-            
-            if len(df.columns) < 3:
-                raise ValueError(f"Invalid data format, columns: {df.columns.tolist()}")
-            
-            return df
-            
-        except Exception as e:
-            # Try alternative URL
-            alt_url = url.replace('downloadDbLoadingData.action', 
-                                  'downloadDbLoadingData-nonTraduit.action')
-            if alt_url != url:
-                print(f"  Primary URL failed, trying alternative...")
+
+        alt_url = url.replace(
+            "downloadDbLoadingData.action",
+            "downloadDbLoadingData-nonTraduit.action",
+        )
+        urls_to_try = [url]
+        if alt_url != url:
+            urls_to_try.append(alt_url)
+
+        last_error: Optional[Exception] = None
+
+        for u in urls_to_try:
+            if u != urls_to_try[0]:
+                print(f"  Trying alternative StatCan URL...")
+
+            for attempt in range(3):
                 try:
-                    response = requests.get(alt_url, timeout=self.REQUEST_TIMEOUT)
+                    if attempt > 0:
+                        delay = 2 * attempt
+                        print(
+                            f"  Retrying StatCan fetch "
+                            f"(attempt {attempt + 1}/3, wait {delay}s)..."
+                        )
+                        time.sleep(delay)
+
+                    response = requests.get(
+                        u,
+                        timeout=self.REQUEST_TIMEOUT,
+                        headers=self.STATCAN_CSV_HEADERS,
+                    )
                     response.raise_for_status()
                     text = response.text
-                    if 'Failed to get' in text or '<html' in text.lower():
-                        raise ValueError("StatCan returned error")
-                    return pd.read_csv(io.StringIO(text))
-                except:
-                    pass
-            
-            raise Exception(f"Failed to fetch data from StatCan: {e}")
+                    if "Failed to get" in text or "<html" in text.lower():
+                        raise ValueError(f"StatCan returned error: {text[:200]}")
+
+                    df = pd.read_csv(io.StringIO(text))
+                    if len(df.columns) < 3:
+                        raise ValueError(
+                            f"Invalid data format, columns: {df.columns.tolist()}"
+                        )
+                    return df
+
+                except ValueError as e:
+                    last_error = e
+                    break
+
+                except requests.exceptions.HTTPError as e:
+                    last_error = e
+                    code = e.response.status_code if e.response is not None else None
+                    if code in (502, 503, 504):
+                        if attempt < 2:
+                            continue
+                        break
+                    raise Exception(f"Failed to fetch data from StatCan: {e}") from e
+
+                except (
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                    ConnectionResetError,
+                    OSError,
+                ) as e:
+                    last_error = e
+                    if attempt < 2:
+                        continue
+                    break
+
+        raise Exception(f"Failed to fetch data from StatCan: {last_error}") from last_error
     
     def fetch_wds_vector_data(self, vector_ids: List[str], start_ref: str = "2007-01-01", end_ref: str = "2030-12-31") -> List[Tuple[int, str, float]]:
         """

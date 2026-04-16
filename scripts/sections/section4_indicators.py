@@ -49,6 +49,39 @@ OEE_COM_AN_PAGES = [f"{OEE_COM_AN_BASE}&page=1", f"{OEE_COM_AN_BASE}&page=2"]
 DEFAULT_PRIMARY_DEMAND_FILENAME = "Primary Energy Use Demand.xlsx"
 REQUEST_TIMEOUT = 60
 
+# OEE Residential Analysis (AN) row labels vary by file version; match broadly.
+def _residential_label_ter(label: str) -> bool:
+    l = (label or "").strip().lower().replace("\n", " ")
+    if not l or "efficiency effect" in l:
+        return False
+    if "space heating" in l or "water heating" in l:
+        return False
+    if "share" in l or l.startswith("%"):
+        return False
+    return (
+        ("total energy use" in l or "total energy requirements" in l or "total residential energy" in l)
+        and ("pj" in l or "terajoule" in l or "(pj)" in l)
+    ) or (l.startswith("ter") and "pj" in l)
+
+
+def _residential_label_eee(label: str) -> bool:
+    l = (label or "").strip().lower().replace("\n", " ")
+    return (
+        "energy efficiency effect" in l
+        or "efficiency effect" in l
+        or ("efficiency" in l and "effect" in l and "pj" in l)
+    )
+
+
+def _residential_label_space(label: str) -> bool:
+    l = (label or "").strip().lower().replace("\n", " ")
+    return "space heating" in l and "water" not in l and "share" not in l
+
+
+def _residential_label_water(label: str) -> bool:
+    l = (label or "").strip().lower().replace("\n", " ")
+    return "water heating" in l and "share" not in l
+
 
 class Section4Indicators(SectionProcessor):
     """
@@ -361,20 +394,44 @@ class Section4Indicators(SectionProcessor):
         print(f"    Stored {n} rows in ingest tables + nrcan_fb_s4_energy_use ({len(all_years)} years)")
         return n
 
+    def _open_oee_residential_analysis_workbook(self, content: bytes) -> Optional[pd.ExcelFile]:
+        """Try openpyxl (xlsx) then xlrd (xls); OEE may serve either format."""
+        for eng in ("openpyxl", "xlrd", None):
+            try:
+                return pd.ExcelFile(io.BytesIO(content), engine=eng)
+            except Exception:
+                continue
+        return None
+
+    def _merge_residential_oee_year_dicts(
+        self,
+        base: Dict[int, Dict[str, float]],
+        add: Dict[int, Dict[str, float]],
+    ) -> Dict[int, Dict[str, float]]:
+        """Fill missing ter/eee/space/water per year (later sources only fill gaps)."""
+        keys = ("ter", "eee", "space_heating_pj", "water_heating_pj")
+        for year, row in add.items():
+            if year not in base:
+                base[year] = {}
+            for k in keys:
+                v = row.get(k)
+                if v is not None and base[year].get(k) is None:
+                    base[year][k] = v
+        return base
+
     def _parse_oee_residential_analysis_xls(self, content: bytes) -> Dict[int, Dict[str, float]]:
         """
-        Parse OEE Residential Sector Energy Use Analysis XLS.
+        Parse OEE Residential Sector Energy Use Analysis XLS/XLSX.
         Extracts by year: Total Energy Use (PJ)=ter, Energy Efficiency Effect=eee,
         Space Heating, Water Heating (from Total Residential section).
         Returns {year: {'ter': v, 'eee': v, 'space_heating_pj': v, 'water_heating_pj': v}}.
         EEE in source is negative (savings); we store as positive.
         """
-        out: Dict[int, Dict[str, float]] = {}
-        try:
-            xls = pd.ExcelFile(io.BytesIO(content), engine='xlrd')
-        except Exception as e:
-            print(f"    Failed to read Residential Analysis XLS: {e}")
-            return out
+        merged: Dict[int, Dict[str, float]] = {}
+        xls = self._open_oee_residential_analysis_workbook(content)
+        if xls is None:
+            print("    Failed to read Residential Analysis workbook (openpyxl/xlrd)")
+            return merged
 
         def to_year(cell):
             if pd.isna(cell):
@@ -390,7 +447,16 @@ class Section4Indicators(SectionProcessor):
                 return int(s)
             return None
 
+        def to_float(cell):
+            if pd.isna(cell):
+                return None
+            try:
+                return float(str(cell).replace(",", "").replace("\u2212", "-"))
+            except (ValueError, TypeError):
+                return None
+
         for sheet_name in xls.sheet_names:
+            sheet_out: Dict[int, Dict[str, float]] = {}
             try:
                 df = pd.read_excel(xls, sheet_name=sheet_name, header=None)
             except Exception:
@@ -398,8 +464,8 @@ class Section4Indicators(SectionProcessor):
             if df.shape[0] < 5 or df.shape[1] < 2:
                 continue
             header_row = None
-            for r in range(min(4, df.shape[0])):
-                for c in range(1, min(df.shape[1], 25)):
+            for r in range(min(8, df.shape[0])):
+                for c in range(1, min(df.shape[1], 40)):
                     cell = df.iloc[r, c]
                     y = to_year(cell)
                     if y is not None:
@@ -418,146 +484,124 @@ class Section4Indicators(SectionProcessor):
             if not year_cols:
                 continue
             row_labels_seen = set()
-            for r in range(header_row + 1, min(df.shape[0], 120)):
+            for r in range(header_row + 1, min(df.shape[0], 150)):
                 cell0 = df.iloc[r, 0]
                 if pd.isna(cell0):
                     continue
-                label = str(cell0).strip().lower().replace('\n', ' ')
+                label = str(cell0).strip().lower().replace("\n", " ")
                 if not label:
                     continue
-                def to_float(cell):
-                    if pd.isna(cell):
-                        return None
-                    try:
-                        return float(str(cell).replace(',', ''))
-                    except (ValueError, TypeError):
-                        return None
 
-                if 'total energy use' in label and 'pj' in label and 'ter' not in row_labels_seen:
-                    row_labels_seen.add('ter')
-                    for c, year in year_cols.items():
-                        v = to_float(df.iloc[r, c])
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['ter'] = round(v, 2)
-                elif 'energy efficiency effect' in label and 'eee' not in row_labels_seen:
-                    row_labels_seen.add('eee')
-                    for c, year in year_cols.items():
-                        v = to_float(df.iloc[r, c])
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['eee'] = round(abs(v), 2)
-                elif 'space heating' in label and 'space_heating_pj' not in row_labels_seen:
-                    row_labels_seen.add('space_heating_pj')
-                    for c, year in year_cols.items():
-                        v = to_float(df.iloc[r, c])
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['space_heating_pj'] = round(v, 2)
-                elif 'water heating' in label and 'water_heating_pj' not in row_labels_seen:
-                    row_labels_seen.add('water_heating_pj')
-                    for c, year in year_cols.items():
-                        v = to_float(df.iloc[r, c])
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['water_heating_pj'] = round(v, 2)
-        return out
+                key = None
+                if _residential_label_ter(label) and "ter" not in row_labels_seen:
+                    key = "ter"
+                    row_labels_seen.add("ter")
+                elif _residential_label_eee(label) and "eee" not in row_labels_seen:
+                    key = "eee"
+                    row_labels_seen.add("eee")
+                elif _residential_label_space(label) and "space_heating_pj" not in row_labels_seen:
+                    key = "space_heating_pj"
+                    row_labels_seen.add("space_heating_pj")
+                elif _residential_label_water(label) and "water_heating_pj" not in row_labels_seen:
+                    key = "water_heating_pj"
+                    row_labels_seen.add("water_heating_pj")
+                if key is None:
+                    continue
+                for c, year in year_cols.items():
+                    v = to_float(df.iloc[r, c])
+                    if v is not None:
+                        if year not in sheet_out:
+                            sheet_out[year] = {}
+                        val = round(abs(v), 2) if key == "eee" else round(v, 2)
+                        sheet_out[year][key] = val
+            self._merge_residential_oee_year_dicts(merged, sheet_out)
+        return merged
 
-    def _parse_oee_residential_analysis_html(self, html: str) -> Dict[int, Dict[str, float]]:
-        """Parse OEE Residential Analysis HTML table; return {year: {ter, eee, space_heating_pj, water_heating_pj}}."""
+    def _parse_oee_residential_analysis_html_table(self, table) -> Dict[int, Dict[str, float]]:
+        """Parse one OEE AN HTML table; return {year: {ter, eee, space_heating_pj, water_heating_pj}}."""
         out: Dict[int, Dict[str, float]] = {}
-        soup = BeautifulSoup(html, 'html.parser')
-        table = soup.find('table')
-        if not table:
-            return out
         rows = table.find_all('tr')
-        if len(rows) < 3:
+        if len(rows) < 2:
             return out
+
         def to_year(cell_text):
-            s = (cell_text or '').strip().replace(',', '')
+            s = (cell_text or "").strip().replace(",", "")
             try:
                 n = int(float(s))
                 if 1990 <= n <= 2030:
                     return n
             except (ValueError, TypeError):
                 pass
-            if re.match(r'^(19|20)\d{2}$', s):
+            if re.match(r"^(19|20)\d{2}$", s):
                 return int(s)
             return None
+
         def to_float(cell_text):
             if not cell_text:
                 return None
             try:
-                return float(str(cell_text).strip().replace(',', '').replace('\u2212', '-'))
+                return float(str(cell_text).strip().replace(",", "").replace("\u2212", "-"))
             except (ValueError, TypeError):
                 return None
-        header_cells = rows[0].find_all(['th', 'td'])
+
         year_cols = {}
-        for i, cell in enumerate(header_cells):
-            if i == 0:
-                continue
-            y = to_year(cell.get_text())
-            if y is not None:
-                year_cols[i] = y
-        if not year_cols:
-            header_cells = rows[1].find_all(['th', 'td'])
-            for i, cell in enumerate(header_cells):
-                if i == 0:
-                    continue
-                y = to_year(cell.get_text())
+        data_start = 0
+        best_count = 0
+        for header_row_idx in range(min(6, len(rows))):
+            cells = rows[header_row_idx].find_all(["th", "td"])
+            cols = {}
+            for i in range(1, min(len(cells), 40)):
+                y = to_year(cells[i].get_text())
                 if y is not None:
-                    year_cols[i] = y
+                    cols[i] = y
+            if len(cols) > best_count:
+                best_count = len(cols)
+                year_cols = cols
+                data_start = header_row_idx + 1
         if not year_cols:
             return out
+
         found = set()
-        for r in rows[2:]:
-            cells = r.find_all(['th', 'td'])
+        for r in rows[data_start:]:
+            cells = r.find_all(["th", "td"])
             if len(cells) <= 1:
                 continue
-            label = (cells[0].get_text() or '').strip().lower().replace('\n', ' ')
+            label = (cells[0].get_text() or "").strip().lower().replace("\n", " ")
             if not label:
                 continue
-            if 'total energy use' in label and 'pj' in label and 'ter' not in found:
-                found.add('ter')
-                for i, year in year_cols.items():
-                    if i < len(cells):
-                        v = to_float(cells[i].get_text())
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['ter'] = round(v, 2)
-            elif 'energy efficiency effect' in label and 'eee' not in found:
-                found.add('eee')
-                for i, year in year_cols.items():
-                    if i < len(cells):
-                        v = to_float(cells[i].get_text())
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['eee'] = round(abs(v), 2)
-            elif 'space heating' in label and 'space_heating_pj' not in found:
-                found.add('space_heating_pj')
-                for i, year in year_cols.items():
-                    if i < len(cells):
-                        v = to_float(cells[i].get_text())
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['space_heating_pj'] = round(v, 2)
-            elif 'water heating' in label and 'water_heating_pj' not in found:
-                found.add('water_heating_pj')
-                for i, year in year_cols.items():
-                    if i < len(cells):
-                        v = to_float(cells[i].get_text())
-                        if v is not None:
-                            if year not in out:
-                                out[year] = {}
-                            out[year]['water_heating_pj'] = round(v, 2)
+            key = None
+            if _residential_label_ter(label) and "ter" not in found:
+                key = "ter"
+                found.add("ter")
+            elif _residential_label_eee(label) and "eee" not in found:
+                key = "eee"
+                found.add("eee")
+            elif _residential_label_space(label) and "space_heating_pj" not in found:
+                key = "space_heating_pj"
+                found.add("space_heating_pj")
+            elif _residential_label_water(label) and "water_heating_pj" not in found:
+                key = "water_heating_pj"
+                found.add("water_heating_pj")
+            if key is None:
+                continue
+            for i, year in year_cols.items():
+                if i < len(cells):
+                    v = to_float(cells[i].get_text())
+                    if v is not None:
+                        if year not in out:
+                            out[year] = {}
+                        out[year][key] = round(abs(v), 2) if key == "eee" else round(v, 2)
         return out
+
+    def _parse_oee_residential_analysis_html(self, html: str) -> Dict[int, Dict[str, float]]:
+        """Parse OEE Residential Analysis HTML; merge all tables that look like AN data."""
+        merged: Dict[int, Dict[str, float]] = {}
+        soup = BeautifulSoup(html, "html.parser")
+        for table in soup.find_all("table"):
+            part = self._parse_oee_residential_analysis_html_table(table)
+            if part:
+                self._merge_residential_oee_year_dicts(merged, part)
+        return merged
 
     def _parse_oee_html_table_generic(
         self,
@@ -767,31 +811,44 @@ class Section4Indicators(SectionProcessor):
         return n
 
     def _fetch_oee_residential_analysis(self) -> Dict[int, Dict[str, float]]:
-        """Fetch OEE Residential Analysis (XLS or HTML pages) and return by-year ter, eee, space_heating_pj, water_heating_pj."""
+        """
+        Fetch OEE Residential Analysis (XLS/XLSX and AN HTML pages).
+        Always merges HTML after XLS so missing EEE/rows from an incomplete XLS parse are filled.
+        """
         merged: Dict[int, Dict[str, float]] = {}
         try:
             r = requests.get(OEE_RESIDENTIAL_ANALYSIS_XLS, timeout=REQUEST_TIMEOUT)
             r.raise_for_status()
             parsed = self._parse_oee_residential_analysis_xls(r.content)
-            for year, d in parsed.items():
-                if year not in merged:
-                    merged[year] = {}
-                for k, v in d.items():
-                    merged[year][k] = v
+            self._merge_residential_oee_year_dicts(merged, parsed)
+            if parsed:
+                print(f"    OEE Residential XLS: parsed {len(parsed)} year rows")
         except Exception as e:
-            print(f"    OEE Residential XLS not available ({e}), trying HTML pages...")
-            for url in OEE_RESIDENTIAL_ANALYSIS_PAGES:
-                try:
-                    r = requests.get(url, timeout=REQUEST_TIMEOUT)
-                    r.raise_for_status()
-                    parsed = self._parse_oee_residential_analysis_html(r.text)
-                    for year, d in parsed.items():
-                        if year not in merged:
-                            merged[year] = {}
-                        for k, v in d.items():
-                            merged[year][k] = v
-                except Exception as e2:
-                    print(f"    Failed to fetch {url}: {e2}")
+            print(f"    OEE Residential XLS not available ({e}); will use HTML / generic table parse")
+
+        for url in OEE_RESIDENTIAL_ANALYSIS_PAGES:
+            try:
+                r = requests.get(url, timeout=REQUEST_TIMEOUT)
+                r.raise_for_status()
+                text = r.text
+                parsed = self._parse_oee_residential_analysis_html(text)
+                self._merge_residential_oee_year_dicts(merged, parsed)
+                # Substring-based fallback (different table markup / wording on some pages)
+                generic = self._parse_oee_html_table_generic(
+                    text,
+                    [
+                        ("total energy use (pj)", "ter", None),
+                        ("total energy requirements (pj)", "ter", None),
+                        ("energy efficiency effect (pj)", "eee", None),
+                        ("energy efficiency effect", "eee", None),
+                        ("efficiency effect (pj)", "eee", None),
+                        ("space heating", "space_heating_pj", ["water heating", "share"]),
+                        ("water heating", "water_heating_pj", ["space heating", "share"]),
+                    ],
+                )
+                self._merge_residential_oee_year_dicts(merged, generic)
+            except Exception as e2:
+                print(f"    Failed to fetch {url}: {e2}")
         return merged
 
     def _process_residential_daily_lives(self) -> int:
@@ -819,7 +876,7 @@ class Section4Indicators(SectionProcessor):
                 if d.get('ter') is not None:
                     data_rows.append(('res_ter', year_str, d['ter']))
                 if d.get('eee') is not None:
-                    data_rows.append(('res_eee', year_str, d['eee']))
+                    data_rows.append(('res_eee', year_str, round(abs(float(d['eee'])), 2)))
                 if d.get('space_heating_pj') is not None:
                     data_rows.append(('res_space_heating_pj', year_str, d['space_heating_pj']))
                 if d.get('water_heating_pj') is not None:
@@ -868,7 +925,16 @@ class Section4Indicators(SectionProcessor):
                 df_res.columns = [str(c).strip() for c in df_res.columns]
                 year_col = self.get_column(df_res, 'year', 'YEAR', 'Year', 'ref_date', 'REF_DATE')
                 ter_col = self.get_column(df_res, 'ter', 'total_energy_use_pj', 'total energy use (pj)', 'Total Energy Use (PJ)', 'total (pj)', 'Total (PJ)', 'total_energy_pj')
-                eee_col = self.get_column(df_res, 'eee', 'EEE', 'energy_efficiency_effect', 'energy efficiency effect', 'efficiency effect (pj)')
+                eee_col = self.get_column(
+                    df_res,
+                    'eee',
+                    'EEE',
+                    'energy_efficiency_effect',
+                    'energy efficiency effect',
+                    'energy efficiency effect (pj)',
+                    'efficiency effect (pj)',
+                    'Energy Efficiency Effect (PJ)',
+                )
                 sh_col = self.get_column(df_res, 'space_heating_pj', 'space_heating', 'Space Heating (PJ)', 'space heating', 'space heating (pj)', 'space heating (PJ)')
                 wh_col = self.get_column(df_res, 'water_heating_pj', 'water_heating', 'Water Heating (PJ)', 'water heating', 'water heating (pj)', 'water heating (PJ)')
                 if year_col:
@@ -885,7 +951,7 @@ class Section4Indicators(SectionProcessor):
                                 pass
                         if eee_col and pd.notna(row.get(eee_col)):
                             try:
-                                data_rows.append(('res_eee', year_str, round(float(row[eee_col]), 2)))
+                                data_rows.append(('res_eee', year_str, round(abs(float(row[eee_col])), 2)))
                             except (TypeError, ValueError):
                                 pass
                         if sh_col and pd.notna(row.get(sh_col)):

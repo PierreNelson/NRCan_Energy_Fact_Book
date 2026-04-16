@@ -1,211 +1,203 @@
-# NRCan Energy Factbook Data Pipeline
+# NRCan Energy Factbook — data pipeline
 
-This directory contains the data pipeline for fetching, storing, and exporting energy data for the NRCan Energy Factbook website.
+Python CLI for fetching data into **SQL Server**, then exporting **`public/data/data.csv`**, **`metadata.csv`**, and related files for the Vite/React app.
 
-## Architecture Overview
+Further reading: **[`db/README.md`](db/README.md)** (schema and table names), **[`../docs/DATA_PIPELINE_GUIDE.md`](../docs/DATA_PIPELINE_GUIDE.md)** (end-to-end design), **[`../docs/DATA_UPDATE_GUIDE.md`](../docs/DATA_UPDATE_GUIDE.md)** (operational updates).
+
+## Layout
 
 ```
 scripts/
-├── main.py              # CLI entry point
-├── config.yaml          # Configuration file
-├── config_loader.py     # Configuration management
-├── requirements.txt     # Python dependencies
+├── main.py                    # CLI: refresh, export, list, test-connection
+├── config.yaml                # Sections, sources, export paths, logging
+├── config_loader.py           # Loads config; env overrides for DB
+├── requirements.txt
+├── .env.example               # Copy to .env for DB_* variables
+├── data_retrieval.py          # Legacy StatCan/helper routines (optional; may be gitignored)
+├── xlsx_paths.py              # Resolves paths to external XLSX inputs
+├── export_glossary_html.py    # Glossary / data-gallery HTML (optional; see docs/GLOSSARY_UPDATE_GUIDE.md)
+├── zip_website_release.py     # Zip app source + public/ for handoff (see "Release zips" below)
+├── zip_data_release.py        # Zip public/data (incl. metadata.csv), public/glossary, translations.js
 ├── db/
-│   ├── README.md             # Table naming and schema overview
-│   ├── setup_database.sql    # SQL Server DDL (also applied on `main.py refresh`)
-│   ├── eedas_registry.yaml   # source_key → physical source_table
-│   ├── eedas_registry.py     # TABLE_* constants and registry helpers
-│   ├── ensure_schema.py      # Runs setup batches against the connected DB
-│   ├── connection.py         # Database connection management
-│   └── models.py             # Data access layer
+│   ├── README.md              # Schema overview (authoritative for table names)
+│   ├── setup_database.sql     # DDL (applied on refresh via ensure_schema)
+│   ├── ensure_schema.py       # Runs idempotent batches from setup_database.sql
+│   ├── eedas_registry.yaml    # source_key → physical source_table
+│   ├── eedas_registry.py      # TABLE_* constants and registry helpers
+│   ├── connection.py          # pyodbc connection wrapper
+│   ├── models.py              # DataRepository — merge, upsert, export staging
+│   ├── patch_setup_unified.py # One-off developer tool to regenerate DDL chunks (not used by refresh)
+│   └── __init__.py
 ├── sections/
-│   ├── base.py                    # Base processor class
-│   ├── section1_indicators.py     # Key Indicators section
-│   └── section2_investment.py     # Investment section
-└── export/
-    └── website_files.py    # CSV export for website
+│   ├── base.py                # Base processor: store_raw_data, merge, logging
+│   ├── section1_indicators.py # Key Indicators
+│   ├── section2_investment.py # Investment
+│   ├── section4_indicators.py # Energy Efficiency (OEE, residential, commercial, SEU)
+│   └── section5_clean_power.py # Clean Power / environmental clean technology
+├── export/
+│   ├── website_files.py       # prepare_export_data + write data.csv / metadata.csv / major_projects_map.csv
+│   └── source_vectors.py      # SOURCE_VECTOR_PREFIXES for `main.py list`
+└── templates/
+    └── data-gallery.html      # Template used by glossary export tooling
 ```
+
+**Section registry** (`main.py`): `section1_indicators`, `section2_investment`, `section4_indicators`, `section5_clean_power`.  
+`config.yaml` may also define **placeholders** `section3_skills` and `section6_oil_gas` (disabled by default).
+
+## Release zips (station / dev test handoff)
+
+Two stdlib Python helpers write timestamped archives under **`release/`** (gitignored). Run from the **repository root**:
+
+**Full website** (React app + `public/` data and glossary assets — no Python pipeline, no `docs/`):
+
+```bash
+python scripts/zip_website_release.py
+```
+
+Produces `release/nrcan-energy-factbook-website-YYYYMMDD-HHMMSS.zip` containing `index.html`, `package.json`, `package-lock.json`, `vite.config.js`, `eslint.config.js`, optional `.env.example`, and the full **`src/`** and **`public/`** trees.
+
+Recipients unzip at the project root, then:
+
+```bash
+npm ci
+npm run build
+```
+
+**Data and text only** (CSV data, glossary files, English/French strings):
+
+```bash
+python scripts/zip_data_release.py
+```
+
+Produces `release/nrcan-energy-factbook-data-YYYYMMDD-HHMMSS.zip` with the full **`public/data/`** tree (including `data.csv`, **`metadata.csv`**, `major_projects_map.csv`), **`public/glossary/`**, and **`src/utils/translations.js`**. Unzip at the project root to overwrite those paths in an existing clone.
+
+Optional: `--output-dir PATH` on either script to change the output directory.
 
 ## Prerequisites
 
 1. **Python 3.10+**
-2. **SQL Server Developer Edition** (free)
-   - Download from: https://www.microsoft.com/en-us/sql-server/sql-server-downloads
-3. **ODBC Driver 17/18 for SQL Server**
-   - Download from: https://docs.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server
+2. **SQL Server** (e.g. Developer Edition) — [download](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+3. **ODBC Driver 17 or 18 for SQL Server** — [Microsoft docs](https://docs.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server)
 
-## Setup Instructions
+## Setup
 
-### 1. Install Python Dependencies
+### 1. Install Python dependencies
 
 ```bash
 cd scripts
 python -m pip install -r requirements.txt
 ```
 
-### 2. Set Up SQL Server Database
+### 2. Create the database
 
-1. Install SQL Server Developer Edition
-2. Create an **empty** database named `NRCanEnergyFactbook` (or the name in your config)
-3. Run **`python main.py refresh --section ...`** or **`python main.py refresh --all`** — refresh applies `db/setup_database.sql` (skips `CREATE DATABASE` and the destructive re-seed of `nrcan_fb_data_sources`; seeds default sources only if that table is empty).
+Create an **empty** database whose name matches `config.yaml` / `.env` (default: `NRCanEnergyFactbook`).
 
-Optional full manual install (creates the database and replaces source rows):
-
-```sql
--- In SSMS or sqlcmd
-:r setup_database.sql
-```
-
-```bash
-sqlcmd -S localhost -i db/setup_database.sql
-```
-
-### 3. Configure Database Connection
-
-Copy the `.env.example` file to `.env` and fill in your credentials:
+### 3. Configure connection
 
 ```bash
 cd scripts
 cp .env.example .env
 ```
 
-Then edit `.env` with your SQL Server credentials:
+Edit `.env`:
 
 ```bash
-# .env (this file is gitignored - safe for credentials)
 DB_SERVER=localhost
 DB_DATABASE=NRCanEnergyFactbook
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
+DB_USERNAME=
+DB_PASSWORD=
 ```
 
-**Important:** The `.env` file is automatically gitignored and will not be committed to version control. Never put credentials in `config.yaml`.
+Leave `DB_USERNAME` / `DB_PASSWORD` empty for **Windows Authentication**. Do not commit secrets; `.env` is gitignored.
 
-For Windows Authentication (no password needed), leave `DB_USERNAME` and `DB_PASSWORD` empty.
-
-### 4. Test Connection
+### 4. Test connection
 
 ```bash
 python main.py test-connection
 ```
 
+### 5. Schema and first refresh
+
+On **`python main.py refresh …`**, the pipeline runs **`ensure_schema`** unless you pass **`--skip-ensure-schema`**. That applies `db/setup_database.sql` (skips `CREATE DATABASE`, destructive re-seed of `nrcan_fb_data_sources`, and standalone `USE` batches). If `nrcan_fb_data_sources` is empty, default rows are inserted.
+
+Optional full manual run of the raw SQL file (creates DB / destructive seed if your copy includes those blocks): use SSMS or `sqlcmd` with `db/setup_database.sql`.
+
 ## Usage
 
-### List Available Sections and Sources
+### List sections and sources
 
 ```bash
 python main.py list
 ```
 
-### Refresh All Data
+### Refresh data
 
 ```bash
 python main.py refresh --all
-```
-
-### Refresh Specific Section
-
-```bash
-python main.py refresh --section section1_indicators
 python main.py refresh --section section2_investment
-```
-
-### Refresh Specific Data Source
-
-```bash
 python main.py refresh --source capital_expenditures
-python main.py refresh --source economic_contributions
 ```
 
-### Refresh and Export in One Step
+Refresh options:
 
-```bash
-python main.py refresh --all --export-after
-```
+| Flag | Meaning |
+|------|---------|
+| `--export-after` / `-e` | Run website CSV export after refresh |
+| `--skip-ensure-schema` | Skip `setup_database.sql` batches (advanced) |
 
-### Export Only (From Existing Database)
+### Export only (from existing DB)
 
 ```bash
 python main.py export
+python main.py export --source capital_expenditures
+python main.py export --vectors "cea_*"
 ```
 
-## Configuration
+Export writes under **`export.output_dir`** in `config.yaml` (default: **`../public/data`**): `data_csv`, `metadata_csv`, `major_projects_csv`.
 
-The `config.yaml` file controls which sections and data sources are enabled:
+## Configuration (`config.yaml`)
 
-```yaml
-sections:
-  section1_indicators:
-    enabled: true
-    sources:
-      economic_contributions:
-        enabled: true
-      nominal_gdp:
-        enabled: true
-      provincial_gdp:
-        enabled: true
-      
-  section2_investment:
-    enabled: true
-    sources:
-      capital_expenditures:
-        enabled: true
-      infrastructure:
-        enabled: true
-      # ...
-```
+- **`database`**: server, database name, driver, timeouts (overridable via `DB_*` env vars).
+- **`sections`**: each section has `enabled`, `name`, and **`sources`** with per-source `enabled`, `description`, and fetch keys (`statcan_table`, `file_path`, `source_url`, OEE paths, etc.).
+- **`export`**: `output_dir`, `files` names for CSV outputs.
+- **`logging`**: level and format.
 
-Set `enabled: false` to skip a section or specific source during refresh.
+Disable a section or source with `enabled: false` to skip it during `--all` refreshes.
 
-## Data Flow
+## Data flow
 
 ```
-1. FETCH
-   StatCan APIs / IEA / NRCan / other sources
-           ↓
-2. STORE
-   SQL Server — per-source series tables (see db/eedas_registry.yaml)
-           ↓
-3. PROCESS
-   Section-scoped calculated tables (nrcan_fb_s1_*, nrcan_fb_s2_*, …)
-           ↓
-4. EXPORT
-   Staging: nrcan_fb_export → CSV files under public/data/, etc.
+Sources (StatCan, IEA, NRCan HTML/XLSX/API, …)
+    → section processors → per-source series tables (see db/eedas_registry.yaml)
+    → optional nrcan_fb_s1_*, nrcan_fb_s2_*, nrcan_fb_s4_* calc tables
+    → nrcan_fb_export (staging)
+    → public/data/data.csv, metadata.csv (+ major_projects_map.csv when applicable)
 ```
 
-## Database tables
-
-Authoritative list and naming rules: **[`db/README.md`](db/README.md)**.
-
-Summary:
-
-- **Registry:** `nrcan_fb_data_sources`, `nrcan_fb_run_history`, `nrcan_fb_major_projects_map`
-- **Per-source staging:** physical names from `db/eedas_registry.yaml` (e.g. `stc_nrsa_3610061001`, `iea_web_rankings`, `nrcan_oee_neud`)
-- **Calculated:** `nrcan_fb_s1_*`, `nrcan_fb_s2_*`, `nrcan_fb_s4_*`
-- **Export:** single table `nrcan_fb_export`
+Website **`data.csv`** is built from **`nrcan_fb_export`**, which unions configured physical tables via `prepare_export_data()` in **`db/models.py`**.
 
 ## Troubleshooting
 
-### Connection Issues
+### Connection issues
 
-1. Ensure SQL Server is running
-2. Check SQL Server authentication mode (Mixed mode for SQL auth)
-3. Verify the ODBC driver is installed: `python -c "import pyodbc; print(pyodbc.drivers())"`
+1. SQL Server service is running.
+2. Mixed Mode authentication if using SQL logins.
+3. `python -c "import pyodbc; print(pyodbc.drivers())"` lists ODBC drivers.
 
-### Missing Data
+### Missing or partial data
 
-1. Check if the source is enabled in `config.yaml`
-2. Look at `nrcan_fb_run_history` for errors
-3. Run with verbose output to see HTTP errors
+1. Source enabled in `config.yaml`.
+2. `nrcan_fb_run_history` for errors.
+3. For exports, run `python main.py export` after a successful refresh.
 
-### Export Problems
+### Export problems
 
-1. Ensure `nrcan_fb_export` is populated after a refresh
-2. Check file permissions in `public/data/` directory
+1. Confirm `nrcan_fb_export` has rows after refresh (`prepare_export_data` runs inside export).
+2. Write permissions on `public/data/`.
 
-## Adding New Data Sources
+## Adding a new data source
 
-1. Add source configuration to `config.yaml`
-2. Create handler method in the appropriate section processor
-3. Register handler in `get_source_handlers()` method
-4. Add `source_table` (and DDL in `db/setup_database.sql` if needed) to `db/eedas_registry.yaml`, then refresh
+1. Add the source under the right **`sections.*.sources`** block in **`config.yaml`**.
+2. Implement the handler in the matching **`sections/section*.py`** and register it in **`get_source_handlers()`** in **`base.py`** or the section class.
+3. Add **`source_key`** → **`source_table`** in **`db/eedas_registry.yaml`**; add a **`CREATE TABLE`** for new physical names in **`db/setup_database.sql`**.
+4. Refresh and export; update the frontend **`dataLoader.js`** / page as needed.

@@ -10,6 +10,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Local release zips (see scripts/zip_*_release.py)
+release/
 *.local
 
 # Editor directories and files

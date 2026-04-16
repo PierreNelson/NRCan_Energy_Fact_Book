@@ -82,6 +82,13 @@ def cmd_refresh(args, config: Config, db: DatabaseConnection):
     print("NRCan Energy Factbook - Data Refresh")
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
+
+    if not args.skip_ensure_schema:
+        try:
+            ensure_database_schema(db)
+        except RuntimeError as e:
+            print(f"\nError: {e}")
+            return 1
     
     processors = get_all_processors(config, db)
     results = {}

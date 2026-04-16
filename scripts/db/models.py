@@ -4,7 +4,7 @@ Data models and repository for database operations.
 Provides high-level methods for storing and retrieving data from SQL Server.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Tuple
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -730,23 +730,3 @@ class DataRepository:
         return self.db.execute_query(
             f"SELECT * FROM [{TABLE_DATA_SOURCES}] WHERE is_enabled = 1 ORDER BY section_id, source_key"
         )
-    
-    def get_source_by_key(self, source_key: str) -> Optional[Dict[str, Any]]:
-        """Get a single data source by its key."""
-        results = self.db.execute_query(
-            f"SELECT * FROM [{TABLE_DATA_SOURCES}] WHERE source_key = ?",
-            (source_key,),
-        )
-        return results[0] if results else None
-    
-    def get_last_run_info(self, source_key: str) -> Optional[Dict[str, Any]]:
-        """Get information about the last run for a data source."""
-        results = self.db.execute_query(
-            f"""
-            SELECT TOP 1 * FROM [{TABLE_RUN_HISTORY}]
-            WHERE source_key = ? AND status = 'success'
-            ORDER BY completed_at DESC
-            """,
-            (source_key,),
-        )
-        return results[0] if results else None

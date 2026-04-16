@@ -34,7 +34,7 @@ The `id` is used for sidebar navigation (hash links).
 
 ---
 
-## 2. Common Page Structure and Chrome
+## 2. Common Page Structure
 
 ### Imports (typical)
 

@@ -12,7 +12,6 @@ Handles data for:
 - Clean technology
 """
 
-import io
 import pandas as pd
 import requests
 from typing import Dict, Any, List, Tuple
@@ -729,12 +728,8 @@ class Section2Investment(SectionProcessor):
             Number of data rows processed
         """
         print("  Fetching environmental protection data...")
-        
-        url = self._get_environmental_protection_url()
-        response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
-        response.raise_for_status()
-        
-        df = pd.read_csv(io.StringIO(response.text))
+
+        df = self.fetch_csv_from_url(self._get_environmental_protection_url())
         df = df[df['Expenditures'] == 'Total, expenditures'].copy()
         df['year'] = df['REF_DATE'].astype(int)
         df = df[df['year'] >= 2018].copy()  # Reference period from 2018 per EEDAS

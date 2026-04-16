@@ -1,97 +1,64 @@
 # NRCan Energy Factbook
 
-An interactive web application presenting the Natural Resources Canada Energy Factbook 2025-2026 data.
+Interactive web application for the Natural Resources Canada Energy Factbook (2025–2026 data).
 
-## Project Structure
+## Project structure
 
 ```
 NRCan_Energy_Factbook/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          # GitHub Pages deployment
-├── docs/                       # Documentation files
-│   ├── Cahier d'information sur l'énergie 2025-2026.pdf
-│   ├── MASTER PAGE BUILDING GUIDE & TEMPLATE.docx
-│   └── NRCAN Energy Factbook 2025-2026.pdf
-├── public/                     # Static assets served by Vite
-│   └── data/                   # Data files for the web app
-│       ├── data.csv
-│       └── metadata.csv
-├── scripts/
-│   └── data_retrieval.py       # Fetches data from StatCan API
-├── src/                        # React source code
-│   ├── assets/                 # App assets (backgrounds)
-│   │   ├── page1_bg.jpg
-│   │   ├── page23_bg.jpg
-│   │   └── page26_bg.png
-│   ├── components/             # Reusable React components
-│   │   ├── GCFooter.jsx
-│   │   ├── GCHeader.jsx
-│   │   ├── Layout.jsx
-│   │   ├── SectionOne.jsx
-│   │   ├── SectionTwo.jsx
-│   │   └── Sidebar.jsx
-│   ├── pages/                  # Page components
-│   │   ├── Page1.jsx
-│   │   ├── Page23.jsx
-│   │   ├── Page24.jsx
-│   │   ├── Page25.jsx
-│   │   ├── Page26.jsx
-│   │   ├── Page27.jsx
-│   │   ├── Page31.jsx
-│   │   ├── Page32.jsx
-│   │   └── Page37.jsx
-│   ├── utils/                  # Utility functions
-│   │   ├── dataLoader.js
-│   │   └── translations.js
-│   ├── App.jsx                 # Main app component
-│   ├── index.css               # Global styles
-│   └── main.jsx                # App entry point
-├── .gitignore
-├── eslint.config.js            # ESLint configuration
-├── index.html                  # Vite entry HTML
-├── package.json                # NPM dependencies
-├── package-lock.json
-└── vite.config.js              # Vite configuration
+├── AGENTS.md                 # Stack, commands, and conventions for contributors / coding agents
+├── docs/                     # Guides (pipeline, pages, glossary, Symphony setup, PDFs)
+├── public/                   # Static assets served by Vite
+│   └── data/                 # Website CSVs (data.csv, metadata.csv, …) — produced by the Python export
+├── scripts/                  # Data pipeline (SQL Server → CSV). See scripts/README.md
+├── src/                      # React app (Vite): pages, components, utils, assets
+├── .github/workflows/        # CI (e.g. GitHub Pages deploy)
+├── package.json              # npm scripts and frontend dependencies
+├── vite.config.js
+└── eslint.config.js
 ```
 
-## Getting Started
+- **App routes and sections:** `src/App.jsx`, `src/components/Sidebar.jsx`, `SectionOne.jsx` … `SectionSix.jsx`.
+- **Factbook pages:** `src/pages/` (dozens of `Page*.jsx` components).
+- **Frontend data:** `src/utils/dataLoader.js` reads `public/data/data.csv` and `metadata.csv`.
 
-### Prerequisites
-- Node.js (v18 or higher)
-- Python 3.10+ (for data retrieval)
+## Prerequisites
 
-### Installation
+- **Node.js** 18+ (for the Vite app)
+- **Python 3.10+** and **SQL Server** with ODBC — only if you run the full **refresh/export pipeline** (`scripts/main.py`). The site can be developed against committed `public/data/*.csv` without a database.
 
-```bash
-npm install
-```
-
-### Development
-
-Start the development server:
+## Web app (local)
 
 ```bash
+npm ci
 npm run dev
 ```
 
-### Update Data from StatCan
-
-To fetch the latest data from Statistics Canada:
+Other commands (see **`AGENTS.md`**):
 
 ```bash
-python scripts/data_retrieval.py
+npm run build   # production build — must pass before PR
+npm run lint    # ESLint
 ```
 
-This will download fresh data from the StatCan API and save it directly to `public/data/`.
+## Data pipeline (optional)
+
+The **canonical** path from sources to `public/data/` is:
+
+1. Configure `scripts/config.yaml` and `scripts/.env` (copy from `scripts/.env.example`).
+2. From the **`scripts/`** directory: `python main.py refresh …` then `python main.py export`, or `python main.py refresh --all --export-after`.
+
+Details: **[`scripts/README.md`](./scripts/README.md)** (commands and layout), **[`docs/DATA_UPDATE_GUIDE.md`](./docs/DATA_UPDATE_GUIDE.md)** (quick steps), **[`docs/DATA_PIPELINE_GUIDE.md`](./docs/DATA_PIPELINE_GUIDE.md)** (architecture). Database naming and tables: **[`scripts/db/README.md`](./scripts/db/README.md)**.
+
+A legacy StatCan helper module may exist as `scripts/data_retrieval.py` in some environments; section processors can import small helpers from it. It is **not** the primary entry point for refreshes — use **`main.py`**.
 
 ## Symphony + Linear + Codex (parallel agents)
 
-**Start here (beginner):** **[`docs/SYMPHONY-BEGINNER-GUIDE.md`](./docs/SYMPHONY-BEGINNER-GUIDE.md)** — full click-by-click setup. Then **[SYMPHONY-SETUP.md](./SYMPHONY-SETUP.md)** for the shorter reference. Agent rules: **[AGENTS.md](./AGENTS.md)**. Config: **`WORKFLOW.md`**. Optional Windows check: `powershell -ExecutionPolicy Bypass -File scripts/check-symphony-prereqs.ps1`.
+Contributor conventions and stack commands: **[`AGENTS.md`](./AGENTS.md)**. Symphony / Linear workflow notes: **[`WORKFLOW.md`](./WORKFLOW.md)**. (Team-specific Symphony setup docs may live outside this repo.)
 
 ## Accessibility
 
-This application follows WCAG 2.1 AA guidelines and Web Experience Toolkit (WET) standards.
+The application targets WCAG 2.1 AA and Web Experience Toolkit (WET) patterns where applicable.
 
 ## License
 

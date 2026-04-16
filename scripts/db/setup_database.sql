@@ -746,6 +746,187 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- SECTION-SCOPED CALCULATED TABLES (MERGE targets; see scripts/db/models.py)
+-- ============================================================================
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_economic_contributions')
+BEGIN
+    CREATE TABLE nrcan_fb_s1_economic_contributions (
+        ref_year INT NOT NULL PRIMARY KEY,
+        gdp_direct DECIMAL(18,4) NULL,
+        gdp_indirect DECIMAL(18,4) NULL,
+        gdp_total DECIMAL(18,4) NULL,
+        jobs_direct DECIMAL(18,2) NULL,
+        jobs_indirect DECIMAL(18,2) NULL,
+        jobs_total DECIMAL(18,2) NULL,
+        income_direct DECIMAL(18,4) NULL,
+        income_indirect DECIMAL(18,4) NULL,
+        income_total DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    PRINT 'Table nrcan_fb_s1_economic_contributions created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_provincial_gdp')
+BEGIN
+    CREATE TABLE nrcan_fb_s1_provincial_gdp (
+        ref_year INT NOT NULL,
+        province_code NVARCHAR(50) NOT NULL,
+        province_name NVARCHAR(200) NULL,
+        energy_gdp DECIMAL(18,4) NULL,
+        total_gdp DECIMAL(18,4) NULL,
+        energy_share_pct DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT PK_nrcan_fb_s1_provincial_gdp PRIMARY KEY (ref_year, province_code)
+    );
+    CREATE INDEX IX_nrcan_fb_s1_prov_gdp_year ON nrcan_fb_s1_provincial_gdp(ref_year);
+    PRINT 'Table nrcan_fb_s1_provincial_gdp created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_world_energy_production')
+BEGIN
+    CREATE TABLE nrcan_fb_s1_world_energy_production (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        ref_year INT NOT NULL,
+        country_key NVARCHAR(100) NULL,
+        metric NVARCHAR(100) NULL,
+        value DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    CREATE INDEX IX_nrcan_fb_s1_world_energy_year ON nrcan_fb_s1_world_energy_production(ref_year);
+    PRINT 'Table nrcan_fb_s1_world_energy_production created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_capital_expenditures')
+BEGIN
+    CREATE TABLE nrcan_fb_s2_capital_expenditures (
+        ref_year INT NOT NULL PRIMARY KEY,
+        oil_gas DECIMAL(18,4) NULL,
+        electricity DECIMAL(18,4) NULL,
+        other_energy DECIMAL(18,4) NULL,
+        total DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    PRINT 'Table nrcan_fb_s2_capital_expenditures created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_infrastructure')
+BEGIN
+    CREATE TABLE nrcan_fb_s2_infrastructure (
+        ref_year INT NOT NULL PRIMARY KEY,
+        fuel_energy_pipelines DECIMAL(18,4) NULL,
+        transport DECIMAL(18,4) NULL,
+        education DECIMAL(18,4) NULL,
+        health_housing DECIMAL(18,4) NULL,
+        environmental DECIMAL(18,4) NULL,
+        public_safety DECIMAL(18,4) NULL,
+        total DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    PRINT 'Table nrcan_fb_s2_infrastructure created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_international_investment')
+BEGIN
+    CREATE TABLE nrcan_fb_s2_international_investment (
+        ref_year INT NOT NULL,
+        investment_type NVARCHAR(100) NOT NULL,
+        industry_category NVARCHAR(100) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT PK_nrcan_fb_s2_intl_inv PRIMARY KEY (ref_year, investment_type, industry_category)
+    );
+    CREATE INDEX IX_nrcan_fb_s2_intl_inv_year ON nrcan_fb_s2_international_investment(ref_year);
+    PRINT 'Table nrcan_fb_s2_international_investment created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_environmental_protection')
+BEGIN
+    CREATE TABLE nrcan_fb_s2_environmental_protection (
+        ref_year INT NOT NULL,
+        industry_category NVARCHAR(100) NOT NULL,
+        wastewater DECIMAL(18,4) NULL,
+        soil_groundwater DECIMAL(18,4) NULL,
+        air_pollution DECIMAL(18,4) NULL,
+        solid_waste DECIMAL(18,4) NULL,
+        other DECIMAL(18,4) NULL,
+        total DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT PK_nrcan_fb_s2_env_prot PRIMARY KEY (ref_year, industry_category)
+    );
+    CREATE INDEX IX_nrcan_fb_s2_env_prot_year ON nrcan_fb_s2_environmental_protection(ref_year);
+    PRINT 'Table nrcan_fb_s2_environmental_protection created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_clean_tech')
+BEGIN
+    CREATE TABLE nrcan_fb_s2_clean_tech (
+        ref_year INT NOT NULL,
+        category NVARCHAR(200) NOT NULL,
+        project_count INT NULL,
+        total_investment DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT PK_nrcan_fb_s2_clean_tech PRIMARY KEY (ref_year, category)
+    );
+    CREATE INDEX IX_nrcan_fb_s2_clean_tech_year ON nrcan_fb_s2_clean_tech(ref_year);
+    PRINT 'Table nrcan_fb_s2_clean_tech created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s4_energy_use')
+BEGIN
+    CREATE TABLE nrcan_fb_s4_energy_use (
+        ref_year INT NOT NULL PRIMARY KEY,
+        [R] DECIMAL(18,4) NULL,
+        [C] DECIMAL(18,4) NULL,
+        [I] DECIMAL(18,4) NULL,
+        [T] DECIMAL(18,4) NULL,
+        [A] DECIMAL(18,4) NULL,
+        [P] DECIMAL(18,4) NULL,
+        [NPC] DECIMAL(18,4) NULL,
+        [FK] DECIMAL(18,4) NULL,
+        [EL] DECIMAL(18,4) NULL,
+        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    PRINT 'Table nrcan_fb_s4_energy_use created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_major_projects_map')
+BEGIN
+    CREATE TABLE nrcan_fb_major_projects_map (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        lang NVARCHAR(20) NOT NULL,
+        feature_id NVARCHAR(200) NOT NULL,
+        company NVARCHAR(500) NULL,
+        project_name NVARCHAR(500) NULL,
+        province NVARCHAR(200) NULL,
+        location NVARCHAR(1000) NULL,
+        capital_cost NVARCHAR(200) NULL,
+        capital_cost_range NVARCHAR(200) NULL,
+        status NVARCHAR(200) NULL,
+        clean_technology NVARCHAR(200) NULL,
+        clean_technology_type NVARCHAR(200) NULL,
+        line_type NVARCHAR(200) NULL,
+        lat NVARCHAR(80) NULL,
+        lon NVARCHAR(80) NULL,
+        paths NVARCHAR(MAX) NULL,
+        feature_type NVARCHAR(80) NULL,
+        inserted_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    CREATE INDEX IX_nrcan_fb_mp_map_lang ON nrcan_fb_major_projects_map(lang, feature_type);
+    PRINT 'Table nrcan_fb_major_projects_map created.';
+END
+GO
+
 -- Remove obsolete legacy tables if present (optional cleanup on re-run)
 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'raw_major_projects')
 BEGIN

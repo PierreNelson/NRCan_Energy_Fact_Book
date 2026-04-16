@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage52Data } from '../utils/dataLoader';
+import { getPage52Data, page52RowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import page52Bg1 from '../assets/page52_bg1.png';
 import page52Bg2 from '../assets/page52_bg2.png';
@@ -14,11 +14,10 @@ import page52Bg6 from '../assets/page52_bg6.png';
 
 const CIEU_SLICE_ORDER = ['sh', 'ae', 'lt', 'wh', 'am', 'sc'];
 const CIEU_COLORS = ['#CE8003', '#4b4c4d', '#6b5b95', '#6b666a', '#1f8093', '#7db8d4'];
-/** Year dropdown and chart data table only show years in this range (when all source data is available). Update when new year's data is complete. */
-const PAGE52_MIN_YEAR = 2022;
-const PAGE52_MAX_YEAR = 2022;
 /** Fixed filename for CSV/DOCX (no year). */
 const PAGE52_TABLE_FILENAME_BASE = 'commercial_institutional_energy_by_end_use';
+/** Earliest year in the year selector and in chart data tables; newer years appear automatically from data. */
+const PAGE52_MIN_DISPLAY_YEAR = 2022;
 
 const hexToRgba = (hex, opacity = 1) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -71,15 +70,8 @@ const Page52 = () => {
         getPage52Data()
             .then((d) => {
                 setResult(d ?? null);
-                const data = d?.data;
-                if (Array.isArray(data) && data.length > 0) {
-                    const validYears = data.filter((r) => r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR && r.year !== 2000 && r.teu != null && r.teu > 0).map((r) => r.year);
-                    const latestValid = validYears.length ? Math.max(...validYears) : null;
-                    const inRange = data.filter((r) => r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR && r.year !== 2000).map((r) => r.year).sort((a, b) => b - a);
-                    const fallback = inRange[0];
-                    const lastRow = data.find((r) => r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR && r.year !== 2000) || data[data.length - 1];
-                    setSelectedYear(latestValid ?? fallback ?? lastRow?.year);
-                }
+                const available = (d?.years || []).filter((y) => y !== 2000 && y >= PAGE52_MIN_DISPLAY_YEAR);
+                if (available.length) setSelectedYear(Math.max(...available));
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -140,18 +132,19 @@ const Page52 = () => {
 
     const pad = layoutPadding && typeof layoutPadding === 'object' ? layoutPadding : { left: 55, right: 15 };
     const years = useMemo(() => {
-        const raw = result?.years ?? [];
-        return [...raw].filter((y) => y >= PAGE52_MIN_YEAR && y <= PAGE52_MAX_YEAR && y !== 2000).sort((a, b) => b - a);
-    }, [result?.years]);
+        if (!result?.data?.length) return [];
+        return [...new Set(result.data.filter(page52RowHasCompleteData).map((r) => r.year))]
+            .filter((y) => y !== 2000 && y >= PAGE52_MIN_DISPLAY_YEAR)
+            .sort((a, b) => b - a);
+    }, [result?.data]);
 
     useEffect(() => {
-        if (years.length > 0 && (selectedYear == null || selectedYear < PAGE52_MIN_YEAR || selectedYear > PAGE52_MAX_YEAR || !years.includes(selectedYear)))
-            setSelectedYear(years[0]);
+        if (years.length > 0 && (selectedYear == null || !years.includes(selectedYear))) setSelectedYear(years[0]);
     }, [years, selectedYear]);
     const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
     const latestWithEe = useMemo(() => {
         if (!result?.data?.length) return null;
-        const filtered = result.data.filter((r) => r.year !== 2000);
+        const filtered = result.data.filter((r) => page52RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE52_MIN_DISPLAY_YEAR);
         return [...filtered].reverse().find((r) => r.ee_improvement_pct != null && r.ee_savings_pj != null) || filtered[filtered.length - 1] || null;
     }, [result?.data]);
 
@@ -215,7 +208,7 @@ const Page52 = () => {
         const data = result?.data;
         if (!Array.isArray(data) || data.length === 0) return [];
         return [...data]
-            .filter((r) => r.year !== 2000 && r.year >= PAGE52_MIN_YEAR && r.year <= PAGE52_MAX_YEAR)
+            .filter((r) => page52RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE52_MIN_DISPLAY_YEAR)
             .sort((a, b) => a.year - b.year)
             .map((r) => {
                 const row = {

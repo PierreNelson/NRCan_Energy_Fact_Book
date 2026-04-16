@@ -9,6 +9,9 @@ import page50Bg2 from '../assets/page50_bg2.png';
 import page50Bg3 from '../assets/page50_bg3.png';
 import page50Bg4 from '../assets/page50_bg4.png';
 
+/** Earliest year shown in the selector and data table; extend range upward automatically when export includes newer years. */
+const PAGE50_MIN_DISPLAY_YEAR = 2022;
+
 const substitute = (str, vars) => {
     if (!str || typeof str !== 'string') return str;
     return Object.keys(vars || {}).reduce((s, k) => s.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(vars[k] ?? '–')), str);
@@ -67,11 +70,10 @@ const Page50 = () => {
     const hasData = result && (result.data?.length > 0 || result.terPct != null || result.euxPct != null || result.swtePct != null || result.eeImprovementPct != null || result.eeSavingsPj != null || result.eeSavingsBillion != null);
 
     const allYears = useMemo(() => (result?.data ? [...new Set(result.data.map((r) => r.year))].sort((a, b) => a - b) : []), [result?.data]);
-    const maxTableYear = 2023;
     const years = useMemo(() => {
         if (!result?.data?.length) return [];
         return allYears.filter((y) => {
-            if (y === 2000 || y > maxTableYear) return false;
+            if (y < PAGE50_MIN_DISPLAY_YEAR) return false;
             const r = result.data.find((x) => x.year === y);
             return r && r.ter != null;
         });
@@ -147,7 +149,11 @@ const Page50 = () => {
         });
     }, [result?.data, base2000]);
 
-    const tableRowsForTable = useMemo(() => tableRows.filter((r) => r.year !== 2000 && r.year <= maxTableYear), [tableRows]);
+    /** Same years and order as the year selector (not every row in raw `result.data`). */
+    const tableRowsForTable = useMemo(() => {
+        if (!years.length) return [];
+        return years.map((y) => tableRows.find((r) => r.year === y)).filter(Boolean);
+    }, [tableRows, years]);
 
     const downloadTableAsCSV = () => {
         const rowsToExport = tableRowsForTable;

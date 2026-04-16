@@ -100,6 +100,45 @@ const Page49 = () => {
         return Math.round(((currentRow.NG - baseline.NG) / baseline.NG) * 100);
     }, [baseline, currentRow]);
 
+    /** Same pool as the year dropdown (excludes 2000 baseline from chart series). */
+    const yearsListFiltered = useMemo(() => {
+        if (!seuData?.years?.length) return [];
+        return seuData.years.filter((y) => y !== 2000);
+    }, [seuData?.years]);
+
+    const yearsListDesc = useMemo(
+        () => [...yearsListFiltered].sort((a, b) => b - a),
+        [yearsListFiltered]
+    );
+
+    /** Chronological columns for the chart data table (all selector years). */
+    const selectorYearsAsc = useMemo(
+        () => [...yearsListFiltered].sort((a, b) => a - b),
+        [yearsListFiltered]
+    );
+
+    /** One row per year (left column = year), fuel PJ/% columns — same pattern as other chart data tables. */
+    const page49YearRows = useMemo(() => {
+        if (!seuData?.data?.length || !selectorYearsAsc.length) return [];
+        return selectorYearsAsc.map((y) => {
+            const row = seuData.data.find((r) => r.year === y);
+            const byKey = {};
+            if (!row || !row.TE || row.TE <= 0) {
+                PAGE49_KEYS.forEach((k) => {
+                    byKey[k] = { value: null, pct: null };
+                });
+                return { year: y, te: null, byKey };
+            }
+            const te = Math.round(row.TE);
+            PAGE49_KEYS.forEach((key) => {
+                const value = row[key] ?? 0;
+                const pct = Number(((value / row.TE) * 100).toFixed(1));
+                byKey[key] = { value: Math.round(value), pct };
+            });
+            return { year: y, te, byKey };
+        });
+    }, [seuData?.data, selectorYearsAsc]);
+
     const chartTitle = useMemo(() => {
         const t = getText('page49_chart_title', lang) || '';
         return selectedYear != null ? t.replace(/\{\{year\}\}/g, String(selectedYear)) : t;
@@ -194,9 +233,29 @@ const Page49 = () => {
     };
 
     const downloadTableAsCSV = () => {
-        if (!categories.length) return;
-        const headers = [lang === 'en' ? 'Fuel type' : 'Source d\'énergie', lang === 'en' ? 'Value (PJ)' : 'Valeur (PJ)', lang === 'en' ? 'Percentage' : 'Pourcentage'];
-        const rows = categories.map((c) => [getText(PAGE49_LABEL_KEYS[c.key], lang), Math.round(c.value), Number(c.pct).toFixed(1) + '%']);
+        if (!page49YearRows.length) return;
+        const yearLabel = lang === 'en' ? 'Year' : 'Année';
+        const totalLabel = `${getText('page49_total', lang)} (PJ)`;
+        const headers = [
+            yearLabel,
+            totalLabel,
+            ...PAGE49_KEYS.flatMap((key) => {
+                const base = getText(PAGE49_LABEL_KEYS[key], lang);
+                return [`${base} (PJ)`, `${base} (%)`];
+            })
+        ];
+        const rows = page49YearRows.map((yr) => {
+            const cells = [
+                String(yr.year),
+                yr.te != null ? String(yr.te) : '',
+                ...PAGE49_KEYS.flatMap((key) => {
+                    const cell = yr.byKey[key];
+                    if (cell?.value == null || cell?.pct == null) return ['', ''];
+                    return [String(cell.value), `${cell.pct}%`];
+                })
+            ];
+            return cells;
+        });
         const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -207,29 +266,49 @@ const Page49 = () => {
     };
 
     const downloadTableAsDocx = async () => {
-        if (!categories.length) return;
-        const headers = [lang === 'en' ? 'Fuel type' : 'Source d\'énergie', lang === 'en' ? 'Value (PJ)' : 'Valeur (PJ)', lang === 'en' ? 'Percentage' : 'Pourcentage'];
+        if (!page49YearRows.length) return;
+        const yearLabel = lang === 'en' ? 'Year' : 'Année';
+        const totalLabel = `${getText('page49_total', lang)} (PJ)`;
+        const headers = [
+            yearLabel,
+            totalLabel,
+            ...PAGE49_KEYS.flatMap((key) => {
+                const base = getText(PAGE49_LABEL_KEYS[key], lang);
+                return [`${base} (PJ)`, `${base} (%)`];
+            })
+        ];
         const headerRow = new TableRow({
             children: headers.map((h) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18 })], alignment: AlignmentType.CENTER })],
+                children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 14 })], alignment: AlignmentType.CENTER })],
                 shading: { fill: 'E6E6E6' }
             }))
         });
-        const dataRows = categories.map((c) => new TableRow({
+        const dataRows = page49YearRows.map((yr) => new TableRow({
             children: [
                 new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: getText(PAGE49_LABEL_KEYS[c.key], lang), size: 20 })], alignment: AlignmentType.LEFT })]
+                    children: [new Paragraph({ children: [new TextRun({ text: String(yr.year), size: 18 })], alignment: AlignmentType.CENTER })]
                 }),
                 new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: String(Math.round(c.value)), size: 20 })], alignment: AlignmentType.RIGHT })]
+                    children: [new Paragraph({ children: [new TextRun({ text: yr.te != null ? String(yr.te) : '–', size: 18 })], alignment: AlignmentType.RIGHT })]
                 }),
-                new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: Number(c.pct).toFixed(1) + '%', size: 20 })], alignment: AlignmentType.RIGHT })]
+                ...PAGE49_KEYS.flatMap((key) => {
+                    const cell = yr.byKey[key];
+                    const pj = cell?.value != null ? String(cell.value) : '–';
+                    const pct = cell?.pct != null ? `${cell.pct}%` : '–';
+                    return [
+                        new TableCell({
+                            children: [new Paragraph({ children: [new TextRun({ text: pj, size: 18 })], alignment: AlignmentType.RIGHT })]
+                        }),
+                        new TableCell({
+                            children: [new Paragraph({ children: [new TextRun({ text: pct, size: 18 })], alignment: AlignmentType.RIGHT })]
+                        })
+                    ];
                 })
             ]
         }));
         const title = chartTitle;
-        const columnWidths = [4000, 2500, 2500];
+        const nCols = headers.length;
+        const columnWidths = Array.from({ length: nCols }, (_, i) => (i === 0 ? 3600 : 2000));
         const doc = new Document({
             sections: [{
                 children: [
@@ -307,8 +386,6 @@ const Page49 = () => {
         );
     }
 
-    const yearsList = seuData.years && seuData.years.length ? [...seuData.years].sort((a, b) => b - a) : [];
-    const yearsListFiltered = yearsList.filter((y) => y !== 2000);
     const hasData = currentRow != null && categories.length > 0;
 
     return (
@@ -342,7 +419,7 @@ const Page49 = () => {
                 )}
             </ul>
 
-            {hasData && yearsListFiltered.length > 0 && (
+            {hasData && yearsListDesc.length > 0 && (
                 <div ref={yearDropdownRef} style={{ position: 'relative', marginBottom: '20px', width: '200px' }}>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
                         {getText('year_slider_label', lang)}
@@ -384,7 +461,7 @@ const Page49 = () => {
                             zIndex: 100,
                             boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                         }}>
-                            {yearsListFiltered.map((y) => {
+                            {yearsListDesc.map((y) => {
                                 const isSelected = y === selectedYear;
                                 return (
                                     <button
@@ -502,22 +579,36 @@ const Page49 = () => {
                                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                                     <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
                                 </summary>
-                                <div className="table-responsive" role="region" tabIndex={0} style={{ marginTop: 12 }}>
+                                <div className="table-responsive" role="region" tabIndex={0} style={{ marginTop: 12, overflowX: 'auto' }}>
                                     <table className="table table-striped table-hover">
                                         <caption id="page49-table-caption" className="wb-inv">{getText('page49_table_caption', lang)}</caption>
                                         <thead>
                                             <tr>
-                                                <th scope="col" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Fuel type' : 'Source d\'énergie'}</th>
-                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Value (PJ)' : 'Valeur (PJ)'}</th>
-                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Percentage' : 'Pourcentage'}</th>
+                                                <th scope="col" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', whiteSpace: 'nowrap' }}>{getText('page49_total', lang)} (PJ)</th>
+                                                {PAGE49_KEYS.map((key) => (
+                                                    <React.Fragment key={key}>
+                                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', whiteSpace: 'nowrap' }}>{getText(PAGE49_LABEL_KEYS[key], lang)} (PJ)</th>
+                                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', whiteSpace: 'nowrap' }}>{getText(PAGE49_LABEL_KEYS[key], lang)} (%)</th>
+                                                    </React.Fragment>
+                                                ))}
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {categories.map((c) => (
-                                                <tr key={c.key}>
-                                                    <th scope="row" style={{ border: '1px solid #ddd' }}>{getText(PAGE49_LABEL_KEYS[c.key], lang)}</th>
-                                                    <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{Math.round(c.value)}</td>
-                                                    <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{Number(c.pct).toFixed(1)}%</td>
+                                            {page49YearRows.map((yr) => (
+                                                <tr key={yr.year}>
+                                                    <th scope="row" style={{ border: '1px solid #ddd' }}>{yr.year}</th>
+                                                    <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{yr.te != null ? yr.te : '–'}</td>
+                                                    {PAGE49_KEYS.map((key) => {
+                                                        const cell = yr.byKey[key];
+                                                        const show = cell?.value != null && cell?.pct != null;
+                                                        return (
+                                                            <React.Fragment key={key}>
+                                                                <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{show ? cell.value : '–'}</td>
+                                                                <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{show ? `${cell.pct}%` : '–'}</td>
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
                                                 </tr>
                                             ))}
                                         </tbody>

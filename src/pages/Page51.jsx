@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage51Data } from '../utils/dataLoader';
+import { getPage51Data, page51RowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const REU_BY_TYPE_ORDER = ['space_heating', 'water_heating', 'appliances', 'lighting', 'space_cooling'];
@@ -15,9 +15,8 @@ const PAGE51_CHART_HEIGHT = 420;
 const PAGE51_CHART_MARGIN = { t: 165, b: 55, l: 245, r: 245 };
 /** Min width so pie doesn't shrink when viewport is narrow at high zoom. Wrapper keeps chart centered. */
 const PAGE51_CHART_MIN_WIDTH = 800;
-/** Year dropdown and chart data tables only show years in this range (when all source data is available). Update when new year's data is complete. */
-const PAGE51_MIN_YEAR = 2022;
-const PAGE51_MAX_YEAR = 2022;
+/** Earliest year in the year selector and in chart data tables; newer years appear automatically from data. */
+const PAGE51_MIN_DISPLAY_YEAR = 2022;
 
 const hexToRgba = (hex, opacity = 1) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -53,7 +52,7 @@ const Page51 = () => {
         getPage51Data()
             .then((d) => {
                 setResult(d);
-                const available = (d?.years || []).filter((y) => y !== 2000 && y >= PAGE51_MIN_YEAR && y <= PAGE51_MAX_YEAR);
+                const available = (d?.years || []).filter((y) => y !== 2000 && y >= PAGE51_MIN_DISPLAY_YEAR);
                 if (available.length) setSelectedYear(Math.max(...available));
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
@@ -80,11 +79,15 @@ const Page51 = () => {
         setSelectedSlices3(null);
     }, [selectedYear]);
 
-    const years = useMemo(() => (result?.years ? [...result.years].filter((y) => y !== 2000 && y >= PAGE51_MIN_YEAR && y <= PAGE51_MAX_YEAR).sort((a, b) => b - a) : []), [result?.years]);
+    const years = useMemo(() => {
+        if (!result?.data?.length) return [];
+        return [...new Set(result.data.filter(page51RowHasCompleteData).map((r) => r.year))]
+            .filter((y) => y !== 2000 && y >= PAGE51_MIN_DISPLAY_YEAR)
+            .sort((a, b) => b - a);
+    }, [result?.data]);
 
     useEffect(() => {
-        if (years.length > 0 && (selectedYear == null || selectedYear < PAGE51_MIN_YEAR || selectedYear > PAGE51_MAX_YEAR || !years.includes(selectedYear)))
-            setSelectedYear(years[0]);
+        if (years.length > 0 && (selectedYear == null || !years.includes(selectedYear))) setSelectedYear(years[0]);
     }, [years, selectedYear]);
 
     const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
@@ -123,7 +126,7 @@ const Page51 = () => {
 
     const table1AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => r.year >= PAGE51_MIN_YEAR && r.year <= PAGE51_MAX_YEAR).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const reu = r.reuByType || {};
             const total = reu.total ?? 0;
             const row = { year: r.year, total };
@@ -137,7 +140,7 @@ const Page51 = () => {
     }, [result?.data]);
     const table2AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => r.year !== 2000 && r.year >= PAGE51_MIN_YEAR && r.year <= PAGE51_MAX_YEAR).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const wh = r.waterHeating || {};
             const total = wh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(wh[k]) || 0), 0);
             const row = { year: r.year, total };
@@ -151,7 +154,7 @@ const Page51 = () => {
     }, [result?.data]);
     const table3AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => r.year !== 2000 && r.year >= PAGE51_MIN_YEAR && r.year <= PAGE51_MAX_YEAR).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const sh = r.spaceHeating || {};
             const total = sh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(sh[k]) || 0), 0);
             const row = { year: r.year, total };

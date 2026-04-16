@@ -2,6 +2,19 @@
 
 SQL Server objects used by the Energy Factbook pipeline. DDL lives in [`setup_database.sql`](setup_database.sql); on `python main.py refresh ...`, [`ensure_schema.py`](ensure_schema.py) applies the batches that create or upgrade objects (without re-running `CREATE DATABASE` or clobbering existing source rows).
 
+CLI overview: **[`../README.md`](../README.md)**. Architecture: **[`../../docs/DATA_PIPELINE_GUIDE.md`](../../docs/DATA_PIPELINE_GUIDE.md)**.
+
+### Runtime vs one-off scripts
+
+| File | Role |
+|------|------|
+| [`ensure_schema.py`](ensure_schema.py) | **Used on every refresh** (`main.py` imports `ensure_database_schema`). Applies `setup_database.sql` batches to the connected database and seeds `nrcan_fb_data_sources` when empty. |
+| [`patch_setup_unified.py`](patch_setup_unified.py) | **Not part of the pipeline.** Optional developer tool to regenerate or migrate chunks of `setup_database.sql` (e.g. unified ingest DDL from `eedas_registry.yaml`). Run manually only when changing physical table layout; do not confuse with `ensure_schema.py`. |
+| [`models.py`](models.py) | **Active code:** defines [`DataRepository`](models.py) (merge/upsert/export helpers). The filename is legacy; this module is the data-access layer, not unused scaffolding. |
+| [`connection.py`](connection.py) | `DatabaseConnection` / `get_connection` — pyodbc pool helper used by `main.py` and repositories. |
+| [`eedas_registry.py`](eedas_registry.py) | Loads [`eedas_registry.yaml`](eedas_registry.yaml); exposes `TABLE_*` constants, `get_source_table`, `unique_source_tables`. |
+| [`__init__.py`](__init__.py) | Re-exports `get_connection`, `DatabaseConnection`, `DataRepository` for `from db import …`. |
+
 ## Naming
 
 - **Registry and system tables** use the `nrcan_fb_*` prefix.
@@ -59,3 +72,7 @@ Legacy `calc_*` tables are dropped by `setup_database.sql` when present.
 ## Removed / legacy objects
 
 The setup script drops former monolithic `raw_statcan_data` / `raw_statcan_metadata`, old per-source `*_data` / `*_metadata` pairs, and deprecated `nrcan_fb_export_data` / `nrcan_fb_export_metadata` when present. See the `DROP` section at the top of `setup_database.sql` for the full list.
+
+## Glossary and data gallery
+
+HTML exports that list per-table CSVs (when rows exist) are produced by **`scripts/export_glossary_html.py`**; see **[`../../docs/GLOSSARY_UPDATE_GUIDE.md`](../../docs/GLOSSARY_UPDATE_GUIDE.md)**. That flow uses calculated tables and metadata separately from the main website **`data.csv`** export.

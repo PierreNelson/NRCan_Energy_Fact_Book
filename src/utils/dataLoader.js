@@ -602,11 +602,12 @@ export async function getEnergyUseData() {
         if (!yearMap[year]) yearMap[year] = { year };
         yearMap[year][suffix] = row.value;
     });
-    const years = Object.keys(yearMap).map(Number).sort((a, b) => a - b);
-    const data = years.map(y => yearMap[y]).filter(row => {
+    const yearKeys = Object.keys(yearMap).map(Number).sort((a, b) => a - b);
+    const data = yearKeys.map(y => yearMap[y]).filter(row => {
         const hasAll = OEE_NEUD_VECTOR_SUFFIXES.every(v => row[v] != null && !Number.isNaN(Number(row[v])));
         return hasAll;
     });
+    const years = data.map((row) => row.year);
     return { years, data };
 }
 
@@ -633,8 +634,9 @@ export async function getSEUByFuelData() {
         if (!yearMap[year]) yearMap[year] = { year };
         yearMap[year][key] = row.value;
     });
-    const years = Object.keys(yearMap).map(Number).sort((a, b) => a - b);
-    const data = years.map(y => yearMap[y]).filter(row => row.TE != null && row.TE > 0);
+    const yearKeys = Object.keys(yearMap).map(Number).sort((a, b) => a - b);
+    const data = yearKeys.map(y => yearMap[y]).filter(row => row.TE != null && row.TE > 0);
+    const years = data.map((row) => row.year);
     const latestYear = data.length > 0 ? data[data.length - 1].year : null;
     const baseline = yearMap[2000];
     const latest = latestYear ? yearMap[latestYear] : null;
@@ -682,22 +684,28 @@ export async function getPage50ResidentialData() {
         else if (v === 'res_eee') byYear[year].eee = val;
         else if (v === 'res_space_heating_pj') byYear[year].space_heating_pj = val;
         else if (v === 'res_water_heating_pj') byYear[year].water_heating_pj = val;
-        else if (v === 'res_ee_improvement_pct') byYear[year].ee_improvement_pct = val;
+        else if (v === 'res_reu_total') byYear[year].reu_total = val;
+        else if (v === 'res_reu_space_heating') byYear[year].reu_space_heating = val;
+        else if (v === 'res_reu_water_heating') byYear[year].reu_water_heating = val;
+        else if (v === 'res_ee_improvement_pct') byYear[year].ingested_ee_improvement_pct = val;
         else if (v === 'res_ee_savings_pj') byYear[year].ee_savings_pj = val;
         else if (v === 'res_ee_savings_billion') byYear[year].ee_savings_billion = val;
     });
     const base2000Row = byYear[2000];
-    const baseTer2000 = base2000Row && (base2000Row.ter != null ? base2000Row.ter : base2000Row.res_ter != null ? base2000Row.res_ter : null);
+    const baseTer2000 = base2000Row && (base2000Row.ter != null ? base2000Row.ter
+        : base2000Row.res_ter != null ? base2000Row.res_ter
+            : base2000Row.reu_total != null ? base2000Row.reu_total
+                : null);
     const baseEee2000 = base2000Row && base2000Row.eee != null ? base2000Row.eee : 0;
     const baseEux2000 = (baseTer2000 != null && baseEee2000 != null) ? baseTer2000 - baseEee2000 : null;
     const data = Object.values(byYear)
         .sort((a, b) => a.year - b.year)
         .map(r => {
-            const ter = (r.ter != null ? r.ter : r.res_ter != null ? r.res_ter : null);
+            const ter = (r.ter != null ? r.ter : r.res_ter != null ? r.res_ter : r.reu_total != null ? r.reu_total : null);
             const eee = r.eee != null ? r.eee : null;
             const eux = (ter != null && eee != null) ? ter - eee : null;
-            const space = r.space_heating_pj != null ? r.space_heating_pj : null;
-            const water = r.water_heating_pj != null ? r.water_heating_pj : null;
+            const space = r.space_heating_pj != null ? r.space_heating_pj : r.reu_space_heating != null ? r.reu_space_heating : null;
+            const water = r.water_heating_pj != null ? r.water_heating_pj : r.reu_water_heating != null ? r.reu_water_heating : null;
             const sweu = (space != null && water != null) ? space + water : null;
             const swtePct = (sweu != null && ter != null && ter > 0) ? Math.round((sweu / ter) * 100) : null;
             const eeSavingsPj = r.ee_savings_pj != null ? r.ee_savings_pj : (eee != null ? eee : null);
@@ -707,7 +715,8 @@ export async function getPage50ResidentialData() {
             const euxPctRow = (baseEux2000 != null && baseEux2000 > 0 && eux != null)
                 ? Math.round(((eux - baseEux2000) / baseEux2000) * 100)
                 : null;
-            const eeImprovementPct = (terPctRow != null && euxPctRow != null) ? terPctRow - euxPctRow : null;
+            const eeImprovementPctCalc = (terPctRow != null && euxPctRow != null) ? terPctRow - euxPctRow : null;
+            const eeImprovementPct = r.ingested_ee_improvement_pct != null ? r.ingested_ee_improvement_pct : eeImprovementPctCalc;
             return {
                 year: r.year,
                 ter,
@@ -743,6 +752,15 @@ export async function getPage50ResidentialData() {
         eeSavingsBillion: latestWithEe ? latestWithEe.ee_savings_billion : null,
         eeEndYear: latestWithEe ? latestWithEe.year : null
     };
+}
+
+/**
+ * Page 51 shows a year only when residential end-use totals exist (HB / res_reu_total path).
+ * Excludes future or partial CSV years until the pipeline fills a positive total.
+ */
+export function page51RowHasCompleteData(row) {
+    const t = row?.reuByType?.total;
+    return t != null && !Number.isNaN(Number(t)) && Number(t) > 0;
 }
 
 export async function getPage51Data() {
@@ -810,11 +828,22 @@ export async function getPage51Data() {
         };
         return { year, reuByType, spaceHeating, waterHeating };
     });
-    const latestYear = years.length ? years[years.length - 1] : null;
-    return { years, data, latestYear };
+    const dataComplete = data.filter(page51RowHasCompleteData);
+    const yearsComplete = dataComplete.map((r) => r.year);
+    const latestYear = yearsComplete.length ? yearsComplete[yearsComplete.length - 1] : null;
+    return { years: yearsComplete, data: dataComplete, latestYear };
 }
 
 const CIEU_END_USE_KEYS = ['sh', 'wh', 'ae', 'am', 'lt', 'sc'];
+
+/**
+ * Page 52 shows a year only when commercial/institutional total energy use (TEU / pie) exists and is positive.
+ * Excludes future or partial CSV years until the pipeline fills a positive total.
+ */
+export function page52RowHasCompleteData(row) {
+    const t = row?.teu;
+    return t != null && !Number.isNaN(Number(t)) && Number(t) > 0;
+}
 
 export async function getPage52Data() {
     const allData = await loadAllData();
@@ -884,6 +913,8 @@ export async function getPage52Data() {
             ee_savings_billion: r.ee_savings_billion != null ? r.ee_savings_billion : null
         };
     });
-    const latestYear = data.length ? data[data.length - 1].year : null;
-    return { data, years, latestYear };
+    const dataComplete = data.filter(page52RowHasCompleteData);
+    const yearsComplete = dataComplete.map((r) => r.year);
+    const latestYear = yearsComplete.length ? yearsComplete[yearsComplete.length - 1] : null;
+    return { data: dataComplete, years: yearsComplete, latestYear };
 }

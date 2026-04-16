@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
@@ -159,7 +159,7 @@ const Page123 = () => {
     const capsuleAria =
         (lang === 'en'
             ? `World proved natural gas reserves for ${year}: `
-            : `RÃ©serves mondiales prouvÃ©es de gaz naturel pour ${year} : `) +
+            : `Réserves mondiales prouvées de gaz naturel pour ${year} : `) +
         capsuleAriaParts.join('. ') +
         '.';
 
@@ -377,7 +377,6 @@ const Page123 = () => {
         );
     };
 
-
     return (
         <main
             id="main-content"
@@ -505,7 +504,7 @@ const Page123 = () => {
                     >
                         <span>{year}</span>
                         <span aria-hidden="true" style={{ fontSize: '12px' }}>
-                            {isYearDropdownOpen ? 'â–²' : 'â–¼'}
+                            {isYearDropdownOpen ? '▲' : '▼'}
                         </span>
                     </button>
                     {isYearDropdownOpen && (
@@ -591,7 +590,7 @@ const Page123 = () => {
                     )}
                     <div role="status" className="wb-inv" aria-live="polite">
                         {year
-                            ? `${lang === 'en' ? 'Showing data for' : 'DonnÃ©es affichÃ©es pour'} ${year}`
+                            ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}`
                             : ''}
                     </div>
                 </div>
@@ -625,13 +624,13 @@ const Page123 = () => {
                         >
                             <summary role="button" aria-expanded={isTableOpen}>
                                 <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? 'â–¼' : 'â–¶'}
+                                    {isTableOpen ? '▼' : '▶'}
                                 </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de donnÃ©es du graphique'}
+                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                                 <span className="wb-inv">
                                     {lang === 'en'
                                         ? ' Press Enter to open or close.'
-                                        : ' Appuyez sur EntrÃ©e pour ouvrir ou fermer.'}
+                                        : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
                                 </span>
                             </summary>
 
@@ -654,7 +653,7 @@ const Page123 = () => {
                                 ref={tableScrollRef}
                                 className="table-responsive"
                                 role="region"
-                                aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de donnÃ©es du graphique'}
+                                aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
                                 tabIndex="0"
                             >
                                 <table className="table table-bordered table-striped table-hover">
@@ -762,7 +761,7 @@ const Page123 = () => {
                                         color: '#ffffff'
                                     }}
                                 >
-                                    {lang === 'en' ? 'Download data (CSV)' : 'TÃ©lÃ©charger les donnÃ©es (CSV)'}
+                                    {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
                                 </button>
                                 <button
                                     type="button"
@@ -778,7 +777,7 @@ const Page123 = () => {
                                         color: '#ffffff'
                                     }}
                                 >
-                                    {lang === 'en' ? 'Download table (DOCX)' : 'TÃ©lÃ©charger le tableau (DOCX)'}
+                                    {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
                                 </button>
                             </div>
                         </details>
