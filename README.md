@@ -56,6 +56,10 @@ A legacy StatCan helper module may exist as `scripts/data_retrieval.py` in some 
 
 Contributor conventions and stack commands: **[`AGENTS.md`](./AGENTS.md)**. Symphony / Linear workflow notes: **[`WORKFLOW.md`](./WORKFLOW.md)**. (Team-specific Symphony setup docs may live outside this repo.)
 
+## Static deployment (client / test servers)
+
+Hosting the production build (`dist/`), URL base path, nginx/IIS, and data-only zip overlays: **[`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)**. Release packaging: **`scripts/zip_website_release.py`** and **`scripts/zip_data_release.py`** (see **[`scripts/README.md`](./scripts/README.md)**).
+
 ## Accessibility
 
 The application targets WCAG 2.1 AA and Web Experience Toolkit (WET) patterns where applicable.

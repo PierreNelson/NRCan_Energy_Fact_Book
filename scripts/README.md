@@ -16,7 +16,7 @@ scripts/
 ├── data_retrieval.py          # Legacy StatCan/helper routines (optional; may be gitignored)
 ├── xlsx_paths.py              # Resolves paths to external XLSX inputs
 ├── export_glossary_html.py    # Glossary / data-gallery HTML (optional; see docs/GLOSSARY_UPDATE_GUIDE.md)
-├── zip_website_release.py     # Zip app source + public/ for handoff (see "Release zips" below)
+├── zip_website_release.py     # npm run build + zip dist/ + source + docs/DEPLOYMENT.md (see "Release zips")
 ├── zip_data_release.py        # Zip public/data (incl. metadata.csv), public/glossary, translations.js
 ├── db/
 │   ├── README.md              # Schema overview (authoritative for table names)
@@ -46,30 +46,35 @@ scripts/
 
 ## Release zips (station / dev test handoff)
 
-Two stdlib Python helpers write timestamped archives under **`release/`** (gitignored). Run from the **repository root**:
+Two stdlib Python helpers write timestamped archives under **`release/`** (gitignored). Run from the **repository root**. Client deployment details: **[`../docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md)**.
 
-**Full website** (React app + `public/` data and glossary assets — no Python pipeline, no `docs/`):
+**Full website** (production **`dist/`** + source + config — requires **Node.js** on the machine that *creates* the zip):
 
 ```bash
 python scripts/zip_website_release.py
 ```
 
-Produces `release/nrcan-energy-factbook-website-YYYYMMDD-HHMMSS.zip` containing `index.html`, `package.json`, `package-lock.json`, `vite.config.js`, `eslint.config.js`, optional `.env.example`, and the full **`src/`** and **`public/`** trees.
+This runs **`npm run build`**, then produces `release/nrcan-energy-factbook-website-YYYYMMDD-HHMMSS.zip` containing:
 
-Recipients unzip at the project root, then:
+- **`dist/`** — static files to deploy to a web server (see **`docs/DEPLOYMENT.md`** in the zip and repo).
+- **`docs/DEPLOYMENT.md`** — how to host the app (URL base path, nginx/IIS notes, data-only overlays).
+- **`src/`**, **`public/`**, `index.html`, `package.json`, `package-lock.json`, `vite.config.js`, `eslint.config.js`, optional `.env.example`.
+
+Recipients can **serve only `dist/`** on a web server without Node on the server. To rebuild locally: `npm ci` then `npm run build`.
+
+To pack an existing **`dist/`** without running npm (e.g. CI already built):
 
 ```bash
-npm ci
-npm run build
+python scripts/zip_website_release.py --skip-build
 ```
 
-**Data and text only** (CSV data, glossary files, English/French strings):
+**Data and text only** (CSV data, glossary files, `translations.js` — for merging into a checkout or overlaying a deployed **`dist/`**):
 
 ```bash
 python scripts/zip_data_release.py
 ```
 
-Produces `release/nrcan-energy-factbook-data-YYYYMMDD-HHMMSS.zip` with the full **`public/data/`** tree (including `data.csv`, **`metadata.csv`**, `major_projects_map.csv`), **`public/glossary/`**, and **`src/utils/translations.js`**. Unzip at the project root to overwrite those paths in an existing clone.
+Produces `release/nrcan-energy-factbook-data-YYYYMMDD-HHMMSS.zip` with the full **`public/data/`** tree (including `data.csv`, **`metadata.csv`**, `major_projects_map.csv`), **`public/glossary/`**, and **`src/utils/translations.js`**. On a static host, copy **`public/data`** → **`dist/data`** and **`public/glossary`** → **`dist/glossary`**. **Translation** changes require a new **`npm run build`** (strings are bundled); see **`docs/DEPLOYMENT.md`**.
 
 Optional: `--output-dir PATH` on either script to change the output directory.
 
