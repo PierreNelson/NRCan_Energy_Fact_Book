@@ -225,7 +225,7 @@ const Page123 = () => {
 
     const renderCapsuleRow = (rank, key, pct, maxPct, isCanada) => {
         const rawRatio = maxPct > 0 ? pct / maxPct : 1;
-        const barWidthPct = 62 + 18 * rawRatio;
+        const barWidthPct = 70 + 20 * rawRatio;
         const name = countryLabel(key);
         return (
             <div
@@ -423,27 +423,70 @@ const Page123 = () => {
                     align-items: center;
                     min-height: 40px;
                     padding-left: 12%;
-                    font-size: 22px;
+                    font-size: 24px !important;
                     color: #333;
                     font-family: 'Noto Sans', sans-serif;
                 }
                 .page123-chart-block .data-table-wrapper {
                     margin-bottom: 0;
                 }
-                .page123-bottom-art {
+                .page123-hero-stack {
+                    display: flex;
+                    flex-direction: column;
                     width: 100%;
-                    margin-top: 20px;
-                    line-height: normal;
-                    clear: both;
-                    overflow: visible;
-                    position: relative;
-                    z-index: 0;
+                    margin-top: 10px;
+                    margin-bottom: 10px;
                 }
-                .page123-bottom-art img {
-                    display: block;
+                .page123-rankings-layer {
+                    z-index: 2;
+                    position: relative;
+                    width: 50%;
+                    min-width: 360px;
+                    max-width: 500px;
+                    padding-top: 10px;
+                }
+                .page123-art-layer {
+                    z-index: 1;
+                    position: relative;
                     width: 100%;
-                    max-width: 100%;
+                    margin-top: -200px;
+                    pointer-events: none;
+                }
+                .page123-art-layer img {
+                    width: 100%;
                     height: auto;
+                    display: block;
+                }
+                .page123-natural-gas-reserves .page108-capsule-bar {
+                    min-width: max-content !important;
+                    padding-right: 14px !important;
+                }
+                .page123-natural-gas-reserves .page108-capsule-bar-text {
+                    white-space: nowrap !important;
+                    font-size: 16px !important;
+                }
+                .page123-natural-gas-reserves .page108-capsule-pill-text {
+                    font-size: 16px !important;
+                }
+                @media (max-width: 1100px) {
+                    .page123-art-layer { margin-top: -120px; }
+                }
+                /* Stacked layout: viewport width must exceed this after zoom (browsers often keep
+                   layout width high on wide monitors — 900px was too low; ~1500px targets ~175% on 1080p–1440p). */
+                @media (max-width: 1500px) {
+                    .page123-rankings-layer {
+                        width: 100%;
+                        max-width: 100%;
+                        padding-bottom: 20px;
+                    }
+                    .page123-art-layer {
+                        margin-top: 0;
+                    }
+                }
+                @media (max-width: 768px) {
+                    .page-123.page-content h1.page123-title {
+                        font-size: 37px !important;
+                    }
                 }
                 .page-123.page123-natural-gas-reserves .page108-capsule-row-canada .page108-capsule-bar {
                     background-color: ${CANADA_CAPSULE};
@@ -456,11 +499,6 @@ const Page123 = () => {
                     border-width: 2px;
                     border-color: ${CANADA_CAPSULE};
                     font-weight: bold;
-                }
-                @media (max-width: 768px) {
-                    .page-123.page-content h1.page123-title {
-                        font-size: 37px !important;
-                    }
                 }
             `}</style>
 
@@ -596,32 +634,46 @@ const Page123 = () => {
                 </div>
 
                 <div className="page108-content-wrapper layout-stacked page123-chart-block">
-                    <div className="page108-chart-section">
-                        <h3 className="page108-graphic-title">
-                            <span aria-hidden="true">
-                                {getText('page140_reserves_kicker', lang)}
-                                {' \u2013 '}
-                                <strong>
-                                    {formatReserveTotal(bundle.totalTcf, lang)} {getText('page123_unit_tcf', lang)}
-                                </strong>
-                                {' '}
-                                ({formatReserveTotal(bundle.totalTcm, lang)} {getText('page123_unit_tcm', lang)})
-                                {' '}
-                                ({year})
-                            </span>
-                        </h3>
+                    <div className="page123-hero-stack">
+                        <div className="page123-rankings-layer page108-chart-section">
+                            <h3 className="page108-graphic-title">
+                                <span aria-hidden="true">
+                                    {getText('page140_reserves_kicker', lang)}
+                                    {' \u2013 '}
+                                    <strong>
+                                        {formatReserveTotal(bundle.totalTcf, lang)} {getText('page123_unit_tcf', lang)}
+                                    </strong>
+                                    {' '}
+                                    ({formatReserveTotal(bundle.totalTcm, lang)} {getText('page123_unit_tcm', lang)})
+                                    {' '}
+                                    ({year})
+                                </span>
+                            </h3>
 
-                        <div className="page108-chart-container" role="region" aria-label={capsuleAria} tabIndex="0">
-                            <div className="page108-capsule-graphic" aria-hidden="true">
-                                {renderCapsuleBlock()}
+                            <div className="page108-chart-container" role="region" aria-label={capsuleAria} tabIndex="0">
+                                <div className="page108-capsule-graphic" aria-hidden="true">
+                                    {renderCapsuleBlock()}
+                                </div>
                             </div>
                         </div>
 
-                        <details
-                            ref={detailsRef}
-                            className="data-table-wrapper"
-                            onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                        >
+                        <div className="page123-art-layer" aria-hidden="true">
+                            <img
+                                src={page123BgUrl}
+                                alt=""
+                                width={2000}
+                                height={933}
+                                decoding="async"
+                            />
+                        </div>
+                    </div>
+
+                    <details
+                        ref={detailsRef}
+                        className="data-table-wrapper"
+                        onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
+                        style={{ marginTop: '20px' }}
+                    >
                             <summary role="button" aria-expanded={isTableOpen}>
                                 <span aria-hidden="true" style={{ marginRight: '8px' }}>
                                     {isTableOpen ? '▼' : '▶'}
@@ -781,17 +833,6 @@ const Page123 = () => {
                                 </button>
                             </div>
                         </details>
-                    </div>
-                </div>
-
-                <div className="page123-bottom-art">
-                    <img
-                        src={page123BgUrl}
-                        alt={getText('page123_bg_alt', lang)}
-                        width={2000}
-                        height={933}
-                        decoding="async"
-                    />
                 </div>
             </div>
         </main>

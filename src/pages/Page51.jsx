@@ -555,8 +555,10 @@ const Page51 = () => {
                 .page-51 { width: 100%; }
                 .page51-container { width: 100%; padding: 15px 0 0 0; display: flex; flex-direction: column; box-sizing: border-box; flex: 1; overflow: visible; }
                 .page51-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
+                .section-four-page .page-51 .page51-chart-frame-before-footnote { padding-bottom: 20px !important; margin-bottom: 20px !important; }
                 .page51-chart-title { font-family: var(--font-body); font-size: 20px; font-weight: bold; color: var(--gc-text); margin: 0 0 12px 0; text-align: center; max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; white-space: normal; box-sizing: border-box; padding: 0 8px; }
                 .page51-chart-title a { color: var(--gc-link); text-decoration: underline; }
+                .page51-footnote { border-top: 1px solid #e0e0e0; padding-top: 12px; margin-top: 24px; margin-bottom: 0; font-family: var(--font-body); font-size: 1rem; line-height: 1.65; color: var(--gc-text); max-width: 100%; box-sizing: border-box; }
                 @media (max-width: 768px) { .page51-chart-title { font-size: 18px; } }
                 .page51-chart-frame details > summary:hover { background-color: #404040 !important; }
                 .page51-chart-frame button[type="button"]:hover,
@@ -626,7 +628,7 @@ const Page51 = () => {
                             </div>
                         </div>
 
-                        <div className="page51-chart-frame">
+                        <div className="page51-chart-frame page51-chart-frame-before-footnote">
                             <p className="page51-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', margin: '0 0 1rem 0' }}>
                                 {chart1Title}
                                 <span id="fn-asterisk-rf-page51" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
@@ -880,7 +882,7 @@ const Page51 = () => {
                             </details>
                         </div>
 
-                        <aside className="wb-fnote" role="note">
+                        <aside className="wb-fnote page51-footnote" role="note">
                             <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                             <dl>
                                 <dt className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</dt>

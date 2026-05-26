@@ -102,6 +102,18 @@ source_tables:
     detail: semantic
     source_table: nrcan_cleanenv_semantic
 
+  cleantech_companies_geo:
+    org_code: nrcan
+    report_code: spi
+    detail: cleantech_geo
+    source_table: nrcan_spi_cleantech_geo
+
+  cleantech_companies_industry:
+    org_code: nrcan
+    report_code: spi
+    detail: cleantech_industry
+    source_table: nrcan_spi_cleantech_industry
+
   energy_use:
     org_code: nrcan
     report_code: oee
@@ -125,6 +137,12 @@ source_tables:
     report_code: oee
     detail: commercial
     source_table: nrcan_oee_commercial
+
+  industrial_sector:
+    org_code: nrcan
+    report_code: oee
+    detail: industrial
+    source_table: nrcan_oee_industrial
 
   seu_by_fuel:
     org_code: nrcan

@@ -50,7 +50,6 @@ const boldNumbersInBullet = (str) => {
 const Page52 = () => {
     const outlet = useOutletContext();
     const lang = outlet?.lang ?? 'en';
-    const layoutPadding = outlet?.layoutPadding ?? { left: 55, right: 15 };
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -130,7 +129,7 @@ const Page52 = () => {
         };
     }, [isTableOpen, windowWidth]);
 
-    const pad = layoutPadding && typeof layoutPadding === 'object' ? layoutPadding : { left: 55, right: 15 };
+    const pad = { left: 0, right: 0 };
     const years = useMemo(() => {
         if (!result?.data?.length) return [];
         return [...new Set(result.data.filter(page52RowHasCompleteData).map((r) => r.year))]
@@ -201,8 +200,10 @@ const Page52 = () => {
     }, [selectedRow, orderedSlices, lang, textSize, effectiveSlices]);
 
     const chartTitle = substitute(getText('page52_chart_title', lang), { year: selectedYear ?? '' });
-    const centerLabel = getText('page52_center_total', lang);
     const teuFormatted = selectedRow?.teu != null ? Math.round(Number(selectedRow.teu)).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 }) : '–';
+    const compactCenterLabel = windowWidth <= 480;
+    const centerLabel = compactCenterLabel ? 'Total' : getText('page52_center_total', lang);
+    const centerText = compactCenterLabel ? centerLabel : `${centerLabel}<br>${teuFormatted} PJ`;
 
     const tableAllYearsRows = useMemo(() => {
         const data = result?.data;
@@ -355,15 +356,15 @@ const Page52 = () => {
         height: 520,
         clickmode: 'event',
         annotations: selectedRow?.teu != null ? [{
-            text: `${centerLabel}<br>${teuFormatted} PJ`,
+            text: centerText,
             showarrow: false,
             x: 0.5,
             y: 0.5,
-            font: { size: 18, color: '#424243', family: 'Arial Black, sans-serif' },
+            font: { size: compactCenterLabel ? 16 : 18, color: '#424243', family: 'Arial Black, sans-serif' },
             xref: 'paper',
             yref: 'paper',
         }] : [],
-    }), [selectedRow, centerLabel, teuFormatted]);
+    }), [selectedRow, centerText, compactCenterLabel]);
 
     if (loading) {
         return (

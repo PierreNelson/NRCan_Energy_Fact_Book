@@ -45,6 +45,7 @@ OEE_COM_HB_BASE = "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTab
 OEE_COM_HB_PAGES = [f"{OEE_COM_HB_BASE}&page=1", f"{OEE_COM_HB_BASE}&page=2"]
 OEE_COM_AN_BASE = "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=com&juris=00&rn=11&year=2023"
 OEE_COM_AN_PAGES = [f"{OEE_COM_AN_BASE}&page=1", f"{OEE_COM_AN_BASE}&page=2"]
+OEE_INDUSTRIAL_CP_URL = "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0"
 
 DEFAULT_PRIMARY_DEMAND_FILENAME = "Primary Energy Use Demand.xlsx"
 REQUEST_TIMEOUT = 60
@@ -104,6 +105,7 @@ class Section4Indicators(SectionProcessor):
             'residential_daily_lives': self._process_residential_daily_lives,
             'residential_pie_charts': self._process_residential_pie_charts,
             'commercial_institutional': self._process_commercial_institutional,
+            'industrial_sector': self._process_industrial_sector,
         }
 
     def _resolve_path(self, path_str: str, base_dir: Path) -> Path:
@@ -705,7 +707,7 @@ class Section4Indicators(SectionProcessor):
     def _process_residential_pie_charts(self) -> int:
         """
         Fetch OEE HB (residential by end-use), Table 7 (space heating by source),
-        Table 14 (water heating by source). Output vectors for page 51 pie charts.
+        Table 14 (water heating by source). Output vectors for residential pie charts.
         """
         data_rows: List[Tuple[str, str, float]] = []
         merged_hb: Dict[int, Dict[str, float]] = {}
@@ -987,7 +989,7 @@ class Section4Indicators(SectionProcessor):
 
     def _process_commercial_institutional(self) -> int:
         """
-        Scrape Commercial/Institutional data for page 52.
+        Scrape Commercial/Institutional energy use by end use.
         - HB tables: Total Energy Use, end use (Space Heating, Water Heating, Auxiliary Equipment,
           Auxiliary Motors, Lighting, Space Cooling), Energy Intensity.
         - AN tables: Energy Efficiency Effect.
@@ -1111,6 +1113,115 @@ class Section4Indicators(SectionProcessor):
         self.repo.clear_raw_data("commercial_institutional")
         n = self.store_raw_data("commercial_institutional", data_rows, metadata_rows)
         print(f"    Stored {n} rows for commercial_institutional")
+        return n
+
+    def _process_industrial_sector(self) -> int:
+        data_rows: List[Tuple[str, str, float]] = []
+        merged_cp: Dict[int, Dict[str, float]] = {}
+        row_mappings = [
+            ("total energy use (pj)", "ind_teu", None),
+            ("electricity", "ind_ele", None),
+            ("natural gas", "ind_ng", None),
+            ("diesel fuel oil, light fuel oil and kerosene", "ind_dfox", None),
+            ("heavy fuel oil", "ind_hfo", None),
+            ("still gas and petroleum coke", "ind_sgpc", None),
+            ("lpg and gas plant ngl", "ind_lgp", None),
+            ("coal", "ind_cl", None),
+            ("coke and coke oven gas", "ind_ccog", None),
+            ("wood waste and pulping liquor", "ind_wwpl", None),
+            ("other", "ind_ot", None),
+        ]
+        try:
+            r = requests.get(OEE_INDUSTRIAL_CP_URL, timeout=REQUEST_TIMEOUT)
+            r.raise_for_status()
+            parsed = self._parse_oee_html_table_generic(r.text, row_mappings)
+            for year, row in parsed.items():
+                for k, v in row.items():
+                    merged_cp.setdefault(year, {})[k] = v
+        except Exception as e:
+            print(f"    Failed to fetch industrial CP page {OEE_INDUSTRIAL_CP_URL}: {e}")
+
+        for year in sorted(merged_cp.keys()):
+            d = merged_cp[year]
+            if d.get("ind_teu") is not None:
+                data_rows.append(("ind_teu", str(year), d["ind_teu"]))
+            for vec in ["ind_ele", "ind_ng", "ind_dfox", "ind_hfo", "ind_sgpc", "ind_lgp", "ind_cl", "ind_ccog", "ind_wwpl", "ind_ot"]:
+                if d.get(vec) is not None:
+                    data_rows.append((vec, str(year), d[vec]))
+            other_x = sum(float(d.get(vec) or 0) for vec in ["ind_hfo", "ind_lgp", "ind_cl", "ind_ccog", "ind_ot"])
+            if other_x > 0:
+                data_rows.append(("ind_other_x", str(year), round(other_x, 2)))
+
+        section_cfg = self.config.sections.get(self.SECTION_KEY, {})
+        sources_cfg = section_cfg.get('sources', {})
+        ind_cfg = sources_cfg.get('industrial_sector', {}) or {}
+        res_cfg = sources_cfg.get('residential_daily_lives', {}) or {}
+        base_dir = default_xlsx_base_dir()
+        path_str = (ind_cfg.get('ee_improvement_file_path') or res_cfg.get('ee_improvement_file_path') or '').strip()
+        path = self._resolve_path(path_str, base_dir) if path_str else base_dir / "EE Improvement.xlsx"
+        if path.exists():
+            try:
+                df_ee = pd.read_excel(path, sheet_name="EE Improvement")
+            except Exception as e:
+                print(f"    Failed to read sheet EE Improvement: {e}")
+                df_ee = pd.DataFrame()
+            if not df_ee.empty:
+                df_ee.columns = [str(c).strip() for c in df_ee.columns]
+                sector_col = self.get_column(df_ee, 'sector', 'SECTOR', 'Sector', 'sectors')
+                metric_col = self.get_column(df_ee, 'metric', 'METRIC', 'Metric', 'metric name', 'metric_name', 'indicator')
+                uom_col = self.get_column(df_ee, 'uom', 'UOM', 'Uom', 'unit', 'units')
+                value_col = self.get_column(df_ee, 'value', 'VALUE', 'Value', 'val', 'amount', 'data')
+                year_col = self.get_column(df_ee, 'year', 'YEAR', 'Year', 'end_year', 'ref_date', 'end year')
+                if sector_col and metric_col and value_col:
+                    sectors = df_ee[sector_col].astype(str).str.strip().str.lower().str.replace(r'[\s-]+', '_', regex=True)
+                    ind = df_ee[sectors == 'industrial_excl_resource_extraction']
+                    for _, row in ind.iterrows():
+                        metric = str(row.get(metric_col, '')).strip().lower()
+                        uom = str(row.get(uom_col, '')).strip().lower() if uom_col else ''
+                        try:
+                            val = float(row[value_col])
+                        except (TypeError, ValueError):
+                            continue
+                        ee_year = 2022
+                        if year_col and pd.notna(row.get(year_col)):
+                            try:
+                                ee_year = int(float(row[year_col]))
+                            except (TypeError, ValueError):
+                                pass
+                        if 'improvement' in metric:
+                            data_rows.append(('ind_ee_improvement_pct', str(ee_year), round(val, 2)))
+                        elif 'energy savings' in metric or 'savings' in metric:
+                            if 'pj' in uom or uom == 'pj':
+                                data_rows.append(('ind_ee_savings_pj', str(ee_year), round(val, 2)))
+                            elif 'billion' in uom or '$' in uom:
+                                data_rows.append(('ind_ee_savings_billion', str(ee_year), round(val, 2)))
+        else:
+            print(f"    EE Improvement file not found (optional for industrial): {path}")
+
+        if not data_rows:
+            print("    No industrial_sector rows produced")
+            return 0
+        source_org = "Natural Resources Canada (OEE)"
+        metadata_rows = [
+            ("ind_teu", "Industrial total energy use (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_ele", "Industrial electricity (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_ng", "Industrial natural gas (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_dfox", "Industrial diesel fuel oil, light fuel oil and kerosene (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_hfo", "Industrial heavy fuel oil (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_sgpc", "Industrial still gas and petroleum coke (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_lgp", "Industrial LPG and gas plant NGL (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_cl", "Industrial coal (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_ccog", "Industrial coke and coke oven gas (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_wwpl", "Industrial wood waste and pulping liquor (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_ot", "Industrial other (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_other_x", "Industrial other fuel group (PJ)", "PJ", "petajoules", source_org, OEE_INDUSTRIAL_CP_URL),
+            ("ind_ee_improvement_pct", "Industrial energy efficiency improvement excluding resource extraction (2000 to end year)", "%", "percent", source_org, "EE Improvement"),
+            ("ind_ee_savings_pj", "Industrial energy savings excluding resource extraction (PJ)", "PJ", "petajoules", source_org, "EE Improvement"),
+            ("ind_ee_savings_billion", "Industrial energy cost savings excluding resource extraction (billion $)", "billion $", "billions", source_org, "EE Improvement"),
+        ]
+        self.repo.clear_raw_data("industrial_sector")
+        n = self.store_raw_data("industrial_sector", data_rows, metadata_rows)
+        print(f"    Stored {n} rows for industrial_sector")
         return n
 
     NEUD_2000_BASELINE = {'TE': 8042.1, 'Ele': 1707.2, 'NG': 2140.8}

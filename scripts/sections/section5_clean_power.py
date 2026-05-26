@@ -12,11 +12,48 @@ import time
 import pandas as pd
 import requests
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from html.parser import HTMLParser
+from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 
 from .base import SectionProcessor
 from xlsx_paths import default_xlsx_base_dir
+
+
+class _TableTextParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.tables = []
+        self._table = None
+        self._row = None
+        self._cell = None
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag == "table":
+            self._table = []
+        elif tag == "tr" and self._table is not None:
+            self._row = []
+        elif tag in ("th", "td") and self._row is not None:
+            self._cell = []
+
+    def handle_data(self, data):
+        if self._cell is not None:
+            self._cell.append(data)
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in ("th", "td") and self._cell is not None and self._row is not None:
+            self._row.append(re.sub(r"\s+", " ", "".join(self._cell)).strip())
+            self._cell = None
+        elif tag == "tr" and self._row is not None and self._table is not None:
+            if any(cell for cell in self._row):
+                self._table.append(self._row)
+            self._row = None
+        elif tag == "table" and self._table is not None:
+            if self._table:
+                self.tables.append(self._table)
+            self._table = None
 
 
 class Section5CleanPower(SectionProcessor):
@@ -36,6 +73,8 @@ class Section5CleanPower(SectionProcessor):
         """Return mapping of source keys to handler functions."""
         return {
             'environmental_clean_tech': self._process_environmental_clean_tech,
+            'cleantech_companies_geo': self._process_cleantech_companies_geo,
+            'cleantech_companies_industry': self._process_cleantech_companies_industry,
         }
 
     def _get_future_end_date(self) -> str:
@@ -79,6 +118,177 @@ class Section5CleanPower(SectionProcessor):
 
     DEFAULT_TMX_XLSX = "tmx_cleantech.xlsx"
     DEFAULT_TMX_XLSX_ROOT = "tsx-and-amp-tsxv-listed-companies-2026-02-17-en.xlsx"
+    CLEANTECH_GEO_URL = "https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies"
+    CLEANTECH_GEO_REGIONS = [
+        ("alta", "Alberta"),
+        ("atl", "Atlantic Provinces"),
+        ("bc", "British Columbia"),
+        ("man", "Manitoba"),
+        ("ont", "Ontario"),
+        ("que", "Quebec"),
+        ("sask", "Saskatchewan"),
+        ("terr", "Territories"),
+    ]
+    CLEANTECH_INDUSTRIES = [
+        ("renewable_energy", "Renewable Energy"),
+        ("energy_efficiency", "Energy Efficiency"),
+        ("biofuels_bioenergy", "Biofuels, Bioenergy and Bioproducts"),
+        ("air_env_remediation", "Air, Environment and Remediation"),
+        ("water_wastewater", "Water and Wastewater"),
+        ("smart_grid_storage", "Smart Grid and Energy Storage"),
+        ("transportation", "Transportation"),
+        ("agriculture_forestry", "Agriculture and Forestry"),
+        ("waste_recycling", "Waste and Recycling"),
+        ("mining_manufacturing", "Mining and Manufacturing"),
+    ]
+
+    def _source_url_for(self, source_key: str, fallback: str) -> str:
+        try:
+            sec = self.config.sections.get("section5_clean_power", {})
+            src = sec.get("sources", {}).get(source_key, {})
+            return src.get("source_url") or fallback
+        except Exception:
+            return fallback
+
+    def _parse_int_text(self, value: str) -> Optional[int]:
+        text = re.sub(r"[^\d.-]", "", str(value or ""))
+        if not text:
+            return None
+        try:
+            return int(float(text))
+        except ValueError:
+            return None
+
+    def _extract_cleantech_geo(self, html: str) -> Tuple[int, int, Dict[str, int]]:
+        plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
+        year_match = re.search(r"accurate as of [A-Za-z]+\s+(\d{4})", plain, re.I) or re.search(r"\b(?:June|July|August|September)\s+(\d{4})\b", plain, re.I)
+        ref_year = int(year_match.group(1)) if year_match else 2025
+        total_match = re.search(r"Total Pureplay Industry Involvement:\s*([\d,]+)", plain, re.I)
+        reported_total = self._parse_int_text(total_match.group(1)) if total_match else None
+
+        parser = _TableTextParser()
+        parser.feed(html)
+        candidates = []
+        for table in parser.tables:
+            if not table:
+                continue
+            header = table[0]
+            norm_header = [re.sub(r"\s+", " ", cell).strip().lower() for cell in header]
+            indexes = {}
+            for key, label in self.CLEANTECH_GEO_REGIONS:
+                label_norm = label.lower()
+                if label_norm in norm_header:
+                    indexes[key] = norm_header.index(label_norm)
+            if len(indexes) != len(self.CLEANTECH_GEO_REGIONS):
+                continue
+            for row in table[1:]:
+                if not row or row[0].strip().lower() != "total":
+                    continue
+                counts = {}
+                for key, _label in self.CLEANTECH_GEO_REGIONS:
+                    idx = indexes[key]
+                    counts[key] = self._parse_int_text(row[idx] if idx < len(row) else "")
+                if all(v is not None for v in counts.values()):
+                    row_sum = sum(counts.values())
+                    candidates.append((row_sum, counts))
+        if not candidates:
+            raise ValueError("Could not find cleantech company province totals in the NRCan source page")
+        if reported_total is not None:
+            for row_sum, counts in candidates:
+                if row_sum == reported_total:
+                    return ref_year, reported_total, counts
+        row_sum, counts = candidates[0]
+        return ref_year, reported_total or row_sum, counts
+
+    def _extract_cleantech_industries(self, html: str) -> Tuple[int, List[Tuple[str, str, int, float]]]:
+        plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
+        year_match = re.search(r"accurate as of [A-Za-z]+\s+(\d{4})", plain, re.I) or re.search(r"\b(?:June|July|August|September)\s+(\d{4})\b", plain, re.I)
+        ref_year = int(year_match.group(1)) if year_match else 2025
+        parser = _TableTextParser()
+        parser.feed(html)
+        def norm_label(value: str) -> str:
+            return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+        industry_lookup = {norm_label(label): (key, label) for key, label in self.CLEANTECH_INDUSTRIES}
+        rows = []
+        for table in parser.tables:
+            if not table:
+                continue
+            header = table[0]
+            norm_header = [re.sub(r"\s+", " ", cell).strip().lower() for cell in header]
+            region_indexes = []
+            for _key, label in self.CLEANTECH_GEO_REGIONS:
+                label_norm = label.lower()
+                if label_norm in norm_header:
+                    region_indexes.append(norm_header.index(label_norm))
+            if len(region_indexes) != len(self.CLEANTECH_GEO_REGIONS):
+                continue
+            candidate_rows = []
+            for row in table[1:]:
+                if not row:
+                    continue
+                label = re.sub(r"\s+", " ", row[0]).strip()
+                if label.lower() == "total":
+                    continue
+                item = industry_lookup.get(norm_label(label))
+                if not item:
+                    continue
+                count = 0
+                for idx in region_indexes:
+                    parsed = self._parse_int_text(row[idx] if idx < len(row) else "")
+                    count += parsed or 0
+                candidate_rows.append((item[0], item[1], count))
+            if len(candidate_rows) == len(self.CLEANTECH_INDUSTRIES):
+                rows = candidate_rows
+                break
+        if not rows:
+            raise ValueError("Could not find cleantech industry totals in the NRCan source page")
+        total = sum(count for _key, _label, count in rows)
+        if total <= 0:
+            raise ValueError("Cleantech industry total must be greater than zero")
+        out = [
+            (key, label, count, round((count / total) * 100, 1))
+            for key, label, count in rows
+        ]
+        out.sort(key=lambda item: item[2], reverse=True)
+        return ref_year, out
+
+    def _process_cleantech_companies_geo(self) -> int:
+        source_key = "cleantech_companies_geo"
+        source_url = self._source_url_for(source_key, self.CLEANTECH_GEO_URL)
+        response = requests.get(source_url, timeout=self.REQUEST_TIMEOUT, headers={"User-Agent": "Mozilla/5.0 (compatible; NRCan-Energy-Factbook/1.0)"})
+        response.raise_for_status()
+        ref_year, total, counts = self._extract_cleantech_geo(response.text)
+        if total <= 0:
+            raise ValueError("Cleantech company total must be greater than zero")
+
+        data_rows = [("cleantech_geo_total", ref_year, float(total))]
+        metadata_rows = [("cleantech_geo_total", "Total pureplay industry involvement", "Number", "units", "Natural Resources Canada", source_url)]
+        for key, label in self.CLEANTECH_GEO_REGIONS:
+            count = counts[key]
+            share = round((count / total) * 100, 1)
+            data_rows.append((f"cleantech_geo_{key}_count", ref_year, float(count)))
+            data_rows.append((f"cleantech_geo_{key}_pct", ref_year, share))
+            metadata_rows.append((f"cleantech_geo_{key}_count", f"Cleantech companies, {label}", "Number", "units", "Natural Resources Canada", source_url))
+            metadata_rows.append((f"cleantech_geo_{key}_pct", f"Cleantech companies share, {label}", "Percent", "percent", "Natural Resources Canada", source_url))
+
+        self.repo.clear_raw_data(source_key)
+        return self.store_raw_data(source_key, data_rows, metadata_rows)
+
+    def _process_cleantech_companies_industry(self) -> int:
+        source_key = "cleantech_companies_industry"
+        source_url = self._source_url_for(source_key, self.CLEANTECH_GEO_URL)
+        response = requests.get(source_url, timeout=self.REQUEST_TIMEOUT, headers={"User-Agent": "Mozilla/5.0 (compatible; NRCan-Energy-Factbook/1.0)"})
+        response.raise_for_status()
+        ref_year, industries = self._extract_cleantech_industries(response.text)
+        data_rows = []
+        metadata_rows = []
+        for key, label, count, share in industries:
+            data_rows.append((f"cleantech_ind_{key}_count", ref_year, float(count)))
+            data_rows.append((f"cleantech_ind_{key}_pct", ref_year, share))
+            metadata_rows.append((f"cleantech_ind_{key}_count", f"Cleantech companies, {label}", "Number", "units", "Natural Resources Canada", source_url))
+            metadata_rows.append((f"cleantech_ind_{key}_pct", f"Cleantech companies share, {label}", "Percent", "percent", "Natural Resources Canada", source_url))
+        self.repo.clear_raw_data(source_key)
+        return self.store_raw_data(source_key, data_rows, metadata_rows)
 
     def _fetch_tsx_xlsx_bytes(self) -> Optional[bytes]:
         """Try to load TSX cleantech XLSX from config, then project-root default, then cwd, then scripts/, then download. Returns bytes or None."""

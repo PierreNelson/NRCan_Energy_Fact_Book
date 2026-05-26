@@ -18,6 +18,8 @@ SOURCE_VECTOR_PREFIXES = {
     'foreign_control': ['foreign_'],
     'environmental_protection': ['enviro_'],
     'major_projects': ['projects_'],
+    'cleantech_companies_geo': ['cleantech_geo_'],
+    'cleantech_companies_industry': ['cleantech_ind_'],
     'clean_tech': ['cleantech_'],
     'environmental_clean_tech': ['envcleantech_'],
     'ghg_emissions': ['ghg_'],
@@ -26,6 +28,7 @@ SOURCE_VECTOR_PREFIXES = {
     'residential_daily_lives': ['res_'],
     'residential_pie_charts': ['res_'],
     'commercial_institutional': ['com_'],
+    'industrial_sector': ['ind_'],
 }
 
 # Source name to display name mapping (human-readable)
@@ -44,12 +47,15 @@ SOURCE_DISPLAY_NAMES = {
     'major_projects': 'Major Projects',
     'clean_tech': 'Clean Technology',
     'environmental_clean_tech': 'Environmental and Clean Technology',
+    'cleantech_companies_geo': 'Cleantech companies by province and region',
+    'cleantech_companies_industry': 'Cleantech companies by industry',
     'ghg_emissions': 'GHG Emissions by Economic Sector',
     'energy_use': 'Energy Use (OEE NEUD)',
     'seu_by_fuel': 'Secondary energy use by fuel type (SEU final demand)',
     'residential_daily_lives': 'Residential energy (energy in our daily lives)',
     'residential_pie_charts': 'Residential pie charts (by type, space/water heating by source)',
-    'commercial_institutional': 'Commercial and institutional energy use by end use (page 52)',
+    'commercial_institutional': 'Commercial and institutional energy use by end use',
+    'industrial_sector': 'Industrial sector energy use by fuel type',
 }
 
 

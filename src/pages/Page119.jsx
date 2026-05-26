@@ -70,7 +70,7 @@ const Page119 = () => {
         let screenZoomHint = 1;
         if (sw > 0 && outer >= sw - 24 && inner > 0) {
             const ratio = sw / inner;
-            if (ratio >= 1.75) screenZoomHint = Math.min(ratio, 4);
+            if (ratio >= 1.75) screenZoomHint = Math.min(ratio, 10);
         }
         return { pinScale, layoutRatio, cssZoomFactor: 1, dprZoomFactor: 1, screenZoomHint };
     });
@@ -137,7 +137,7 @@ const Page119 = () => {
             let screenZoomHint = 1;
             if (sw > 0 && outer >= sw - 24 && inner > 0) {
                 const ratio = sw / inner;
-                if (ratio >= 1.75) screenZoomHint = Math.min(ratio, 4);
+                if (ratio >= 1.75) screenZoomHint = Math.min(ratio, 10);
             }
 
             const vv = window.visualViewport;
@@ -306,7 +306,6 @@ const Page119 = () => {
         return { yearTickvals, yearTicktext };
     }, [quarters]);
 
-    const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
     const xRange = [-0.5, quarters.length - 0.5];
     // Pinch: visualViewport.scale. Ctrl+ zoom: compare innerWidth while outerWidth stable (see zoomBaselineRef).
     // Near-maximized: screen availWidth / innerWidth ≈ zoom when few CSS px fit across the screen.
@@ -317,6 +316,24 @@ const Page119 = () => {
         viewportZoom.dprZoomFactor,
         viewportZoom.screenZoomHint
     );
+    /** Only true page zoom (Ctrl+/pinch/maximized sw/inner), not layoutRatio/DPR, so Q1–Q4 stay full size at 100%. */
+    const pageZoomForQuarterTicks = Math.max(
+        viewportZoom.cssZoomFactor,
+        viewportZoom.pinScale,
+        viewportZoom.screenZoomHint
+    );
+    const tickFontBaseSize = windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15;
+    const tickFont = { size: tickFontBaseSize, family: 'Arial, sans-serif' };
+    /** Q1–Q4 labels: unchanged at 100%; smaller only at ~300%+ and ~500%+ page zoom. */
+    const quarterXTickFont = {
+        size:
+            pageZoomForQuarterTicks >= 5
+                ? Math.max(6, tickFontBaseSize - 9)
+                : pageZoomForQuarterTicks >= 3
+                  ? Math.max(9, tickFontBaseSize - 5)
+                  : tickFontBaseSize,
+        family: 'Arial, sans-serif'
+    };
     const useVerticalQuarterTicks = zoomEffective >= 1.9 || windowWidth <= 720;
     const quarterTickAngle = useVerticalQuarterTicks ? 90 : 0;
     const plotBottomMargin = useVerticalQuarterTicks
@@ -368,7 +385,7 @@ const Page119 = () => {
             const img = new Image();
             img.onload = () => {
                 const titleHeight = 90;
-                const legendHeight = 48;
+                const legendHeight = 36;
                 canvas.width = img.width;
                 canvas.height = img.height + titleHeight + legendHeight;
                 ctx.fillStyle = '#ffffff';
@@ -382,7 +399,7 @@ const Page119 = () => {
                     42
                 );
                 ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 30;
+                const legendY = titleHeight + img.height + 14;
                 ctx.font = '18px Arial';
                 ctx.textAlign = 'left';
                 ctx.fillStyle = BAR_COLORS[2];
@@ -644,10 +661,10 @@ const Page119 = () => {
                 .page119-legend {
                     display: flex;
                     justify-content: center;
-                    margin-top: 20px;
-                    margin-bottom: 20px;
+                    margin-top: -28px;
+                    margin-bottom: 12px;
                     font-family: 'Noto Sans', sans-serif;
-                    padding: 10px 20px;
+                    padding: 4px 16px 8px;
                 }
                 .page119-legend-inner {
                     display: flex;
@@ -762,6 +779,9 @@ const Page119 = () => {
                     .page119-legend-label {
                         font-size: 16px;
                     }
+                    .page119-legend {
+                        margin-top: -22px;
+                    }
                 }
             `}</style>
 
@@ -826,8 +846,8 @@ const Page119 = () => {
                                             showline: true,
                                             linewidth: 1,
                                             linecolor: '#333',
-                                            tickfont: tickFont,
-                                            automargin: true
+                                            tickfont: quarterXTickFont,
+                                            automargin: false
                                         },
                                         yaxis: {
                                             title: {

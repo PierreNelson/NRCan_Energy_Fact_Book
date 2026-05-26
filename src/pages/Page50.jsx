@@ -37,7 +37,6 @@ const boldNumbersInBullet = (str) => {
 const Page50 = () => {
     const outlet = useOutletContext();
     const lang = outlet?.lang ?? 'en';
-    const layoutPadding = outlet?.layoutPadding ?? { left: 55, right: 15 };
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -66,7 +65,7 @@ const Page50 = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const pad = layoutPadding && typeof layoutPadding === 'object' ? layoutPadding : { left: 55, right: 15 };
+    const pad = { left: 0, right: 0 };
     const hasData = result && (result.data?.length > 0 || result.terPct != null || result.euxPct != null || result.swtePct != null || result.eeImprovementPct != null || result.eeSavingsPj != null || result.eeSavingsBillion != null);
 
     const allYears = useMemo(() => (result?.data ? [...new Set(result.data.map((r) => r.year))].sort((a, b) => a - b) : []), [result?.data]);

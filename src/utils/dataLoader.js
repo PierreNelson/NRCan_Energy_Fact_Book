@@ -555,6 +555,88 @@ export async function getEnvironmentalCleanTechData() {
     };
 }
 
+const PAGE62_REGION_KEYS = ['terr', 'atl', 'que', 'ont', 'man', 'sask', 'alta', 'bc'];
+
+export async function getPage62Data() {
+    const allData = await loadAllData();
+    const rows = allData.filter(row => row.vector && row.vector.startsWith('cleantech_geo_'));
+    const byYear = {};
+    rows.forEach((row) => {
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        const field = row.vector.replace('cleantech_geo_', '');
+        byYear[year][field] = row.value;
+    });
+    const data = Object.values(byYear)
+        .map((row) => {
+            const total = row.total;
+            const slices = PAGE62_REGION_KEYS.map((key) => {
+                const count = row[`${key}_count`];
+                const pct = row[`${key}_pct`];
+                return {
+                    key,
+                    count,
+                    pct: pct != null ? pct : (total && count != null ? (count / total) * 100 : null)
+                };
+            });
+            return { ...row, total, slices };
+        })
+        .filter((row) => row.total != null && row.slices.every((slice) => slice.count != null && slice.pct != null))
+        .sort((a, b) => a.year - b.year);
+    const years = data.map((row) => row.year);
+    return {
+        data,
+        years,
+        latestYear: years.length ? years[years.length - 1] : null
+    };
+}
+
+const PAGE63_INDUSTRY_KEYS = [
+    'renewable_energy',
+    'energy_efficiency',
+    'biofuels_bioenergy',
+    'air_env_remediation',
+    'water_wastewater',
+    'smart_grid_storage',
+    'transportation',
+    'agriculture_forestry',
+    'waste_recycling',
+    'mining_manufacturing'
+];
+
+export async function getPage63Data() {
+    const allData = await loadAllData();
+    const rows = allData.filter(row => row.vector && row.vector.startsWith('cleantech_ind_'));
+    const byYear = {};
+    rows.forEach((row) => {
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        const field = row.vector.replace('cleantech_ind_', '');
+        byYear[year][field] = row.value;
+    });
+    const data = Object.values(byYear)
+        .map((row) => {
+            const industries = PAGE63_INDUSTRY_KEYS.map((key) => {
+                const count = row[`${key}_count`];
+                const pct = row[`${key}_pct`];
+                return { key, count, pct };
+            })
+                .filter((item) => item.count != null && item.pct != null)
+                .sort((a, b) => b.count - a.count);
+            return { ...row, industries };
+        })
+        .filter((row) => row.industries.length === PAGE63_INDUSTRY_KEYS.length)
+        .sort((a, b) => a.year - b.year);
+    const years = data.map((row) => row.year);
+    return {
+        data,
+        years,
+        latestYear: years.length ? years[years.length - 1] : null
+    };
+}
+
 const PEP_REGIONS = ['BC', 'Alta', 'Sask', 'Man', 'Ont', 'Que', 'NL', 'Territories', 'Maritimes'];
 const PEP_SOURCES = ['coal', 'crude_oil', 'natural_gas', 'ngls', 'hydro', 'uranium', 'other_renewables'];
 
@@ -917,4 +999,88 @@ export async function getPage52Data() {
     const yearsComplete = dataComplete.map((r) => r.year);
     const latestYear = yearsComplete.length ? yearsComplete[yearsComplete.length - 1] : null;
     return { data: dataComplete, years: yearsComplete, latestYear };
+}
+
+const PAGE53_FUEL_KEYS = ['Ele', 'NG', 'DFOx', 'SGPC', 'WWPL', 'Other_x'];
+
+export function page53RowHasCompleteData(row) {
+    const t = row?.teu;
+    return (
+        t != null &&
+        !Number.isNaN(Number(t)) &&
+        Number(t) > 0 &&
+        PAGE53_FUEL_KEYS.every((k) => row[k] != null && !Number.isNaN(Number(row[k]))) &&
+        row.ee_improvement_pct != null &&
+        row.ee_savings_pj != null &&
+        row.ee_savings_billion != null
+    );
+}
+
+export async function getPage53Data() {
+    const allData = await loadAllData();
+    const byYear = {};
+    allData.forEach(row => {
+        if (!row.vector) return;
+        const rawDate = row.ref_date;
+        const year = typeof rawDate === 'number' ? (Number.isNaN(rawDate) ? null : Math.trunc(rawDate)) : parseInt(String(rawDate).trim(), 10);
+        if (year == null || Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        const v = row.vector;
+        const val = row.value != null ? Number(row.value) : null;
+        if (v === 'ind_teu') byYear[year].teu = val;
+        else if (v === 'oee_neud_I' && byYear[year].teu == null) byYear[year].teu = val;
+        else if (v === 'ind_ele') byYear[year].Ele = val;
+        else if (v === 'ind_ng') byYear[year].NG = val;
+        else if (v === 'ind_dfox') byYear[year].DFOx = val;
+        else if (v === 'ind_hfo') byYear[year].HFO = val;
+        else if (v === 'ind_sgpc') byYear[year].SGPC = val;
+        else if (v === 'ind_lgp') byYear[year].LGP = val;
+        else if (v === 'ind_cl') byYear[year].CL = val;
+        else if (v === 'ind_ccog') byYear[year].CCOG = val;
+        else if (v === 'ind_wwpl') byYear[year].WWPL = val;
+        else if (v === 'ind_ot') byYear[year].OT = val;
+        else if (v === 'ind_other_x') byYear[year].Other_x = val;
+        else if (v === 'ind_ee_improvement_pct') byYear[year].ee_improvement_pct = val;
+        else if (v === 'ind_ee_savings_pj') byYear[year].ee_savings_pj = val;
+        else if (v === 'ind_ee_savings_billion') byYear[year].ee_savings_billion = val;
+    });
+    const years = Object.keys(byYear).map(Number).filter(y => !Number.isNaN(y)).sort((a, b) => a - b);
+    const base2000 = byYear[2000];
+    const data = years.map(y => {
+        const r = byYear[y] || {};
+        const other = r.Other_x != null ? r.Other_x : (Number(r.HFO || 0) + Number(r.LGP || 0) + Number(r.CL || 0) + Number(r.CCOG || 0) + Number(r.OT || 0));
+        const row = {
+            year: y,
+            teu: r.teu != null ? r.teu : null,
+            Ele: r.Ele != null ? r.Ele : null,
+            NG: r.NG != null ? r.NG : null,
+            DFOx: r.DFOx != null ? r.DFOx : null,
+            HFO: r.HFO != null ? r.HFO : null,
+            SGPC: r.SGPC != null ? r.SGPC : null,
+            LGP: r.LGP != null ? r.LGP : null,
+            CL: r.CL != null ? r.CL : null,
+            CCOG: r.CCOG != null ? r.CCOG : null,
+            WWPL: r.WWPL != null ? r.WWPL : null,
+            OT: r.OT != null ? r.OT : null,
+            Other_x: other > 0 ? Number(other.toFixed(2)) : (r.Other_x != null ? r.Other_x : null),
+            ee_improvement_pct: r.ee_improvement_pct != null ? r.ee_improvement_pct : null,
+            ee_savings_pj: r.ee_savings_pj != null ? r.ee_savings_pj : null,
+            ee_savings_billion: r.ee_savings_billion != null ? r.ee_savings_billion : null
+        };
+        if (base2000?.teu != null && base2000.teu > 0 && row.teu != null) {
+            row.change_since_2000_pct = Math.round(((row.teu - base2000.teu) / base2000.teu) * 100);
+        } else {
+            row.change_since_2000_pct = null;
+        }
+        row.slices = PAGE53_FUEL_KEYS.map(k => ({
+            key: k,
+            pj: row[k],
+            pct: row.teu != null && row.teu > 0 && row[k] != null ? Number(((row[k] / row.teu) * 100).toFixed(1)) : null
+        }));
+        return row;
+    });
+    const dataComplete = data.filter(page53RowHasCompleteData);
+    const yearsComplete = dataComplete.filter((r) => r.year >= 2022).map((r) => r.year);
+    const latestYear = yearsComplete.length ? yearsComplete[yearsComplete.length - 1] : null;
+    return { data, years: yearsComplete, latestYear };
 }

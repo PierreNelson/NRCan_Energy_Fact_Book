@@ -58,7 +58,7 @@ Contributor conventions and stack commands: **[`AGENTS.md`](./AGENTS.md)**. Symp
 
 ## Static deployment (client / test servers)
 
-Hosting the production build (`dist/`), URL base path, nginx/IIS, and data-only zip overlays: **[`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)**. Release packaging: **`scripts/zip_website_release.py`** and **`scripts/zip_data_release.py`** (see **[`scripts/README.md`](./scripts/README.md)**).
+Hosting the production build, URL base path, nginx/IIS, and data-only zip overlays: **[`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)**. Release packaging: **`scripts/zip_website_release.py`** (default: deploy-only zip; **`--full`** for source + packages) and **`scripts/zip_data_release.py`** — see **[`scripts/README.md`](./scripts/README.md)**.
 
 ## Accessibility
 

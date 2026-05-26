@@ -14,7 +14,7 @@ const PAGE48_PIE_COLORS = ['#fcb340', '#657f9b', '#1f8093', '#6b666a', '#4b4c4d'
 const PAGE48_BAR_COLORS = ['#c88d34', '#A687A5', '#7F94AD', '#577F6A', '#50A569'];
 
 const Page48 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [data, setData] = useState({ years: [], data: [] });
     const [selectedYear, setSelectedYear] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -541,7 +541,7 @@ const Page48 = () => {
         >
             <style>{`
                 .page-48 { width: 100%; max-width: 1140px; margin: 0 auto; box-sizing: border-box; }
-                .page48-inner { padding: 24px ${layoutPadding?.right ?? 24}px 32px ${layoutPadding?.left ?? 24}px; }
+                .page48-inner { padding: 24px 0 32px 0; }
                 .page48-title {
                     font-family: 'Lato', sans-serif;
                     font-size: 50px;
@@ -605,12 +605,7 @@ const Page48 = () => {
                     padding: 0 8px;
                 }
                 .page48-chart-title a { color: #26374a; text-decoration: underline; }
-                .page48-charts-anchor {
-                    margin-left: -${layoutPadding?.left ?? 24}px;
-                    width: calc(100% + ${layoutPadding?.left ?? 24}px);
-                    padding-left: 0;
-                    box-sizing: border-box;
-                }
+                .page48-charts-anchor { width: 100%; padding-left: 0; box-sizing: border-box; }
                 .page48-chart-frame {
                     background-color: #f5f5f5;
                     padding: 20px;
@@ -626,7 +621,15 @@ const Page48 = () => {
                 .page-48 .table-responsive { display: block; width: 100%; overflow-x: auto; }
                 .page-48 .table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
                 .page-48 .table-responsive th, .page-48 .table-responsive td { border: 1px solid #ddd; padding: 8px; }
-                .page48-footnote { margin-top: 24px; font-family: 'Noto Sans', sans-serif; font-size: 20px; line-height: 1.6; color: var(--gc-text); }
+                .page48-footnote {
+                    width: 100%;
+                    box-sizing: border-box;
+                    margin-top: 24px;
+                    font-family: var(--font-body);
+                    font-size: 1rem;
+                    line-height: 1.65;
+                    color: var(--gc-text);
+                }
                 .page48-loading, .page48-error { padding: 24px; font-family: 'Noto Sans', sans-serif; }
                 .page48-pie-wrap .js-plotly-plot .plotly .modebar { right: 20px !important; }
                 .page48-chart-frame details > summary:hover { background-color: #404040 !important; }

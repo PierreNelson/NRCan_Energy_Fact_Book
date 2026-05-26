@@ -11,17 +11,29 @@ const LOCATION_KEYS = ['canada', 'vancouver', 'calgary', 'toronto', 'montreal', 
 const YEARS_DESC = [2024, 2023, 2022];
 const YEARS_ASC = [...YEARS_DESC].sort((a, b) => a - b);
 const YEAR_SPAN_LABEL = `${YEARS_ASC[0]}\u2013${YEARS_ASC[YEARS_ASC.length - 1]}`;
-/** Ctrl+ page zoom is not exposed on `visualViewport.scale` on desktop; infer ~5× from `devicePixelRatio` / common OS scale. */
-const PAGE_ZOOM_FACTOR_MIN = 4.65;
-const PAGE_ZOOM_FACTOR_MAX = 5.35;
+/**
+ * Ctrl+ page zoom is not exposed on `visualViewport.scale` on desktop; infer zoom from
+ * `devicePixelRatio` / common OS scale. Use one continuous ratio band so ~400% cannot fall
+ * in the gap between separate 400% / 500% windows (that gap hid 400% while 500% still matched).
+ */
+const PAGE_ZOOM_VERTICAL_TICK_MIN = 3.55;
+const PAGE_ZOOM_VERTICAL_TICK_MAX = 5.45;
 const LIKELY_OS_DPR_BASES = [1, 1.25, 1.3333333333333333, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5];
 
-function isApprox500PercentBrowserZoom() {
+function isZoomRatioInVerticalTickBands(z) {
+    return z >= PAGE_ZOOM_VERTICAL_TICK_MIN && z <= PAGE_ZOOM_VERTICAL_TICK_MAX;
+}
+
+function isBrowserZoomInVerticalTickRange() {
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
     return LIKELY_OS_DPR_BASES.some((b) => {
         const z = dpr / b;
-        return z >= PAGE_ZOOM_FACTOR_MIN && z <= PAGE_ZOOM_FACTOR_MAX;
+        return isZoomRatioInVerticalTickBands(z);
     });
+}
+
+function isPinchScaleInVerticalTickBands(s) {
+    return typeof s === 'number' && s > 1.02 && isZoomRatioInVerticalTickBands(s);
 }
 
 const DATA_BY_YEAR = {
@@ -165,12 +177,8 @@ const Page138 = () => {
         const syncViewport = () => {
             setWindowWidth(window.innerWidth);
             const s = window.visualViewport?.scale ?? 1;
-            const pinchNear500 =
-                typeof window.visualViewport?.scale === 'number' &&
-                s > 1.02 &&
-                s >= PAGE_ZOOM_FACTOR_MIN &&
-                s <= PAGE_ZOOM_FACTOR_MAX;
-            setXAxisVerticalForPageZoom(pinchNear500 || isApprox500PercentBrowserZoom());
+            const pinchVertical = isPinchScaleInVerticalTickBands(s);
+            setXAxisVerticalForPageZoom(pinchVertical || isBrowserZoomInVerticalTickRange());
         };
         syncViewport();
         window.addEventListener('resize', syncViewport);

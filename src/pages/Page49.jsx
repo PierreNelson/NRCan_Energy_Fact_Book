@@ -19,7 +19,7 @@ const PAGE49_LABEL_KEYS = {
 const PAGE49_COLORS = ['#657f9b', '#CE8003', '#4b4c4d', '#6b666a', '#1f8093', '#A687A5', '#949494'];
 
 const Page49 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [seuData, setSeuData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -372,7 +372,7 @@ const Page49 = () => {
 
     if (loading) {
         return (
-            <div className="page49-root" style={{ padding: layoutPadding }}>
+            <div className="page49-root">
                 <p className="page49-loading">{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>
             </div>
         );
@@ -380,7 +380,7 @@ const Page49 = () => {
 
     if (error || !seuData) {
         return (
-            <div className="page49-root" style={{ padding: layoutPadding }}>
+            <div className="page49-root">
                 <p className="page49-error">{getText('page49_no_data', lang)}</p>
             </div>
         );
@@ -389,7 +389,7 @@ const Page49 = () => {
     const hasData = currentRow != null && categories.length > 0;
 
     return (
-        <div className="page49-root" style={{ padding: layoutPadding }}>
+        <div className="page49-root">
             <style>{`
 .page49-chart-frame details > summary:hover { background-color: #404040 !important; }
 .page49-chart-frame button[type="button"]:hover,

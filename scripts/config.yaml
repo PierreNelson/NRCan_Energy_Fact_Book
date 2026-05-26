@@ -139,7 +139,7 @@ sections:
         primary_demand_file_path: ""  # e.g. Primary_Energy_Use_Demand.xlsx (P,NPC,FK,EL in PJ)
       seu_by_fuel:
         enabled: true
-        description: "Secondary energy use (final demand) by fuel type for page 49"
+        description: "Secondary energy use (final demand) by fuel type"
         source_type: "file"
         seu_final_demand_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
       residential_daily_lives:
@@ -149,10 +149,14 @@ sections:
         ee_improvement_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
       residential_pie_charts:
         enabled: true
-        description: "Residential by type and space/water heating by source (page 51) from OEE HB, Table 7, Table 14"
+        description: "Residential by type and space/water heating by source from OEE HB, Table 7, Table 14"
       commercial_institutional:
         enabled: true
-        description: "Commercial and institutional energy use by end use (page 52) from OEE HB, AN, and EE Improvement"
+        description: "Commercial and institutional energy use by end use from OEE HB, AN, and EE Improvement"
+      industrial_sector:
+        enabled: true
+        description: "Industrial sector energy use by fuel type from OEE CP and EE Improvement"
+        ee_improvement_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
 
   # Section 5: Clean Power and Low Carbon Fuels
   section5_clean_power:
@@ -167,6 +171,16 @@ sections:
         source_url: "https://www.tsx.com/resource/en/571"
         # Optional: path to TSX cleantech XLSX (relative to scripts/ or absolute). If unset, scripts/tmx_cleantech.xlsx is used when present.
         # tmx_xlsx_path: "tmx_cleantech.xlsx"
+      cleantech_companies_geo:
+        enabled: true
+        description: "Cleantech companies by province and region"
+        source_type: "web"
+        source_url: "https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies"
+      cleantech_companies_industry:
+        enabled: true
+        description: "Cleantech companies by industry"
+        source_type: "web"
+        source_url: "https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies"
 
   # Section 6: Oil, Natural Gas and Coal (placeholder)
   section6_oil_gas:

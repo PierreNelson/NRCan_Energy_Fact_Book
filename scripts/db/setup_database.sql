@@ -113,9 +113,12 @@ UPDATE dbo.nrcan_fb_data_sources SET source_url = CASE source_key
     WHEN N'residential_pie_charts' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1'
     WHEN N'residential_daily_lives' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1'
     WHEN N'commercial_institutional' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1'
+    WHEN N'industrial_sector' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0'
     WHEN N'seu_by_fuel' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2'
     WHEN N'ghg_emissions' THEN N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html'
     WHEN N'environmental_clean_tech' THEN N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology'
+    WHEN N'cleantech_companies_geo' THEN N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies'
+    WHEN N'cleantech_companies_industry' THEN N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies'
     ELSE N'https://www.nrcan.gc.ca/energy'
 END
 WHERE source_url IS NULL OR RTRIM(ISNULL(source_url, N'')) = N'';
@@ -158,9 +161,12 @@ BEGIN
         WHEN N'residential_pie_charts' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1'
         WHEN N'residential_daily_lives' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1'
         WHEN N'commercial_institutional' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1'
+        WHEN N'industrial_sector' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0'
         WHEN N'seu_by_fuel' THEN N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2'
         WHEN N'ghg_emissions' THEN N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html'
         WHEN N'environmental_clean_tech' THEN N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology'
+        WHEN N'cleantech_companies_geo' THEN N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies'
+        WHEN N'cleantech_companies_industry' THEN N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies'
         ELSE N'https://www.nrcan.gc.ca/energy'
     END
     WHERE source_url IS NULL OR RTRIM(ISNULL(source_url, N'')) = N'';
@@ -213,6 +219,8 @@ IF OBJECT_ID('dbo.nrcan_majorproj_semantic_data', 'U') IS NOT NULL DROP TABLE db
 IF OBJECT_ID('dbo.nrcan_majorproj_semantic_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_majorproj_semantic_metadata;
 IF OBJECT_ID('dbo.nrcan_oee_commercial_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_commercial_data;
 IF OBJECT_ID('dbo.nrcan_oee_commercial_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_commercial_metadata;
+IF OBJECT_ID('dbo.nrcan_oee_industrial_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_industrial_data;
+IF OBJECT_ID('dbo.nrcan_oee_industrial_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_industrial_metadata;
 IF OBJECT_ID('dbo.nrcan_oee_neud_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_neud_data;
 IF OBJECT_ID('dbo.nrcan_oee_neud_metadata', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_neud_metadata;
 IF OBJECT_ID('dbo.nrcan_oee_res_daily_data', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_daily_data;
@@ -248,6 +256,7 @@ IF OBJECT_ID('dbo.nrcan_cleantech_semantic_ingest', 'U') IS NOT NULL DROP TABLE 
 IF OBJECT_ID('dbo.nrcan_ghg_semantic_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_ghg_semantic_ingest;
 IF OBJECT_ID('dbo.nrcan_majorproj_semantic_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_majorproj_semantic_ingest;
 IF OBJECT_ID('dbo.nrcan_oee_commercial_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_commercial_ingest;
+IF OBJECT_ID('dbo.nrcan_oee_industrial_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_industrial_ingest;
 IF OBJECT_ID('dbo.nrcan_oee_neud_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_neud_ingest;
 IF OBJECT_ID('dbo.nrcan_oee_res_daily_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_daily_ingest;
 IF OBJECT_ID('dbo.nrcan_oee_res_pie_ingest', 'U') IS NOT NULL DROP TABLE dbo.nrcan_oee_res_pie_ingest;
@@ -329,6 +338,52 @@ BEGIN
     CREATE INDEX IX_nrcan_cleanenv_semantic_source ON [nrcan_cleanenv_semantic](source_key);
     CREATE INDEX IX_nrcan_cleanenv_semantic_ref_date ON [nrcan_cleanenv_semantic](ref_date);
     PRINT 'Table nrcan_cleanenv_semantic created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_spi_cleantech_geo')
+BEGIN
+    CREATE TABLE [nrcan_spi_cleantech_geo] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_spi_cleantech_geo_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_spi_cleantech_geo_vector ON [nrcan_spi_cleantech_geo](vector);
+    CREATE INDEX IX_nrcan_spi_cleantech_geo_source ON [nrcan_spi_cleantech_geo](source_key);
+    CREATE INDEX IX_nrcan_spi_cleantech_geo_ref_date ON [nrcan_spi_cleantech_geo](ref_date);
+    PRINT 'Table nrcan_spi_cleantech_geo created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_spi_cleantech_industry')
+BEGIN
+    CREATE TABLE [nrcan_spi_cleantech_industry] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_spi_cleantech_industry_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_spi_cleantech_industry_vector ON [nrcan_spi_cleantech_industry](vector);
+    CREATE INDEX IX_nrcan_spi_cleantech_industry_source ON [nrcan_spi_cleantech_industry](source_key);
+    CREATE INDEX IX_nrcan_spi_cleantech_industry_ref_date ON [nrcan_spi_cleantech_industry](ref_date);
+    PRINT 'Table nrcan_spi_cleantech_industry created.';
 END
 GO
 
@@ -421,6 +476,29 @@ BEGIN
     CREATE INDEX IX_nrcan_oee_commercial_source ON [nrcan_oee_commercial](source_key);
     CREATE INDEX IX_nrcan_oee_commercial_ref_date ON [nrcan_oee_commercial](ref_date);
     PRINT 'Table nrcan_oee_commercial created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_industrial')
+BEGIN
+    CREATE TABLE [nrcan_oee_industrial] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_oee_industrial_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_oee_industrial_vector ON [nrcan_oee_industrial](vector);
+    CREATE INDEX IX_nrcan_oee_industrial_source ON [nrcan_oee_industrial](source_key);
+    CREATE INDEX IX_nrcan_oee_industrial_ref_date ON [nrcan_oee_industrial](ref_date);
+    PRINT 'Table nrcan_oee_industrial created.';
 END
 GO
 
@@ -961,9 +1039,12 @@ VALUES
 ('residential_pie_charts', 'Residential pie charts (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1', 1),
 ('residential_daily_lives', 'Residential daily lives (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1', 1),
 ('commercial_institutional', 'Commercial / institutional (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1', 1),
+('industrial_sector', 'Industrial sector energy use by fuel type (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0', 1),
 ('seu_by_fuel', 'SEU by fuel (OEE)', 4, 'Energy Efficiency', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2', 1),
 ('ghg_emissions', 'GHG emissions (ECCC)', 1, 'Key Indicators', N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html', 1),
-('environmental_clean_tech', 'Environmental and clean technology', 5, 'Clean Power and Low Carbon Fuels', N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology', 1);
+('environmental_clean_tech', 'Environmental and clean technology', 5, 'Clean Power and Low Carbon Fuels', N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology', 1),
+('cleantech_companies_geo', 'Cleantech companies by province and region', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1),
+('cleantech_companies_industry', 'Cleantech companies by industry', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1);
 
 PRINT 'Default data sources inserted.';
 GO
