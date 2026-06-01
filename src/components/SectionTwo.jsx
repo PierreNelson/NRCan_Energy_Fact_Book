@@ -12,6 +12,8 @@ import Page31 from '../pages/Page31';
 import Page32 from '../pages/Page32';
 import Page33 from '../pages/Page33';
 import Page34 from '../pages/Page34';
+import Page35 from '../pages/Page35';
+import Page36 from '../pages/Page36';
 import Page37 from '../pages/Page37';
 
 const SectionTwo = () => {
@@ -94,6 +96,14 @@ const SectionTwo = () => {
 
             <div id="research-development-demonstration" className="stacked-page-wrapper">
                 <Page34 />
+            </div>
+
+            <div id="public-energy-rdd-expenditures" className="stacked-page-wrapper">
+                <Page35 />
+            </div>
+
+            <div id="energy-rdd-by-technology" className="stacked-page-wrapper">
+                <Page36 />
             </div>
 
             <div id="environmental-protection" className="stacked-page-wrapper page-with-title-divider">

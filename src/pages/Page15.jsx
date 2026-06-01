@@ -22,12 +22,12 @@ const PAGE15_EXPORT_FILE_BASE = 'canadas-global-energy-trade';
 
 const PAGE15_COLORS = {
     coal: '#6B4423',
-    crude: '#2EABB8',
+    crude: '#2A9BA7',
     rpp: '#1B4F72',
     gas: '#8B1538',
-    ngl: '#E67E22',
-    uranium: '#9CCC65',
-    electricity: '#E6C229',
+    ngl: '#D87118',
+    uranium: '#699933',
+    electricity: '#A48A13',
     biofuels: '#D81B60',
     other: '#7f8c8d',
 };

@@ -155,3 +155,60 @@ source_tables:
     report_code: ghg
     detail: semantic
     source_table: nrcan_ghg_semantic
+
+  rpp_supply_demand_raw:
+    org_code: stc
+    report_code: rppsd
+    detail: "2510008101"
+    source_table: stc_rppsd_25100081
+  rpp_supply_demand:
+    org_code: stc
+    report_code: rppsd
+    detail: "2510008101"
+    source_table: stc_rppsd_25100081
+
+  rpp_refinery_input_raw:
+    org_code: stc
+    report_code: refinput
+    detail: "2510006301"
+    source_table: stc_refinput_25100063
+  rpp_refinery_input:
+    org_code: stc
+    report_code: refinput
+    detail: "2510006301"
+    source_table: stc_refinput_25100063
+
+  crude_prices:
+    org_code: nrcan
+    report_code: crude
+    detail: wti_wcs
+    source_table: nrcan_crude_prices
+  oil_sands:
+    org_code: stc
+    report_code: os
+    detail: capex_prod
+    source_table: stc_oil_sands
+
+  ev_sales:
+    org_code: stc
+    report_code: ev
+    detail: "2010002501"
+    source_table: stc_ev_sales
+
+  canadian_production:
+    org_code: stc
+    report_code: canprod
+    detail: "2510006301"
+    source_table: stc_canadian_production
+
+  kal_gas_prices:
+    org_code: kal
+    report_code: gas
+    detail: retail_prices
+    source_table: kal_gas_prices
+
+  osm_refin_cap:
+    org_code: osm
+    report_code: refin
+    detail: capacity
+    source_table: osm_refin_cap

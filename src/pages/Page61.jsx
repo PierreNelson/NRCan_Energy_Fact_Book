@@ -48,18 +48,18 @@ const Page61 = () => {
     const yearsList = data.years || [];
     const snap = data.snapshots?.find((s) => s.year === selectedYear) || data.snapshots?.[data.snapshots.length - 1];
     const year = selectedYear ?? snap?.year ?? 2023;
-    const gdpEco = snap?.gdp_billions ?? 80.8;
-    const gdpPct = 3.0; // Hardcoded until a source for Canada total GDP is available for all years
-    const jobsEco = snap?.eco_jobs_total ?? 354300;
-    const jobsPct = snap?.jobs_pct ?? 1.7;
-    const exportsEco = snap?.eco_exports_billions ?? 19.7;
-    const cleanEnergyGdpPct = snap?.clean_energy_gdp_pct ?? 1.5;
-    const cleanEnergyJobs = snap?.eco_jobs_clean_energy ?? 115006;
+    const gdpEco = snap?.gdp_billions ?? null;
+    const gdpPct = snap?.gdp_pct ?? null;
+    const jobsEco = snap?.eco_jobs_total ?? null;
+    const jobsPct = snap?.jobs_pct ?? null;
+    const exportsEco = snap?.eco_exports_billions ?? null;
+    const cleanEnergyGdpPct = snap?.clean_energy_gdp_pct ?? null;
+    const cleanEnergyJobs = snap?.eco_jobs_clean_energy ?? null;
     const tmx = data.tmx;
-    const tmxCount = tmx?.count ?? 85;
-    const tmxMcap = tmx?.mcap_total ?? 42.1;
-    const tmxCanCount = tmx?.can_count ?? 79;
-    const tmxCanMcap = tmx?.can_mcap ?? 35.9;
+    const tmxCount = tmx?.count ?? null;
+    const tmxMcap = tmx?.mcap_total ?? null;
+    const tmxCanCount = tmx?.can_count ?? null;
+    const tmxCanMcap = tmx?.can_mcap ?? null;
 
     if (loading) {
         return (

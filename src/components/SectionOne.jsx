@@ -7,11 +7,11 @@ import Page4 from '../pages/Page4';
 import Page5 from '../pages/Page5';
 import Page7 from '../pages/Page7';
 import Page8 from '../pages/Page8';
-import Page14 from '../pages/Page14';
-import Page15 from '../pages/Page15';
 import Page9 from '../pages/Page9';
 import Page10 from '../pages/Page10';
 import Page11 from '../pages/Page11';
+import Page14 from '../pages/Page14';
+import Page15 from '../pages/Page15';
 import Page16 from '../pages/Page16';
 import Page17 from '../pages/Page17';
 import Page20 from '../pages/Page20';
@@ -64,12 +64,6 @@ const SectionOne = () => {
                 <div id="provincial-gdp" className="stacked-page-wrapper">
                     <Page8 />
                 </div>
-                <div id="canadian-energy-exports-us-states" className="stacked-page-wrapper">
-                    <Page14 />
-                </div>
-                <div id="canada-global-energy-trade" className="stacked-page-wrapper">
-                    <Page15 />
-                </div>
                 <div id="employment" className="stacked-page-wrapper page-with-title-divider">
                     <Page9 />
                 </div>
@@ -78,6 +72,12 @@ const SectionOne = () => {
                 </div>
                 <div id="gdp-chart" className="stacked-page-wrapper">
                     <Page11 />
+                </div>
+                <div id="canadian-energy-exports-us-states" className="stacked-page-wrapper">
+                    <Page14 />
+                </div>
+                <div id="canada-global-energy-trade" className="stacked-page-wrapper">
+                    <Page15 />
                 </div>
                 <div id="government-revenues" className="stacked-page-wrapper">
                     <Page16 />

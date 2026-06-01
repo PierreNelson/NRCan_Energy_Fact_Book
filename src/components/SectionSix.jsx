@@ -2,19 +2,23 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Page103 from '../pages/Page103';
 import Page105 from '../pages/Page105';
-import Page108 from '../pages/Page108';
 import Page106 from '../pages/Page106';
 import Page107 from '../pages/Page107';
+import Page108 from '../pages/Page108';
+import Page111 from '../pages/Page111';
+import Page112 from '../pages/Page112';
+import Page113 from '../pages/Page113';
+import Page117 from '../pages/Page117';
 import Page119 from '../pages/Page119';
 import Page122 from '../pages/Page122';
 import Page123 from '../pages/Page123';
-import Page140 from '../pages/Page140';
 import Page126 from '../pages/Page126';
 import Page132 from '../pages/Page132';
 import Page135 from '../pages/Page135';
+import Page136 from '../pages/Page136';
 import Page138 from '../pages/Page138';
 import Page139 from '../pages/Page139';
-
+import Page140 from '../pages/Page140';
 const SectionSix = () => {
     const location = useLocation();
 
@@ -57,6 +61,18 @@ const SectionSix = () => {
             <div id="crude-oil-international" className="stacked-page-wrapper">
                 <Page108 />
             </div>
+            <div id="canadian-crude-production" className="stacked-page-wrapper">
+                <Page111 />
+            </div>
+            <div id="canadian-supply-demand" className="stacked-page-wrapper">
+                <Page112 />
+            </div>
+            <div id="oil-sands" className="stacked-page-wrapper">
+                <Page113 />
+            </div>
+            <div id="crude-oil-prices" className="stacked-page-wrapper">
+                <Page117 />
+            </div>
             <div id="oil-by-rail" className="stacked-page-wrapper">
                 <Page119 />
             </div>
@@ -74,6 +90,9 @@ const SectionSix = () => {
             </div>
             <div id="refined-petroleum-products" className="stacked-page-wrapper">
                 <Page135 />
+            </div>
+            <div id="rpp-supply-demand" className="stacked-page-wrapper">
+                <Page136 />
             </div>
             <div id="retail-gasoline-prices" className="stacked-page-wrapper">
                 <Page138 />

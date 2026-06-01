@@ -29,6 +29,18 @@ SOURCE_VECTOR_PREFIXES = {
     'residential_pie_charts': ['res_'],
     'commercial_institutional': ['com_'],
     'industrial_sector': ['ind_'],
+    'rpp_supply_demand': [
+        'rpp_net_prod_', 'rpp_imports_', 'rpp_exports_', 'rpp_domestic_',
+        'rpp_motor_', 'rpp_distillate_', 'rpp_still_gas_', 'rpp_jet_',
+        'rpp_coke_', 'rpp_residual_', 'rpp_asphalt_', 'rpp_other_',
+    ],
+    'rpp_refinery_input': ['rpp_refinery_'],
+    'crude_prices': ['crude_'],
+    'oil_sands': ['os_'],
+    'canadian_production': ['cp_'],
+    'ev_sales': ['ev_'],
+    'kal_gas_prices': ['kal_'],
+    'osm_refin_cap': ['refcap_'],
 }
 
 # Source name to display name mapping (human-readable)
@@ -56,6 +68,14 @@ SOURCE_DISPLAY_NAMES = {
     'residential_pie_charts': 'Residential pie charts (by type, space/water heating by source)',
     'commercial_institutional': 'Commercial and institutional energy use by end use',
     'industrial_sector': 'Industrial sector energy use by fuel type',
+    'rpp_supply_demand': 'RPP supply and disposition',
+    'rpp_refinery_input': 'Refinery input',
+    'crude_prices': 'WTI and WCS crude prices',
+    'oil_sands': 'Oil sands capex and production share',
+    'canadian_production': 'Canadian crude production by type and province',
+    'ev_sales': 'Plug-in electric vehicle registrations',
+    'kal_gas_prices': 'Gasoline retail price components (Kalibrate)',
+    'osm_refin_cap': 'Canadian refinery capacity (Oil Sands Magazine)',
 }
 
 

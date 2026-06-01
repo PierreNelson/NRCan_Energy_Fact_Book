@@ -5,27 +5,6 @@ import page21Bg1 from '../assets/page21_bg1.png';
 import page21Bg2 from '../assets/page21_bg2.png';
 import page21Bg3 from '../assets/page21_bg3.png';
 
-const MissionInnovationMark = ({ lang }) => (
-    <figure className="page34-mi-mark">
-        <svg width="72" height="72" viewBox="0 0 72 72" focusable="false" aria-hidden="true">
-            <circle cx="36" cy="36" r="33" fill="none" stroke="#3d7a47" strokeWidth="3" />
-            <circle cx="36" cy="36" r="25" fill="#1e5a8a" />
-            <text
-                x="36"
-                y="41"
-                textAnchor="middle"
-                fill="#ffffff"
-                fontSize="17"
-                fontWeight="bold"
-                fontFamily="Arial, sans-serif"
-            >
-                MI
-            </text>
-        </svg>
-        <figcaption className="wb-inv">{getText('page34_mi_logo_inv', lang)}</figcaption>
-    </figure>
-);
-
 const Page34 = () => {
     const { lang } = useOutletContext();
 
@@ -54,11 +33,12 @@ const Page34 = () => {
 }
 .page34-title {
     font-family: 'Lato', sans-serif;
-    font-size: 50px;
+    font-size: 41px;
     font-weight: bold;
-    color: #5a6d3e;
-    margin: 0 0 12px 0;
-    line-height: 1.15;
+    color: var(--gc-text);
+    margin-top: 5px;
+    margin-bottom: 25px;
+    line-height: 1.3;
     position: relative;
     padding-bottom: 0.5em;
 }
@@ -123,34 +103,6 @@ const Page34 = () => {
 .page34-row-body p:last-child {
     margin-bottom: 0;
 }
-.page34-federal-p2-row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 16px 20px;
-}
-.page34-federal-p2-row p {
-    flex: 1 1 240px;
-    margin: 0;
-    min-width: min(100%, 280px);
-}
-.page34-mi-mark {
-    flex: 0 0 auto;
-    margin: 0;
-    align-self: center;
-}
-.page34-mi-mark svg {
-    display: block;
-}
-.page34-footer {
-    font-family: 'Noto Sans', sans-serif;
-    font-size: 16px;
-    color: #332f30;
-    margin-top: 8px;
-    padding-top: 16px;
-    border-top: 1px solid #e0e0e0;
-}
 @media (max-width: 768px) {
     .page34-title { font-size: 37px; }
     .page34-subtitle,
@@ -158,7 +110,6 @@ const Page34 = () => {
     .page34-row-body { font-size: 18px; }
     .page34-row { flex-direction: column; gap: 12px; }
     .page34-row-icon { width: 80px; }
-    .page34-federal-p2-row { flex-direction: column; }
 }
             `}</style>
             <div className="page34-container">
@@ -178,16 +129,13 @@ const Page34 = () => {
                             <strong>{getText('page34_federal_p1_bold', lang)}</strong>
                             {getText('page34_federal_p1_post', lang)}
                         </p>
-                        <div className="page34-federal-p2-row">
-                            <p>
-                                {getText('page34_federal_p2_pre', lang)}
-                                <strong>{getText('page34_federal_p2_bold_2b', lang)}</strong>
-                                {getText('page34_federal_p2_mid', lang)}
-                                <strong>{getText('page34_federal_p2_bold_138', lang)}</strong>
-                                {getText('page34_federal_p2_post', lang)}
-                            </p>
-                            <MissionInnovationMark lang={lang} />
-                        </div>
+                        <p>
+                            {getText('page34_federal_p2_pre', lang)}
+                            <strong>{getText('page34_federal_p2_bold_2b', lang)}</strong>
+                            {getText('page34_federal_p2_mid', lang)}
+                            <strong>{getText('page34_federal_p2_bold_138', lang)}</strong>
+                            {getText('page34_federal_p2_post', lang)}
+                        </p>
                     </div>
                 </div>
 
@@ -223,10 +171,6 @@ const Page34 = () => {
                             {getText('page34_industry_post', lang)}
                         </p>
                     </div>
-                </div>
-
-                <div className="page34-footer">
-                    <span>34</span> {getText('page34_footer_line', lang)}
                 </div>
             </div>
         </main>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
-import { getGHGEmissionsData } from '../utils/dataLoader';
+import { getGHGEmissionsData, getGhgNarrativeStats } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -9,6 +9,7 @@ import { saveAs } from 'file-saver';
 const Page20 = () => {
     const { lang } = useOutletContext();
     const [pageData, setPageData] = useState([]);
+    const [narrativeStats, setNarrativeStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -89,8 +90,11 @@ const Page20 = () => {
     }, []);
 
     useEffect(() => {
-        getGHGEmissionsData()
-            .then(data => setPageData(data))
+        Promise.all([getGHGEmissionsData(), getGhgNarrativeStats()])
+            .then(([data, stats]) => {
+                setPageData(data);
+                setNarrativeStats(stats);
+            })
             .catch(err => {
                 console.error("Failed to load GHG emissions data:", err);
                 setError(err.message || 'Failed to load data');
@@ -149,14 +153,79 @@ const Page20 = () => {
     if (error) return <div>Error: {error}</div>;
     if (pageData.length === 0) return <div className="page20-empty" style={{ padding: '24px 20px', marginTop: '32px' }} role="region" aria-label={lang === 'en' ? 'GHG emissions chart' : 'Graphique des émissions de GES'}>{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</div>;
 
+    const stats = narrativeStats ?? {
+        baseYear: 2000,
+        endYear: 2023,
+        electricityPct: null,
+        oilGasEmissionsPct: null,
+        heavyIndustryPct: null,
+        crudeProductionPct: null,
+    };
+
+    const formatPctDisplay = (value) => {
+        const n = Math.abs(Math.round(Number(value)));
+        return lang === 'fr' ? `${n} %` : `${n}%`;
+    };
+
+    const emissionsChangeShort = (pct) => {
+        const n = formatPctDisplay(pct);
+        if (lang === 'fr') {
+            return Number(pct) < 0 ? `diminué de ${n}` : `augmenté de ${n}`;
+        }
+        return Number(pct) < 0 ? `decreased ${n}` : `increased ${n}`;
+    };
+
+    const yearRangePrefix = lang === 'fr'
+        ? `Entre ${stats.baseYear} et ${stats.endYear}`
+        : `Between ${stats.baseYear} and ${stats.endYear}`;
+
     const years = pageData.map(d => d.year);
     const minYear = Math.min(...years);
     const maxYear = Math.max(...years);
+    const chartTitle = `${getText('page20_chart_title_prefix', lang)}${minYear}${lang === 'en' ? '–' : '-'}${maxYear}`;
 
     const tickVals = [];
-    for (let y = 2001; y <= maxYear; y += 2) {
+    const tickStart = minYear % 2 === 0 ? minYear : minYear + 1;
+    for (let y = tickStart; y <= maxYear; y += 2) {
         tickVals.push(y);
     }
+
+    const bullet1Prefix = lang === 'fr'
+        ? `${yearRangePrefix}, les `
+        : `${yearRangePrefix}, `;
+    const bullet1Highlight = stats.electricityPct != null
+        ? (() => {
+            const n = formatPctDisplay(stats.electricityPct);
+            if (lang === 'fr') {
+                const verb = Number(stats.electricityPct) < 0 ? `ont connu une baisse de ${n}` : `ont augmenté de ${n}`;
+                return `émissions provenant de la production d'électricité ${verb}`;
+            }
+            const verb = Number(stats.electricityPct) < 0 ? `decreased ${n}` : `increased ${n}`;
+            return `emissions from electricity production ${verb}`;
+        })()
+        : getText('page20_bullet1_part2', lang);
+    const bullet1Text = `${bullet1Prefix}${bullet1Highlight}${getText('page20_bullet1_part3', lang)}`;
+
+    const bullet2Highlight = stats.oilGasEmissionsPct != null
+        ? emissionsChangeShort(stats.oilGasEmissionsPct)
+        : getText('page20_bullet2_part2', lang);
+    const bullet2ProductionPct = stats.crudeProductionPct != null
+        ? formatPctDisplay(stats.crudeProductionPct)
+        : null;
+    const bullet2Text = bullet2ProductionPct != null
+        ? `${getText('page20_bullet2_part1', lang)}${bullet2Highlight}${getText('page20_bullet2_part3a', lang)}${bullet2ProductionPct}${getText('page20_bullet2_part3b', lang)}`
+        : `${getText('page20_bullet2_part1', lang)}${bullet2Highlight}${getText('page20_bullet2_part3', lang)}`;
+
+    const bullet3Highlight = stats.heavyIndustryPct != null
+        ? (() => {
+            const n = formatPctDisplay(stats.heavyIndustryPct);
+            if (lang === 'fr') {
+                return Number(stats.heavyIndustryPct) < 0 ? `ont diminué de près de ${n}` : `ont augmenté de ${n}`;
+            }
+            return Number(stats.heavyIndustryPct) < 0 ? `have decreased by nearly ${n}` : `have increased by ${n}`;
+        })()
+        : getText('page20_bullet3_part2', lang);
+    const bullet3Text = `${getText('page20_bullet3_part1', lang)}${bullet3Highlight}${getText('page20_bullet3_part3', lang)}`;
 
     const colors = {
         'oil_gas': '#819892',
@@ -328,7 +397,7 @@ const Page20 = () => {
 
     const downloadTableAsDocx = async () => {
         const unitHeader = lang === 'en' ? '(Mt)' : '(Mt)';
-        const title = stripHtml(getText('page20_title', lang));
+        const title = stripHtml(chartTitle);
 
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
@@ -386,7 +455,7 @@ const Page20 = () => {
             return;
         }
 
-        const title = stripHtml(getText('page20_chart_title', lang));
+        const title = stripHtml(chartTitle);
 
         try {
             if (!window.Plotly) {
@@ -473,7 +542,7 @@ const Page20 = () => {
             tabIndex="-1"
             className="page-content page-20" 
             role="main"
-            aria-label={getText('page20_title', lang)}
+            aria-label={chartTitle}
             style={{
                 backgroundColor: 'white',
                 flex: '1 1 auto',
@@ -745,7 +814,7 @@ const Page20 = () => {
                     <div className="page20-chart-column">
                         <div className="page20-chart-frame">
                             <h2 id="page20-chart-title" className="page20-chart-title" tabIndex="0">
-                                {getText('page20_chart_title', lang)}
+                                {chartTitle}
                             </h2>
 
                             <div role="region" aria-label={getChartSummary()} tabIndex="0">
@@ -877,14 +946,11 @@ const Page20 = () => {
                             <li 
                                 className="page20-bullet" 
                                 style={{ marginBottom: '20px', lineHeight: '1.4', marginTop: '20px' }}
-                                aria-label={lang === 'en'
-                                    ? 'Between 2000 and 2023, emissions from electricity generation dropped 62%, largely due to Ontario\'s coal phase-out plan which began in 2001.'
-                                    : "Entre 2000 et 2023, les émissions provenant de la production d'électricité ont connu une baisse de 62 %, surtout grâce au plan d'action de l'Ontario visant une élimination progressive du charbon qui a débuté en 2001."
-                                }
+                                aria-label={bullet1Text}
                             >
                                 <span aria-hidden="true">
-                                    {getText('page20_bullet1_part1', lang)}
-                                    <strong>{getText('page20_bullet1_part2', lang)}</strong>
+                                    {bullet1Prefix}
+                                    <strong>{bullet1Highlight}</strong>
                                     {getText('page20_bullet1_part3', lang)}
                                 </span>
                             </li>
@@ -892,29 +958,31 @@ const Page20 = () => {
                             <li 
                                 className="page20-bullet" 
                                 style={{ marginBottom: '20px', lineHeight: '1.4' }}
-                                aria-label={lang === 'en'
-                                    ? 'Oil and gas sector emissions increased 16% due to a 67% rise in production.'
-                                    : "Les émissions du secteur pétrolier et gazier ont augmenté de 16 % en raison de l'augmentation de 67 % de la production."
-                                }
+                                aria-label={bullet2Text}
                             >
                                 <span aria-hidden="true">
                                     {getText('page20_bullet2_part1', lang)}
-                                    <strong>{getText('page20_bullet2_part2', lang)}</strong>
-                                    {getText('page20_bullet2_part3', lang)}
+                                    <strong>{bullet2Highlight}</strong>
+                                    {bullet2ProductionPct != null ? (
+                                        <>
+                                            {getText('page20_bullet2_part3a', lang)}
+                                            <strong>{bullet2ProductionPct}</strong>
+                                            {getText('page20_bullet2_part3b', lang)}
+                                        </>
+                                    ) : (
+                                        getText('page20_bullet2_part3', lang)
+                                    )}
                                 </span>
                             </li>
 
                             <li 
                                 className="page20-bullet" 
                                 style={{ marginBottom: '2px', lineHeight: '1.4' }}
-                                aria-label={lang === 'en'
-                                    ? 'Heavy industry sector emissions decreased by nearly 19% despite increased industrial production, partly due to energy efficiency improvements and fuel switching.'
-                                    : "Les émissions du secteur de l'industrie lourde ont diminué de presque 19 % malgré une hausse de production pour le secteur industriel. Cela est dû en partie aux améliorations de l'efficacité énergétique et au changement de combustible."
-                                }
+                                aria-label={bullet3Text}
                             >
                                 <span aria-hidden="true">
                                     {getText('page20_bullet3_part1', lang)}
-                                    <strong>{getText('page20_bullet3_part2', lang)}</strong>
+                                    <strong>{bullet3Highlight}</strong>
                                     {getText('page20_bullet3_part3', lang)}
                                 </span>
                             </li>

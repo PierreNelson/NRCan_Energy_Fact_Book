@@ -16,8 +16,137 @@ from html.parser import HTMLParser
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 
+from collections import defaultdict
+
 from .base import SectionProcessor
 from xlsx_paths import default_xlsx_base_dir
+
+EV_SALES_URL_20100021 = "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002101"
+EV_SALES_URL_20100025 = "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501"
+
+EV_SALES_OLD_TOTAL = 1079014832
+EV_SALES_OLD_BEV = 1079014835
+EV_SALES_OLD_PHEV = 1079014837
+EV_SALES_NEW_TOTAL = 1671330686
+EV_SALES_NEW_BEV = 1277485216
+EV_SALES_NEW_PHEV = 1277490561
+
+EV_SALES_METADATA = [
+    (
+        "ev_total_regs",
+        "Total new vehicle registrations",
+        "Number",
+        "units",
+        "Statistics Canada",
+        EV_SALES_URL_20100025,
+    ),
+    (
+        "ev_new_regs",
+        "New EV registrations (battery electric + plug-in hybrid electric)",
+        "Number",
+        "units",
+        "Statistics Canada",
+        EV_SALES_URL_20100025,
+    ),
+    (
+        "ev_share_pct",
+        "Proportion of total new vehicle registrations",
+        "Percent",
+        "percent",
+        "Statistics Canada",
+        EV_SALES_URL_20100025,
+    ),
+]
+
+EV_SALES_VECTORS = {row[0] for row in EV_SALES_METADATA}
+
+
+def _fetch_wds_annual_totals(vector_ids: List[int], start_ref: str = "2010-01-01") -> Dict[int, Dict[int, float]]:
+    """Fetch StatCan WDS vectors and aggregate to annual totals per vector id."""
+    ids = [str(v).lstrip("vV") for v in vector_ids]
+    url = (
+        "https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorByReferencePeriodRange"
+        f"?vectorIds={','.join(ids)}&startRefPeriod={start_ref}&endReferencePeriod=2030-12-31"
+    )
+    headers = {
+        "Accept": "*/*",
+        "Accept-Language": "en-CA,en;q=0.9",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://www.statcan.gc.ca/",
+    }
+    response = requests.get(url, timeout=120, headers=headers)
+    response.raise_for_status()
+    raw = response.json()
+    items = raw if isinstance(raw, list) else [raw]
+    totals: Dict[int, Dict[int, float]] = defaultdict(lambda: defaultdict(float))
+    for item in items:
+        if item.get("status") != "SUCCESS":
+            continue
+        obj = item.get("object") or {}
+        vid = obj.get("vectorId")
+        if vid is None:
+            continue
+        for pt in obj.get("vectorDataPoint") or []:
+            ref = pt.get("refPer") or pt.get("refPerRaw") or ""
+            val = pt.get("value")
+            if not ref or val is None:
+                continue
+            year = int(str(ref)[:4])
+            totals[int(vid)][year] += float(val)
+    return totals
+
+
+def build_ev_sales_rows(max_year: Optional[int] = None) -> List[Tuple[str, str, float]]:
+    """
+    Amalgamate StatCan 20-10-0021-01 (2011-2016) and 20-10-0025-01 (2017+).
+    Returns rows of (vector, year, value) for ev_total_regs, ev_new_regs, ev_share_pct.
+    """
+    old = _fetch_wds_annual_totals(
+        [EV_SALES_OLD_TOTAL, EV_SALES_OLD_BEV, EV_SALES_OLD_PHEV],
+        start_ref="2010-01-01",
+    )
+    new = _fetch_wds_annual_totals(
+        [EV_SALES_NEW_TOTAL, EV_SALES_NEW_BEV, EV_SALES_NEW_PHEV],
+        start_ref="2016-01-01",
+    )
+
+    rows: List[Tuple[str, str, float]] = []
+    for year in range(2011, 2017):
+        total = old[EV_SALES_OLD_TOTAL].get(year, 0.0)
+        ev = old[EV_SALES_OLD_BEV].get(year, 0.0) + old[EV_SALES_OLD_PHEV].get(year, 0.0)
+        if total <= 0 or ev <= 0:
+            continue
+        share = round((ev / total) * 100, 1)
+        rows.extend(
+            [
+                ("ev_total_regs", str(year), round(total, 0)),
+                ("ev_new_regs", str(year), round(ev, 0)),
+                ("ev_share_pct", str(year), share),
+            ]
+        )
+
+    quarterly_years = sorted(set(new[EV_SALES_NEW_TOTAL]) | set(new[EV_SALES_NEW_BEV]) | set(new[EV_SALES_NEW_PHEV]))
+    for year in quarterly_years:
+        if year < 2017:
+            continue
+        if max_year is not None and year > max_year:
+            continue
+        total = new[EV_SALES_NEW_TOTAL].get(year, 0.0)
+        ev = new[EV_SALES_NEW_BEV].get(year, 0.0) + new[EV_SALES_NEW_PHEV].get(year, 0.0)
+        if total <= 0 or ev <= 0:
+            continue
+        share = round((ev / total) * 100, 1)
+        rows.extend(
+            [
+                ("ev_total_regs", str(year), round(total, 0)),
+                ("ev_new_regs", str(year), round(ev, 0)),
+                ("ev_share_pct", str(year), share),
+            ]
+        )
+    return rows
 
 
 class _TableTextParser(HTMLParser):
@@ -75,7 +204,16 @@ class Section5CleanPower(SectionProcessor):
             'environmental_clean_tech': self._process_environmental_clean_tech,
             'cleantech_companies_geo': self._process_cleantech_companies_geo,
             'cleantech_companies_industry': self._process_cleantech_companies_industry,
+            'ev_sales': self._process_ev_sales,
         }
+
+    def _process_ev_sales(self) -> int:
+        """Fetch amalgamated plug-in EV registration vectors for Page 96."""
+        data_rows = build_ev_sales_rows(max_year=2024)
+        if not data_rows:
+            return 0
+        self.repo.clear_raw_data('ev_sales')
+        return self.store_raw_data('ev_sales', data_rows, EV_SALES_METADATA)
 
     def _get_future_end_date(self) -> str:
         """Get end date 5 years in future for StatCan queries."""
@@ -112,6 +250,14 @@ class Section5CleanPower(SectionProcessor):
         return (
             f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?"
             f"pid=3610062901&latestN=0&startDate=20070101&endDate={end_date}&csvLocale=en"
+        )
+
+    def _get_ect_eco_gdp_url(self) -> str:
+        """Get URL for Table 36-10-0645-01 (ECT GDP by industry, Page 61 step 3)."""
+        end_date = self._get_future_end_date()
+        return (
+            f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?"
+            f"pid=3610064501&latestN=0&startDate=20120101&endDate={end_date}&csvLocale=en"
         )
 
     TSX_CLEANTECH_URL = "https://www.tsx.com/resource/en/571"
@@ -425,7 +571,7 @@ class Section5CleanPower(SectionProcessor):
     def _process_environmental_clean_tech(self) -> int:
         """
         Process environmental and clean technology data for the factbook snapshot.
-        Sources: StatCan 14-10-0023-01, 36-10-0103-01, 36-10-0632-01, 36-10-0629-01.
+        Sources: StatCan 14-10-0023-01, 36-10-0103-01, 36-10-0645-01, 36-10-0632-01, 36-10-0629-01, TSX.
         Vectors use prefix envcleantech_. Uses WDS JSON API when CSV download fails.
         """
         data_rows = []
@@ -433,6 +579,7 @@ class Section5CleanPower(SectionProcessor):
         source_org_sc = 'Statistics Canada'
         url_labour = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410002301'
         url_gdp = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610010301'
+        url_eco_gdp = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610064501'
         url_eco_jobs = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610063201'
         url_eco_exports = 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062901'
         try:
@@ -475,9 +622,53 @@ class Section5CleanPower(SectionProcessor):
                     ydf = df[df['year'] == year]
                     gdp_mp = ydf[ydf[vcol].astype(str).str.upper().isin(['V62295576'])][valcol].sum()
                     if pd.notna(gdp_mp) and gdp_mp != 0:
-                        data_rows.append(('envcleantech_gdp_annual', int(year), round(float(gdp_mp), 1)))
+                        data_rows.append(('envcleantech_canada_gdp_market', int(year), round(float(gdp_mp), 1)))
         except Exception as e:
-            print(f"    Warning: environmental_clean_tech GDP fetch failed: {e}")
+            print(f"    Warning: environmental_clean_tech Canada GDP fetch failed: {e}")
+        try:
+            df = self.fetch_csv_from_url(self._get_ect_eco_gdp_url())
+            vcol = self.get_column(df, 'VECTOR', 'Vector', 'vector')
+            rcol = self.get_column(df, 'REF_DATE', 'Ref_date', 'ref_date')
+            valcol = self.get_column(df, 'VALUE', 'Value', 'value')
+            if vcol and rcol and valcol:
+                df = df.copy()
+                df['year'] = pd.to_numeric(df[rcol].astype(str).str[:4], errors='coerce')
+                clean_vecs = {'v1257883276', 'v1257883278', 'v1257883280'}
+                for year in df['year'].dropna().unique():
+                    ydf = df[df['year'] == year]
+                    eco = ydf[ydf[vcol].astype(str).str.lower().isin(['v1257883274'])][valcol].sum()
+                    if pd.notna(eco) and eco != 0:
+                        data_rows.append(('envcleantech_eco_gdp', int(year), round(float(eco), 1)))
+                    clean = ydf[ydf[vcol].astype(str).str.lower().isin(clean_vecs)][valcol].sum()
+                    if pd.notna(clean) and clean != 0:
+                        data_rows.append(('envcleantech_clean_energy_gdp', int(year), round(float(clean), 1)))
+        except Exception as e:
+            try:
+                time.sleep(2)
+                wds = self.fetch_wds_vector_data(
+                    ['1257883274', '1257883276', '1257883278', '1257883280'],
+                    start_ref='2012-01-01',
+                )
+                eco_by_year: Dict[int, float] = {}
+                clean_by_year: Dict[int, float] = {}
+                total_vec = 1257883274
+                clean_vecs = {1257883276, 1257883278, 1257883280}
+                for vid, ref_per, value in wds:
+                    year = int(str(ref_per)[:4]) if ref_per else None
+                    if not year or year < 2012:
+                        continue
+                    if vid == total_vec:
+                        eco_by_year[year] = eco_by_year.get(year, 0) + value
+                    elif vid in clean_vecs:
+                        clean_by_year[year] = clean_by_year.get(year, 0) + value
+                for year in sorted(eco_by_year):
+                    if eco_by_year[year] != 0:
+                        data_rows.append(('envcleantech_eco_gdp', year, round(float(eco_by_year[year]), 1)))
+                for year in sorted(clean_by_year):
+                    if clean_by_year[year] != 0:
+                        data_rows.append(('envcleantech_clean_energy_gdp', year, round(float(clean_by_year[year]), 1)))
+            except Exception as e2:
+                print(f"    Warning: environmental_clean_tech ECT GDP fetch failed: {e2}")
         try:
             df = self.fetch_csv_from_url(self._get_ect_eco_jobs_url())
             vcol = self.get_column(df, 'VECTOR', 'Vector', 'vector')
@@ -563,7 +754,9 @@ class Section5CleanPower(SectionProcessor):
         if data_rows:
             metadata_rows = [
                 ('envcleantech_employment_total', 'Employment, total all industries', 'Thousands', 'thousands', source_org_sc, url_labour),
-                ('envcleantech_gdp_annual', 'Gross domestic product at market prices, annual', 'Millions of dollars', 'millions', source_org_sc, url_gdp),
+                ('envcleantech_canada_gdp_market', 'Gross domestic product at market prices, Canada', 'Millions of dollars', 'millions', source_org_sc, url_gdp),
+                ('envcleantech_eco_gdp', 'Environmental and clean technology GDP, total industries', 'Millions of dollars', 'millions', source_org_sc, url_eco_gdp),
+                ('envcleantech_clean_energy_gdp', 'Clean energy GDP (electric power, engineering, equipment)', 'Millions of dollars', 'millions', source_org_sc, url_eco_gdp),
                 ('envcleantech_eco_jobs_total', 'Environmental and clean technology products, jobs total', 'Number', 'units', source_org_sc, url_eco_jobs),
                 ('envcleantech_eco_jobs_clean_energy', 'Clean energy jobs (electric power, engineering, equipment)', 'Number', 'units', source_org_sc, url_eco_jobs),
                 ('envcleantech_eco_exports', 'Environmental and clean technology products, international exports', 'Millions of dollars', 'millions', source_org_sc, url_eco_exports),

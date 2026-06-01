@@ -1,63 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
+import { getPage139RefineryCapacityData } from '../utils/dataLoader';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
-const TABLE_ROWS = [
-    {
-        key: 'ab',
-        petroleum: { count: 4, capacity: 530 },
-        asphalt: null,
-        lubricant: null,
-        total: { count: 4, capacity: 530 }
-    },
-    {
-        key: 'bc',
-        petroleum: { count: 2, capacity: 67 },
-        asphalt: null,
-        lubricant: null,
-        total: { count: 2, capacity: 67 }
-    },
-    {
-        key: 'nb',
-        petroleum: { count: 1, capacity: 320 },
-        asphalt: null,
-        lubricant: null,
-        total: { count: 1, capacity: 320 }
-    },
-    {
-        key: 'on',
-        petroleum: { count: 4, capacity: 393 },
-        asphalt: null,
-        lubricant: { count: 1, capacity: 16 },
-        total: { count: 5, capacity: 409 }
-    },
-    {
-        key: 'qc',
-        petroleum: { count: 2, capacity: 372 },
-        asphalt: null,
-        lubricant: null,
-        total: { count: 2, capacity: 372 }
-    },
-    {
-        key: 'sk',
-        petroleum: { count: 1, capacity: 135 },
-        asphalt: { count: 2, capacity: 52 },
-        lubricant: null,
-        total: { count: 3, capacity: 187 }
-    }
-];
-
-const TOTAL_ROW = {
-    petroleum: { count: 14, capacity: 1817 },
-    asphalt: { count: 2, capacity: 52 },
-    lubricant: { count: 1, capacity: 16 },
-    total: { count: 17, capacity: 1885 }
-};
-
 const Page139 = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [tableRows, setTableRows] = useState([]);
+    const [totalRow, setTotalRow] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
+
+    useEffect(() => {
+        getPage139RefineryCapacityData()
+            .then(({ tableRows: rows, totalRow: total }) => {
+                if (!rows?.length || !total) {
+                    setLoadError('no_data');
+                } else {
+                    setTableRows(rows);
+                    setTotalRow(total);
+                }
+            })
+            .catch((err) => setLoadError(err?.message || 'Failed to load data'))
+            .finally(() => setLoading(false));
+    }, []);
 
     const scrollToFootnote = (e) => {
         e.preventDefault();
@@ -71,8 +38,10 @@ const Page139 = () => {
 
     const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-    const fmtNum = (n) =>
-        n.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 });
+    const fmtNum = (n) => {
+        if (n == null || Number.isNaN(Number(n))) return '\u2014';
+        return Number(n).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 });
+    };
 
     const cellPair = (pair) => {
         if (!pair || pair.count == null) {
@@ -113,7 +82,7 @@ const Page139 = () => {
         const pairVals = (pair) =>
             pair && pair.count != null ? [fmtNum(pair.count), fmtNum(pair.capacity)] : ['\u2014', '\u2014'];
         const lines = [headers.join(',')];
-        TABLE_ROWS.forEach((row) => {
+        tableRows.forEach((row) => {
             lines.push(
                 [
                     stripHtml(getText(`page139_prov_${row.key}`, lang)),
@@ -124,7 +93,7 @@ const Page139 = () => {
                 ].join(',')
             );
         });
-        const t = TOTAL_ROW;
+        const t = totalRow;
         lines.push(
             [
                 getText('page139_total_label', lang),
@@ -274,7 +243,7 @@ const Page139 = () => {
             });
         };
 
-        const dataRows = TABLE_ROWS.map((row, index) => {
+        const dataRows = tableRows.map((row, index) => {
             const isEven = (index + 1) % 2 === 0;
             return new TableRow({
                 children: [
@@ -306,7 +275,7 @@ const Page139 = () => {
             });
         });
 
-        const t = TOTAL_ROW;
+        const t = totalRow;
         const totalDataRow = new TableRow({
             children: [
                 new TableCell({
@@ -373,6 +342,20 @@ const Page139 = () => {
             aria-labelledby="page139-main-title"
             style={{ backgroundColor: '#ffffff' }}
         >
+            {loading && (
+                <p style={{ padding: '24px', fontFamily: 'Arial, sans-serif' }}>
+                    {lang === 'en' ? 'Loading…' : 'Chargement…'}
+                </p>
+            )}
+            {!loading && loadError && (
+                <p style={{ padding: '24px', fontFamily: 'Arial, sans-serif', color: '#a00' }} role="alert">
+                    {lang === 'en'
+                        ? 'Refinery capacity data could not be loaded. Run the osm_refin_cap pipeline refresh and export.'
+                        : 'Les données sur la capacité de raffinage n’ont pas pu être chargées. Exécutez l’actualisation et l’exportation du pipeline osm_refin_cap.'}
+                </p>
+            )}
+            {!loading && !loadError && totalRow && (
+            <>
             <style>{`
                 .page-139.page-content {
                     max-width: none !important;
@@ -600,7 +583,7 @@ const Page139 = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {TABLE_ROWS.map((row) => (
+                                {tableRows.map((row) => (
                                     <tr key={row.key}>
                                         <th scope="row" className="province-cell">
                                             {getText(`page139_prov_${row.key}`, lang)}
@@ -615,14 +598,10 @@ const Page139 = () => {
                                     <th scope="row" className="province-cell">
                                         {getText('page139_total_label', lang)}
                                     </th>
-                                    <td>{fmtNum(TOTAL_ROW.petroleum.count)}</td>
-                                    <td>{fmtNum(TOTAL_ROW.petroleum.capacity)}</td>
-                                    <td>{fmtNum(TOTAL_ROW.asphalt.count)}</td>
-                                    <td>{fmtNum(TOTAL_ROW.asphalt.capacity)}</td>
-                                    <td>{fmtNum(TOTAL_ROW.lubricant.count)}</td>
-                                    <td>{fmtNum(TOTAL_ROW.lubricant.capacity)}</td>
-                                    <td>{fmtNum(TOTAL_ROW.total.count)}</td>
-                                    <td>{fmtNum(TOTAL_ROW.total.capacity)}</td>
+                                    {cellPair(totalRow.petroleum)}
+                                    {cellPair(totalRow.asphalt)}
+                                    {cellPair(totalRow.lubricant)}
+                                    {cellPair(totalRow.total)}
                                 </tr>
                             </tbody>
                         </table>
@@ -663,6 +642,8 @@ const Page139 = () => {
                     </dl>
                 </aside>
             </div>
+            </>
+            )}
         </main>
     );
 };

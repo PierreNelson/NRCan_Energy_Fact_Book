@@ -64,8 +64,9 @@ sections:
       ghg_emissions:
         enabled: true
         description: "GHG emissions by Canadian economic sector (ECCC)"
-        source_type: "file"
-        file_path: "EN_Annex10_GHG_Econ_Canada.xlsx"  # relative to EXTERNAL_XLSX_DATA_DIR or repo root
+        source_type: "external"
+        # Page 20 spec: ECCC B-Economic-Sector CSV (catalogue name GHG_Econ_Can_Prov_Terr.csv)
+        source_url: "https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv"
 
   # Section 2: Investment
   section2_investment:
@@ -100,7 +101,7 @@ sections:
       environmental_protection:
         enabled: true
         description: "Environmental protection expenditures"
-        statcan_table: "38-10-0116-01"
+        statcan_table: "38-10-0130-01"
       
       major_projects:
         enabled: true
@@ -166,7 +167,7 @@ sections:
       environmental_clean_tech:
         enabled: true
         description: "Environmental and clean technology (GDP, jobs, exports) + TSX/TSXV cleantech list"
-        statcan_table: "14-10-0023-01, 36-10-0103-01, 36-10-0632-01, 36-10-0629-01"
+        statcan_table: "14-10-0023-01, 36-10-0103-01, 36-10-0645-01, 36-10-0632-01, 36-10-0629-01"
         source_type: "external"
         source_url: "https://www.tsx.com/resource/en/571"
         # Optional: path to TSX cleantech XLSX (relative to scripts/ or absolute). If unset, scripts/tmx_cleantech.xlsx is used when present.
@@ -181,12 +182,53 @@ sections:
         description: "Cleantech companies by industry"
         source_type: "web"
         source_url: "https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies"
+      ev_sales:
+        enabled: true
+        description: "Plug-in electric vehicle registrations (Page 96)"
+        source_type: "statcan"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501"
 
-  # Section 6: Oil, Natural Gas and Coal (placeholder)
+  # Section 6: Oil, Natural Gas and Coal
   section6_oil_gas:
-    enabled: false
+    enabled: true
     name: "Oil, Natural Gas and Coal"
-    sources: {}
+    sources:
+      rpp_supply_demand:
+        enabled: true
+        description: "RPP supply and disposition (StatCan 25-10-0081-01)"
+        source_type: "statcan"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510008101"
+      rpp_refinery_input:
+        enabled: true
+        description: "Input to Canadian refineries (StatCan 25-10-0063-01)"
+        source_type: "statcan"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301"
+      crude_prices:
+        enabled: true
+        description: "WTI and WCS crude oil prices and differential"
+        source_type: "external"
+        source_url: "https://www.eia.gov/dnav/pet/xls/PET_PRI_SPT_S1_M.xls"
+      oil_sands:
+        enabled: true
+        description: "Oil sands capex and production share"
+        source_type: "statcan"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601"
+      canadian_production:
+        enabled: true
+        description: "Canadian crude production by type and province (Page 111)"
+        source_type: "statcan"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301"
+      kal_gas_prices:
+        enabled: true
+        description: "Gasoline retail price components (Kalibrate charting tool, Page 138)"
+        source_type: "web"
+        source_url: "https://charting.kalibrate.com/Charting/Margins"
+        section6_xlsx: "Section 6.xlsx"
+      osm_refin_cap:
+        enabled: true
+        description: "Canadian refinery capacity by province (Oil Sands Magazine, Page 139)"
+        source_type: "web"
+        source_url: "https://www.oilsandsmagazine.com/projects/canadian-refineries"
 
 # ============================================================================
 # EXPORT CONFIGURATION

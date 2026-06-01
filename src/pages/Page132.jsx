@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getText } from '../utils/translations';
-import { getOilGasGhgSpotlightData } from '../utils/dataLoader';
+import { getOilGasGhgSpotlightData, getGhgNarrativeStats } from '../utils/dataLoader';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -13,6 +13,7 @@ const Page132 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [chartRows, setChartRows] = useState([]);
+    const [narrativeStats, setNarrativeStats] = useState(null);
     const [loadError, setLoadError] = useState(false);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedPoints, setSelectedPoints] = useState(null);
@@ -38,9 +39,13 @@ const Page132 = () => {
         let cancelled = false;
         (async () => {
             try {
-                const rows = await getOilGasGhgSpotlightData();
+                const [rows, stats] = await Promise.all([
+                    getOilGasGhgSpotlightData(),
+                    getGhgNarrativeStats(),
+                ]);
                 if (!cancelled) {
                     setChartRows(rows);
+                    setNarrativeStats(stats);
                     setLoadError(!rows || rows.length === 0);
                 }
             } catch {
@@ -54,6 +59,55 @@ const Page132 = () => {
             cancelled = true;
         };
     }, []);
+
+    const stats = narrativeStats ?? {
+        baseYear: 2000,
+        endYear: 2023,
+        oilGasSpotlightTotalPct: null,
+        oilSandsRatio: null,
+        convGasPct: null,
+    };
+
+    const formatPctDisplay = (value) => {
+        const n = Math.abs(Math.round(Number(value)));
+        return lang === 'fr' ? `${n} %` : `${n}%`;
+    };
+
+    const para1Highlight = stats.oilGasSpotlightTotalPct != null
+        ? (() => {
+            const n = formatPctDisplay(stats.oilGasSpotlightTotalPct);
+            if (lang === 'fr') {
+                const verb = Number(stats.oilGasSpotlightTotalPct) < 0 ? `diminué de ${n}` : `augmenté de ${n}`;
+                return `${verb} entre ${stats.baseYear} et ${stats.endYear}`;
+            }
+            const verb = Number(stats.oilGasSpotlightTotalPct) < 0 ? `gone down ${n}` : `gone up ${n}`;
+            return `have ${verb} between ${stats.baseYear} and ${stats.endYear}`;
+        })()
+        : getText('page132_para1b', lang);
+
+    const para2HighlightSand = stats.oilSandsRatio != null
+        ? (() => {
+            const r = Number(stats.oilSandsRatio);
+            if (!Number.isFinite(r)) return getText('page132_para2b', lang);
+            if (r >= 3) return lang === 'fr' ? 'ont plus que triplé' : 'more than tripled';
+            if (r >= 2) return lang === 'fr' ? 'ont plus que doublé' : 'more than doubled';
+            const pct = Math.round((r - 1) * 100);
+            return lang === 'fr' ? `ont augmenté de ${formatPctDisplay(pct)}` : `increased ${formatPctDisplay(pct)}`;
+        })()
+        : getText('page132_para2b', lang);
+
+    const para2HighlightConvGas = stats.convGasPct != null
+        ? (() => {
+            const n = formatPctDisplay(stats.convGasPct);
+            if (lang === 'fr') {
+                return Number(stats.convGasPct) < 0 ? `diminué de ${n}` : `augmenté de ${n}`;
+            }
+            return Number(stats.convGasPct) < 0 ? `decreased by ${n}` : `increased by ${n}`;
+        })()
+        : getText('page132_para2d', lang);
+
+    const para1Text = `${getText('page132_para1a', lang)}${para1Highlight}${getText('page132_para1c', lang)}`;
+    const para2Text = `${getText('page132_para2a', lang)}${para2HighlightSand}${getText('page132_para2c', lang)}${para2HighlightConvGas}${getText('page132_para2e', lang)}`;
 
     const years = useMemo(() => chartRows.map((r) => r.year), [chartRows]);
     const oilSands = useMemo(() => chartRows.map((r) => r.oil_sands), [chartRows]);
@@ -557,16 +611,16 @@ const Page132 = () => {
                     {getText('page132_title', lang)}
                 </h1>
 
-                <p className="page132-body">
+                <p className="page132-body" aria-label={para1Text}>
                     {getText('page132_para1a', lang)}
-                    <span className="visual-bold">{getText('page132_para1b', lang)}</span>
+                    <span className="visual-bold">{para1Highlight}</span>
                     {getText('page132_para1c', lang)}
                 </p>
-                <p className="page132-body">
+                <p className="page132-body" aria-label={para2Text}>
                     {getText('page132_para2a', lang)}
-                    <span className="visual-bold">{getText('page132_para2b', lang)}</span>
+                    <span className="visual-bold">{para2HighlightSand}</span>
                     {getText('page132_para2c', lang)}
-                    <span className="visual-bold">{getText('page132_para2d', lang)}</span>
+                    <span className="visual-bold">{para2HighlightConvGas}</span>
                     {getText('page132_para2e', lang)}
                 </p>
 

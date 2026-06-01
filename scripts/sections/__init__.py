@@ -10,6 +10,7 @@ from .section1_indicators import Section1Indicators
 from .section2_investment import Section2Investment
 from .section4_indicators import Section4Indicators
 from .section5_clean_power import Section5CleanPower
+from .section6_oil_gas import Section6OilGas
 
 __all__ = [
     'SectionProcessor',
@@ -17,4 +18,5 @@ __all__ = [
     'Section2Investment',
     'Section4Indicators',
     'Section5CleanPower',
+    'Section6OilGas',
 ]

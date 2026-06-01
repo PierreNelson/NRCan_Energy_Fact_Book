@@ -38,7 +38,7 @@ from config_loader import get_config, Config
 from db.connection import get_connection, DatabaseConnection
 from db.models import DataRepository
 from db.ensure_schema import ensure_database_schema
-from sections import Section1Indicators, Section2Investment, Section4Indicators, Section5CleanPower
+from sections import Section1Indicators, Section2Investment, Section4Indicators, Section5CleanPower, Section6OilGas
 from export.website_files import export_website_files
 
 
@@ -48,6 +48,7 @@ SECTION_PROCESSORS = {
     'section2_investment': Section2Investment,
     'section4_indicators': Section4Indicators,
     'section5_clean_power': Section5CleanPower,
+    'section6_oil_gas': Section6OilGas,
 }
 
 

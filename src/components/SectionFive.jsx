@@ -4,6 +4,7 @@ import Page59 from '../pages/Page59';
 import Page61 from '../pages/Page61';
 import Page62 from '../pages/Page62';
 import Page63 from '../pages/Page63';
+import Page96 from '../pages/Page96';
 
 const SectionFive = () => {
     const location = useLocation();
@@ -35,6 +36,9 @@ const SectionFive = () => {
             </div>
             <div id="cleantech-companies-industry" className="stacked-page-wrapper">
                 <Page63 />
+            </div>
+            <div id="ev-sales" className="stacked-page-wrapper">
+                <Page96 />
             </div>
         </div>
     );

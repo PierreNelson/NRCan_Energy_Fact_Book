@@ -88,6 +88,23 @@ const Page39 = () => {
     color: #ebe8e1;
 }
 
+.page39-list-item a {
+    color: #ebe8e1;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.page39-list-item a:hover,
+.page39-list-item a:focus {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.page39-list-item a:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
 @media (max-width: 1745px) { .page39-title-text { font-size: 4.2rem; } }
 @media (max-width: 1536px) { .page39-title-text { font-size: 4.0rem; } }
 @media (max-width: 1280px) { .page39-title-text { font-size: 3.8rem; } }
@@ -141,9 +158,13 @@ const Page39 = () => {
 
                 <nav className="page39-list" aria-label={getText('page39_nav_label', lang)}>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontFamily: "'Noto Sans', sans-serif" }}>
-                        <li className="page39-list-item">{getText('page39_item1', lang)}</li>
                         <li className="page39-list-item">
-                            <Link to="/section-3#energy-affordability" style={{ color: 'inherit', textDecoration: 'none' }}>{getText('page39_item2', lang)}</Link>
+                            <Link to="/section-3#energy-sector-demographics">
+                                {getText('page39_item1', lang)}
+                            </Link>
+                        </li>
+                        <li className="page39-list-item">
+                            <Link to="/section-3#energy-affordability">{getText('page39_item2', lang)}</Link>
                         </li>
                         <li className="page39-list-item">{getText('page39_item3', lang)}</li>
                     </ul>

@@ -44,7 +44,9 @@ VALUES
 ('ghg_emissions', 'GHG emissions (ECCC)', 1, 'Key Indicators', N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html', 1),
 ('environmental_clean_tech', 'Environmental and clean technology', 5, 'Clean Power and Low Carbon Fuels', N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology', 1),
 ('cleantech_companies_geo', 'Cleantech companies by province and region', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1),
-('cleantech_companies_industry', 'Cleantech companies by industry', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1);
+('cleantech_companies_industry', 'Cleantech companies by industry', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1),
+('rpp_supply_demand', 'RPP supply and disposition (Page 136)', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510008101', 1),
+('rpp_refinery_input', 'Refinery input (Page 136)', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301', 1);
 """
 
 

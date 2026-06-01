@@ -200,23 +200,45 @@ class Section2Investment(SectionProcessor):
         if not naics_col:
             print(f"    Warning: No NAICS/Industry column found. Columns: {df.columns.tolist()[:10]}")
             return 0
-        
+
+        def _sum_naics(year_df, pattern, *, exact=False):
+            if value_col is None:
+                return 0.0
+            if exact:
+                mask = year_df[naics_col].str.match(pattern, na=False)
+            else:
+                mask = year_df[naics_col].str.contains(pattern, regex=True, na=False)
+            return float(year_df.loc[mask, value_col].sum())
+
         calc_data = []  # For nrcan_fb_s2_capital_expenditures
         data_rows = []  # For semantic vector export (backwards compatibility)
-        
+
         for year in years:
             year_df = df[df['year'] == year]
-            
-            # Extract by industry
-            oil_gas_mask = year_df[naics_col].str.match(r'^Oil and gas extraction \[211\]$', na=False)
-            oil_gas = float(year_df.loc[oil_gas_mask, value_col].sum()) if value_col else 0
-            
-            elec_mask = year_df[naics_col].str.contains(r'\[2211\]', regex=True, na=False)
-            electricity = float(year_df.loc[elec_mask, value_col].sum()) if value_col else 0
-            
-            other_mask = year_df[naics_col].str.contains(r'\[213\]|\[2212\]|\[324\]|\[486\]', regex=True, na=False)
-            other = float(year_df.loc[other_mask, value_col].sum()) if value_col else 0
-            
+
+            # Page 24 spec: oil/gas [211], electricity [2211], other = coal + nat gas +
+            # petroleum + pipeline + proportional share of support [213].
+            oil_gas = _sum_naics(year_df, r'^Oil and gas extraction \[211\]$', exact=True)
+            electricity = _sum_naics(year_df, r'\[2211\]')
+            mining_ex_oil_gas = _sum_naics(
+                year_df, r'^Mining and quarrying \(except oil and gas\) \[212\]$', exact=True
+            )
+            coal = _sum_naics(year_df, r'^Coal mining \[2121\]$', exact=True)
+            support = _sum_naics(
+                year_df,
+                r'^Support activities for mining, and oil and gas extraction \[213\]$',
+                exact=True,
+            )
+            nat_gas = _sum_naics(year_df, r'\[2212\]')
+            petroleum = _sum_naics(year_df, r'\[324\]')
+            pipeline = _sum_naics(year_df, r'\[486\]')
+
+            support_oil_gas = 0.0
+            mining_denominator = oil_gas + mining_ex_oil_gas
+            if mining_denominator > 0 and support > 0:
+                support_oil_gas = (oil_gas / mining_denominator) * support
+
+            other = coal + nat_gas + petroleum + pipeline + support_oil_gas
             total = oil_gas + electricity + other
             
             if total > 0:

@@ -801,6 +801,214 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_rppsd_25100081')
+BEGIN
+    CREATE TABLE [stc_rppsd_25100081] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_rppsd_25100081_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_stc_rppsd_25100081_vector ON [stc_rppsd_25100081](vector);
+    CREATE INDEX IX_stc_rppsd_25100081_source ON [stc_rppsd_25100081](source_key);
+    CREATE INDEX IX_stc_rppsd_25100081_ref_date ON [stc_rppsd_25100081](ref_date);
+    PRINT 'Table stc_rppsd_25100081 created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_refinput_25100063')
+BEGIN
+    CREATE TABLE [stc_refinput_25100063] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(50) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_refinput_25100063_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_stc_refinput_25100063_vector ON [stc_refinput_25100063](vector);
+    CREATE INDEX IX_stc_refinput_25100063_source ON [stc_refinput_25100063](source_key);
+    CREATE INDEX IX_stc_refinput_25100063_ref_date ON [stc_refinput_25100063](ref_date);
+    PRINT 'Table stc_refinput_25100063 created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_crude_prices')
+BEGIN
+    CREATE TABLE [nrcan_crude_prices] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_crude_prices_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_crude_prices_vector ON [nrcan_crude_prices](vector);
+    CREATE INDEX IX_nrcan_crude_prices_source ON [nrcan_crude_prices](source_key);
+    CREATE INDEX IX_nrcan_crude_prices_ref_date ON [nrcan_crude_prices](ref_date);
+    PRINT 'Table nrcan_crude_prices created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_oil_sands')
+BEGIN
+    CREATE TABLE [stc_oil_sands] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_oil_sands_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_stc_oil_sands_vector ON [stc_oil_sands](vector);
+    CREATE INDEX IX_stc_oil_sands_source ON [stc_oil_sands](source_key);
+    CREATE INDEX IX_stc_oil_sands_ref_date ON [stc_oil_sands](ref_date);
+    PRINT 'Table stc_oil_sands created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_ev_sales')
+BEGIN
+    CREATE TABLE [stc_ev_sales] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_ev_sales_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_stc_ev_sales_vector ON [stc_ev_sales](vector);
+    CREATE INDEX IX_stc_ev_sales_source ON [stc_ev_sales](source_key);
+    CREATE INDEX IX_stc_ev_sales_ref_date ON [stc_ev_sales](ref_date);
+    PRINT 'Table stc_ev_sales created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_canadian_production')
+BEGIN
+    CREATE TABLE [stc_canadian_production] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_canadian_production_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_stc_canadian_production_vector ON [stc_canadian_production](vector);
+    CREATE INDEX IX_stc_canadian_production_source ON [stc_canadian_production](source_key);
+    CREATE INDEX IX_stc_canadian_production_ref_date ON [stc_canadian_production](ref_date);
+    PRINT 'Table stc_canadian_production created.';
+END
+GO
+
+-- Upgrade legacy section-6 ingest tables created before unified schema
+IF OBJECT_ID('dbo.nrcan_crude_prices', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('dbo.nrcan_crude_prices', 'title') IS NULL ALTER TABLE dbo.nrcan_crude_prices ADD title NVARCHAR(500) NULL;
+    IF COL_LENGTH('dbo.nrcan_crude_prices', 'uom') IS NULL ALTER TABLE dbo.nrcan_crude_prices ADD uom NVARCHAR(100) NULL;
+    IF COL_LENGTH('dbo.nrcan_crude_prices', 'scalar_factor') IS NULL ALTER TABLE dbo.nrcan_crude_prices ADD scalar_factor NVARCHAR(50) NULL;
+    IF COL_LENGTH('dbo.nrcan_crude_prices', 'source_org') IS NULL ALTER TABLE dbo.nrcan_crude_prices ADD source_org NVARCHAR(255) NULL;
+    IF COL_LENGTH('dbo.nrcan_crude_prices', 'source_url') IS NULL ALTER TABLE dbo.nrcan_crude_prices ADD source_url NVARCHAR(1000) NULL;
+    IF COL_LENGTH('dbo.nrcan_crude_prices', 'fetched_at') IS NULL ALTER TABLE dbo.nrcan_crude_prices ADD fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE();
+    IF COL_LENGTH('dbo.nrcan_crude_prices', 'source_key') IS NULL ALTER TABLE dbo.nrcan_crude_prices ADD source_key NVARCHAR(100) NULL;
+END
+GO
+
+IF OBJECT_ID('dbo.stc_oil_sands', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('dbo.stc_oil_sands', 'title') IS NULL ALTER TABLE dbo.stc_oil_sands ADD title NVARCHAR(500) NULL;
+    IF COL_LENGTH('dbo.stc_oil_sands', 'uom') IS NULL ALTER TABLE dbo.stc_oil_sands ADD uom NVARCHAR(100) NULL;
+    IF COL_LENGTH('dbo.stc_oil_sands', 'scalar_factor') IS NULL ALTER TABLE dbo.stc_oil_sands ADD scalar_factor NVARCHAR(50) NULL;
+    IF COL_LENGTH('dbo.stc_oil_sands', 'source_org') IS NULL ALTER TABLE dbo.stc_oil_sands ADD source_org NVARCHAR(255) NULL;
+    IF COL_LENGTH('dbo.stc_oil_sands', 'source_url') IS NULL ALTER TABLE dbo.stc_oil_sands ADD source_url NVARCHAR(1000) NULL;
+    IF COL_LENGTH('dbo.stc_oil_sands', 'fetched_at') IS NULL ALTER TABLE dbo.stc_oil_sands ADD fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE();
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'kal_gas_prices')
+BEGIN
+    CREATE TABLE [kal_gas_prices] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_kal_gas_prices_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_kal_gas_prices_vector ON [kal_gas_prices](vector);
+    CREATE INDEX IX_kal_gas_prices_source ON [kal_gas_prices](source_key);
+    CREATE INDEX IX_kal_gas_prices_ref_date ON [kal_gas_prices](ref_date);
+    PRINT 'Table kal_gas_prices created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'osm_refin_cap')
+BEGIN
+    CREATE TABLE [osm_refin_cap] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_osm_refin_cap_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_osm_refin_cap_vector ON [osm_refin_cap](vector);
+    CREATE INDEX IX_osm_refin_cap_source ON [osm_refin_cap](source_key);
+    CREATE INDEX IX_osm_refin_cap_ref_date ON [osm_refin_cap](ref_date);
+    PRINT 'Table osm_refin_cap created.';
+END
+GO
+
 -- ============================================================================
 -- EXPORT STAGING (wide table: replaces nrcan_fb_export_data + _metadata)
 -- ============================================================================
@@ -1044,7 +1252,15 @@ VALUES
 ('ghg_emissions', 'GHG emissions (ECCC)', 1, 'Key Indicators', N'https://www.canada.ca/en/environment-climate-change/services/climate-change/greenhouse-gas-emissions-inventory.html', 1),
 ('environmental_clean_tech', 'Environmental and clean technology', 5, 'Clean Power and Low Carbon Fuels', N'https://www.statcan.gc.ca/en/topics-start/environmental_and_clean_technology', 1),
 ('cleantech_companies_geo', 'Cleantech companies by province and region', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1),
-('cleantech_companies_industry', 'Cleantech companies by industry', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1);
+('cleantech_companies_industry', 'Cleantech companies by industry', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1),
+('rpp_supply_demand', 'RPP supply and disposition', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510008101', 1),
+('rpp_refinery_input', 'Refinery input', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301', 1),
+('crude_prices', 'WTI and WCS crude prices', 6, 'Oil, Natural Gas and Coal', N'https://www.eia.gov/dnav/pet/xls/PET_PRI_SPT_S1_M.xls', 1),
+('oil_sands', 'Oil sands capex and production share', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601', 1),
+('canadian_production', 'Canadian crude production by type and province', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301', 1),
+('ev_sales', 'Plug-in electric vehicle registrations', 5, 'Clean Power and Low Carbon Fuels', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501', 1),
+('kal_gas_prices', 'Gasoline retail price components (Kalibrate)', 6, 'Oil, Natural Gas and Coal', N'https://kalibrate.com/', 1),
+('osm_refin_cap', 'Canadian refinery capacity (Oil Sands Magazine)', 6, 'Oil, Natural Gas and Coal', N'https://www.oilsandsmagazine.com/projects/canadian-refineries', 1);
 
 PRINT 'Default data sources inserted.';
 GO

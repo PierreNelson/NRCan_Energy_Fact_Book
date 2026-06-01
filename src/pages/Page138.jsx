@@ -2,15 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from 'react-plotly.js';
 import { getText } from '../utils/translations';
+import { getPage138GasolineData } from '../utils/dataLoader';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
 const TRACE_COUNT = 4;
 const COLORS = ['#3E2B26', '#6296B1', '#F48C36', '#2F414B'];
 const LOCATION_KEYS = ['canada', 'vancouver', 'calgary', 'toronto', 'montreal', 'halifax'];
-const YEARS_DESC = [2024, 2023, 2022];
-const YEARS_ASC = [...YEARS_DESC].sort((a, b) => a - b);
-const YEAR_SPAN_LABEL = `${YEARS_ASC[0]}\u2013${YEARS_ASC[YEARS_ASC.length - 1]}`;
 /**
  * Ctrl+ page zoom is not exposed on `visualViewport.scale` on desktop; infer zoom from
  * `devicePixelRatio` / common OS scale. Use one continuous ratio band so ~400% cannot fall
@@ -36,37 +34,12 @@ function isPinchScaleInVerticalTickBands(s) {
     return typeof s === 'number' && s > 1.02 && isZoomRatioInVerticalTickBands(s);
 }
 
-const DATA_BY_YEAR = {
-    2024: {
-        canada: { crude: 66, refining: 31, marketing: 9, taxes: 54 },
-        vancouver: { crude: 62, refining: 49, marketing: 9, taxes: 66 },
-        calgary: { crude: 61, refining: 29, marketing: 11, taxes: 52 },
-        toronto: { crude: 63, refining: 30, marketing: 9, taxes: 59 },
-        montreal: { crude: 72, refining: 32, marketing: 8, taxes: 59 },
-        halifax: { crude: 72, refining: 21, marketing: 8, taxes: 68 }
-    },
-    2023: {
-        canada: { crude: 64, refining: 30, marketing: 9, taxes: 53 },
-        vancouver: { crude: 60, refining: 47, marketing: 9, taxes: 64 },
-        calgary: { crude: 59, refining: 28, marketing: 11, taxes: 51 },
-        toronto: { crude: 61, refining: 29, marketing: 9, taxes: 57 },
-        montreal: { crude: 70, refining: 31, marketing: 8, taxes: 58 },
-        halifax: { crude: 70, refining: 20, marketing: 8, taxes: 66 }
-    },
-    2022: {
-        canada: { crude: 63, refining: 29, marketing: 8, taxes: 51 },
-        vancouver: { crude: 58, refining: 45, marketing: 9, taxes: 62 },
-        calgary: { crude: 58, refining: 27, marketing: 10, taxes: 50 },
-        toronto: { crude: 60, refining: 28, marketing: 8, taxes: 56 },
-        montreal: { crude: 68, refining: 30, marketing: 8, taxes: 56 },
-        halifax: { crude: 68, refining: 19, marketing: 8, taxes: 64 }
-    }
-};
-
 const Page138 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [selectedYear, setSelectedYear] = useState(2024);
+    const [gasolineData, setGasolineData] = useState({ years: [], dataByYear: {} });
+    const [loading, setLoading] = useState(true);
+    const [selectedYear, setSelectedYear] = useState(null);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedPoints, setSelectedPoints] = useState(null);
@@ -77,6 +50,25 @@ const Page138 = () => {
     const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
+
+    useEffect(() => {
+        getPage138GasolineData()
+            .then((payload) => {
+                setGasolineData(payload);
+                if (payload.years?.length) {
+                    setSelectedYear(payload.years[0]);
+                }
+            })
+            .catch((err) => console.error('Page138 data load failed:', err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const yearsDesc = useMemo(() => gasolineData.years || [], [gasolineData.years]);
+    const yearsAsc = useMemo(() => [...yearsDesc].sort((a, b) => a - b), [yearsDesc]);
+    const dataByYear = useMemo(() => gasolineData.dataByYear || {}, [gasolineData.dataByYear]);
+    const yearSpanLabel = yearsAsc.length
+        ? `${yearsAsc[0]}\u2013${yearsAsc[yearsAsc.length - 1]}`
+        : '';
 
     const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
@@ -108,7 +100,7 @@ const Page138 = () => {
 
     const chartTitleText = getText('page138_chart_title', lang).replace('{year}', String(selectedYear));
     const exportChartTitle = stripHtml(chartTitleText);
-    const docHeading = stripHtml(getText('page138_doc_heading', lang).replace('{span}', YEAR_SPAN_LABEL));
+    const docHeading = stripHtml(getText('page138_doc_heading', lang).replace('{span}', yearSpanLabel));
 
     const cplSuffix = getText('page138_table_hdr_cpl_suffix', lang);
     const tableHeaders = [
@@ -121,18 +113,19 @@ const Page138 = () => {
         `${getText('page138_table_col_total', lang)}${cplSuffix}`
     ];
 
-    const tableFileSlug = `${slugifyExport(getText('page138_export_slug_table', lang))}-${YEARS_ASC[0]}-${YEARS_ASC[YEARS_ASC.length - 1]}`;
-    const pngFileSlug = `${slugifyExport(getText('page138_export_slug_chart', lang))}-${selectedYear}`;
+    const tableFileSlug = `${slugifyExport(getText('page138_export_slug_table', lang))}${yearsAsc.length ? `-${yearsAsc[0]}-${yearsAsc[yearsAsc.length - 1]}` : ''}`;
+    const pngFileSlug = `${slugifyExport(getText('page138_export_slug_chart', lang))}-${selectedYear ?? 'year'}`;
 
-    const yearBundle = DATA_BY_YEAR[selectedYear] || DATA_BY_YEAR[2024];
+    const yearBundle = selectedYear != null ? dataByYear[selectedYear] : null;
 
     const flatTableRows = useMemo(() => {
         const rows = [];
-        YEARS_DESC.forEach((yr) => {
-            const b = DATA_BY_YEAR[yr];
+        yearsDesc.forEach((yr) => {
+            const b = dataByYear[yr];
             if (!b) return;
             LOCATION_KEYS.forEach((locKey) => {
                 const d = b[locKey];
+                if (!d) return;
                 const total = d.crude + d.refining + d.marketing + d.taxes;
                 rows.push({
                     year: yr,
@@ -144,12 +137,12 @@ const Page138 = () => {
             });
         });
         return rows;
-    }, [lang]);
+    }, [lang, yearsDesc, dataByYear]);
 
-    const crudeY = LOCATION_KEYS.map((k) => yearBundle[k].crude);
-    const refiningY = LOCATION_KEYS.map((k) => yearBundle[k].refining);
-    const marketingY = LOCATION_KEYS.map((k) => yearBundle[k].marketing);
-    const taxesY = LOCATION_KEYS.map((k) => yearBundle[k].taxes);
+    const crudeY = yearBundle ? LOCATION_KEYS.map((k) => yearBundle[k]?.crude) : [];
+    const refiningY = yearBundle ? LOCATION_KEYS.map((k) => yearBundle[k]?.refining) : [];
+    const marketingY = yearBundle ? LOCATION_KEYS.map((k) => yearBundle[k]?.marketing) : [];
+    const taxesY = yearBundle ? LOCATION_KEYS.map((k) => yearBundle[k]?.taxes) : [];
 
     const plotBottomMarginHorizontal = windowWidth <= 480 ? 100 : windowWidth <= 768 ? 88 : 76;
     const plotBottomMarginVertical = windowWidth <= 480 ? 148 : windowWidth <= 768 ? 128 : 108;
@@ -462,6 +455,13 @@ const Page138 = () => {
             aria-labelledby="page138-main-title"
             style={{ backgroundColor: '#ffffff' }}
         >
+            {loading && (
+                <p style={{ padding: '24px', fontFamily: 'Arial, sans-serif' }}>
+                    {lang === 'en' ? 'Loading…' : 'Chargement…'}
+                </p>
+            )}
+            {!loading && yearBundle && (
+            <>
             <style>{`
                 .page-138.page-content {
                     max-width: none !important;
@@ -686,7 +686,7 @@ const Page138 = () => {
                                     boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                                 }}
                             >
-                                {YEARS_DESC.map((y) => {
+                                {yearsDesc.map((y) => {
                                     const isSelected = selectedYear === y;
                                     return (
                                         <button
@@ -1002,6 +1002,8 @@ const Page138 = () => {
                     </div>
                 </div>
             </div>
+            </>
+            )}
         </main>
     );
 };
