@@ -561,12 +561,13 @@ const Page48 = () => {
                     height: 6px;
                     background-color: var(--gc-red);
                 }
-                .page48-subtitle {
+                .page-48.page-content p.page48-subtitle {
                     font-family: 'Lato', sans-serif;
-                    font-size: 39px;
+                    font-size: 41px;
                     font-weight: bold;
-                    color: #58585a;
+                    color: var(--gc-text);
                     margin: 0 0 15px 0;
+                    line-height: 1.25;
                 }
                 .page48-bullets { margin: 0 0 24px 0; padding-left: 1.2em; }
                 .page48-bullets li { margin-bottom: 10px; font-family: 'Noto Sans', sans-serif; font-size: 20px; line-height: 1.6; color: var(--gc-text); }

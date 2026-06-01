@@ -142,7 +142,7 @@ const Page47 = () => {
                 <nav className="page47-list" aria-label={getText('page47_nav_label', lang)}>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontFamily: "'Noto Sans', sans-serif" }}>
                         <li className="page47-list-item"><Link to="/section-4#energy-use" style={{ color: 'inherit', textDecoration: 'underline' }}>{getText('page47_item1', lang)}</Link></li>
-                        <li className="page47-list-item">{getText('page47_item2', lang)}</li>
+                        <li className="page47-list-item"><Link to="/section-4#efficiency-trends" style={{ color: 'inherit', textDecoration: 'underline' }}>{getText('page47_item2', lang)}</Link></li>
                     </ul>
                 </nav>
             </div>

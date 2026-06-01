@@ -7,6 +7,9 @@ import Page50 from '../pages/Page50';
 import Page51 from '../pages/Page51';
 import Page52 from '../pages/Page52';
 import Page53 from '../pages/Page53';
+import Page54 from '../pages/Page54';
+import Page55 from '../pages/Page55';
+import Page56 from '../pages/Page56';
 
 const SectionFour = () => {
     const location = useLocation();
@@ -35,7 +38,10 @@ const SectionFour = () => {
                 #energy-use .page48-chart-frame,
                 #secondary-energy-by-fuel .page49-chart-frame,
                 #residential-energy-use .page51-chart-frame-before-footnote,
-                #industrial-sector-energy .page53-chart-frame {
+                #industrial-sector-energy .page53-chart-frame,
+                #efficiency-trends .page54-chart-frame,
+                #energy-intensity-index .page55-chart-frame,
+                #energy-use-factors .page56-chart-frame {
                     padding-bottom: 20px !important;
                     margin-bottom: 20px !important;
                 }
@@ -109,6 +115,15 @@ const SectionFour = () => {
             </div>
             <div id="industrial-sector-energy" className="section-four-page stacked-page-wrapper">
                 <Page53 />
+            </div>
+            <div id="efficiency-trends" className="section-four-page stacked-page-wrapper page-with-title-divider">
+                <Page54 />
+            </div>
+            <div id="energy-intensity-index" className="section-four-page stacked-page-wrapper">
+                <Page55 />
+            </div>
+            <div id="energy-use-factors" className="section-four-page stacked-page-wrapper">
+                <Page56 />
             </div>
         </div>
     );
