@@ -10,7 +10,6 @@ const Sidebar = ({ lang }) => {
     const [section4Expanded, setSection4Expanded] = useState(false);
     const [section5Expanded, setSection5Expanded] = useState(false);
     const [section6Expanded, setSection6Expanded] = useState(false);
-    const [sectionTestExpanded, setSectionTestExpanded] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const toggleButtonRef = useRef(null);
     const sidebarRef = useRef(null);
@@ -66,10 +65,6 @@ const Sidebar = ({ lang }) => {
         setSection6Expanded(!section6Expanded);
     };
 
-    const toggleSectionTest = () => {
-        setSectionTestExpanded(!sectionTestExpanded);
-    };
-
     const handleKeyDown1 = (e) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
@@ -109,13 +104,6 @@ const Sidebar = ({ lang }) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
             toggleSection6();
-        }
-    };
-
-    const handleKeyDownTest = (e) => {
-        if (e.key === ' ' || e.key === 'Enter') {
-            e.preventDefault();
-            toggleSectionTest();
         }
     };
 
@@ -352,6 +340,12 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('page39_item2', lang)}
                             </NavLink>
+                            <NavLink
+                                to="/section-3#energy-reliant-communities"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('page39_item3', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>
@@ -436,6 +430,12 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_section5_title', lang)}
                             </NavLink>
+                            <NavLink
+                                to="/section-5#clean-technology-economy"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_page60_clean_technology_economy', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>
@@ -495,75 +495,6 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section6_coal_international', lang)}
-                            </NavLink>
-                        </div>
-                    )}
-                </div>
-
-                {/* Test Pages Section */}
-                <div className="nav-section">
-                    <button
-                        className="nav-section-header"
-                        onClick={toggleSectionTest}
-                        onKeyDown={handleKeyDownTest}
-                        aria-expanded={sectionTestExpanded}
-                        aria-controls="sectiontest-content"
-                        aria-label={`${lang === 'en' ? 'Test Pages' : 'Pages de test'}. ${sectionTestExpanded 
-                            ? (lang === 'en' ? 'Expanded. Press Space to collapse.' : 'Développé. Appuyez sur Espace pour réduire.')
-                            : (lang === 'en' ? 'Collapsed. Press Space to expand.' : 'Réduit. Appuyez sur Espace pour développer.')
-                        }`}
-                    >
-                        <span className="section-arrow" aria-hidden="true">
-                            {sectionTestExpanded ? "▼" : "▶"}
-                        </span>
-                        <span>{lang === 'en' ? 'Test Pages' : 'Pages de test'}</span>
-                    </button>
-
-                    {sectionTestExpanded && (
-                        <div 
-                            id="sectiontest-content"
-                            className="nav-section-content expanded"
-                            role="group"
-                            aria-label={lang === 'en' ? 'Test Pages' : 'Pages de test'}
-                        >
-                            {/* Investment Overview - Page23Stacked */}
-                            <NavLink
-                                to="/section-test#section-overview"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_section2_title', lang)}
-                            </NavLink>
-
-                            {/* Capital Expenditure - Page24Stacked */}
-                            <NavLink
-                                to="/section-test#capital-expenditure"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('page23_item1', lang)}
-                            </NavLink>
-
-                            {/* Energy infrastructure and major projects - Page25Stacked */}
-                            <NavLink
-                                to="/section-test#infrastructure-stock"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('page23_item2', lang)}
-                            </NavLink>
-
-                            {/* Major Projects - Page28Stacked */}
-                            <NavLink
-                                to="/section-test#major-projects"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('nav_major_projects', lang)}
-                            </NavLink>
-
-                            {/* Environmental Protection - Page37Stacked */}
-                            <NavLink
-                                to="/section-test#environmental-protection"
-                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
-                            >
-                                {getText('page23_item6', lang)}
                             </NavLink>
                         </div>
                     )}

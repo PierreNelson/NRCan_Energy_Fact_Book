@@ -404,6 +404,81 @@ In `src/utils/dataLoader.js`:
 
 ---
 
+## 15.1 Trace an indicator to a page
+
+Use this workflow to connect a series in `data.csv` to the live website page.
+
+### Steps
+
+1. **Find the vector** in [`public/data/data.csv`](../public/data/data.csv) and [`public/data/metadata.csv`](../public/data/metadata.csv) (e.g. `capex_oil_gas`).
+2. **Identify the source key** from the vector prefix in [`scripts/export/source_vectors.py`](../scripts/export/source_vectors.py) (e.g. `capex_` → `capital_expenditures`).
+3. **Find the handler** in the matching section processor under [`scripts/sections/`](../scripts/sections/) (see [`scripts/config.yaml`](../scripts/config.yaml) for which section owns the source).
+4. **Find the getter** in [`src/utils/dataLoader.js`](../src/utils/dataLoader.js) (grep for the prefix or source name).
+5. **Find the page** — grep the getter name in [`src/pages/`](../src/pages/) to see which `PageNN.jsx` imports it.
+6. **Find the section anchor** — grep `PageNN` in [`src/components/Section*.jsx`](../src/components/) for the wrapper `id` used in sidebar hash links.
+
+See also [EFB_MODERNIZATION_REVIEW.md §9](EFB_MODERNIZATION_REVIEW.md#9-page-file-organization) for a growing page-to-source map.
+
+### Worked example: capital expenditures → Page 24
+
+```
+scripts/config.yaml
+  capital_expenditures (enabled, section2_investment)
+    ↓
+scripts/sections/section2_investment.py
+  _process_capital_expenditures
+    ↓
+public/data/data.csv + metadata.csv
+  vectors: capex_oil_gas, capex_electricity, capex_other, capex_total, …
+    ↓
+src/utils/dataLoader.js
+  getCapitalExpendituresData()
+    ↓
+src/pages/Page23.jsx, Page24.jsx  (production)
+    ↓
+src/components/SectionTwo.jsx
+  #investment-overview (Page23), #capital-expenditure (Page24)
+```
+
+**Note:** `capex` is a **vector prefix**, not a source key. Export with `--source capital_expenditures` or `--vectors "capex_*"`.
+
+---
+
+## 15.2 Production page files
+
+Live pages are wired in `SectionOne.jsx` … `SectionSix.jsx`. Trust **`Section*.jsx` imports** as the source of truth for what is on the site.
+
+Some pages lazy-load another page component (e.g. `Page31` from `Page29`) — check the importing page when tracing behaviour.
+
+---
+
+## 15.3 Section 4 source map (detailed)
+
+[`scripts/sections/section4_indicators.py`](../scripts/sections/section4_indicators.py) is the Section 4 processor (~5,300 lines). Each `source_key` maps to a handler, vector prefix(es), and typical pages.
+
+| source_key | Handler | Vector prefix | Local Excel / fetch | Typical pages |
+|------------|---------|---------------|---------------------|---------------|
+| `energy_use` | `_process_energy_use` | `oee_neud_` | OEE NEUD ZIP/HTML; `Primary Energy Use Demand.xlsx` via `resolve_root_xlsx()` or `primary_demand_file_path` in config | Page 48 (primary/secondary energy) |
+| `seu_by_fuel` | `_process_seu_by_fuel` | `seu_` | `SEU Final Demand.xlsx` | Page 49 |
+| `residential_daily_lives` | `_process_residential_daily_lives` | `res_` | `EE Improvement.xlsx` (Residential sheet) | Page 50 |
+| `residential_pie_charts` | `_process_residential_pie_charts` | `res_` | OEE HTML tables (HB, Table 7, Table 14) | Page 51 |
+| `commercial_institutional` | `_process_commercial_institutional` | `com_` | OEE / Excel per handler | Page 52 |
+| `industrial_sector` | `_process_industrial_sector` | `ind_` | OEE / Excel per handler | Section 4 industrial pages |
+
+**When a source changes:**
+
+| Change type | Where to edit |
+|-------------|---------------|
+| Enable/disable source | `scripts/config.yaml` → `section4_indicators.sources.<key>.enabled` |
+| Override Excel path | `config.yaml` path keys, or place file in `EXTERNAL_XLSX_DATA_DIR` with default name |
+| OEE URL or HTML table structure | Handler in `section4_indicators.py` (search `_parse_oee_`, `_fetch_oee_`) |
+| New vector names | Handler + [`source_vectors.py`](../scripts/export/source_vectors.py) + `dataLoader.js` getter + page |
+| Physical SQL table | [`eedas_registry.yaml`](../scripts/db/eedas_registry.yaml) + `setup_database.sql` |
+
+A planned split of this module into `scripts/sections/section4/` is documented in [`scripts/sections/section4/README.md`](../scripts/sections/section4/README.md).
+
+---
+
 ## 16. Troubleshooting and Common Pitfalls
 
 - **Refresh succeeds but the page shows no data:** Run **export** after refresh (`python main.py export` or `--export-after`). Ensure the **vector prefix** in `source_vectors.py` matches what the handler writes and what the dataLoader getter filters on (e.g. `mysource_` everywhere). Confirm **`eedas_registry.yaml`** maps your `source_key` to the series table that **`prepare_export_data`** unions.
@@ -426,10 +501,11 @@ In `src/utils/dataLoader.js`:
 |---------|------------|--------------|-----------------|-----------------|-----------------|
 | Key Indicators | section1_indicators | section1_indicators.py | economic_contributions, provincial_gdp, canadian_energy_assets, world_energy_production, nominal_gdp, ghg_emissions | econ_, gdp_prov_, cea_, energy_prod_, gdp_nominal_, ghg_ | getEconomicContributionsData, getProvincialGdpData, getCEAData, getWorldEnergyProductionData, getNominalGDPData, getGHGEmissionsData |
 | Investment | section2_investment | section2_investment.py | capital_expenditures, infrastructure, international_investment, foreign_control, environmental_protection | capex_, infra_, intl_, foreign_, enviro_, asset_, projects_, cleantech_ | getCapitalExpendituresData, getInfrastructureData, getInternationalInvestmentData, getForeignControlData, getEnvironmentalProtectionData |
-| Energy Efficiency | section4_indicators | section4_indicators.py | energy_use, seu_by_fuel, residential_daily_lives, residential_pie_charts, commercial_institutional | oee_neud_, seu_, res_, com_ | getEnergyUseData, getSEUByFuelData, getPage50ResidentialData, getPage51Data, getPage52Data |
+| Energy Efficiency | section4_indicators | section4_indicators.py | energy_use, seu_by_fuel, residential_daily_lives, residential_pie_charts, commercial_institutional, industrial_sector | oee_neud_, seu_, res_, com_, ind_ | getEnergyUseData, getSEUByFuelData, getPage50ResidentialData, getPage51Data, getPage52Data |
 | Clean Power | section5_clean_power | section5_clean_power.py | environmental_clean_tech | envcleantech_ | getEnvironmentalCleanTechData |
 
 **Cross-references**
 
 - **Commands and workflows:** [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md)
+- **Client Q&A handoff:** [EFB_MODERNIZATION_REVIEW.md](EFB_MODERNIZATION_REVIEW.md)
 - **Building the page (charts, tables, download, footnotes):** [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md)

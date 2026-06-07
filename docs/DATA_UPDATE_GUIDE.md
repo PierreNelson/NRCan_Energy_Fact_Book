@@ -21,6 +21,77 @@ cd scripts
 python main.py test-connection
 ```
 
+**List sections and sources (no database required):**
+```bash
+cd scripts
+python main.py list
+```
+
+---
+
+## Config toggles and logging
+
+### When to enable or disable sections and sources
+
+Settings live in [`scripts/config.yaml`](../scripts/config.yaml). Each section and each source within a section has an `enabled: true/false` flag.
+
+| Level | `refresh --all` | `refresh --section` / `--source` |
+|-------|-----------------|----------------------------------|
+| Section `enabled: false` | Section processor is **not loaded** — all its sources are skipped | Error: section not found or not enabled |
+| Source `enabled: false` (section enabled) | That source handler is **skipped** | Error: source disabled |
+
+Typical reasons to disable:
+
+- Upstream source is broken (URL or format change) while other sources still refresh
+- Optional manual source (Excel workbook not yet on the machine)
+- Work-in-progress source not ready for website export
+- Temporarily skip a slow or flaky external fetch during development
+
+Disabled sources **do not remove** existing database rows or CSV rows. Stale vectors remain until the next successful refresh and export overwrites them.
+
+### Should `config.yaml` stay one file?
+
+The repo uses a **single** `config.yaml` (~250 lines). That is appropriate at current scale. If the file grows substantially (for example beyond ~500 lines or ~15 sources per section), consider splitting into `scripts/config/sections/*.yaml` merged by [`config_loader.py`](../scripts/config_loader.py).
+
+### Where to find logs after a run
+
+| Location | Contents |
+|----------|----------|
+| **Terminal stdout** | Primary operator log. Level from `config.yaml` → `logging.level` (default `INFO`). |
+| **`nrcan_fb_run_history` (SQL Server)** | Per-source refresh audit: status, errors, row counts. See [`scripts/db/README.md`](../scripts/db/README.md). |
+| **Log file** | **Not written by default.** Redirect stdout or add a logging FileHandler if you need a disk log. |
+
+After a refresh: read terminal output first. If a source failed without a clear message, query `nrcan_fb_run_history` in SSMS.
+
+---
+
+## Manual Excel workbooks and path configuration
+
+### `EXTERNAL_XLSX_DATA_DIR` (recommended for DevOps)
+
+Copy [`scripts/.env.example`](../scripts/.env.example) to `scripts/.env` and set:
+
+```bash
+EXTERNAL_XLSX_DATA_DIR=C:\path\to\factbook-data-files
+```
+
+[`scripts/xlsx_paths.py`](../scripts/xlsx_paths.py) resolves default-named workbooks (CEA, IEA, ECCC, `EE Improvement.xlsx`, `Primary Energy Use Demand.xlsx`, `SEU Final Demand.xlsx`, TSX listing export, etc.) from that folder.
+
+If `EXTERNAL_XLSX_DATA_DIR` is **unset**, the pipeline falls back to the **repository root** (legacy local-dev convenience). **Do not rely on repo-root fallback in CI or DevOps** — proprietary or large workbooks should live on a secure share or pipeline-mounted path, not in git.
+
+### `.env` vs `config.yaml`
+
+| Control | Examples |
+|---------|----------|
+| **`scripts/.env`** | `DB_*`, `EXTERNAL_XLSX_DATA_DIR`, optional `DB_DRIVER` |
+| **`config.yaml`** | Per-source: `statcan_table`, `source_url`, `file_path`, `primary_demand_file_path`, `oee_neud_file_path`, section6 xlsx name, `enabled` flags |
+
+### Blank Section 4 file paths
+
+When `primary_demand_file_path` or similar keys are blank under `sections.section4_indicators.sources`, handlers use [`resolve_root_xlsx()`](../scripts/xlsx_paths.py) → `EXTERNAL_XLSX_DATA_DIR` or repo root with the default filename. If the file is missing, the handler logs a message and may skip or partial-fail that source.
+
+For DevOps setup (ODBC, secrets, scheduled refresh, release zips), see [EFB_MODERNIZATION_REVIEW.md §7](EFB_MODERNIZATION_REVIEW.md#7-sql-and-database-refresh-environment).
+
 ---
 
 ## Quick Reference

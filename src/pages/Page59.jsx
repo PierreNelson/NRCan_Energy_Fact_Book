@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import page59Image from '../assets/page59_bg.jpg';
 
@@ -141,7 +141,11 @@ const Page59 = () => {
 
                 <nav className="page59-list" aria-label={getText('page59_nav_label', lang)}>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontFamily: "'Noto Sans', sans-serif" }}>
-                        <li className="page59-list-item">{getText('page59_item1', lang)}</li>
+                        <li className="page59-list-item">
+                            <Link to="/section-5#clean-technology-economy" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                                {getText('page59_item1', lang)}
+                            </Link>
+                        </li>
                         <li className="page59-list-item">{getText('page59_item2', lang)}</li>
                         <li className="page59-list-item">{getText('page59_item3', lang)}</li>
                     </ul>

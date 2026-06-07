@@ -10,6 +10,7 @@ import Page53 from '../pages/Page53';
 import Page54 from '../pages/Page54';
 import Page55 from '../pages/Page55';
 import Page56 from '../pages/Page56';
+import Page57 from '../pages/Page57';
 
 const SectionFour = () => {
     const location = useLocation();
@@ -124,6 +125,9 @@ const SectionFour = () => {
             </div>
             <div id="energy-use-factors" className="section-four-page stacked-page-wrapper">
                 <Page56 />
+            </div>
+            <div id="sector-energy-trends" className="section-four-page stacked-page-wrapper">
+                <Page57 />
             </div>
         </div>
     );

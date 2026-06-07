@@ -166,7 +166,9 @@ const Page39 = () => {
                         <li className="page39-list-item">
                             <Link to="/section-3#energy-affordability">{getText('page39_item2', lang)}</Link>
                         </li>
-                        <li className="page39-list-item">{getText('page39_item3', lang)}</li>
+                        <li className="page39-list-item">
+                            <Link to="/section-3#energy-reliant-communities">{getText('page39_item3', lang)}</Link>
+                        </li>
                     </ul>
                 </nav>
             </div>

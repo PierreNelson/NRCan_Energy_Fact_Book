@@ -98,3 +98,41 @@ python scripts/zip_website_release.py --skip-build
 ```
 
 `--skip-build` requires `dist/index.html` to already exist.
+
+---
+
+## Deployment options and current defaults
+
+The post-handover deployment path is **not yet finalized**. This section documents what exists today and the options to choose from.
+
+### Current defaults (repository)
+
+| Mechanism | Location | Behaviour |
+|-----------|----------|-----------|
+| **GitHub Pages** | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Auto-build and deploy on push to `main`; manual `workflow_dispatch` supported |
+| **`homepage` in package.json** | [`package.json`](../package.json) | Points to a personal GitHub Pages URL (placeholder until org URL is confirmed) |
+| **Vite `base` path** | [`vite.config.js`](../vite.config.js) | `/NRCan_Energy_Fact_Book/` — must match server URL path |
+| **Static release zip** | [`scripts/zip_website_release.py`](../scripts/zip_website_release.py) | Production handoff for CCEI / internal IIS or nginx |
+| **Data-only zip** | [`scripts/zip_data_release.py`](../scripts/zip_data_release.py) | CSV + glossary overlay without full rebuild |
+
+### Options for post-handover (client to decide)
+
+1. **CCEI static host (primary)** — Publish the website zip to internal IIS/nginx. Keep GitHub Pages for development or demo only.
+2. **Azure DevOps CI/CD (primary)** — Pipeline builds on merge and deploys artifacts to CCEI; disable or manual-trigger GitHub Pages.
+3. **Parallel** — Both GitHub Pages and CCEI until cutover is complete.
+
+### Open items when a path is chosen
+
+- Replace personal `homepage` URL with the production URL
+- Set Vite `base` to match the production URL path (or `/` if served at domain root)
+- Add approval gate before production deploy (if required)
+- Define who runs **data refresh** (`python main.py refresh --all --export-after`) vs who publishes **website zips**
+- Wire [`azure-pipelines.template.yml`](../azure-pipelines.template.yml) to the chosen agent pool and hosting target — see [EFB_MODERNIZATION_REVIEW.md §7–8](EFB_MODERNIZATION_REVIEW.md#7-sql-and-database-refresh-environment)
+
+### Website build vs data-only updates
+
+| Update type | Requires `npm run build`? | Delivery |
+|-------------|---------------------------|----------|
+| CSV / glossary data | No | Data-only zip → copy into deployed `data/` and `glossary/` |
+| UI copy (`translations.js`) | **Yes** | New website zip |
+| New pages or chart code | **Yes** | New website zip |

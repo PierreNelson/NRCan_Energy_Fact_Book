@@ -1166,6 +1166,7 @@ details .table-responsive {
 .section-four-page main [class*="-content-row"],
 .stacked-page-wrapper main [class*="-data-table-section"],
 .stacked-page-wrapper main [class*="-footer"],
+.stacked-page-wrapper main [class*="-filter-region"],
 .section-four-page main [class*="-data-table-section"],
 .section-four-page main [class*="-footer"] {
   margin-bottom: 0 !important;

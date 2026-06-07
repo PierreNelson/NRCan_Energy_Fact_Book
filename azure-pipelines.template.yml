@@ -1,0 +1,109 @@
+# Azure DevOps pipeline template — NRCan Energy Factbook
+#
+# Copy to azure-pipelines.yml and customize:
+#   - trigger branches and path filters
+#   - agent pool (Windows vs Linux for ODBC)
+#   - variable group linking (DB_*, EXTERNAL_XLSX_DATA_DIR)
+#   - approval environment before production deploy
+#
+# See docs/EFB_MODERNIZATION_REVIEW.md and docs/DEPLOYMENT.md
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - README.md
+      - docs/**
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  - group: NRCanFactbookSecrets
+  - name: nodeVersion
+    value: '20.x'
+  - name: pythonVersion
+    value: '3.11'
+
+stages:
+  - stage: BuildWebsite
+    displayName: Build static website
+    jobs:
+      - job: npm_build
+        displayName: npm ci and build
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+          - script: npm ci
+            displayName: Install npm dependencies
+          - script: npm run build
+            displayName: Production build
+          - script: npm run lint
+            displayName: ESLint (informational — see docs/EFB_MODERNIZATION_REVIEW.md §4)
+            continueOnError: true
+          - publish: dist
+            artifact: website-dist
+            displayName: Publish dist artifact
+
+  - stage: RefreshData
+    displayName: Refresh pipeline data (optional)
+    dependsOn: []
+    condition: eq(variables['RunDataRefresh'], 'true')
+    jobs:
+      - job: python_refresh
+        displayName: SQL refresh and CSV export
+        pool:
+          vmImage: windows-latest
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+          - script: python -m pip install -r scripts/requirements.txt
+            displayName: Install Python dependencies
+          - script: python main.py test-connection
+            workingDirectory: scripts
+            displayName: Test SQL connection
+            env:
+              DB_SERVER: $(DB_SERVER)
+              DB_DATABASE: $(DB_DATABASE)
+              DB_USERNAME: $(DB_USERNAME)
+              DB_PASSWORD: $(DB_PASSWORD)
+              EXTERNAL_XLSX_DATA_DIR: $(EXTERNAL_XLSX_DATA_DIR)
+          - script: python main.py refresh --all --export-after
+            workingDirectory: scripts
+            displayName: Refresh all sources and export CSVs
+            env:
+              DB_SERVER: $(DB_SERVER)
+              DB_DATABASE: $(DB_DATABASE)
+              DB_USERNAME: $(DB_USERNAME)
+              DB_PASSWORD: $(DB_PASSWORD)
+              EXTERNAL_XLSX_DATA_DIR: $(EXTERNAL_XLSX_DATA_DIR)
+          - publish: public/data
+            artifact: factbook-data
+            displayName: Publish data CSV artifact
+
+  - stage: Deploy
+    displayName: Deploy to static host (placeholder)
+    dependsOn: BuildWebsite
+    condition: and(succeeded(), eq(variables['DeployToProduction'], 'true'))
+    jobs:
+      - deployment: DeployStatic
+        displayName: Deploy website artifact
+        environment: factbook-production
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: website-dist
+                - script: echo "Replace with IIS/nginx/Azure Static Web Apps upload steps"
+                  displayName: Placeholder deploy step

@@ -221,7 +221,7 @@ def cmd_export(args, config: Config, db: DatabaseConnection):
     return 0
 
 
-def cmd_list(args, config: Config, db: DatabaseConnection):
+def cmd_list(args, config: Config):
     """Handle the list command."""
     from export.source_vectors import SOURCE_VECTOR_PREFIXES
     
@@ -302,8 +302,8 @@ Examples:
   python main.py refresh --all --export-after           Refresh and export
   
   python main.py export                     Export all website files
-  python main.py export --source capex      Export only capital expenditures
-  python main.py export --vectors "cea_*"   Export vectors matching pattern
+  python main.py export --source capital_expenditures  Export one source
+  python main.py export --vectors "capex_*"          Export vectors matching pattern
   
   python main.py list                       List available sections/sources
   python main.py test-connection            Test database connection
@@ -376,23 +376,25 @@ Examples:
     
     # Setup logging
     setup_logging(config)
-    
-    # Initialize database connection
+
+    if args.command == 'list':
+        return cmd_list(args, config)
+
+    # Initialize database connection (not required for list)
     try:
         db = get_connection(config.database)
     except Exception as e:
         print(f"Error initializing database connection: {e}")
         print("\nMake sure SQL Server is running and config.yaml is correct.")
         return 1
-    
+
     # Route to command handler
     commands = {
         'refresh': cmd_refresh,
         'export': cmd_export,
-        'list': cmd_list,
         'test-connection': cmd_test_connection,
     }
-    
+
     handler = commands.get(args.command)
     if handler:
         return handler(args, config, db)

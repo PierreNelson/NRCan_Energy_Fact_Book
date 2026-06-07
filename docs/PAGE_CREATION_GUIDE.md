@@ -727,7 +727,7 @@ Use it for the chart title: `{renderTextWithFootnoteLink(getText('pageN_chart_ti
 
 - Same as bar with **`barmode: 'stack'`** and multiple traces. Control stacking order with trace order or `legendrank`. Use same selection pattern as grouped bar if needed.
 
-**Reference:** Page 27, Page 25Stacked, Page 28Stacked.
+**Reference:** Page 27, Page 28.
 
 ---
 

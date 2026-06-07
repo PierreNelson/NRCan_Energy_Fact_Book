@@ -2,7 +2,7 @@
 
 Python CLI for fetching data into **SQL Server**, then exporting **`public/data/data.csv`**, **`metadata.csv`**, and related files for the Vite/React app.
 
-Further reading: **[`db/README.md`](db/README.md)** (schema and table names), **[`../docs/DATA_PIPELINE_GUIDE.md`](../docs/DATA_PIPELINE_GUIDE.md)** (end-to-end design), **[`../docs/DATA_UPDATE_GUIDE.md`](../docs/DATA_UPDATE_GUIDE.md)** (operational updates).
+Further reading: **[`db/README.md`](db/README.md)** (schema and table names), **[`../docs/DATA_PIPELINE_GUIDE.md`](../docs/DATA_PIPELINE_GUIDE.md)** (end-to-end design), **[`../docs/DATA_UPDATE_GUIDE.md`](../docs/DATA_UPDATE_GUIDE.md)** (operational updates), **[`../docs/EFB_MODERNIZATION_REVIEW.md`](../docs/EFB_MODERNIZATION_REVIEW.md)** (client Q&A: DevOps, lint, page index).
 
 ## Layout
 

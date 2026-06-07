@@ -5,7 +5,9 @@ import Page40 from '../pages/Page40';
 import Page41 from '../pages/Page41';
 import Page42 from '../pages/Page42';
 import Page43 from '../pages/Page43';
+import Page44 from '../pages/Page44';
 import Page45 from '../pages/Page45';
+import Page46 from '../pages/Page46';
 
 const SectionThree = () => {
     const location = useLocation();
@@ -41,8 +43,14 @@ const SectionThree = () => {
             <div id="energy-affordability" className="stacked-page-wrapper page-with-title-divider">
                 <Page43 />
             </div>
+            <div id="household-energy-expenditures" className="stacked-page-wrapper">
+                <Page44 />
+            </div>
             <div id="household-energy-prices-comparison" className="stacked-page-wrapper">
                 <Page45 />
+            </div>
+            <div id="energy-reliant-communities" className="stacked-page-wrapper page-with-title-divider">
+                <Page46 />
             </div>
         </div>
     );
