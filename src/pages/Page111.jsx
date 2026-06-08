@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getPage111Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import Page111ProvinceInfographic, {
+import Page111ProvinceInfographic from '../components/Page111ProvinceInfographic';
+import {
     IMAGE_TRIM,
     NATIVE_SIZE,
     OVERLAY_COLORS,
     PCT_SLOTS,
     PROVINCE_ORDER,
-} from '../components/Page111ProvinceInfographic';
+} from '../components/Page111ProvinceInfographic.constants';
 import page111Bg from '../assets/page111_bg_1.png';
 
 const COLORS = {
@@ -188,11 +189,12 @@ const Page111 = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!result?.selectorYears?.length) return;
-        if (selectedYear == null || !result.selectorYears.includes(selectedYear)) {
-            setSelectedYear(result.selectorYears[0]);
+    const effectiveSelectedYear = useMemo(() => {
+        if (!result?.selectorYears?.length) return null;
+        if (selectedYear != null && result.selectorYears.includes(selectedYear)) {
+            return selectedYear;
         }
+        return result.selectorYears[0];
     }, [result, selectedYear]);
 
     useEffect(() => {
@@ -312,14 +314,14 @@ const Page111 = () => {
     );
 
     const selectorYears = result?.selectorYears ?? [];
-    const selectedYearRow = selectedYear != null
-        ? result?.production?.find((row) => row.year === selectedYear) ?? null
+    const selectedYearRow = effectiveSelectedYear != null
+        ? result?.production?.find((row) => row.year === effectiveSelectedYear) ?? null
         : null;
     const chartStartYear = result?.chartStartYear ?? 2006;
-    const chartEndYear = result?.chartEndYear ?? selectedYear;
+    const chartEndYear = result?.chartEndYear ?? effectiveSelectedYear;
     const provinceStartYear = result?.provinceStartYear ?? 2016;
-    const provinceEndYear = result?.provinceEndYear ?? selectedYear;
-    const year = selectedYear;
+    const provinceEndYear = result?.provinceEndYear ?? effectiveSelectedYear;
+    const year = effectiveSelectedYear;
 
     const textVars = {
         year,
@@ -331,8 +333,8 @@ const Page111 = () => {
         conventionalMmbd: selectedYearRow?.conventionalMmbd != null ? formatMmbd(selectedYearRow.conventionalMmbd, 1) : '–',
     };
 
-    const selectedProvinceRow = selectedYear != null
-        ? result?.provinces?.find((row) => row.year === selectedYear) ?? null
+    const selectedProvinceRow = effectiveSelectedYear != null
+        ? result?.provinces?.find((row) => row.year === effectiveSelectedYear) ?? null
         : null;
 
     const provinceOverlayValues = selectedProvinceRow?.provinces ?? null;
@@ -950,7 +952,7 @@ const Page111 = () => {
                             }}
                         >
                             {selectorYears.map((optionYear) => {
-                                const isSelected = optionYear === selectedYear;
+                                const isSelected = optionYear === effectiveSelectedYear;
                                 return (
                                     <button
                                         key={optionYear}

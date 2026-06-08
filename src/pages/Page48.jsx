@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getEnergyUseData } from '../utils/dataLoader';
@@ -12,6 +12,17 @@ const PAGE48_PIE_FIELDS = ['TSEU', 'EL', 'NPC', 'FK', 'P'];
 const PAGE48_BAR_FIELDS = ['I', 'T', 'R', 'C', 'A'];
 const PAGE48_PIE_COLORS = ['#fcb340', '#657f9b', '#1f8093', '#6b666a', '#4b4c4d'];
 const PAGE48_BAR_COLORS = ['#c88d34', '#A687A5', '#7F94AD', '#577F6A', '#50A569'];
+
+const hexToRgba = (hex, opacity = 1) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
+    return hex;
+};
+
+const formatPJ = (n, lang) => {
+    if (n === undefined || n === null) return '—';
+    return Math.round(Number(n)).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+};
 
 const Page48 = () => {
     const { lang } = useOutletContext();
@@ -46,11 +57,6 @@ const Page48 = () => {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
-
-    useEffect(() => {
-        setSelectedSlices(null);
-        setSelectedBars(null);
-    }, [selectedYear]);
 
     const scrollToFootnote = (e) => {
         e.preventDefault();
@@ -142,12 +148,6 @@ const Page48 = () => {
         };
     }, [isBarTableOpen, windowWidth]);
 
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        return hex;
-    };
-
     const row = useMemo(() => {
         if (!data.data || !selectedYear) return null;
         return data.data.find((r) => r.year === selectedYear) || null;
@@ -186,10 +186,6 @@ const Page48 = () => {
         };
     }, [row]);
 
-    const formatPJ = (n) => {
-        if (n === undefined || n === null) return '—';
-        return Math.round(Number(n)).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
     const stripHtml = (text) => text ? String(text).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     const yearsList = data.years || [];
@@ -201,7 +197,7 @@ const Page48 = () => {
         const labels = PAGE48_PIE_KEYS.map((k) => getText('page48_' + k, lang));
         computed.pieValues.forEach((val, i) => {
             const pct = computed.TPD > 0 ? (val / computed.TPD) * 100 : 0;
-            hoverTexts.push(`<b>${labels[i]}</b><br>${formatPJ(val)} PJ<br>${pct.toFixed(0)}%`);
+            hoverTexts.push(`<b>${labels[i]}</b><br>${formatPJ(val, lang)} PJ<br>${pct.toFixed(0)}%`);
         });
         return { labels, hoverTexts, colors: PAGE48_PIE_COLORS };
     }, [computed, lang]);
@@ -241,7 +237,7 @@ const Page48 = () => {
             rotation: 335,
             automargin: true
         }];
-    }, [computed, lang, pieChartData, selectedSlices, zoomLegendMode, windowWidth]);
+    }, [computed, pieChartData, selectedSlices, windowWidth]);
 
     const barLabelFontSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 18;
     const barTextSize = Math.max(barLabelFontSize, 14);
@@ -259,7 +255,7 @@ const Page48 = () => {
                 orientation: 'h',
                 marker: { color },
                 hoverinfo: 'text',
-                hovertext: `<b>${labels[i]}</b><br>${Math.round(computed.barPct[i])}%<br>${formatPJ(computed.barValues[i])} PJ`,
+                hovertext: `<b>${labels[i]}</b><br>${Math.round(computed.barPct[i])}%<br>${formatPJ(computed.barValues[i], lang)} PJ`,
                 hoverlabel: { bgcolor: 'white', font: { size: 14, family: 'Arial, sans-serif' } },
                 text: [Math.round(computed.barPct[i]) + '%'],
                 textposition: 'inside',
@@ -328,7 +324,7 @@ const Page48 = () => {
         autosize: true,
         clickmode: 'event',
         dragmode: windowWidth <= 768 ? false : 'zoom'
-    }), [windowWidth]);
+    }), [windowWidth, barLabelFontSize]);
 
     const downloadChartPng = async (plotContainerRef, filenameTitle) => {
         const plotEl = plotContainerRef?.current?.querySelector?.('.js-plotly-plot');
@@ -361,13 +357,13 @@ const Page48 = () => {
                 link.click();
             };
             img.src = imgData;
-        } catch (e) {
-            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch (_) {}
+        } catch {
+            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch { /* ignore relayout restore */ }
         }
     };
     const pieChartRef = useRef(null);
     const barChartRef = useRef(null);
-    const configPie = useMemo(() => ({
+    const configPie = {
         displayModeBar: true,
         displaylogo: false,
         responsive: true,
@@ -377,8 +373,8 @@ const Page48 = () => {
             icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
             click: () => downloadChartPng(pieChartRef, lang === 'en' ? 'Primary and secondary energy use by sector' : "Consommation d'énergie primaire et secondaire par secteur")
         }]
-    }), [lang, selectedYear]);
-    const configBar = useMemo(() => ({
+    };
+    const configBar = {
         displayModeBar: true,
         displaylogo: false,
         responsive: true,
@@ -388,7 +384,7 @@ const Page48 = () => {
             icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
             click: () => downloadChartPng(barChartRef, lang === 'en' ? 'Secondary energy use by sector' : "Consommation d'énergie secondaire par secteur")
         }]
-    }), [lang, selectedYear]);
+    };
 
     const downloadPieTableCSV = () => {
         if (!data.data || data.data.length === 0) return;
@@ -653,7 +649,7 @@ const Page48 = () => {
                     <li>{getText('page48_bullet4', lang)}</li>
                     <li>
                         {getText('page48_bullet5_prefix', lang)}
-                        {hasData ? <strong>{formatPJ(computed.TPD)}</strong> : '—'}
+                        {hasData ? <strong>{formatPJ(computed.TPD, lang)}</strong> : '—'}
                         {getText('page48_bullet5_suffix', lang)}
                     </li>
                 </ul>
@@ -783,7 +779,7 @@ const Page48 = () => {
                                     )}
                                     <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 380, margin: '0 auto', position: 'relative' }}>
                                     <Plot
-                                        key={`pie-${selectedSlices ? selectedSlices.join('-') : 'none'}`}
+                                        key={selectedYear}
                                         data={pieData}
                                         layout={pieLayout}
                                         config={configPie}
@@ -882,11 +878,11 @@ const Page48 = () => {
                                                             <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{r.year}</th>
                                                             {pieVals.map((v, i) => (
                                                                 <React.Fragment key={i}>
-                                                                    <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(v)}</td>
+                                                                    <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(v, lang)}</td>
                                                                     <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{piePcts[i]}%</td>
                                                                 </React.Fragment>
                                                             ))}
-                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}><strong>{formatPJ(TPD)}</strong></td>
+                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}><strong>{formatPJ(TPD, lang)}</strong></td>
                                                         </tr>
                                                     );
                                                 })}
@@ -924,6 +920,7 @@ const Page48 = () => {
                                     )}
                                     <figure style={{ width: '100%', minHeight: 250, margin: '0 auto', position: 'relative' }}>
                                     <Plot
+                                        key={selectedYear}
                                         data={barData}
                                         layout={barLayout}
                                         config={configBar}
@@ -1012,11 +1009,11 @@ const Page48 = () => {
                                                             <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{r.year}</th>
                                                             {vals.map((v, i) => (
                                                                 <React.Fragment key={i}>
-                                                                    <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(v)}</td>
+                                                                    <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{formatPJ(v, lang)}</td>
                                                                     <td style={{ textAlign: 'right', border: '1px solid #ddd' }}>{pcts[i]}%</td>
                                                                 </React.Fragment>
                                                             ))}
-                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}><strong>{formatPJ(TSEU)}</strong></td>
+                                                            <td style={{ textAlign: 'right', border: '1px solid #ddd' }}><strong>{formatPJ(TSEU, lang)}</strong></td>
                                                         </tr>
                                                     );
                                                 })}

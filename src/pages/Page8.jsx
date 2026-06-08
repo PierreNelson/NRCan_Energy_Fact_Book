@@ -1,10 +1,49 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getProvincialGdpData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE8_PROVINCE_INFO = {
+    'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', abbrevEn: 'N.L.', abbrevFr: 'T.-N.-L.', geoJsonName: 'Newfoundland and Labrador' },
+    'pe': { nameEn: 'Prince Edward Island', nameFr: 'Île-du-Prince-Édouard', abbrevEn: 'P.E.I.', abbrevFr: 'Î.-P.-É.', geoJsonName: 'Prince Edward Island' },
+    'ns': { nameEn: 'Nova Scotia', nameFr: 'Nouvelle-Écosse', abbrevEn: 'N.S.', abbrevFr: 'N.-É.', geoJsonName: 'Nova Scotia' },
+    'nb': { nameEn: 'New Brunswick', nameFr: 'Nouveau-Brunswick', abbrevEn: 'N.B.', abbrevFr: 'N.-B.', geoJsonName: 'New Brunswick' },
+    'qc': { nameEn: 'Quebec', nameFr: 'Québec', abbrevEn: 'Que.', abbrevFr: 'Qc', geoJsonName: 'Quebec' },
+    'on': { nameEn: 'Ontario', nameFr: 'Ontario', abbrevEn: 'Ont.', abbrevFr: 'Ont.', geoJsonName: 'Ontario' },
+    'mb': { nameEn: 'Manitoba', nameFr: 'Manitoba', abbrevEn: 'Man.', abbrevFr: 'Man.', geoJsonName: 'Manitoba' },
+    'sk': { nameEn: 'Saskatchewan', nameFr: 'Saskatchewan', abbrevEn: 'Sask.', abbrevFr: 'Sask.', geoJsonName: 'Saskatchewan' },
+    'ab': { nameEn: 'Alberta', nameFr: 'Alberta', abbrevEn: 'Alta.', abbrevFr: 'Alb.', geoJsonName: 'Alberta' },
+    'bc': { nameEn: 'British Columbia', nameFr: 'Colombie-Britannique', abbrevEn: 'B.C.', abbrevFr: 'C.-B.', geoJsonName: 'British Columbia' },
+    'yt': { nameEn: 'Yukon', nameFr: 'Yukon', abbrevEn: 'Y.T.', abbrevFr: 'Yn', geoJsonName: 'Yukon Territory' },
+    'nt': { nameEn: 'Northwest Territories', nameFr: 'Territoires du Nord-Ouest', abbrevEn: 'N.W.T.', abbrevFr: 'T.N.-O.', geoJsonName: 'Northwest Territories' },
+    'nu': { nameEn: 'Nunavut', nameFr: 'Nunavut', abbrevEn: 'Nunavut', abbrevFr: 'Nt', geoJsonName: 'Nunavut' },
+};
+
+const PAGE8_PROVINCE_CODES = ['bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl', 'yt', 'nt', 'nu'];
+
+const PAGE8_PROVINCE_CENTROIDS = {
+    'nl': { lat: 53.5, lon: -57.0 },
+    'pe': { lat: 47.5, lon: -63.0 },
+    'ns': { lat: 43.5, lon: -61.5 },
+    'nb': { lat: 44.5, lon: -68.5 },
+    'qc': { lat: 52.5, lon: -72.0 },
+    'on': { lat: 50.5, lon: -86.0 },
+    'mb': { lat: 55.5, lon: -98.0 },
+    'sk': { lat: 54.5, lon: -106.0 },
+    'ab': { lat: 54.5, lon: -115.5 },
+    'bc': { lat: 54.0, lon: -125.0 },
+    'yt': { lat: 64.5, lon: -135.5 },
+    'nt': { lat: 65.5, lon: -120.0 },
+    'nu': { lat: 67.0, lon: -95.0 }
+};
+
+const formatPage8Number = (num, lang) => {
+    if (num === undefined || num === null) return '—';
+    return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+};
 
 const Page8 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -105,48 +144,12 @@ const Page8 = () => {
         };
     }, [isTableOpen, windowWidth]);
 
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
     const hexToRgba = (hex, opacity = 1) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         if (result) {
             return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
         }
         return hex;
-    };
-
-    const provinceInfo = {
-        'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', abbrevEn: 'N.L.', abbrevFr: 'T.-N.-L.', geoJsonName: 'Newfoundland and Labrador' },
-        'pe': { nameEn: 'Prince Edward Island', nameFr: 'Île-du-Prince-Édouard', abbrevEn: 'P.E.I.', abbrevFr: 'Î.-P.-É.', geoJsonName: 'Prince Edward Island' },
-        'ns': { nameEn: 'Nova Scotia', nameFr: 'Nouvelle-Écosse', abbrevEn: 'N.S.', abbrevFr: 'N.-É.', geoJsonName: 'Nova Scotia' },
-        'nb': { nameEn: 'New Brunswick', nameFr: 'Nouveau-Brunswick', abbrevEn: 'N.B.', abbrevFr: 'N.-B.', geoJsonName: 'New Brunswick' },
-        'qc': { nameEn: 'Quebec', nameFr: 'Québec', abbrevEn: 'Que.', abbrevFr: 'Qc', geoJsonName: 'Quebec' },
-        'on': { nameEn: 'Ontario', nameFr: 'Ontario', abbrevEn: 'Ont.', abbrevFr: 'Ont.', geoJsonName: 'Ontario' },
-        'mb': { nameEn: 'Manitoba', nameFr: 'Manitoba', abbrevEn: 'Man.', abbrevFr: 'Man.', geoJsonName: 'Manitoba' },
-        'sk': { nameEn: 'Saskatchewan', nameFr: 'Saskatchewan', abbrevEn: 'Sask.', abbrevFr: 'Sask.', geoJsonName: 'Saskatchewan' },
-        'ab': { nameEn: 'Alberta', nameFr: 'Alberta', abbrevEn: 'Alta.', abbrevFr: 'Alb.', geoJsonName: 'Alberta' },
-        'bc': { nameEn: 'British Columbia', nameFr: 'Colombie-Britannique', abbrevEn: 'B.C.', abbrevFr: 'C.-B.', geoJsonName: 'British Columbia' },
-        'yt': { nameEn: 'Yukon', nameFr: 'Yukon', abbrevEn: 'Y.T.', abbrevFr: 'Yn', geoJsonName: 'Yukon Territory' },
-        'nt': { nameEn: 'Northwest Territories', nameFr: 'Territoires du Nord-Ouest', abbrevEn: 'N.W.T.', abbrevFr: 'T.N.-O.', geoJsonName: 'Northwest Territories' },
-        'nu': { nameEn: 'Nunavut', nameFr: 'Nunavut', abbrevEn: 'Nunavut', abbrevFr: 'Nt', geoJsonName: 'Nunavut' },
-    };
-
-    const provinceCodes = ['bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl', 'yt', 'nt', 'nu'];
-
-    const provinceCentroids = {
-        'nl': { lat: 53.5, lon: -57.0 },
-        'pe': { lat: 47.5, lon: -63.0 },  
-        'ns': { lat: 43.5, lon: -61.5 },  
-        'nb': { lat: 44.5, lon: -68.5 },
-        'qc': { lat: 52.5, lon: -72.0 },
-        'on': { lat: 50.5, lon: -86.0 },
-        'mb': { lat: 55.5, lon: -98.0 },
-        'sk': { lat: 54.5, lon: -106.0 },
-        'ab': { lat: 54.5, lon: -115.5 },
-        'bc': { lat: 54.0, lon: -125.0 },
-        'yt': { lat: 64.5, lon: -135.5 },
-        'nt': { lat: 65.5, lon: -120.0 },
-        'nu': { lat: 67.0, lon: -95.0 }
     };
 
     useEffect(() => {
@@ -169,7 +172,7 @@ const Page8 = () => {
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isChartInteractive]);
+    }, [isChartInteractive, windowWidth]);
 
     const downloadChartWithTitle = async (plotEl = null) => {
         const plotElement = plotEl || document.querySelector('.page8-map-container .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
@@ -312,10 +315,6 @@ const Page8 = () => {
         return allData.find(d => d.year === year) || allData[allData.length - 1];
     }, [year, allData]);
 
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
     const downloadTableAsCSV = () => {
         if (!allData || allData.length === 0) return;
 
@@ -324,8 +323,8 @@ const Page8 = () => {
             lang === 'en' ? 'Province/Territory' : 'Province/Territoire',
             ...allData.map(yearData => `${yearData.year} ${unitHeader}`)
         ];
-        const rows = provinceCodes.map(code => {
-            const info = provinceInfo[code];
+        const rows = PAGE8_PROVINCE_CODES.map(code => {
+            const info = PAGE8_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
             return [name, ...allData.map(yearData => yearData[code] || 0)];
         });
@@ -360,14 +359,14 @@ const Page8 = () => {
                 shading: { fill: 'E6E6E6' }
             }))
         });
-        const dataRows = provinceCodes.map(code => {
-            const info = provinceInfo[code];
+        const dataRows = PAGE8_PROVINCE_CODES.map(code => {
+            const info = PAGE8_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: name, size: 20 })], alignment: AlignmentType.LEFT })] }),
                     ...allData.map(yearData => new TableCell({ 
-                        children: [new Paragraph({ children: [new TextRun({ text: formatNumber(yearData[code] || 0), size: 20 })], alignment: AlignmentType.RIGHT })] 
+                        children: [new Paragraph({ children: [new TextRun({ text: formatPage8Number(yearData[code] || 0, lang), size: 20 })], alignment: AlignmentType.RIGHT })] 
                     }))
                 ]
             });
@@ -376,7 +375,7 @@ const Page8 = () => {
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Canada Total' : 'Total Canada', bold: true, size: 20 })], alignment: AlignmentType.LEFT })] }),
                 ...allData.map(yearData => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: formatNumber(yearData.national_total || 0), bold: true, size: 20 })], alignment: AlignmentType.RIGHT })] 
+                    children: [new Paragraph({ children: [new TextRun({ text: formatPage8Number(yearData.national_total || 0, lang), bold: true, size: 20 })], alignment: AlignmentType.RIGHT })] 
                 }))
             ]
         });
@@ -409,12 +408,12 @@ const Page8 = () => {
 
         if (lang === 'en') {
             return `Energy's nominal GDP contribution by province and territory for ${year}. ` +
-                   `The national total is ${formatNumber(total)} million dollars. ` +
-                   `${topProvince} has the highest contribution at ${formatNumber(topValue)} million dollars.`;
+                   `The national total is ${formatPage8Number(total, lang)} million dollars. ` +
+                   `${topProvince} has the highest contribution at ${formatPage8Number(topValue, lang)} million dollars.`;
         } else {
             return `Contribution de l'énergie au PIB nominal par province et territoire pour ${year}. ` +
-                   `Le total national est de ${formatNumber(total)} millions de dollars. ` +
-                   `${topProvince} a la contribution la plus élevée à ${formatNumber(topValue)} millions de dollars.`;
+                   `Le total national est de ${formatPage8Number(total, lang)} millions de dollars. ` +
+                   `${topProvince} a la contribution la plus élevée à ${formatPage8Number(topValue, lang)} millions de dollars.`;
         }
     };
     const chartData = useMemo(() => {
@@ -442,20 +441,20 @@ const Page8 = () => {
             'nu': 0
         };
 
-        provinceCodes.forEach(code => {
+        PAGE8_PROVINCE_CODES.forEach(code => {
             const value = currentYearData[code] || 0;
-            const info = provinceInfo[code];
+            const info = PAGE8_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
             const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
 
             values.push(value);
-            hoverTexts.push(`<b>${name}</b><br>$${formatNumber(value)}M`);
+            hoverTexts.push(`<b>${name}</b><br>$${formatPage8Number(value, lang)}M`);
             geoJsonNames.push(info.geoJsonName);
-            const centroid = provinceCentroids[code];
+            const centroid = PAGE8_PROVINCE_CENTROIDS[code];
             const latOffset = windowWidth <= 480 ? (highZoomOffsets[code] || 0) : 0;
             labelLats.push(centroid.lat + latOffset);
             labelLons.push(centroid.lon);
-            labelTexts.push(`${abbrev}\n${formatNumber(value)}`);
+            labelTexts.push(`${abbrev}\n${formatPage8Number(value, lang)}`);
         });
 
         return { values, hoverTexts, labelLats, labelLons, labelTexts, geoJsonNames };
@@ -1133,10 +1132,10 @@ const Page8 = () => {
                                     featureidkey: 'properties.name',
                                     locations: chartData.geoJsonNames,
                                     z: chartData.values,
-                                    text: provinceCodes.map((code, i) => {
-                                        const info = provinceInfo[code];
+                                    text: PAGE8_PROVINCE_CODES.map((code, i) => {
+                                        const info = PAGE8_PROVINCE_INFO[code];
                                         const name = lang === 'en' ? info.nameEn : info.nameFr;
-                                        return `<b>${name}</b><br>${year}<br>$${formatNumber(chartData.values[i])}M`;
+                                        return `<b>${name}</b><br>${year}<br>$${formatPage8Number(chartData.values[i], lang)}M`;
                                     }),
                                     hoverinfo: 'text',
                                     hoverlabel: {
@@ -1171,26 +1170,26 @@ const Page8 = () => {
                                     mode: 'text',
                                     lat: chartData.labelLats,
                                     lon: chartData.labelLons,
-                                    text: provinceCodes.map((code, i) => {
-                                        const info = provinceInfo[code];
+                                    text: PAGE8_PROVINCE_CODES.map((code, i) => {
+                                        const info = PAGE8_PROVINCE_INFO[code];
                                         const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
                                         if (windowWidth <= 480) {
-                                            return `${abbrev}<br>${formatNumber(chartData.values[i])}`;
+                                            return `${abbrev}<br>${formatPage8Number(chartData.values[i], lang)}`;
                                         }
-                                        return `<b>${abbrev}</b><br><b>${formatNumber(chartData.values[i])}</b>`;
+                                        return `<b>${abbrev}</b><br><b>${formatPage8Number(chartData.values[i], lang)}</b>`;
                                     }),
                                     textfont: {
                                         family: 'Arial, sans-serif',
                                         size: windowWidth <= 640 ? 12 : 14,
                                         color: selectedProvinces === null 
                                             ? '#000000' 
-                                            : provinceCodes.map((_, i) => selectedProvinces.includes(i) ? '#333333' : hexToRgba('#333333', 0.3))
+                                            : PAGE8_PROVINCE_CODES.map((_, i) => selectedProvinces.includes(i) ? '#333333' : hexToRgba('#333333', 0.3))
                                     },
                                     hoverinfo: 'text',
-                                    hovertext: provinceCodes.map((code, i) => {
-                                        const info = provinceInfo[code];
+                                    hovertext: PAGE8_PROVINCE_CODES.map((code, i) => {
+                                        const info = PAGE8_PROVINCE_INFO[code];
                                         const name = lang === 'en' ? info.nameEn : info.nameFr;
-                                        return `<b>${name}</b><br>${year}<br>$${formatNumber(chartData.values[i])}M`;
+                                        return `<b>${name}</b><br>${year}<br>$${formatPage8Number(chartData.values[i], lang)}M`;
                                     }),
                                     hoverlabel: {
                                         bgcolor: '#ffffff',
@@ -1342,8 +1341,8 @@ const Page8 = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {provinceCodes.map((code, idx) => {
-                                    const info = provinceInfo[code];
+                                {PAGE8_PROVINCE_CODES.map((code) => {
+                                    const info = PAGE8_PROVINCE_INFO[code];
                                     const name = lang === 'en' ? info.nameEn : info.nameFr;
                                     const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
                                     return (
@@ -1353,9 +1352,9 @@ const Page8 = () => {
                                                 <td 
                                                     key={yearData.year} 
                                                     style={{ textAlign: 'right' }}
-                                                    aria-label={`${name}, ${yearData.year}: ${formatNumber(yearData[code])}${cellUnitSR}`}
+                                                    aria-label={`${name}, ${yearData.year}: ${formatPage8Number(yearData[code], lang)}${cellUnitSR}`}
                                                 >
-                                                    {formatNumber(yearData[code])}
+                                                    {formatPage8Number(yearData[code], lang)}
                                                 </td>
                                             ))}
                                         </tr>
@@ -1370,9 +1369,9 @@ const Page8 = () => {
                                             <td 
                                                 key={yearData.year} 
                                                 style={{ textAlign: 'right' }}
-                                                aria-label={`${totalLabel}, ${yearData.year}: ${formatNumber(yearData.national_total)}${cellUnitSR}`}
+                                                aria-label={`${totalLabel}, ${yearData.year}: ${formatPage8Number(yearData.national_total, lang)}${cellUnitSR}`}
                                             >
-                                                {formatNumber(yearData.national_total)}
+                                                {formatPage8Number(yearData.national_total, lang)}
                                             </td>
                                         );
                                     })}

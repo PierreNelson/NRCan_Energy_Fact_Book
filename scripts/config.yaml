@@ -69,7 +69,7 @@ sections:
         source_url: "https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv"
 
   # Section 2: Investment
-  section2_investment:
+  section2_indicators:
     enabled: true
     name: "Investment"
     sources:
@@ -160,7 +160,7 @@ sections:
         ee_improvement_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
 
   # Section 5: Clean Power and Low Carbon Fuels
-  section5_clean_power:
+  section5_indicators:
     enabled: true
     name: "Clean Power and Low Carbon Fuels"
     sources:
@@ -189,7 +189,7 @@ sections:
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501"
 
   # Section 6: Oil, Natural Gas and Coal
-  section6_oil_gas:
+  section6_indicators:
     enabled: true
     name: "Oil, Natural Gas and Coal"
     sources:
@@ -236,10 +236,21 @@ sections:
 
 export:
   output_dir: "../public/data"
+  backup_enabled: true
+  backup_dir: "../public/data/.backups"
+  keep_backups: 5
   files:
     data_csv: "data.csv"
     metadata_csv: "metadata.csv"
     major_projects_csv: "major_projects_map.csv"
+
+# ============================================================================
+# RESILIENCE CONFIGURATION
+# ============================================================================
+
+resilience:
+  fetch_max_retries: 3
+  fetch_retry_delay_seconds: 2
 
 # ============================================================================
 # LOGGING CONFIGURATION
@@ -248,3 +259,6 @@ export:
 logging:
   level: "INFO"  # DEBUG, INFO, WARNING, ERROR
   format: "%(asctime)s - %(levelname)s - %(message)s"
+  file:
+    enabled: true
+    directory: "logs"  # relative to scripts/

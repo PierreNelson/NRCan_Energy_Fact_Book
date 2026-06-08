@@ -1,48 +1,45 @@
 # NRCan Energy Factbook — data pipeline
 
-Python CLI for fetching data into **SQL Server**, then exporting **`public/data/data.csv`**, **`metadata.csv`**, and related files for the Vite/React app.
+Python CLI that fetches energy data from StatCan, NRCan, IEA, and other sources into **SQL Server**, then exports **`public/data/data.csv`**, **`metadata.csv`**, and related files for the Vite/React website.
 
-Further reading: **[`db/README.md`](db/README.md)** (schema and table names), **[`../docs/DATA_PIPELINE_GUIDE.md`](../docs/DATA_PIPELINE_GUIDE.md)** (end-to-end design), **[`../docs/DATA_UPDATE_GUIDE.md`](../docs/DATA_UPDATE_GUIDE.md)** (operational updates), **[`../docs/EFB_MODERNIZATION_REVIEW.md`](../docs/EFB_MODERNIZATION_REVIEW.md)** (client Q&A: DevOps, lint, page index).
+**Full command list:** root **[`README.md`](../README.md#command-reference-master-list)** (npm, pipeline, glossary, release). This file covers setup, layout, and troubleshooting in more detail.
+
+Further reading: **[`db/README.md`](db/README.md)** (schema), **[`../docs/DATA_UPDATE_GUIDE.md`](../docs/DATA_UPDATE_GUIDE.md)** (operator runbook), **[`../docs/DATA_PIPELINE_GUIDE.md`](../docs/DATA_PIPELINE_GUIDE.md)** (developer architecture).
 
 ## Layout
 
+This folder is the pipeline entry point. Each subfolder has a focused role:
+
 ```
 scripts/
-├── main.py                    # CLI: refresh, export, list, test-connection
+├── main.py                    # CLI: eedas update, efb transform, export, status, list
+├── eedas/                     # Stage 1 — raw ingest orchestration
+├── efb/                       # Stage 2 — indicator transform orchestration
 ├── config.yaml                # Sections, sources, export paths, logging
 ├── config_loader.py           # Loads config; env overrides for DB
 ├── requirements.txt
-├── .env.example               # Copy to .env for DB_* variables
-├── data_retrieval.py          # Legacy StatCan/helper routines (optional; may be gitignored)
-├── xlsx_paths.py              # Resolves paths to external XLSX inputs
-├── export_glossary_html.py    # Glossary / data-gallery HTML (optional; see docs/GLOSSARY_UPDATE_GUIDE.md)
-├── zip_website_release.py     # npm run build + zip deploy-only (dist flat) or --full handoff (see "Release zips")
-├── zip_data_release.py        # Zip public/data (incl. metadata.csv), public/glossary, translations.js
-├── db/
-│   ├── README.md              # Schema overview (authoritative for table names)
-│   ├── setup_database.sql     # DDL (applied on refresh via ensure_schema)
-│   ├── ensure_schema.py       # Runs idempotent batches from setup_database.sql
-│   ├── eedas_registry.yaml    # source_key → physical source_table
-│   ├── eedas_registry.py      # TABLE_* constants and registry helpers
-│   ├── connection.py          # pyodbc connection wrapper
-│   ├── models.py              # DataRepository — merge, upsert, export staging
-│   ├── patch_setup_unified.py # One-off developer tool to regenerate DDL chunks (not used by refresh)
-│   └── __init__.py
-├── sections/
-│   ├── base.py                # Base processor: store_raw_data, merge, logging
-│   ├── section1_indicators.py # Key Indicators
-│   ├── section2_investment.py # Investment
-│   ├── section4_indicators.py # Energy Efficiency (OEE, residential, commercial, SEU)
-│   └── section5_clean_power.py # Clean Power / environmental clean technology
-├── export/
-│   ├── website_files.py       # prepare_export_data + write data.csv / metadata.csv / major_projects_map.csv
-│   └── source_vectors.py      # SOURCE_VECTOR_PREFIXES for `main.py list`
+├── .env.example               # Copy to .env for DB_* and EXTERNAL_XLSX_DATA_DIR
+├── xlsx_paths.py              # Resolves paths to external Excel workbooks
+├── export_glossary_html.py    # Glossary / data-gallery HTML (see docs/GLOSSARY_UPDATE_GUIDE.md)
+├── zip_website_release.py     # npm run build + deploy zip (see Release zips)
+├── zip_data_release.py        # Zip public/data, glossary, translations.js
+├── db/                        # Schema DDL, registries, DataRepository
+├── sections/                  # Per-section update_* and transform_* handlers
+├── export/                    # website_files.py, source_vectors.py
 └── templates/
-    └── data-gallery.html      # Template used by glossary export tooling
+    └── data-gallery.html
 ```
 
-**Section registry** (`main.py`): `section1_indicators`, `section2_investment`, `section4_indicators`, `section5_clean_power`.  
-`config.yaml` may also define **placeholders** `section3_skills` and `section6_oil_gas` (disabled by default).
+| Folder | Role |
+|--------|------|
+| **`eedas/`** | Runs `update_*` handlers — fetch sources, write publisher-native rows to EEDAS series tables |
+| **`efb/`** | Runs `transform_*` handlers — read raw SQL, aggregate, write `nrcan_efb_indicators` |
+| **`sections/`** | One package per Factbook section; each source has paired update and transform modules |
+| **`db/`** | SQL schema, `eedas_registry.yaml`, `efb_indicators_registry.yaml`, connection and repository code |
+| **`export/`** | Copies indicators to `nrcan_fb_export` staging, writes CSV files under `public/data/` |
+
+**Section registry** (`main.py`): `section1_indicators`, `section2_indicators`, `section4_indicators`, `section5_indicators`, `section6_indicators`.  
+`config.yaml` may also define a **placeholder** `section3_skills` (disabled by default).
 
 ## Release zips (station / dev test handoff)
 
@@ -54,41 +51,39 @@ Two stdlib Python helpers write timestamped archives under **`release/`** (gitig
 python scripts/zip_website_release.py
 ```
 
-This runs **`npm run build`**, then produces `release/nrcan-energy-factbook-website-YYYYMMDD-HHMMSS.zip` containing:
+This runs **`npm run build`**, then produces `release/nrcan-energy-factbook-website-YYYYMMDD-HHMMSS.zip` containing **`DEPLOYMENT.md`** and the **contents of `dist/`** at the zip root (`index.html`, `assets/`, `data/`, `glossary/`, …). No `src/`, `public/`, or `package.json`.
 
-- **`DEPLOYMENT.md`** and the **contents of `dist/`** at the zip root (`index.html`, `assets/`, `data/`, `glossary/`, …). No `src/`, `public/`, or `package.json`.
-
-Recipients unzip and point the web server at that folder. See **[`../docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md)**.
-
-**Optional full handoff** (same as older behavior — large archive for developers who need to rebuild):
+**Optional full handoff** (large archive for developers who need to rebuild):
 
 ```bash
 python scripts/zip_website_release.py --full
 ```
 
-Produces `release/nrcan-energy-factbook-website-full-YYYYMMDD-HHMMSS.zip` with **`dist/`**, **`src/`**, **`public/`**, package files, and **`docs/DEPLOYMENT.md`**.
-
-To pack an existing **`dist/`** without running npm (e.g. CI already built):
+Pack an existing **`dist/`** without running npm:
 
 ```bash
 python scripts/zip_website_release.py --skip-build
 ```
 
-**Data and text only** (CSV data, glossary files, `translations.js` — for merging into a checkout or overlaying a deployed **`dist/`**):
+**Data and text only** (CSV data, glossary files, `translations.js`):
 
 ```bash
 python scripts/zip_data_release.py
 ```
 
-Produces `release/nrcan-energy-factbook-data-YYYYMMDD-HHMMSS.zip` with the full **`public/data/`** tree (including `data.csv`, **`metadata.csv`**, `major_projects_map.csv`), **`public/glossary/`**, and **`src/utils/translations.js`**. On a server deployed from the **default** website zip (flat `data/` / `glossary/` next to `index.html`), copy files into **`data/`** and **`glossary/`**. If you still use a **`dist/`** folder layout, copy **`public/data`** → **`dist/data`** and **`public/glossary`** → **`dist/glossary`**. **Translation** changes require a new **`npm run build`** (strings are bundled); see **`docs/DEPLOYMENT.md`**.
+Produces `release/nrcan-energy-factbook-data-YYYYMMDD-HHMMSS.zip` with **`public/data/`**, **`public/glossary/`**, and **`src/utils/translations.js`**. On a server deployed from the default website zip, copy files into flat **`data/`** and **`glossary/`** next to `index.html`. Translation changes require a new **`npm run build`** — see **`docs/DEPLOYMENT.md`**.
 
 Optional: `--output-dir PATH` on either script to change the output directory.
 
 ## Prerequisites
 
-1. **Python 3.10+**
-2. **SQL Server** (e.g. Developer Edition) — [download](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
-3. **ODBC Driver 17 or 18 for SQL Server** — [Microsoft docs](https://docs.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server)
+You need all three when running the full pipeline locally:
+
+| Requirement | Why |
+|-------------|-----|
+| **Python 3.10+** | Runs `main.py` and section handlers |
+| **SQL Server** (e.g. Developer Edition) — [download](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) | Stores EEDAS raw tables and EFB indicators before CSV export |
+| **ODBC Driver 17 or 18 for SQL Server** — [Microsoft docs](https://docs.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server) | How Python (`pyodbc`) connects to SQL Server |
 
 ## Setup
 
@@ -117,9 +112,8 @@ DB_SERVER=localhost
 DB_DATABASE=NRCanEnergyFactbook
 DB_USERNAME=
 DB_PASSWORD=
+EXTERNAL_XLSX_DATA_DIR=C:\path\to\excel-workbooks
 ```
-
-Leave `DB_USERNAME` / `DB_PASSWORD` empty for **Windows Authentication**. Do not commit secrets; `.env` is gitignored.
 
 ### 4. Test connection
 
@@ -127,13 +121,21 @@ Leave `DB_USERNAME` / `DB_PASSWORD` empty for **Windows Authentication**. Do not
 python main.py test-connection
 ```
 
-### 5. Schema and first refresh
+### 5. Schema and first run
 
-On **`python main.py refresh …`**, the pipeline runs **`ensure_schema`** unless you pass **`--skip-ensure-schema`**. That applies `db/setup_database.sql` (skips `CREATE DATABASE`, destructive re-seed of `nrcan_fb_data_sources`, and standalone `USE` batches). If `nrcan_fb_data_sources` is empty, default rows are inserted.
+The first **`python main.py eedas update …`** applies table DDL from **`db/setup_database.sql`** via **`ensure_schema`**, unless you pass **`--skip-ensure-schema`**.
 
-Optional full manual run of the raw SQL file (creates DB / destructive seed if your copy includes those blocks): use SSMS or `sqlcmd` with `db/setup_database.sql`.
+### Three-stage workflow
+
+```bash
+python main.py eedas update --all      # 1. Load raw source data into EEDAS
+python main.py efb transform --all     # 2. Build Factbook indicators
+python main.py export                  # 3. Write website CSVs
+```
 
 ## Usage
+
+All commands run from the **`scripts/`** directory.
 
 ### List sections and sources
 
@@ -141,74 +143,106 @@ Optional full manual run of the raw SQL file (creates DB / destructive seed if y
 python main.py list
 ```
 
-### Refresh data
+Shows enabled sections and sources from `config.yaml`. Does not require a database connection.
+
+### EEDAS update (raw ingest)
+
+Fetches from StatCan, Excel, HTML, APIs and writes **source-native** rows to EEDAS series tables (`stc_*`, `nrcan_*`, `iea_*`).
 
 ```bash
-python main.py refresh --all
-python main.py refresh --section section2_investment
-python main.py refresh --source capital_expenditures
+python main.py eedas update --all
+python main.py eedas update --section section2_indicators
+python main.py eedas update --source capital_expenditures
 ```
 
-Refresh options:
+### EFB transform (indicators)
 
-| Flag | Meaning |
-|------|---------|
-| `--export-after` / `-e` | Run website CSV export after refresh |
-| `--skip-ensure-schema` | Skip `setup_database.sql` batches (advanced) |
+Reads raw EEDAS tables, applies Factbook aggregation rules, writes semantic vectors to **`nrcan_efb_indicators`**.
 
-### Export only (from existing DB)
+```bash
+python main.py efb transform --all
+python main.py efb transform --section section2_indicators
+python main.py efb transform --indicator capital_expenditures
+```
+
+### Export (website CSVs)
+
+Copies indicators from SQL to `public/data/`. Does not fetch from external sources.
 
 ```bash
 python main.py export
 python main.py export --source capital_expenditures
-python main.py export --vectors "cea_*"
+python main.py export --vectors "capex_*"
+python main.py export --restore-latest
+python main.py export --list-backups
 ```
 
-Export writes under **`export.output_dir`** in `config.yaml` (default: **`../public/data`**): `data_csv`, `metadata_csv`, `major_projects_csv`.
+Export writes under **`export.output_dir`** in `config.yaml` (default: **`../public/data`**): `data_csv`, `metadata_csv`, `major_projects_csv`. Before overwrite, files are backed up to **`export.backup_dir`** (default: `public/data/.backups/`).
+
+### Pipeline status
+
+```bash
+python main.py status
+python main.py status --failed-only
+python main.py status --hours 48
+```
 
 ## Configuration (`config.yaml`)
 
+`config.yaml` controls which sections and sources run, where files are fetched from, and where CSVs are written.
+
 - **`database`**: server, database name, driver, timeouts (overridable via `DB_*` env vars).
 - **`sections`**: each section has `enabled`, `name`, and **`sources`** with per-source `enabled`, `description`, and fetch keys (`statcan_table`, `file_path`, `source_url`, OEE paths, etc.).
-- **`export`**: `output_dir`, `files` names for CSV outputs.
-- **`logging`**: level and format.
+- **`export`**: `output_dir`, `files` names for CSV outputs, `backup_enabled`, `backup_dir`, `keep_backups`.
+- **`resilience`**: `fetch_max_retries`, `fetch_retry_delay_seconds` for StatCan HTTP fetches.
+- **`logging`**: level, format, and **`file`** (`enabled`, `directory` under `scripts/`). Each CLI run writes **`scripts/logs/{command}_{timestamp}.log`**.
 
-Disable a section or source with `enabled: false` to skip it during `--all` refreshes.
+Disable a section or source with `enabled: false` to skip it during **`eedas update --all`**. Disabled sources do not remove existing database or CSV rows until the next successful update, transform, and export.
 
 ## Data flow
 
 ```
-Sources (StatCan, IEA, NRCan HTML/XLSX/API, …)
-    → section processors → per-source series tables (see db/eedas_registry.yaml)
-    → optional nrcan_fb_s1_*, nrcan_fb_s2_*, nrcan_fb_s4_* calc tables
-    → nrcan_fb_export (staging)
-    → public/data/data.csv, metadata.csv (+ major_projects_map.csv when applicable)
+External sources (StatCan, IEA, NRCan HTML/XLSX/API, local Excel)
+    → eedas update (update_* handlers)
+    → EEDAS series tables (stc_*, nrcan_*, iea_*)
+    → efb transform (transform_* handlers)
+    → nrcan_efb_indicators
+    → prepare_export_data() → nrcan_fb_export (staging)
+    → export → public/data/data.csv, metadata.csv, major_projects_map.csv
+    → React app (dataLoader.js)
 ```
 
-Website **`data.csv`** is built from **`nrcan_fb_export`**, which unions configured physical tables via `prepare_export_data()` in **`db/models.py`**.
+Website **`data.csv`** is built from **`nrcan_efb_indicators`** via **`prepare_export_data()`** in **`db/models.py`**, then written by **`export/website_files.py`**.
 
 ## Troubleshooting
 
 ### Connection issues
 
-1. SQL Server service is running.
-2. Mixed Mode authentication if using SQL logins.
-3. `python -c "import pyodbc; print(pyodbc.drivers())"` lists ODBC drivers.
+1. Confirm SQL Server service is running.
+2. Enable Mixed Mode authentication if using SQL logins.
+3. List ODBC drivers: `python -c "import pyodbc; print(pyodbc.drivers())"`.
 
 ### Missing or partial data
 
 1. Source enabled in `config.yaml`.
-2. `nrcan_fb_run_history` for errors.
-3. For exports, run `python main.py export` after a successful refresh.
+2. Run all three stages — export alone does not fetch new data.
+3. `python main.py status --failed-only` for recent failures (or query `nrcan_fb_run_history`).
+4. Latest **`scripts/logs/`** log file for the run (path printed at startup).
 
 ### Export problems
 
-1. Confirm `nrcan_fb_export` has rows after refresh (`prepare_export_data` runs inside export).
+1. Confirm **`nrcan_efb_indicators`** has rows after transform (`prepare_export_data` runs inside export).
 2. Write permissions on `public/data/`.
+3. Check `public/data/.backups/` for pre-export copies; `python main.py export --list-backups`.
+4. Review `scripts/logs/last_refresh_summary.json` after pipeline runs.
 
 ## Adding a new data source
 
 1. Add the source under the right **`sections.*.sources`** block in **`config.yaml`**.
-2. Implement the handler in the matching **`sections/section*.py`** and register it in **`get_source_handlers()`** in **`base.py`** or the section class.
-3. Add **`source_key`** → **`source_table`** in **`db/eedas_registry.yaml`**; add a **`CREATE TABLE`** for new physical names in **`db/setup_database.sql`**.
-4. Refresh and export; update the frontend **`dataLoader.js`** / page as needed.
+2. Register **`source_key` → `source_table`** in **`db/eedas_registry.yaml`**; add DDL in **`db/setup_database.sql`** if the table is new.
+3. Implement **`update_*`** in the matching section folder — fetch data, write publisher-native rows via **`replace_raw_data`** / **`store_publisher_rows`**.
+4. Register the indicator in **`db/efb_indicators_registry.yaml`**; implement **`transform_*`** — read raw with **`get_raw_dataframe`**, aggregate, call **`store_indicators`**.
+5. Add vector prefix in **`export/source_vectors.py`** and a getter in **`src/utils/dataLoader.js`**.
+6. Run all three stages for the new source; update the relevant page component.
+
+See **[`../docs/DATA_PIPELINE_GUIDE.md`](../docs/DATA_PIPELINE_GUIDE.md)** for handler patterns and fetch examples.

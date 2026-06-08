@@ -1,12 +1,31 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getCEAData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE33_REGION_DEFINITIONS = [
+    { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#48A36C', labelLat: 78, labelLon: -160 },
+    { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis et Mexique', color: '#48A36C', labelLat: 35, labelLon: -150 },
+    { key: 'latin_america', nameEn: 'Americas (South and Central\nAmerica, Caribbean)', nameFr: 'Amériques (Amérique du Sud,\nAmérique centrale et Caraïbes)', color: '#f26721', labelLat: -18, labelLon: -120 },
+    { key: 'europe', nameEn: 'Europe', nameFr: 'Europe', color: '#204897', labelLat: 48, labelLon: -32 },
+    { key: 'africa', nameEn: 'Africa', nameFr: 'Afrique', color: '#AB9217', labelLat: -10, labelLon: -5 },
+    { key: 'asia', nameEn: 'Asia', nameFr: 'Asie', color: '#a91e22', labelLat: 20, labelLon: 140 },
+    { key: 'oceania', nameEn: 'Oceania', nameFr: 'Océanie', color: '#857550', labelLat: -25, labelLon: 90 }
+];
+
+const formatPage33BillionSR = (num, lang) => {
+    if (num === undefined || num === null) return '';
+    const rounded = Math.round(num);
+    return lang === 'en'
+        ? `${rounded} billion dollars`
+        : `${rounded} milliards de dollars`;
+};
+
 const Page33 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [year, setYear] = useState(null);
     const [allData, setAllData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -41,14 +60,6 @@ const Page33 = () => {
         }
         // English format: "$563.8B"
         return `$${rounded}B`;
-    };
-
-    const formatBillionSR = (num) => {
-        if (num === undefined || num === null) return '';
-        const rounded = Math.round(num);
-        return lang === 'en' 
-            ? `${rounded} billion dollars` 
-            : `${rounded} milliards de dollars`;
     };
 
     const formatPercent = (num) => {
@@ -240,10 +251,10 @@ const Page33 = () => {
     const downloadTableAsCSV = () => {
         if (!tableData || tableData.length === 0) return;
 
-        const regionKeys = regionDefinitions.map(r => r.key);
+        const regionKeys = PAGE33_REGION_DEFINITIONS.map(r => r.key);
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...regionDefinitions.map(r => lang === 'en' ? r.nameEn.replace(/\n/g, ' ') : r.nameFr.replace(/\n/g, ' '))
+            ...PAGE33_REGION_DEFINITIONS.map(r => lang === 'en' ? r.nameEn.replace(/\n/g, ' ') : r.nameFr.replace(/\n/g, ' '))
         ];
 
         const rows = tableData.map(yearData => [
@@ -272,7 +283,7 @@ const Page33 = () => {
         const maxYear = Math.max(...years);
         const title = `${getText('page33_chart_title', lang)} ${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
         const unitHeader = lang === 'en' ? '($ billions)' : '(G$)';
-        const regionKeys = regionDefinitions.map(r => r.key);
+        const regionKeys = PAGE33_REGION_DEFINITIONS.map(r => r.key);
 
         const unitRow = new TableRow({
             children: [
@@ -286,7 +297,7 @@ const Page33 = () => {
                         alignment: AlignmentType.CENTER
                     })],
                     shading: { fill: 'E6E6E6' },
-                    columnSpan: regionDefinitions.length
+                    columnSpan: PAGE33_REGION_DEFINITIONS.length
                 })
             ]
         });
@@ -300,7 +311,7 @@ const Page33 = () => {
                     })],
                     shading: { fill: 'E6E6E6' }
                 }),
-                ...regionDefinitions.map(r => new TableCell({
+                ...PAGE33_REGION_DEFINITIONS.map(r => new TableCell({
                     children: [new Paragraph({
                         children: [new TextRun({ 
                             text: lang === 'en' ? r.nameEn.replace(/\n/g, ' ') : r.nameFr.replace(/\n/g, ' '), 
@@ -387,26 +398,15 @@ const Page33 = () => {
         ]
     }), []);
 
-    // Region definitions with colors matching the reference image
-    const regionDefinitions = useMemo(() => [
-        { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#48A36C', labelLat: 78, labelLon: -160 },
-        { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis et Mexique', color: '#48A36C', labelLat: 35, labelLon: -150 },
-        { key: 'latin_america', nameEn: 'Americas (South and Central\nAmerica, Caribbean)', nameFr: 'Amériques (Amérique du Sud,\nAmérique centrale et Caraïbes)', color: '#f26721', labelLat: -18, labelLon: -120 },
-        { key: 'europe', nameEn: 'Europe', nameFr: 'Europe', color: '#204897', labelLat: 48, labelLon: -32 },
-        { key: 'africa', nameEn: 'Africa', nameFr: 'Afrique', color: '#AB9217', labelLat: -10, labelLon: -5 },
-        { key: 'asia', nameEn: 'Asia', nameFr: 'Asie', color: '#a91e22', labelLat: 20, labelLon: 140 },
-        { key: 'oceania', nameEn: 'Oceania', nameFr: 'Océanie', color: '#857550', labelLat: -25, labelLon: 90 }
-    ], []);
-
     const regionData = useMemo(() => {
         if (!currentYearData) return [];
 
-        return regionDefinitions.map(region => ({
+        return PAGE33_REGION_DEFINITIONS.map(region => ({
             ...region,
             value: currentYearData[region.key] || 0,
             countries: regionCountryCodes[region.key] || []
         })).filter(r => r.value > 0);
-    }, [currentYearData, regionDefinitions, regionCountryCodes]);
+    }, [currentYearData, regionCountryCodes]);
 
     const mapData = useMemo(() => {
         if (!regionData.length) return [];
@@ -598,11 +598,11 @@ const Page33 = () => {
     const narrativeTextSR = useMemo(() => {
         if (!calculatedValues) return '';
         
-        const A1Text = formatBillionSR(calculatedValues.A1);
-        const A2Text = formatBillionSR(calculatedValues.A2);
-        const A3Text = formatBillionSR(calculatedValues.A3);
-        const A4Text = formatBillionSR(calculatedValues.A4);
-        const A5Text = formatBillionSR(calculatedValues.A5);
+        const A1Text = formatPage33BillionSR(calculatedValues.A1, lang);
+        const A2Text = formatPage33BillionSR(calculatedValues.A2, lang);
+        const A3Text = formatPage33BillionSR(calculatedValues.A3, lang);
+        const A4Text = formatPage33BillionSR(calculatedValues.A4, lang);
+        const A5Text = formatPage33BillionSR(calculatedValues.A5, lang);
 
         if (lang === 'en') {
             return `The total value of Canadian energy assets (CEA) went up in ${year} to ${A1Text}, an increase of ${calculatedValues.B1.toFixed(1)} percent from ${A2Text} in ${year - 1}. In ${year}, domestic CEA totaled ${A3Text}, up ${calculatedValues.B2.toFixed(1)} percent from ${year - 1}, while CEA abroad totaled ${A4Text}, up from ${A5Text}.`;
@@ -1334,7 +1334,7 @@ const Page33 = () => {
                     <div 
                         className="page33-stats-container" 
                         role="region" 
-                        aria-label={`${getText('page33_card_total', lang)}: ${formatBillionSR(calculatedValues.A1)}. ${getText('page33_card_abroad', lang)}: ${formatBillionSR(calculatedValues.A4)}.`} 
+                        aria-label={`${getText('page33_card_total', lang)}: ${formatPage33BillionSR(calculatedValues.A1, lang)}. ${getText('page33_card_abroad', lang)}: ${formatPage33BillionSR(calculatedValues.A4, lang)}.`} 
                         tabIndex="0"
                     >
                         <div className="page33-stat">
@@ -1375,13 +1375,13 @@ const Page33 = () => {
                             <thead>
                                 <tr>
                                     <th scope="col" rowSpan={2} style={{ verticalAlign: 'bottom' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                    <th scope="colgroup" colSpan={regionDefinitions.length} style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                                    <th scope="colgroup" colSpan={PAGE33_REGION_DEFINITIONS.length} style={{ textAlign: 'center', fontWeight: 'bold' }}>
                                         <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(G$)'}</span>
                                         <span className="wb-inv">{lang === 'en' ? 'billions of dollars' : 'milliards de dollars'}</span>
                                     </th>
                                 </tr>
                                 <tr>
-                                    {regionDefinitions.map(region => (
+                                    {PAGE33_REGION_DEFINITIONS.map(region => (
                                         <th key={region.key} scope="col" style={{ textAlign: 'right' }}>
                                             <span aria-hidden="true">{lang === 'en' ? region.nameEn.replace(/\n/g, ' ') : region.nameFr.replace(/\n/g, ' ')}</span>
                                             <span className="wb-inv">{lang === 'en' ? region.nameEn.replace(/\n/g, ' ') : region.nameFr.replace(/\n/g, ' ')}, {lang === 'en' ? 'billions of dollars' : 'milliards de dollars'}</span>
@@ -1393,7 +1393,7 @@ const Page33 = () => {
                                 {tableData.map(yearData => (
                                     <tr key={yearData.year}>
                                         <th scope="row">{yearData.year}</th>
-                                        {regionDefinitions.map(region => (
+                                        {PAGE33_REGION_DEFINITIONS.map(region => (
                                             <td 
                                                 key={region.key}
                                                 style={{ textAlign: 'right' }}

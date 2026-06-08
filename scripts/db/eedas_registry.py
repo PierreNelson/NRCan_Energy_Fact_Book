@@ -2,7 +2,7 @@
 EEDAS-style table name resolution for the NRCan Energy Factbook SQL layer.
 
 Physical per-source table names come from eedas_registry.yaml (source_key -> source_table).
-Calc, export, and system tables use fixed identifiers below.
+EFB indicators live in nrcan_efb_indicators; export staging uses nrcan_fb_export.
 """
 
 from __future__ import annotations
@@ -15,16 +15,8 @@ import yaml
 
 _IDENTIFIER_RE = re.compile(r"^[a-z][a-z0-9_]*$", re.IGNORECASE)
 
-# Calculated (section-scoped)
-TABLE_CALC_ECONOMIC_CONTRIBUTIONS = "nrcan_fb_s1_economic_contributions"
-TABLE_CALC_PROVINCIAL_GDP = "nrcan_fb_s1_provincial_gdp"
-TABLE_CALC_WORLD_ENERGY_PRODUCTION = "nrcan_fb_s1_world_energy_production"
-TABLE_CALC_CAPITAL_EXPENDITURES = "nrcan_fb_s2_capital_expenditures"
-TABLE_CALC_INFRASTRUCTURE = "nrcan_fb_s2_infrastructure"
-TABLE_CALC_INTERNATIONAL_INVESTMENT = "nrcan_fb_s2_international_investment"
-TABLE_CALC_ENVIRONMENTAL_PROTECTION = "nrcan_fb_s2_environmental_protection"
-TABLE_CALC_CLEAN_TECH = "nrcan_fb_s2_clean_tech"
-TABLE_CALC_ENERGY_USE = "nrcan_fb_s4_energy_use"
+# EFB indicator output (populated by efb transform)
+TABLE_EFB_INDICATORS = "nrcan_efb_indicators"
 
 # Export staging (single wide table: series + attribution columns)
 TABLE_EXPORT = "nrcan_fb_export"

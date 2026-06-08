@@ -10,7 +10,7 @@
 --
 -- Usage:
 --   1. Preferred: create an empty database matching config, then run
---      `python main.py refresh ...` — the refresh command applies this script's
+--      `python main.py eedas update ...` — ensure_schema applies this script's
 --      DDL (except CREATE DATABASE / destructive seed) automatically.
 --   2. Or connect as an admin and run this script in SSMS/sqlcmd for a full
 --      install including CREATE DATABASE and default data-source rows.
@@ -272,11 +272,32 @@ IF OBJECT_ID('dbo.stc_nrsa_3610061001_ingest', 'U') IS NOT NULL DROP TABLE dbo.s
 IF OBJECT_ID('dbo.stc_nrsa_3810028501_ingest', 'U') IS NOT NULL DROP TABLE dbo.stc_nrsa_3810028501_ingest;
 GO
 
+-- Widen vector column on existing EEDAS tables (publisher-native keys can exceed 50 chars)
+DECLARE @widen_sql NVARCHAR(MAX) = N'';
+SELECT @widen_sql = @widen_sql + N'
+IF COL_LENGTH(''dbo.' + REPLACE(name, '''', '''''') + ''', ''vector'') IS NOT NULL
+   AND COL_LENGTH(''dbo.' + REPLACE(name, '''', '''''') + ''', ''vector'') <= 100
+    ALTER TABLE dbo.[' + REPLACE(name, ']', ']]') + N'] ALTER COLUMN vector NVARCHAR(300) NOT NULL;'
+FROM sys.tables
+WHERE schema_id = SCHEMA_ID('dbo')
+  AND name IN (
+    'iea_web_rankings','nrcan_cea_assets','nrcan_cleanenv_semantic','nrcan_cleantech_semantic',
+    'nrcan_majorproj_semantic','nrcan_spi_cleantech_geo','nrcan_spi_cleantech_industry',
+    'nrcan_oee_neud','nrcan_oee_res_pie','nrcan_oee_res_daily','nrcan_oee_commercial',
+    'nrcan_oee_industrial','nrcan_oee_seu','nrcan_ghg_semantic','stc_capex_3410003601',
+    'stc_invasset_3410003601','stc_infra_3610060801','stc_fdi_3610000901','stc_foreignctrl_misc',
+    'stc_epes_3810013001','stc_nrsa_3610061001','stc_nrsa_3810028501','stc_gdpnom_3610010301',
+    'stc_rppsd_25100081','stc_refinput_25100063','nrcan_crude_prices','stc_oil_sands',
+    'stc_ev_sales','stc_canadian_production','kal_gas_prices','osm_refin_cap'
+  );
+IF LEN(@widen_sql) > 0 EXEC sp_executesql @widen_sql;
+GO
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_web_rankings')
 BEGIN
     CREATE TABLE [iea_web_rankings] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -299,7 +320,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cea_assets')
 BEGIN
     CREATE TABLE [nrcan_cea_assets] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -322,7 +343,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleanenv_semantic')
 BEGIN
     CREATE TABLE [nrcan_cleanenv_semantic] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -345,7 +366,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_spi_cleantech_geo')
 BEGIN
     CREATE TABLE [nrcan_spi_cleantech_geo] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -368,7 +389,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_spi_cleantech_indust
 BEGIN
     CREATE TABLE [nrcan_spi_cleantech_industry] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -391,7 +412,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cleantech_semantic')
 BEGIN
     CREATE TABLE [nrcan_cleantech_semantic] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -414,7 +435,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_ghg_semantic')
 BEGIN
     CREATE TABLE [nrcan_ghg_semantic] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -437,7 +458,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_majorproj_semantic')
 BEGIN
     CREATE TABLE [nrcan_majorproj_semantic] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -460,7 +481,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_commercial')
 BEGIN
     CREATE TABLE [nrcan_oee_commercial] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -483,7 +504,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_industrial')
 BEGIN
     CREATE TABLE [nrcan_oee_industrial] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -506,7 +527,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_neud')
 BEGIN
     CREATE TABLE [nrcan_oee_neud] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -529,7 +550,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_daily')
 BEGIN
     CREATE TABLE [nrcan_oee_res_daily] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -552,7 +573,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_res_pie')
 BEGIN
     CREATE TABLE [nrcan_oee_res_pie] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -575,7 +596,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_oee_seu')
 BEGIN
     CREATE TABLE [nrcan_oee_seu] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -598,7 +619,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_capex_3410003601')
 BEGIN
     CREATE TABLE [stc_capex_3410003601] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -621,7 +642,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_epes_3810013001')
 BEGIN
     CREATE TABLE [stc_epes_3810013001] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -644,7 +665,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_fdi_3610000901')
 BEGIN
     CREATE TABLE [stc_fdi_3610000901] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -667,7 +688,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_foreignctrl_misc')
 BEGIN
     CREATE TABLE [stc_foreignctrl_misc] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -690,7 +711,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_gdpnom_3610010301')
 BEGIN
     CREATE TABLE [stc_gdpnom_3610010301] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -713,7 +734,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_infra_3610060801')
 BEGIN
     CREATE TABLE [stc_infra_3610060801] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -736,7 +757,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_invasset_3410003601')
 BEGIN
     CREATE TABLE [stc_invasset_3410003601] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -759,7 +780,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3610061001')
 BEGIN
     CREATE TABLE [stc_nrsa_3610061001] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -782,7 +803,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_nrsa_3810028501')
 BEGIN
     CREATE TABLE [stc_nrsa_3810028501] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -805,7 +826,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_rppsd_25100081')
 BEGIN
     CREATE TABLE [stc_rppsd_25100081] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -828,7 +849,7 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_refinput_25100063')
 BEGIN
     CREATE TABLE [stc_refinput_25100063] (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        vector NVARCHAR(50) NOT NULL,
+        vector NVARCHAR(300) NOT NULL,
         ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
         title NVARCHAR(500) NULL,
@@ -1033,156 +1054,44 @@ END
 GO
 
 -- ============================================================================
--- SECTION-SCOPED CALCULATED TABLES (MERGE targets; see scripts/db/models.py)
+-- LEGACY CALC TABLES (replaced by nrcan_efb_indicators)
 -- ============================================================================
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_economic_contributions')
-BEGIN
-    CREATE TABLE nrcan_fb_s1_economic_contributions (
-        ref_year INT NOT NULL PRIMARY KEY,
-        gdp_direct DECIMAL(18,4) NULL,
-        gdp_indirect DECIMAL(18,4) NULL,
-        gdp_total DECIMAL(18,4) NULL,
-        jobs_direct DECIMAL(18,2) NULL,
-        jobs_indirect DECIMAL(18,2) NULL,
-        jobs_total DECIMAL(18,2) NULL,
-        income_direct DECIMAL(18,4) NULL,
-        income_indirect DECIMAL(18,4) NULL,
-        income_total DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    PRINT 'Table nrcan_fb_s1_economic_contributions created.';
-END
+IF OBJECT_ID('dbo.nrcan_fb_s1_economic_contributions', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s1_economic_contributions;
+IF OBJECT_ID('dbo.nrcan_fb_s1_provincial_gdp', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s1_provincial_gdp;
+IF OBJECT_ID('dbo.nrcan_fb_s1_world_energy_production', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s1_world_energy_production;
+IF OBJECT_ID('dbo.nrcan_fb_s2_capital_expenditures', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s2_capital_expenditures;
+IF OBJECT_ID('dbo.nrcan_fb_s2_infrastructure', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s2_infrastructure;
+IF OBJECT_ID('dbo.nrcan_fb_s2_international_investment', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s2_international_investment;
+IF OBJECT_ID('dbo.nrcan_fb_s2_environmental_protection', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s2_environmental_protection;
+IF OBJECT_ID('dbo.nrcan_fb_s2_clean_tech', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s2_clean_tech;
+IF OBJECT_ID('dbo.nrcan_fb_s4_energy_use', 'U') IS NOT NULL DROP TABLE dbo.nrcan_fb_s4_energy_use;
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_provincial_gdp')
-BEGIN
-    CREATE TABLE nrcan_fb_s1_provincial_gdp (
-        ref_year INT NOT NULL,
-        province_code NVARCHAR(50) NOT NULL,
-        province_name NVARCHAR(200) NULL,
-        energy_gdp DECIMAL(18,4) NULL,
-        total_gdp DECIMAL(18,4) NULL,
-        energy_share_pct DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT PK_nrcan_fb_s1_provincial_gdp PRIMARY KEY (ref_year, province_code)
-    );
-    CREATE INDEX IX_nrcan_fb_s1_prov_gdp_year ON nrcan_fb_s1_provincial_gdp(ref_year);
-    PRINT 'Table nrcan_fb_s1_provincial_gdp created.';
-END
-GO
+-- ============================================================================
+-- EFB INDICATORS (Factbook semantic vectors; populated by efb transform)
+-- ============================================================================
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s1_world_energy_production')
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_efb_indicators')
 BEGIN
-    CREATE TABLE nrcan_fb_s1_world_energy_production (
+    CREATE TABLE nrcan_efb_indicators (
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
-        ref_year INT NOT NULL,
-        country_key NVARCHAR(100) NULL,
-        metric NVARCHAR(100) NULL,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
         value DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        indicator_key NVARCHAR(100) NOT NULL,
+        computed_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_efb_indicators_vd] UNIQUE (vector, ref_date)
     );
-    CREATE INDEX IX_nrcan_fb_s1_world_energy_year ON nrcan_fb_s1_world_energy_production(ref_year);
-    PRINT 'Table nrcan_fb_s1_world_energy_production created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_capital_expenditures')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_capital_expenditures (
-        ref_year INT NOT NULL PRIMARY KEY,
-        oil_gas DECIMAL(18,4) NULL,
-        electricity DECIMAL(18,4) NULL,
-        other_energy DECIMAL(18,4) NULL,
-        total DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    PRINT 'Table nrcan_fb_s2_capital_expenditures created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_infrastructure')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_infrastructure (
-        ref_year INT NOT NULL PRIMARY KEY,
-        fuel_energy_pipelines DECIMAL(18,4) NULL,
-        transport DECIMAL(18,4) NULL,
-        education DECIMAL(18,4) NULL,
-        health_housing DECIMAL(18,4) NULL,
-        environmental DECIMAL(18,4) NULL,
-        public_safety DECIMAL(18,4) NULL,
-        total DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    PRINT 'Table nrcan_fb_s2_infrastructure created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_international_investment')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_international_investment (
-        ref_year INT NOT NULL,
-        investment_type NVARCHAR(100) NOT NULL,
-        industry_category NVARCHAR(100) NOT NULL,
-        value DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT PK_nrcan_fb_s2_intl_inv PRIMARY KEY (ref_year, investment_type, industry_category)
-    );
-    CREATE INDEX IX_nrcan_fb_s2_intl_inv_year ON nrcan_fb_s2_international_investment(ref_year);
-    PRINT 'Table nrcan_fb_s2_international_investment created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_environmental_protection')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_environmental_protection (
-        ref_year INT NOT NULL,
-        industry_category NVARCHAR(100) NOT NULL,
-        wastewater DECIMAL(18,4) NULL,
-        soil_groundwater DECIMAL(18,4) NULL,
-        air_pollution DECIMAL(18,4) NULL,
-        solid_waste DECIMAL(18,4) NULL,
-        other DECIMAL(18,4) NULL,
-        total DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT PK_nrcan_fb_s2_env_prot PRIMARY KEY (ref_year, industry_category)
-    );
-    CREATE INDEX IX_nrcan_fb_s2_env_prot_year ON nrcan_fb_s2_environmental_protection(ref_year);
-    PRINT 'Table nrcan_fb_s2_environmental_protection created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s2_clean_tech')
-BEGIN
-    CREATE TABLE nrcan_fb_s2_clean_tech (
-        ref_year INT NOT NULL,
-        category NVARCHAR(200) NOT NULL,
-        project_count INT NULL,
-        total_investment DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        CONSTRAINT PK_nrcan_fb_s2_clean_tech PRIMARY KEY (ref_year, category)
-    );
-    CREATE INDEX IX_nrcan_fb_s2_clean_tech_year ON nrcan_fb_s2_clean_tech(ref_year);
-    PRINT 'Table nrcan_fb_s2_clean_tech created.';
-END
-GO
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_fb_s4_energy_use')
-BEGIN
-    CREATE TABLE nrcan_fb_s4_energy_use (
-        ref_year INT NOT NULL PRIMARY KEY,
-        [R] DECIMAL(18,4) NULL,
-        [C] DECIMAL(18,4) NULL,
-        [I] DECIMAL(18,4) NULL,
-        [T] DECIMAL(18,4) NULL,
-        [A] DECIMAL(18,4) NULL,
-        [P] DECIMAL(18,4) NULL,
-        [NPC] DECIMAL(18,4) NULL,
-        [FK] DECIMAL(18,4) NULL,
-        [EL] DECIMAL(18,4) NULL,
-        calculated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    PRINT 'Table nrcan_fb_s4_energy_use created.';
+    CREATE INDEX IX_nrcan_efb_indicators_vector ON nrcan_efb_indicators(vector);
+    CREATE INDEX IX_nrcan_efb_indicators_indicator ON nrcan_efb_indicators(indicator_key);
+    CREATE INDEX IX_nrcan_efb_indicators_ref_date ON nrcan_efb_indicators(ref_date);
+    PRINT 'Table nrcan_efb_indicators created.';
 END
 GO
 

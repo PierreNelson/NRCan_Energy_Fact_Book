@@ -76,9 +76,42 @@ stages:
               DB_USERNAME: $(DB_USERNAME)
               DB_PASSWORD: $(DB_PASSWORD)
               EXTERNAL_XLSX_DATA_DIR: $(EXTERNAL_XLSX_DATA_DIR)
-          - script: python main.py refresh --all --export-after
+          - script: python main.py eedas update --all
             workingDirectory: scripts
-            displayName: Refresh all sources and export CSVs
+            displayName: EEDAS update — load raw source data
+            env:
+              DB_SERVER: $(DB_SERVER)
+              DB_DATABASE: $(DB_DATABASE)
+              DB_USERNAME: $(DB_USERNAME)
+              DB_PASSWORD: $(DB_PASSWORD)
+              EXTERNAL_XLSX_DATA_DIR: $(EXTERNAL_XLSX_DATA_DIR)
+          - script: python main.py efb transform --all
+            workingDirectory: scripts
+            displayName: EFB transform — build indicators
+            env:
+              DB_SERVER: $(DB_SERVER)
+              DB_DATABASE: $(DB_DATABASE)
+              DB_USERNAME: $(DB_USERNAME)
+              DB_PASSWORD: $(DB_PASSWORD)
+              EXTERNAL_XLSX_DATA_DIR: $(EXTERNAL_XLSX_DATA_DIR)
+          - script: python main.py export
+            workingDirectory: scripts
+            displayName: Export website CSVs
+            env:
+              DB_SERVER: $(DB_SERVER)
+              DB_DATABASE: $(DB_DATABASE)
+              DB_USERNAME: $(DB_USERNAME)
+              DB_PASSWORD: $(DB_PASSWORD)
+              EXTERNAL_XLSX_DATA_DIR: $(EXTERNAL_XLSX_DATA_DIR)
+          - script: |
+              echo Waiting 5 minutes before one retry...
+              ping -n 301 127.0.0.1 >nul
+              python main.py eedas update --all
+              python main.py efb transform --all
+              python main.py export
+            workingDirectory: scripts
+            displayName: Retry full pipeline once after transient failure
+            condition: failed()
             env:
               DB_SERVER: $(DB_SERVER)
               DB_DATABASE: $(DB_DATABASE)

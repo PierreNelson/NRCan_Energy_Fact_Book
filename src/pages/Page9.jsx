@@ -1,9 +1,82 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE9_PROVINCE_INFO = {
+    'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', abbrevEn: 'N.L.', abbrevFr: 'T.-N.-L.', geoJsonName: 'Newfoundland and Labrador' },
+    'pe': { nameEn: 'Prince Edward Island', nameFr: 'Île-du-Prince-Édouard', abbrevEn: 'P.E.I.', abbrevFr: 'Î.-P.-É.', geoJsonName: 'Prince Edward Island' },
+    'ns': { nameEn: 'Nova Scotia', nameFr: 'Nouvelle-Écosse', abbrevEn: 'N.S.', abbrevFr: 'N.-É.', geoJsonName: 'Nova Scotia' },
+    'nb': { nameEn: 'New Brunswick', nameFr: 'Nouveau-Brunswick', abbrevEn: 'N.B.', abbrevFr: 'N.-B.', geoJsonName: 'New Brunswick' },
+    'qc': { nameEn: 'Quebec', nameFr: 'Québec', abbrevEn: 'Que.', abbrevFr: 'Qc', geoJsonName: 'Quebec' },
+    'on': { nameEn: 'Ontario', nameFr: 'Ontario', abbrevEn: 'Ont.', abbrevFr: 'Ont.', geoJsonName: 'Ontario' },
+    'mb': { nameEn: 'Manitoba', nameFr: 'Manitoba', abbrevEn: 'Man.', abbrevFr: 'Man.', geoJsonName: 'Manitoba' },
+    'sk': { nameEn: 'Saskatchewan', nameFr: 'Saskatchewan', abbrevEn: 'Sask.', abbrevFr: 'Sask.', geoJsonName: 'Saskatchewan' },
+    'ab': { nameEn: 'Alberta', nameFr: 'Alberta', abbrevEn: 'Alta.', abbrevFr: 'Alb.', geoJsonName: 'Alberta' },
+    'bc': { nameEn: 'British Columbia', nameFr: 'Colombie-Britannique', abbrevEn: 'B.C.', abbrevFr: 'C.-B.', geoJsonName: 'British Columbia' },
+    'yt': { nameEn: 'Yukon', nameFr: 'Yukon', abbrevEn: 'Y.T.', abbrevFr: 'Yn', geoJsonName: 'Yukon Territory' },
+    'nt': { nameEn: 'Northwest Territories', nameFr: 'Territoires du Nord-Ouest', abbrevEn: 'N.W.T.', abbrevFr: 'T.N.-O.', geoJsonName: 'Northwest Territories' },
+    'nu': { nameEn: 'Nunavut', nameFr: 'Nunavut', abbrevEn: 'Nunavut', abbrevFr: 'Nt', geoJsonName: 'Nunavut' },
+};
+
+const PAGE9_PROVINCE_CODES = ['bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl', 'yt', 'nt', 'nu'];
+
+const PAGE9_PROVINCE_CENTROIDS = {
+    'nl': { lat: 53.5, lon: -57.0 },
+    'pe': { lat: 47.5, lon: -63.0 },
+    'ns': { lat: 43.5, lon: -61.5 },
+    'nb': { lat: 44.5, lon: -68.5 },
+    'qc': { lat: 52.5, lon: -72.0 },
+    'on': { lat: 50.5, lon: -86.0 },
+    'mb': { lat: 55.5, lon: -98.0 },
+    'sk': { lat: 54.5, lon: -106.0 },
+    'ab': { lat: 54.5, lon: -115.5 },
+    'bc': { lat: 54.0, lon: -125.0 },
+    'yt': { lat: 64.5, lon: -135.5 },
+    'nt': { lat: 65.5, lon: -120.0 },
+    'nu': { lat: 67.0, lon: -95.0 }
+};
+
+const PAGE9_INDIRECT_RATIO = 428300 / 316200;
+
+const PAGE9_EMPLOYMENT_DATA = {
+    bc: { direct: 29873, indirect: Math.round(29873 * PAGE9_INDIRECT_RATIO) },
+    ab: { direct: 159826, indirect: Math.round(159826 * PAGE9_INDIRECT_RATIO) },
+    sk: { direct: 17168, indirect: Math.round(17168 * PAGE9_INDIRECT_RATIO) },
+    mb: { direct: 6679, indirect: Math.round(6679 * PAGE9_INDIRECT_RATIO) },
+    on: { direct: 53834, indirect: Math.round(53834 * PAGE9_INDIRECT_RATIO) },
+    qc: { direct: 33109, indirect: Math.round(33109 * PAGE9_INDIRECT_RATIO) },
+    nb: { direct: 5491, indirect: Math.round(5491 * PAGE9_INDIRECT_RATIO) },
+    ns: { direct: 3128, indirect: Math.round(3128 * PAGE9_INDIRECT_RATIO) },
+    pe: { direct: 348, indirect: Math.round(348 * PAGE9_INDIRECT_RATIO) },
+    nl: { direct: 6155, indirect: Math.round(6155 * PAGE9_INDIRECT_RATIO) },
+    yt: { direct: 149, indirect: Math.round(149 * PAGE9_INDIRECT_RATIO) },
+    nt: { direct: 254, indirect: Math.round(254 * PAGE9_INDIRECT_RATIO) },
+    nu: { direct: 229, indirect: Math.round(229 * PAGE9_INDIRECT_RATIO) },
+    direct_total: 316200,
+    indirect_total: 428300,
+    total: 744500,
+    indigenous_employed: 18200,
+    share_total_pct: 3.6,
+    energy_direct_pct: 1.5,
+    petroleum_pct: 0.9,
+    electricity_pct: 0.5,
+    other_pct: 0.1,
+    energy_indirect_pct: 2.1
+};
+
+const PAGE9_COLORS = {
+    'energy_sector': '#245e7f',
+    'non_energy': '#9A9389',
+    'map_fill': '#AA9255'
+};
+
+const formatPage9Number = (num, lang) => {
+    if (num === undefined || num === null) return '—';
+    return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+};
 
 const Page9 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -99,8 +172,6 @@ const Page9 = () => {
         };
     }, [isTableOpen, windowWidth]);
 
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
     const hexToRgba = (hex, opacity = 1) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         if (result) {
@@ -108,72 +179,6 @@ const Page9 = () => {
         }
         return hex;
     };
-
-    const provinceInfo = {
-        'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', abbrevEn: 'N.L.', abbrevFr: 'T.-N.-L.', geoJsonName: 'Newfoundland and Labrador' },
-        'pe': { nameEn: 'Prince Edward Island', nameFr: 'Île-du-Prince-Édouard', abbrevEn: 'P.E.I.', abbrevFr: 'Î.-P.-É.', geoJsonName: 'Prince Edward Island' },
-        'ns': { nameEn: 'Nova Scotia', nameFr: 'Nouvelle-Écosse', abbrevEn: 'N.S.', abbrevFr: 'N.-É.', geoJsonName: 'Nova Scotia' },
-        'nb': { nameEn: 'New Brunswick', nameFr: 'Nouveau-Brunswick', abbrevEn: 'N.B.', abbrevFr: 'N.-B.', geoJsonName: 'New Brunswick' },
-        'qc': { nameEn: 'Quebec', nameFr: 'Québec', abbrevEn: 'Que.', abbrevFr: 'Qc', geoJsonName: 'Quebec' },
-        'on': { nameEn: 'Ontario', nameFr: 'Ontario', abbrevEn: 'Ont.', abbrevFr: 'Ont.', geoJsonName: 'Ontario' },
-        'mb': { nameEn: 'Manitoba', nameFr: 'Manitoba', abbrevEn: 'Man.', abbrevFr: 'Man.', geoJsonName: 'Manitoba' },
-        'sk': { nameEn: 'Saskatchewan', nameFr: 'Saskatchewan', abbrevEn: 'Sask.', abbrevFr: 'Sask.', geoJsonName: 'Saskatchewan' },
-        'ab': { nameEn: 'Alberta', nameFr: 'Alberta', abbrevEn: 'Alta.', abbrevFr: 'Alb.', geoJsonName: 'Alberta' },
-        'bc': { nameEn: 'British Columbia', nameFr: 'Colombie-Britannique', abbrevEn: 'B.C.', abbrevFr: 'C.-B.', geoJsonName: 'British Columbia' },
-        'yt': { nameEn: 'Yukon', nameFr: 'Yukon', abbrevEn: 'Y.T.', abbrevFr: 'Yn', geoJsonName: 'Yukon Territory' },
-        'nt': { nameEn: 'Northwest Territories', nameFr: 'Territoires du Nord-Ouest', abbrevEn: 'N.W.T.', abbrevFr: 'T.N.-O.', geoJsonName: 'Northwest Territories' },
-        'nu': { nameEn: 'Nunavut', nameFr: 'Nunavut', abbrevEn: 'Nunavut', abbrevFr: 'Nt', geoJsonName: 'Nunavut' },
-    };
-
-    const provinceCodes = ['bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl', 'yt', 'nt', 'nu'];
-
-    const provinceCentroids = {
-        'nl': { lat: 53.5, lon: -57.0 },
-        'pe': { lat: 47.5, lon: -63.0 },
-        'ns': { lat: 43.5, lon: -61.5 },
-        'nb': { lat: 44.5, lon: -68.5 },
-        'qc': { lat: 52.5, lon: -72.0 },
-        'on': { lat: 50.5, lon: -86.0 },
-        'mb': { lat: 55.5, lon: -98.0 },
-        'sk': { lat: 54.5, lon: -106.0 },
-        'ab': { lat: 54.5, lon: -115.5 },
-        'bc': { lat: 54.0, lon: -125.0 },
-        'yt': { lat: 64.5, lon: -135.5 },
-        'nt': { lat: 65.5, lon: -120.0 },
-        'nu': { lat: 67.0, lon: -95.0 }
-    };
-
-    const indirectRatio = 428300 / 316200;
-    
-    const employmentData = {
-        bc: { direct: 29873, indirect: Math.round(29873 * indirectRatio) },
-        ab: { direct: 159826, indirect: Math.round(159826 * indirectRatio) },
-        sk: { direct: 17168, indirect: Math.round(17168 * indirectRatio) },
-        mb: { direct: 6679, indirect: Math.round(6679 * indirectRatio) },
-        on: { direct: 53834, indirect: Math.round(53834 * indirectRatio) },
-        qc: { direct: 33109, indirect: Math.round(33109 * indirectRatio) },
-        nb: { direct: 5491, indirect: Math.round(5491 * indirectRatio) },
-        ns: { direct: 3128, indirect: Math.round(3128 * indirectRatio) },
-        pe: { direct: 348, indirect: Math.round(348 * indirectRatio) },
-        nl: { direct: 6155, indirect: Math.round(6155 * indirectRatio) },
-        yt: { direct: 149, indirect: Math.round(149 * indirectRatio) },
-        nt: { direct: 254, indirect: Math.round(254 * indirectRatio) },
-        nu: { direct: 229, indirect: Math.round(229 * indirectRatio) },
-        direct_total: 316200,
-        indirect_total: 428300,
-        total: 744500,
-        indigenous_employed: 18200,
-        share_total_pct: 3.6,
-        energy_direct_pct: 1.5,
-        petroleum_pct: 0.9,
-        electricity_pct: 0.5,
-        other_pct: 0.1,
-        energy_indirect_pct: 2.1
-    };
-    
-    const getProvinceTotal = (code) => employmentData[code].direct + employmentData[code].indirect;
-    const getProvinceEnergyShare = (code) => ((getProvinceTotal(code) / employmentData.total) * 100).toFixed(1);
-    const getProvinceNonEnergyShare = (code) => ((getProvinceTotal(code) / (employmentData.total / employmentData.share_total_pct * (100 - employmentData.share_total_pct))) * 100).toFixed(2);
 
     const years = Array.from({ length: 2024 - 2009 + 1 }, (_, i) => 2024 - i);
 
@@ -196,12 +201,6 @@ const Page9 = () => {
         nu: 229,
         national_total: 316200
     }));
-
-    const COLORS = {
-        'energy_sector': '#245e7f',
-        'non_energy': '#9A9389',
-        'map_fill': '#AA9255'
-    };
 
     useEffect(() => {
         const handleResize = () => {
@@ -299,11 +298,6 @@ const Page9 = () => {
         return () => observer.disconnect();
     }, [lang]);
 
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
-
     const formatPercent = (num) => {
         if (num === undefined || num === null) return '—';
         return lang === 'en' ? `${num}%` : `${num.toString().replace('.', ',')} %`;
@@ -395,7 +389,6 @@ const Page9 = () => {
             img.onload = () => {
                 const titleHeight = 80;
                 const legendWidth = 400;
-                const legendHeight = 220;
                 canvas.width = img.width + legendWidth;
                 canvas.height = img.height + titleHeight;
 
@@ -421,21 +414,21 @@ const Page9 = () => {
 
                 ctx.font = 'bold 22px Arial';
                 ctx.fillStyle = '#245e7f';
-                ctx.fillText(`${lang === 'en' ? 'Energy direct' : 'Énergie (emplois directs)'} ${formatPercent(employmentData.energy_direct_pct)}`, legendX, legendY);
+                ctx.fillText(`${lang === 'en' ? 'Energy direct' : 'Énergie (emplois directs)'} ${formatPercent(PAGE9_EMPLOYMENT_DATA.energy_direct_pct)}`, legendX, legendY);
                 legendY += lineHeight;
 
                 ctx.font = 'bold 20px Arial';
                 ctx.fillStyle = '#58585a';
-                ctx.fillText(`   ${lang === 'en' ? 'Petroleum' : 'Pétrole'} ${formatPercent(employmentData.petroleum_pct)}`, legendX, legendY);
+                ctx.fillText(`   ${lang === 'en' ? 'Petroleum' : 'Pétrole'} ${formatPercent(PAGE9_EMPLOYMENT_DATA.petroleum_pct)}`, legendX, legendY);
                 legendY += lineHeight;
-                ctx.fillText(`   ${lang === 'en' ? 'Electricity' : 'Électricité'} ${formatPercent(employmentData.electricity_pct)}`, legendX, legendY);
+                ctx.fillText(`   ${lang === 'en' ? 'Electricity' : 'Électricité'} ${formatPercent(PAGE9_EMPLOYMENT_DATA.electricity_pct)}`, legendX, legendY);
                 legendY += lineHeight;
-                ctx.fillText(`   ${lang === 'en' ? 'Other' : 'Autres'} ${formatPercent(employmentData.other_pct)}`, legendX, legendY);
+                ctx.fillText(`   ${lang === 'en' ? 'Other' : 'Autres'} ${formatPercent(PAGE9_EMPLOYMENT_DATA.other_pct)}`, legendX, legendY);
                 legendY += lineHeight + 10;
 
                 ctx.font = 'bold 22px Arial';
                 ctx.fillStyle = '#245e7f';
-                ctx.fillText(`${lang === 'en' ? 'Energy indirect' : 'Énergie (emplois indirects)'} ${formatPercent(employmentData.energy_indirect_pct)}`, legendX, legendY);
+                ctx.fillText(`${lang === 'en' ? 'Energy indirect' : 'Énergie (emplois indirects)'} ${formatPercent(PAGE9_EMPLOYMENT_DATA.energy_indirect_pct)}`, legendX, legendY);
 
                 const link = document.createElement('a');
                 link.download = lang === 'en' ? `employment_share_${year}.png` : `part_emploi_${year}.png`;
@@ -457,8 +450,8 @@ const Page9 = () => {
             ...yearlyProvinceData.map(d => String(d.year))
         ];
 
-        const rows = provinceCodes.map(code => {
-            const info = provinceInfo[code];
+        const rows = PAGE9_PROVINCE_CODES.map(code => {
+            const info = PAGE9_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
             return [name, ...yearlyProvinceData.map(yearData => yearData[code])];
         });
@@ -472,15 +465,15 @@ const Page9 = () => {
         // Add share rows
         rows.push([
             lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)",
-            ...yearlyProvinceData.map(() => `${employmentData.energy_direct_pct}%`)
+            ...yearlyProvinceData.map(() => `${PAGE9_EMPLOYMENT_DATA.energy_direct_pct}%`)
         ]);
         rows.push([
             lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)",
-            ...yearlyProvinceData.map(() => `${employmentData.energy_indirect_pct}%`)
+            ...yearlyProvinceData.map(() => `${PAGE9_EMPLOYMENT_DATA.energy_indirect_pct}%`)
         ]);
         rows.push([
             lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)",
-            ...yearlyProvinceData.map(() => `${employmentData.share_total_pct}%`)
+            ...yearlyProvinceData.map(() => `${PAGE9_EMPLOYMENT_DATA.share_total_pct}%`)
         ]);
 
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
@@ -509,14 +502,14 @@ const Page9 = () => {
             }))
         });
 
-        const dataRows = provinceCodes.map(code => {
-            const info = provinceInfo[code];
+        const dataRows = PAGE9_PROVINCE_CODES.map(code => {
+            const info = PAGE9_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: name, size: 18 })], alignment: AlignmentType.LEFT })] }),
                     ...yearlyProvinceData.map(yearData => new TableCell({ 
-                        children: [new Paragraph({ children: [new TextRun({ text: formatNumber(yearData[code]), size: 18 })], alignment: AlignmentType.RIGHT })] 
+                        children: [new Paragraph({ children: [new TextRun({ text: formatPage9Number(yearData[code], lang), size: 18 })], alignment: AlignmentType.RIGHT })] 
                     }))
                 ]
             });
@@ -527,7 +520,7 @@ const Page9 = () => {
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Canada Total (Direct)' : 'Total Canada (direct)', bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
                 ...yearlyProvinceData.map(yearData => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: formatNumber(yearData.national_total), bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                    children: [new Paragraph({ children: [new TextRun({ text: formatPage9Number(yearData.national_total, lang), bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
                 }))
             ]
         });
@@ -537,7 +530,7 @@ const Page9 = () => {
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)", bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
                 ...yearlyProvinceData.map(() => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: `${employmentData.energy_direct_pct}%`, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                    children: [new Paragraph({ children: [new TextRun({ text: `${PAGE9_EMPLOYMENT_DATA.energy_direct_pct}%`, size: 18 })], alignment: AlignmentType.RIGHT })] 
                 }))
             ]
         });
@@ -546,7 +539,7 @@ const Page9 = () => {
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)", bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
                 ...yearlyProvinceData.map(() => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: `${employmentData.energy_indirect_pct}%`, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                    children: [new Paragraph({ children: [new TextRun({ text: `${PAGE9_EMPLOYMENT_DATA.energy_indirect_pct}%`, size: 18 })], alignment: AlignmentType.RIGHT })] 
                 }))
             ]
         });
@@ -555,7 +548,7 @@ const Page9 = () => {
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)", bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
                 ...yearlyProvinceData.map(() => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: `${employmentData.share_total_pct}%`, bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                    children: [new Paragraph({ children: [new TextRun({ text: `${PAGE9_EMPLOYMENT_DATA.share_total_pct}%`, bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
                 }))
             ]
         });
@@ -582,25 +575,25 @@ const Page9 = () => {
 
     const getMapSRSummary = () => {
         if (lang === 'en') {
-            return `Map showing energy sector direct employment by province and territory for ${year}. Alberta has the highest employment at ${formatNumber(employmentData.ab.direct)} jobs. Total direct employment is ${formatNumber(employmentData.direct_total)} jobs.`;
+            return `Map showing energy sector direct employment by province and territory for ${year}. Alberta has the highest employment at ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.ab.direct, lang)} jobs. Total direct employment is ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} jobs.`;
         } else {
-            return `Carte montrant les emplois directs du secteur de l'énergie par province et territoire pour ${year}. L'Alberta a le plus grand nombre d'emplois avec ${formatNumber(employmentData.ab.direct)} emplois. Le total des emplois directs est de ${formatNumber(employmentData.direct_total)} emplois.`;
+            return `Carte montrant les emplois directs du secteur de l'énergie par province et territoire pour ${year}. L'Alberta a le plus grand nombre d'emplois avec ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.ab.direct, lang)} emplois. Le total des emplois directs est de ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} emplois.`;
         }
     };
 
     const getPieSRSummary = () => {
         if (lang === 'en') {
-            return `Pie chart showing energy sector's share of total employment in ${year}. Energy sector represents ${employmentData.share_total_pct}% of total employment, with Energy Direct at ${employmentData.energy_direct_pct}% and Energy Indirect at ${employmentData.energy_indirect_pct}%.`;
+            return `Pie chart showing energy sector's share of total employment in ${year}. Energy sector represents ${PAGE9_EMPLOYMENT_DATA.share_total_pct}% of total employment, with Energy Direct at ${PAGE9_EMPLOYMENT_DATA.energy_direct_pct}% and Energy Indirect at ${PAGE9_EMPLOYMENT_DATA.energy_indirect_pct}%.`;
         } else {
-            return `Graphique circulaire montrant la part du secteur de l'énergie dans l'emploi total en ${year}. Le secteur de l'énergie représente ${employmentData.share_total_pct} % de l'emploi total, avec l'énergie directe à ${employmentData.energy_direct_pct} % et l'énergie indirecte à ${employmentData.energy_indirect_pct} %.`;
+            return `Graphique circulaire montrant la part du secteur de l'énergie dans l'emploi total en ${year}. Le secteur de l'énergie représente ${PAGE9_EMPLOYMENT_DATA.share_total_pct} % de l'emploi total, avec l'énergie directe à ${PAGE9_EMPLOYMENT_DATA.energy_direct_pct} % et l'énergie indirecte à ${PAGE9_EMPLOYMENT_DATA.energy_indirect_pct} %.`;
         }
     };
 
     const getLegendText = () => {
         if (lang === 'en') {
-            return `Total employment breakdown. Energy Direct: ${employmentData.energy_direct_pct}%, including Petroleum at ${employmentData.petroleum_pct}%, Electricity at ${employmentData.electricity_pct}%, and Other at ${employmentData.other_pct}%. Energy Indirect: ${employmentData.energy_indirect_pct}%.`;
+            return `Total employment breakdown. Energy Direct: ${PAGE9_EMPLOYMENT_DATA.energy_direct_pct}%, including Petroleum at ${PAGE9_EMPLOYMENT_DATA.petroleum_pct}%, Electricity at ${PAGE9_EMPLOYMENT_DATA.electricity_pct}%, and Other at ${PAGE9_EMPLOYMENT_DATA.other_pct}%. Energy Indirect: ${PAGE9_EMPLOYMENT_DATA.energy_indirect_pct}%.`;
         } else {
-            return `Répartition de l'emploi total. Énergie directe : ${employmentData.energy_direct_pct} %, incluant le Pétrole à ${employmentData.petroleum_pct} %, l'Électricité à ${employmentData.electricity_pct} % et Autres à ${employmentData.other_pct} %. Énergie indirecte : ${employmentData.energy_indirect_pct} %.`;
+            return `Répartition de l'emploi total. Énergie directe : ${PAGE9_EMPLOYMENT_DATA.energy_direct_pct} %, incluant le Pétrole à ${PAGE9_EMPLOYMENT_DATA.petroleum_pct} %, l'Électricité à ${PAGE9_EMPLOYMENT_DATA.electricity_pct} % et Autres à ${PAGE9_EMPLOYMENT_DATA.other_pct} %. Énergie indirecte : ${PAGE9_EMPLOYMENT_DATA.energy_indirect_pct} %.`;
         }
     };
 
@@ -636,27 +629,27 @@ const Page9 = () => {
             'nu': 0
         };
 
-        provinceCodes.forEach(code => {
-            const value = employmentData[code]?.direct || 0;
-            const info = provinceInfo[code];
+        PAGE9_PROVINCE_CODES.forEach(code => {
+            const value = PAGE9_EMPLOYMENT_DATA[code]?.direct || 0;
+            const info = PAGE9_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
             const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
 
             values.push(value);
-            hoverTexts.push(`<b>${name}</b><br>${formatNumber(value)} ${lang === 'en' ? 'jobs' : 'emplois'}`);
+            hoverTexts.push(`<b>${name}</b><br>${formatPage9Number(value, lang)} ${lang === 'en' ? 'jobs' : 'emplois'}`);
             geoJsonNames.push(info.geoJsonName);
-            const centroid = provinceCentroids[code];
+            const centroid = PAGE9_PROVINCE_CENTROIDS[code];
             const latOffset = windowWidth <= 480 ? (highZoomOffsets[code] || 0) : 0;
             labelLats.push(centroid.lat + latOffset);
             labelLons.push(centroid.lon);
-            labelTexts.push(`${abbrev}\n${formatNumber(value)}`);
+            labelTexts.push(`${abbrev}\n${formatPage9Number(value, lang)}`);
         });
 
         return { values, hoverTexts, labelLats, labelLons, labelTexts, geoJsonNames };
     }, [lang, windowWidth]);
 
     const pieChartData = useMemo(() => {
-        const energyPct = employmentData.share_total_pct;
+        const energyPct = PAGE9_EMPLOYMENT_DATA.share_total_pct;
         const nonEnergyPct = 100 - energyPct;
 
         const energyLabel = `<b>${lang === 'fr' ? energyPct.toString().replace('.', ',') : energyPct}${lang === 'fr' ? ' %' : '%'}</b>`;
@@ -693,7 +686,7 @@ const Page9 = () => {
                 font: { color: '#000000', size: windowWidth <= 640 ? 12 : 14, family: 'Arial, sans-serif' }
             },
             marker: {
-                colors: [COLORS.energy_sector, COLORS.non_energy],
+                colors: [PAGE9_COLORS.energy_sector, PAGE9_COLORS.non_energy],
                 line: { color: '#ffffff', width: 2 }
             },
             hole: 0.0,
@@ -1241,13 +1234,13 @@ const Page9 = () => {
                         <div className="page9-left-column">
                             <div className="page9-stats">
                                 <div className="page9-stats-line">
-                                    {getText('page9_direct', lang)}: {formatNumber(employmentData.direct_total)} {getText('page9_jobs', lang)}
+                                    {getText('page9_direct', lang)}: {formatPage9Number(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} {getText('page9_jobs', lang)}
                                 </div>
                                 <div className="page9-stats-line">
-                                    {getText('page9_indirect', lang)}: {formatNumber(employmentData.indirect_total)} {getText('page9_jobs', lang)}
+                                    {getText('page9_indirect', lang)}: {formatPage9Number(PAGE9_EMPLOYMENT_DATA.indirect_total, lang)} {getText('page9_jobs', lang)}
                                 </div>
                                 <div className="page9-stats-line page9-stats-total">
-                                    {getText('page9_total_label', lang)}: {formatNumber(employmentData.total)} {getText('page9_jobs', lang)}
+                                    {getText('page9_total_label', lang)}: {formatPage9Number(PAGE9_EMPLOYMENT_DATA.total, lang)} {getText('page9_jobs', lang)}
                                 </div>
                             </div>
 
@@ -1317,20 +1310,20 @@ const Page9 = () => {
                                                 mode: 'text',
                                                 lat: mapChartData.labelLats,
                                                 lon: mapChartData.labelLons,
-                                                text: provinceCodes.map((code, i) => {
-                                                    const info = provinceInfo[code];
+                                                text: PAGE9_PROVINCE_CODES.map((code, i) => {
+                                                    const info = PAGE9_PROVINCE_INFO[code];
                                                     const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
                                                     if (windowWidth <= 480) {
-                                                        return `${abbrev}<br>${formatNumber(mapChartData.values[i])}`;
+                                                        return `${abbrev}<br>${formatPage9Number(mapChartData.values[i], lang)}`;
                                                     }
-                                                    return `<b>${abbrev}</b><br><b>${formatNumber(mapChartData.values[i])}</b>`;
+                                                    return `<b>${abbrev}</b><br><b>${formatPage9Number(mapChartData.values[i], lang)}</b>`;
                                                 }),
                                                 textfont: {
                                                     family: 'Arial, sans-serif',
                                                     size: windowWidth <= 640 ? 12 : 14,
                                                     color: selectedProvinces === null 
                                                         ? '#000000' 
-                                                        : provinceCodes.map((_, i) => selectedProvinces.includes(i) ? '#333333' : hexToRgba('#333333', 0.3))
+                                                        : PAGE9_PROVINCE_CODES.map((_, i) => selectedProvinces.includes(i) ? '#333333' : hexToRgba('#333333', 0.3))
                                                 },
                                                 hoverinfo: 'text',
                                                 hovertext: mapChartData.hoverTexts,
@@ -1430,11 +1423,11 @@ const Page9 = () => {
                         <div className="page9-right-column">
                             <ul className="page9-indigenous-bullet" style={{ listStyle: 'disc', paddingLeft: '20px', margin: 0 }}>
                                 <li aria-label={lang === 'en' 
-                                    ? `About ${formatNumber(employmentData.indigenous_employed)} Indigenous people were directly employed in the energy sector in 2023.`
-                                    : `Le secteur de l'énergie employait directement environ ${formatNumber(employmentData.indigenous_employed)} Autochtones en 2023.`
+                                    ? `About ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)} Indigenous people were directly employed in the energy sector in 2023.`
+                                    : `Le secteur de l'énergie employait directement environ ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)} Autochtones en 2023.`
                                 }>
                                     <span aria-hidden="true">
-                                        {getText('page9_indigenous_bullet', lang).replace('18,200', formatNumber(employmentData.indigenous_employed)).replace('18 200', formatNumber(employmentData.indigenous_employed))}
+                                        {getText('page9_indigenous_bullet', lang).replace('18,200', formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)).replace('18 200', formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang))}
                                     </span>
                                 </li>
                             </ul>
@@ -1496,20 +1489,20 @@ const Page9 = () => {
                                     </div>
                                     
                                     <div className="page9-legend-main">
-                                        {getText('page9_energy_direct_label', lang)} {formatPercent(employmentData.energy_direct_pct)}
+                                        {getText('page9_energy_direct_label', lang)} {formatPercent(PAGE9_EMPLOYMENT_DATA.energy_direct_pct)}
                                     </div>
                                     <div className="page9-legend-sub">
-                                        {getText('page9_petroleum', lang)} {formatPercent(employmentData.petroleum_pct)}
+                                        {getText('page9_petroleum', lang)} {formatPercent(PAGE9_EMPLOYMENT_DATA.petroleum_pct)}
                                     </div>
                                     <div className="page9-legend-sub">
-                                        {getText('page9_electricity', lang)} {formatPercent(employmentData.electricity_pct)}
+                                        {getText('page9_electricity', lang)} {formatPercent(PAGE9_EMPLOYMENT_DATA.electricity_pct)}
                                     </div>
                                     <div className="page9-legend-sub">
-                                        {getText('page9_other', lang)} {formatPercent(employmentData.other_pct)}
+                                        {getText('page9_other', lang)} {formatPercent(PAGE9_EMPLOYMENT_DATA.other_pct)}
                                     </div>
                                     
                                     <div className="page9-legend-indirect">
-                                        {getText('page9_energy_indirect_label', lang)} {formatPercent(employmentData.energy_indirect_pct)}
+                                        {getText('page9_energy_indirect_label', lang)} {formatPercent(PAGE9_EMPLOYMENT_DATA.energy_indirect_pct)}
                                     </div>
                                 </div>
                             </aside>
@@ -1572,8 +1565,8 @@ const Page9 = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {provinceCodes.map((code) => {
-                                            const info = provinceInfo[code];
+                                        {PAGE9_PROVINCE_CODES.map((code) => {
+                                            const info = PAGE9_PROVINCE_INFO[code];
                                             const name = lang === 'en' ? info.nameEn : info.nameFr;
                                             const cellUnitSR = lang === 'en' ? ' jobs' : ' emplois';
                                             return (
@@ -1583,9 +1576,9 @@ const Page9 = () => {
                                                         <td 
                                                             key={yearData.year} 
                                                             style={{ textAlign: 'right' }}
-                                                            aria-label={`${name}, ${yearData.year}: ${formatNumber(yearData[code])}${cellUnitSR}`}
+                                                            aria-label={`${name}, ${yearData.year}: ${formatPage9Number(yearData[code], lang)}${cellUnitSR}`}
                                                         >
-                                                            {formatNumber(yearData[code])}
+                                                            {formatPage9Number(yearData[code], lang)}
                                                         </td>
                                                     ))}
                                                 </tr>
@@ -1600,9 +1593,9 @@ const Page9 = () => {
                                                     <td 
                                                         key={yearData.year} 
                                                         style={{ textAlign: 'right' }}
-                                                        aria-label={`${totalLabel}, ${yearData.year}: ${formatNumber(yearData.national_total)}${cellUnitSR}`}
+                                                        aria-label={`${totalLabel}, ${yearData.year}: ${formatPage9Number(yearData.national_total, lang)}${cellUnitSR}`}
                                                     >
-                                                        {formatNumber(yearData.national_total)}
+                                                        {formatPage9Number(yearData.national_total, lang)}
                                                     </td>
                                                 );
                                             })}
@@ -1613,9 +1606,9 @@ const Page9 = () => {
                                                 <td 
                                                     key={yearData.year} 
                                                     style={{ textAlign: 'right' }}
-                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)"}, ${yearData.year}: ${employmentData.energy_direct_pct}%`}
+                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Direct)' : "Part de l'emploi total (direct)"}, ${yearData.year}: ${PAGE9_EMPLOYMENT_DATA.energy_direct_pct}%`}
                                                 >
-                                                    {employmentData.energy_direct_pct}%
+                                                    {PAGE9_EMPLOYMENT_DATA.energy_direct_pct}%
                                                 </td>
                                             ))}
                                         </tr>
@@ -1625,9 +1618,9 @@ const Page9 = () => {
                                                 <td 
                                                     key={yearData.year} 
                                                     style={{ textAlign: 'right' }}
-                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)"}, ${yearData.year}: ${employmentData.energy_indirect_pct}%`}
+                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Indirect)' : "Part de l'emploi total (indirect)"}, ${yearData.year}: ${PAGE9_EMPLOYMENT_DATA.energy_indirect_pct}%`}
                                                 >
-                                                    {employmentData.energy_indirect_pct}%
+                                                    {PAGE9_EMPLOYMENT_DATA.energy_indirect_pct}%
                                                 </td>
                                             ))}
                                         </tr>
@@ -1637,9 +1630,9 @@ const Page9 = () => {
                                                 <td 
                                                     key={yearData.year} 
                                                     style={{ textAlign: 'right' }}
-                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)"}, ${yearData.year}: ${employmentData.share_total_pct}%`}
+                                                    aria-label={`${lang === 'en' ? 'Share of total employment (Total)' : "Part de l'emploi total (total)"}, ${yearData.year}: ${PAGE9_EMPLOYMENT_DATA.share_total_pct}%`}
                                                 >
-                                                    {employmentData.share_total_pct}%
+                                                    {PAGE9_EMPLOYMENT_DATA.share_total_pct}%
                                                 </td>
                                             ))}
                                         </tr>

@@ -3,12 +3,13 @@ import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import Page36RddInfographic, {
+import Page36RddInfographic from '../components/Page36RddInfographic';
+import {
     COLUMN_KEYS,
     ROW_KEYS,
     INFOGRAPHIC_DATA,
     exportPage36InfographicPng,
-} from '../components/Page36RddInfographic';
+} from '../components/Page36RddInfographic.constants';
 
 const Page36 = () => {
     const { lang, layoutPadding } = useOutletContext();

@@ -131,6 +131,22 @@ class DatabaseConnection:
                 conn.close()
             except Exception:
                 pass
+
+    @contextmanager
+    def transaction(self):
+        """
+        Yield a connection with explicit commit/rollback.
+
+        Use for multi-statement writes that must succeed or fail together.
+        """
+        with self.get_connection() as conn:
+            conn.autocommit = False
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
     
     def test_connection(self) -> bool:
         """

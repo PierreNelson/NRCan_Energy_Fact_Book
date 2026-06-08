@@ -24,6 +24,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from config_loader import Config  # noqa: E402
 from db import DataRepository, DatabaseConnection, get_connection  # noqa: E402
 from db.eedas_registry import (  # noqa: E402
+    TABLE_EFB_INDICATORS,
     TABLE_EXPORT,
     TABLE_DATA_SOURCES,
     TABLE_MAJOR_PROJECTS_MAP,
@@ -40,8 +41,8 @@ MANIFEST_TITLES: Dict[str, Tuple[str, str]] = {
         "Métadonnées d'export (vecteurs, unités, sources)",
     ),
     "glossary_series.csv": (
-        "Time series (nrcan_fb_export)",
-        "Séries temporelles (nrcan_fb_export)",
+        "Time series (nrcan_efb_indicators / export staging)",
+        "Séries temporelles (nrcan_efb_indicators / export)",
     ),
     "glossary_major_projects.csv": (
         "Major projects map (raw)",
@@ -58,31 +59,20 @@ MANIFEST_TITLES: Dict[str, Tuple[str, str]] = {
 }
 
 
-def _is_safe_section_calc_table(name: str) -> bool:
-    # Section-scoped calculated tables only (nrcan_fb_sN_*).
-    return bool(re.fullmatch(r"nrcan_fb_s[0-9]_[a-z][a-z0-9_]*", name))
-
-
-def _purge_legacy_calc_glossary_csvs(out_dir: Path) -> None:
-    """
-    Remove stale glossary_calc_*.csv files. Legacy DB table names were calc_*; the
-    exporter only writes glossary_nrcan_fb_s*.csv. Old files linger in public/glossary/
-    and the manifest listed them until removed.
-    """
-    for p in out_dir.glob("glossary_calc_*.csv"):
-        try:
-            p.unlink()
-        except OSError:
-            pass
+def _is_safe_raw_table(name: str) -> bool:
+    """EEDAS per-source series tables from registry (not system tables)."""
+    return name in unique_source_tables()
 
 
 def _titles_for_csv_filename(filename: str) -> Tuple[str, str]:
     if filename in MANIFEST_TITLES:
         return MANIFEST_TITLES[filename]
-    m = re.fullmatch(r"glossary_(nrcan_fb_s[0-9]_[a-z0-9_]+)\.csv", filename)
+    m = re.fullmatch(r"glossary_(stc_[a-z0-9_]+|nrcan_[a-z0-9_]+|iea_[a-z0-9_]+|kal_[a-z0-9_]+|osm_[a-z0-9_]+)\.csv", filename)
     if m:
         tab = m.group(1)
-        return (f"Calculated table: {tab}", f"Table calculée : {tab}")
+        return (f"EEDAS raw table: {tab}", f"Table brute EEDAS : {tab}")
+    if filename == "glossary_nrcan_efb_indicators.csv":
+        return ("EFB indicators (nrcan_efb_indicators)", "Indicateurs EFB (nrcan_efb_indicators)")
     stem = Path(filename).stem
     # Avoid "Glossary Calc Energy Use" — drop the filename prefix used for all exports
     display = stem[9:] if stem.lower().startswith("glossary_") else stem
@@ -97,6 +87,8 @@ def _write_manifest(out_dir: Path) -> None:
             continue
         # Never list legacy calc_* exports (pre–nrcan_fb_s* schema).
         if re.fullmatch(r"glossary_calc_[a-z0-9_]+\.csv", path.name, re.IGNORECASE):
+            continue
+        if re.fullmatch(r"glossary_nrcan_fb_s[0-9]_[a-z0-9_]+\.csv", path.name, re.IGNORECASE):
             continue
         title_en, title_fr = _titles_for_csv_filename(path.name)
         rows.append(
@@ -123,9 +115,19 @@ def _copy_html_template(out_dir: Path) -> None:
         pass
 
 
+def _purge_legacy_glossary_csvs(out_dir: Path) -> None:
+    """Remove stale calc-table glossary exports."""
+    for pattern in ("glossary_calc_*.csv", "glossary_nrcan_fb_s*.csv"):
+        for p in out_dir.glob(pattern):
+            try:
+                p.unlink()
+            except OSError:
+                pass
+
+
 def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-    _purge_legacy_calc_glossary_csvs(out_dir)
+    _purge_legacy_glossary_csvs(out_dir)
     config = Config()
     db_mgr: DatabaseConnection = get_connection(config.database)
     repo = DataRepository(db_mgr)
@@ -138,7 +140,8 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
     )
     metadata_sql = f"""
         SELECT e.vector, e.title, e.uom, e.scalar_factor,
-               COALESCE(m.source_key,'') AS data_source, e.source_org, e.source_url
+               COALESCE(i.indicator_key, m.source_key, '') AS data_source,
+               e.source_org, e.source_url
         FROM (
             SELECT vector, MAX(title) AS title, MAX(uom) AS uom, MAX(scalar_factor) AS scalar_factor,
                    MAX(source_org) AS source_org, MAX(source_url) AS source_url
@@ -147,8 +150,11 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
             GROUP BY vector
         ) e
         LEFT JOIN (
-            {meta_union}
-        ) m ON m.vector = e.vector
+            SELECT vector, MAX(indicator_key) AS indicator_key
+            FROM [{TABLE_EFB_INDICATORS}]
+            GROUP BY vector
+        ) i ON i.vector = e.vector
+        LEFT JOIN ({meta_union}) m ON m.vector = e.vector
         ORDER BY e.vector
     """
     series_sql = f"""
@@ -188,20 +194,8 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
             out_dir / "glossary_run_history.csv", index=False, encoding="utf-8"
         )
 
-        tables_df = pd.read_sql(
-            """
-            SELECT TABLE_NAME
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_TYPE = 'BASE TABLE'
-              AND TABLE_SCHEMA = 'dbo'
-              AND TABLE_NAME LIKE 'nrcan_fb_s[0-9]_%'
-            ORDER BY TABLE_NAME
-            """,
-            conn,
-        )
-        for table_name in tables_df["TABLE_NAME"].astype(str):
-            if not _is_safe_section_calc_table(table_name):
-                continue
+        # EEDAS raw series tables (when non-empty)
+        for table_name in unique_source_tables():
             quoted = "[" + table_name.replace("]", "]]") + "]"
             out_name = f"glossary_{table_name.lower()}.csv"
             out_path = out_dir / out_name
@@ -214,8 +208,25 @@ def export_from_database(out_dir: Path, skip_prepare: bool) -> None:
                     except OSError:
                         pass
                 continue
-            q = f"SELECT * FROM {quoted}"
-            pd.read_sql(q, conn).to_csv(out_path, index=False, encoding="utf-8")
+            pd.read_sql(f"SELECT * FROM {quoted} ORDER BY vector, ref_date", conn).to_csv(
+                out_path, index=False, encoding="utf-8"
+            )
+
+        # EFB indicators table
+        ind_path = out_dir / "glossary_nrcan_efb_indicators.csv"
+        ind_cnt = pd.read_sql(f"SELECT COUNT(*) AS n FROM [{TABLE_EFB_INDICATORS}]", conn)
+        ind_n = int(ind_cnt.iloc[0]["n"]) if not ind_cnt.empty else 0
+        if ind_n == 0:
+            if ind_path.is_file():
+                try:
+                    ind_path.unlink()
+                except OSError:
+                    pass
+        else:
+            pd.read_sql(
+                f"SELECT * FROM [{TABLE_EFB_INDICATORS}] ORDER BY indicator_key, vector, ref_date",
+                conn,
+            ).to_csv(ind_path, index=False, encoding="utf-8")
 
     _write_manifest(out_dir)
     _copy_html_template(out_dir)

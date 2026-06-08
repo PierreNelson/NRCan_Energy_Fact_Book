@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getForeignControlData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE32_COLORS = {
+    'utilities': '#284162',
+    'oil_gas': '#419563',
+    'all_non_financial': '#8B7355',
+};
+
 const Page32 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -167,11 +174,6 @@ const Page32 = () => {
         return () => observer.disconnect();
     }, [chartData, lang]);
 
-    const COLORS = {
-        'utilities': '#284162',
-        'oil_gas': '#419563',
-        'all_non_financial': '#8B7355',
-    };
     const processedChartData = useMemo(() => {
         if (chartData.length === 0) return null;
 
@@ -196,7 +198,7 @@ const Page32 = () => {
                 y: allIndustriesValues,
                 type: 'bar',
                 marker: { 
-                    color: COLORS.all_non_financial,
+                    color: PAGE32_COLORS.all_non_financial,
                     opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[0]?.includes(i) ? 1 : 0.3)
                 },
                 hovertext: buildHoverText(allIndustriesValues, 'page32_hover_all_industries'),
@@ -213,7 +215,7 @@ const Page32 = () => {
                 y: oilGasValues,
                 type: 'bar',
                 marker: { 
-                    color: COLORS.oil_gas,
+                    color: PAGE32_COLORS.oil_gas,
                     opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[1]?.includes(i) ? 1 : 0.3)
                 },
                 hovertext: buildHoverText(oilGasValues, 'page32_hover_oil_gas'),
@@ -230,7 +232,7 @@ const Page32 = () => {
                 y: utilitiesValues,
                 type: 'bar',
                 marker: { 
-                    color: COLORS.utilities,
+                    color: PAGE32_COLORS.utilities,
                     opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[2]?.includes(i) ? 1 : 0.3)
                 },
                 hovertext: buildHoverText(utilitiesValues, 'page32_hover_utilities'),
@@ -245,11 +247,6 @@ const Page32 = () => {
 
         return { traces, years, tickVals, minYear, maxYear, utilitiesValues, oilGasValues, allIndustriesValues };
     }, [chartData, lang, windowWidth, selectedPoints]);
-    const formatPercentSR = (val) => {
-        return lang === 'en' 
-            ? `${val.toFixed(1)} percent` 
-            : `${val.toFixed(1)} pour cent`;
-    };
     const getChartTitleSR = () => {
         if (lang === 'en') {
             return 'Foreign control of Canadian assets';
@@ -278,7 +275,6 @@ const Page32 = () => {
     const getAccessibleDataTable = () => {
         if (!chartData || chartData.length === 0) return null;
 
-        const unitText = lang === 'en' ? ', in percent' : ', en pourcentage';
         const captionId = 'page32-table-caption';
 
         const utilitiesLabel = getText('page32_legend_utilities', lang);

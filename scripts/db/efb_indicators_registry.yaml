@@ -1,0 +1,158 @@
+# EFB indicator registry: indicator_key -> section, raw table dependencies, export vector prefixes.
+# Transform order follows topological sort on depends_on (physical table names).
+
+indicators:
+  economic_contributions:
+    section_id: 1
+    depends_on: [stc_nrsa_3610061001, stc_capex_3410003601]
+    vector_prefixes: [econ_]
+
+  nominal_gdp:
+    section_id: 1
+    depends_on: [stc_gdpnom_3610010301]
+    vector_prefixes: [gdp_nominal_]
+
+  provincial_gdp:
+    section_id: 1
+    depends_on: [stc_nrsa_3810028501]
+    vector_prefixes: [gdp_prov_]
+
+  world_energy_production:
+    section_id: 1
+    depends_on: [iea_web_rankings]
+    vector_prefixes: [energy_prod_]
+
+  canadian_energy_assets:
+    section_id: 1
+    depends_on: [nrcan_cea_assets]
+    vector_prefixes: [cea_]
+
+  ghg_emissions:
+    section_id: 1
+    depends_on: [nrcan_ghg_semantic]
+    vector_prefixes: [ghg_]
+
+  capital_expenditures:
+    section_id: 2
+    depends_on: [stc_capex_3410003601]
+    vector_prefixes: [capex_]
+
+  infrastructure:
+    section_id: 2
+    depends_on: [stc_infra_3610060801]
+    vector_prefixes: [infra_]
+
+  investment_by_asset:
+    section_id: 2
+    depends_on: [stc_invasset_3410003601]
+    vector_prefixes: [asset_]
+
+  international_investment:
+    section_id: 2
+    depends_on: [stc_fdi_3610000901]
+    vector_prefixes: [intl_]
+
+  foreign_control:
+    section_id: 2
+    depends_on: [stc_foreignctrl_misc]
+    vector_prefixes: [foreign_]
+
+  environmental_protection:
+    section_id: 2
+    depends_on: [stc_epes_3810013001]
+    vector_prefixes: [enviro_]
+
+  major_projects:
+    section_id: 2
+    depends_on: [nrcan_majorproj_semantic]
+    vector_prefixes: [projects_]
+
+  clean_tech:
+    section_id: 2
+    depends_on: [nrcan_cleantech_semantic]
+    vector_prefixes: [cleantech_]
+
+  energy_use:
+    section_id: 4
+    depends_on: [nrcan_oee_neud]
+    vector_prefixes: [oee_neud_]
+
+  seu_by_fuel:
+    section_id: 4
+    depends_on: [nrcan_oee_seu]
+    vector_prefixes: [seu_]
+
+  residential_pie_charts:
+    section_id: 4
+    depends_on: [nrcan_oee_res_pie]
+    vector_prefixes: [res_]
+
+  residential_daily_lives:
+    section_id: 4
+    depends_on: [nrcan_oee_res_daily]
+    vector_prefixes: [res_]
+
+  commercial_institutional:
+    section_id: 4
+    depends_on: [nrcan_oee_commercial]
+    vector_prefixes: [com_]
+
+  industrial_sector:
+    section_id: 4
+    depends_on: [nrcan_oee_industrial]
+    vector_prefixes: [ind_]
+
+  environmental_clean_tech:
+    section_id: 5
+    depends_on: [nrcan_cleanenv_semantic]
+    vector_prefixes: [envcleantech_]
+
+  cleantech_companies_geo:
+    section_id: 5
+    depends_on: [nrcan_spi_cleantech_geo]
+    vector_prefixes: [cleantech_geo_]
+
+  cleantech_companies_industry:
+    section_id: 5
+    depends_on: [nrcan_spi_cleantech_industry]
+    vector_prefixes: [cleantech_ind_]
+
+  ev_sales:
+    section_id: 5
+    depends_on: [stc_ev_sales]
+    vector_prefixes: [ev_]
+
+  rpp_supply_demand:
+    section_id: 6
+    depends_on: [stc_rppsd_25100081]
+    vector_prefixes: [rpp_net_prod_, rpp_imports_, rpp_exports_, rpp_domestic_, rpp_motor_, rpp_distillate_, rpp_still_gas_, rpp_jet_, rpp_coke_, rpp_residual_, rpp_asphalt_, rpp_other_]
+
+  rpp_refinery_input:
+    section_id: 6
+    depends_on: [stc_refinput_25100063]
+    vector_prefixes: [rpp_refinery_]
+
+  crude_prices:
+    section_id: 6
+    depends_on: [nrcan_crude_prices]
+    vector_prefixes: [crude_]
+
+  oil_sands:
+    section_id: 6
+    depends_on: [stc_oil_sands]
+    vector_prefixes: [os_]
+
+  canadian_production:
+    section_id: 6
+    depends_on: [stc_canadian_production]
+    vector_prefixes: [cp_]
+
+  kal_gas_prices:
+    section_id: 6
+    depends_on: [kal_gas_prices]
+    vector_prefixes: [kal_]
+
+  osm_refin_cap:
+    section_id: 6
+    depends_on: [osm_refin_cap]
+    vector_prefixes: [refcap_]

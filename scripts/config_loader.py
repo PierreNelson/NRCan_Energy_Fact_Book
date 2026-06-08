@@ -98,6 +98,11 @@ class Config:
     def logging(self) -> Dict[str, Any]:
         """Get logging configuration."""
         return self._config.get('logging', {})
+
+    @property
+    def resilience(self) -> Dict[str, Any]:
+        """Get resilience configuration (retries, backoff)."""
+        return self._config.get('resilience', {})
     
     def is_section_enabled(self, section_key: str) -> bool:
         """

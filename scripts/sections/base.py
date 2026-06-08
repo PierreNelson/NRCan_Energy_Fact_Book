@@ -16,6 +16,7 @@ from datetime import datetime
 from db.connection import DatabaseConnection
 from db.models import DataRepository
 from config_loader import Config
+from utils.http_retry import fetch_get, resilience_from_config
 
 
 class SectionProcessor(ABC):
@@ -56,6 +57,34 @@ class SectionProcessor(ABC):
         self.config = config
         self.db = db
         self.repo = DataRepository(db)
+
+    @property
+    def fetch_max_retries(self) -> int:
+        return self.config.resilience.get('fetch_max_retries', 3)
+
+    @property
+    def fetch_retry_delay_seconds(self) -> int:
+        return self.config.resilience.get('fetch_retry_delay_seconds', 2)
+
+    def fetch_url_with_retry(
+        self,
+        url: str,
+        *,
+        timeout: Optional[int] = None,
+        headers: Optional[Dict[str, str]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        label: str = "HTTP",
+    ) -> requests.Response:
+        """GET with config-driven retries (OEE, NRCan HTML, etc.)."""
+        return fetch_get(
+            url,
+            timeout=timeout or self.REQUEST_TIMEOUT,
+            headers=headers,
+            params=params,
+            max_retries=self.fetch_max_retries,
+            retry_delay_seconds=self.fetch_retry_delay_seconds,
+            label=label,
+        )
     
     @abstractmethod
     def get_source_handlers(self) -> Dict[str, callable]:
@@ -112,7 +141,7 @@ class SectionProcessor(ABC):
                 raise ValueError(f"No handler found for source: {source_key}")
         
         # Log run start
-        run_id = self.repo.log_run_start(source_key, 'fetch')
+        run_id = self.repo.log_run_start(source_key, 'eedas_update')
         
         try:
             # Execute the handler
@@ -196,18 +225,20 @@ class SectionProcessor(ABC):
             urls_to_try.append(alt_url)
 
         last_error: Optional[Exception] = None
+        max_retries = self.fetch_max_retries
+        retry_delay = self.fetch_retry_delay_seconds
 
         for u in urls_to_try:
             if u != urls_to_try[0]:
                 print(f"  Trying alternative StatCan URL...")
 
-            for attempt in range(3):
+            for attempt in range(max_retries):
                 try:
                     if attempt > 0:
-                        delay = 2 * attempt
+                        delay = retry_delay * attempt
                         print(
                             f"  Retrying StatCan fetch "
-                            f"(attempt {attempt + 1}/3, wait {delay}s)..."
+                            f"(attempt {attempt + 1}/{max_retries}, wait {delay}s)..."
                         )
                         time.sleep(delay)
 
@@ -236,7 +267,7 @@ class SectionProcessor(ABC):
                     last_error = e
                     code = e.response.status_code if e.response is not None else None
                     if code in (502, 503, 504):
-                        if attempt < 2:
+                        if attempt < max_retries - 1:
                             continue
                         break
                     raise Exception(f"Failed to fetch data from StatCan: {e}") from e
@@ -248,7 +279,7 @@ class SectionProcessor(ABC):
                     OSError,
                 ) as e:
                     last_error = e
-                    if attempt < 2:
+                    if attempt < max_retries - 1:
                         continue
                     break
 
@@ -273,10 +304,12 @@ class SectionProcessor(ABC):
             "Referer": "https://www.statcan.gc.ca/",
         }
         last_error = None
-        for attempt in range(3):
+        max_retries = self.fetch_max_retries
+        retry_delay = self.fetch_retry_delay_seconds
+        for attempt in range(max_retries):
             try:
                 if attempt > 0:
-                    time.sleep(4)
+                    time.sleep(retry_delay * attempt)
                 response = requests.get(url, timeout=self.REQUEST_TIMEOUT, headers=headers)
                 response.raise_for_status()
                 raw = response.json()
@@ -293,7 +326,7 @@ class SectionProcessor(ABC):
             except Exception as e:
                 raise Exception(f"WDS request failed: {e}")
         if last_error is not None:
-            raise Exception(f"WDS request failed after 3 attempts: {last_error}")
+            raise Exception(f"WDS request failed after {max_retries} attempts: {last_error}")
         out = []
         if isinstance(raw, list):
             for item in raw:
@@ -456,52 +489,126 @@ class SectionProcessor(ABC):
             if meta_only:
                 self.repo.upsert_ingest_metadata_only(source_key, meta_only)
         return len(data_rows)
-    
-    def store_calculated_data(self, source_key: str,
-                              calc_type: str,
-                              data: List[Dict[str, Any]],
-                              metadata_rows: List[Tuple] = None) -> int:
+
+    def replace_raw_data(
+        self,
+        source_key: str,
+        data_rows: List[Tuple],
+        metadata_rows: List[Tuple],
+    ) -> int:
         """
-        Store calculated/derived data in the appropriate calc_* table.
-        
-        This stores aggregated or computed values that are derived from
-        raw StatCan data. The data is also exported with semantic vector names.
-        
+        Atomically replace ingest rows for a source (clear + upsert in one transaction).
+
         Args:
-            source_key: Source identifier (e.g., 'capital_expenditures')
-            calc_type: Type of calculated data ('capex', 'infra', 'econ', etc.)
-            data: List of dicts with year and calculated values
-            metadata_rows: Optional list of (vector, title, uom, scalar_factor) tuples
-            
+            source_key: Source identifier
+            data_rows: List of (vector, ref_date, value) tuples
+            metadata_rows: List of metadata tuples per vector
+
         Returns:
             Number of data rows stored
         """
-        if not data:
-            return 0
-        
-        # Store in the appropriate calc_* table based on type
-        if calc_type == 'capital_expenditures':
-            self.repo.upsert_capital_expenditures(data)
-        elif calc_type == 'infrastructure':
-            self.repo.upsert_infrastructure(data)
-        elif calc_type == 'economic_contributions':
-            self.repo.upsert_economic_contributions(data)
-        elif calc_type == 'international_investment':
-            self.repo.upsert_international_investment(data)
-        elif calc_type == 'environmental_protection':
-            self.repo.upsert_environmental_protection(data)
-        elif calc_type == 'provincial_gdp':
-            self.repo.upsert_provincial_gdp(data)
-        elif calc_type == 'clean_tech':
-            self.repo.upsert_clean_tech(data)
-        elif calc_type == 'foreign_control':
-            self.repo.upsert_foreign_control(data)
-        
-        # Also store metadata if provided
+        n = self.repo.replace_source_ingest(source_key, data_rows, metadata_rows)
         if metadata_rows:
-            self.repo.insert_raw_statcan_metadata(source_key, metadata_rows)
-        
-        return len(data)
+            data_vectors = {str(r[0]) for r in data_rows}
+            meta_only = [r for r in metadata_rows if str(r[0]) not in data_vectors]
+            if meta_only:
+                self.repo.upsert_ingest_metadata_only(source_key, meta_only)
+        return n
+
+    def get_raw_dataframe(self, source_key: str) -> pd.DataFrame:
+        """Read source-native ingest rows for transform handlers."""
+        return self.repo.get_raw_dataframe(source_key)
+
+    def store_indicators(
+        self,
+        indicator_key: str,
+        data_rows: List[Tuple],
+        metadata_rows: List[Tuple],
+    ) -> int:
+        """Store EFB indicator vectors in nrcan_efb_indicators."""
+        return self.repo.replace_efb_indicators(indicator_key, data_rows, metadata_rows)
+
+    def get_update_handlers(self) -> Dict[str, callable]:
+        """Return source_key -> EEDAS ingest handler. Override in section processors."""
+        return {}
+
+    def get_transform_handlers(self) -> Dict[str, callable]:
+        """Return source_key -> EFB transform handler. Override in section processors."""
+        return {}
+
+    def update_all(self) -> Dict[str, Any]:
+        """Run EEDAS update handlers for all enabled sources in this section."""
+        results = {}
+        handlers = self.get_update_handlers()
+        for source_key, handler in handlers.items():
+            if self.config.is_source_enabled(self.SECTION_KEY, source_key):
+                print(f"\n[{self.SECTION_NAME}] EEDAS update: {source_key}")
+                try:
+                    results[source_key] = self.update_source(source_key, handler)
+                except Exception as e:
+                    print(f"  ERROR: {e}")
+                    results[source_key] = {'status': 'failed', 'error': str(e)}
+        return results
+
+    def transform_all(self) -> Dict[str, Any]:
+        """Run EFB transform handlers for all enabled indicators in this section."""
+        results = {}
+        handlers = self.get_transform_handlers()
+        for indicator_key, handler in handlers.items():
+            if self.config.is_source_enabled(self.SECTION_KEY, indicator_key):
+                print(f"\n[{self.SECTION_NAME}] EFB transform: {indicator_key}")
+                try:
+                    results[indicator_key] = self.transform_source(indicator_key, handler)
+                except Exception as e:
+                    print(f"  ERROR: {e}")
+                    results[indicator_key] = {'status': 'failed', 'error': str(e)}
+        return results
+
+    def update_source(self, source_key: str, handler: callable = None) -> Dict[str, Any]:
+        """Run EEDAS ingest for a single source."""
+        if handler is None:
+            handler = self.get_update_handlers().get(source_key)
+            if handler is None:
+                raise ValueError(f"No EEDAS update handler for source: {source_key}")
+
+        run_id = self.repo.log_run_start(source_key, 'eedas_update')
+        try:
+            rows_affected = handler()
+            self.repo.update_source_last_refresh(source_key)
+            self.repo.log_run_complete(run_id, 'success', rows_affected)
+            print(f"  Completed: {rows_affected} rows")
+            return {'status': 'success', 'rows': rows_affected}
+        except Exception as e:
+            self.repo.log_run_complete(run_id, 'failed', error_message=str(e))
+            raise
+
+    def transform_source(self, indicator_key: str, handler: callable = None) -> Dict[str, Any]:
+        """Run EFB transform for a single indicator."""
+        if handler is None:
+            handler = self.get_transform_handlers().get(indicator_key)
+            if handler is None:
+                raise ValueError(f"No EFB transform handler for indicator: {indicator_key}")
+
+        from db.efb_registry import get_indicator_config
+
+        cfg = get_indicator_config(indicator_key)
+        for tbl in cfg.get('depends_on', []):
+            n = self.repo.count_raw_table_rows(tbl)
+            if n == 0:
+                raise RuntimeError(
+                    f"EFB transform '{indicator_key}' requires raw data in [{tbl}] "
+                    f"(0 rows). Run: python main.py eedas update --source <source> first."
+                )
+
+        run_id = self.repo.log_run_start(indicator_key, 'efb_transform')
+        try:
+            rows_affected = handler()
+            self.repo.log_run_complete(run_id, 'success', rows_affected)
+            print(f"  Completed: {rows_affected} rows")
+            return {'status': 'success', 'rows': rows_affected}
+        except Exception as e:
+            self.repo.log_run_complete(run_id, 'failed', error_message=str(e))
+            raise
     
     # =========================================================================
     # UTILITY METHODS

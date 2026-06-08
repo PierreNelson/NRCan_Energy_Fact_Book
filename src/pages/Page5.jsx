@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -35,6 +35,11 @@ const COLORS = {
     other_renewables: '#857650'
 };
 
+const formatPage5Number = (num, lang) => {
+    if (num === undefined || num === null) return '—';
+    return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+};
+
 const Page5 = () => {
     const { lang } = useOutletContext();
     const pageData = PAGE5_HARDCODED;
@@ -56,11 +61,6 @@ const Page5 = () => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
         return hex;
-    };
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
     };
 
     useEffect(() => {
@@ -144,7 +144,7 @@ const Page5 = () => {
             const hovertext = PEP_REGIONS.map((region, i) => {
                 const val = xArr[i];
                 const regionLabelFull = getText(`page5_region_${region}_full`, lang);
-                return `<b>${regionLabelFull}</b><br>${sourceLabel}: ${formatNumber(val)} PJ`;
+                return `<b>${regionLabelFull}</b><br>${sourceLabel}: ${formatPage5Number(val, lang)} PJ`;
             });
             const baseColor = COLORS[sourceKey];
             const markerColor = selectedPoints1 === null
@@ -176,7 +176,7 @@ const Page5 = () => {
             const hovertext = PEP_REGIONS.map((region, i) => {
                 const val = xArr[i];
                 const regionLabelFull = getText(`page5_region_${region}_full`, lang);
-                return `<b>${regionLabelFull}</b><br>${sourceLabel}: ${formatNumber(val)} PJ`;
+                return `<b>${regionLabelFull}</b><br>${sourceLabel}: ${formatPage5Number(val, lang)} PJ`;
             });
             const baseColor = COLORS[sourceKey];
             const markerColor = selectedPoints2 === null
@@ -333,7 +333,7 @@ const Page5 = () => {
             const r = pageData.regions[region] || {};
             const vals = SOURCES_INCLUDING.map(s => r[s] ?? 0);
             const total = vals.reduce((a, b) => a + b, 0);
-            return [getText(`page5_region_${region}`, lang), ...vals.map(formatNumber), formatNumber(total)];
+            return [getText(`page5_region_${region}`, lang), ...vals.map(v => formatPage5Number(v, lang)), formatPage5Number(total, lang)];
         });
         const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -351,7 +351,7 @@ const Page5 = () => {
             const r = pageData.regions[region] || {};
             const vals = SOURCES_EXCLUDING.map(s => (s === 'nuclear' ? r.uranium : r[s]) ?? 0);
             const total = vals.reduce((a, b) => a + b, 0);
-            return [getText(`page5_region_${region}`, lang), ...vals.map(formatNumber), formatNumber(total)];
+            return [getText(`page5_region_${region}`, lang), ...vals.map(v => formatPage5Number(v, lang)), formatPage5Number(total, lang)];
         });
         const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -372,7 +372,7 @@ const Page5 = () => {
             const r = pageData.regions[region] || {};
             const vals = SOURCES_INCLUDING.map(s => r[s] ?? 0);
             const total = vals.reduce((a, b) => a + b, 0);
-            const cells = [getText(`page5_region_${region}`, lang), ...vals.map(v => formatNumber(v)), formatNumber(total)].map((text, i) =>
+            const cells = [getText(`page5_region_${region}`, lang), ...vals.map(v => formatPage5Number(v, lang)), formatPage5Number(total, lang)].map((text, i) =>
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(text), size: 22 })], alignment: i === 0 ? AlignmentType.LEFT : AlignmentType.CENTER })] })
             );
             return new TableRow({ children: cells });
@@ -399,7 +399,7 @@ const Page5 = () => {
             const r = pageData.regions[region] || {};
             const vals = SOURCES_EXCLUDING.map(s => (s === 'nuclear' ? r.uranium : r[s]) ?? 0);
             const total = vals.reduce((a, b) => a + b, 0);
-            const cells = [getText(`page5_region_${region}`, lang), ...vals.map(v => formatNumber(v)), formatNumber(total)].map((text, i) =>
+            const cells = [getText(`page5_region_${region}`, lang), ...vals.map(v => formatPage5Number(v, lang)), formatPage5Number(total, lang)].map((text, i) =>
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(text), size: 22 })], alignment: i === 0 ? AlignmentType.LEFT : AlignmentType.CENTER })] })
             );
             return new TableRow({ children: cells });
@@ -541,9 +541,9 @@ const Page5 = () => {
                                                         <tr key={region}>
                                                             <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{getText(`page5_region_${region}`, lang)}</th>
                                                             {vals.map((v, i) => (
-                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${getText(`page5_region_${region}`, lang)}, ${getText(SOURCES_INCLUDING[i] === 'uranium' ? 'page4_uranium' : `page4_${SOURCES_INCLUDING[i]}`, lang)}: ${formatNumber(v)} PJ`}>{formatNumber(v)}</td>
+                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${getText(`page5_region_${region}`, lang)}, ${getText(SOURCES_INCLUDING[i] === 'uranium' ? 'page4_uranium' : `page4_${SOURCES_INCLUDING[i]}`, lang)}: ${formatPage5Number(v, lang)} PJ`}>{formatPage5Number(v, lang)}</td>
                                                             ))}
-                                                            <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatNumber(total)}</td>
+                                                            <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatPage5Number(total, lang)}</td>
                                                         </tr>
                                                     );
                                                 })}
@@ -631,9 +631,9 @@ const Page5 = () => {
                                                         <tr key={region}>
                                                             <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{getText(`page5_region_${region}`, lang)}</th>
                                                             {vals.map((v, i) => (
-                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${getText(`page5_region_${region}`, lang)}, ${getText(`page4_${SOURCES_EXCLUDING[i]}`, lang)}: ${formatNumber(v)} PJ`}>{formatNumber(v)}</td>
+                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${getText(`page5_region_${region}`, lang)}, ${getText(`page4_${SOURCES_EXCLUDING[i]}`, lang)}: ${formatPage5Number(v, lang)} PJ`}>{formatPage5Number(v, lang)}</td>
                                                             ))}
-                                                            <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatNumber(total)}</td>
+                                                            <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatPage5Number(total, lang)}</td>
                                                         </tr>
                                                     );
                                                 })}

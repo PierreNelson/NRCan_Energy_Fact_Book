@@ -1,7 +1,7 @@
 """
 Apply idempotent DDL from setup_database.sql against the connected database.
 
-Used at the start of `python main.py refresh` so new tables/procedures appear without
+Used at the start of `python main.py eedas update` so new tables/procedures appear without
 a separate manual SQL run. Skips CREATE DATABASE and USE (DB must already exist and
 match the connection). Skips the destructive DELETE/INSERT seed block; empty
 nrcan_fb_data_sources is seeded once without wiping existing rows.

@@ -1,9 +1,208 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE4_COLORS = {
+    natural_gas: '#14333E',
+    hydro: '#245e7f',
+    coal: '#7A7A7A',
+    other_renewables: '#339CC1',
+    ngls: '#9A9389',
+    crude_oil: '#9b8a42',
+    uranium: '#1C6B7E',
+    nuclear: '#1C6B7E',
+};
+
+const getPage4LabelKey = (key) => {
+    const keyMap = {
+        natural_gas: 'page4_natural_gas',
+        hydro: 'page4_hydro',
+        coal: 'page4_coal',
+        other_renewables: 'page4_other_renewables',
+        ngls: 'page4_ngls',
+        crude_oil: 'page4_crude_oil',
+        uranium: 'page4_uranium',
+        nuclear: 'page4_nuclear',
+    };
+    return keyMap[key] || key;
+};
+
+const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+
+const formatPage4Number = (num, lang) => {
+    if (num === undefined || num === null) return '—';
+    return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+};
+
+const hexToRgba = (hex, opacity = 1) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
+    }
+    return hex;
+};
+
+const PAGE4_DATA_INCLUDING_URANIUM = {
+    total: 29341,
+    sources: [
+        { key: 'crude_oil', value: 38 },
+        { key: 'natural_gas', value: 26 },
+        { key: 'uranium', value: 21 },
+        { key: 'hydro', value: 4 },
+        { key: 'coal', value: 4 },
+        { key: 'ngls', value: 3 },
+        { key: 'other_renewables', value: 2 },
+    ],
+};
+
+const PAGE4_DATA_EXCLUDING_URANIUM = {
+    total: 23448,
+    sources: [
+        { key: 'crude_oil', value: 48 },
+        { key: 'natural_gas', value: 33 },
+        { key: 'hydro', value: 6 },
+        { key: 'coal', value: 5 },
+        { key: 'ngls', value: 4 },
+        { key: 'other_renewables', value: 3 },
+        { key: 'nuclear', value: 1 },
+    ],
+};
+
+const createPage4ChartData = (data, selectedSlices, lang, windowWidth) => {
+    const labels = data.sources.map((s) => getText(getPage4LabelKey(s.key), lang).toUpperCase());
+    const values = data.sources.map((s) => s.value);
+    const baseColors = data.sources.map((s) => PAGE4_COLORS[s.key]);
+
+    const colors = selectedSlices === null
+        ? baseColors
+        : baseColors.map((color, i) => (selectedSlices.includes(i) ? color : hexToRgba(color, 0.3)));
+
+    const textColors = selectedSlices === null
+        ? baseColors
+        : baseColors.map((color, i) => (selectedSlices.includes(i) ? color : hexToRgba(color, 0.3)));
+
+    const hoverTexts = data.sources.map((s) => {
+        const label = getText(getPage4LabelKey(s.key), lang);
+        const pjValue = Math.round(data.total * s.value / 100);
+        return `<b>${label}</b><br>${formatPage4Number(pjValue, lang)} PJ<br>${s.value}%`;
+    });
+
+    const pullValues = selectedSlices === null
+        ? data.sources.map(() => 0.02)
+        : data.sources.map((_, i) => (selectedSlices.includes(i) ? 0.08 : 0.02));
+
+    const useCompactLayout = windowWidth <= 768;
+
+    return [{
+        type: 'pie',
+        values,
+        labels,
+        texttemplate: useCompactLayout ? '%{percent:.0%}' : '%{label}<br><b>%{percent:.0%}</b>',
+        textinfo: useCompactLayout ? 'percent' : 'label+percent',
+        textposition: useCompactLayout ? 'inside' : 'outside',
+        textfont: {
+            size: windowWidth <= 480 ? 11 : windowWidth <= 768 ? 12 : windowWidth <= 1280 ? 15 : 18,
+            family: 'Arial, sans-serif',
+            color: useCompactLayout ? '#ffffff' : textColors,
+        },
+        outsidetextfont: {
+            color: textColors,
+            size: windowWidth <= 480 ? 11 : windowWidth <= 768 ? 12 : windowWidth <= 1280 ? 15 : 18,
+            family: 'Arial, sans-serif',
+        },
+        insidetextfont: {
+            color: '#ffffff',
+            size: windowWidth <= 480 ? 10 : 12,
+            family: 'Arial, sans-serif',
+        },
+        hovertext: hoverTexts,
+        hoverinfo: 'text',
+        hoverlabel: {
+            bgcolor: '#ffffff',
+            font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
+        },
+        marker: {
+            colors,
+            line: { color: '#ffffff', width: 2 },
+        },
+        hole: 0.55,
+        direction: 'clockwise',
+        rotation: 90,
+        sort: false,
+        pull: pullValues,
+    }];
+};
+
+const downloadPage4ChartWithTitle = async (lang, getPlotContainer, title, data) => {
+    const plotElement = getPlotContainer()?.querySelector('.js-plotly-plot');
+    if (!plotElement) return;
+
+    try {
+        if (!window.Plotly) return;
+
+        const imgData = await window.Plotly.toImage(plotElement, {
+            format: 'png',
+            width: 800,
+            height: 600,
+            scale: 2,
+        });
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = () => {
+            const titleHeight = 80;
+            const legendHeight = 150;
+            canvas.width = img.width;
+            canvas.height = img.height + titleHeight + legendHeight;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(stripHtml(title), canvas.width / 2, 50);
+
+            ctx.drawImage(img, 0, titleHeight);
+
+            const legendY = img.height + titleHeight + 30;
+            const legendItems = data.sources;
+            const itemWidth = 200;
+            const itemsPerRow = Math.floor(canvas.width / itemWidth);
+
+            legendItems.forEach((item, i) => {
+                const row = Math.floor(i / itemsPerRow);
+                const col = i % itemsPerRow;
+                const x = (canvas.width - (Math.min(itemsPerRow, legendItems.length) * itemWidth)) / 2 + col * itemWidth + 20;
+                const y = legendY + row * 30;
+
+                ctx.fillStyle = PAGE4_COLORS[item.key];
+                ctx.fillRect(x, y - 12, 16, 16);
+
+                ctx.fillStyle = '#333333';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${getText(getPage4LabelKey(item.key), lang)} ${item.value}%`, x + 22, y);
+            });
+
+            const link = document.createElement('a');
+            link.download = lang === 'en' ? 'primary_energy_production.png' : 'production_energie_primaire.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        img.src = imgData;
+    } catch (error) {
+        console.error('Error downloading chart:', error);
+    }
+};
 
 const Page4 = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -24,25 +223,7 @@ const Page4 = () => {
     const lastClickRef1 = useRef({ time: 0, index: null });
     const lastClickRef2 = useRef({ time: 0, index: null });
 
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
-
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
-
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-page4')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const formatNumber = (num) => formatPage4Number(num, lang);
 
     useEffect(() => {
         const topScroll = topScrollRef.current;
@@ -173,197 +354,22 @@ const Page4 = () => {
         return () => clearTimeout(timer);
     }, [isTableOpen]);
 
-    const COLORS = {
-        natural_gas: '#14333E',
-        hydro: '#245e7f',
-        coal: '#7A7A7A',
-        other_renewables: '#339CC1',
-        ngls: '#9A9389',
-        crude_oil: '#9b8a42',
-        uranium: '#1C6B7E',
-        nuclear: '#1C6B7E'
-    };
+    const COLORS = PAGE4_COLORS;
 
-    const dataIncludingUranium = {
-        total: 29341,
-        sources: [
-            { key: 'crude_oil', value: 38 },
-            { key: 'natural_gas', value: 26 },
-            { key: 'uranium', value: 21 },
-            { key: 'hydro', value: 4 },
-            { key: 'coal', value: 4 },
-            { key: 'ngls', value: 3 },
-            { key: 'other_renewables', value: 2 }
-        ]
-    };
+    const getLabelKey = getPage4LabelKey;
 
-    const dataExcludingUranium = {
-        total: 23448,
-        sources: [
-            { key: 'crude_oil', value: 48 },
-            { key: 'natural_gas', value: 33 },
-            { key: 'hydro', value: 6 },
-            { key: 'coal', value: 5 },
-            { key: 'ngls', value: 4 },
-            { key: 'other_renewables', value: 3 },
-            { key: 'nuclear', value: 1 }
-        ]
-    };
-
-    const getLabelKey = (key) => {
-        const keyMap = {
-            natural_gas: 'page4_natural_gas',
-            hydro: 'page4_hydro',
-            coal: 'page4_coal',
-            other_renewables: 'page4_other_renewables',
-            ngls: 'page4_ngls',
-            crude_oil: 'page4_crude_oil',
-            uranium: 'page4_uranium',
-            nuclear: 'page4_nuclear'
-        };
-        return keyMap[key] || key;
-    };
-
-    const createChartData = (data, selectedSlices) => {
-        const labels = data.sources.map(s => getText(getLabelKey(s.key), lang).toUpperCase());
-        const values = data.sources.map(s => s.value);
-        const baseColors = data.sources.map(s => COLORS[s.key]);
-
-        const colors = selectedSlices === null
-            ? baseColors
-            : baseColors.map((color, i) => selectedSlices.includes(i) ? color : hexToRgba(color, 0.3));
-
-        const textColors = selectedSlices === null
-            ? baseColors
-            : baseColors.map((color, i) => selectedSlices.includes(i) ? color : hexToRgba(color, 0.3));
-
-        const hoverTexts = data.sources.map(s => {
-            const label = getText(getLabelKey(s.key), lang);
-            const pjValue = Math.round(data.total * s.value / 100);
-            return `<b>${label}</b><br>${formatNumber(pjValue)} PJ<br>${s.value}%`;
-        });
-
-        const pullValues = selectedSlices === null
-            ? data.sources.map(() => 0.02)
-            : data.sources.map((_, i) => selectedSlices.includes(i) ? 0.08 : 0.02);
-
-        // At high zoom (small viewport), use legend instead of outside labels
-        const useCompactLayout = windowWidth <= 768;
-
-        return [{
-            type: 'pie',
-            values: values,
-            labels: labels,
-            texttemplate: useCompactLayout ? '%{percent:.0%}' : '%{label}<br><b>%{percent:.0%}</b>',
-            textinfo: useCompactLayout ? 'percent' : 'label+percent',
-            textposition: useCompactLayout ? 'inside' : 'outside',
-            textfont: {
-                size: windowWidth <= 480 ? 11 : windowWidth <= 768 ? 12 : windowWidth <= 1280 ? 15 : 18,
-                family: 'Arial, sans-serif',
-                color: useCompactLayout ? '#ffffff' : textColors
-            },
-            outsidetextfont: {
-                color: textColors,
-                size: windowWidth <= 480 ? 11 : windowWidth <= 768 ? 12 : windowWidth <= 1280 ? 15 : 18,
-                family: 'Arial, sans-serif'
-            },
-            insidetextfont: {
-                color: '#ffffff',
-                size: windowWidth <= 480 ? 10 : 12,
-                family: 'Arial, sans-serif'
-            },
-            hovertext: hoverTexts,
-            hoverinfo: 'text',
-            hoverlabel: {
-                bgcolor: '#ffffff',
-                font: { color: '#000000', size: 14, family: 'Arial, sans-serif' }
-            },
-            marker: {
-                colors: colors,
-                line: { color: '#ffffff', width: 2 }
-            },
-            hole: 0.55,
-            direction: 'clockwise',
-            rotation: 90,
-            sort: false,
-            pull: pullValues
-        }];
-    };
-
-    const chart1Data = useMemo(() => createChartData(dataIncludingUranium, selectedSlices1), [lang, windowWidth, selectedSlices1]);
-    const chart2Data = useMemo(() => createChartData(dataExcludingUranium, selectedSlices2), [lang, windowWidth, selectedSlices2]);
+    const chart1Data = useMemo(
+        () => createPage4ChartData(PAGE4_DATA_INCLUDING_URANIUM, selectedSlices1, lang, windowWidth),
+        [lang, windowWidth, selectedSlices1],
+    );
+    const chart2Data = useMemo(
+        () => createPage4ChartData(PAGE4_DATA_EXCLUDING_URANIUM, selectedSlices2, lang, windowWidth),
+        [lang, windowWidth, selectedSlices2],
+    );
 
     const getChartSummary = (data, title) => {
         const sources = data.sources.map(s => `${getText(getLabelKey(s.key), lang)}: ${s.value}%`).join(', ');
         return `${stripHtml(title)}. Total: ${formatNumber(data.total)} PJ. ${sources}`;
-    };
-
-    const downloadChartWithTitle = async (chartRef, title, data) => {
-        const plotElement = chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) return;
-
-        try {
-            if (!window.Plotly) return;
-
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 800,
-                height: 600,
-                scale: 2
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                const titleHeight = 80;
-                const legendHeight = 150;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(stripHtml(title), canvas.width / 2, 50);
-
-                ctx.drawImage(img, 0, titleHeight);
-
-                const legendY = img.height + titleHeight + 30;
-                const legendItems = data.sources;
-                const itemWidth = 200;
-                const itemsPerRow = Math.floor(canvas.width / itemWidth);
-
-                legendItems.forEach((item, i) => {
-                    const row = Math.floor(i / itemsPerRow);
-                    const col = i % itemsPerRow;
-                    const x = (canvas.width - (Math.min(itemsPerRow, legendItems.length) * itemWidth)) / 2 + col * itemWidth + 20;
-                    const y = legendY + row * 30;
-
-                    ctx.fillStyle = COLORS[item.key];
-                    ctx.fillRect(x, y - 12, 16, 16);
-
-                    ctx.fillStyle = '#333333';
-                    ctx.font = '16px Arial';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(`${getText(getLabelKey(item.key), lang)} ${item.value}%`, x + 22, y);
-                });
-
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? 'primary_energy_production.png' : 'production_energie_primaire.png';
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-
-            img.src = imgData;
-        } catch (error) {
-            console.error('Error downloading chart:', error);
-        }
     };
 
     const downloadTableAsCSV = () => {
@@ -375,15 +381,15 @@ const Page4 = () => {
 
         const allKeys = ['crude_oil', 'natural_gas', 'uranium', 'hydro', 'coal', 'ngls', 'other_renewables', 'nuclear'];
         const rows = allKeys.map(key => {
-            const includingVal = dataIncludingUranium.sources.find(s => s.key === key)?.value || '-';
-            const excludingVal = dataExcludingUranium.sources.find(s => s.key === key)?.value || '-';
+            const includingVal = PAGE4_DATA_INCLUDING_URANIUM.sources.find(s => s.key === key)?.value || '-';
+            const excludingVal = PAGE4_DATA_EXCLUDING_URANIUM.sources.find(s => s.key === key)?.value || '-';
             return [getText(getLabelKey(key), lang), includingVal, excludingVal];
         });
 
         rows.push([
             lang === 'en' ? 'Total (PJ)' : 'Total (PJ)',
-            formatNumber(dataIncludingUranium.total),
-            formatNumber(dataExcludingUranium.total)
+            formatNumber(PAGE4_DATA_INCLUDING_URANIUM.total),
+            formatNumber(PAGE4_DATA_EXCLUDING_URANIUM.total)
         ]);
 
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
@@ -408,8 +414,8 @@ const Page4 = () => {
 
         const allKeys = ['crude_oil', 'natural_gas', 'uranium', 'hydro', 'coal', 'ngls', 'other_renewables', 'nuclear'];
         const dataRows = allKeys.map(key => {
-            const includingVal = dataIncludingUranium.sources.find(s => s.key === key)?.value;
-            const excludingVal = dataExcludingUranium.sources.find(s => s.key === key)?.value;
+            const includingVal = PAGE4_DATA_INCLUDING_URANIUM.sources.find(s => s.key === key)?.value;
+            const excludingVal = PAGE4_DATA_EXCLUDING_URANIUM.sources.find(s => s.key === key)?.value;
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText(getLabelKey(key), lang), size: 22 })], alignment: AlignmentType.LEFT })] }),
@@ -422,8 +428,8 @@ const Page4 = () => {
         const totalRow = new TableRow({
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Total (PJ)', bold: true, size: 22 })], alignment: AlignmentType.LEFT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(dataIncludingUranium.total), bold: true, size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(dataExcludingUranium.total), bold: true, size: 22 })], alignment: AlignmentType.CENTER })] })
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(PAGE4_DATA_INCLUDING_URANIUM.total), bold: true, size: 22 })], alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(PAGE4_DATA_EXCLUDING_URANIUM.total), bold: true, size: 22 })], alignment: AlignmentType.CENTER })] })
             ]
         });
 
@@ -507,7 +513,7 @@ const Page4 = () => {
         ]
     });
 
-    const chartConfig = (chartRef, title, data) => ({
+    const chart1Config = useMemo(() => ({
         displayModeBar: true,
         displaylogo: false,
         responsive: true,
@@ -521,9 +527,37 @@ const Page4 = () => {
                 height: 24,
                 path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
             },
-            click: () => downloadChartWithTitle(chartRef, title, data)
-        }]
-    });
+            click: () => downloadPage4ChartWithTitle(
+                lang,
+                () => chartRef1.current,
+                getText('page4_chart1_title', lang),
+                PAGE4_DATA_INCLUDING_URANIUM,
+            ),
+        }],
+    }), [lang]);
+
+    const chart2Config = useMemo(() => ({
+        displayModeBar: true,
+        displaylogo: false,
+        responsive: true,
+        scrollZoom: false,
+        staticPlot: false,
+        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
+        modeBarButtonsToAdd: [{
+            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+            icon: {
+                width: 24,
+                height: 24,
+                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
+            },
+            click: () => downloadPage4ChartWithTitle(
+                lang,
+                () => chartRef2.current,
+                getText('page4_chart2_title', lang),
+                PAGE4_DATA_EXCLUDING_URANIUM,
+            ),
+        }],
+    }), [lang]);
 
 
     return (
@@ -728,7 +762,7 @@ const Page4 = () => {
                             </h2>
                             <div
                                 role="region"
-                                aria-label={getChartSummary(dataIncludingUranium, getText('page4_chart1_title', lang))}
+                                aria-label={getChartSummary(PAGE4_DATA_INCLUDING_URANIUM, getText('page4_chart1_title', lang))}
                                 tabIndex="0"
                             >
                                 <div className="page4-chart-wrapper">
@@ -742,8 +776,8 @@ const Page4 = () => {
                                             <Plot
                                                 key={`pie1-${selectedSlices1 ? selectedSlices1.join('-') : 'none'}`}
                                                 data={chart1Data}
-                                                layout={createChartLayout(dataIncludingUranium)}
-                                                config={chartConfig(chartRef1, getText('page4_chart1_title', lang), dataIncludingUranium)}
+                                                layout={createChartLayout(PAGE4_DATA_INCLUDING_URANIUM)}
+                                                config={chart1Config}
                                                 style={{ width: '100%', height: '100%' }}
                                                 useResizeHandler={true}
                                                 onClick={(data) => {
@@ -783,7 +817,7 @@ const Page4 = () => {
                             </h2>
                             <div
                                 role="region"
-                                aria-label={getChartSummary(dataExcludingUranium, getText('page4_chart2_title', lang))}
+                                aria-label={getChartSummary(PAGE4_DATA_EXCLUDING_URANIUM, getText('page4_chart2_title', lang))}
                                 tabIndex="0"
                             >
                                 <div className="page4-chart-wrapper">
@@ -797,8 +831,8 @@ const Page4 = () => {
                                             <Plot
                                                 key={`pie2-${selectedSlices2 ? selectedSlices2.join('-') : 'none'}`}
                                                 data={chart2Data}
-                                                layout={createChartLayout(dataExcludingUranium)}
-                                                config={chartConfig(chartRef2, getText('page4_chart2_title', lang), dataExcludingUranium)}
+                                                layout={createChartLayout(PAGE4_DATA_EXCLUDING_URANIUM)}
+                                                config={chart2Config}
                                                 style={{ width: '100%', height: '100%' }}
                                                 useResizeHandler={true}
                                                 onClick={(data) => {
@@ -883,8 +917,8 @@ const Page4 = () => {
                                     </thead>
                                     <tbody>
                                         {['crude_oil', 'natural_gas', 'uranium', 'hydro', 'coal', 'ngls', 'other_renewables', 'nuclear'].map(key => {
-                                            const includingVal = dataIncludingUranium.sources.find(s => s.key === key)?.value;
-                                            const excludingVal = dataExcludingUranium.sources.find(s => s.key === key)?.value;
+                                            const includingVal = PAGE4_DATA_INCLUDING_URANIUM.sources.find(s => s.key === key)?.value;
+                                            const excludingVal = PAGE4_DATA_EXCLUDING_URANIUM.sources.find(s => s.key === key)?.value;
                                             return (
                                                 <tr key={key}>
                                                     <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>
@@ -904,10 +938,10 @@ const Page4 = () => {
                                                 Total (PJ)
                                             </th>
                                             <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>
-                                                {formatNumber(dataIncludingUranium.total)}
+                                                {formatNumber(PAGE4_DATA_INCLUDING_URANIUM.total)}
                                             </td>
                                             <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>
-                                                {formatNumber(dataExcludingUranium.total)}
+                                                {formatNumber(PAGE4_DATA_EXCLUDING_URANIUM.total)}
                                             </td>
                                         </tr>
                                     </tbody>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -152,10 +152,7 @@ const Page46FilterDropdown = ({ label, filterValues, options, isOpen, setOpen, s
     }, []);
 
     useEffect(() => {
-        if (!isOpen) {
-            setPanelStyle(null);
-            return;
-        }
+        if (!isOpen) return;
         updatePanelPosition();
         window.addEventListener('scroll', updatePanelPosition, true);
         window.addEventListener('resize', updatePanelPosition);
@@ -164,6 +161,16 @@ const Page46FilterDropdown = ({ label, filterValues, options, isOpen, setOpen, s
             window.removeEventListener('resize', updatePanelPosition);
         };
     }, [isOpen, updatePanelPosition, options.length]);
+
+    const handleToggleOpen = () => {
+        if (isOpen) {
+            setPanelStyle(null);
+            setOpen(false);
+        } else {
+            closeOthers();
+            setOpen(true);
+        }
+    };
 
     const panel = isOpen && panelStyle && typeof document !== 'undefined' ? createPortal(
         <div className="page46-filter-panel" style={panelStyle} role="listbox" aria-label={label}>
@@ -203,7 +210,7 @@ const Page46FilterDropdown = ({ label, filterValues, options, isOpen, setOpen, s
                 ref={buttonRef}
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
-                onClick={() => { setOpen(!isOpen); closeOthers(); }}
+                onClick={handleToggleOpen}
                 style={FILTER_BUTTON}
             >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -331,6 +338,23 @@ const Page46 = () => {
     useTableScrollSync(isBarTableOpen, windowWidth, barTopScrollRef, barTableScrollRef);
     useTableScrollSync(isMapTableOpen, windowWidth, mapTopScrollRef, mapTableScrollRef);
 
+    const filteredCommunities = useMemo(() => {
+        return DEMO_COMMUNITIES.filter(c => {
+            if (provinceFilter.length > 0 && !provinceFilter.includes(c.province)) return false;
+            if (communityFilter.length > 0 && !communityFilter.includes(c.id)) return false;
+            if (locationFilter.length > 0 && !locationFilter.includes(c.location)) return false;
+            if (relianceFilter.length > 0 && !relianceFilter.includes(c.reliance)) return false;
+            return true;
+        });
+    }, [provinceFilter, communityFilter, locationFilter, relianceFilter]);
+
+    const effectiveSelectedMapIds = useMemo(() => {
+        if (selectedMapIds === null) return null;
+        const visibleIds = new Set(filteredCommunities.map(c => c.id));
+        const next = selectedMapIds.filter(id => visibleIds.has(id));
+        return next.length === 0 ? null : next;
+    }, [filteredCommunities, selectedMapIds]);
+
     useEffect(() => {
         [barChartRef, mapChartRef].forEach(ref => {
             if (!ref?.current) return;
@@ -349,17 +373,7 @@ const Page46 = () => {
                 }
             });
         });
-    }, [lang, selectedBarPoints, selectedMapIds, provinceFilter, communityFilter, locationFilter, relianceFilter]);
-
-    const filteredCommunities = useMemo(() => {
-        return DEMO_COMMUNITIES.filter(c => {
-            if (provinceFilter.length > 0 && !provinceFilter.includes(c.province)) return false;
-            if (communityFilter.length > 0 && !communityFilter.includes(c.id)) return false;
-            if (locationFilter.length > 0 && !locationFilter.includes(c.location)) return false;
-            if (relianceFilter.length > 0 && !relianceFilter.includes(c.reliance)) return false;
-            return true;
-        });
-    }, [provinceFilter, communityFilter, locationFilter, relianceFilter]);
+    }, [lang, selectedBarPoints, effectiveSelectedMapIds, provinceFilter, communityFilter, locationFilter, relianceFilter]);
 
     const sortedMapTableData = useMemo(() => {
         const sorted = [...filteredCommunities];
@@ -494,7 +508,7 @@ const Page46 = () => {
             marker: { line: { color: 'white', width: 1 } }
         };
 
-        const isSelected = (id) => selectedMapIds === null || selectedMapIds.includes(id);
+        const isSelected = (id) => effectiveSelectedMapIds === null || effectiveSelectedMapIds.includes(id);
         const markerColors = filteredCommunities.map(c => {
             const base = RELIANCE_COLORS[c.reliance];
             return isSelected(c.id) ? base : hexToRgba(base, 0.3);
@@ -519,7 +533,7 @@ const Page46 = () => {
         };
 
         return [choroplethTrace, scatterTrace];
-    }, [lang, filteredCommunities, selectedMapIds, getProvinceName, getCommunityName, getLocationLabel, getRelianceLabel]);
+    }, [lang, filteredCommunities, effectiveSelectedMapIds, getProvinceName, getCommunityName, getLocationLabel, getRelianceLabel]);
 
     const handleBarClick = (data) => {
         if (!data.points || data.points.length === 0) return;
@@ -794,15 +808,6 @@ const Page46 = () => {
         setRelianceDropdownOpen(false);
     };
 
-    useEffect(() => {
-        if (selectedMapIds === null) return;
-        const visibleIds = new Set(filteredCommunities.map(c => c.id));
-        const next = selectedMapIds.filter(id => visibleIds.has(id));
-        if (next.length !== selectedMapIds.length) {
-            setSelectedMapIds(next.length === 0 ? null : next);
-        }
-    }, [filteredCommunities, selectedMapIds]);
-
     const getBarChartSummary = () => {
         const parts = PAGE46_BAR_PROVINCES.map((p, i) => `${getProvinceName(p.key)}: ${barValues[i]}`).join(', ');
         return `${stripHtml(getText('page46_bar_chart_title', lang))}. ${parts}.`;
@@ -1029,7 +1034,7 @@ const Page46 = () => {
                     <h2 className="page46-map-title">{getText('page46_map_title', lang)}</h2>
                     <div role="region" aria-label={getMapChartSummary()} tabIndex="0">
                         <figure ref={mapChartRef} className="page46-map-chart" style={{ margin: 0, position: 'relative', height: mapHeight, overflow: 'hidden' }}>
-                            {selectedMapIds !== null && (
+                            {effectiveSelectedMapIds !== null && (
                                 <div style={{ marginBottom: 8 }}>
                                     <button
                                         type="button"

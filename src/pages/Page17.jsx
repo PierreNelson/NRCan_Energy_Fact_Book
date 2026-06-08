@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -25,6 +25,11 @@ const PAGE17_COLORS = {
     pipelines: '#4AA56F'
 };
 
+const formatPage17Number = (num, lang) => {
+    if (num === undefined || num === null) return '—';
+    return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+};
+
 const Page17 = () => {
     const { lang } = useOutletContext();
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -39,11 +44,6 @@ const Page17 = () => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
         return hex;
-    };
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
     };
 
     useEffect(() => {
@@ -110,10 +110,10 @@ const Page17 = () => {
         return PAGE17_CATEGORIES.map((key, traceIndex) => {
             const label = getText(`page17_legend_${key}`, lang);
             const yArr = PAGE17_HARDCODED.map(row => row[key]);
-            const hovertext = PAGE17_HARDCODED.map((row, i) => {
+            const hovertext = PAGE17_HARDCODED.map((row) => {
                 const val = row[key];
                 const total = PAGE17_CATEGORIES.reduce((s, k) => s + row[k], 0);
-                return `<b>${row.year}</b><br>${label}: ${formatNumber(val)} ${lang === 'en' ? '$ billion' : 'milliards de dollars'}<br>${lang === 'en' ? 'Total' : 'Total'}: ${formatNumber(total)}`;
+                return `<b>${row.year}</b><br>${label}: ${formatPage17Number(val, lang)} ${lang === 'en' ? '$ billion' : 'milliards de dollars'}<br>${lang === 'en' ? 'Total' : 'Total'}: ${formatPage17Number(total, lang)}`;
             });
             const baseColor = PAGE17_COLORS[key];
             const markerColor = selectedPoints === null
@@ -238,7 +238,7 @@ const Page17 = () => {
         const rows = PAGE17_HARDCODED.map(row => {
             const vals = PAGE17_CATEGORIES.map(k => row[k]);
             const total = vals.reduce((a, b) => a + b, 0);
-            return [row.year, ...vals.map(v => formatNumber(v)), formatNumber(total)];
+            return [row.year, ...vals.map(v => formatPage17Number(v, lang)), formatPage17Number(total, lang)];
         });
         const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -265,7 +265,7 @@ const Page17 = () => {
         const dataRows = PAGE17_HARDCODED.map(row => {
             const vals = PAGE17_CATEGORIES.map(k => row[k]);
             const total = vals.reduce((a, b) => a + b, 0);
-            const cells = [row.year, ...vals.map(v => formatNumber(v)), formatNumber(total)].map((text, i) =>
+            const cells = [row.year, ...vals.map(v => formatPage17Number(v, lang)), formatPage17Number(total, lang)].map((text, i) =>
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(text), size: 22 })], alignment: i === 0 ? AlignmentType.CENTER : AlignmentType.CENTER })] })
             );
             return new TableRow({ children: cells });
@@ -397,9 +397,9 @@ const Page17 = () => {
                                                 <tr key={row.year}>
                                                     <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{row.year}</th>
                                                     {vals.map((v, i) => (
-                                                        <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${row.year}, ${getText(`page17_legend_${PAGE17_CATEGORIES[i]}`, lang)}: ${formatNumber(v)} ${getText('page17_yaxis', lang)}`}>{formatNumber(v)}</td>
+                                                        <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${row.year}, ${getText(`page17_legend_${PAGE17_CATEGORIES[i]}`, lang)}: ${formatPage17Number(v, lang)} ${getText('page17_yaxis', lang)}`}>{formatPage17Number(v, lang)}</td>
                                                     ))}
-                                                    <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatNumber(total)}</td>
+                                                    <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatPage17Number(total, lang)}</td>
                                                 </tr>
                                             );
                                         })}

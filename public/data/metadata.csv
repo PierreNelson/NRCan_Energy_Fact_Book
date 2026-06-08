@@ -300,15 +300,6 @@ kal_vancouver_marketing,Gasoline marketing (vancouver),cents per litre,units,Gas
 kal_vancouver_price,Gasoline price (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
 kal_vancouver_refining,Gasoline refining (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
 kal_vancouver_taxes,Gasoline taxes (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
-oee_neud_A,Energy use - Agriculture,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_C,Energy use - Commercial,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_EL,Energy use - Energy losses,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_FK,Energy use - Non-covered producer/consumption,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_I,Energy use - Industrial,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_NPC,Energy use - Non-energy (feedstock),PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_P,Energy use - Pipeline,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_R,Energy use - Residential,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-oee_neud_T,Energy use - Transportation,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 os_capex_capp_m,Oil sands capital expenditures (CAPP),millions of dollars,units,Oil sands capex and production share,,
 os_capex_cumulative_bn,Cumulative oil sands capital expenditures,billions of dollars,units,Oil sands capex and production share,,
 os_capex_statcan_m,Oil sands capital expenditures (StatCan),millions of dollars,units,Oil sands capex and production share,,
@@ -429,24 +420,6 @@ rpp_refinery_bl,Input to Canadian refineries (billion L),billion litres,units,Re
 rpp_refinery_mmbd,Input to Canadian refineries (MMb/d),million barrels per day,units,Refinery input,,
 rpp_residual_pct,Residual fuel share of domestic RPP consumption,percent,units,RPP supply and disposition,,
 rpp_still_gas_pct,Still gas share of domestic RPP consumption,percent,units,RPP supply and disposition,,
-rpp136_asphalt_pct,Asphalt share of domestic RPP consumption,percent,units,Unknown,,
-rpp136_coke_pct,Coke share of domestic RPP consumption,percent,units,Unknown,,
-rpp136_distillate_pct,Distillate share of domestic RPP consumption,percent,units,Unknown,,
-rpp136_domestic_bl,RPP domestic consumption (billion L),billion litres,units,Unknown,,
-rpp136_domestic_mmbd,RPP domestic consumption (MMb/d),million barrels per day,units,Unknown,,
-rpp136_exports_bl,RPP exports (billion L),billion litres,units,Unknown,,
-rpp136_exports_mmbd,RPP exports (MMb/d),million barrels per day,units,Unknown,,
-rpp136_imports_bl,RPP imports (billion L),billion litres,units,Unknown,,
-rpp136_imports_mmbd,RPP imports (MMb/d),million barrels per day,units,Unknown,,
-rpp136_jet_pct,Jet fuel share of domestic RPP consumption,percent,units,Unknown,,
-rpp136_motor_gasoline_pct,Motor gasoline share of domestic RPP consumption,percent,units,Unknown,,
-rpp136_net_prod_bl,RPP net production (billion L),billion litres,units,Unknown,,
-rpp136_net_prod_mmbd,RPP net production (MMb/d),million barrels per day,units,Unknown,,
-rpp136_other_pct,Other petroleum products share of domestic RPP consumption,percent,units,Unknown,,
-rpp136_refinery_bl,Input to Canadian refineries (billion L),billion litres,units,Unknown,,
-rpp136_refinery_mmbd,Input to Canadian refineries (MMb/d),million barrels per day,units,Unknown,,
-rpp136_residual_pct,Residual fuel share of domestic RPP consumption,percent,units,Unknown,,
-rpp136_still_gas_pct,Still gas share of domestic RPP consumption,percent,units,Unknown,,
 seu_BM,Secondary energy use - Biomass,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_Ele,Secondary energy use - Electricity,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2

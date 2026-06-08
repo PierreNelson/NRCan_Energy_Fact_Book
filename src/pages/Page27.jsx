@@ -1,10 +1,51 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getInvestmentByAssetData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE27_COLORS = {
+    'transmission_distribution': '#224397',
+    'pipelines': '#857550',
+    'nuclear': '#E4570C',
+    'other_electric': '#787878',
+    'hydraulic': '#2CA2AF',
+    'wind_solar': '#6cbe8d',
+    'steam_thermal': '#A78F16',
+};
+
+const PAGE27_CATEGORY_ORDER = [
+    'transmission_distribution',
+    'hydraulic',
+    'pipelines',
+    'wind_solar',
+    'nuclear',
+    'steam_thermal',
+    'other_electric'
+];
+
+const PAGE27_LEGEND_KEYS = {
+    'transmission_distribution': 'page27_legend_transmission',
+    'pipelines': 'page27_legend_pipelines',
+    'nuclear': 'page27_legend_nuclear',
+    'other_electric': 'page27_legend_other',
+    'hydraulic': 'page27_legend_hydraulic',
+    'wind_solar': 'page27_legend_wind_solar',
+    'steam_thermal': 'page27_legend_steam',
+};
+
+const PAGE27_HOVER_KEYS = {
+    'transmission_distribution': 'page27_hover_transmission',
+    'pipelines': 'page27_hover_pipelines',
+    'nuclear': 'page27_hover_nuclear',
+    'other_electric': 'page27_hover_other',
+    'hydraulic': 'page27_hover_hydraulic',
+    'wind_solar': 'page27_hover_wind_solar',
+    'steam_thermal': 'page27_hover_steam',
+};
+
 const Page27 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
@@ -190,46 +231,6 @@ const Page27 = () => {
         return () => observer.disconnect();
     }, [pageData, lang]);
 
-    const COLORS = {
-        'transmission_distribution': '#224397',  
-        'pipelines': '#857550',                  
-        'nuclear': '#E4570C',                   
-        'other_electric': '#787878',          
-        'hydraulic': '#2CA2AF',            
-        'wind_solar': '#6cbe8d',                
-        'steam_thermal': '#A78F16',             
-    };
-
-    const CATEGORY_ORDER = [
-        'transmission_distribution',
-        'hydraulic',
-        'pipelines', 
-        'wind_solar',
-        'nuclear',
-        'steam_thermal',
-        'other_electric'
-    ];
-
-    const LEGEND_KEYS = {
-        'transmission_distribution': 'page27_legend_transmission',
-        'pipelines': 'page27_legend_pipelines',
-        'nuclear': 'page27_legend_nuclear',
-        'other_electric': 'page27_legend_other',
-        'hydraulic': 'page27_legend_hydraulic',
-        'wind_solar': 'page27_legend_wind_solar',
-        'steam_thermal': 'page27_legend_steam',
-    };
-
-    const HOVER_KEYS = {
-        'transmission_distribution': 'page27_hover_transmission',
-        'pipelines': 'page27_hover_pipelines',
-        'nuclear': 'page27_hover_nuclear',
-        'other_electric': 'page27_hover_other',
-        'hydraulic': 'page27_hover_hydraulic',
-        'wind_solar': 'page27_hover_wind_solar',
-        'steam_thermal': 'page27_hover_steam',
-    };
-
     const chartData = useMemo(() => {
         if (pageData.length === 0) return null;
 
@@ -245,7 +246,7 @@ const Page27 = () => {
         // Use pre-calculated total_billions from database if available
         const totalValues = pageData.map(d => d.total_billions ?? (() => {
             let total = 0;
-            CATEGORY_ORDER.forEach(cat => {
+            PAGE27_CATEGORY_ORDER.forEach(cat => {
                 total += (d[cat] || 0) / 1000;
             });
             return total;
@@ -273,14 +274,14 @@ const Page27 = () => {
 
         const LEGEND_ORDER = windowWidth <= 1536 ? LEGEND_ORDER_ZOOMED : LEGEND_ORDER_DEFAULT;
 
-        const traces = CATEGORY_ORDER.map((cat) => {
+        const traces = PAGE27_CATEGORY_ORDER.map((cat) => {
             // Use pre-calculated billions from database if available
             const values = pageData.map(d => d[`${cat}_billions`] ?? ((d[cat] || 0) / 1000));
 
             const hoverTexts = values.map((v, i) => {
                 const y = years[i];
                 const tot = totalValues[i];
-                const catName = getText(HOVER_KEYS[cat], lang);
+                const catName = getText(PAGE27_HOVER_KEYS[cat], lang);
                 const vFormatted = v < 1 ? v.toFixed(2) : v.toFixed(1);
                 const totFormatted = tot < 1 ? tot.toFixed(2) : tot.toFixed(1);
                 return `<b>${catName}</b><br>${y}: $${vFormatted}B<br>${getText('page27_hover_total', lang)}: $${totFormatted}B`;
@@ -288,14 +289,14 @@ const Page27 = () => {
 
             const legendRank = LEGEND_ORDER.indexOf(cat) + 2;
 
-            const traceIndex = CATEGORY_ORDER.indexOf(cat);
+            const traceIndex = PAGE27_CATEGORY_ORDER.indexOf(cat);
             return {
-                name: getText(LEGEND_KEYS[cat], lang),
+                name: getText(PAGE27_LEGEND_KEYS[cat], lang),
                 x: years,
                 y: values,
                 type: 'bar',
                 marker: { 
-                    color: COLORS[cat],
+                    color: PAGE27_COLORS[cat],
                     opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[traceIndex]?.includes(i) ? 1 : 0.3)
                 },
                 hovertext: hoverTexts,
@@ -311,7 +312,7 @@ const Page27 = () => {
 
         const chartTitle = `${getText('page27_chart_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
 
-        return { traces, years, tickVals, minYear, maxYear, chartTitle, numTraces: CATEGORY_ORDER.length };
+        return { traces, years, tickVals, minYear, maxYear, chartTitle, numTraces: PAGE27_CATEGORY_ORDER.length };
     }, [pageData, lang, windowWidth, selectedPoints]);
 
     const formatBillionSR = (val) => {
@@ -332,7 +333,7 @@ const Page27 = () => {
         // Use pre-calculated total_billions from database if available
         let total = latestYear.total_billions ?? (() => {
             let t = 0;
-            CATEGORY_ORDER.forEach(cat => {
+            PAGE27_CATEGORY_ORDER.forEach(cat => {
                 t += (latestYear[cat] || 0) / 1000;
             });
             return t;
@@ -433,7 +434,7 @@ const Page27 = () => {
                         <thead>
                             <tr>
                                 <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                {CATEGORY_ORDER.map(cat => (
+                                {PAGE27_CATEGORY_ORDER.map(cat => (
                                     <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                         {categoryLabels[cat]}<br/>
                                         <span aria-hidden="true">{headerUnitVisual}</span>
@@ -452,13 +453,13 @@ const Page27 = () => {
                                 // Use pre-calculated total_billions from database
                                 const total = yearData.total_billions ?? (() => {
                                     let t = 0;
-                                    CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
+                                    PAGE27_CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
                                     return t;
                                 })();
                                 return (
                                     <tr key={yearData.year}>
                                         <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
-                                        {CATEGORY_ORDER.map(cat => {
+                                        {PAGE27_CATEGORY_ORDER.map(cat => {
                                             const val = yearData[`${cat}_billions`] ?? ((yearData[cat] || 0) / 1000);
                                             return (
                                             <td 
@@ -533,18 +534,18 @@ const Page27 = () => {
         const unitHeader = lang === 'en' ? '($ billions constant 2012)' : '(milliards $ constants 2012)';
         const headers = [
             lang === 'en' ? 'Year' : 'Année', 
-            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`), 
+            ...PAGE27_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`), 
             `Total ${unitHeader}`
         ];
         const rows = pageData.map(yearData => {
             // Use pre-calculated billions from database
-            const values = CATEGORY_ORDER.map(cat => {
+            const values = PAGE27_CATEGORY_ORDER.map(cat => {
                 const val = yearData[`${cat}_billions`] ?? ((yearData[cat] || 0) / 1000);
                 return val.toFixed(2);
             });
             const total = yearData.total_billions ?? (() => {
                 let t = 0;
-                CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
+                PAGE27_CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
                 return t;
             })();
             return [yearData.year, ...values, total.toFixed(2)];
@@ -575,7 +576,7 @@ const Page27 = () => {
 
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
+            ...PAGE27_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
             `Total ${unitHeader}`
         ];
 
@@ -591,13 +592,13 @@ const Page27 = () => {
 
         const dataRows = pageData.map(yearData => {
             // Use pre-calculated billions from database
-            const values = CATEGORY_ORDER.map(cat => {
+            const values = PAGE27_CATEGORY_ORDER.map(cat => {
                 const val = yearData[`${cat}_billions`] ?? ((yearData[cat] || 0) / 1000);
                 return val.toFixed(2);
             });
             const total = yearData.total_billions ?? (() => {
                 let t = 0;
-                CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
+                PAGE27_CATEGORY_ORDER.forEach(cat => { t += (yearData[cat] || 0) / 1000; });
                 return t;
             })();
             return new TableRow({

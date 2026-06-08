@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getInternationalInvestmentData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE31_COLORS = {
+    'cdia': '#419563',
+    'fdi': '#2EA3AD',
+};
+
 const Page31 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [pageData, setPageData] = useState([]);
@@ -180,11 +186,6 @@ const Page31 = () => {
         return () => observer.disconnect();
     }, [pageData, lang]);
 
-    const COLORS = {
-        'cdia': '#419563',  
-        'fdi': '#2EA3AD',  
-    };
-
     const bulletValues = useMemo(() => {
         if (pageData.length < 2) return null;
         const latestYear = pageData[pageData.length - 1];
@@ -242,7 +243,7 @@ const Page31 = () => {
                 y: cdiaValues,
                 type: 'bar',
                 marker: { 
-                    color: COLORS.cdia,
+                    color: PAGE31_COLORS.cdia,
                     opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[0]?.includes(i) ? 1 : 0.3)
                 },
                 hovertext: cdiaHoverText,
@@ -259,7 +260,7 @@ const Page31 = () => {
                 y: fdiValues,
                 type: 'bar',
                 marker: { 
-                    color: COLORS.fdi,
+                    color: PAGE31_COLORS.fdi,
                     opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[1]?.includes(i) ? 1 : 0.3)
                 },
                 hovertext: fdiHoverText,
@@ -295,14 +296,6 @@ const Page31 = () => {
             return `Grouped bar chart showing stock of foreign direct investment in Canada and Canadian direct investment abroad in the energy industry from ${chartData?.minYear} to ${latestYearNum}. In ${latestYearNum}, Canadian direct investment abroad was approximately ${formatBillionSR(latestCDIA)} and foreign direct investment was approximately ${formatBillionSR(latestFDI)}. Expand the data table below for detailed values.`;
         } else {
             return `Graphique à barres groupées montrant le stock d'investissement direct étranger au Canada et l'investissement direct canadien à l'étranger dans le secteur de l'énergie de ${chartData?.minYear} à ${latestYearNum}. En ${latestYearNum}, l'investissement direct canadien à l'étranger était d'environ ${formatBillionSR(latestCDIA)} et l'investissement direct étranger était d'environ ${formatBillionSR(latestFDI)}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
-        }
-    };
-
-    const getChartTitleSR = () => {
-        if (lang === 'en') {
-            return 'Stock of foreign direct investment in Canada and Canadian direct investment abroad in the energy industry';
-        } else {
-            return "Stock d'investissement direct étranger au Canada et investissement direct canadien à l'étranger dans le secteur de l'énergie";
         }
     };
 

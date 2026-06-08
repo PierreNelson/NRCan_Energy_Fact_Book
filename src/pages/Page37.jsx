@@ -1,10 +1,21 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getEnvironmentalProtectionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE37_COLORS = {
+    'wastewater': '#857550',
+    'soil': '#224397',
+    'air': '#23808B',
+    'solid_waste': '#CA4F0C',
+    'other': '#877312',
+};
+
+const PAGE37_CATEGORY_ORDER = ['wastewater', 'soil', 'air', 'solid_waste', 'other'];
+
 const Page37 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const mainRef = useRef(null);
@@ -211,15 +222,6 @@ const Page37 = () => {
         return () => observer.disconnect();
     }, [pageData, lang]);
 
-    const COLORS = {
-        'wastewater': '#857550',  
-        'soil': '#224397',        
-        'air': '#23808B',         
-        'solid_waste': '#CA4F0C', 
-        'other': '#877312',       
-    };
-
-    const CATEGORY_ORDER = ['wastewater', 'soil', 'air', 'solid_waste', 'other'];
     const downloadChartWithTitle = async (plotEl = null) => {
         const plotElement = plotEl || document.querySelector('.page37-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement) {
@@ -355,12 +357,12 @@ const Page37 = () => {
             return result + currentLine.trim();
         };
 
-        CATEGORY_ORDER.forEach(cat => {
+        PAGE37_CATEGORY_ORDER.forEach(cat => {
             const value = currentYearData[catMapping[cat]] || 0;
             const pct = oilGasTotal > 0 ? (value / oilGasTotal) * 100 : 0;
             if (value >= 0) {
                 values.push(value);
-                colors.push(COLORS[cat]);
+                colors.push(PAGE37_COLORS[cat]);
                 pctDict[cat] = pct;
                 let catName = getText(hoverKeys[cat], lang);
                 if (windowWidth <= 480) {
@@ -384,7 +386,7 @@ const Page37 = () => {
             'solid_waste': 'page37_cat_solid_waste',
             'other': 'page37_cat_other'
         };
-        return CATEGORY_ORDER.map(cat => getText(transKeys[cat], lang));
+        return PAGE37_CATEGORY_ORDER.map(cat => getText(transKeys[cat], lang));
     }, [lang]);
     const annotations = useMemo(() => {
         if (!chartData) return [];
@@ -414,10 +416,6 @@ const Page37 = () => {
             maximumFractionDigits: 0 
         });
     };
-    const getSubtitleText = () => {
-        if (!dynamicValues) return '';
-        return `${getText('page37_subtitle_part1', lang)}${formatNumber(dynamicValues.energySectorTotal)}${getText('page37_subtitle_part2', lang)}${year}${getText('page37_subtitle_part3', lang)}${dynamicValues.energySectorPct.toFixed(0)}${getText('page37_subtitle_part4', lang)}`;
-    };
     const getChartDataSummary = () => {
         if (!chartData || !currentYearData) return '';
         const millionText = getText('page37_million', lang);
@@ -437,7 +435,7 @@ const Page37 = () => {
             'other': 'oil_gas_other'
         };
 
-        const parts = CATEGORY_ORDER.map(cat => {
+        const parts = PAGE37_CATEGORY_ORDER.map(cat => {
             const value = currentYearData[catMapping[cat]] || 0;
             const pct = chartData.pctDict[cat] || 0;
             const name = stripHtml(getText(categoryNames[cat], lang));
@@ -528,7 +526,7 @@ const getAccessibleDataTable = () => {
                         <thead>
                             <tr>
                                 <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                {CATEGORY_ORDER.map(cat => (
+                                {PAGE37_CATEGORY_ORDER.map(cat => (
                                     <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                         {categoryLabels[cat]}<br/>
                                         <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
@@ -543,12 +541,12 @@ const getAccessibleDataTable = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {pageData.map((yearData, idx) => {
+                            {pageData.map((yearData) => {
                                 const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
                                 return (
                                     <tr key={yearData.year}>
                                         <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
-                                        {CATEGORY_ORDER.map(cat => (
+                                        {PAGE37_CATEGORY_ORDER.map(cat => (
                                             <td 
                                                 key={cat} 
                                                 style={{ textAlign: 'right', border: '1px solid #ddd' }}
@@ -626,11 +624,11 @@ const getAccessibleDataTable = () => {
         const unitHeader = lang === 'en' ? '($ millions)' : '(millions $)';
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
+            ...PAGE37_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
             `Total ${unitHeader}`
         ];
         const rows = pageData.map(yearData => {
-            const values = CATEGORY_ORDER.map(cat => yearData[catMapping[cat]] || 0);
+            const values = PAGE37_CATEGORY_ORDER.map(cat => yearData[catMapping[cat]] || 0);
             return [yearData.year, ...values, yearData.oil_gas_total || 0];
         });
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
@@ -665,7 +663,7 @@ const getAccessibleDataTable = () => {
 
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
+            ...PAGE37_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
             `Total ${unitHeader}`
         ];
 
@@ -680,7 +678,7 @@ const getAccessibleDataTable = () => {
         });
 
         const dataRows = pageData.map(yearData => {
-            const values = CATEGORY_ORDER.map(cat => yearData[catMapping[cat]] || 0);
+            const values = PAGE37_CATEGORY_ORDER.map(cat => yearData[catMapping[cat]] || 0);
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 20 })], alignment: AlignmentType.CENTER })] }),

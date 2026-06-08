@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getPage52Data, page52RowHasCompleteData } from '../utils/dataLoader';
@@ -53,7 +53,7 @@ const Page52 = () => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedYear, setSelectedYear] = useState(null);
+    const [pickedYear, setPickedYear] = useState(null);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedSlices, setSelectedSlices] = useState(null);
@@ -69,8 +69,6 @@ const Page52 = () => {
         getPage52Data()
             .then((d) => {
                 setResult(d ?? null);
-                const available = (d?.years || []).filter((y) => y !== 2000 && y >= PAGE52_MIN_DISPLAY_YEAR);
-                if (available.length) setSelectedYear(Math.max(...available));
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -135,17 +133,16 @@ const Page52 = () => {
         return [...new Set(result.data.filter(page52RowHasCompleteData).map((r) => r.year))]
             .filter((y) => y !== 2000 && y >= PAGE52_MIN_DISPLAY_YEAR)
             .sort((a, b) => b - a);
-    }, [result?.data]);
+    }, [result]);
 
-    useEffect(() => {
-        if (years.length > 0 && (selectedYear == null || !years.includes(selectedYear))) setSelectedYear(years[0]);
-    }, [years, selectedYear]);
-    const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
+    const selectedYear = pickedYear != null && years.includes(pickedYear) ? pickedYear : (years[0] ?? null);
+
+    const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result, selectedYear]);
     const latestWithEe = useMemo(() => {
         if (!result?.data?.length) return null;
         const filtered = result.data.filter((r) => page52RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE52_MIN_DISPLAY_YEAR);
         return [...filtered].reverse().find((r) => r.ee_improvement_pct != null && r.ee_savings_pj != null) || filtered[filtered.length - 1] || null;
-    }, [result?.data]);
+    }, [result]);
 
     const getSliceLabelKey = (key) => {
         const m = { sh: 'page52_label_space_heating', wh: 'page52_label_water_heating', ae: 'page52_label_auxiliary_equipment', am: 'page52_label_auxiliary_motors', lt: 'page52_label_lighting', sc: 'page52_label_space_cooling' };
@@ -155,7 +152,7 @@ const Page52 = () => {
     const orderedSlices = useMemo(() => {
         if (!selectedRow?.slices?.length) return [];
         return CIEU_SLICE_ORDER.map((k) => selectedRow.slices.find((s) => s.key === k)).filter(Boolean);
-    }, [selectedRow?.slices]);
+    }, [selectedRow]);
 
     const textSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 18;
     const selectEnabled = windowWidth > 768;
@@ -228,7 +225,7 @@ const Page52 = () => {
                 });
                 return row;
             });
-    }, [result?.data]);
+    }, [result]);
 
     const downloadChartPng = async () => {
         const plotEl = chartRef?.current?.querySelector('.js-plotly-plot');
@@ -259,12 +256,12 @@ const Page52 = () => {
                 link.click();
             };
             img.src = imgData;
-        } catch (e) {
-            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch (_) {}
+        } catch {
+            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch { /* ignore relayout restore */ }
         }
     };
 
-    const config = useMemo(() => ({
+    const config = {
         displayModeBar: true,
         displaylogo: false,
         responsive: true,
@@ -275,7 +272,7 @@ const Page52 = () => {
             icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
             click: downloadChartPng,
         }],
-    }), [lang, chartTitle]);
+    };
 
     const downloadTableCSV = () => {
         if (!tableAllYearsRows.length) return;
@@ -448,7 +445,7 @@ const Page52 = () => {
                                             role="option"
                                             aria-selected={isSelected}
                                             type="button"
-                                            onClick={() => { setSelectedYear(y); setIsYearDropdownOpen(false); setTimeout(() => yearButtonRef.current?.focus(), 0); }}
+                                            onClick={() => { setPickedYear(y); setIsYearDropdownOpen(false); setTimeout(() => yearButtonRef.current?.focus(), 0); }}
                                             style={{ backgroundColor: isSelected ? '#f0f9ff' : '#fff' }}
                                             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#f5f5f5'; }}
                                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'; }}
@@ -479,7 +476,7 @@ const Page52 = () => {
                         <div className="page52-chart" ref={chartRef} role="region" aria-label={chartTitle}>
                             {pieTrace ? (
                                 <Plot
-                                    key={`pie-${effectiveSlices ? effectiveSlices.join('-') : 'none'}`}
+                                    key={selectedYear}
                                     data={[pieTrace]}
                                     layout={layout}
                                     config={config}

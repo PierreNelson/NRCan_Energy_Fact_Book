@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -32,6 +32,15 @@ const PAGE42_DATA = {
 const COLORS = {
     energy: '#1B99BB',
     all: '#9f346d',
+};
+
+const formatPage42Pct = (value, lang) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    const formatted = Number(value).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    });
+    return lang === 'fr' ? `${formatted} %` : `${formatted}%`;
 };
 
 /** Horizontal inset from plot left to first legend symbol (matches Plotly legend swatch padding). */
@@ -139,15 +148,6 @@ const Page42 = () => {
         return hex;
     };
 
-    const formatPct = (value) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
-        const formatted = Number(value).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        });
-        return lang === 'fr' ? `${formatted} %` : `${formatted}%`;
-    };
-
     const fileSlugBase = getText('page42_download_title', lang).replace(/\s+/g, '_');
     const chartTitle = getText('page42_chart_title', lang);
 
@@ -209,26 +209,22 @@ const Page42 = () => {
         [legendSettings, plotAreaWidthPx],
     );
 
-    const traceOpacity = (traceIndex, pointIndex) => {
-        if (selectedPoints === null) return 1;
-        return selectedPoints[traceIndex]?.includes(pointIndex) ? 1 : 0.3;
-    };
-
-    const markerColors = (traceIndex, baseColor) =>
-        CATEGORY_KEYS.map((_, index) =>
-            selectedPoints === null ? baseColor : hexToRgba(baseColor, traceOpacity(traceIndex, index)),
-        );
-
     const energyTrace = useMemo(
         () => ({
             type: 'bar',
             name: getText('page42_legend_energy', lang),
             x: CATEGORY_KEYS,
             y: energyValues,
-            marker: { color: markerColors(0, COLORS.energy) },
+            marker: {
+                color: CATEGORY_KEYS.map((_, index) =>
+                    selectedPoints === null
+                        ? COLORS.energy
+                        : hexToRgba(COLORS.energy, selectedPoints[0]?.includes(index) ? 1 : 0.3),
+                ),
+            },
             hovertext: CATEGORY_KEYS.map(
                 (key, i) =>
-                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_energy', lang)}: ${formatPct(energyValues[i])}`,
+                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_energy', lang)}: ${formatPage42Pct(energyValues[i], lang)}`,
             ),
             hoverinfo: 'text',
             hoverlabel: {
@@ -245,10 +241,16 @@ const Page42 = () => {
             name: getText('page42_legend_all', lang),
             x: CATEGORY_KEYS,
             y: allValues,
-            marker: { color: markerColors(1, COLORS.all) },
+            marker: {
+                color: CATEGORY_KEYS.map((_, index) =>
+                    selectedPoints === null
+                        ? COLORS.all
+                        : hexToRgba(COLORS.all, selectedPoints[1]?.includes(index) ? 1 : 0.3),
+                ),
+            },
             hovertext: CATEGORY_KEYS.map(
                 (key, i) =>
-                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_all', lang)}: ${formatPct(allValues[i])}`,
+                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_all', lang)}: ${formatPage42Pct(allValues[i], lang)}`,
             ),
             hoverinfo: 'text',
             hoverlabel: {
@@ -599,7 +601,7 @@ const Page42 = () => {
     const getChartSummary = () => {
         const parts = CATEGORY_KEYS.map(
             (key, i) =>
-                `${categoryLabelsFull[i]}: ${getText('page42_legend_energy', lang)} ${formatPct(energyValues[i])}, ${getText('page42_legend_all', lang)} ${formatPct(allValues[i])}`,
+                `${categoryLabelsFull[i]}: ${getText('page42_legend_energy', lang)} ${formatPage42Pct(energyValues[i], lang)}, ${getText('page42_legend_all', lang)} ${formatPage42Pct(allValues[i], lang)}`,
         ).join('; ');
         return `${stripHtml(chartTitle)}. ${parts}.`;
     };
@@ -818,11 +820,11 @@ const Page42 = () => {
                                                 <th scope="row" style={{ fontWeight: 'bold' }}>
                                                     {categoryLabelsFull[i]}
                                                 </th>
-                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_energy', lang)}: ${formatPct(PAGE42_DATA[key].energy)}`}>
-                                                    {formatPct(PAGE42_DATA[key].energy)}
+                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_energy', lang)}: ${formatPage42Pct(PAGE42_DATA[key].energy, lang)}`}>
+                                                    {formatPage42Pct(PAGE42_DATA[key].energy, lang)}
                                                 </td>
-                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_all', lang)}: ${formatPct(PAGE42_DATA[key].all)}`}>
-                                                    {formatPct(PAGE42_DATA[key].all)}
+                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_all', lang)}: ${formatPage42Pct(PAGE42_DATA[key].all, lang)}`}>
+                                                    {formatPage42Pct(PAGE42_DATA[key].all, lang)}
                                                 </td>
                                             </tr>
                                         ))}

@@ -1,0 +1,5 @@
+# Windows-native Symphony orchestrator (isolated venv recommended)
+httpx>=0.27.0
+PyYAML>=6.0
+python-liquid>=1.12.0
+watchdog>=4.0.0

@@ -1,14 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import page1Image from '../assets/page1_bg.jpg';
 
 const Page1 = () => {
-    const { lang, layoutPadding } = useOutletContext();
-
-    useEffect(() => {
-        import('./Page23');
-    }, []);
+    const { lang } = useOutletContext();
 
     return (
         <main 

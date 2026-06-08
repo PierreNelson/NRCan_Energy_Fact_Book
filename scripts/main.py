@@ -2,35 +2,28 @@
 """
 NRCan Energy Factbook Data Pipeline CLI
 
-Main entry point for refreshing data and generating website files.
+Three-stage workflow:
+  1. python main.py eedas update --all     Load source-native data into EEDAS
+  2. python main.py efb transform --all    Build Factbook indicators
+  3. python main.py export                   Write website CSV files
 
 Usage:
-    # Refresh all data and export
-    python main.py refresh --all
-    
-    # Refresh specific section
-    python main.py refresh --section section1_indicators
-    
-    # Refresh specific data source
-    python main.py refresh --source capital_expenditures
-    
-    # Export only (from existing database data)
+    python main.py eedas update --all
+    python main.py eedas update --source capital_expenditures
+    python main.py efb transform --all
+    python main.py efb transform --indicator capital_expenditures
     python main.py export
-    
-    # List available sections and sources
+    python main.py status
     python main.py list
-    
-    # Test database connection
     python main.py test-connection
 """
 
 import argparse
+import json
 import sys
-import os
 from pathlib import Path
 from datetime import datetime
 
-# Add scripts directory to path for imports
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
@@ -38,49 +31,151 @@ from config_loader import get_config, Config
 from db.connection import get_connection, DatabaseConnection
 from db.models import DataRepository
 from db.ensure_schema import ensure_database_schema
-from sections import Section1Indicators, Section2Investment, Section4Indicators, Section5CleanPower, Section6OilGas
+from eedas.runner import run_eedas_update
+from efb.runner import run_efb_transform
 from export.website_files import export_website_files
+from export.safe_io import restore_latest_backups, list_backups
+
+_log_file_handle = None
+_original_stdout = None
+_original_stderr = None
 
 
-# Section class registry
-SECTION_PROCESSORS = {
-    'section1_indicators': Section1Indicators,
-    'section2_investment': Section2Investment,
-    'section4_indicators': Section4Indicators,
-    'section5_clean_power': Section5CleanPower,
-    'section6_oil_gas': Section6OilGas,
-}
+class _Tee:
+    def __init__(self, stream, log_file):
+        self._stream = stream
+        self._log_file = log_file
+
+    def write(self, data):
+        self._stream.write(data)
+        self._log_file.write(data)
+
+    def flush(self):
+        self._stream.flush()
+        self._log_file.flush()
+
+    def fileno(self):
+        return self._stream.fileno()
+
+    def isatty(self):
+        return getattr(self._stream, 'isatty', lambda: False)()
 
 
-def setup_logging(config: Config):
-    """Configure logging based on config settings."""
+def setup_logging(config: Config, command: str | None = None) -> Path | None:
     import logging
-    
+
+    global _log_file_handle, _original_stdout, _original_stderr
+
     log_config = config.logging
     level_name = log_config.get('level', 'INFO')
     level = getattr(logging, level_name, logging.INFO)
-    
-    logging.basicConfig(
-        level=level,
-        format=log_config.get('format', '%(asctime)s - %(levelname)s - %(message)s')
-    )
+    fmt = log_config.get('format', '%(asctime)s - %(levelname)s - %(message)s')
+
+    file_cfg = log_config.get('file', {})
+    if not file_cfg.get('enabled', True):
+        logging.basicConfig(level=level, format=fmt, force=True)
+        return None
+
+    log_dir = SCRIPT_DIR / file_cfg.get('directory', 'logs')
+    log_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    cmd_label = (command or 'pipeline').replace('-', '_').replace(' ', '_')
+    log_path = log_dir / f"{cmd_label}_{timestamp}.log"
+
+    _log_file_handle = open(log_path, 'w', encoding='utf-8')
+    _original_stdout = sys.stdout
+    _original_stderr = sys.stderr
+    sys.stdout = _Tee(_original_stdout, _log_file_handle)
+    sys.stderr = _Tee(_original_stderr, _log_file_handle)
+
+    logging.basicConfig(level=level, format=fmt, force=True)
+    print(f"Log file: {log_path}")
+    return log_path
 
 
-def get_all_processors(config: Config, db: DatabaseConnection) -> dict:
-    """Get instances of all enabled section processors."""
-    processors = {}
-    
-    for section_key, processor_class in SECTION_PROCESSORS.items():
-        if config.is_section_enabled(section_key):
-            processors[section_key] = processor_class(config, db)
-    
-    return processors
+def teardown_logging() -> None:
+    global _log_file_handle, _original_stdout, _original_stderr
+
+    if _original_stdout is not None:
+        sys.stdout = _original_stdout
+        _original_stdout = None
+    if _original_stderr is not None:
+        sys.stderr = _original_stderr
+        _original_stderr = None
+    if _log_file_handle is not None:
+        _log_file_handle.close()
+        _log_file_handle = None
 
 
-def cmd_refresh(args, config: Config, db: DatabaseConnection):
-    """Handle the refresh command."""
+def flatten_results(results: dict) -> list[tuple[str, dict]]:
+    flat = []
+    for _key, result in results.items():
+        if not isinstance(result, dict):
+            continue
+        if 'status' in result:
+            flat.append((_key, result))
+        else:
+            for sub_key, sub_result in result.items():
+                if isinstance(sub_result, dict):
+                    flat.append((sub_key, sub_result))
+    return flat
+
+
+def get_failures(results: dict) -> list[tuple[str, dict]]:
+    return [
+        (key, result)
+        for key, result in flatten_results(results)
+        if result.get('status') == 'failed'
+    ]
+
+
+def print_failure_summary(failures: list[tuple[str, dict]]) -> None:
+    print("\n" + "=" * 60)
+    print("Failure Summary")
     print("=" * 60)
-    print("NRCan Energy Factbook - Data Refresh")
+    for key, result in failures:
+        print(f"  {key}: FAILED")
+        print(f"    {result.get('error', 'unknown error')}")
+    print("\nReview details: python main.py status --failed-only")
+
+
+def write_run_summary(config: Config, command: str, results: dict, failures: list, exit_code: int) -> Path:
+    log_dir = SCRIPT_DIR / config.logging.get('file', {}).get('directory', 'logs')
+    log_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = log_dir / 'last_refresh_summary.json'
+
+    payload = {
+        'command': command,
+        'completed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'exit_code': exit_code,
+        'failed_count': len(failures),
+        'failed_sources': [
+            {'source_key': k, 'error': r.get('error', '')} for k, r in failures
+        ],
+        'results': results,
+    }
+    with open(summary_path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, indent=2, default=str)
+    print(f"\nRun summary written to: {summary_path}")
+    return summary_path
+
+
+def print_result_summary(results: dict) -> None:
+    for key, result in results.items():
+        if isinstance(result, dict):
+            if 'status' in result:
+                print(f"  {key}: {result.get('status')} ({result.get('rows', 0)} rows)")
+            else:
+                for sub_key, sub_result in result.items():
+                    print(
+                        f"  {sub_key}: {sub_result.get('status', 'unknown')} "
+                        f"({sub_result.get('rows', 0)} rows)"
+                    )
+
+
+def cmd_eedas_update(args, config: Config, db: DatabaseConnection):
+    print("=" * 60)
+    print("EEDAS Update — load source-native data")
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
@@ -90,117 +185,112 @@ def cmd_refresh(args, config: Config, db: DatabaseConnection):
         except RuntimeError as e:
             print(f"\nError: {e}")
             return 1
-    
-    processors = get_all_processors(config, db)
-    results = {}
-    
-    if args.all:
-        # Refresh all enabled sections
-        print("\nRefreshing all enabled sections...")
-        for section_key, processor in processors.items():
-            print(f"\n{'='*40}")
-            print(f"Section: {processor.SECTION_NAME}")
-            print(f"{'='*40}")
-            results[section_key] = processor.refresh_all()
-    
-    elif args.section:
-        # Refresh specific section
-        section_key = args.section
-        if section_key not in processors:
-            print(f"Error: Section '{section_key}' not found or not enabled.")
-            print(f"Available sections: {list(processors.keys())}")
-            return 1
-        
-        print(f"\nRefreshing section: {section_key}")
-        processor = processors[section_key]
-        results[section_key] = processor.refresh_all()
-    
-    elif args.source:
-        # Refresh specific source
-        source_key = args.source
-        found = False
-        
-        for section_key, processor in processors.items():
-            handlers = processor.get_source_handlers()
-            if source_key in handlers:
-                if config.is_source_enabled(section_key, source_key):
-                    print(f"\nRefreshing source: {source_key}")
-                    result = processor.refresh_source(source_key)
-                    results[source_key] = result
-                    found = True
-                    break
-                else:
-                    print(f"Error: Source '{source_key}' is disabled in config.")
-                    return 1
-        
-        if not found:
-            print(f"Error: Source '{source_key}' not found.")
-            if source_key in processors:
-                print(f"\nHint: '{source_key}' is a section. Use: python main.py refresh --section {source_key}")
-            else:
-                print("\nAvailable sources:")
-                for section_key, processor in processors.items():
-                    handlers = processor.get_source_handlers()
-                    for src in handlers.keys():
-                        status = "enabled" if config.is_source_enabled(section_key, src) else "disabled"
-                        print(f"  - {src} ({status})")
-            return 1
-    
-    else:
-        print("Error: Please specify --all, --section, or --source")
-        return 1
-    
-    # Print summary
-    print("\n" + "=" * 60)
-    print("Refresh Summary")
-    print("=" * 60)
-    for key, result in results.items():
-        if isinstance(result, dict):
-            if 'status' in result:
-                print(f"  {key}: {result.get('status')} ({result.get('rows', 0)} rows)")
-            else:
-                for sub_key, sub_result in result.items():
-                    status = sub_result.get('status', 'unknown')
-                    rows = sub_result.get('rows', 0)
-                    print(f"  {sub_key}: {status} ({rows} rows)")
-    
-    # Auto-export if requested
-    if args.export_after:
-        print("\n" + "=" * 60)
-        print("Exporting website files...")
-        export_results = export_website_files(config, db)
-        print("\nExport Summary:")
-        for key, result in export_results.items():
-            print(f"  {key}: {result.get('status')} ({result.get('rows', 0)} rows)")
-    
-    print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    return 0
 
-
-def cmd_export(args, config: Config, db: DatabaseConnection):
-    """Handle the export command."""
-    print("=" * 60)
-    print("NRCan Energy Factbook - Export Website Files")
-    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 60)
-    
-    # Check for filter options
-    source_filter = getattr(args, 'source', None)
-    vectors_filter = getattr(args, 'vectors', None)
-    
-    if source_filter or vectors_filter:
-        print("\nSelective export mode:")
-    
     try:
-        results = export_website_files(
-            config, db,
-            source=source_filter,
-            vectors=vectors_filter
+        results = run_eedas_update(
+            config,
+            db,
+            all_sections=args.all,
+            section_key=args.section,
+            source_key=args.source,
         )
     except ValueError as e:
         print(f"\nError: {e}")
         return 1
-    
+
+    print("\n" + "=" * 60)
+    print("EEDAS Update Summary")
+    print("=" * 60)
+    print_result_summary(results)
+
+    failures = get_failures(results)
+    exit_code = 1 if failures else 0
+    if failures:
+        print_failure_summary(failures)
+    write_run_summary(config, 'eedas update', results, failures, exit_code)
+    print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    return exit_code
+
+
+def cmd_efb_transform(args, config: Config, db: DatabaseConnection):
+    print("=" * 60)
+    print("EFB Transform — build Factbook indicators")
+    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 60)
+
+    if not args.skip_ensure_schema:
+        try:
+            ensure_database_schema(db)
+        except RuntimeError as e:
+            print(f"\nError: {e}")
+            return 1
+
+    try:
+        results = run_efb_transform(
+            config,
+            db,
+            all_indicators=args.all,
+            section_key=args.section,
+            indicator_key=args.indicator,
+        )
+    except ValueError as e:
+        print(f"\nError: {e}")
+        return 1
+
+    print("\n" + "=" * 60)
+    print("EFB Transform Summary")
+    print("=" * 60)
+    print_result_summary(results)
+
+    failures = get_failures(results)
+    exit_code = 1 if failures else 0
+    if failures:
+        print_failure_summary(failures)
+    write_run_summary(config, 'efb transform', results, failures, exit_code)
+    print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    return exit_code
+
+
+def cmd_export(args, config: Config, db: DatabaseConnection):
+    print("=" * 60)
+    print("NRCan Energy Factbook - Export Website Files")
+    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 60)
+
+    if getattr(args, 'list_backups', False):
+        backups = list_backups(config)
+        print("\nAvailable export backups:")
+        if not any(backups.values()):
+            print("  (no backups found)")
+        else:
+            for key, entries in backups.items():
+                print(f"\n  {key}:")
+                for entry in entries:
+                    print(f"    {entry['modified']}  {entry['name']}  ({entry['size_bytes']} bytes)")
+        return 0
+
+    if getattr(args, 'restore_latest', False):
+        results = restore_latest_backups(config)
+        if 'error' in results:
+            print(f"\nError: {results['error'].get('reason', 'restore failed')}")
+            return 1
+        for key, result in results.items():
+            status = result.get('status', 'unknown')
+            if status == 'restored':
+                print(f"  {key}: restored -> {result.get('path')}")
+            else:
+                print(f"  {key}: {status} ({result.get('reason', '')})")
+        return 0
+
+    source_filter = getattr(args, 'source', None)
+    vectors_filter = getattr(args, 'vectors', None)
+
+    try:
+        results = export_website_files(config, db, source=source_filter, vectors=vectors_filter)
+    except ValueError as e:
+        print(f"\nError: {e}")
+        return 1
+
     print("\n" + "=" * 60)
     print("Export Summary")
     print("=" * 60)
@@ -209,198 +299,207 @@ def cmd_export(args, config: Config, db: DatabaseConnection):
         status = result.get('status', 'unknown')
         rows = result.get('rows', 0)
         reason = result.get('reason', '')
-        
         if reason:
             print(f"  {key}: {status} ({reason})")
         else:
             print(f"  {key}: {status} ({rows} rows)")
         if path:
             print(f"    -> {path}")
-    
     print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     return 0
 
 
+def cmd_status(args, config: Config, db: DatabaseConnection):
+    hours = getattr(args, 'hours', 24)
+    failed_only = getattr(args, 'failed_only', False)
+
+    print("=" * 60)
+    print("NRCan Energy Factbook - Pipeline Status")
+    print(f"Window: last {hours} hour(s)")
+    print("=" * 60)
+
+    repo = DataRepository(db)
+    try:
+        rows = repo.get_recent_run_history(hours=hours, failed_only=failed_only)
+    except Exception as e:
+        print(f"\nError querying run history: {e}")
+        return 1
+
+    if not rows:
+        label = "failed runs" if failed_only else "runs"
+        print(f"\nNo {label} in the last {hours} hour(s).")
+    else:
+        for row in rows:
+            error = row.get('error_message') or ''
+            if error and len(error) > 120:
+                error = error[:117] + '...'
+            print(
+                f"  {row.get('source_key', '')} [{row.get('run_type', '')}] "
+                f"{row.get('status', '')} @ {row.get('started_at', '')} "
+                f"({row.get('rows_affected', '')} rows)"
+            )
+            if error:
+                print(f"    {error}")
+
+    if not failed_only:
+        try:
+            last_success = repo.get_last_successful_refresh_per_source()
+            if last_success:
+                print("\nLast successful EEDAS update per source:")
+                for row in last_success:
+                    print(f"  {row.get('source_key', '')}: {row.get('last_success', '')}")
+        except Exception as e:
+            print(f"\nNote: Could not query last successful update: {e}")
+
+    return 0
+
+
 def cmd_list(args, config: Config):
-    """Handle the list command."""
     from export.source_vectors import SOURCE_VECTOR_PREFIXES
-    
+
     print("=" * 60)
-    print("NRCan Energy Factbook - Available Sections and Sources")
+    print("NRCan Energy Factbook - Sections and Sources")
     print("=" * 60)
-    
+    print("\nWorkflow: eedas update -> efb transform -> export\n")
+
     for section_key, section_config in config.sections.items():
         enabled = section_config.get('enabled', False)
         name = section_config.get('name', section_key)
         status = "ENABLED" if enabled else "disabled"
-        
         print(f"\n{name} ({section_key}) [{status}]")
         print("-" * 40)
-        
-        sources = section_config.get('sources', {})
-        for source_key, source_config in sources.items():
+        for source_key, source_config in section_config.get('sources', {}).items():
             src_enabled = source_config.get('enabled', False)
             src_status = "ENABLED" if src_enabled else "disabled"
-            description = source_config.get('description', '')
             prefixes = SOURCE_VECTOR_PREFIXES.get(source_key, [])
-            
             print(f"  {source_key} [{src_status}]")
             if prefixes:
                 print(f"    Vectors: {', '.join(prefixes)}*")
-            if description:
-                print(f"    {description}")
-    
     return 0
 
 
 def cmd_test_connection(args, config: Config, db: DatabaseConnection):
-    """Handle the test-connection command."""
     print("=" * 60)
     print("NRCan Energy Factbook - Test Database Connection")
     print("=" * 60)
-    
     print(f"\nServer: {db.server}")
     print(f"Database: {db.database}")
-    print(f"Driver: {db.driver}")
-    print(f"Using: {'SQL Server Authentication' if db.username else 'Windows Authentication'}")
-    
-    print("\nTesting connection...")
-    
+
     if db.test_connection():
-        print("SUCCESS: Database connection successful!")
-        
-        # Try to count data sources
+        print("\nSUCCESS: Database connection successful!")
         try:
             repo = DataRepository(db)
             sources = repo.get_enabled_sources()
-            print(f"\nFound {len(sources)} enabled data sources in database.")
+            print(f"Found {len(sources)} enabled data sources in database.")
         except Exception as e:
-            print(f"\nNote: Could not query data sources table: {e}")
-            print("The database may need to be initialized with setup_database.sql")
-        
+            print(f"Note: Could not query data sources: {e}")
+        print("\nNext steps:")
+        print("  python main.py eedas update --all")
+        print("  python main.py efb transform --all")
+        print("  python main.py export")
         return 0
-    else:
-        print("FAILED: Could not connect to database.")
-        print("\nTroubleshooting:")
-        print("1. Ensure SQL Server is running")
-        print("2. Check the config.yaml settings")
-        print("3. Verify credentials (or use DB_USERNAME/DB_PASSWORD env vars)")
-        print("4. Create database NRCanEnergyFactbook (empty), then run: python main.py refresh (creates tables)")
-        return 1
+    print("FAILED: Could not connect to database.")
+    return 1
 
 
 def main():
-    """Main entry point."""
     parser = argparse.ArgumentParser(
         description='NRCan Energy Factbook Data Pipeline',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
+        epilog="""
 Examples:
-  python main.py refresh --all              Refresh all data sources
-  python main.py refresh --section section2_investment  Refresh one section
-  python main.py refresh --source capital_expenditures  Refresh one source
-  python main.py refresh --all --export-after           Refresh and export
-  
-  python main.py export                     Export all website files
-  python main.py export --source capital_expenditures  Export one source
-  python main.py export --vectors "capex_*"          Export vectors matching pattern
-  
-  python main.py list                       List available sections/sources
-  python main.py test-connection            Test database connection
-        '''
+  python main.py eedas update --all
+  python main.py eedas update --source capital_expenditures
+  python main.py efb transform --all
+  python main.py efb transform --indicator capital_expenditures
+  python main.py export
+  python main.py status --failed-only
+  python main.py list
+        """,
     )
-    
-    parser.add_argument(
-        '--config', '-c',
-        help='Path to config.yaml (default: scripts/config.yaml)'
-    )
-    
+    parser.add_argument('--config', '-c', help='Path to config.yaml')
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
-    
-    # Refresh command
-    refresh_parser = subparsers.add_parser('refresh', help='Refresh data from sources')
-    refresh_group = refresh_parser.add_mutually_exclusive_group()
-    refresh_group.add_argument(
-        '--all', '-a',
-        action='store_true',
-        help='Refresh all enabled sections'
-    )
-    refresh_group.add_argument(
-        '--section', '-s',
-        help='Refresh a specific section (e.g., section1_indicators)'
-    )
-    refresh_group.add_argument(
-        '--source', '-r',
-        help='Refresh a specific data source (e.g., capital_expenditures)'
-    )
-    refresh_parser.add_argument(
-        '--export-after', '-e',
-        action='store_true',
-        help='Export website files after refresh'
-    )
-    refresh_parser.add_argument(
-        '--skip-ensure-schema',
-        action='store_true',
-        help='Do not run setup_database.sql batches before refresh (advanced)'
-    )
-    
-    # Export command
+
+    eedas_parser = subparsers.add_parser('eedas', help='EEDAS standalone data ingest')
+    eedas_sub = eedas_parser.add_subparsers(dest='eedas_command')
+    eedas_update = eedas_sub.add_parser('update', help='Download and load raw source data')
+    eedas_group = eedas_update.add_mutually_exclusive_group(required=True)
+    eedas_group.add_argument('--all', '-a', action='store_true', help='Update all enabled sources')
+    eedas_group.add_argument('--section', '-s', help='Update one section')
+    eedas_group.add_argument('--source', '-r', help='Update one source')
+    eedas_update.add_argument('--skip-ensure-schema', action='store_true')
+
+    efb_parser = subparsers.add_parser('efb', help='EFB indicator transform')
+    efb_sub = efb_parser.add_subparsers(dest='efb_command')
+    efb_transform = efb_sub.add_parser('transform', help='Build indicators from EEDAS raw data')
+    efb_group = efb_transform.add_mutually_exclusive_group(required=True)
+    efb_group.add_argument('--all', '-a', action='store_true', help='Transform all indicators')
+    efb_group.add_argument('--section', '-s', help='Transform one section')
+    efb_group.add_argument('--indicator', '-i', help='Transform one indicator')
+    efb_transform.add_argument('--skip-ensure-schema', action='store_true')
+
     export_parser = subparsers.add_parser('export', help='Export website files from database')
-    export_parser.add_argument(
-        '--source', '-s',
-        help='Export only vectors from a specific data source (e.g., capital_expenditures)'
-    )
-    export_parser.add_argument(
-        '--vectors', '-v',
-        help='Export only vectors matching a pattern (e.g., "capex_*", "*_total")'
-    )
-    
-    # List command
-    list_parser = subparsers.add_parser('list', help='List available sections and sources')
-    
-    # Test connection command
-    test_parser = subparsers.add_parser('test-connection', help='Test database connection')
-    
+    export_parser.add_argument('--source', '-s', help='Export vectors from one indicator/source')
+    export_parser.add_argument('--vectors', '-v', help='Export vectors matching pattern')
+    export_parser.add_argument('--restore-latest', action='store_true')
+    export_parser.add_argument('--list-backups', action='store_true')
+
+    status_parser = subparsers.add_parser('status', help='Recent run history')
+    status_parser.add_argument('--hours', type=int, default=24)
+    status_parser.add_argument('--failed-only', action='store_true')
+
+    subparsers.add_parser('list', help='List sections and sources')
+    subparsers.add_parser('test-connection', help='Test database connection')
+
     args = parser.parse_args()
-    
+
     if not args.command:
         parser.print_help()
         return 1
-    
-    # Load configuration
+
     try:
         config = get_config(args.config)
     except FileNotFoundError as e:
         print(f"Error: {e}")
         return 1
-    
-    # Setup logging
-    setup_logging(config)
 
-    if args.command == 'list':
-        return cmd_list(args, config)
+    setup_logging(config, command=args.command)
 
-    # Initialize database connection (not required for list)
     try:
-        db = get_connection(config.database)
-    except Exception as e:
-        print(f"Error initializing database connection: {e}")
-        print("\nMake sure SQL Server is running and config.yaml is correct.")
-        return 1
+        if args.command == 'list':
+            return cmd_list(args, config)
 
-    # Route to command handler
-    commands = {
-        'refresh': cmd_refresh,
-        'export': cmd_export,
-        'test-connection': cmd_test_connection,
-    }
+        try:
+            db = get_connection(config.database)
+        except Exception as e:
+            print(f"Error initializing database connection: {e}")
+            return 1
 
-    handler = commands.get(args.command)
-    if handler:
-        return handler(args, config, db)
-    else:
+        if args.command == 'eedas':
+            if args.eedas_command != 'update':
+                print("Usage: python main.py eedas update --all|--section|--source")
+                return 1
+            return cmd_eedas_update(args, config, db)
+
+        if args.command == 'efb':
+            if args.efb_command != 'transform':
+                print("Usage: python main.py efb transform --all|--section|--indicator")
+                return 1
+            return cmd_efb_transform(args, config, db)
+
+        handlers = {
+            'export': cmd_export,
+            'status': cmd_status,
+            'test-connection': cmd_test_connection,
+        }
+        handler = handlers.get(args.command)
+        if handler:
+            return handler(args, config, db)
+
         parser.print_help()
         return 1
+    finally:
+        teardown_logging()
 
 
 if __name__ == '__main__':

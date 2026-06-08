@@ -1,11 +1,162 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE30_PROVINCE_INFO = {
+    'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', geoJsonName: 'Newfoundland and Labrador' },
+    'pe': { nameEn: 'Prince Edward Island', nameFr: 'Île-du-Prince-Édouard', geoJsonName: 'Prince Edward Island' },
+    'ns': { nameEn: 'Nova Scotia', nameFr: 'Nouvelle-Écosse', geoJsonName: 'Nova Scotia' },
+    'nb': { nameEn: 'New Brunswick', nameFr: 'Nouveau-Brunswick', geoJsonName: 'New Brunswick' },
+    'qc': { nameEn: 'Quebec', nameFr: 'Québec', geoJsonName: 'Quebec' },
+    'on': { nameEn: 'Ontario', nameFr: 'Ontario', geoJsonName: 'Ontario' },
+    'mb': { nameEn: 'Manitoba', nameFr: 'Manitoba', geoJsonName: 'Manitoba' },
+    'sk': { nameEn: 'Saskatchewan', nameFr: 'Saskatchewan', geoJsonName: 'Saskatchewan' },
+    'ab': { nameEn: 'Alberta', nameFr: 'Alberta', geoJsonName: 'Alberta' },
+    'bc': { nameEn: 'British Columbia', nameFr: 'Colombie-Britannique', geoJsonName: 'British Columbia' },
+    'yt': { nameEn: 'Yukon', nameFr: 'Yukon', geoJsonName: 'Yukon Territory' },
+    'nt': { nameEn: 'Northwest Territories', nameFr: 'Territoires du Nord-Ouest', geoJsonName: 'Northwest Territories' },
+    'nu': { nameEn: 'Nunavut', nameFr: 'Nunavut', geoJsonName: 'Nunavut' },
+};
+
+const PAGE30_PROVINCE_CODES = ['bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl', 'yt', 'nt', 'nu'];
+
+const page30HexToRgba = (hex, opacity = 1) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
+    }
+    return hex;
+};
+
+const page30GetMarkerSize = (costRange) => {
+    if (!costRange) return 8;
+    if (costRange.includes('10,000')) return 18;
+    if (costRange.includes('5,000 - 10,000')) return 16;
+    if (costRange.includes('2,500 - 5,000')) return 14;
+    if (costRange.includes('1,000 - 2,500')) return 12;
+    if (costRange.includes('750 - 1,000')) return 10;
+    if (costRange.includes('500 - 750')) return 9;
+    if (costRange.includes('250 - 500')) return 8;
+    if (costRange.includes('100 - 250')) return 7;
+    if (costRange.includes('50 - 100')) return 6;
+    return 5;
+};
+
+const page30GetMarkerProps = (project, isSelected = true) => {
+    const isClean = project.clean_technology === 'Yes' || project.clean_technology === 'Oui';
+    const isConstruction = project.status === 'Under Construction' || project.status === 'En construction';
+    const size = page30GetMarkerSize(project.capital_cost_range);
+    const opacity = isSelected ? 1 : 0.3;
+    const plannedColor = '#4196F6';
+    const constructionColor = '#20B2AA';
+    const color = isConstruction ? constructionColor : plannedColor;
+
+    if (isClean) {
+        return {
+            symbol: 'triangle-down',
+            color: page30HexToRgba(color, opacity),
+            size,
+            line: { color: page30HexToRgba(color, opacity), width: 1 }
+        };
+    }
+
+    return {
+        symbol: 'triangle-up',
+        color: page30HexToRgba(color, opacity),
+        size,
+        line: { color: page30HexToRgba(color, opacity), width: 1 }
+    };
+};
+
+const page30GetLineColor = (line, isSelected = true) => {
+    const isClean = line.clean_technology === 'Yes' || line.clean_technology === 'Oui';
+    const isConstruction = line.status === 'Under Construction' || line.status === 'En construction';
+    const opacity = isSelected ? 1 : 0.3;
+    const color = isClean
+        ? (isConstruction ? '#71a210' : '#a3f900')
+        : (isConstruction ? '#B684B6' : '#FE3ED8');
+    return page30HexToRgba(color, opacity);
+};
+
+const page30FormatHoverText = (project, language) => {
+    const costDisplay = project.capital_cost ? `$${project.capital_cost}M` : 'N/A';
+
+    if (language === 'fr') {
+        return `<b>${project.project_name}</b><br>` +
+               `<b>Entreprise :</b> ${project.company || 'N/D'}<br>` +
+               `<b>Province :</b> ${project.province || 'N/D'}<br>` +
+               `<b>Emplacement :</b> ${project.location || 'N/D'}<br>` +
+               `<b>Coût en capital :</b> ${costDisplay}<br>` +
+               `<b>Statut :</b> ${project.status || 'N/D'}<br>` +
+               `<b>Technologie propre :</b> ${project.clean_technology || 'N/D'}` +
+               (project.clean_technology === 'Oui' && project.clean_technology_type ?
+                   `<br><b>Type :</b> ${project.clean_technology_type}` : '');
+    }
+
+    return `<b>${project.project_name}</b><br>` +
+           `<b>Company:</b> ${project.company || 'N/A'}<br>` +
+           `<b>Province:</b> ${project.province || 'N/A'}<br>` +
+           `<b>Location:</b> ${project.location || 'N/A'}<br>` +
+           `<b>Capital cost:</b> ${costDisplay}<br>` +
+           `<b>Status:</b> ${project.status || 'N/A'}<br>` +
+           `<b>Clean technology:</b> ${project.clean_technology || 'N/A'}` +
+           (project.clean_technology === 'Yes' && project.clean_technology_type ?
+               `<br><b>Type:</b> ${project.clean_technology_type}` : '');
+};
+
+const page30IsProjectInSelectedProvince = (project, selectedProvinces) => {
+    if (selectedProvinces === null) return true;
+    const projectProvince = (project.province || '').toLowerCase();
+    return selectedProvinces.some(idx => {
+        const code = PAGE30_PROVINCE_CODES[idx];
+        const info = PAGE30_PROVINCE_INFO[code];
+        const enName = info.nameEn.toLowerCase();
+        const frName = info.nameFr.toLowerCase();
+        return projectProvince.includes(enName) || enName.includes(projectProvince) ||
+               projectProvince.includes(frName) || frName.includes(projectProvince);
+    });
+};
+
+const LegendItem = ({ windowWidth, color, symbol, label, isLine, isOutline, size = 'medium' }) => {
+    const sizeMap = { small: 8, medium: 12, large: 16 };
+    const triangleSize = sizeMap[size] || 12;
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3px', fontSize: windowWidth <= 768 ? '14px' : '16px' }}>
+            {isLine ? (
+                <div style={{
+                    width: '24px',
+                    height: '3px',
+                    backgroundColor: color,
+                    marginRight: '6px',
+                    flexShrink: 0
+                }} />
+            ) : (
+                <div style={{
+                    width: '0',
+                    height: '0',
+                    borderLeft: `${triangleSize / 2}px solid transparent`,
+                    borderRight: `${triangleSize / 2}px solid transparent`,
+                    borderBottom: symbol === 'up' ? `${triangleSize}px solid ${isOutline ? 'transparent' : color}` : 'none',
+                    borderTop: symbol === 'down' ? `${triangleSize}px solid ${isOutline ? 'transparent' : color}` : 'none',
+                    marginRight: '6px',
+                    flexShrink: 0,
+                    ...(isOutline && {
+                        borderBottomColor: symbol === 'up' ? color : undefined,
+                        borderTopColor: symbol === 'down' ? color : undefined,
+                    })
+                }} />
+            )}
+            <span style={{ color: '#333', fontFamily: 'Arial, sans-serif', lineHeight: '1.2' }}>{label}</span>
+        </div>
+    );
+};
+
 const Page30 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [mapData, setMapData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -98,32 +249,6 @@ const Page30 = () => {
     }, [isTableOpen, windowWidth]);
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
-
-    const provinceInfo = {
-        'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', geoJsonName: 'Newfoundland and Labrador' },
-        'pe': { nameEn: 'Prince Edward Island', nameFr: 'Île-du-Prince-Édouard', geoJsonName: 'Prince Edward Island' },
-        'ns': { nameEn: 'Nova Scotia', nameFr: 'Nouvelle-Écosse', geoJsonName: 'Nova Scotia' },
-        'nb': { nameEn: 'New Brunswick', nameFr: 'Nouveau-Brunswick', geoJsonName: 'New Brunswick' },
-        'qc': { nameEn: 'Quebec', nameFr: 'Québec', geoJsonName: 'Quebec' },
-        'on': { nameEn: 'Ontario', nameFr: 'Ontario', geoJsonName: 'Ontario' },
-        'mb': { nameEn: 'Manitoba', nameFr: 'Manitoba', geoJsonName: 'Manitoba' },
-        'sk': { nameEn: 'Saskatchewan', nameFr: 'Saskatchewan', geoJsonName: 'Saskatchewan' },
-        'ab': { nameEn: 'Alberta', nameFr: 'Alberta', geoJsonName: 'Alberta' },
-        'bc': { nameEn: 'British Columbia', nameFr: 'Colombie-Britannique', geoJsonName: 'British Columbia' },
-        'yt': { nameEn: 'Yukon', nameFr: 'Yukon', geoJsonName: 'Yukon Territory' },
-        'nt': { nameEn: 'Northwest Territories', nameFr: 'Territoires du Nord-Ouest', geoJsonName: 'Northwest Territories' },
-        'nu': { nameEn: 'Nunavut', nameFr: 'Nunavut', geoJsonName: 'Nunavut' },
-    };
-
-    const provinceCodes = ['bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl', 'yt', 'nt', 'nu'];
 
     useEffect(() => {
         const handleResize = () => {
@@ -458,8 +583,8 @@ const Page30 = () => {
 
         if (selectedProvinces !== null && selectedProvinces.length > 0) {
             const selectedProvNames = selectedProvinces.map(idx => {
-                const code = provinceCodes[idx];
-                const info = provinceInfo[code];
+                const code = PAGE30_PROVINCE_CODES[idx];
+                const info = PAGE30_PROVINCE_INFO[code];
                 return lang === 'en' ? info.nameEn : info.nameFr;
             });
             filtered = filtered.filter(project => {
@@ -561,7 +686,7 @@ const Page30 = () => {
         return filtered;
     }, [tableData, selectedProvinces, lang, projectFilter, companyFilter, provinceFilter, typeFilter, locationFilter, capitalCostFilter, statusFilter, cleanTechFilter, sortColumn, sortDirection]);
 
-    const applyFiltersToData = (data) => {
+    const applyFiltersToData = useCallback((data) => {
         if (!data || data.length === 0) return [];
         let filtered = [...data];
 
@@ -634,17 +759,17 @@ const Page30 = () => {
         }
 
         return filtered;
-    };
+    }, [projectFilter, companyFilter, provinceFilter, typeFilter, locationFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
 
     const filteredMapPoints = useMemo(() => {
         if (!langData || !langData.points) return [];
         return applyFiltersToData(langData.points);
-    }, [langData, projectFilter, companyFilter, provinceFilter, typeFilter, locationFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
+    }, [langData, applyFiltersToData]);
 
     const filteredMapLines = useMemo(() => {
         if (!langData || !langData.lines) return [];
         return applyFiltersToData(langData.lines);
-    }, [langData, projectFilter, companyFilter, provinceFilter, typeFilter, locationFilter, capitalCostFilter, statusFilter, cleanTechFilter]);
+    }, [langData, applyFiltersToData]);
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -746,105 +871,15 @@ const Page30 = () => {
         saveAs(blob, lang === 'en' ? 'major_energy_projects.docx' : 'grands_projets_energetiques.docx');
     };
 
-    const getMarkerSize = (costRange) => {
-        if (!costRange) return 8;
-        if (costRange.includes('10,000')) return 18;
-        if (costRange.includes('5,000 - 10,000')) return 16;
-        if (costRange.includes('2,500 - 5,000')) return 14;
-        if (costRange.includes('1,000 - 2,500')) return 12;
-        if (costRange.includes('750 - 1,000')) return 10;
-        if (costRange.includes('500 - 750')) return 9;
-        if (costRange.includes('250 - 500')) return 8;
-        if (costRange.includes('100 - 250')) return 7;
-        if (costRange.includes('50 - 100')) return 6;
-        return 5;
-    };
-
-    const getMarkerProps = (project, isSelected = true) => {
-        const isClean = project.clean_technology === 'Yes' || project.clean_technology === 'Oui';
-        const isConstruction = project.status === 'Under Construction' || project.status === 'En construction';
-        const size = getMarkerSize(project.capital_cost_range);
-        const opacity = isSelected ? 1 : 0.3;
-        
-        const plannedColor = '#4196F6';
-        const constructionColor = '#20B2AA';
-        const color = isConstruction ? constructionColor : plannedColor;
-        
-        if (isClean) {
-            return {
-                symbol: 'triangle-down',
-                color: hexToRgba(color, opacity),
-                size: size,
-                line: { color: hexToRgba(color, opacity), width: 1 }
-            };
-        } else {
-            return {
-                symbol: 'triangle-up',
-                color: hexToRgba(color, opacity),
-                size: size,
-                line: { color: hexToRgba(color, opacity), width: 1 }
-            };
-        }
-    };
-
-    const getLineColor = (line, isSelected = true) => {
-        const isClean = line.clean_technology === 'Yes' || line.clean_technology === 'Oui';
-        const isConstruction = line.status === 'Under Construction' || line.status === 'En construction';
-        const opacity = isSelected ? 1 : 0.3;
-        const color = isClean 
-            ? (isConstruction ? '#71a210' : '#a3f900')
-            : (isConstruction ? '#B684B6' : '#FE3ED8');
-        return hexToRgba(color, opacity);
-    };
-
-    const formatHoverText = (project, language) => {
-        const costDisplay = project.capital_cost ? `$${project.capital_cost}M` : 'N/A';
-        
-        if (language === 'fr') {
-            return `<b>${project.project_name}</b><br>` +
-                   `<b>Entreprise :</b> ${project.company || 'N/D'}<br>` +
-                   `<b>Province :</b> ${project.province || 'N/D'}<br>` +
-                   `<b>Emplacement :</b> ${project.location || 'N/D'}<br>` +
-                   `<b>Coût en capital :</b> ${costDisplay}<br>` +
-                   `<b>Statut :</b> ${project.status || 'N/D'}<br>` +
-                   `<b>Technologie propre :</b> ${project.clean_technology || 'N/D'}` +
-                   (project.clean_technology === 'Oui' && project.clean_technology_type ? 
-                       `<br><b>Type :</b> ${project.clean_technology_type}` : '');
-        }
-        
-        return `<b>${project.project_name}</b><br>` +
-               `<b>Company:</b> ${project.company || 'N/A'}<br>` +
-               `<b>Province:</b> ${project.province || 'N/A'}<br>` +
-               `<b>Location:</b> ${project.location || 'N/A'}<br>` +
-               `<b>Capital cost:</b> ${costDisplay}<br>` +
-               `<b>Status:</b> ${project.status || 'N/A'}<br>` +
-               `<b>Clean technology:</b> ${project.clean_technology || 'N/A'}` +
-               (project.clean_technology === 'Yes' && project.clean_technology_type ? 
-                   `<br><b>Type:</b> ${project.clean_technology_type}` : '');
-    };
-
-    const isProjectInSelectedProvince = (project) => {
-        if (selectedProvinces === null) return true;
-        const projectProvince = (project.province || '').toLowerCase();
-        return selectedProvinces.some(idx => {
-            const code = provinceCodes[idx];
-            const info = provinceInfo[code];
-            const enName = info.nameEn.toLowerCase();
-            const frName = info.nameFr.toLowerCase();
-            return projectProvince.includes(enName) || enName.includes(projectProvince) ||
-                   projectProvince.includes(frName) || frName.includes(projectProvince);
-        });
-    };
-
     const plotlyData = useMemo(() => {
         if (!langData) return [];
         
         const traces = [];
         
-        const geoJsonNames = provinceCodes.map(code => provinceInfo[code].geoJsonName);
-        const provinceColors = provinceCodes.map((_, idx) => {
+        const geoJsonNames = PAGE30_PROVINCE_CODES.map(code => PAGE30_PROVINCE_INFO[code].geoJsonName);
+        const provinceColors = PAGE30_PROVINCE_CODES.map((_, idx) => {
             if (selectedProvinces === null) return '#474747';
-            return selectedProvinces.includes(idx) ? '#474747' : hexToRgba('#474747', 0.3);
+            return selectedProvinces.includes(idx) ? '#474747' : page30HexToRgba('#474747', 0.3);
         });
 
         const choroplethTrace = {
@@ -853,9 +888,9 @@ const Page30 = () => {
             geojson: 'https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/canada.geojson',
             featureidkey: 'properties.name',
             locations: geoJsonNames,
-            z: provinceCodes.map((_, idx) => idx),
-            text: provinceCodes.map(code => {
-                const info = provinceInfo[code];
+            z: PAGE30_PROVINCE_CODES.map((_, idx) => idx),
+            text: PAGE30_PROVINCE_CODES.map(code => {
+                const info = PAGE30_PROVINCE_INFO[code];
                 return lang === 'en' ? info.nameEn : info.nameFr;
             }),
             hoverinfo: 'text',
@@ -884,7 +919,7 @@ const Page30 = () => {
         if (filteredMapLines && filteredMapLines.length > 0) {
             filteredMapLines.forEach((line, idx) => {
                 if (line.paths && line.paths.length > 0) {
-                    const isSelected = isProjectInSelectedProvince(line);
+                    const isSelected = page30IsProjectInSelectedProvince(line, selectedProvinces);
                     line.paths.forEach((path, pathIdx) => {
                         const lats = path.map(p => p.lat);
                         const lons = path.map(p => p.lon);
@@ -895,11 +930,11 @@ const Page30 = () => {
                             lat: lats,
                             lon: lons,
                             line: {
-                                color: getLineColor(line, isSelected),
+                                color: page30GetLineColor(line, isSelected),
                                 width: 3
                             },
                             hoverinfo: 'text',
-                            hovertext: formatHoverText(line, lang),
+                            hovertext: page30FormatHoverText(line, lang),
                             hoverlabel: {
                                 bgcolor: '#ffffff',
                                 bordercolor: '#333333',
@@ -928,16 +963,16 @@ const Page30 = () => {
                     lat: points.map(p => p.lat),
                     lon: points.map(p => p.lon),
                     marker: {
-                        size: points.map(p => getMarkerProps(p, isProjectInSelectedProvince(p)).size),
-                        color: points.map(p => getMarkerProps(p, isProjectInSelectedProvince(p)).color),
-                        symbol: points.map(p => getMarkerProps(p, isProjectInSelectedProvince(p)).symbol),
+                        size: points.map(p => page30GetMarkerProps(p, page30IsProjectInSelectedProvince(p, selectedProvinces)).size),
+                        color: points.map(p => page30GetMarkerProps(p, page30IsProjectInSelectedProvince(p, selectedProvinces)).color),
+                        symbol: points.map(p => page30GetMarkerProps(p, page30IsProjectInSelectedProvince(p, selectedProvinces)).symbol),
                         line: {
-                            color: points.map(p => getMarkerProps(p, isProjectInSelectedProvince(p)).line.color),
-                            width: points.map(p => getMarkerProps(p, isProjectInSelectedProvince(p)).line.width)
+                            color: points.map(p => page30GetMarkerProps(p, page30IsProjectInSelectedProvince(p, selectedProvinces)).line.color),
+                            width: points.map(p => page30GetMarkerProps(p, page30IsProjectInSelectedProvince(p, selectedProvinces)).line.width)
                         }
                     },
                     hoverinfo: 'text',
-                    hovertext: points.map(p => formatHoverText(p, lang)),
+                    hovertext: points.map(p => page30FormatHoverText(p, lang)),
                     hoverlabel: {
                         bgcolor: '#ffffff',
                         bordercolor: '#333333',
@@ -1003,41 +1038,6 @@ const Page30 = () => {
 
     const mapScale = 2.5;
     const mapHeight = windowWidth <= 384 ? 230 : windowWidth <= 480 ? 290 : windowWidth <= 640 ? 350 : windowWidth <= 768 ? 500 : windowWidth <= 1100 ? 600 : 700;
-
-    const LegendItem = ({ color, symbol, label, isLine, isOutline, size = 'medium' }) => {
-        const sizeMap = { small: 8, medium: 12, large: 16 };
-        const triangleSize = sizeMap[size] || 12;
-        
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '3px', fontSize: windowWidth <= 768 ? '14px' : '16px' }}>
-                {isLine ? (
-                    <div style={{ 
-                        width: '24px', 
-                        height: '3px', 
-                        backgroundColor: color,
-                        marginRight: '6px',
-                        flexShrink: 0
-                    }} />
-                ) : (
-                    <div style={{ 
-                        width: '0', 
-                        height: '0', 
-                        borderLeft: `${triangleSize/2}px solid transparent`,
-                        borderRight: `${triangleSize/2}px solid transparent`,
-                        borderBottom: symbol === 'up' ? `${triangleSize}px solid ${isOutline ? 'transparent' : color}` : 'none',
-                        borderTop: symbol === 'down' ? `${triangleSize}px solid ${isOutline ? 'transparent' : color}` : 'none',
-                        marginRight: '6px',
-                        flexShrink: 0,
-                        ...(isOutline && {
-                            borderBottomColor: symbol === 'up' ? color : undefined,
-                            borderTopColor: symbol === 'down' ? color : undefined,
-                        })
-                    }} />
-                )}
-                <span style={{ color: '#333', fontFamily: 'Arial, sans-serif', lineHeight: '1.2' }}>{label}</span>
-            </div>
-        );
-    };
 
     if (loading) {
         return (
@@ -1434,34 +1434,34 @@ const Page30 = () => {
                     <div className="page30-legend-section">
                         <div className="page30-legend-title">{getText('page30_legend_title_lines', lang)}</div>
                         <div className="page30-legend-items">
-                            <LegendItem isLine color="#FE3ED8" label={getText('page30_legend_transmission_planned', lang)} />
-                            <LegendItem isLine color="#B684B6" label={getText('page30_legend_transmission_construction', lang)} />
-                            <LegendItem isLine color="#a3f900" label={getText('page30_legend_transmission_clean_planned', lang)} />
-                            <LegendItem isLine color="#71a210" label={getText('page30_legend_transmission_clean_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} isLine color="#FE3ED8" label={getText('page30_legend_transmission_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} isLine color="#B684B6" label={getText('page30_legend_transmission_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} isLine color="#a3f900" label={getText('page30_legend_transmission_clean_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} isLine color="#71a210" label={getText('page30_legend_transmission_clean_construction', lang)} />
                         </div>
                     </div>
 
                     <div className="page30-legend-section">
                         <div className="page30-legend-title">{getText('page30_legend_title_energy', lang)}</div>
                         <div className="page30-legend-items">
-                            <LegendItem symbol="up" color="#4196F6" isOutline size="small" label={getText('page30_legend_energy_10_999m_planned', lang)} />
-                            <LegendItem symbol="up" color="#4196F6" isOutline size="medium" label={getText('page30_legend_energy_1_5b_planned', lang)} />
-                            <LegendItem symbol="up" color="#4196F6" isOutline size="large" label={getText('page30_legend_energy_5b_plus_planned', lang)} />
-                            <LegendItem symbol="up" color="#20B2AA" size="small" label={getText('page30_legend_energy_10_999m_construction', lang)} />
-                            <LegendItem symbol="up" color="#20B2AA" size="medium" label={getText('page30_legend_energy_1_5b_construction', lang)} />
-                            <LegendItem symbol="up" color="#20B2AA" size="large" label={getText('page30_legend_energy_5b_plus_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="up" color="#4196F6" isOutline size="small" label={getText('page30_legend_energy_10_999m_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="up" color="#4196F6" isOutline size="medium" label={getText('page30_legend_energy_1_5b_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="up" color="#4196F6" isOutline size="large" label={getText('page30_legend_energy_5b_plus_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="up" color="#20B2AA" size="small" label={getText('page30_legend_energy_10_999m_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="up" color="#20B2AA" size="medium" label={getText('page30_legend_energy_1_5b_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="up" color="#20B2AA" size="large" label={getText('page30_legend_energy_5b_plus_construction', lang)} />
                         </div>
                     </div>
 
                     <div className="page30-legend-section">
                         <div className="page30-legend-title">{getText('page30_legend_title_energy_clean', lang)}</div>
                         <div className="page30-legend-items">
-                            <LegendItem symbol="down" color="#4196F6" isOutline size="small" label={getText('page30_legend_clean_10_999m_planned', lang)} />
-                            <LegendItem symbol="down" color="#4196F6" isOutline size="medium" label={getText('page30_legend_clean_1_5b_planned', lang)} />
-                            <LegendItem symbol="down" color="#4196F6" isOutline size="large" label={getText('page30_legend_clean_5b_plus_planned', lang)} />
-                            <LegendItem symbol="down" color="#20B2AA" size="small" label={getText('page30_legend_clean_10_999m_construction', lang)} />
-                            <LegendItem symbol="down" color="#20B2AA" size="medium" label={getText('page30_legend_clean_1_5b_construction', lang)} />
-                            <LegendItem symbol="down" color="#20B2AA" size="large" label={getText('page30_legend_clean_5b_plus_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="down" color="#4196F6" isOutline size="small" label={getText('page30_legend_clean_10_999m_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="down" color="#4196F6" isOutline size="medium" label={getText('page30_legend_clean_1_5b_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="down" color="#4196F6" isOutline size="large" label={getText('page30_legend_clean_5b_plus_planned', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="down" color="#20B2AA" size="small" label={getText('page30_legend_clean_10_999m_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="down" color="#20B2AA" size="medium" label={getText('page30_legend_clean_1_5b_construction', lang)} />
+                            <LegendItem windowWidth={windowWidth} symbol="down" color="#20B2AA" size="large" label={getText('page30_legend_clean_5b_plus_construction', lang)} />
                         </div>
                     </div>
                 </aside>

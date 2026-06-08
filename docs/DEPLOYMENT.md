@@ -1,6 +1,8 @@
 # Deploying the Energy Factbook (static build)
 
-This guide is for teams who receive a **website release zip** and need to host the app on a web server. You do **not** need Node.js on the server.
+This guide is for teams who **host the built website** on a web server. You do **not** need Node.js on the server.
+
+If you **publish or refresh data** (StatCan, SQL pipeline, CSV export), see [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md) and the publisher sections below.
 
 ## What is in the zip
 
@@ -126,8 +128,32 @@ The post-handover deployment path is **not yet finalized**. This section documen
 - Replace personal `homepage` URL with the production URL
 - Set Vite `base` to match the production URL path (or `/` if served at domain root)
 - Add approval gate before production deploy (if required)
-- Define who runs **data refresh** (`python main.py refresh --all --export-after`) vs who publishes **website zips**
+- Define who runs the **data pipeline** (`eedas update` → `efb transform` → `export`) vs who publishes **website zips**
 - Wire [`azure-pipelines.template.yml`](../azure-pipelines.template.yml) to the chosen agent pool and hosting target — see [EFB_MODERNIZATION_REVIEW.md §7–8](EFB_MODERNIZATION_REVIEW.md#7-sql-and-database-refresh-environment)
+
+### Scheduled data pipeline (Azure DevOps)
+
+The template [`azure-pipelines.template.yml`](../azure-pipelines.template.yml) optional **RefreshData** stage runs all three pipeline stages when `RunDataRefresh=true`:
+
+```bash
+python main.py eedas update --all
+python main.py efb transform --all
+python main.py export
+```
+
+- **Fails the job** if any stage exits non-zero (at least one source or indicator failed).
+- **Retries once** after 5 minutes on failure (transient StatCan/OEE outages) — re-runs all three stages.
+- Requires SQL Server credentials and `EXTERNAL_XLSX_DATA_DIR` via variable group `NRCanFactbookSecrets`.
+
+After a pipeline run, inspect `scripts/logs/last_refresh_summary.json` and `python main.py status --failed-only`.
+
+**Roles:**
+
+| Role | Typical actions |
+|------|-----------------|
+| Data publisher | Run EEDAS update / EFB transform / export; ship data-only zip or commit CSVs |
+| Website publisher | Run `npm run build`; ship website zip via `zip_website_release.py` |
+| Hosting team | Deploy static zip; overlay data-only updates into `data/` and `glossary/` |
 
 ### Website build vs data-only updates
 

@@ -6,6 +6,8 @@ import { getText } from '../utils/translations';
 
 const CANADA_CAPSULE = '#819476';
 
+const page64CountryLabel = (key, lang) => getText(`page64_country_${key}`, lang);
+
 const DATA_BY_YEAR = {
     2020: {
         production: {
@@ -275,14 +277,12 @@ const Page64 = () => {
     const formatTwh = (n) =>
         Math.round(n).toLocaleString(locale, { maximumFractionDigits: 0 });
 
-    const countryLabel = (key) => getText(`page64_country_${key}`, lang);
-
     const productionRows = useMemo(
         () =>
             production.items.map((row, index) => ({
                 ...row,
                 rank: index + 1,
-                name: countryLabel(row.key),
+                name: page64CountryLabel(row.key, lang),
                 pctRounded: Math.round(row.pct),
             })),
         [production.items, lang],
@@ -293,7 +293,7 @@ const Page64 = () => {
             exportsBlock.items.map((row, index) => ({
                 ...row,
                 rank: index + 1,
-                name: countryLabel(row.key),
+                name: page64CountryLabel(row.key, lang),
                 pctRounded: Math.round(row.pct),
             })),
         [exportsBlock.items, lang],
@@ -304,8 +304,8 @@ const Page64 = () => {
 
     const productionAria =
         lang === 'en'
-            ? `World electricity production ranking for ${year}: ${productionRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}. Rank ${production.canada.rank}, ${countryLabel('canada')}, ${Math.round(production.canada.pct)} percent.`
-            : `Classement de la production mondiale d'électricité pour ${year}: ${productionRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}. Rang ${production.canada.rank}, ${countryLabel('canada')}, ${Math.round(production.canada.pct)} pour cent.`;
+            ? `World electricity production ranking for ${year}: ${productionRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}. Rank ${production.canada.rank}, ${page64CountryLabel('canada', lang)}, ${Math.round(production.canada.pct)} percent.`
+            : `Classement de la production mondiale d'électricité pour ${year}: ${productionRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}. Rang ${production.canada.rank}, ${page64CountryLabel('canada', lang)}, ${Math.round(production.canada.pct)} pour cent.`;
 
     const exportsAria =
         lang === 'en'
@@ -421,7 +421,7 @@ const Page64 = () => {
         const headers = [
             getText('page64_table_col_year', lang),
             getText('page64_table_col_total', lang),
-            ...PRODUCTION_COLUMN_KEYS.map((k) => `${stripHtml(countryLabel(k))} (%)`),
+            ...PRODUCTION_COLUMN_KEYS.map((k) => `${stripHtml(page64CountryLabel(k, lang))} (%)`),
         ];
         const rows = productionHistoricalRows.map((row) => [
             row.year,
@@ -437,7 +437,7 @@ const Page64 = () => {
         const headers = [
             getText('page64_table_col_year', lang),
             getText('page64_table_col_total', lang),
-            ...PRODUCTION_COLUMN_KEYS.map((k) => `${stripHtml(countryLabel(k))} (%)`),
+            ...PRODUCTION_COLUMN_KEYS.map((k) => `${stripHtml(page64CountryLabel(k, lang))} (%)`),
         ];
         const headerRow = new TableRow({
             children: headers.map(
@@ -482,7 +482,7 @@ const Page64 = () => {
         const headers = [
             getText('page64_table_col_year', lang),
             getText('page64_table_col_total', lang),
-            ...EXPORT_COLUMN_KEYS.map((k) => `${stripHtml(countryLabel(k))} (%)`),
+            ...EXPORT_COLUMN_KEYS.map((k) => `${stripHtml(page64CountryLabel(k, lang))} (%)`),
         ];
         const rows = exportHistoricalRows.map((row) => [
             row.year,
@@ -498,7 +498,7 @@ const Page64 = () => {
         const headers = [
             getText('page64_table_col_year', lang),
             getText('page64_table_col_total', lang),
-            ...EXPORT_COLUMN_KEYS.map((k) => `${stripHtml(countryLabel(k))} (%)`),
+            ...EXPORT_COLUMN_KEYS.map((k) => `${stripHtml(page64CountryLabel(k, lang))} (%)`),
         ];
         const headerRow = new TableRow({
             children: headers.map(
@@ -545,7 +545,7 @@ const Page64 = () => {
             { isEllipsis: true },
             {
                 rank: production.canada.rank,
-                name: countryLabel('canada'),
+                name: page64CountryLabel('canada', lang),
                 pct: production.canada.pct,
                 pctRounded: Math.round(production.canada.pct),
                 isCanada: true,
@@ -594,7 +594,7 @@ const Page64 = () => {
                 {renderCapsuleRow(
                     {
                         rank: production.canada.rank,
-                        name: countryLabel('canada'),
+                        name: page64CountryLabel('canada', lang),
                         pct: production.canada.pct,
                         pctRounded: Math.round(production.canada.pct),
                         isCanada: true,
@@ -643,7 +643,7 @@ const Page64 = () => {
                             </th>
                             {columnKeys.map((k) => (
                                 <th key={k} scope="col" style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
-                                    {countryLabel(k)} (%)
+                                    {page64CountryLabel(k, lang)} (%)
                                 </th>
                             ))}
                         </tr>

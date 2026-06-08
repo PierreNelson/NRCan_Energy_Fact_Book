@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getGHGEmissionsData, getGhgNarrativeStats } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
@@ -15,7 +15,7 @@ const Page20 = () => {
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
 
-    const [hiddenSeries, setHiddenSeries] = useState([]);
+    const [hiddenSeries] = useState([]);
     const [selectedPoints, setSelectedPoints] = useState(null);
 
     const chartRef = useRef(null);

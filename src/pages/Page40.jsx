@@ -3,10 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import Page40DemographicsInfographic, {
-    BUBBLE_KEYS,
-    exportPage40InfographicPng,
-} from '../components/Page40DemographicsInfographic';
+import Page40DemographicsInfographic from '../components/Page40DemographicsInfographic';
+import { BUBBLE_KEYS, exportPage40InfographicPng } from '../components/Page40DemographicsInfographic.constants';
 
 const YEAR = '2023';
 

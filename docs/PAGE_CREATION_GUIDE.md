@@ -1,6 +1,25 @@
 # Page Creation Guide
 
-This guide gives a step-by-step process for creating a new page in the NRCan Energy Factbook. It documents every common pattern so new pages are built consistently. The **data pipeline** (scripts, CSVs, metadata) is covered in a separate guide.
+This guide gives a step-by-step process for creating a new page in the NRCan Energy Factbook. It documents every common pattern so new pages are built consistently.
+
+**When a page needs new data** (not just a new chart layout on existing vectors), start with [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md) and [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md) — implement `update_*` and `transform_*` handlers, export CSVs, then return here for the React UI.
+
+This guide covers **frontend only**: routing, charts, tables, downloads, and translations.
+
+---
+
+## 0. Data your page needs
+
+Most pipeline-backed pages read from **`public/data/data.csv`** via getters in **`src/utils/dataLoader.js`**.
+
+| Concept | Where it lives |
+|---------|----------------|
+| **Vector prefix** | e.g. `capex_`, `res_` — filters rows in `data.csv` |
+| **Getter function** | `getCapitalExpendituresData()` etc. in `dataLoader.js` |
+| **Source key** | e.g. `capital_expenditures` — maps to pipeline handlers (see section READMEs under `scripts/sections/`) |
+| **Fresh CSVs** | Produced by `python main.py export` after EEDAS update and EFB transform |
+
+To trace an existing vector back to its handler and page, see [DATA_PIPELINE_GUIDE.md §16](DATA_PIPELINE_GUIDE.md#16-trace-an-indicator-to-a-page).
 
 ---
 

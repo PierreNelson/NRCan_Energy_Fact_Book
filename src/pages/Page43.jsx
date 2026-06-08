@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -26,6 +26,11 @@ const PAGE43_DATA = {
 
 const BAR_COLOR = '#9f346d';
 
+const formatPage43Number = (num, lang) => {
+    if (num === undefined || num === null) return '—';
+    return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+};
+
 const Page43 = () => {
     const { lang } = useOutletContext();
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -40,11 +45,6 @@ const Page43 = () => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
         return hex;
-    };
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     };
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
@@ -116,7 +116,7 @@ const Page43 = () => {
         const hovertext = PAGE43_REGIONS.map((r, i) => {
             const full = getText('page43_region_' + r + '_full', lang);
             const pct = barValues[i];
-            return `<b>${full}</b><br>${getText('page43_chart_title', lang)}: ${formatNumber(pct)}%`;
+            return `<b>${full}</b><br>${getText('page43_chart_title', lang)}: ${formatPage43Number(pct, lang)}%`;
         });
         const markerColor = selectedPoints === null
             ? BAR_COLOR
@@ -138,7 +138,7 @@ const Page43 = () => {
             textfont: { size: windowWidth <= 480 ? 11 : 14, family: 'Arial, sans-serif' },
             insidetextfont: { size: 12, family: 'Arial, sans-serif' }
         };
-    }, [lang, barValues, windowWidth, selectedPoints]);
+    }, [lang, barValues, regionLabels, windowWidth, selectedPoints]);
 
     const plotLayout = useMemo(() => ({
         barmode: 'overlay',
@@ -213,7 +213,7 @@ const Page43 = () => {
 
     const downloadTableAsCSV = () => {
         const headers = [getText('page43_table_geo', lang), getText('page43_table_pct', lang)];
-        const rows = PAGE43_REGIONS.map(r => [getText('page43_region_' + r + '_full', lang), formatNumber(PAGE43_DATA[r])]);
+        const rows = PAGE43_REGIONS.map(r => [getText('page43_region_' + r + '_full', lang), formatPage43Number(PAGE43_DATA[r], lang)]);
         const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -234,7 +234,7 @@ const Page43 = () => {
         const dataRows = PAGE43_REGIONS.map(r => {
             const cells = [
                 getText('page43_region_' + r + '_full', lang),
-                formatNumber(PAGE43_DATA[r])
+                formatPage43Number(PAGE43_DATA[r], lang)
             ].map((text, i) =>
                 new TableCell({
                     children: [new Paragraph({ children: [new TextRun({ text: String(text), size: 22 })], alignment: i === 0 ? AlignmentType.LEFT : AlignmentType.CENTER })]
@@ -255,7 +255,7 @@ const Page43 = () => {
     };
 
     const getChartSummary = () => {
-        const parts = PAGE43_REGIONS.map((r, i) => `${getText('page43_region_' + r + '_full', lang)}: ${formatNumber(barValues[i])}%`).join(', ');
+        const parts = PAGE43_REGIONS.map((r, i) => `${getText('page43_region_' + r + '_full', lang)}: ${formatPage43Number(barValues[i], lang)}%`).join(', ');
         return `${stripHtml(getText('page43_chart_title', lang))}. ${parts}.`;
     };
 
@@ -434,7 +434,7 @@ const Page43 = () => {
                                         {PAGE43_REGIONS.map(r => (
                                             <tr key={r}>
                                                 <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{getText('page43_region_' + r + '_full', lang)}</th>
-                                                <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{formatNumber(PAGE43_DATA[r])}</td>
+                                                <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{formatPage43Number(PAGE43_DATA[r], lang)}</td>
                                             </tr>
                                         ))}
                                     </tbody>

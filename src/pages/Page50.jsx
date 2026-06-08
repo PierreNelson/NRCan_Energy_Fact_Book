@@ -41,7 +41,7 @@ const Page50 = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [imgScale, setImgScale] = useState(1);
-    const [selectedYear, setSelectedYear] = useState(null);
+    const [pickedYear, setPickedYear] = useState(null);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const yearDropdownRef = useRef(null);
@@ -51,7 +51,6 @@ const Page50 = () => {
         getPage50ResidentialData()
             .then((d) => {
                 setResult(d);
-                if (d?.data?.length) setSelectedYear(d.latestYear ?? d.data[d.data.length - 1].year);
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -68,7 +67,7 @@ const Page50 = () => {
     const pad = { left: 0, right: 0 };
     const hasData = result && (result.data?.length > 0 || result.terPct != null || result.euxPct != null || result.swtePct != null || result.eeImprovementPct != null || result.eeSavingsPj != null || result.eeSavingsBillion != null);
 
-    const allYears = useMemo(() => (result?.data ? [...new Set(result.data.map((r) => r.year))].sort((a, b) => a - b) : []), [result?.data]);
+    const allYears = useMemo(() => (result?.data ? [...new Set(result.data.map((r) => r.year))].sort((a, b) => a - b) : []), [result]);
     const years = useMemo(() => {
         if (!result?.data?.length) return [];
         return allYears.filter((y) => {
@@ -76,12 +75,9 @@ const Page50 = () => {
             const r = result.data.find((x) => x.year === y);
             return r && r.ter != null;
         });
-    }, [result?.data, allYears]);
+    }, [result, allYears]);
 
-    useEffect(() => {
-        if (years.length > 0 && (selectedYear == null || !years.includes(selectedYear)))
-            setSelectedYear(years[years.length - 1]);
-    }, [years, selectedYear]);
+    const selectedYear = pickedYear != null && years.includes(pickedYear) ? pickedYear : (years.length > 0 ? years[years.length - 1] : null);
 
     useEffect(() => {
         const updateScale = () => {
@@ -100,8 +96,8 @@ const Page50 = () => {
             };
         }
     }, []);
-    const base2000 = useMemo(() => result?.data?.find((r) => r.year === 2000) ?? null, [result?.data]);
-    const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
+    const base2000 = useMemo(() => result?.data?.find((r) => r.year === 2000) ?? null, [result]);
+    const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result, selectedYear]);
 
     const terPct = useMemo(() => {
         if (!base2000 || !selectedRow || base2000.ter == null || base2000.ter <= 0 || selectedRow.ter == null) return null;
@@ -112,7 +108,7 @@ const Page50 = () => {
         return Math.round(((selectedRow.eux - base2000.eux) / base2000.eux) * 100);
     }, [base2000, selectedRow]);
     const swtePct = useMemo(() => (selectedRow?.swte_pct != null ? selectedRow.swte_pct : (selectedRow?.sweu != null && selectedRow?.ter > 0 ? Math.round((selectedRow.sweu / selectedRow.ter) * 100) : null)), [selectedRow]);
-    const latestWithEe = useMemo(() => (result?.data ? [...result.data].reverse().find((r) => r.ee_improvement_pct != null && r.ee_savings_pj != null) : null), [result?.data]);
+    const latestWithEe = useMemo(() => (result?.data ? [...result.data].reverse().find((r) => r.ee_improvement_pct != null && r.ee_savings_pj != null) : null), [result]);
     const eeImprovementPct = selectedRow?.ee_improvement_pct ?? latestWithEe?.ee_improvement_pct ?? result?.eeImprovementPct ?? null;
     const eeSavingsPj = selectedRow?.ee_savings_pj ?? latestWithEe?.ee_savings_pj ?? result?.eeSavingsPj ?? null;
     const eeSavingsBillion = selectedRow?.ee_savings_billion ?? latestWithEe?.ee_savings_billion ?? result?.eeSavingsBillion ?? null;
@@ -146,7 +142,7 @@ const Page50 = () => {
                 ee_savings_billion: r.ee_savings_billion
             };
         });
-    }, [result?.data, base2000]);
+    }, [result, base2000]);
 
     /** Same years and order as the year selector (not every row in raw `result.data`). */
     const tableRowsForTable = useMemo(() => {
@@ -412,7 +408,7 @@ const Page50 = () => {
                                             aria-selected={isSelected}
                                             type="button"
                                             onClick={() => {
-                                                setSelectedYear(y);
+                                                setPickedYear(y);
                                                 setIsYearDropdownOpen(false);
                                                 setTimeout(() => yearButtonRef.current?.focus(), 0);
                                             }}

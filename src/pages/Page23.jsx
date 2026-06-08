@@ -11,7 +11,6 @@ const Page23 = () => {
         getCapitalExpendituresData();
         getInfrastructureData();
         getEconomicContributionsData();
-        import('./Page24');
     }, []);
 
     return (

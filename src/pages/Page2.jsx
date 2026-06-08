@@ -5,6 +5,23 @@ import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
+const PAGE2_COUNTRY_NAME_MAP = {
+    'china': 'page2_country_china',
+    'united_states': 'page2_country_united_states',
+    'india': 'page2_country_india',
+    'canada': 'page2_country_canada',
+    'indonesia': 'page2_country_indonesia',
+    'australia': 'page2_country_australia',
+    'brazil': 'page2_country_brazil',
+    'norway': 'page2_country_norway',
+    'mexico': 'page2_country_mexico',
+    'south_africa': 'page2_country_south_africa',
+    'colombia': 'page2_country_colombia',
+    'united_kingdom': 'page2_country_united_kingdom',
+    'egypt': 'page2_country_egypt',
+    'argentina': 'page2_country_argentina',
+};
+
 const Page2 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
@@ -325,34 +342,17 @@ const Page2 = () => {
         return pageData.find(d => d.year === year);
     }, [year, pageData]);
 
-    const countryNameMap = {
-        'china': 'page2_country_china',
-        'united_states': 'page2_country_united_states',
-        'india': 'page2_country_india',
-        'canada': 'page2_country_canada',
-        'indonesia': 'page2_country_indonesia',
-        'australia': 'page2_country_australia',
-        'brazil': 'page2_country_brazil',
-        'norway': 'page2_country_norway',
-        'mexico': 'page2_country_mexico',
-        'south_africa': 'page2_country_south_africa',
-        'colombia': 'page2_country_colombia',
-        'united_kingdom': 'page2_country_united_kingdom',
-        'egypt': 'page2_country_egypt',
-        'argentina': 'page2_country_argentina',
-    };
-
     const topProducers = useMemo(() => {
         if (!currentYearData) return [];
         
-        const allCountries = Object.keys(countryNameMap)
+        const allCountries = Object.keys(PAGE2_COUNTRY_NAME_MAP)
             .map(key => {
                 const pct = currentYearData[`${key}_pct`];
                 if (pct === undefined || pct === null) return null;
                 return {
                     key,
-                    nameKey: countryNameMap[key],
-                    name: getText(countryNameMap[key], lang),
+                    nameKey: PAGE2_COUNTRY_NAME_MAP[key],
+                    name: getText(PAGE2_COUNTRY_NAME_MAP[key], lang),
                     pct: pct,
                     pctRounded: Math.round(pct),
                 };
@@ -370,7 +370,7 @@ const Page2 = () => {
         const uniqueCountries = new Set();
 
         pageData.forEach(yearRow => {
-            const yearCountries = Object.keys(countryNameMap)
+            const yearCountries = Object.keys(PAGE2_COUNTRY_NAME_MAP)
                 .map(key => ({
                     key,
                     pct: yearRow[`${key}_pct`] || 0
@@ -431,7 +431,7 @@ const Page2 = () => {
 
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...dynamicColumns.map(key => getText(countryNameMap[key], lang) + ' (%)')
+            ...dynamicColumns.map(key => getText(PAGE2_COUNTRY_NAME_MAP[key], lang) + ' (%)')
         ];
 
         const rows = pageData.map(d => [
@@ -458,7 +458,7 @@ const Page2 = () => {
 
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...dynamicColumns.map(key => getText(countryNameMap[key], lang) + ' (%)')
+            ...dynamicColumns.map(key => getText(PAGE2_COUNTRY_NAME_MAP[key], lang) + ' (%)')
         ];
 
         const headerRow = new TableRow({
@@ -1433,13 +1433,13 @@ const Page2 = () => {
                                             </th>
                                             {dynamicColumns.map(countryKey => (
                                                 <th key={countryKey} scope="col" style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                                    {getText(countryNameMap[countryKey], lang)} (%)
+                                                    {getText(PAGE2_COUNTRY_NAME_MAP[countryKey], lang)} (%)
                                                 </th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pageData.map((d, idx) => (
+                                        {pageData.map((d) => (
                                             <tr key={d.year}>
                                                 <th scope="row" style={{ position: 'sticky', left: 0, zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #ddd' }}>
                                                     {d.year}
@@ -1622,7 +1622,7 @@ const Page2 = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {rankingsYearData.map((d, idx) => (
+                                        {rankingsYearData.map((d) => (
                                             <tr key={d.year}>
                                                 <th scope="row" style={{ position: 'sticky', left: 0, zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #ddd' }}>
                                                     {d.year}

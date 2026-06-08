@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -38,16 +38,6 @@ const Page10 = () => {
             return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
         }
         return hex;
-    };
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
-
-    const scrollToElement = (elementId) => (e) => {
-        e.preventDefault();
-        document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     useEffect(() => {
@@ -316,7 +306,6 @@ const Page10 = () => {
     const years = employmentData.map(d => d.year);
     const directValues = employmentData.map(d => d.direct);
     const indirectValues = employmentData.map(d => d.indirect);
-    const totalValues = employmentData.map(d => d.total);
 
     const getBarColors = (baseColor, traceIndex) => {
         if (selectedPoints === null) return baseColor;

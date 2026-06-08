@@ -5,11 +5,10 @@ import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 const Page29 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(true);
 
     const scrollToElement = (elementId) => (e) => {
         e.preventDefault();
@@ -17,10 +16,6 @@ const Page29 = () => {
     };
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
-    useEffect(() => {
-        import('./Page31');
-    }, []);
 
     useEffect(() => {
         getCleanTechTrendsData()

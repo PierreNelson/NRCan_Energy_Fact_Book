@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 const BREADCRUMBS = [
     {
@@ -451,12 +451,31 @@ const MENU_DATA = [
     }
 ];
 
+const COMPACT_MODE_QUERY = '(max-width: 768px)';
+
+const subscribeCompactMode = (callback) => {
+    const mediaQuery = window.matchMedia(COMPACT_MODE_QUERY);
+    mediaQuery.addEventListener('change', callback);
+    window.addEventListener('resize', callback);
+    return () => {
+        mediaQuery.removeEventListener('change', callback);
+        window.removeEventListener('resize', callback);
+    };
+};
+
+const getCompactModeSnapshot = () => window.innerWidth <= 768;
+
+const getCompactModeServerSnapshot = () => false;
+
 const GCHeader = ({ lang, onToggleLanguage }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [activeMenu, setActiveMenu] = useState('jobs');
     const [keyboardExpandedMenu, setKeyboardExpandedMenu] = useState(null);
-    const [isCompactMode, setIsCompactMode] = useState(false);
-    const [isMobileAccordion, setIsMobileAccordion] = useState(false);
+    const isCompactMode = useSyncExternalStore(
+        subscribeCompactMode,
+        getCompactModeSnapshot,
+        getCompactModeServerSnapshot,
+    );
     const [expandedMobileCategory, setExpandedMobileCategory] = useState(null);
     const [mostRequestedOpen, setMostRequestedOpen] = useState(false);
     
@@ -467,19 +486,6 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
     // Get the appropriate URL based on current language
     const getItemUrl = (item) => lang === 'fr' ? item.urlFr : item.urlEn;
     const getHomeLink = (homeLink) => lang === 'fr' ? homeLink.fr : homeLink.en;
-
-    // Check for compact mode
-    const checkCompactMode = useCallback(() => {
-        setIsCompactMode(window.innerWidth <= 768);
-        setIsMobileAccordion(window.innerWidth <= 960);
-    }, []);
-
-    // Listen for resize to update compact mode
-    useEffect(() => {
-        checkCompactMode();
-        window.addEventListener('resize', checkCompactMode);
-        return () => window.removeEventListener('resize', checkCompactMode);
-    }, [checkCompactMode]);
 
     const toggleMenu = () => {
         const newMenuOpen = !menuOpen;

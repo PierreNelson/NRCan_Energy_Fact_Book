@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -22,6 +22,11 @@ const PAGE16_TABLE_DATA = [
 ];
 
 const PAGE16_COLORS = { land_sales: '#689F38', income_taxes: '#3CA1AF', royalties: '#7A6F4E' };
+
+const formatPage16Number = (num, lang) => {
+    if (num === undefined || num === null) return '—';
+    return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+};
 
 const Page16 = () => {
     const { lang } = useOutletContext();
@@ -47,11 +52,6 @@ const Page16 = () => {
     const scrollToRef = (e) => {
         e.preventDefault();
         document.getElementById('fn-asterisk-rf-page16')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
     };
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
@@ -124,7 +124,7 @@ const Page16 = () => {
         const hovertext = PAGE16_CATEGORIES.map((k, i) => {
             const v = donutValues[i];
             const pct = Math.round((v / PAGE16_TOTAL) * 100);
-            return `${donutLabels[i]}: ${formatNumber(v)} ${getText('page16_table_uom', lang)}, ${pct}%`;
+            return `${donutLabels[i]}: ${formatPage16Number(v, lang)} ${getText('page16_table_uom', lang)}, ${pct}%`;
         });
         const colors = PAGE16_CATEGORIES.map(k => PAGE16_COLORS[k]);
         const textColors = selectedSlices === null
@@ -247,8 +247,8 @@ const Page16 = () => {
         const rows = PAGE16_TABLE_DATA.map(row => {
             const vals = PAGE16_CATEGORIES.map(k => row[k]);
             const total = vals.reduce((a, b) => a + b, 0);
-            const pcts = total > 0 ? vals.map(v => formatNumber((v / total) * 100)) : vals.map(() => '0');
-            return [row.year, ...vals.map(v => formatNumber(v)), formatNumber(total), ...pcts];
+            const pcts = total > 0 ? vals.map(v => formatPage16Number((v / total) * 100, lang)) : vals.map(() => '0');
+            return [row.year, ...vals.map(v => formatPage16Number(v, lang)), formatPage16Number(total, lang), ...pcts];
         });
         const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -275,8 +275,8 @@ const Page16 = () => {
         const dataRows = PAGE16_TABLE_DATA.map(row => {
             const vals = PAGE16_CATEGORIES.map(k => row[k]);
             const total = vals.reduce((a, b) => a + b, 0);
-            const pcts = total > 0 ? vals.map(v => formatNumber((v / total) * 100)) : vals.map(() => '0');
-            const cells = [row.year, ...vals.map(v => formatNumber(v)), formatNumber(total), ...pcts].map((text) =>
+            const pcts = total > 0 ? vals.map(v => formatPage16Number((v / total) * 100, lang)) : vals.map(() => '0');
+            const cells = [row.year, ...vals.map(v => formatPage16Number(v, lang)), formatPage16Number(total, lang), ...pcts].map((text) =>
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(text), size: 22 })], alignment: AlignmentType.CENTER })] })
             );
             return new TableRow({ children: cells });
@@ -294,7 +294,7 @@ const Page16 = () => {
     };
 
     const getChartSummary = () => {
-        const parts = PAGE16_CATEGORIES.map((k, i) => `${donutLabels[i]}: ${formatNumber(donutValues[i])} ${getText('page16_table_uom', lang)}`).join(', ');
+        const parts = PAGE16_CATEGORIES.map((k, i) => `${donutLabels[i]}: ${formatPage16Number(donutValues[i], lang)} ${getText('page16_table_uom', lang)}`).join(', ');
         return `${stripHtml(getText('page16_chart_title', lang))}. ${getText('page16_total_label', lang)}: ${totalFormatted}. ${parts}.`;
     };
 
@@ -523,11 +523,11 @@ const Page16 = () => {
                                                         <tr key={row.year}>
                                                             <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{row.year}</th>
                                                             {vals.map((v, i) => (
-                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{formatNumber(v)}</td>
+                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{formatPage16Number(v, lang)}</td>
                                                             ))}
-                                                            <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatNumber(total)}</td>
+                                                            <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatPage16Number(total, lang)}</td>
                                                             {pcts.map((p, i) => (
-                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{formatNumber(p)}</td>
+                                                                <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{formatPage16Number(p, lang)}</td>
                                                             ))}
                                                         </tr>
                                                     );

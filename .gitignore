@@ -1,6 +1,4 @@
-# Logs
-logs
-*.log
+# Logs (npm/yarn debug output)
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -31,7 +29,12 @@ release/
 .env.local
 scripts/.env
 
+# Pipeline CSV backups (see scripts/export/safe_io.py)
+public/data/.backups/
+
 # Python
+scripts/logs/
+
 __pycache__/
 *.py[cod]
 *$py.class
@@ -42,17 +45,7 @@ venv/
 
 # Legacy data retrieval script (kept for reference but not tracked)
 scripts/data_retrieval.py
-page52.png
-page52fr.png
 
-# Symphony + Codex orchestration (local paths, API keys via env; optional Windows runner)
-symphony_windows/
-scripts/run-symphony.ps1
-scripts/check-symphony-prereqs.ps1
 WORKFLOW.md
-.codex/
-SYMPHONY*.md
-docs/SYMPHONY*.md
 docs/MASTER PAGE BUILDING GUIDE & TEMPLATE.md
-log/symphony.log
-log/symphony.log*
+

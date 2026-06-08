@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getMajorProjectsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 const Page28 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [pageData, setPageData] = useState({ yearlyData: [], summary: {} });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -192,10 +192,6 @@ const Page28 = () => {
             : `${Math.round(val)} milliards de dollars`;
     };
 
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
 
     const getChartSummary = () => {
         if (!pageData.yearlyData || pageData.yearlyData.length === 0) return '';
@@ -438,34 +434,6 @@ const Page28 = () => {
     const bullet3AriaLabel = lang === 'en'
         ? `There were ${summary.clean_tech_projects || 215} clean technology projects valued at ${formatBillionSR(summary.clean_tech_value || 194)}.`
         : `Il y avait ${summary.clean_tech_projects || 215} projets de technologies propres d'une valeur de ${formatBillionSR(summary.clean_tech_value || 194)}.`;
-
-    // --- HELPER: WRAP TITLE TEXT FOR ZOOM/MOBILE ---
-    const getWrappedTitle = (text, width) => {
-        // If width is large (desktop), return original text
-        if (width > 700) return text;
-        
-        // At 500% zoom, viewport is tiny (~300-400px).
-        // 18px font needs a break roughly every 20-25 characters.
-        const charLimit = width < 480 ? 25 : 35;
-        
-        const words = text.split(' ');
-        let lines = [''];
-        let lineIndex = 0;
-
-        words.forEach(word => {
-            if ((lines[lineIndex].length + word.length) > charLimit) {
-                // Start a new line
-                lines.push(word + ' ');
-                lineIndex++;
-            } else {
-                // Append to current line
-                lines[lineIndex] += word + ' ';
-            }
-        });
-
-        // Join with Plotly's line break tag
-        return lines.map(l => l.trim()).join('<br>');
-    };
 
     return (
         <main

@@ -3,10 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import Page41WagesInfographic, {
-    BULLET_KEYS,
-    exportPage41InfographicPng,
-} from '../components/Page41WagesInfographic';
+import Page41WagesInfographic from '../components/Page41WagesInfographic';
+import { BULLET_KEYS, exportPage41InfographicPng } from '../components/Page41WagesInfographic.constants';
 
 const YEAR = '2023';
 

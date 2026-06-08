@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getCapitalExpendituresData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
 const Page24 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -15,7 +15,7 @@ const Page24 = () => {
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
 
-    const [hiddenSeries, setHiddenSeries] = useState([]); 
+    const [hiddenSeries] = useState([]); 
     const [selectedPoints, setSelectedPoints] = useState(null);
 
     const scrollToFootnote = (e) => {
@@ -121,7 +121,6 @@ const Page24 = () => {
                 setError(err.message || 'Failed to load data');
             })
             .finally(() => setLoading(false));
-        import('./Page25');
     }, []);
 
     useEffect(() => {
@@ -578,17 +577,6 @@ backgroundColor: '#8C8C8C',
         { id: 'electricity', label: getText('page24_legend_electricity', lang), color: colors.electricity },
         { id: 'other', label: getText('page24_legend_other', lang), color: colors.other }
     ];
-
-    const handleLegendClick = (id) => {
-        setHiddenSeries(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
-    };
-
-    const handleLegendDoubleClick = (id) => {
-        const allIds = legendItems.map(item => item.id);
-        const others = allIds.filter(item => item !== id);
-        const isIsolated = others.every(o => hiddenSeries.includes(o)) && !hiddenSeries.includes(id);
-        setHiddenSeries(isIsolated ? [] : others);
-    };
     const isColumnFormat = windowWidth <= 1400;
     const chartMarginLeft = 50;
     const chartMarginRight = isColumnFormat ? 0 : 15;

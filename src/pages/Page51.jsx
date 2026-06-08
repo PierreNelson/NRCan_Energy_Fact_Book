@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getPage51Data, page51RowHasCompleteData } from '../utils/dataLoader';
@@ -24,13 +24,75 @@ const hexToRgba = (hex, opacity = 1) => {
     return hex;
 };
 
+const wrapLabel = (text) => {
+    if (!text || text.length <= 14) return text;
+    const firstSpace = text.indexOf(' ');
+    if (firstSpace > 0 && firstSpace < text.length - 1) return text.slice(0, firstSpace) + '<br>' + text.slice(firstSpace + 1);
+    if (text.length > 18) return text.slice(0, 18) + '<br>' + text.slice(18);
+    return text;
+};
+
+const getReuLabelKey = (key) => {
+    const m = { space_heating: 'page51_label_space_heating', water_heating: 'page51_label_water_heating', appliances: 'page51_label_appliances', lighting: 'page51_label_lighting', space_cooling: 'page51_label_space_cooling' };
+    return m[key] || key;
+};
+
+const getSourceLabelKey = (key) => {
+    const m = { natural_gas: 'page51_label_natural_gas', electricity: 'page51_label_electricity', heating_oil: 'page51_label_heating_oil', wood: 'page51_label_wood', other: 'page51_label_other' };
+    return m[key] || key;
+};
+
+const getSourceLabel = (key, lang) => getText(getSourceLabelKey(key), lang);
+
+const buildPieTrace = (categories, labelKeyFn, colors, totalVal, textSize, lang, labelOverrideFn, selectedSlices) => {
+    if (!categories.length) return null;
+    const getLabel = (c) => (labelOverrideFn ? labelOverrideFn(c) : getText(labelKeyFn(c.key), lang));
+    const values = categories.map((c) => (c.value > 0 ? c.value : 0.001));
+    const labels = categories.map((c) => {
+        const raw = getLabel(c);
+        if (c.key === 'space_heating' || c.key === 'water_heating') {
+            const match = raw.match(/^(\S+)\s+(.*)$/);
+            return match ? `${match[1]}<br>${match[2]}` : raw;
+        }
+        return wrapLabel(raw);
+    });
+    const hoverTexts = categories.map((c) => {
+        const label = getLabel(c);
+        return `<b>${label}</b><br>${Number(c.value).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 1 })} PJ<br>${Number(c.pct).toFixed(1)}%`;
+    });
+    const baseColors = colors.slice(0, values.length);
+    const effectiveColors = selectedSlices && selectedSlices.length > 0
+        ? baseColors.map((c, i) => (selectedSlices.includes(i) ? c : hexToRgba(c, 0.3)))
+        : baseColors;
+    const pull = selectedSlices && selectedSlices.length > 0
+        ? values.map((_, i) => (selectedSlices.includes(i) ? 0.08 : 0.02))
+        : values.map(() => 0.02);
+    return {
+        values,
+        labels,
+        hoverTexts,
+        customdata: categories.map((c) => c.pct),
+        total: totalVal,
+        texttemplate: '%{label}<br>%{customdata:.1f}%',
+        textinfo: 'label+percent',
+        textposition: 'outside',
+        textfont: { size: textSize, family: 'Arial, sans-serif', color: effectiveColors },
+        outsidetextfont: { size: textSize, color: effectiveColors },
+        marker: { colors: effectiveColors, line: { color: '#fff', width: 1 } },
+        pull,
+        hovertext: hoverTexts,
+        hoverinfo: 'text',
+        hoverlabel: { bgcolor: '#fff', font: { color: '#333', size: 14 } },
+    };
+};
+
 const Page51 = () => {
     const outlet = useOutletContext();
     const lang = outlet?.lang ?? 'en';
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedYear, setSelectedYear] = useState(null);
+    const [pickedYear, setPickedYear] = useState(null);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [isTable1Open, setIsTable1Open] = useState(false);
     const [isTable2Open, setIsTable2Open] = useState(false);
@@ -52,8 +114,6 @@ const Page51 = () => {
         getPage51Data()
             .then((d) => {
                 setResult(d);
-                const available = (d?.years || []).filter((y) => y !== 2000 && y >= PAGE51_MIN_DISPLAY_YEAR);
-                if (available.length) setSelectedYear(Math.max(...available));
             })
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -73,24 +133,16 @@ const Page51 = () => {
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
-    useEffect(() => {
-        setSelectedSlices1(null);
-        setSelectedSlices2(null);
-        setSelectedSlices3(null);
-    }, [selectedYear]);
-
     const years = useMemo(() => {
         if (!result?.data?.length) return [];
         return [...new Set(result.data.filter(page51RowHasCompleteData).map((r) => r.year))]
             .filter((y) => y !== 2000 && y >= PAGE51_MIN_DISPLAY_YEAR)
             .sort((a, b) => b - a);
-    }, [result?.data]);
+    }, [result]);
 
-    useEffect(() => {
-        if (years.length > 0 && (selectedYear == null || !years.includes(selectedYear))) setSelectedYear(years[0]);
-    }, [years, selectedYear]);
+    const selectedYear = pickedYear != null && years.includes(pickedYear) ? pickedYear : (years[0] ?? null);
 
-    const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result?.data, selectedYear]);
+    const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result, selectedYear]);
 
     const reuByTypeCategories = useMemo(() => {
         if (!selectedRow?.reuByType) return [];
@@ -137,7 +189,7 @@ const Page51 = () => {
             });
             return row;
         });
-    }, [result?.data]);
+    }, [result]);
     const table2AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
         return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
@@ -151,7 +203,7 @@ const Page51 = () => {
             });
             return row;
         });
-    }, [result?.data]);
+    }, [result]);
     const table3AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
         return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
@@ -165,7 +217,7 @@ const Page51 = () => {
             });
             return row;
         });
-    }, [result?.data]);
+    }, [result]);
 
     const chart1Title = useMemo(() => {
         const t = getText('page51_chart1_title', lang) || '';
@@ -187,65 +239,6 @@ const Page51 = () => {
     const scrollToRef = (e) => {
         e.preventDefault();
         document.getElementById('fn-asterisk-rf-page51')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const getReuLabelKey = (key) => {
-        const m = { space_heating: 'page51_label_space_heating', water_heating: 'page51_label_water_heating', appliances: 'page51_label_appliances', lighting: 'page51_label_lighting', space_cooling: 'page51_label_space_cooling' };
-        return m[key] || key;
-    };
-    const getSourceLabelKey = (key) => {
-        const m = { natural_gas: 'page51_label_natural_gas', electricity: 'page51_label_electricity', heating_oil: 'page51_label_heating_oil', wood: 'page51_label_wood', other: 'page51_label_other' };
-        return m[key] || key;
-    };
-    const getSourceLabel = (key) => getText(getSourceLabelKey(key), lang);
-
-    const wrapLabel = (text) => {
-        if (!text || text.length <= 14) return text;
-        const firstSpace = text.indexOf(' ');
-        if (firstSpace > 0 && firstSpace < text.length - 1) return text.slice(0, firstSpace) + '<br>' + text.slice(firstSpace + 1);
-        if (text.length > 18) return text.slice(0, 18) + '<br>' + text.slice(18);
-        return text;
-    };
-    const buildPieTrace = (categories, labelKeyFn, colors, totalVal, textSize, labelOverrideFn, selectedSlices) => {
-        if (!categories.length) return null;
-        const getLabel = (c) => (labelOverrideFn ? labelOverrideFn(c) : getText(labelKeyFn(c.key), lang));
-        const values = categories.map((c) => (c.value > 0 ? c.value : 0.001));
-        const labels = categories.map((c) => {
-            const raw = getLabel(c);
-            if (c.key === 'space_heating' || c.key === 'water_heating') {
-                const match = raw.match(/^(\S+)\s+(.*)$/);
-                return match ? `${match[1]}<br>${match[2]}` : raw;
-            }
-            return wrapLabel(raw);
-        });
-        const hoverTexts = categories.map((c) => {
-            const label = getLabel(c);
-            return `<b>${label}</b><br>${Number(c.value).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 1 })} PJ<br>${Number(c.pct).toFixed(1)}%`;
-        });
-        const baseColors = colors.slice(0, values.length);
-        const effectiveColors = selectedSlices && selectedSlices.length > 0
-            ? baseColors.map((c, i) => (selectedSlices.includes(i) ? c : hexToRgba(c, 0.3)))
-            : baseColors;
-        const pull = selectedSlices && selectedSlices.length > 0
-            ? values.map((_, i) => (selectedSlices.includes(i) ? 0.08 : 0.02))
-            : values.map(() => 0.02);
-        return {
-            values,
-            labels,
-            hoverTexts,
-            customdata: categories.map((c) => c.pct),
-            total: totalVal,
-            texttemplate: '%{label}<br>%{customdata:.1f}%',
-            textinfo: 'label+percent',
-            textposition: 'outside',
-            textfont: { size: textSize, family: 'Arial, sans-serif', color: effectiveColors },
-            outsidetextfont: { size: textSize, color: effectiveColors },
-            marker: { colors: effectiveColors, line: { color: '#fff', width: 1 } },
-            pull,
-            hovertext: hoverTexts,
-            hoverinfo: 'text',
-            hoverlabel: { bgcolor: '#fff', font: { color: '#333', size: 14 } },
-        };
     };
 
     const selectEnabled = windowWidth > 768;
@@ -282,42 +275,42 @@ const Page51 = () => {
                 link.click();
             };
             img.src = imgData;
-        } catch (e) {
-            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch (_) {}
+        } catch {
+            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch { /* ignore relayout restore */ }
         }
     };
 
-    const configBase = useMemo(() => ({
+    const configBase = {
         displayModeBar: true,
         displaylogo: false,
         responsive: true,
         scrollZoom: false,
         modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
-    }), []);
-    const config1 = useMemo(() => ({
+    };
+    const config1 = {
         ...configBase,
         modeBarButtonsToAdd: [{
             name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
             icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
             click: () => downloadChartPng(chartRef1, chart1Title, (chart1Title.replace(/\*$/g, '').replace(/[^\w\s,-]/g, '').replace(/\s+/g, '_').trim()) || 'residential_energy_by_type'),
         }],
-    }), [configBase, lang, chart1Title, selectedYear]);
-    const config2 = useMemo(() => ({
+    };
+    const config2 = {
         ...configBase,
         modeBarButtonsToAdd: [{
             name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
             icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
             click: () => downloadChartPng(chartRef2, chart2Title, (chart2Title.replace(/[^\w\s,-]/g, '').replace(/\s+/g, '_').trim()) || 'water_heating_by_source'),
         }],
-    }), [configBase, lang, chart2Title, selectedYear]);
-    const config3 = useMemo(() => ({
+    };
+    const config3 = {
         ...configBase,
         modeBarButtonsToAdd: [{
             name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
             icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
             click: () => downloadChartPng(chartRef3, chart3Title, (chart3Title.replace(/[^\w\s,-]/g, '').replace(/\s+/g, '_').trim()) || 'space_heating_by_source'),
         }],
-    }), [configBase, lang, chart3Title, selectedYear]);
+    };
 
     const downloadTable1CSV = () => {
         if (!table1AllYearsRows.length) return;
@@ -368,7 +361,7 @@ const Page51 = () => {
     const downloadTable2CSV = () => {
         if (!table2AllYearsRows.length) return;
         const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
+        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k, lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
         const rows = table2AllYearsRows.map((r) => [r.year, ...SOURCE_ORDER.map((k) => Number(r[k]).toFixed(2)), Number(r.total).toFixed(2)]);
         const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -381,7 +374,7 @@ const Page51 = () => {
     const downloadTable2Docx = async () => {
         if (!table2AllYearsRows.length) return;
         const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
+        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k, lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
         const headerRow = new TableRow({
             children: headers.map((h) => new TableCell({
                 children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
@@ -414,7 +407,7 @@ const Page51 = () => {
     const downloadTable3CSV = () => {
         if (!table3AllYearsRows.length) return;
         const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
+        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k, lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
         const rows = table3AllYearsRows.map((r) => [r.year, ...SOURCE_ORDER.map((k) => Number(r[k]).toFixed(2)), Number(r.total).toFixed(2)]);
         const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -427,7 +420,7 @@ const Page51 = () => {
     const downloadTable3Docx = async () => {
         if (!table3AllYearsRows.length) return;
         const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
+        const headers = [yearCol, ...SOURCE_ORDER.map((k) => getSourceLabel(k, lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'];
         const headerRow = new TableRow({
             children: headers.map((h) => new TableCell({
                 children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
@@ -460,29 +453,20 @@ const Page51 = () => {
     const hasData = result && result.data?.length > 0;
     const textSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 18;
 
-    const plot1Data = useMemo(() => {
-        if (!reuByTypeCategories.length) return [];
-        const total = selectedRow?.reuByType?.total;
-        const trace = buildPieTrace(reuByTypeCategories, getReuLabelKey, REU_BY_TYPE_COLORS, total, textSize, undefined, effectiveSlices1);
-        if (!trace) return [];
-        return [{ ...trace, type: 'pie', hole: 0.55, direction: 'clockwise', sort: false, automargin: false }];
-    }, [reuByTypeCategories, selectedRow, lang, windowWidth, textSize, effectiveSlices1]);
+    const plot1Trace = reuByTypeCategories.length
+        ? buildPieTrace(reuByTypeCategories, getReuLabelKey, REU_BY_TYPE_COLORS, selectedRow?.reuByType?.total, textSize, lang, undefined, effectiveSlices1)
+        : null;
+    const plot1Data = plot1Trace ? [{ ...plot1Trace, type: 'pie', hole: 0.55, direction: 'clockwise', sort: false, automargin: false }] : [];
 
-    const plot2Data = useMemo(() => {
-        if (!waterHeatingCategories.length) return [];
-        const total = selectedRow?.waterHeating?.total;
-        const trace = buildPieTrace(waterHeatingCategories, getSourceLabelKey, SOURCE_COLORS, total, textSize, (c) => getSourceLabel(c.key), effectiveSlices2);
-        if (!trace) return [];
-        return [{ ...trace, type: 'pie', hole: 0.55, direction: 'clockwise', sort: false, automargin: false }];
-    }, [waterHeatingCategories, selectedRow, lang, windowWidth, textSize, effectiveSlices2]);
+    const plot2Trace = waterHeatingCategories.length
+        ? buildPieTrace(waterHeatingCategories, getSourceLabelKey, SOURCE_COLORS, selectedRow?.waterHeating?.total, textSize, lang, (c) => getSourceLabel(c.key, lang), effectiveSlices2)
+        : null;
+    const plot2Data = plot2Trace ? [{ ...plot2Trace, type: 'pie', hole: 0.55, direction: 'clockwise', sort: false, automargin: false }] : [];
 
-    const plot3Data = useMemo(() => {
-        if (!spaceHeatingCategories.length) return [];
-        const total = selectedRow?.spaceHeating?.total;
-        const trace = buildPieTrace(spaceHeatingCategories, getSourceLabelKey, SOURCE_COLORS, total, textSize, (c) => getSourceLabel(c.key), effectiveSlices3);
-        if (!trace) return [];
-        return [{ ...trace, type: 'pie', hole: 0.55, direction: 'clockwise', sort: false, automargin: false }];
-    }, [spaceHeatingCategories, selectedRow, lang, windowWidth, textSize, effectiveSlices3]);
+    const plot3Trace = spaceHeatingCategories.length
+        ? buildPieTrace(spaceHeatingCategories, getSourceLabelKey, SOURCE_COLORS, selectedRow?.spaceHeating?.total, textSize, lang, (c) => getSourceLabel(c.key, lang), effectiveSlices3)
+        : null;
+    const plot3Data = plot3Trace ? [{ ...plot3Trace, type: 'pie', hole: 0.55, direction: 'clockwise', sort: false, automargin: false }] : [];
 
     const layout1 = useMemo(() => ({
         height: PAGE51_CHART_HEIGHT,
@@ -529,7 +513,7 @@ const Page51 = () => {
             xref: 'paper',
             yref: 'paper',
         }] : [],
-    }), [selectedRow, waterHeatingTotalDisplay, lang]);
+    }), [waterHeatingTotalDisplay, lang]);
 
     const layout3 = useMemo(() => ({
         height: PAGE51_CHART_HEIGHT,
@@ -547,7 +531,7 @@ const Page51 = () => {
             xref: 'paper',
             yref: 'paper',
         }] : [],
-    }), [selectedRow, spaceHeatingTotalDisplay, lang]);
+    }), [spaceHeatingTotalDisplay, lang]);
 
     return (
         <main id="main-content" tabIndex={-1} className="page-content page-51" role="main" style={{ backgroundColor: '#ffffff' }}>
@@ -609,7 +593,7 @@ const Page51 = () => {
                                                 role="option"
                                                 aria-selected={isSelected}
                                                 type="button"
-                                                onClick={() => { setSelectedYear(y); setIsYearDropdownOpen(false); setTimeout(() => yearButtonRef.current?.focus(), 0); }}
+                                                onClick={() => { setPickedYear(y); setIsYearDropdownOpen(false); setTimeout(() => yearButtonRef.current?.focus(), 0); }}
                                                 style={{ display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '10px 15px', cursor: 'pointer', border: 'none', borderBottom: '1px solid #eee', backgroundColor: isSelected ? '#f0f9ff' : '#fff', fontFamily: 'Arial, sans-serif' }}
                                                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#f5f5f5'; }}
                                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'; }}
@@ -649,6 +633,7 @@ const Page51 = () => {
                                 <div ref={chartRef1} role="region" aria-label={chart1Title} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: PAGE51_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
                                     <figure style={{ width: '100%', height: PAGE51_CHART_HEIGHT, margin: 0, overflow: 'visible' }}>
                                         <Plot
+                                            key={selectedYear}
                                             data={plot1Data}
                                             layout={layout1}
                                             config={config1}
@@ -731,6 +716,7 @@ const Page51 = () => {
                                 <div ref={chartRef2} role="region" aria-label={chart2Title} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: PAGE51_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
                                     <figure style={{ width: '100%', height: PAGE51_CHART_HEIGHT, margin: 0, overflow: 'visible' }}>
                                         <Plot
+                                            key={selectedYear}
                                             data={plot2Data}
                                             layout={layout2}
                                             config={config2}
@@ -771,7 +757,7 @@ const Page51 = () => {
                                             <tr>
                                                 <th scope="col" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
                                                 {SOURCE_ORDER.map((k) => (
-                                                    <th key={k} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{getSourceLabel(k)} (PJ)</th>
+                                                    <th key={k} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{getSourceLabel(k, lang)} (PJ)</th>
                                                 ))}
                                                 <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'}</th>
                                             </tr>
@@ -813,6 +799,7 @@ const Page51 = () => {
                                 <div ref={chartRef3} role="region" aria-label={chart3Title} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: PAGE51_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
                                     <figure style={{ width: '100%', height: PAGE51_CHART_HEIGHT, margin: 0, overflow: 'visible' }}>
                                         <Plot
+                                            key={selectedYear}
                                             data={plot3Data}
                                             layout={layout3}
                                             config={config3}
@@ -853,7 +840,7 @@ const Page51 = () => {
                                             <tr>
                                                 <th scope="col" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
                                                 {SOURCE_ORDER.map((k) => (
-                                                    <th key={k} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{getSourceLabel(k)} (PJ)</th>
+                                                    <th key={k} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{getSourceLabel(k, lang)} (PJ)</th>
                                                 ))}
                                                 <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'}</th>
                                             </tr>

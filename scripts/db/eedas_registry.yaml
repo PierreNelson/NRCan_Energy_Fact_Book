@@ -1,13 +1,8 @@
-# EEDAS-style mapping: source_key -> org/report/detail + physical source_table name.
-# Multiple source_keys may share one physical table (e.g. *_raw + processed).
-# Calc / system tables: eedas_registry.py (TABLE_* constants).
+# EEDAS raw ingest mapping: source_key -> physical source_table name.
+# Aggregation belongs in EFB transform (nrcan_efb_indicators), not here.
+# System tables: eedas_registry.py (TABLE_* constants).
 
 source_tables:
-  economic_contributions_raw:
-    org_code: stc
-    report_code: nrsa
-    detail: "3610061001"
-    source_table: stc_nrsa_3610061001
   economic_contributions:
     org_code: stc
     report_code: nrsa
@@ -38,11 +33,6 @@ source_tables:
     detail: assets
     source_table: nrcan_cea_assets
 
-  capital_expenditures_raw:
-    org_code: stc
-    report_code: capex
-    detail: "3410003601"
-    source_table: stc_capex_3410003601
   capital_expenditures:
     org_code: stc
     report_code: capex
@@ -55,11 +45,6 @@ source_tables:
     detail: "3410003601"
     source_table: stc_invasset_3410003601
 
-  infrastructure_raw:
-    org_code: stc
-    report_code: infra
-    detail: "3610060801"
-    source_table: stc_infra_3610060801
   infrastructure:
     org_code: stc
     report_code: infra
@@ -156,22 +141,12 @@ source_tables:
     detail: semantic
     source_table: nrcan_ghg_semantic
 
-  rpp_supply_demand_raw:
-    org_code: stc
-    report_code: rppsd
-    detail: "2510008101"
-    source_table: stc_rppsd_25100081
   rpp_supply_demand:
     org_code: stc
     report_code: rppsd
     detail: "2510008101"
     source_table: stc_rppsd_25100081
 
-  rpp_refinery_input_raw:
-    org_code: stc
-    report_code: refinput
-    detail: "2510006301"
-    source_table: stc_refinput_25100063
   rpp_refinery_input:
     org_code: stc
     report_code: refinput
@@ -183,6 +158,7 @@ source_tables:
     report_code: crude
     detail: wti_wcs
     source_table: nrcan_crude_prices
+
   oil_sands:
     org_code: stc
     report_code: os

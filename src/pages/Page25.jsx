@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getInfrastructureData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+
+const PAGE25_COLORS = {
+    'environmental': '#8F7200', 'fuel_energy_pipelines': '#3A8357',
+    'transport': '#23808B', 'education': '#4870D5',
+    'health_housing': '#857550', 'public_safety': '#CA4B0C',
+};
+
+const PAGE25_CATEGORY_ORDER = ['environmental', 'fuel_energy_pipelines', 'transport', 'education', 'health_housing', 'public_safety'];
+
 const Page25 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(null);
@@ -131,7 +140,7 @@ const Page25 = () => {
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isChartInteractive]);
+    }, [isChartInteractive, windowWidth]);
 
     useEffect(() => {
         getInfrastructureData()
@@ -148,7 +157,6 @@ const Page25 = () => {
             .finally(() => {
                 setLoading(false);
             });
-        import('./Page26');
     }, []);
 
     useEffect(() => {
@@ -205,13 +213,6 @@ const Page25 = () => {
         return () => observer.disconnect();
     }, [pageData, lang]);
 
-    const COLORS = {
-        'environmental': '#8F7200', 'fuel_energy_pipelines': '#3A8357',
-        'transport': '#23808B', 'education': '#4870D5',
-        'health_housing': '#857550', 'public_safety': '#CA4B0C',
-    };
-
-    const CATEGORY_ORDER = ['environmental', 'fuel_energy_pipelines', 'transport', 'education', 'health_housing', 'public_safety'];
     const downloadChartWithTitle = async (plotEl = null) => {
         const plotElement = plotEl || document.querySelector('.page25-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement) {
@@ -295,7 +296,7 @@ const Page25 = () => {
         };
         const billionText = getText('billion', lang);
 
-        CATEGORY_ORDER.forEach(cat => {
+        PAGE25_CATEGORY_ORDER.forEach(cat => {
             const value = currentYearData[cat] || 0;
             // Use pre-calculated percentage from database if available, otherwise calculate
             const pct = currentYearData[`${cat}_pct`] ?? (total > 0 ? (value / total) * 100 : 0);
@@ -304,7 +305,7 @@ const Page25 = () => {
             
             if (value >= 0) { 
                 values.push(value);
-                colors.push(COLORS[cat]);
+                colors.push(PAGE25_COLORS[cat]);
                 pctDict[cat] = pct;
                 const catName = getText(hoverKeys[cat], lang);
                 let hoverText = lang === 'en' 
@@ -322,7 +323,7 @@ const Page25 = () => {
             'transport': 'infra_transport', 'education': 'infra_education',
             'health_housing': 'infra_health_housing', 'public_safety': 'infra_public_safety',
         };
-        return CATEGORY_ORDER.map(cat => {
+        return PAGE25_CATEGORY_ORDER.map(cat => {
             const labelText = getText(transKeys[cat], lang);
             return labelText;
         });
@@ -342,7 +343,7 @@ const Page25 = () => {
             font: { size: 22, color: '#424243', family: 'Arial Black, sans-serif' },
             showarrow: false,
         }];
-    }, [chartData, lang]);
+    }, [chartData, currentYearData?.total_billions, lang]);
 
     if (loading) {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
@@ -405,7 +406,7 @@ const Page25 = () => {
             'public_safety': 'hover_public_safety'
         };
 
-        const parts = CATEGORY_ORDER.map(cat => {
+        const parts = PAGE25_CATEGORY_ORDER.map(cat => {
             const pct = chartData.pctDict[cat] || 0;
             const name = getText(categoryNames[cat], lang).replace(/<br>/g, ' ');
             // Use pre-calculated billions from database
@@ -511,7 +512,7 @@ const Page25 = () => {
                         <thead>
                             <tr>
 <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                                {CATEGORY_ORDER.map(cat => (
+                                                {PAGE25_CATEGORY_ORDER.map(cat => (
                                                     <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
                                                         {categoryLabels[cat]}<br/>
                                                         <span aria-hidden="true">{headerUnitVisual}</span>
@@ -529,7 +530,7 @@ const Page25 = () => {
                             {pageData.map(yearData => (
                                 <tr key={yearData.year}>
 <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
-                                                    {CATEGORY_ORDER.map(cat => (
+                                                    {PAGE25_CATEGORY_ORDER.map(cat => (
                                                         <td 
                                                             key={cat} 
                                                             style={{ textAlign: 'right', border: '1px solid #ddd' }}
@@ -599,14 +600,12 @@ const Page25 = () => {
         const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
+            ...PAGE25_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
             `Total ${unitHeader}`
         ];
         const rows = pageData.map(yearData => {
-            let total = 0;
-            const values = CATEGORY_ORDER.map(cat => {
+            const values = PAGE25_CATEGORY_ORDER.map(cat => {
                 const val = (yearData[cat] || 0) / 1000;
-                total += val;
                 return val.toFixed(2);
             });
             return [yearData.year, ...values, ((yearData.total || 0) / 1000).toFixed(2)];
@@ -636,7 +635,7 @@ const Page25 = () => {
 
         const headers = [
             lang === 'en' ? 'Year' : 'Année',
-            ...CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
+            ...PAGE25_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
             `Total ${unitHeader}`
         ];
 
@@ -651,7 +650,7 @@ const Page25 = () => {
         });
 
         const dataRows = pageData.map(yearData => {
-            const values = CATEGORY_ORDER.map(cat => ((yearData[cat] || 0) / 1000).toFixed(2));
+            const values = PAGE25_CATEGORY_ORDER.map(cat => ((yearData[cat] || 0) / 1000).toFixed(2));
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 20 })], alignment: AlignmentType.CENTER })] }),

@@ -4,7 +4,8 @@ import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, Width
 import { saveAs } from 'file-saver';
 import { getPage113Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import Page113OilSandsInfographic, { OVERLAY_COLORS, OVERLAY_SLOTS } from '../components/Page113OilSandsInfographic';
+import Page113OilSandsInfographic from '../components/Page113OilSandsInfographic';
+import { OVERLAY_COLORS, OVERLAY_SLOTS } from '../components/Page113OilSandsInfographic.constants';
 import page113BgEn from '../assets/page113_bg.png';
 import page113BgFr from '../assets/page113_bg_fr.png';
 
@@ -78,11 +79,12 @@ const Page113 = () => {
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
-    useEffect(() => {
-        if (!result?.selectorYears?.length) return;
-        if (selectedYear == null || !result.selectorYears.includes(selectedYear)) {
-            setSelectedYear(result.selectorYears[0]);
+    const effectiveSelectedYear = useMemo(() => {
+        if (!result?.selectorYears?.length) return null;
+        if (selectedYear != null && result.selectorYears.includes(selectedYear)) {
+            return selectedYear;
         }
+        return result.selectorYears[0];
     }, [result, selectedYear]);
 
     useEffect(() => {
@@ -160,10 +162,10 @@ const Page113 = () => {
         [result],
     );
     const selectorYears = result?.selectorYears ?? [];
-    const selectedRow = selectedYear != null
-        ? result?.production?.find((row) => row.year === selectedYear) ?? null
+    const selectedRow = effectiveSelectedYear != null
+        ? result?.production?.find((row) => row.year === effectiveSelectedYear) ?? null
         : null;
-    const year = selectedRow?.year ?? selectedYear ?? null;
+    const year = selectedRow?.year ?? effectiveSelectedYear ?? null;
     const startYear = result?.startYear ?? 2000;
     const endYear = result?.endYear ?? year;
     const textVars = {
@@ -632,7 +634,7 @@ const Page113 = () => {
                             }}
                         >
                             {selectorYears.map((optionYear) => {
-                                const isSelected = optionYear === selectedYear;
+                                const isSelected = optionYear === effectiveSelectedYear;
                                 return (
                                     <button
                                         key={optionYear}

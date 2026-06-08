@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getSEUByFuelData } from '../utils/dataLoader';
@@ -17,6 +17,12 @@ const PAGE49_LABEL_KEYS = {
     OT: 'page49_label_other'
 };
 const PAGE49_COLORS = ['#657f9b', '#CE8003', '#4b4c4d', '#6b666a', '#1f8093', '#A687A5', '#949494'];
+
+const hexToRgba = (hex, opacity = 1) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
+    return hex;
+};
 
 const Page49 = () => {
     const { lang } = useOutletContext();
@@ -50,10 +56,6 @@ const Page49 = () => {
     }, []);
 
     useEffect(() => {
-        setSelectedSlices(null);
-    }, [selectedYear]);
-
-    useEffect(() => {
         const handleClickOutside = (e) => {
             if (yearDropdownRef.current && !yearDropdownRef.current.contains(e.target)) setIsYearDropdownOpen(false);
         };
@@ -61,21 +63,15 @@ const Page49 = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        return hex;
-    };
-
     const currentRow = useMemo(() => {
         if (!seuData?.data?.length || selectedYear == null) return null;
         return seuData.data.find((r) => r.year === selectedYear) || null;
-    }, [seuData?.data, selectedYear]);
+    }, [seuData, selectedYear]);
 
     const baseline = useMemo(() => {
         if (!seuData?.data?.length) return null;
         return seuData.data.find((r) => r.year === 2000) || null;
-    }, [seuData?.data]);
+    }, [seuData]);
 
     const categories = useMemo(() => {
         if (!currentRow || !currentRow.TE || currentRow.TE <= 0) return [];
@@ -104,7 +100,7 @@ const Page49 = () => {
     const yearsListFiltered = useMemo(() => {
         if (!seuData?.years?.length) return [];
         return seuData.years.filter((y) => y !== 2000);
-    }, [seuData?.years]);
+    }, [seuData]);
 
     const yearsListDesc = useMemo(
         () => [...yearsListFiltered].sort((a, b) => b - a),
@@ -137,7 +133,7 @@ const Page49 = () => {
             });
             return { year: y, te, byKey };
         });
-    }, [seuData?.data, selectorYearsAsc]);
+    }, [seuData, selectorYearsAsc]);
 
     const chartTitle = useMemo(() => {
         const t = getText('page49_chart_title', lang) || '';
@@ -321,7 +317,6 @@ const Page49 = () => {
         saveAs(blob, lang === 'en' ? 'secondary_energy_use_by_fuel_table.docx' : 'consommation_energie_secondaire_par_source_tableau.docx');
     };
 
-    const stripHtml = (s) => (s || '').replace(/<[^>]*>/g, '').trim();
     const downloadChartPng = async () => {
         const plotEl = chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotEl || !window.Plotly) return;
@@ -354,11 +349,11 @@ const Page49 = () => {
                 link.click();
             };
             img.src = imgData;
-        } catch (e) {
-            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'transparent', plot_bgcolor: 'transparent' }); } catch (_) {}
+        } catch {
+            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'transparent', plot_bgcolor: 'transparent' }); } catch { /* ignore relayout restore */ }
         }
     };
-    const config = useMemo(() => ({
+    const config = {
         displayModeBar: true,
         displaylogo: false,
         responsive: true,
@@ -368,7 +363,7 @@ const Page49 = () => {
             icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
             click: downloadChartPng
         }]
-    }), [lang]);
+    };
 
     if (loading) {
         return (
@@ -526,7 +521,7 @@ const Page49 = () => {
                                         )}
                                         <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 450, height: 450, margin: 0, position: 'relative' }}>
                                         <Plot
-                                            key={`donut-${selectedYear}-${effectiveSelectedSlices ? effectiveSelectedSlices.join('-') : 'none'}`}
+                                            key={selectedYear}
                                             data={plotData}
                                             layout={layout}
                                             config={config}

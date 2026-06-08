@@ -3,12 +3,13 @@ import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import Page67GenerationInfographic, {
+import Page67GenerationInfographic from '../components/Page67GenerationInfographic';
+import {
     SOURCE_KEYS,
     PAGE67_DATA,
     formatSharePct,
     exportPage67InfographicPng,
-} from '../components/Page67GenerationInfographic';
+} from '../components/Page67GenerationInfographic.constants';
 
 const YEAR = 2023;
 

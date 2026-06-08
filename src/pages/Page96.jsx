@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getPage96Data } from '../utils/dataLoader';
@@ -225,7 +225,7 @@ const Page96 = () => {
         };
     }, [lang, selectedPoints, result]);
 
-    const chartRows = result?.data ?? [];
+    const chartRows = useMemo(() => result?.data ?? [], [result]);
     const tableRows = useMemo(
         () => [...chartRows].sort((a, b) => b.year - a.year),
         [chartRows],

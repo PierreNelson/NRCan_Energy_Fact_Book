@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getNominalGDPData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
+const PAGE7_COLORS = {
+    'energy_total': '#245e7f',
+    'non_energy': '#9A9389',
+};
+
 const Page7 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -103,13 +108,6 @@ const Page7 = () => {
     }, [isTableOpen, windowWidth]);
 
     const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
 
     const minYear = useMemo(() => pageData.length > 0 ? pageData[0].year : 2022, [pageData]);
     const maxYear = useMemo(() => pageData.length > 0 ? pageData[pageData.length - 1].year : 2024, [pageData]);
@@ -194,11 +192,6 @@ const Page7 = () => {
 
         return () => observer.disconnect();
     }, [pageData, lang, year]);
-
-    const COLORS = {
-        'energy_total': '#245e7f',
-        'non_energy': '#9A9389',
-    };
 
     const currentData = useMemo(() => {
         if (!year || pageData.length === 0) return null;
@@ -430,7 +423,7 @@ const Page7 = () => {
                 font: { color: '#000000', size: windowWidth <= 640 ? 12 : 14, family: 'Arial, sans-serif' }
             },
             marker: {
-                colors: [COLORS.energy_total, COLORS.non_energy],
+                colors: [PAGE7_COLORS.energy_total, PAGE7_COLORS.non_energy],
                 line: { color: '#ffffff', width: 2 }
             },
             hole: 0.0,

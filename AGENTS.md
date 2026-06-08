@@ -17,7 +17,17 @@ Guidance for coding agents (OpenAI Codex, Cursor, etc.) working in this reposito
 | `npm ci` | Clean install (use in fresh clones / CI-style workspaces) |
 | `npm run dev` | Local dev server |
 | `npm run build` | Production build — **must pass before PR / Human Review** |
-| `npm run lint` | ESLint — run when changing `.js` / `.jsx`; see [docs/EFB_MODERNIZATION_REVIEW.md §4](docs/EFB_MODERNIZATION_REVIEW.md#4-frontend-setup-dev--build--lint) |
+| `npm run lint` | ESLint — must pass clean on full repo before PR / Human Review |
+
+## Data pipeline (from `scripts/`)
+
+| Command | Purpose |
+|--------|---------|
+| `python main.py eedas update --all` | Stage 1 — fetch and load raw source data into SQL |
+| `python main.py efb transform --all` | Stage 2 — build Factbook indicators |
+| `python main.py export` | Stage 3 — write `public/data/*.csv` for the website |
+
+See [docs/DATA_UPDATE_GUIDE.md](docs/DATA_UPDATE_GUIDE.md) for partial updates and troubleshooting.
 
 ## Layout (pages)
 
@@ -38,7 +48,7 @@ Guidance for coding agents (OpenAI Codex, Cursor, etc.) working in this reposito
 
 1. Implement or update the relevant `PageNN.jsx` (and sidebar/route/translations if required).
 2. `npm run build` succeeds.
-3. `npm run lint` clean for touched files (or fix new violations). Full-repo lint baseline: [docs/EFB_MODERNIZATION_REVIEW.md §4](docs/EFB_MODERNIZATION_REVIEW.md#4-frontend-setup-dev--build--lint).
+3. `npm run lint` passes with zero issues.
 4. No secrets committed; use `.env` only locally (see `.gitignore`).
 
 ## Remote

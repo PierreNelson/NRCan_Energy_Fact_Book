@@ -6,7 +6,7 @@ import page26BgImage from '../assets/page26_bg.svg';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 const Page26 = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [year, setYear] = useState(null);
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -439,14 +439,6 @@ const Page26 = () => {
 
     const getTitleText = () => {
         return getText('page26_title', lang);
-    };
-
-    const getSliderText = () => {
-        if (lang === 'en') {
-            return `${getText('year_slider_label', lang)} ${year}. Use arrow keys to change year from ${minYear} to ${maxYear}.`;
-        } else {
-            return `${getText('year_slider_label', lang)} ${year}. Utilisez les touches fléchées pour changer l'année de ${minYear} à ${maxYear}.`;
-        }
     };
 
     const getStatsSummary = () => {

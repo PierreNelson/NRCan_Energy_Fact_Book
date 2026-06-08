@@ -10,7 +10,6 @@ Supports selective export by:
 """
 
 import csv
-import os
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
@@ -23,6 +22,7 @@ from export.source_vectors import (
     get_all_sources,
     get_display_name_for_vector,
 )
+from export.safe_io import atomic_write_csv, atomic_write_dict_csv, backup_file
 
 
 class WebsiteExporter:
@@ -189,15 +189,14 @@ class WebsiteExporter:
             print(f"  Updated {len(filtered_data)} vectors, total {len(data)} rows")
         else:
             data = all_data
-        
-        # Write CSV
-        with open(output_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['vector', 'ref_date', 'value'])
-            
-            for row in data:
-                writer.writerow(row)
-        
+
+        backup_file(output_path, self.config)
+        atomic_write_csv(
+            output_path,
+            ['vector', 'ref_date', 'value'],
+            data,
+        )
+
         print(f"  Wrote {len(data)} rows to {output_path}")
         return {'status': 'success', 'rows': len(data), 'path': str(output_path)}
     
@@ -258,14 +257,14 @@ class WebsiteExporter:
             for row in all_metadata:
                 data_source = get_display_name_for_vector(row[0])
                 metadata.append((row[0], row[1], row[2], row[3], data_source, row[4], row[5]))
-        
-        # Write CSV (7 columns for Glossary: data_source, source_org, source_url)
-        with open(output_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['vector', 'title', 'uom', 'scalar_factor', 'data_source', 'source_org', 'source_url'])
-            for row in metadata:
-                writer.writerow(row)
-        
+
+        backup_file(output_path, self.config)
+        atomic_write_csv(
+            output_path,
+            ['vector', 'title', 'uom', 'scalar_factor', 'data_source', 'source_org', 'source_url'],
+            metadata,
+        )
+
         print(f"  Wrote {len(metadata)} rows to {output_path}")
         return {'status': 'success', 'rows': len(metadata), 'path': str(output_path)}
     
@@ -303,14 +302,11 @@ class WebsiteExporter:
             'clean_technology_type', 'line_type', 'lat', 'lon', 'paths', 'type',
             'source_org', 'source_url'
         ]
-        
-        with open(output_path, 'w', newline='', encoding='utf-8-sig') as f:
-            writer = csv.DictWriter(f, fieldnames=headers, extrasaction='ignore')
-            writer.writeheader()
-            for project in projects:
-                row = {**project, 'source_org': source_org, 'source_url': source_url}
-                writer.writerow(row)
-        
+
+        backup_file(output_path, self.config)
+        rows = [{**project, 'source_org': source_org, 'source_url': source_url} for project in projects]
+        atomic_write_dict_csv(output_path, headers, rows)
+
         print(f"  Wrote {len(projects)} rows to {output_path}")
         return {'status': 'success', 'rows': len(projects), 'path': str(output_path)}
 
@@ -333,12 +329,23 @@ def export_website_files(
     Returns:
         Export results summary
     """
-    exporter = WebsiteExporter(config, db)
-    
-    # Apply filters
-    if source:
-        exporter.set_source_filter(source)
-    if vectors:
-        exporter.set_vector_pattern(vectors)
-    
-    return exporter.export_all()
+    repo = DataRepository(db)
+    run_id = repo.log_run_start('website_export', 'export')
+
+    try:
+        exporter = WebsiteExporter(config, db)
+
+        if source:
+            exporter.set_source_filter(source)
+        if vectors:
+            exporter.set_vector_pattern(vectors)
+
+        results = exporter.export_all()
+        total_rows = sum(
+            r.get('rows', 0) for r in results.values() if r.get('status') == 'success'
+        )
+        repo.log_run_complete(run_id, 'success', total_rows)
+        return results
+    except Exception as e:
+        repo.log_run_complete(run_id, 'failed', error_message=str(e))
+        raise
