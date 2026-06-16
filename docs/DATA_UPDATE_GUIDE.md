@@ -53,11 +53,17 @@ cd scripts
 python -m pip install -r requirements.txt
 ```
 
-### Local Excel workbooks
+### Excel workbooks (SharePoint)
 
-**What it means:** Some sources read proprietary or manual Excel files instead of (or in addition to) web downloads. These files are **not** in git.
+Manual Excel sources are read from the BenchScope SharePoint folder **Manual Data**. Each **`eedas update`** syncs files into **`EXTERNAL_XLSX_DATA_DIR`** before handlers run.
 
-Place workbooks in one folder and set **`EXTERNAL_XLSX_DATA_DIR`** in `scripts/.env`. If unset, scripts fall back to the **repository root** (local dev only — use a mounted path in CI).
+```bash
+cd scripts
+python main.py sharepoint sync          # refresh cache
+python main.py sharepoint sync --force  # re-download all
+```
+
+**Authentication:** Use an Azure AD **app registration** with client secret (`AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` in `scripts/.env`). Application permission **Sites.Read.All** with admin consent is required. User username/password cannot bypass MFA.
 
 | File | Used by |
 |------|---------|
@@ -70,7 +76,7 @@ Place workbooks in one folder and set **`EXTERNAL_XLSX_DATA_DIR`** in `scripts/.
 | `tsx-and-amp-tsxv-listed-companies-2026-02-17-en.xlsx` | Section 5 cleantech (optional) |
 | `Section 6.xlsx` | Section 6 gasoline prices (page 138) |
 
-See [`scripts/xlsx_paths.py`](../scripts/xlsx_paths.py) for the full default filename list.
+See [`scripts/xlsx_paths.py`](../scripts/xlsx_paths.py) and [`scripts/sharepoint/sync.py`](../scripts/sharepoint/sync.py).
 
 ---
 

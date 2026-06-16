@@ -28,8 +28,38 @@ OEE_COM_AN_BASE = "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTab
 OEE_COM_AN_PAGES = [f"{OEE_COM_AN_BASE}&page=1", f"{OEE_COM_AN_BASE}&page=2"]
 OEE_INDUSTRIAL_CP_URL = "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0"
 
-DEFAULT_PRIMARY_DEMAND_FILENAME = "Primary Energy Use Demand.xlsx"
 REQUEST_TIMEOUT = 60
+
+# SharePoint Manual Data — consolidated Energy Efficiency workbook (Section 4)
+ENERGY_EFFICIENCY_XLSX = "Energy Efficiency.xlsx"
+EE_SHEET_PRIMARY = "Primary and secondary demand"
+EE_SHEET_SEU = "SEU (final demand)"
+EE_SHEET_IMPROVEMENT = "EE Improvement"
+
+# Product labels in "Primary and secondary demand" → pipeline vector codes
+PRIMARY_SECONDARY_PRODUCT_TO_VECTOR = {
+    "pipeline": "P",
+    "noncovered producer consumption": "FK",
+    "non-energy (feedstock)": "NPC",
+    "energy losses (conversion)": "EL",
+    "industrial": "I",
+    "transporation": "T",
+    "transportation": "T",
+    "residential": "R",
+    "commercial": "C",
+    "agriculture": "A",
+}
+
+
+def map_primary_secondary_product(product: str) -> str | None:
+    """Map Excel product label to vector code (R,C,I,T,A,P,NPC,FK,EL)."""
+    prod = str(product).strip().lower()
+    if prod in PRIMARY_SECONDARY_PRODUCT_TO_VECTOR:
+        return PRIMARY_SECONDARY_PRODUCT_TO_VECTOR[prod]
+    for label, code in PRIMARY_SECONDARY_PRODUCT_TO_VECTOR.items():
+        if label in prod or prod in label:
+            return code
+    return None
 
 
 # OEE Residential Analysis (AN) row labels vary by file version; match broadly.

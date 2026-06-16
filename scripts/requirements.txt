@@ -15,6 +15,12 @@ pyodbc>=5.0.0
 pyyaml>=6.0.0
 python-dotenv>=1.0.0
 
+# SharePoint / Microsoft Graph (manual Excel sync from BenchScope)
+msgraph-sdk>=1.0.0
+azure-identity>=1.15.0
+# On Windows without long-path support, pip install msgraph-sdk may fail; run:
+#   python tools/install_msgraph_sdk.py
+
 # Note: For SQL Server connectivity, you also need:
 # - SQL Server (Developer Edition is free)
 # - ODBC Driver 17 or 18 for SQL Server

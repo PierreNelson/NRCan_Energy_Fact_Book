@@ -20,6 +20,7 @@ scripts/
 ├── requirements.txt
 ├── .env.example               # Copy to .env for DB_* and EXTERNAL_XLSX_DATA_DIR
 ├── xlsx_paths.py              # Resolves paths to external Excel workbooks
+├── sharepoint/                # SharePoint Manual Data sync (Microsoft Graph)
 ├── export_glossary_html.py    # Glossary / data-gallery HTML (see docs/GLOSSARY_UPDATE_GUIDE.md)
 ├── zip_website_release.py     # npm run build + deploy zip (see Release zips)
 ├── zip_data_release.py        # Zip public/data, glossary, translations.js
@@ -112,7 +113,21 @@ DB_SERVER=localhost
 DB_DATABASE=NRCanEnergyFactbook
 DB_USERNAME=
 DB_PASSWORD=
-EXTERNAL_XLSX_DATA_DIR=C:\path\to\excel-workbooks
+
+SHAREPOINT_HOSTNAME=hustlebench.sharepoint.com
+SHAREPOINT_SITE_PATH=sites/BenchScope
+SHAREPOINT_FOLDER_PATH=Manual Data
+EXTERNAL_XLSX_DATA_DIR=../data/sharepoint_cache
+AZURE_TENANT_ID=your-tenant-guid
+AZURE_CLIENT_ID=your-app-client-id
+AZURE_CLIENT_SECRET=your-client-secret
+```
+
+The pipeline syncs Excel from SharePoint **Manual Data** before each **`eedas update`**. Authentication is an Azure AD app registration (client secret) with **Sites.Read.All** application permission — not a user password. See `.env.example` for setup steps.
+
+```bash
+python main.py sharepoint sync
+python main.py sharepoint sync --force
 ```
 
 ### 4. Test connection

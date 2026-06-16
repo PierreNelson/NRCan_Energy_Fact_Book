@@ -19,6 +19,7 @@
  */
 
 let dataCache = null;
+let metadataCache = null;
 
 /**
  * Parse CSV text into array of objects
@@ -77,6 +78,31 @@ async function loadAllData() {
     const csvText = await response.text();
     dataCache = parseCSV(csvText);
     return dataCache;
+}
+
+/**
+ * Load vector metadata from metadata.csv (cached)
+ */
+async function loadMetadata() {
+    if (metadataCache !== null) {
+        return metadataCache;
+    }
+
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const response = await fetch(`${baseUrl}data/metadata.csv`);
+    if (!response.ok) {
+        throw new Error(`Failed to load metadata.csv: ${response.status} ${response.statusText}`);
+    }
+
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+    metadataCache = rows.reduce((acc, row) => {
+        if (row.vector) {
+            acc[row.vector] = row;
+        }
+        return acc;
+    }, {});
+    return metadataCache;
 }
 
 /**
@@ -1347,6 +1373,37 @@ export async function getPage111Data() {
     };
 }
 
+export async function getPage65Data() {
+    const allData = await loadAllData();
+    const tradeRows = allData.filter((row) => row.vector && row.vector.startsWith('elec_trade_'));
+    const byYear = {};
+    tradeRows.forEach((row) => {
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        if (row.vector === 'elec_trade_exports') byYear[year].exports = Number(row.value);
+        if (row.vector === 'elec_trade_imports') byYear[year].imports = Number(row.value);
+        if (row.vector === 'elec_trade_net') byYear[year].net = Number(row.value);
+    });
+
+    const data = Object.values(byYear)
+        .filter((row) => row.exports != null && row.imports != null && row.net != null)
+        .sort((a, b) => a.year - b.year);
+
+    const referenceYear = data.length ? data[data.length - 1].year : null;
+    const referenceRow = referenceYear != null ? data.find((row) => row.year === referenceYear) : null;
+    const chartStartYear = data.length ? data[0].year : null;
+    const chartEndYear = referenceYear;
+
+    return {
+        data,
+        referenceYear,
+        referenceRow,
+        chartStartYear,
+        chartEndYear,
+    };
+}
+
 export async function getPage96Data() {
     const allData = await loadAllData();
     const evRows = allData.filter((row) => row.vector && row.vector.startsWith('ev_'));
@@ -1495,5 +1552,263 @@ export async function getPage117Data() {
         chartData,
         chartStartYear: 2015,
         chartEndYear,
+    };
+}
+
+const WIND_PROJECT_PROV_FROM_CODE = {
+    1: 'ab',
+    2: 'qc',
+    3: 'on',
+    4: 'sk',
+};
+
+const ELEC_GHG_SERIES = {
+    elec_ghg_coal: 'coal',
+    elec_ghg_natural_gas: 'naturalGas',
+    elec_ghg_other: 'other',
+};
+
+export async function getPage71Data() {
+    const allData = await loadAllData();
+    const byYear = {};
+    const stats = {};
+
+    allData.forEach((row) => {
+        if (!row.vector || !row.vector.startsWith('elec_ghg_')) return;
+        if (row.vector.startsWith('elec_ghg_stat_')) {
+            stats[row.vector] = Number(row.value);
+            return;
+        }
+        const key = ELEC_GHG_SERIES[row.vector];
+        if (!key) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        byYear[year][key] = Number(row.value);
+    });
+
+    const data = Object.values(byYear)
+        .filter((row) =>
+            row.coal != null
+            && row.naturalGas != null
+            && row.other != null,
+        )
+        .sort((a, b) => a.year - b.year)
+        .map((row) => ({
+            ...row,
+            total: row.coal + row.naturalGas + row.other,
+        }));
+
+    const years = data.map((row) => row.year);
+
+    return {
+        data,
+        years,
+        startYear: years[0] ?? null,
+        endYear: years.length ? years[years.length - 1] : null,
+        baseYear: stats.elec_ghg_stat_base_year ?? years[0] ?? null,
+        referenceYear: stats.elec_ghg_stat_reference_year ?? years[years.length - 1] ?? null,
+        totalPctChange: stats.elec_ghg_stat_total_pct_change ?? null,
+        coalGenSharePct: stats.elec_ghg_stat_coal_gen_share_pct ?? null,
+        coalGhgSharePct: stats.elec_ghg_stat_coal_ghg_share_pct ?? null,
+    };
+}
+
+const REN_CAP_VECTORS = {
+    ren_cap_hydro: 'hydro',
+    ren_cap_wind: 'wind',
+    ren_cap_biomass: 'biomass',
+    ren_cap_solar_tidal: 'solarTidal',
+};
+
+export async function getPage74Data() {
+    const allData = await loadAllData();
+    const byYear = {};
+
+    allData.forEach((row) => {
+        if (!row.vector || !row.vector.startsWith('ren_cap_')) return;
+        const key = REN_CAP_VECTORS[row.vector];
+        if (!key) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        byYear[year][key] = Number(row.value);
+    });
+
+    const data = Object.values(byYear)
+        .filter((row) =>
+            row.hydro != null
+            && row.wind != null
+            && row.biomass != null
+            && row.solarTidal != null,
+        )
+        .sort((a, b) => a.year - b.year);
+
+    const years = data.map((row) => row.year);
+
+    return {
+        data,
+        years,
+        startYear: years[0] ?? null,
+        endYear: years.length ? years[years.length - 1] : null,
+    };
+}
+
+export async function getPage81Data() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+
+    const provinces = allData
+        .filter((row) => row.vector && row.vector.startsWith('wind_cap_'))
+        .map((row) => ({
+            key: row.vector.replace('wind_cap_', ''),
+            capacity: Number(row.value),
+            year: row.ref_date,
+        }))
+        .filter((row) => !Number.isNaN(row.capacity) && row.capacity > 0)
+        .sort((a, b) => b.capacity - a.capacity);
+
+    const projects = allData
+        .filter((row) => row.vector && /^wind_proj_\d+_mw$/.test(row.vector))
+        .map((row) => {
+            const match = row.vector.match(/^wind_proj_(\d+)_mw$/);
+            const index = match ? match[1] : '';
+            const provRow = allData.find((item) => item.vector === `wind_proj_${index}_prov`);
+            const provCode = provRow != null ? Number(provRow.value) : null;
+            const provKey = WIND_PROJECT_PROV_FROM_CODE[provCode] || null;
+            const facility = metadata[row.vector]?.title || row.vector;
+            return {
+                index,
+                facility,
+                capacity: Number(row.value),
+                provKey,
+                year: row.ref_date,
+            };
+        })
+        .filter((row) => !Number.isNaN(row.capacity) && row.capacity > 0)
+        .sort((a, b) => b.capacity - a.capacity);
+
+    const referenceYear = provinces.length ? provinces[0].year : projects.length ? projects[0].year : null;
+
+    return {
+        referenceYear,
+        provinces,
+        projects,
+    };
+}
+
+const SOLAR_PROJECT_PROV_FROM_CODE = {
+    1: 'ab',
+    2: 'on',
+};
+
+export async function getPage84Data() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+
+    const projects = allData
+        .filter((row) => row.vector && /^solar_proj_\d+_mw$/.test(row.vector))
+        .map((row) => {
+            const match = row.vector.match(/^solar_proj_(\d+)_mw$/);
+            const index = match ? match[1] : '';
+            const provRow = allData.find((item) => item.vector === `solar_proj_${index}_prov`);
+            const provCode = provRow != null ? Number(provRow.value) : null;
+            const provKey = SOLAR_PROJECT_PROV_FROM_CODE[provCode] || null;
+            const facility = metadata[row.vector]?.title || row.vector;
+            return {
+                index,
+                facility,
+                capacity: Number(row.value),
+                provKey,
+                year: row.ref_date,
+            };
+        })
+        .filter((row) => !Number.isNaN(row.capacity) && row.capacity > 0)
+        .sort((a, b) => b.capacity - a.capacity);
+
+    const referenceYear = projects.length ? projects[0].year : null;
+
+    return {
+        referenceYear,
+        projects,
+    };
+}
+
+const SBIO_BAR_VECTORS = {
+    sbio_prod_pulping: 'pulping',
+    sbio_prod_swr: 'swr',
+    sbio_prod_firewood: 'firewood',
+    sbio_prod_pellets: 'pellets',
+};
+
+const SBIO_PIE_VECTORS = {
+    sbio_use_industrial: 'industrial',
+    sbio_use_electricity: 'electricity',
+    sbio_use_residential: 'residential',
+    sbio_use_total: 'total',
+};
+
+export async function getPage78Data() {
+    const allData = await loadAllData();
+    const byYear = {};
+
+    allData.forEach((row) => {
+        if (!row.vector || !row.vector.startsWith('sbio_')) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+
+        const barKey = SBIO_BAR_VECTORS[row.vector];
+        if (barKey) {
+            byYear[year][barKey] = Number(row.value);
+            return;
+        }
+        const pieKey = SBIO_PIE_VECTORS[row.vector];
+        if (pieKey) {
+            byYear[year][pieKey] = Number(row.value);
+        }
+    });
+
+    const data = Object.values(byYear)
+        .filter((row) =>
+            row.pulping != null
+            && row.swr != null
+            && row.firewood != null
+            && row.pellets != null
+            && row.industrial != null
+            && row.electricity != null
+            && row.residential != null
+            && row.total != null,
+        )
+        .sort((a, b) => a.year - b.year)
+        .map((row) => ({
+            ...row,
+            barTotal: row.pulping + row.swr + row.firewood + row.pellets,
+            pieSlices: [
+                {
+                    key: 'industrial',
+                    pj: row.industrial,
+                    pct: row.total > 0 ? Math.round((row.industrial / row.total) * 100) : null,
+                },
+                {
+                    key: 'electricity',
+                    pj: row.electricity,
+                    pct: row.total > 0 ? Math.round((row.electricity / row.total) * 100) : null,
+                },
+                {
+                    key: 'residential',
+                    pj: row.residential,
+                    pct: row.total > 0 ? Math.round((row.residential / row.total) * 100) : null,
+                },
+            ],
+        }));
+
+    const years = data.map((row) => row.year);
+    const referenceYear = years.length ? years[years.length - 1] : null;
+
+    return {
+        data,
+        years,
+        startYear: years[0] ?? null,
+        endYear: referenceYear,
+        referenceYear,
     };
 }

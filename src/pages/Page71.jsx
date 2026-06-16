@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { getPage71Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const TRACE_KEYS = ['coal', 'naturalGas', 'other'];
@@ -13,35 +14,23 @@ const COLORS = {
     other: '#84962C',
 };
 
-const PAGE71_DATA = [
-    { year: 2000, coal: 108, naturalGas: 10, other: 10 },
-    { year: 2001, coal: 106, naturalGas: 12, other: 10 },
-    { year: 2002, coal: 104, naturalGas: 8, other: 10 },
-    { year: 2003, coal: 103, naturalGas: 13, other: 10 },
-    { year: 2004, coal: 96, naturalGas: 10, other: 13 },
-    { year: 2005, coal: 98, naturalGas: 10, other: 10 },
-    { year: 2006, coal: 94, naturalGas: 10, other: 8 },
-    { year: 2007, coal: 100, naturalGas: 10, other: 9 },
-    { year: 2008, coal: 94, naturalGas: 10, other: 5 },
-    { year: 2009, coal: 79, naturalGas: 8, other: 8 },
-    { year: 2010, coal: 80, naturalGas: 10, other: 5 },
-    { year: 2011, coal: 69, naturalGas: 13, other: 4 },
-    { year: 2012, coal: 63, naturalGas: 16, other: 4 },
-    { year: 2013, coal: 64, naturalGas: 12, other: 4 },
-    { year: 2014, coal: 60, naturalGas: 10, other: 5 },
-    { year: 2015, coal: 58, naturalGas: 12, other: 5 },
-    { year: 2016, coal: 58, naturalGas: 12, other: 5 },
-    { year: 2017, coal: 58, naturalGas: 10, other: 5 },
-    { year: 2018, coal: 45, naturalGas: 13, other: 4 },
-    { year: 2019, coal: 43, naturalGas: 14, other: 4 },
-    { year: 2020, coal: 35, naturalGas: 15, other: 3 },
-    { year: 2021, coal: 32, naturalGas: 17, other: 3 },
-    { year: 2022, coal: 25, naturalGas: 19, other: 3 },
-    { year: 2023, coal: 22, naturalGas: 22, other: 5 },
-];
+const substitute = (text, vars) =>
+    Object.keys(vars || {}).reduce(
+        (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
+        text || '',
+    );
 
-const START_YEAR = PAGE71_DATA[0].year;
-const END_YEAR = PAGE71_DATA[PAGE71_DATA.length - 1].year;
+const computeYAxis = (maxTotal) => {
+    if (!maxTotal || maxTotal <= 0) {
+        return { tickvals: [0, 20, 40, 60, 80, 100, 120, 140], range: [0, 140] };
+    }
+    const padded = maxTotal * 1.1;
+    const step = padded <= 120 ? 20 : 25;
+    const axisMax = Math.ceil(padded / step) * step;
+    const tickvals = [];
+    for (let v = 0; v <= axisMax; v += step) tickvals.push(v);
+    return { tickvals, range: [0, axisMax] };
+};
 
 const markerOpacityFor = (selectedPoints, years, traceIndex) => {
     if (selectedPoints === null) return 1;
@@ -50,6 +39,9 @@ const markerOpacityFor = (selectedPoints, years, traceIndex) => {
 
 const Page71 = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedPoints, setSelectedPoints] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -76,16 +68,60 @@ const Page71 = () => {
         return formatted === '—' ? formatted : `${formatted}${hoverUnit}`;
     };
 
-    const years = PAGE71_DATA.map((row) => row.year);
+    useEffect(() => {
+        getPage71Data()
+            .then(setResult)
+            .catch((err) => setError(err?.message || 'Failed to load data'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const tableRows = useMemo(() => result?.data ?? [], [result]);
+    const years = tableRows.map((row) => row.year);
+    const startYear = result?.startYear;
+    const endYear = result?.endYear;
+    const baseYear = result?.baseYear;
+    const referenceYear = result?.referenceYear;
     const yearTicks = years.filter((y) => y % 2 === 1);
-    const tableRowsDesc = useMemo(() => [...PAGE71_DATA].reverse(), []);
+    const tableRowsDesc = useMemo(() => [...tableRows].reverse(), [tableRows]);
+
+    const formatPctDisplay = (value) => {
+        const n = Math.abs(Math.round(Number(value)));
+        return lang === 'fr' ? `${n} %` : `${n}%`;
+    };
+
+    const intro1Bold = result?.totalPctChange != null
+        ? (() => {
+            const pct = formatPctDisplay(result.totalPctChange);
+            if (lang === 'fr') {
+                const verb = Number(result.totalPctChange) < 0 ? `diminué de ${pct}` : `augmenté de ${pct}`;
+                return verb;
+            }
+            const verb = Number(result.totalPctChange) < 0 ? `decreased by ${pct}` : `increased by ${pct}`;
+            return verb;
+        })()
+        : getText('page71_intro1_bold', lang);
+
+    const intro2Bold1 = result?.coalGenSharePct != null
+        ? (lang === 'fr'
+            ? `${formatPctDisplay(result.coalGenSharePct)} de la production totale d'électricité`
+            : `${formatPctDisplay(result.coalGenSharePct)} of generation`)
+        : getText('page71_intro2_bold1', lang);
+
+    const intro2Bold2 = result?.coalGhgSharePct != null
+        ? (lang === 'fr' ? formatPctDisplay(result.coalGhgSharePct) : `${formatPctDisplay(result.coalGhgSharePct)} of electricity-related GHG`)
+        : getText('page71_intro2_bold2', lang);
+
+    const textVars = { startYear: startYear ?? '', endYear: endYear ?? '', baseYear: baseYear ?? '', referenceYear: referenceYear ?? '' };
+    const intro1Part2 = substitute(getText('page71_intro1_part2', lang), textVars);
+    const intro2Part3 = substitute(getText('page71_intro2_part3', lang), textVars);
 
     const coalLabel = getText('page71_legend_coal', lang);
     const naturalGasLabel = getText('page71_legend_naturalGas', lang);
     const otherLabel = getText('page71_legend_other', lang);
-    const chartTitle = getText('page71_chart_title', lang);
+    const chartTitle = substitute(getText('page71_chart_title', lang), textVars);
     const yAxisTitle = getText('page71_yaxis', lang);
-    const fileTitle = `${getText('page71_download_title', lang)} ${START_YEAR}-${END_YEAR}`;
+    const fileTitle = `${getText('page71_download_title', lang)}_${startYear ?? ''}-${endYear ?? ''}`;
+    const tableCaption = substitute(getText('page71_table_caption', lang), textVars);
 
     const tableHeaders = [
         getText('page71_table_col_year', lang),
@@ -101,9 +137,15 @@ const Page71 = () => {
     const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
     const axisTitleFont = { size: windowWidth <= 768 ? 16 : 18, family: 'Arial, sans-serif', color: '#58585a' };
 
-    const coalValues = PAGE71_DATA.map((row) => row.coal);
-    const naturalGasValues = PAGE71_DATA.map((row) => row.naturalGas);
-    const otherValues = PAGE71_DATA.map((row) => row.other);
+    const coalValues = tableRows.map((row) => row.coal);
+    const naturalGasValues = tableRows.map((row) => row.naturalGas);
+    const otherValues = tableRows.map((row) => row.other);
+
+    const maxTotal = useMemo(
+        () => (tableRows.length ? Math.max(...tableRows.map((row) => row.total)) : 0),
+        [tableRows],
+    );
+    const { tickvals: yTickvals, range: yRange } = useMemo(() => computeYAxis(maxTotal), [maxTotal]);
 
     const coalHoverTexts = years.map(
         (yearValue, i) => `<b>${coalLabel}</b><br>${yearValue}: ${formatHoverMt(coalValues[i])}<extra></extra>`,
@@ -155,7 +197,7 @@ const Page71 = () => {
             clearTimeout(timer);
             observer.disconnect();
         };
-    }, [lang, selectedPoints]);
+    }, [lang, loading, error, result, selectedPoints]);
 
     const syncTableScroll = useCallback(() => {
         const topScroll = topScrollRef.current;
@@ -250,7 +292,7 @@ const Page71 = () => {
     const downloadChartPng = async (plotEl = null) => {
         const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement || !window.Plotly) return;
-        const title = `${stripHtml(chartTitle)} (${START_YEAR}–${END_YEAR})`;
+        const title = `${stripHtml(chartTitle)} (${startYear}–${endYear})`;
         try {
             const imgData = await window.Plotly.toImage(plotElement, {
                 format: 'png',
@@ -339,7 +381,7 @@ const Page71 = () => {
                 {
                     children: [
                         new Paragraph({
-                            children: [new TextRun({ text: `${stripHtml(chartTitle)} (${START_YEAR}–${END_YEAR})`, bold: true, size: 28 })],
+                            children: [new TextRun({ text: `${stripHtml(chartTitle)} (${startYear}–${endYear})`, bold: true, size: 28 })],
                             alignment: AlignmentType.CENTER,
                             spacing: { after: 300 },
                         }),
@@ -401,6 +443,16 @@ const Page71 = () => {
             hovertemplate: otherHoverTexts,
         },
     ];
+
+    if (loading) {
+        return <p className="page71-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>;
+    }
+    if (error) {
+        return <p className="page71-error" role="alert">{error}</p>;
+    }
+    if (!tableRows.length) {
+        return <p className="page71-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>;
+    }
 
     return (
         <main
@@ -510,6 +562,12 @@ const Page71 = () => {
     .page71-intro { font-size: 18px; }
     .page71-chart-title { font-size: 26px; }
 }
+.page71-loading, .page71-error {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    color: var(--gc-text);
+    padding: 24px 0;
+}
             `}</style>
 
             <div className="page71-inner">
@@ -517,19 +575,19 @@ const Page71 = () => {
 
                 <p className="page71-intro">
                     {getText('page71_intro1_part1', lang)}
-                    <strong>{getText('page71_intro1_bold', lang)}</strong>
-                    {getText('page71_intro1_part2', lang)}
+                    <strong>{intro1Bold}</strong>
+                    {intro1Part2}
                 </p>
                 <p className="page71-intro">
                     {getText('page71_intro2_part1', lang)}
-                    <strong>{getText('page71_intro2_bold1', lang)}</strong>
+                    <strong>{intro2Bold1}</strong>
                     {getText('page71_intro2_part2', lang)}
-                    <strong>{getText('page71_intro2_bold2', lang)}</strong>
-                    {getText('page71_intro2_part3', lang)}
+                    <strong>{intro2Bold2}</strong>
+                    {intro2Part3}
                     {lang === 'fr' && (
                         <>
                             <strong>{getText('page71_intro2_bold3', lang)}</strong>
-                            {getText('page71_intro2_part4', lang)}
+                            {substitute(getText('page71_intro2_part4', lang), textVars)}
                         </>
                     )}
                 </p>
@@ -585,8 +643,8 @@ const Page71 = () => {
                                 },
                                 yaxis: {
                                     title: { text: yAxisTitle, font: axisTitleFont, standoff: 12 },
-                                    tickvals: [0, 20, 40, 60, 80, 100, 120, 140],
-                                    range: [0, 140],
+                                    tickvals: yTickvals,
+                                    range: yRange,
                                     tickfont: tickFont,
                                     automargin: true,
                                     fixedrange: true,
@@ -650,7 +708,7 @@ const Page71 = () => {
                             tabIndex={0}
                         >
                             <table className="table table-bordered table-striped table-hover">
-                                <caption className="wb-inv">{getText('page71_table_caption', lang)}</caption>
+                                <caption className="wb-inv">{tableCaption}</caption>
                                 <thead>
                                     <tr>
                                         {tableHeaders.map((header, index) => (

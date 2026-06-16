@@ -37,7 +37,14 @@ const OverlayBlock = ({ slot, className, children }) => (
     </div>
 );
 
-const Page65TradeInfographic = ({ lang, getText, ariaLabel, figureRef }) => {
+const Page65TradeInfographic = ({
+    lang,
+    getText,
+    ariaLabel,
+    figureRef,
+    exportsValue,
+    importsValue,
+}) => {
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const slots = TEXT_SLOTS[overlayLang];
 
@@ -114,7 +121,7 @@ const Page65TradeInfographic = ({ lang, getText, ariaLabel, figureRef }) => {
                 </OverlayBlock>
 
                 <OverlayBlock slot={slots.exportsValue} className="page65-overlay--exports-value">
-                    <p className="page65-overlay-value">{getText('page65_info_exports_value', lang)}</p>
+                    <p className="page65-overlay-value">{exportsValue}</p>
                 </OverlayBlock>
 
                 <OverlayBlock slot={slots.importsLabel} className="page65-overlay--imports-label">
@@ -122,7 +129,7 @@ const Page65TradeInfographic = ({ lang, getText, ariaLabel, figureRef }) => {
                 </OverlayBlock>
 
                 <OverlayBlock slot={slots.importsValue} className="page65-overlay--imports-value">
-                    <p className="page65-overlay-value">{getText('page65_info_imports_value', lang)}</p>
+                    <p className="page65-overlay-value">{importsValue}</p>
                 </OverlayBlock>
             </div>
             <figcaption className="wb-inv">{ariaLabel}</figcaption>

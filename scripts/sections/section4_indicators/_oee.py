@@ -10,11 +10,16 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from utils.io_retry import ensure_workbook, resolve_sheet_name
+
 from .constants import (
+    EE_SHEET_PRIMARY,
+    ENERGY_EFFICIENCY_XLSX,
     OEE_NEUD_ZIP_URLS,
     OEE_RESIDENTIAL_ANALYSIS_PAGES,
     OEE_RESIDENTIAL_ANALYSIS_XLS,
     REQUEST_TIMEOUT,
+    map_primary_secondary_product,
     _residential_label_eee,
     _residential_label_space,
     _residential_label_ter,
@@ -155,8 +160,45 @@ class OEESharedMixin:
                         break
         return out
 
+    def _load_oee_from_energy_efficiency_excel(self) -> Dict[int, Dict[str, float]]:
+        """Load R,C,I,T,A from SharePoint Energy Efficiency workbook when available."""
+        path = ensure_workbook(ENERGY_EFFICIENCY_XLSX, config=self.config)
+        if not path.is_file():
+            return {}
+        try:
+            sheet = resolve_sheet_name(path, EE_SHEET_PRIMARY, label='energy_use OEE sectors')
+            df = pd.read_excel(path, sheet_name=sheet)
+        except Exception as e:
+            print(f"    Could not read {path.name} sheet {EE_SHEET_PRIMARY!r}: {e}")
+            return {}
+        df.columns = [str(c).strip() for c in df.columns]
+        year_col = self.get_column(df, "year", "Year", "YEAR", "ref_date")
+        product_col = self.get_column(df, "product", "PRODUCT", "category")
+        value_col = self.get_column(df, "value", "VALUE", "amount")
+        if not year_col or not product_col or not value_col:
+            return {}
+        oee_sectors = {"R", "C", "I", "T", "A"}
+        by_year: Dict[int, Dict[str, float]] = {}
+        for _, row in df.iterrows():
+            code = map_primary_secondary_product(row.get(product_col, ""))
+            if code not in oee_sectors:
+                continue
+            try:
+                year = int(float(row[year_col]))
+                val = float(row[value_col])
+            except (TypeError, ValueError):
+                continue
+            by_year.setdefault(year, {})[code] = val
+        if by_year:
+            print(f"    OEE sectors R,C,I,T,A from {path.name} ({len(by_year)} years)")
+        return by_year
+
     def _fetch_oee_by_year(self) -> Dict[int, Dict[str, float]]:
-        """Download all five sector XLS from comprehensive ZIPs, parse Total Energy Use (PJ) by year."""
+        """Load sector totals R,C,I,T,A from SharePoint Excel, else OEE NEUD ZIP downloads."""
+        from_excel = self._load_oee_from_energy_efficiency_excel()
+        if from_excel:
+            return from_excel
+
         by_year: Dict[int, Dict[str, float]] = {}
         for sector, zip_url in OEE_NEUD_ZIP_URLS.items():
             content = self._fetch_sector_xls_from_zip(zip_url, sector)

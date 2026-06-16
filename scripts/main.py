@@ -47,8 +47,11 @@ class _Tee:
         self._log_file = log_file
 
     def write(self, data):
-        self._stream.write(data)
-        self._log_file.write(data)
+        from utils.log_sanitize import sanitize_log_text
+
+        sanitized = sanitize_log_text(data)
+        self._stream.write(sanitized)
+        self._log_file.write(sanitized)
 
     def flush(self):
         self._stream.flush()
@@ -89,7 +92,23 @@ def setup_logging(config: Config, command: str | None = None) -> Path | None:
     sys.stderr = _Tee(_original_stderr, _log_file_handle)
 
     logging.basicConfig(level=level, format=fmt, force=True)
-    print(f"Log file: {log_path}")
+
+    from utils.log_sanitize import sanitize_log_text
+
+    class _SanitizeLogFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            record.msg = sanitize_log_text(str(record.getMessage()))
+            record.args = ()
+            return True
+
+    logging.getLogger().addFilter(_SanitizeLogFilter())
+
+    try:
+        log_display = log_path.relative_to(SCRIPT_DIR.parent).as_posix()
+    except ValueError:
+        from utils.log_sanitize import format_path_for_log
+        log_display = format_path_for_log(log_path)
+    print(f"Log file: {log_display}")
     return log_path
 
 
@@ -156,7 +175,7 @@ def write_run_summary(config: Config, command: str, results: dict, failures: lis
     }
     with open(summary_path, 'w', encoding='utf-8') as f:
         json.dump(payload, f, indent=2, default=str)
-    print(f"\nRun summary written to: {summary_path}")
+    print(f"\nRun summary written to: {summary_path.relative_to(SCRIPT_DIR.parent).as_posix()}")
     return summary_path
 
 
@@ -173,11 +192,55 @@ def print_result_summary(results: dict) -> None:
                     )
 
 
+def cmd_sharepoint_sync(args, config: Config):
+    from sharepoint.sync import sync_manual_data_folder, cache_dir
+
+    print("=" * 60)
+    print("SharePoint sync — Manual Data workbooks")
+    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 60)
+
+    try:
+        result = sync_manual_data_folder(force=args.force)
+    except Exception as exc:
+        print(f"\nSharePoint sync failed: {exc}")
+        return 1
+
+    print(f"\nStatus: {result.get('status')}")
+    from utils.log_sanitize import format_path_for_log
+    print(f"Cache: {format_path_for_log(result.get('cache_dir', cache_dir()))}")
+    downloaded = result.get("downloaded") or []
+    if downloaded:
+        print(f"Downloaded ({len(downloaded)}):")
+        for name in downloaded:
+            print(f"  - {name}")
+    else:
+        print("No new downloads (cache up to date).")
+
+    cache = Path(result.get("cache_dir", cache_dir()))
+    files = sorted(p.name for p in cache.iterdir() if p.is_file())
+    if files:
+        print(f"\nFiles in cache ({len(files)}):")
+        for name in files:
+            print(f"  - {name}")
+    return 0
+
+
 def cmd_eedas_update(args, config: Config, db: DatabaseConnection):
     print("=" * 60)
     print("EEDAS Update — load source-native data")
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
+
+    try:
+        from sharepoint.sync import ensure_sharepoint_sync
+
+        print("Syncing SharePoint Manual Data workbooks...")
+        ensure_sharepoint_sync()
+        print()
+    except Exception as exc:
+        print(f"\nError: SharePoint sync failed: {exc}")
+        return 1
 
     if not args.skip_ensure_schema:
         try:
@@ -413,6 +476,7 @@ Examples:
   python main.py efb transform --all
   python main.py efb transform --indicator capital_expenditures
   python main.py export
+  python main.py sharepoint sync
   python main.py status --failed-only
   python main.py list
         """,
@@ -428,6 +492,11 @@ Examples:
     eedas_group.add_argument('--section', '-s', help='Update one section')
     eedas_group.add_argument('--source', '-r', help='Update one source')
     eedas_update.add_argument('--skip-ensure-schema', action='store_true')
+
+    sharepoint_parser = subparsers.add_parser('sharepoint', help='SharePoint manual-data sync')
+    sharepoint_sub = sharepoint_parser.add_subparsers(dest='sharepoint_command')
+    sp_sync = sharepoint_sub.add_parser('sync', help='Download Manual Data Excel files from SharePoint')
+    sp_sync.add_argument('--force', action='store_true', help='Re-download all files')
 
     efb_parser = subparsers.add_parser('efb', help='EFB indicator transform')
     efb_sub = efb_parser.add_subparsers(dest='efb_command')
@@ -468,6 +537,12 @@ Examples:
     try:
         if args.command == 'list':
             return cmd_list(args, config)
+
+        if args.command == 'sharepoint':
+            if args.sharepoint_command != 'sync':
+                print("Usage: python main.py sharepoint sync [--force]")
+                return 1
+            return cmd_sharepoint_sync(args, config)
 
         try:
             db = get_connection(config.database)

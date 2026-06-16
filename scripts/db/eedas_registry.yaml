@@ -171,6 +171,12 @@ source_tables:
     detail: "2010002501"
     source_table: stc_ev_sales
 
+  electricity_trade_us:
+    org_code: cer
+    report_code: elec
+    detail: trade_summary
+    source_table: cer_electricity_trade_summary
+
   canadian_production:
     org_code: stc
     report_code: canprod
@@ -188,3 +194,39 @@ source_tables:
     report_code: refin
     detail: capacity
     source_table: osm_refin_cap
+
+  solid_biofuels:
+    org_code: nrcan
+    report_code: renaq
+    detail: sbio
+    source_table: nrcan_solid_biofuels
+
+  wind_capacity_by_province:
+    org_code: nrcan
+    report_code: windcap
+    detail: by_prov
+    source_table: nrcan_windcapbyprov
+
+  renewable_electricity_capacity:
+    org_code: nrcan
+    report_code: renelecap
+    detail: capacity
+    source_table: nrcan_renelecap
+
+  ghg_electricity_spotlight:
+    org_code: ecc
+    report_code: ghg
+    detail: electricity
+    source_table: ecc_ghg_electricity
+
+  largest_wind_projects:
+    org_code: nrcan
+    report_code: windproj
+    detail: largest
+    source_table: can_largestwindprojects
+
+  largest_solar_projects:
+    org_code: nrcan
+    report_code: solarproj
+    detail: largest
+    source_table: can_largestsolprojects

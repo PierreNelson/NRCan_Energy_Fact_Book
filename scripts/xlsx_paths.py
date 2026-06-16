@@ -1,8 +1,8 @@
 """
-Resolve paths to local Excel workbooks (CEA, IEA, ECCC, OEE companions, TSX listing).
+Resolve paths to pipeline Excel workbooks synced from SharePoint Manual Data.
 
-Set EXTERNAL_XLSX_DATA_DIR in scripts/.env to a folder containing those files.
-If unset, paths fall back to the repository root (legacy).
+Workbooks are downloaded to EXTERNAL_XLSX_DATA_DIR (see scripts/.env) before
+handlers read them. Sync runs once per pipeline process via ensure_sharepoint_sync().
 """
 
 from __future__ import annotations
@@ -31,16 +31,12 @@ def repo_root() -> Path:
 
 
 def default_xlsx_base_dir() -> Path:
-    """Base directory for default-named workbooks: EXTERNAL_XLSX_DATA_DIR if set, else repo root."""
-    raw = os.environ.get(ENV_KEY, "").strip()
-    if not raw:
-        return repo_root()
-    p = Path(raw)
-    if not p.is_absolute():
-        p = (repo_root() / raw).resolve()
-    return p
+    """Local folder containing workbooks synced from SharePoint Manual Data."""
+    from sharepoint.sync import ensure_sharepoint_sync
+
+    return ensure_sharepoint_sync()
 
 
 def resolve_root_xlsx(filename: str) -> Path:
-    """Path to a workbook that used to live at repo root."""
+    """Path to a workbook in the SharePoint sync cache."""
     return default_xlsx_base_dir() / filename

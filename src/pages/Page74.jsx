@@ -3,9 +3,12 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { getPage74Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const TRACE_KEYS = ['hydro', 'wind', 'solarTidal', 'biomass'];
+const LEGEND_KEYS = [...TRACE_KEYS].reverse();
+const TRACE_COUNT = TRACE_KEYS.length;
 
 const COLORS = {
     hydro: '#2B5C3F',
@@ -13,26 +16,6 @@ const COLORS = {
     solarTidal: '#C4D56E',
     biomass: '#6D91B3',
 };
-
-const PAGE74_DATA = [
-    { year: 2011, hydro: 75500, wind: 5200, solarTidal: 600, biomass: 2700 },
-    { year: 2012, hydro: 75500, wind: 6300, solarTidal: 800, biomass: 2700 },
-    { year: 2013, hydro: 76000, wind: 7800, solarTidal: 1200, biomass: 2700 },
-    { year: 2014, hydro: 78500, wind: 9700, solarTidal: 1800, biomass: 2700 },
-    { year: 2015, hydro: 79200, wind: 11200, solarTidal: 2300, biomass: 2700 },
-    { year: 2016, hydro: 80400, wind: 11900, solarTidal: 2700, biomass: 2700 },
-    { year: 2017, hydro: 81000, wind: 12600, solarTidal: 2900, biomass: 2700 },
-    { year: 2018, hydro: 81400, wind: 12800, solarTidal: 3100, biomass: 2700 },
-    { year: 2019, hydro: 81400, wind: 13400, solarTidal: 3300, biomass: 2700 },
-    { year: 2020, hydro: 81400, wind: 13600, solarTidal: 3300, biomass: 2700 },
-    { year: 2021, hydro: 82300, wind: 14300, solarTidal: 3900, biomass: 2700 },
-    { year: 2022, hydro: 82300, wind: 15300, solarTidal: 4400, biomass: 2700 },
-    { year: 2023, hydro: 83200, wind: 16000, solarTidal: 5500, biomass: 2700 },
-];
-
-const START_YEAR = PAGE74_DATA[0].year;
-const END_YEAR = PAGE74_DATA[PAGE74_DATA.length - 1].year;
-const TRACE_COUNT = TRACE_KEYS.length;
 
 const hexToRgba = (hex, opacity = 1) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -42,8 +25,30 @@ const hexToRgba = (hex, opacity = 1) => {
     return hex;
 };
 
+const substitute = (text, vars) =>
+    Object.keys(vars || {}).reduce(
+        (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
+        text || '',
+    );
+
+const computeYAxis = (maxTotal) => {
+    if (!maxTotal || maxTotal <= 0) {
+        return { tickvals: [0, 20000, 40000, 60000, 80000, 100000], range: [0, 110000] };
+    }
+    const padded = maxTotal * 1.1;
+    const magnitude = 10 ** Math.floor(Math.log10(padded));
+    const step = padded <= 120000 ? 20000 : magnitude >= 100000 ? 100000 : 50000;
+    const axisMax = Math.ceil(padded / step) * step;
+    const tickvals = [];
+    for (let v = 0; v <= axisMax; v += step) tickvals.push(v);
+    return { tickvals, range: [0, axisMax] };
+};
+
 const Page74 = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedPoints, setSelectedPoints] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -70,9 +75,19 @@ const Page74 = () => {
         return formatted === '—' ? formatted : `${formatted}${hoverUnit}`;
     };
 
-    const years = PAGE74_DATA.map((row) => row.year);
+    useEffect(() => {
+        getPage74Data()
+            .then(setResult)
+            .catch((err) => setError(err?.message || 'Failed to load data'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const tableRows = useMemo(() => result?.data ?? [], [result]);
+    const years = tableRows.map((row) => row.year);
+    const startYear = result?.startYear;
+    const endYear = result?.endYear;
     const yearTicks = years.filter((y) => y % 2 === 1);
-    const tableRowsDesc = useMemo(() => [...PAGE74_DATA].reverse(), []);
+    const tableRowsDesc = useMemo(() => [...tableRows].reverse(), [tableRows]);
 
     const hydroLabel = getText('page74_legend_hydro', lang);
     const windLabel = getText('page74_legend_wind', lang);
@@ -80,7 +95,11 @@ const Page74 = () => {
     const biomassLabel = getText('page74_legend_biomass', lang);
     const chartTitle = getText('page74_chart_title', lang);
     const yAxisTitle = getText('page74_yaxis', lang);
-    const fileTitle = `${getText('page74_download_title', lang)} ${START_YEAR}-${END_YEAR}`;
+    const fileTitle = `${getText('page74_download_title', lang)}_${startYear ?? ''}-${endYear ?? ''}`;
+    const tableCaption = substitute(getText('page74_table_caption', lang), {
+        startYear: startYear ?? '',
+        endYear: endYear ?? '',
+    });
 
     const tableHeaders = [
         getText('page74_table_col_year', lang),
@@ -97,20 +116,31 @@ const Page74 = () => {
     const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
     const axisTitleFont = { size: windowWidth <= 768 ? 16 : 18, family: 'Arial, sans-serif', color: '#58585a' };
 
-    const hydroValues = PAGE74_DATA.map((row) => row.hydro);
-    const windValues = PAGE74_DATA.map((row) => row.wind);
-    const solarTidalValues = PAGE74_DATA.map((row) => row.solarTidal);
-    const biomassValues = PAGE74_DATA.map((row) => row.biomass);
+    const hydroValues = tableRows.map((row) => row.hydro);
+    const windValues = tableRows.map((row) => row.wind);
+    const solarTidalValues = tableRows.map((row) => row.solarTidal);
+    const biomassValues = tableRows.map((row) => row.biomass);
 
-    const seriesFillFor = (traceIndex, baseColor) =>
-        years.map((_, i) =>
-            hexToRgba(baseColor, selectedPoints === null || selectedPoints[traceIndex]?.includes(i) ? 0.85 : 0.25),
-        );
+    const maxTotal = useMemo(
+        () => (tableRows.length
+            ? Math.max(...tableRows.map((row) => row.hydro + row.wind + row.solarTidal + row.biomass))
+            : 0),
+        [tableRows],
+    );
+    const { tickvals: yTickvals, range: yRange } = useMemo(() => computeYAxis(maxTotal), [maxTotal]);
 
-    const seriesLineFor = (traceIndex, baseColor) =>
-        years.map((_, i) =>
-            hexToRgba(baseColor, selectedPoints === null || selectedPoints[traceIndex]?.includes(i) ? 1 : 0.25),
-        );
+    const pointOpacityFor = (traceIndex, pointIndex) => {
+        if (selectedPoints === null) return 1;
+        return selectedPoints[traceIndex]?.includes(pointIndex) ? 1 : 0.25;
+    };
+
+    const seriesColorFor = (traceIndex, baseColor, pointIndex) => {
+        const opacity = pointOpacityFor(traceIndex, pointIndex);
+        return opacity === 1 ? baseColor : hexToRgba(baseColor, opacity);
+    };
+
+    const seriesColorsFor = (traceIndex, baseColor) =>
+        years.map((_, i) => seriesColorFor(traceIndex, baseColor, i));
 
     const buildHoverTexts = (label, values) =>
         years.map((yearValue, i) => `<b>${label}</b><br>${yearValue}: ${formatHoverMw(values[i])}<extra></extra>`);
@@ -160,7 +190,7 @@ const Page74 = () => {
             clearTimeout(timer);
             observer.disconnect();
         };
-    }, [lang, selectedPoints]);
+    }, [lang, loading, error, result, selectedPoints]);
 
     const syncTableScroll = useCallback(() => {
         const topScroll = topScrollRef.current;
@@ -255,7 +285,7 @@ const Page74 = () => {
     const downloadChartPng = async (plotEl = null) => {
         const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement || !window.Plotly) return;
-        const title = `${stripHtml(chartTitle)} (${START_YEAR}–${END_YEAR})`;
+        const title = `${stripHtml(chartTitle)} (${startYear}–${endYear})`;
         try {
             const imgData = await window.Plotly.toImage(plotElement, {
                 format: 'png',
@@ -279,7 +309,7 @@ const Page74 = () => {
                 ctx.fillText(title, canvas.width / 2, 48);
                 ctx.drawImage(img, 0, titleHeight);
                 const legendY = titleHeight + img.height + 36;
-                const legendItems = TRACE_KEYS.map((key) => ({
+                const legendItems = LEGEND_KEYS.map((key) => ({
                     color: COLORS[key],
                     label: getText(`page74_legend_${key}`, lang),
                 }));
@@ -343,7 +373,7 @@ const Page74 = () => {
                 {
                     children: [
                         new Paragraph({
-                            children: [new TextRun({ text: `${stripHtml(chartTitle)} (${START_YEAR}–${END_YEAR})`, bold: true, size: 28 })],
+                            children: [new TextRun({ text: `${stripHtml(chartTitle)} (${startYear}–${endYear})`, bold: true, size: 28 })],
                             alignment: AlignmentType.CENTER,
                             spacing: { after: 300 },
                         }),
@@ -377,11 +407,11 @@ const Page74 = () => {
             name: hydroLabel,
             type: 'scatter',
             mode: 'lines',
-            line: { color: seriesLineFor(0, COLORS.hydro), width: 0.5 },
+            line: { color: selectedPoints === null ? COLORS.hydro : seriesColorsFor(0, COLORS.hydro), width: 0.5 },
             fill: 'tozeroy',
-            fillcolor: seriesFillFor(0, COLORS.hydro),
+            fillcolor: selectedPoints === null ? COLORS.hydro : seriesColorsFor(0, COLORS.hydro),
             stackgroup: 'capacity',
-            hoveron: 'points',
+            hoveron: 'points+fills',
             hovertemplate: hydroHoverTexts,
         },
         {
@@ -390,11 +420,11 @@ const Page74 = () => {
             name: windLabel,
             type: 'scatter',
             mode: 'lines',
-            line: { color: seriesLineFor(1, COLORS.wind), width: 0.5 },
+            line: { color: selectedPoints === null ? COLORS.wind : seriesColorsFor(1, COLORS.wind), width: 0.5 },
             fill: 'tonexty',
-            fillcolor: seriesFillFor(1, COLORS.wind),
+            fillcolor: selectedPoints === null ? COLORS.wind : seriesColorsFor(1, COLORS.wind),
             stackgroup: 'capacity',
-            hoveron: 'points',
+            hoveron: 'points+fills',
             hovertemplate: windHoverTexts,
         },
         {
@@ -403,11 +433,11 @@ const Page74 = () => {
             name: solarTidalLabel,
             type: 'scatter',
             mode: 'lines',
-            line: { color: seriesLineFor(2, COLORS.solarTidal), width: 0.5 },
+            line: { color: selectedPoints === null ? COLORS.solarTidal : seriesColorsFor(2, COLORS.solarTidal), width: 0.5 },
             fill: 'tonexty',
-            fillcolor: seriesFillFor(2, COLORS.solarTidal),
+            fillcolor: selectedPoints === null ? COLORS.solarTidal : seriesColorsFor(2, COLORS.solarTidal),
             stackgroup: 'capacity',
-            hoveron: 'points',
+            hoveron: 'points+fills',
             hovertemplate: solarTidalHoverTexts,
         },
         {
@@ -416,14 +446,24 @@ const Page74 = () => {
             name: biomassLabel,
             type: 'scatter',
             mode: 'lines',
-            line: { color: seriesLineFor(3, COLORS.biomass), width: 0.5 },
+            line: { color: selectedPoints === null ? COLORS.biomass : seriesColorsFor(3, COLORS.biomass), width: 0.5 },
             fill: 'tonexty',
-            fillcolor: seriesFillFor(3, COLORS.biomass),
+            fillcolor: selectedPoints === null ? COLORS.biomass : seriesColorsFor(3, COLORS.biomass),
             stackgroup: 'capacity',
-            hoveron: 'points',
+            hoveron: 'points+fills',
             hovertemplate: biomassHoverTexts,
         },
     ];
+
+    if (loading) {
+        return <p className="page74-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>;
+    }
+    if (error) {
+        return <p className="page74-error" role="alert">{error}</p>;
+    }
+    if (!tableRows.length) {
+        return <p className="page74-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>;
+    }
 
     return (
         <main
@@ -502,6 +542,12 @@ const Page74 = () => {
 @media (max-width: 768px) {
     .page74-chart-title { font-size: 26px; }
 }
+.page74-loading, .page74-error {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    color: var(--gc-text);
+    padding: 24px 0;
+}
             `}</style>
 
             <div className="page74-inner">
@@ -560,12 +606,11 @@ const Page74 = () => {
                                 },
                                 yaxis: {
                                     title: { text: yAxisTitle, font: axisTitleFont, standoff: 12 },
-                                    tickvals: [0, 20000, 40000, 60000, 80000, 100000],
-                                    ticktext: [0, 20000, 40000, 60000, 80000, 100000].map((v) => formatMw(v)),
-                                    range: [0, 110000],
+                                    tickvals: yTickvals,
+                                    ticktext: yTickvals.map((v) => formatMw(v)),
+                                    range: yRange,
                                     tickfont: tickFont,
-                                    showgrid: true,
-                                    gridcolor: '#e0e0e0',
+                                    showgrid: false,
                                     showline: true,
                                     linewidth: 1,
                                     linecolor: '#333',
@@ -607,7 +652,7 @@ const Page74 = () => {
                     </figure>
 
                     <div className="page74-legend" aria-hidden="true">
-                        {TRACE_KEYS.map((key) => (
+                        {LEGEND_KEYS.map((key) => (
                             <span key={key} className="page74-legend-item">
                                 <span className="page74-legend-swatch" style={{ backgroundColor: COLORS[key] }} />
                                 {getText(`page74_legend_${key}`, lang)}
@@ -632,7 +677,7 @@ const Page74 = () => {
                             tabIndex={0}
                         >
                             <table className="table table-bordered table-striped table-hover">
-                                <caption className="wb-inv">{getText('page74_table_caption', lang)}</caption>
+                                <caption className="wb-inv">{tableCaption}</caption>
                                 <thead>
                                     <tr>
                                         {tableHeaders.map((header, index) => (

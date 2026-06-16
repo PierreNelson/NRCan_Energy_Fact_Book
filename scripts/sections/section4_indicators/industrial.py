@@ -5,8 +5,14 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 from xlsx_paths import default_xlsx_base_dir
+from utils.io_retry import ensure_workbook, resolve_sheet_name
 
-from .constants import OEE_INDUSTRIAL_CP_URL, REQUEST_TIMEOUT
+from .constants import (
+    EE_SHEET_IMPROVEMENT,
+    ENERGY_EFFICIENCY_XLSX,
+    OEE_INDUSTRIAL_CP_URL,
+    REQUEST_TIMEOUT,
+)
 
 SOURCE_KEY = 'industrial_sector'
 
@@ -18,7 +24,16 @@ def _ee_improvement_path(processor):
     res_cfg = sources_cfg.get('residential_daily_lives', {}) or {}
     base_dir = default_xlsx_base_dir()
     path_str = (ind_cfg.get('ee_improvement_file_path') or res_cfg.get('ee_improvement_file_path') or '').strip()
-    return processor._resolve_path(path_str, base_dir) if path_str else base_dir / 'EE Improvement.xlsx'
+    if path_str:
+        return processor._resolve_path(path_str, base_dir)
+    return ensure_workbook(ENERGY_EFFICIENCY_XLSX, config=processor.config)
+
+
+def _ee_improvement_sheet(processor, path) -> str | int:
+    default_path = ensure_workbook(ENERGY_EFFICIENCY_XLSX, config=processor.config)
+    if path.resolve() == default_path.resolve():
+        return resolve_sheet_name(path, EE_SHEET_IMPROVEMENT, label='industrial_sector')
+    return EE_SHEET_IMPROVEMENT
 
 
 def update_industrial_sector(processor) -> int:
@@ -51,7 +66,7 @@ def update_industrial_sector(processor) -> int:
     path = _ee_improvement_path(processor)
     if path.exists():
         try:
-            df_ee = pd.read_excel(path, sheet_name='EE Improvement')
+            df_ee = pd.read_excel(path, sheet_name=_ee_improvement_sheet(processor, path))
         except Exception as e:
             print(f'    Failed to read sheet EE Improvement: {e}')
             df_ee = pd.DataFrame()

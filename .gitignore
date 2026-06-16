@@ -29,11 +29,10 @@ release/
 .env.local
 scripts/.env
 
-# Pipeline CSV backups (see scripts/export/safe_io.py)
-public/data/.backups/
+# SharePoint Excel cache (downloaded workbooks)
+data/sharepoint_cache/
 
 # Python
-scripts/logs/
 
 __pycache__/
 *.py[cod]

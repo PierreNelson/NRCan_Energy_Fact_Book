@@ -3,28 +3,9 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { getPage65Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page65TradeInfographic from '../components/Page65TradeInfographic';
-
-const PAGE65_DATA = [
-    { year: 2008, exports: 56.0, imports: 23.0, net: 33.0 },
-    { year: 2009, exports: 51.0, imports: 17.0, net: 34.0 },
-    { year: 2010, exports: 44.0, imports: 19.0, net: 25.0 },
-    { year: 2011, exports: 51.0, imports: 14.0, net: 37.0 },
-    { year: 2012, exports: 58.0, imports: 11.0, net: 47.0 },
-    { year: 2013, exports: 63.0, imports: 11.0, net: 52.0 },
-    { year: 2014, exports: 58.0, imports: 13.0, net: 45.0 },
-    { year: 2015, exports: 68.0, imports: 9.0, net: 59.0 },
-    { year: 2016, exports: 73.0, imports: 9.0, net: 64.0 },
-    { year: 2017, exports: 72.0, imports: 10.0, net: 62.0 },
-    { year: 2018, exports: 61.0, imports: 13.0, net: 48.0 },
-    { year: 2019, exports: 60.0, imports: 13.0, net: 47.0 },
-    { year: 2020, exports: 67.0, imports: 10.0, net: 57.0 },
-    { year: 2021, exports: 60.0, imports: 13.0, net: 47.0 },
-    { year: 2022, exports: 65.0, imports: 14.0, net: 51.0 },
-    { year: 2023, exports: 46.0, imports: 19.0, net: 27.0 },
-    { year: 2024, exports: 35.6, imports: 23.2, net: 12.4 },
-];
 
 const COLORS = {
     exports: '#8DBE45',
@@ -42,8 +23,17 @@ const hexToRgba = (hex, opacity = 1) => {
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
+const substitute = (text, vars) =>
+    Object.keys(vars || {}).reduce(
+        (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
+        text || '',
+    );
+
 const Page65 = () => {
     const { lang } = useOutletContext();
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [selectedPoints, setSelectedPoints] = useState(null);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -71,6 +61,13 @@ const Page65 = () => {
         e.preventDefault();
         document.getElementById('fn-asterisk-rf-page65')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
+
+    useEffect(() => {
+        getPage65Data()
+            .then(setResult)
+            .catch((err) => setError(err?.message || 'Failed to load data'))
+            .finally(() => setLoading(false));
+    }, []);
 
     useEffect(() => {
         const onResize = () => setWindowWidth(window.innerWidth);
@@ -155,21 +152,54 @@ const Page65 = () => {
             clearTimeout(timer);
             observer.disconnect();
         };
-    }, [lang, selectedPoints]);
+    }, [lang, selectedPoints, loading, error, result]);
 
-    const years = useMemo(() => PAGE65_DATA.map((row) => row.year), []);
-    const exportValues = useMemo(() => PAGE65_DATA.map((row) => row.exports), []);
-    const importValues = useMemo(() => PAGE65_DATA.map((row) => row.imports), []);
-    const netValues = useMemo(() => PAGE65_DATA.map((row) => row.net), []);
-    const tableRowsDesc = useMemo(() => [...PAGE65_DATA].reverse(), []);
+    const pageData = useMemo(() => result?.data ?? [], [result]);
+    const referenceYear = result?.referenceYear ?? null;
+    const referenceRow = result?.referenceRow ?? null;
+    const chartStartYear = result?.chartStartYear ?? null;
+    const chartEndYear = result?.chartEndYear ?? referenceYear;
+
+    const years = useMemo(() => pageData.map((row) => row.year), [pageData]);
+    const exportValues = useMemo(() => pageData.map((row) => row.exports), [pageData]);
+    const importValues = useMemo(() => pageData.map((row) => row.imports), [pageData]);
+    const netValues = useMemo(() => pageData.map((row) => row.net), [pageData]);
+    const tableRowsDesc = useMemo(() => [...pageData].reverse(), [pageData]);
+
+    const yAxisMax = useMemo(() => {
+        if (!pageData.length) return 80;
+        const peak = Math.max(...pageData.flatMap((row) => [row.exports, row.imports, row.net]));
+        return Math.ceil((peak + 5) / 10) * 10;
+    }, [pageData]);
 
     const exportsLabel = getText('page65_legend_exports', lang);
     const importsLabel = getText('page65_legend_imports', lang);
     const netLabel = getText('page65_legend_net', lang);
     const chartTitle = getText('page65_chart_title', lang);
     const exportChartTitle = stripHtml(chartTitle);
-    const fileTitle = `${getText('page65_download_title', lang)} 2008-2024`;
+    const yearRangeLabel = chartStartYear && chartEndYear ? `${chartStartYear}–${chartEndYear}` : '';
+    const fileTitle = yearRangeLabel
+        ? `${getText('page65_download_title', lang)} ${yearRangeLabel}`
+        : getText('page65_download_title', lang);
     const yAxisTitle = getText('page65_yaxis', lang);
+    const pageTitle = substitute(getText('page65_title', lang), { year: referenceYear ?? '' });
+    const tableCaption = substitute(getText('page65_table_caption', lang), {
+        startYear: chartStartYear ?? '',
+        endYear: chartEndYear ?? '',
+    });
+    const infographicAria = referenceRow
+        ? substitute(getText('page65_infographic_aria', lang), {
+            year: referenceRow.year,
+            exports: formatTwh(referenceRow.exports),
+            imports: formatTwh(referenceRow.imports),
+        })
+        : getText('page65_infographic_aria', lang);
+    const exportsInfographicValue = referenceRow
+        ? `${formatTwh(referenceRow.exports)} ${getText('page65_twh_unit', lang)}`
+        : '';
+    const importsInfographicValue = referenceRow
+        ? `${formatTwh(referenceRow.imports)} ${getText('page65_twh_unit', lang)}`
+        : '';
 
     const tableHeaders = [
         getText('page65_col_year', lang),
@@ -377,7 +407,8 @@ const Page65 = () => {
 .page65-container { width: 100%; padding: 15px 0 0 0; display: flex; flex-direction: column; box-sizing: border-box; flex: 1; overflow: visible; }
 .page65-title { font-family: 'Lato', sans-serif; font-size: 41px; font-weight: bold; color: var(--gc-text); margin-top: 0; margin-bottom: 25px; line-height: 1.25; position: relative; padding-bottom: 0.5em; text-transform: none; }
 .page65-title::after { content: ''; position: absolute; left: 0; bottom: 0.2em; width: 72px; height: 6px; background-color: var(--gc-red); }
-.page65-subtitle { font-family: 'Noto Sans', sans-serif; font-size: 20px; color: #332f30; margin: 0 0 -60px 0; line-height: 1.45; white-space: nowrap; }
+.page65-subtitle { font-family: 'Noto Sans', sans-serif; font-size: 20px; color: #332f30; margin: 0 0 20px 0; line-height: 1.45; white-space: nowrap; }
+.page65-subtitle--with-infographic { margin-bottom: -60px; }
 .page65-chart-frame { background-color: #f5f5f5; padding: 20px; padding-bottom: 20px; border-radius: 8px; margin-top: 0; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
 .page65-chart-title { font-family: 'Lato', sans-serif; font-size: 29px; font-weight: bold; color: var(--gc-text); text-align: center; margin: 0 0 12px 0; text-transform: none; }
 .page65-chart-title .fn-lnk { color: #26374a; text-decoration: underline; }
@@ -400,6 +431,7 @@ const Page65 = () => {
 .page65-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
 .page65-download-buttons button { padding: 8px 16px; border: 1px solid #404040; border-radius: 4px; background: #8C8C8C; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; }
 .page65-chart-frame button:hover, .page65-table-wrapper summary:hover { background-color: #404040 !important; }
+.page65-loading, .page65-error { font-family: 'Noto Sans', sans-serif; font-size: 18px; color: var(--gc-text); margin: 24px 0; }
 .page65-footnotes { font-family: var(--font-body); font-size: 1rem; color: var(--gc-text); margin-top: 24px; margin-bottom: 0; padding-top: 12px; border-top: 1px solid #e0e0e0; line-height: 1.65; max-width: 100%; box-sizing: border-box; }
 .page65-footnotes h2 { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--gc-text); margin-top: 0; margin-bottom: 1rem; }
 .page65-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
@@ -413,15 +445,26 @@ const Page65 = () => {
             `}</style>
 
             <div className="page65-container">
-                <h1 id="page65-title" className="page65-title">{getText('page65_title', lang)}</h1>
-                <p className="page65-subtitle">{getText('page65_subtitle', lang)}</p>
+                <h1 id="page65-title" className="page65-title">{pageTitle}</h1>
+                <p className={`page65-subtitle${!loading && !error && referenceRow ? ' page65-subtitle--with-infographic' : ''}`}>{getText('page65_subtitle', lang)}</p>
 
+                {loading && <p className="page65-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>}
+                {error && <p className="page65-error" role="alert">{error}</p>}
+                {!loading && !error && !pageData.length && (
+                    <p className="page65-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>
+                )}
+
+                {!loading && !error && referenceRow && (
                 <Page65TradeInfographic
                     lang={lang}
                     getText={getText}
-                    ariaLabel={getText('page65_infographic_aria', lang)}
+                    ariaLabel={infographicAria}
+                    exportsValue={exportsInfographicValue}
+                    importsValue={importsInfographicValue}
                 />
+                )}
 
+                {!loading && !error && pageData.length > 0 && (
                 <div className="page65-chart-frame">
                     <h2 id="page65-chart-title" className="page65-chart-title">
                         {chartTitle}
@@ -520,7 +563,7 @@ const Page65 = () => {
                                                 font: axisTitleFont,
                                                 standoff: 12,
                                             },
-                                            range: [0, 80],
+                                            range: [0, yAxisMax],
                                             dtick: 10,
                                             showgrid: true,
                                             gridcolor: '#cccccc',
@@ -558,7 +601,7 @@ const Page65 = () => {
                             <div ref={tableTopRef} className="page65-table-scrollbar" aria-hidden="true"><div /></div>
                             <div ref={tableScrollRef} className="page65-table-responsive" role="region" aria-labelledby="page65-table-caption" tabIndex={0}>
                                 <table className="table table-striped table-hover">
-                                    <caption id="page65-table-caption" className="wb-inv">{getText('page65_table_caption', lang)}</caption>
+                                    <caption id="page65-table-caption" className="wb-inv">{tableCaption}</caption>
                                     <thead>
                                         <tr>
                                             {tableHeaders.map((header) => (
@@ -586,7 +629,9 @@ const Page65 = () => {
                         </details>
                     </div>
                 </div>
+                )}
 
+                {!loading && !error && pageData.length > 0 && (
                 <aside className="wb-fnote page65-footnotes" role="note">
                     <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>
@@ -599,6 +644,7 @@ const Page65 = () => {
                         </dd>
                     </dl>
                 </aside>
+                )}
             </div>
         </main>
     );

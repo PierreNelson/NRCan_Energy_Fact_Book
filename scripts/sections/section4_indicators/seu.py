@@ -4,7 +4,9 @@ from typing import Dict, List, Tuple
 
 import pandas as pd
 
-from xlsx_paths import default_xlsx_base_dir
+from utils.io_retry import ensure_workbook, resolve_sheet_name
+
+from .constants import EE_SHEET_SEU, ENERGY_EFFICIENCY_XLSX
 
 SOURCE_KEY = 'seu_by_fuel'
 NEUD_2000_BASELINE = {'TE': 8042.1, 'Ele': 1707.2, 'NG': 2140.8}
@@ -12,22 +14,33 @@ NEUD_2000_BASELINE = {'TE': 8042.1, 'Ele': 1707.2, 'NG': 2140.8}
 
 def _seu_excel_path(processor) -> 'Path':
     from pathlib import Path
+    from xlsx_paths import default_xlsx_base_dir
+
     section_cfg = processor.config.sections.get(processor.SECTION_KEY, {})
     seu_cfg = section_cfg.get('sources', {}).get('seu_by_fuel', {}) or {}
     base_dir = default_xlsx_base_dir()
     path_str = (seu_cfg.get('seu_final_demand_file_path') or '').strip()
     if path_str:
         return processor._resolve_path(path_str, base_dir)
-    return base_dir / 'SEU Final Demand.xlsx'
+    return ensure_workbook(ENERGY_EFFICIENCY_XLSX, config=processor.config)
+
+
+def _seu_sheet_name(processor, path: 'Path') -> str | int:
+    default_path = ensure_workbook(ENERGY_EFFICIENCY_XLSX, config=processor.config)
+    if path.resolve() == default_path.resolve():
+        return resolve_sheet_name(path, EE_SHEET_SEU, label='seu_by_fuel')
+    return EE_SHEET_SEU
 
 
 def _read_seu_sheet(processor) -> pd.DataFrame:
     path = _seu_excel_path(processor)
     if not path.exists():
-        print(f'    SEU Final Demand file not found: {path}')
+        from utils.log_sanitize import format_path_for_log
+        print(f'    SEU Final Demand file not found: {format_path_for_log(path)}')
         return pd.DataFrame()
+    read_sheet = _seu_sheet_name(processor, path)
     try:
-        df = pd.read_excel(path, sheet_name='SEU (final demand)')
+        df = pd.read_excel(path, sheet_name=read_sheet)
     except Exception as e:
         print(f'    Failed to read SEU (final demand) sheet: {e}')
         return pd.DataFrame()

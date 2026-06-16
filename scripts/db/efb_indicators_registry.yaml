@@ -122,6 +122,41 @@ indicators:
     depends_on: [stc_ev_sales]
     vector_prefixes: [ev_]
 
+  electricity_trade_us:
+    section_id: 5
+    depends_on: [cer_electricity_trade_summary]
+    vector_prefixes: [elec_trade_]
+
+  wind_capacity_by_province:
+    section_id: 5
+    depends_on: [nrcan_windcapbyprov]
+    vector_prefixes: [wind_cap_]
+
+  renewable_electricity_capacity:
+    section_id: 5
+    depends_on: [nrcan_renelecap]
+    vector_prefixes: [ren_cap_]
+
+  ghg_electricity_spotlight:
+    section_id: 5
+    depends_on: [ecc_ghg_electricity]
+    vector_prefixes: [elec_ghg_]
+
+  largest_wind_projects:
+    section_id: 5
+    depends_on: [can_largestwindprojects]
+    vector_prefixes: [wind_proj_]
+
+  largest_solar_projects:
+    section_id: 5
+    depends_on: [can_largestsolprojects]
+    vector_prefixes: [solar_proj_]
+
+  solid_biofuels:
+    section_id: 5
+    depends_on: [nrcan_solid_biofuels]
+    vector_prefixes: [sbio_]
+
   rpp_supply_demand:
     section_id: 6
     depends_on: [stc_rppsd_25100081]

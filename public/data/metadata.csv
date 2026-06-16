@@ -136,6 +136,18 @@ econ_investment_value,"Annual investment - Fuel, energy and pipelines",Millions 
 econ_investment_value_billions,Annual investment (billions),Billions of dollars,billions,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_jobs,Economic contributions - Jobs (direct + indirect),Number,units,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_jobs_thousands,Economic contributions - Jobs (thousands),Thousands,thousands,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
+elec_ghg_coal,"Electricity sector GHG emissions, coal",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_natural_gas,"Electricity sector GHG emissions, natural gas",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_other,"Electricity sector GHG emissions, other",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_base_year,Electricity GHG narrative base year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_coal_gen_share_pct,Coal electricity generation share (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_coal_ghg_share_pct,Coal share of electricity-related GHG emissions (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_reference_year,Electricity GHG narrative reference year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_total_pct_change,Electricity GHG total percent change (base to reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_total,"Electricity sector GHG emissions, total",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_trade_exports,Electricity exports to the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
+elec_trade_imports,Electricity imports from the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
+elec_trade_net,Net electricity trade with the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
 energy_prod_australia_pct,Australia Share of World Energy Production,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
 energy_prod_canada_growth_since_2005,Canada Energy Production Growth Since 2005,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
 energy_prod_canada_pct,Canada Share of World Energy Production,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
@@ -377,6 +389,10 @@ refcap_total_petroleum_capacity,"Refinery capacity (Canada total, petroleum)",Th
 refcap_total_petroleum_count,"Refinery count (Canada total, petroleum)",Number,units,Canadian refinery capacity (Oil Sands Magazine),Oil Sands Magazine,https://www.oilsandsmagazine.com/projects/canadian-refineries
 refcap_total_total_capacity,"Refinery capacity (Canada total, total)",Thousand bbl/day,units,Canadian refinery capacity (Oil Sands Magazine),Oil Sands Magazine,https://www.oilsandsmagazine.com/projects/canadian-refineries
 refcap_total_total_count,"Refinery count (Canada total, total)",Number,units,Canadian refinery capacity (Oil Sands Magazine),Oil Sands Magazine,https://www.oilsandsmagazine.com/projects/canadian-refineries
+ren_cap_biomass,Biomass renewable electricity capacity,MW,megawatts,Canadian renewable electricity generating capacity,Natural Resources Canada,
+ren_cap_hydro,Hydro renewable electricity capacity,MW,megawatts,Canadian renewable electricity generating capacity,Natural Resources Canada,
+ren_cap_solar_tidal,Solar and tidal renewable electricity capacity,MW,megawatts,Canadian renewable electricity generating capacity,Natural Resources Canada,
+ren_cap_wind,Wind renewable electricity capacity,MW,megawatts,Canadian renewable electricity generating capacity,Natural Resources Canada,
 res_appliances_pj,Residential appliances energy use (PJ),PJ,petajoules,Residential energy (energy in our daily lives),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=res&juris=00&rn=1&year=2023&page=1
 res_ee_improvement_pct,Residential energy efficiency improvement (2000 to end year),%,percent,Residential energy (energy in our daily lives),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1
 res_ee_savings_billion,Residential energy cost savings (billion $),billion $,billions,Residential energy (energy in our daily lives),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=AN&sector=res&juris=00&rn=11&year=2023&page=1
@@ -420,11 +436,103 @@ rpp_refinery_bl,Input to Canadian refineries (billion L),billion litres,units,Re
 rpp_refinery_mmbd,Input to Canadian refineries (MMb/d),million barrels per day,units,Refinery input,,
 rpp_residual_pct,Residual fuel share of domestic RPP consumption,percent,units,RPP supply and disposition,,
 rpp_still_gas_pct,Still gas share of domestic RPP consumption,percent,units,RPP supply and disposition,,
+sbio_prod_firewood,Firewood production,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
+sbio_prod_pellets,Wood pellets production,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
+sbio_prod_pulping,Pulping liquor production,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
+sbio_prod_swr,Solid wood residues production,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
+sbio_use_electricity,Electricity sector wood fuel use,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
+sbio_use_industrial,Industrial wood fuel use,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003101
+sbio_use_residential,Residential wood fuel use,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
+sbio_use_total,Total wood fuel use,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
 seu_BM,Secondary energy use - Biomass,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_Ele,Secondary energy use - Electricity,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_NG,Secondary energy use - Natural gas,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OOP,Secondary energy use - Other oil products,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OT,Secondary energy use - Other,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_TE,Secondary energy use (final demand) total,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+solar_proj_01_mw,Travers,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_01_prov,Travers province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_02_mw,Big Sky,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_02_prov,Big Sky province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_03_mw,Claresholm (1 & 2),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_03_prov,Claresholm (1 & 2) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_04_mw,Grand Renewable,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_04_prov,Grand Renewable province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_05_mw,Kingston,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_05_prov,Kingston province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_06_mw,Saddlebrook,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_06_prov,Saddlebrook province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_07_mw,Fox Coulee,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_07_prov,Fox Coulee province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_08_mw,Sarnia (1-8),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_08_prov,Sarnia (1-8) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_09_mw,Clydesdale (1 & 2),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_09_prov,Clydesdale (1 & 2) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_10_mw,Sollair,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_10_prov,Sollair province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_11_mw,Sault Ste. Marie (1 - 3),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_11_prov,Sault Ste. Marie (1 - 3) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_12_mw,Loyalist,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_12_prov,Loyalist province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_13_mw,Southgate,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_13_prov,Southgate province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_14_mw,Windsor,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_14_prov,Windsor province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_15_mw,Wheatcrest,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_15_prov,Wheatcrest province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+wind_cap_alta,"Wind capacity, Alta.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_bc,"Wind capacity, B.C.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_man,"Wind capacity, Man.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_nb,"Wind capacity, N.B.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_nl,"Wind capacity, N.L.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_ns,"Wind capacity, N.S.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_nwt,"Wind capacity, N.W.T.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_ont,"Wind capacity, Ont.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_pei,"Wind capacity, P.E.I.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_que,"Wind capacity, Que.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_sask,"Wind capacity, Sask.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_cap_yt,"Wind capacity, Y.T.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
+wind_proj_01_mw,Buffalo Plains,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_01_prov,Buffalo Plains province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_02_mw,Seigneurie de Beaupré (1 - 4),MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_02_prov,Seigneurie de Beaupré (1 - 4) province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_03_mw,Whitla Wind (1 - 3),MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_03_prov,Whitla Wind (1 - 3) province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_04_mw,"Rivière du Moulin Phase (1, 2)",MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_04_prov,"Rivière du Moulin Phase (1, 2) province code",Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_05_mw,Jenner Wind (1 - 3),MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_05_prov,Jenner Wind (1 - 3) province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_06_mw,Henvey Inlet,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_06_prov,Henvey Inlet province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_07_mw,Lac-Alfred (1 & 2),MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_07_prov,Lac-Alfred (1 & 2) province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_08_mw,Blackspring Ridge,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_08_prov,Blackspring Ridge province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_09_mw,Sharp Hills,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_09_prov,Sharp Hills province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_10_mw,South Kent,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_10_prov,South Kent province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_11_mw,K2 Wind Power Facility,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_11_prov,K2 Wind Power Facility province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_12_mw,Forty Mile Bow Island,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_12_prov,Forty Mile Bow Island province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_13_mw,Cypress Wind (1 & 2),MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_13_prov,Cypress Wind (1 & 2) province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_14_mw,Niagara Region,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_14_prov,Niagara Region province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_15_mw,Nicolas-Riou,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_15_prov,Nicolas-Riou province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_16_mw,Forty Mile Wind,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_16_prov,Forty Mile Wind province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_17_mw,Gros Morne (1 & 2),MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_17_prov,Gros Morne (1 & 2) province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_18_mw,Windrise,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_18_prov,Windrise province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_19_mw,Golden South,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_19_prov,Golden South province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_20_mw,Bekevar,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_20_prov,Bekevar province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_21_mw,Apuiat Wind Farm,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
+wind_proj_21_prov,Apuiat Wind Farm province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,

@@ -20,7 +20,7 @@ try:
     
     if _env_path.exists():
         load_dotenv(_env_path)
-        print(f"Loaded environment from: {_env_path}")
+        print(f"Loaded environment from: {_env_path.relative_to(_script_dir.parent).as_posix()}")
     else:
         # Also check parent directory
         _env_path_parent = _script_dir.parent / ".env"

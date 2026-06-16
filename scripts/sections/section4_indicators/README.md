@@ -22,12 +22,12 @@ python main.py export
 | Page | In pipeline? | Website getter | `source_key` | Handler function | Edit data here |
 |------|--------------|----------------|--------------|------------------|----------------|
 | **47** | No | — | — | — | Section cover — `src/pages/Page47.jsx` |
-| **48** | Yes | `getEnergyUseData()` | `energy_use` | `_process_energy_use()` · `energy_use.py` | OEE ZIP in `constants.py` + Primary Excel |
-| **49** | Yes | `getSEUByFuelData()` | `seu_by_fuel` | `_process_seu_by_fuel()` · `seu.py` | `SEU Final Demand.xlsx` |
-| **50** | Yes | `getPage50ResidentialData()` | `residential_daily_lives` | `_process_residential_daily_lives()` · `residential.py` | OEE web + `EE Improvement.xlsx` |
-| **51** | Yes | `getPage51Data()` | `residential_pie_charts` | `_process_residential_pie_charts()` · `residential.py` | OEE HB / Table 7 / Table 14 HTML |
-| **52** | Yes | `getPage52Data()` | `commercial_institutional` | `_process_commercial_institutional()` · `commercial.py` | OEE commercial HB/AN + `EE Improvement.xlsx` |
-| **53** | Yes | `getPage53Data()` | `industrial_sector` | `_process_industrial_sector()` · `industrial.py` | OEE industrial CP + `EE Improvement.xlsx` |
+| **48** | Yes | `getEnergyUseData()` | `energy_use` | `update_energy_use()` · `energy_use.py` | `Energy Efficiency.xlsx` → `Primary and secondary demand` |
+| **49** | Yes | `getSEUByFuelData()` | `seu_by_fuel` | `update_seu_by_fuel()` · `seu.py` | `Energy Efficiency.xlsx` → `SEU (final demand)` |
+| **50** | Yes | `getPage50ResidentialData()` | `residential_daily_lives` | `update_residential_daily_lives()` · `residential.py` | OEE web + `Energy Efficiency.xlsx` → `EE Improvement` |
+| **51** | Yes | `getPage51Data()` | `residential_pie_charts` | `update_residential_pie_charts()` · `residential.py` | OEE HB / Table 7 / Table 14 HTML |
+| **52** | Yes | `getPage52Data()` | `commercial_institutional` | `update_commercial_institutional()` · `commercial.py` | OEE commercial HB/AN + `Energy Efficiency.xlsx` → `EE Improvement` |
+| **53** | Yes | `getPage53Data()` | `industrial_sector` | `update_industrial_sector()` · `industrial.py` | OEE industrial CP + `Energy Efficiency.xlsx` → `EE Improvement` |
 | **54** | No | — | — | — | Hardcoded — `src/pages/Page54.jsx` |
 | **55** | No | — | — | — | Hardcoded — `src/pages/Page55.jsx` |
 | **56** | No | — | — | — | Hardcoded — `src/pages/Page56.jsx` |
@@ -39,25 +39,25 @@ python main.py export
 
 ## Pipeline sources (detail)
 
-Excel paths resolve via `EXTERNAL_XLSX_DATA_DIR` in `scripts/.env` or repo root; blank config `*_file_path` → default filename in that folder.
+Excel paths resolve via SharePoint sync (`EXTERNAL_XLSX_DATA_DIR` in `scripts/.env`). Section 4 reads **`Energy Efficiency.xlsx`** (consolidated Manual Data workbook); sheet names are in `constants.py` and `config.yaml`.
 
 ### `energy_use` — Page 48
 
 | Item | Location |
 |------|----------|
-| Handler | `_process_energy_use()`, `_load_primary_demand()` in `energy_use.py` |
-| OEE fetch | `_oee.py` → `_fetch_oee_by_year()`; ZIP URLs in `constants.py` → `OEE_NEUD_ZIP_URLS` |
-| Primary Excel | `Primary Energy Use Demand.xlsx`; config `primary_demand_file_path` |
-| Primary sheet / columns | First sheet; year + product + value — map in `PRIMARY_PRODUCT_TO_VEC` |
+| Handler | `update_energy_use()`, `_load_primary_demand()` in `energy_use.py` |
+| OEE fetch | `_oee.py` → `_fetch_oee_by_year()`; prefers `Energy Efficiency.xlsx` sheet `Primary and secondary demand`, else ZIP URLs in `constants.py` |
+| Excel | `Energy Efficiency.xlsx`; sheet `Primary and secondary demand`; config override `primary_demand_file_path` |
+| Primary columns | year + product + value — map in `PRIMARY_PRODUCT_TO_VEC` / `map_primary_secondary_product()` |
 | Vectors | `oee_neud_*` |
 
 ### `seu_by_fuel` — Page 49
 
 | Item | Location |
 |------|----------|
-| Handler | `_process_seu_by_fuel()` in `seu.py` |
-| Excel | `SEU Final Demand.xlsx`; config `seu_final_demand_file_path` |
-| Sheet / columns | `"SEU (final demand)"`; year, fuel, value |
+| Handler | `update_seu_by_fuel()` in `seu.py` |
+| Excel | `Energy Efficiency.xlsx`; sheet `SEU (final demand)`; config override `seu_final_demand_file_path` |
+| Columns | year, fuel, value |
 | Fuel rollup | Logic in `seu.py` → Ele, NG, mogas, Oil, OOP, BM, OT |
 | Vectors | `seu_*` |
 
@@ -65,10 +65,10 @@ Excel paths resolve via `EXTERNAL_XLSX_DATA_DIR` in `scripts/.env` or repo root;
 
 | Item | Location |
 |------|----------|
-| Handler | `_process_residential_daily_lives()` in `residential.py` |
+| Handler | `update_residential_daily_lives()` in `residential.py` |
 | OEE web | `_oee.py` → `_fetch_oee_residential_analysis()`; URLs in `constants.py` |
 | Row labels | `constants.py` → `_residential_label_*` |
-| EE Excel | `EE Improvement.xlsx`; sheet `EE Improvement`, sector `residential`; optional sheet `Residential` |
+| EE Excel | `Energy Efficiency.xlsx`; sheet `EE Improvement`, sector `residential`; optional sheet `Residential` |
 | Vectors | `res_ter`, `res_eee`, `res_space_heating_pj`, `res_water_heating_pj`, `res_ee_*` |
 
 ### `residential_pie_charts` — Page 51
@@ -86,7 +86,7 @@ Excel paths resolve via `EXTERNAL_XLSX_DATA_DIR` in `scripts/.env` or repo root;
 |------|----------|
 | Handler | `_process_commercial_institutional()` in `commercial.py` |
 | OEE HTML | `constants.py` → `OEE_COM_HB_PAGES`, `OEE_COM_AN_PAGES` |
-| EE Excel | `EE Improvement.xlsx`; sector `commercial` |
+| EE Excel | `Energy Efficiency.xlsx` → `EE Improvement`; sector `commercial` |
 | Vectors | `com_*` |
 
 ### `industrial_sector` — Page 53
@@ -95,7 +95,7 @@ Excel paths resolve via `EXTERNAL_XLSX_DATA_DIR` in `scripts/.env` or repo root;
 |------|----------|
 | Handler | `_process_industrial_sector()` in `industrial.py` |
 | OEE HTML | `constants.py` → `OEE_INDUSTRIAL_CP_URL` |
-| EE Excel | `EE Improvement.xlsx`; sector `industrial_excl_resource_extraction` |
+| EE Excel | `Energy Efficiency.xlsx` → `EE Improvement`; sector `industrial_excl_resource_extraction` |
 | Vectors | `ind_*` |
 
 ---
@@ -104,7 +104,7 @@ Excel paths resolve via `EXTERNAL_XLSX_DATA_DIR` in `scripts/.env` or repo root;
 
 | File | Purpose |
 |------|---------|
-| `constants.py` | OEE URLs, default filenames, residential row-label matchers |
+| `constants.py` | OEE URLs, `Energy Efficiency.xlsx` + sheet names, residential row-label matchers |
 | `_oee.py` | OEE ZIP/XLS/HTML download and parse helpers |
 
 ---

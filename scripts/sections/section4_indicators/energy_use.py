@@ -6,8 +6,13 @@ from typing import Any, Dict, List, Tuple
 import pandas as pd
 
 from xlsx_paths import default_xlsx_base_dir
+from utils.io_retry import ensure_workbook, resolve_sheet_name
 
-from .constants import DEFAULT_PRIMARY_DEMAND_FILENAME
+from .constants import (
+    EE_SHEET_PRIMARY,
+    ENERGY_EFFICIENCY_XLSX,
+    map_primary_secondary_product,
+)
 
 SOURCE_KEY = 'energy_use'
 OEE_SECTORS = ['R', 'C', 'I', 'T', 'A']
@@ -27,7 +32,14 @@ def _get_primary_demand_path(processor, energy_cfg: Dict[str, Any]) -> Path:
     xlsx_base = default_xlsx_base_dir()
     if primary_path and str(primary_path).strip():
         return processor._resolve_path(primary_path.strip(), xlsx_base)
-    return xlsx_base / DEFAULT_PRIMARY_DEMAND_FILENAME
+    return ensure_workbook(ENERGY_EFFICIENCY_XLSX, config=processor.config)
+
+
+def _primary_demand_sheet(processor, file_path: Path) -> str | int:
+    default_path = ensure_workbook(ENERGY_EFFICIENCY_XLSX, config=processor.config)
+    if file_path.resolve() == default_path.resolve():
+        return resolve_sheet_name(file_path, EE_SHEET_PRIMARY, label='energy_use primary demand')
+    return 0
 
 
 def _find_year_col(processor, df: pd.DataFrame) -> str:
@@ -36,13 +48,18 @@ def _find_year_col(processor, df: pd.DataFrame) -> str:
 
 def _load_primary_demand(processor, file_path: Path) -> Dict[int, Dict[str, float]]:
     by_year: Dict[int, Dict[str, float]] = {}
-    df = pd.read_excel(file_path, sheet_name=0)
+    sheet = _primary_demand_sheet(processor, file_path)
+    try:
+        df = pd.read_excel(file_path, sheet_name=sheet)
+    except Exception:
+        df = pd.read_excel(file_path, sheet_name=0)
     df.columns = [str(c).strip() for c in df.columns]
     year_col = _find_year_col(processor, df)
     product_col = processor.get_column(df, 'product', 'PRODUCT', 'category', 'Category')
     value_col = processor.get_column(df, 'value', 'VALUE', 'amount', 'val')
     if not year_col or not product_col or not value_col:
         return by_year
+    primary_codes = set(PRIMARY_VECS)
     for _, row in df.iterrows():
         try:
             y = row[year_col]
@@ -54,13 +71,14 @@ def _load_primary_demand(processor, file_path: Path) -> Dict[int, Dict[str, floa
         prod = row.get(product_col)
         if pd.isna(prod):
             continue
-        prod_str = str(prod).strip().lower()
-        vec = None
-        for v, keywords in PRIMARY_PRODUCT_TO_VEC.items():
-            if any(kw in prod_str or prod_str in kw for kw in keywords):
-                vec = v
-                break
+        vec = map_primary_secondary_product(str(prod))
         if vec is None:
+            prod_str = str(prod).strip().lower()
+            for v, keywords in PRIMARY_PRODUCT_TO_VEC.items():
+                if any(kw in prod_str or prod_str in kw for kw in keywords):
+                    vec = v
+                    break
+        if vec not in primary_codes:
             continue
         try:
             val = float(row[value_col])
@@ -106,7 +124,8 @@ def update_energy_use(processor) -> int:
 
     path_primary = _get_primary_demand_path(processor, energy_cfg)
     if not path_primary.exists():
-        print(f'    Primary file not found: {path_primary}')
+        from utils.log_sanitize import format_path_for_log
+        print(f'    Primary file not found: {format_path_for_log(path_primary)}')
         return 0
     primary_by_year = _load_primary_demand(processor, path_primary)
     if not primary_by_year:

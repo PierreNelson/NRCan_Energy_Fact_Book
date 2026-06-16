@@ -1,7 +1,9 @@
 # MASTER PAGE BUILDING GUIDE & TEMPLATE
 
-**Version:** 5.0 (Updated January 2026)  
+**Version:** 6.0 (Updated Spring 2026)  
 **Compliance:** WCAG 2.1 AA, WET-BOEW (Web Experience Toolkit), Canada.ca Design System
+
+**Private use:** This file is gitignored and is **not** linked from `docs/README.md` or any other repo documentation. It is a personal AI/code template for building `PageNN.jsx` components. For the official page-building guide (collaborators, PRs, client handoff), use [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md). Pipeline: [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md), [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md). Per-section source maps: `scripts/sections/section*_indicators/README.md`.
 
 ---
 
@@ -23,41 +25,90 @@ Pages should **not** override these widths. The `Layout.jsx` component handles:
 
 ## DATA PIPELINE ARCHITECTURE
 
-Data flows through a SQL Server-based pipeline before reaching the frontend:
+Data reaches pages through a **three-stage SQL pipeline**, then static CSVs. The frontend never talks to SQL directly.
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  External APIs  │────▶│   SQL Server    │────▶│   CSV Export    │────▶│  React Frontend │
-│  (StatCan, etc) │     │   (raw + calc)  │     │  (public/data/) │     │  (dataLoader.js)│
-└─────────────────┘     └─────────────────┘     └─────────────────┘     └─────────────────┘
+External sources (StatCan, Excel, HTML, APIs)
+    → eedas update          (raw rows in EEDAS SQL tables)
+    → efb transform         (Factbook vectors in nrcan_efb_indicators)
+    → export                (public/data/*.csv)
+    → dataLoader.js getter  → PageNN.jsx
 ```
 
-### Data Sources
-Data is organized by **source** (not page number):
+**Commands** (from `scripts/`):
 
-| Source | Vector Prefix | SQL Table | Description |
-|--------|---------------|-----------|-------------|
-| `economic_contributions` | `econ_` | `calc_economic_contributions` | GDP, jobs, trade |
-| `capital_expenditures` | `capex_` | `calc_capital_expenditures` | Investment data |
-| `infrastructure` | `infra_` | `calc_infrastructure` | Infrastructure stock |
-| `provincial_gdp` | `gdp_prov_` | `calc_provincial_gdp` | Provincial GDP breakdown |
-| `world_energy_production` | `energy_prod_` | `calc_world_energy_production` | Global energy data |
-| `major_projects` | `projects_` | `calc_major_projects` | Project summaries |
-| `major_projects_map` | N/A | `raw_major_projects_map` | Map visualization data |
-| `clean_tech` | `cleantech_` | `calc_clean_tech` | Clean technology investment |
-| `investment_by_asset` | `asset_` | `calc_investment_by_asset` | Asset-level investment |
-| `international_investment` | `intl_` | `calc_international_investment` | FDI/CDIA data |
-| `foreign_control` | `foreign_` | `calc_foreign_control` | Foreign ownership data |
-| `environmental_protection` | `enviro_` | `calc_environmental_protection` | Environmental spending |
+```bash
+python main.py eedas update --source <source_key>
+python main.py efb transform --indicator <source_key>
+python main.py export
+```
 
-### Exported Files
-The pipeline exports three CSV files to `public/data/`:
-- `data.csv` - Time series data (vector, ref_date, value)
-- `metadata.csv` - Vector metadata (vector, title, uom, scalar_factor, data_source)
-- `major_projects_map.csv` - Project map visualization data
+Full publish: `eedas update --all` → `efb transform --all` → `export`. See root [README.md](../README.md) (Command reference).
 
-### Key Principle: Pre-calculated Data
-**All calculations (percentages, totals, unit conversions) are performed in SQL Server.** The React frontend should consume pre-calculated values directly. Client-side calculations should only be used as fallbacks.
+### Data sources (by source_key, not page number)
+
+Pages consume **vector prefixes** from `data.csv`. Each prefix maps to a **`source_key`** in `scripts/export/source_vectors.py`. Maintainer maps (page → getter → source → handler files) live in **`scripts/sections/section*_indicators/README.md`**.
+
+Illustrative subset (full list: `python main.py list` or `source_vectors.py`):
+
+| source_key | Vector prefix | Example getter |
+|------------|---------------|----------------|
+| `capital_expenditures` | `capex_` | `getCapitalExpendituresData()` |
+| `infrastructure` | `infra_` | `getInfrastructureData()` |
+| `economic_contributions` | `econ_` | `getEconomicContributionsData()` |
+| `major_projects` | `projects_` | `getMajorProjectsData()` |
+| `energy_use` | `oee_neud_` | `getEnergyUseData()` |
+| `ghg_emissions` | `ghg_` | `getGHGEmissionsData()` |
+
+Use `python main.py list` for all keys. Do **not** use page numbers in vector names.
+
+### Exported files (`public/data/`)
+
+- **`data.csv`** — `vector`, `ref_date`, `value`
+- **`metadata.csv`** — `vector`, `title`, `uom`, `scalar_factor`, `data_source`, `source_org`, `source_url`
+- **`major_projects_map.csv`** — map features (separate from time-series vectors)
+
+### Key principle: pre-calculated indicators
+
+**Aggregation, unit conversion, and Factbook vector naming happen in EFB transform** (`transform_*` handlers in Python), not in React and not in raw EEDAS tables. The page reads finished vectors from CSV via a `dataLoader.js` getter. Use client-side math only for display fallbacks (e.g. combining two vectors already on the page).
+
+### When a page needs new data
+
+1. Add or enable the source in `scripts/config.yaml`.
+2. Implement **`update_*`** (fetch → EEDAS raw SQL) and **`transform_*`** (aggregate → `nrcan_efb_indicators`) — see [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md).
+3. Register vector prefix in `source_vectors.py`; add a getter in `dataLoader.js`.
+4. Run the three pipeline commands; then build the page using this template.
+
+### Trace: vector → page (frontend)
+
+1. Grep vector in `public/data/data.csv`.
+2. Prefix → `source_key` in `source_vectors.py`.
+3. Getter in `dataLoader.js` → grep getter in `src/pages/` → find `PageNN.jsx`.
+4. Grep `PageNN` in `Section*.jsx` for sidebar hash `id`.
+
+### Trace: config → CSV (pipeline)
+
+| Step | Where | What |
+|------|--------|------|
+| 1. Source key | `scripts/config.yaml` | e.g. `capital_expenditures: enabled: true` |
+| 2. Handlers | `scripts/sections/section*_indicators/<source>.py` | `update_*` + `transform_*` |
+| 3. Pipeline | CLI (above) | Load SQL, build indicators, write CSVs |
+| 4. Vectors | `public/data/data.csv` | e.g. `capex_electricity` |
+| 5. Getter | `src/utils/dataLoader.js` | e.g. `getCapitalExpendituresData()` |
+| 6. Page | `src/pages/PageNN.jsx` | Chart/table |
+| 7. Section | `src/components/Section*.jsx` | `<PageNN />` wrapper + hash `id` |
+
+---
+
+## PAGE WIRING (before generating JSX)
+
+After creating `PageNN.jsx`, wire it into the app:
+
+1. **`src/components/Section*.jsx`** — import `PageNN`, wrap in `<div id="semantic-anchor" className="stacked-page-wrapper"><PageNN /></div>`.
+2. **`src/components/Sidebar.jsx`** — NavLink `to="/section-N#semantic-anchor"` + translation key.
+3. **`src/utils/translations.js`** — add `nav_*` and all `pageNN_*` keys in **en** and **fr**.
+
+Use **semantic hash ids** (e.g. `#capital-expenditure`), not page numbers. Trust **`Section*.jsx` imports** as the source of truth for which page is live (ignore unused `PageNNStacked.jsx` variants unless explicitly wired).
 
 ---
 
@@ -70,12 +121,13 @@ These rules are **non-negotiable** and must be followed exactly when generating 
 3. **COMPONENT NAMING:** Component name must be `Page[[PAGE_NUMBER]]` and export must be `export default Page[[PAGE_NUMBER]];`
 4. **IMPORTS:** Always include these imports exactly:
    - `useOutletContext` from `react-router-dom`
-   - `Plot` from `react-plotly.js`
+   - `Plot` from `../components/LazyPlot` (lazy-loaded Plotly — do **not** import `react-plotly.js` directly)
    - `getText` from `../utils/translations`
-5. **DATA LOADING:** Use the `useEffect` hook pattern shown in `[DATA_LOADING_PATTERN]` section. Data comes from pre-exported CSV files, not directly from SQL Server.
+5. **DATA LOADING:** Use the `useEffect` hook pattern shown in `[DATA_LOADING_PATTERN]` section. Data comes from pre-exported CSV files (`public/data/data.csv` via `dataLoader.js`), not from SQL or live APIs.
 6. **LAYOUT:** The layout width (1140px) is controlled by `Layout.jsx`. Do not override with page-specific width calculations.
 7. **BILINGUAL:** All user-facing text must use `getText('key', lang)` for EN/FR support.
 8. **TOKEN REPLACEMENT:** Replace all `[[PLACEHOLDER]]` tokens with actual values before output.
+9. **PAGE WIRING:** After generating `PageNN.jsx`, wire it per **PAGE WIRING** above (Section, Sidebar, translations). The page is not live until all three are updated.
 
 ---
 
@@ -86,7 +138,8 @@ Before generating a page, confirm you have:
 | Input | Description | Example |
 |-------|-------------|---------|
 | `[[PAGE_NUMBER]]` | The page number | `28` |
-| `[[DATA_FUNCTION]]` | Data loader function name | `getMajorProjectsData` |
+| `[[DATA_FUNCTION]]` | Data loader function name (camelCase after `get`) | `MajorProjectsData` → `getMajorProjectsData()` |
+| `[[SOURCE_KEY]]` | Pipeline source key (for tracing / new data) | `major_projects` |
 | `[[TRANSLATION_PREFIX]]` | Translation key prefix | `page28` |
 | `[[CHART_TYPE]]` | Chart type | `bar`, `pie`, `line`, `map` |
 | `[[TITLE_EN]]` | English page title | `Major Energy Projects` |
@@ -320,7 +373,7 @@ Copy this CSS block **verbatim** into every page file. Replace `[[PAGE_NUMBER]]`
 ```javascript
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { get[[DATA_FUNCTION]] } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
@@ -858,7 +911,7 @@ Complete template with all tokens. Replace all `[[PLACEHOLDER]]` values.
 ```javascript
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { get[[DATA_FUNCTION]] } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
@@ -1069,7 +1122,7 @@ export default Page[[PAGE_NUMBER]];
 
 ## DATA VECTOR NAMING CONVENTIONS
 
-**Do NOT use page numbers in data vector names.** Use semantic prefixes.
+**Do NOT use page numbers in data vector names.** Use semantic prefixes defined in **`scripts/export/source_vectors.py`** (`SOURCE_VECTOR_PREFIXES`). Examples:
 
 | Prefix | Category | Examples |
 |--------|----------|----------|
@@ -1080,6 +1133,10 @@ export default Page[[PAGE_NUMBER]];
 | `projects_` | Major projects | `projects_total_count`, `projects_oil_gas_value` |
 | `cleantech_` | Clean technology | `cleantech_hydro_value` |
 | `gdp_prov_` | Provincial GDP | `gdp_prov_ab`, `gdp_prov_on` |
+| `oee_neud_` | Energy use (OEE NEUD) | `oee_neud_R`, `oee_neud_T` |
+| `ghg_` | GHG emissions | `ghg_oil_gas`, `ghg_total` |
+
+New sources must register their prefix in `source_vectors.py` during pipeline work (see [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md) §3.6).
 
 ---
 
@@ -1094,10 +1151,23 @@ CORRECT: /section-2#major-projects
 
 Section wrapper ID must match hash:
 ```jsx
-<div id="major-projects">
+<div id="major-projects" className="stacked-page-wrapper">
     <Page28 />
 </div>
 ```
+
+---
+
+## RELATED DOCUMENTATION
+
+| Topic | Document |
+|-------|----------|
+| Sidebar, sections, translations, chart patterns | [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md) |
+| `update_*` / `transform_*` handlers, registries, SQL model | [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md) |
+| Running pipeline commands, publishing CSVs | [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md) |
+| Per-section page → source maps | `scripts/sections/section*_indicators/README.md` |
+| Glossary entries | [GLOSSARY_UPDATE_GUIDE.md](GLOSSARY_UPDATE_GUIDE.md) |
+| Agent / CI commands | [AGENTS.md](../AGENTS.md) |
 
 ---
 

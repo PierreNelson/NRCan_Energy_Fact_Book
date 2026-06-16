@@ -10,6 +10,9 @@ import Page65 from '../pages/Page65';
 import Page67 from '../pages/Page67';
 import Page71 from '../pages/Page71';
 import Page74 from '../pages/Page74';
+import Page78 from '../pages/Page78';
+import Page81 from '../pages/Page81';
+import Page84 from '../pages/Page84';
 import Page96 from '../pages/Page96';
 
 const SectionFive = () => {
@@ -60,6 +63,15 @@ const SectionFive = () => {
             </div>
             <div id="renewable-electricity-capacity" className="stacked-page-wrapper">
                 <Page74 />
+            </div>
+            <div id="solid-biofuels" className="stacked-page-wrapper">
+                <Page78 />
+            </div>
+            <div id="wind-capacity" className="stacked-page-wrapper">
+                <Page81 />
+            </div>
+            <div id="largest-solar-projects" className="stacked-page-wrapper">
+                <Page84 />
             </div>
             <div id="ev-sales" className="stacked-page-wrapper">
                 <Page96 />

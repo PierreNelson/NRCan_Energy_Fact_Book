@@ -133,31 +133,41 @@ sections:
     sources:
       energy_use:
         enabled: true
-        description: "Energy use by sector (OEE NEUD + Primary Energy Use Demand), PJ"
+        description: "Energy use by sector (OEE NEUD + Primary and secondary demand), PJ"
         source_type: "file"
-        # Paths relative to scripts/ or absolute. Set both to run refresh --source energy_use.
-        oee_neud_file_path: ""    # e.g. OEE_NEUD_export.xlsx (sector R,C,I,T,A in PJ)
-        primary_demand_file_path: ""  # e.g. Primary_Energy_Use_Demand.xlsx (P,NPC,FK,EL in PJ)
+        file_path: "Energy Efficiency.xlsx"
+        sheet_name: "Primary and secondary demand"
+        # Optional overrides (relative to EXTERNAL_XLSX_DATA_DIR):
+        oee_neud_file_path: ""
+        primary_demand_file_path: ""
       seu_by_fuel:
         enabled: true
         description: "Secondary energy use (final demand) by fuel type"
         source_type: "file"
-        seu_final_demand_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
+        file_path: "Energy Efficiency.xlsx"
+        sheet_name: "SEU (final demand)"
+        seu_final_demand_file_path: ""
       residential_daily_lives:
         enabled: true
         description: "Residential energy (energy in our daily lives) - EE Improvement + optional Residential sheet"
         source_type: "file"
-        ee_improvement_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
+        file_path: "Energy Efficiency.xlsx"
+        sheet_name: "EE Improvement"
+        ee_improvement_file_path: ""
       residential_pie_charts:
         enabled: true
         description: "Residential by type and space/water heating by source from OEE HB, Table 7, Table 14"
       commercial_institutional:
         enabled: true
         description: "Commercial and institutional energy use by end use from OEE HB, AN, and EE Improvement"
+        file_path: "Energy Efficiency.xlsx"
+        sheet_name: "EE Improvement"
       industrial_sector:
         enabled: true
         description: "Industrial sector energy use by fuel type from OEE CP and EE Improvement"
-        ee_improvement_file_path: ""  # EXTERNAL_XLSX_DATA_DIR or repo root if empty
+        file_path: "Energy Efficiency.xlsx"
+        sheet_name: "EE Improvement"
+        ee_improvement_file_path: ""
 
   # Section 5: Clean Power and Low Carbon Fuels
   section5_indicators:
@@ -187,6 +197,54 @@ sections:
         description: "Plug-in electric vehicle registrations (Page 96)"
         source_type: "statcan"
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501"
+      electricity_trade_us:
+        enabled: true
+        description: "Electricity trade with the U.S. (Page 65, CER XLSM)"
+        source_type: "web"
+        source_url: "https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm"
+      wind_capacity_by_province:
+        enabled: true
+        description: "Wind capacity by province (Page 81, gencap workbook)"
+        source_type: "external"
+        source_url: ""
+        file_path: "secondary Master gencap file.xlsx"
+        sheet_name: "src_elecap_prov"
+      renewable_electricity_capacity:
+        enabled: true
+        description: "Canadian renewable electricity generating capacity (Page 74, gencap ren_elecap sheet)"
+        source_type: "external"
+        source_url: ""
+        file_path: "secondary Master gencap file.xlsx"
+        sheet_name: "ren_elecap"
+      ghg_electricity_spotlight:
+        enabled: true
+        description: "GHG spotlight electricity (Page 71, ECCC environmental indicators + gencap coal_elegen)"
+        source_type: "web"
+        source_url: "https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html"
+        csv_url: "https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv"
+        file_path: "secondary Master gencap file.xlsx"
+        sheet_name: "coal_elegen"
+      largest_wind_projects:
+        enabled: true
+        description: "Largest wind projects 200 MW+ (Page 81, Manual Data workbook)"
+        source_type: "external"
+        source_url: ""
+        file_path: "Largest hydrofac, wind and solar projects.xlsx"
+        sheet_name: "windprojects"
+      largest_solar_projects:
+        enabled: true
+        description: "Largest solar projects 50 MW+ (Page 84, Manual Data workbook)"
+        source_type: "external"
+        source_url: ""
+        file_path: "Largest hydrofac, wind and solar projects.xlsx"
+        sheet_name: "solprojects"
+      solid_biofuels:
+        enabled: true
+        description: "Canadian production of solid biofuels (Page 78, RenAQ + StatCan 25-10-0031-01)"
+        source_type: "external"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003101"
+        file_path: "RenAQ.xlsx"
+        statcan_table: "25100031"
 
   # Section 6: Oil, Natural Gas and Coal
   section6_indicators:
