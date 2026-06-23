@@ -290,7 +290,7 @@ WHERE schema_id = SCHEMA_ID('dbo')
     'stc_rppsd_25100081','stc_refinput_25100063','nrcan_crude_prices','stc_oil_sands',
     'stc_ev_sales','stc_canadian_production','kal_gas_prices','osm_refin_cap',
     'cer_electricity_trade_summary','nrcan_windcapbyprov','can_largestwindprojects',
-    'can_largestsolprojects','nrcan_solid_biofuels','nrcan_renelecap','ecc_ghg_electricity'
+    'can_largestsolprojects','can_largesthydrofac','nrcan_solid_biofuels','nrcan_renelecap','nrcan_elegen_can','nrcan_windpwr_can','nrcan_worldwind','nrcan_worldsolar','nrcan_electrical_energy_use','ecc_ghg_electricity'
   );
 IF LEN(@widen_sql) > 0 EXEC sp_executesql @widen_sql;
 GO
@@ -1031,6 +1031,29 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'can_largesthydrofac')
+BEGIN
+    CREATE TABLE [can_largesthydrofac] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_can_largesthydrofac_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_can_largesthydrofac_vector ON [can_largesthydrofac](vector);
+    CREATE INDEX IX_can_largesthydrofac_source ON [can_largesthydrofac](source_key);
+    CREATE INDEX IX_can_largesthydrofac_ref_date ON [can_largesthydrofac](ref_date);
+    PRINT 'Table can_largesthydrofac created.';
+END
+GO
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_solid_biofuels')
 BEGIN
     CREATE TABLE [nrcan_solid_biofuels] (
@@ -1074,6 +1097,121 @@ BEGIN
     CREATE INDEX IX_nrcan_renelecap_source ON [nrcan_renelecap](source_key);
     CREATE INDEX IX_nrcan_renelecap_ref_date ON [nrcan_renelecap](ref_date);
     PRINT 'Table nrcan_renelecap created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_elegen_can')
+BEGIN
+    CREATE TABLE [nrcan_elegen_can] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_elegen_can_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_elegen_can_vector ON [nrcan_elegen_can](vector);
+    CREATE INDEX IX_nrcan_elegen_can_source ON [nrcan_elegen_can](source_key);
+    CREATE INDEX IX_nrcan_elegen_can_ref_date ON [nrcan_elegen_can](ref_date);
+    PRINT 'Table nrcan_elegen_can created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_windpwr_can')
+BEGIN
+    CREATE TABLE [nrcan_windpwr_can] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_windpwr_can_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_windpwr_can_vector ON [nrcan_windpwr_can](vector);
+    CREATE INDEX IX_nrcan_windpwr_can_source ON [nrcan_windpwr_can](source_key);
+    CREATE INDEX IX_nrcan_windpwr_can_ref_date ON [nrcan_windpwr_can](ref_date);
+    PRINT 'Table nrcan_windpwr_can created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_worldwind')
+BEGIN
+    CREATE TABLE [nrcan_worldwind] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_worldwind_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_worldwind_vector ON [nrcan_worldwind](vector);
+    CREATE INDEX IX_nrcan_worldwind_source ON [nrcan_worldwind](source_key);
+    CREATE INDEX IX_nrcan_worldwind_ref_date ON [nrcan_worldwind](ref_date);
+    PRINT 'Table nrcan_worldwind created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_worldsolar')
+BEGIN
+    CREATE TABLE [nrcan_worldsolar] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_worldsolar_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_worldsolar_vector ON [nrcan_worldsolar](vector);
+    CREATE INDEX IX_nrcan_worldsolar_source ON [nrcan_worldsolar](source_key);
+    CREATE INDEX IX_nrcan_worldsolar_ref_date ON [nrcan_worldsolar](ref_date);
+    PRINT 'Table nrcan_worldsolar created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_electrical_energy_use')
+BEGIN
+    CREATE TABLE [nrcan_electrical_energy_use] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_electrical_energy_use_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_electrical_energy_use_vector ON [nrcan_electrical_energy_use](vector);
+    CREATE INDEX IX_nrcan_electrical_energy_use_source ON [nrcan_electrical_energy_use](source_key);
+    CREATE INDEX IX_nrcan_electrical_energy_use_ref_date ON [nrcan_electrical_energy_use](ref_date);
+    PRINT 'Table nrcan_electrical_energy_use created.';
 END
 GO
 
@@ -1333,10 +1471,13 @@ VALUES
 ('ev_sales', 'Plug-in electric vehicle registrations', 5, 'Clean Power and Low Carbon Fuels', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501', 1),
 ('electricity_trade_us', 'Electricity trade with the U.S.', 5, 'Clean Power and Low Carbon Fuels', N'https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm', 1),
 ('wind_capacity_by_province', 'Wind capacity by province', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
+('world_wind_power', 'World wind power capacity and Canada wind generation share', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
+('world_solar_pv', 'World solar PV capacity ranking', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
 ('renewable_electricity_capacity', 'Canadian renewable electricity generating capacity', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
 ('ghg_electricity_spotlight', 'GHG spotlight: electricity', 5, 'Clean Power and Low Carbon Fuels', N'https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html', 1),
 ('largest_wind_projects', 'Largest wind projects (200 MW+)', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
 ('largest_solar_projects', 'Largest solar projects (50 MW+)', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
+('major_hydro_facilities', 'Major hydro facilities in Canada (1,000 MW+)', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
 ('solid_biofuels', 'Canadian production of solid biofuels', 5, 'Clean Power and Low Carbon Fuels', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003101', 1),
 ('kal_gas_prices', 'Gasoline retail price components (Kalibrate)', 6, 'Oil, Natural Gas and Coal', N'https://kalibrate.com/', 1),
 ('osm_refin_cap', 'Canadian refinery capacity (Oil Sands Magazine)', 6, 'Oil, Natural Gas and Coal', N'https://www.oilsandsmagazine.com/projects/canadian-refineries', 1);

@@ -183,95 +183,6 @@ export const OVERLAY_LAYOUT = {
     },
 };
 
-export const PAGE67_DATA = {
-    biomass: {
-        canada: 1.5,
-        provinces: [
-            { key: 'bc', value: 7.1 },
-            { key: 'nb', value: 3.8 },
-            { key: 'ns', value: 3.2 },
-            { key: 'alta', value: 2.1 },
-            { key: 'ont', value: 0.8 },
-            { key: 'que', value: 0.7 },
-            { key: 'pei', value: 0.6 },
-            { key: 'man', value: 0.2 },
-            { key: 'sask', value: 'lt0.2' },
-            { key: 'nl', value: 'lt0.1' },
-        ],
-    },
-    naturalGas: {
-        canada: 15.4,
-        provinces: [
-            { key: 'alta', value: 67.1 },
-            { key: 'sask', value: 47.7 },
-            { key: 'ns', value: 21.3 },
-            { key: 'nb', value: 15.2 },
-            { key: 'nwt', value: 14.7 },
-            { key: 'ont', value: 13.8 },
-            { key: 'yt', value: 6.4 },
-            { key: 'bc', value: 1.6 },
-            { key: 'nl', value: 0.6 },
-            { key: 'man', value: 0.2 },
-            { key: 'que', value: 'lt0.1' },
-        ],
-    },
-    petroleum: {
-        canada: 0.9,
-        provinces: [
-            { key: 'nvt', value: 99.5 },
-            { key: 'nwt', value: 63.5 },
-            { key: 'ns', value: 8.3 },
-            { key: 'nb', value: 7.2 },
-            { key: 'yt', value: 5.6 },
-            { key: 'nl', value: 2.0 },
-            { key: 'alta', value: 1.6 },
-            { key: 'bc', value: 1.0 },
-            { key: 'pei', value: 0.8 },
-            { key: 'que', value: 0.2 },
-            { key: 'man', value: 'lt0.1' },
-            { key: 'ont', value: 'lt0.1' },
-            { key: 'sask', value: 'lt0.1' },
-        ],
-    },
-    solar: {
-        canada: 1.1,
-        provinces: [
-            { key: 'pei', value: 3.0 },
-            { key: 'alta', value: 3.0 },
-            { key: 'ont', value: 2.5 },
-            { key: 'yt', value: 2.1 },
-            { key: 'ns', value: 1.1 },
-            { key: 'nvt', value: 0.5 },
-            { key: 'sask', value: 0.5 },
-            { key: 'nwt', value: 0.2 },
-            { key: 'bc', value: 0.2 },
-            { key: 'man', value: 0.2 },
-            { key: 'nb', value: 'lt0.1' },
-            { key: 'que', value: 'lt0.1' },
-            { key: 'nl', value: 'lt0.1' },
-        ],
-    },
-    coal: {
-        canada: 3.5,
-        provinces: [
-            { key: 'ns', value: 40.2 },
-            { key: 'sask', value: 31.7 },
-            { key: 'alta', value: 10.7 },
-            { key: 'nb', value: 9.3 },
-        ],
-    },
-    other: {
-        canada: 0.2,
-        provinces: [
-            { key: 'sask', value: 1.0 },
-            { key: 'alta', value: 0.8 },
-            { key: 'ont', value: 0.1 },
-            { key: 'que', value: 'lt0.1' },
-            { key: 'man', value: 'lt0.1' },
-        ],
-    },
-};
-
 const getProvinceRowTop = (column, rowIndex) => {
     const override = column.overrides?.provinces?.[rowIndex];
     if (override?.abbrTop != null) return override.abbrTop;
@@ -314,6 +225,12 @@ export const getProvincePctSlot = (column, rowIndex) => {
     };
 };
 
+export const pctSortValue = (value) => {
+    if (value === 'lt0.1') return 0.05;
+    if (value === 'lt0.2') return 0.15;
+    return Number(value);
+};
+
 export const formatSharePct = (value, lang) => {
     if (value === 'lt0.1') return lang === 'fr' ? '<0,1 %' : '<0.1%';
     if (value === 'lt0.2') return lang === 'fr' ? '<0,2 %' : '<0.2%';
@@ -325,21 +242,16 @@ export const formatSharePct = (value, lang) => {
     return lang === 'fr' ? `${text} %` : `${text}%`;
 };
 
-export const exportPage67InfographicPng = async (figureEl, { title, scale = 2 }) => {
+export const exportPage67InfographicPng = async (figureEl, { scale = 2 }) => {
     if (!figureEl) return null;
 
-    const exportRoot = figureEl.closest('.page67-inner');
-    const titleEl = exportRoot?.querySelector('#page67-infographic-title');
     const wrapper = figureEl.querySelector('.page67-infographic-wrapper');
-    if (!exportRoot || !titleEl || !wrapper) return null;
+    const titleEl = wrapper?.querySelector('#page67-infographic-title');
+    if (!wrapper) return null;
 
-    const rootRect = exportRoot.getBoundingClientRect();
-    const canvasW = Math.ceil(exportRoot.clientWidth);
-    const canvasH = Math.ceil(
-        Math.max(figureEl.getBoundingClientRect().bottom, titleEl.getBoundingClientRect().bottom) -
-            rootRect.top +
-            16,
-    );
+    const rootRect = figureEl.getBoundingClientRect();
+    const canvasW = Math.ceil(figureEl.clientWidth);
+    const canvasH = Math.ceil(figureEl.clientHeight);
 
     const canvas = document.createElement('canvas');
     canvas.width = canvasW * scale;
@@ -399,13 +311,15 @@ export const exportPage67InfographicPng = async (figureEl, { title, scale = 2 })
         ctx.fillText(text, box.x, box.y + box.h / 2);
     };
 
-    const titleBox = rel(titleEl);
-    const titleStyle = window.getComputedStyle(titleEl);
-    ctx.fillStyle = titleStyle.color;
-    ctx.font = `${titleStyle.fontWeight} ${titleStyle.fontSize} ${titleStyle.fontFamily}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(title, titleBox.x + titleBox.w / 2, titleBox.y + titleBox.h / 2);
+    const drawTitleEl = (el) => {
+        const box = rel(el);
+        const style = window.getComputedStyle(el);
+        ctx.fillStyle = style.color;
+        ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(el.textContent?.trim() || '', box.x + box.w / 2, box.y);
+    };
 
     const bgImg = wrapper.querySelector('.page67-bg-image');
     const bgLoaded = await waitForImage(bgImg);
@@ -414,6 +328,7 @@ export const exportPage67InfographicPng = async (figureEl, { title, scale = 2 })
         ctx.drawImage(bgLoaded, box.x, box.y, box.w, box.h);
     }
 
+    if (titleEl) drawTitleEl(titleEl);
     wrapper.querySelectorAll('.page67-overlay').forEach(drawTextEl);
 
     return canvas;

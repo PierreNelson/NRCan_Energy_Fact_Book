@@ -17,12 +17,10 @@ const COLORS = {
     biomass: '#6D91B3',
 };
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
+const markerOpacityFor = (selectedPoints, yearCount, traceIndex) => {
+    if (selectedPoints === null) return 1;
+    return Array.from({ length: yearCount }, (_, i) =>
+        (selectedPoints[traceIndex]?.includes(i) ? 1 : 0.3));
 };
 
 const substitute = (text, vars) =>
@@ -93,7 +91,10 @@ const Page74 = () => {
     const windLabel = getText('page74_legend_wind', lang);
     const solarTidalLabel = getText('page74_legend_solarTidal', lang);
     const biomassLabel = getText('page74_legend_biomass', lang);
-    const chartTitle = getText('page74_chart_title', lang);
+    const chartTitle = substitute(getText('page74_chart_title', lang), {
+        startYear: startYear ?? '',
+        endYear: endYear ?? '',
+    });
     const yAxisTitle = getText('page74_yaxis', lang);
     const fileTitle = `${getText('page74_download_title', lang)}_${startYear ?? ''}-${endYear ?? ''}`;
     const tableCaption = substitute(getText('page74_table_caption', lang), {
@@ -128,19 +129,6 @@ const Page74 = () => {
         [tableRows],
     );
     const { tickvals: yTickvals, range: yRange } = useMemo(() => computeYAxis(maxTotal), [maxTotal]);
-
-    const pointOpacityFor = (traceIndex, pointIndex) => {
-        if (selectedPoints === null) return 1;
-        return selectedPoints[traceIndex]?.includes(pointIndex) ? 1 : 0.25;
-    };
-
-    const seriesColorFor = (traceIndex, baseColor, pointIndex) => {
-        const opacity = pointOpacityFor(traceIndex, pointIndex);
-        return opacity === 1 ? baseColor : hexToRgba(baseColor, opacity);
-    };
-
-    const seriesColorsFor = (traceIndex, baseColor) =>
-        years.map((_, i) => seriesColorFor(traceIndex, baseColor, i));
 
     const buildHoverTexts = (label, values) =>
         years.map((yearValue, i) => `<b>${label}</b><br>${yearValue}: ${formatHoverMw(values[i])}<extra></extra>`);
@@ -285,7 +273,7 @@ const Page74 = () => {
     const downloadChartPng = async (plotEl = null) => {
         const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement || !window.Plotly) return;
-        const title = `${stripHtml(chartTitle)} (${startYear}–${endYear})`;
+        const title = stripHtml(chartTitle);
         try {
             const imgData = await window.Plotly.toImage(plotElement, {
                 format: 'png',
@@ -373,7 +361,7 @@ const Page74 = () => {
                 {
                     children: [
                         new Paragraph({
-                            children: [new TextRun({ text: `${stripHtml(chartTitle)} (${startYear}–${endYear})`, bold: true, size: 28 })],
+                            children: [new TextRun({ text: stripHtml(chartTitle), bold: true, size: 28 })],
                             alignment: AlignmentType.CENTER,
                             spacing: { after: 300 },
                         }),
@@ -402,76 +390,64 @@ const Page74 = () => {
 
     const plotData = [
         {
+            type: 'bar',
+            name: hydroLabel,
             x: years,
             y: hydroValues,
-            name: hydroLabel,
-            type: 'scatter',
-            mode: 'lines',
-            line: { color: selectedPoints === null ? COLORS.hydro : seriesColorsFor(0, COLORS.hydro), width: 0.5 },
-            fill: 'tozeroy',
-            fillcolor: selectedPoints === null ? COLORS.hydro : seriesColorsFor(0, COLORS.hydro),
-            stackgroup: 'capacity',
-            hoveron: 'points+fills',
+            marker: {
+                color: COLORS.hydro,
+                opacity: markerOpacityFor(selectedPoints, years.length, 0),
+                line: { width: 0 },
+            },
             hovertemplate: hydroHoverTexts,
         },
         {
+            type: 'bar',
+            name: windLabel,
             x: years,
             y: windValues,
-            name: windLabel,
-            type: 'scatter',
-            mode: 'lines',
-            line: { color: selectedPoints === null ? COLORS.wind : seriesColorsFor(1, COLORS.wind), width: 0.5 },
-            fill: 'tonexty',
-            fillcolor: selectedPoints === null ? COLORS.wind : seriesColorsFor(1, COLORS.wind),
-            stackgroup: 'capacity',
-            hoveron: 'points+fills',
+            marker: {
+                color: COLORS.wind,
+                opacity: markerOpacityFor(selectedPoints, years.length, 1),
+                line: { width: 0 },
+            },
             hovertemplate: windHoverTexts,
         },
         {
+            type: 'bar',
+            name: solarTidalLabel,
             x: years,
             y: solarTidalValues,
-            name: solarTidalLabel,
-            type: 'scatter',
-            mode: 'lines',
-            line: { color: selectedPoints === null ? COLORS.solarTidal : seriesColorsFor(2, COLORS.solarTidal), width: 0.5 },
-            fill: 'tonexty',
-            fillcolor: selectedPoints === null ? COLORS.solarTidal : seriesColorsFor(2, COLORS.solarTidal),
-            stackgroup: 'capacity',
-            hoveron: 'points+fills',
+            marker: {
+                color: COLORS.solarTidal,
+                opacity: markerOpacityFor(selectedPoints, years.length, 2),
+                line: { width: 0 },
+            },
             hovertemplate: solarTidalHoverTexts,
         },
         {
+            type: 'bar',
+            name: biomassLabel,
             x: years,
             y: biomassValues,
-            name: biomassLabel,
-            type: 'scatter',
-            mode: 'lines',
-            line: { color: selectedPoints === null ? COLORS.biomass : seriesColorsFor(3, COLORS.biomass), width: 0.5 },
-            fill: 'tonexty',
-            fillcolor: selectedPoints === null ? COLORS.biomass : seriesColorsFor(3, COLORS.biomass),
-            stackgroup: 'capacity',
-            hoveron: 'points+fills',
+            marker: {
+                color: COLORS.biomass,
+                opacity: markerOpacityFor(selectedPoints, years.length, 3),
+                line: { width: 0 },
+            },
             hovertemplate: biomassHoverTexts,
         },
     ];
 
-    if (loading) {
-        return <p className="page74-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>;
-    }
-    if (error) {
-        return <p className="page74-error" role="alert">{error}</p>;
-    }
-    if (!tableRows.length) {
-        return <p className="page74-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>;
-    }
+    const pageTitle = getText('page74_title', lang);
+    const hasChartData = !loading && !error && tableRows.length > 0;
 
     return (
         <main
-            id="main-content"
             tabIndex="-1"
             className="page-content page-74"
             role="main"
-            aria-labelledby="page74-chart-title"
+            aria-labelledby="page74-title"
             style={{ backgroundColor: '#ffffff' }}
         >
             <style>{`
@@ -484,6 +460,27 @@ const Page74 = () => {
     padding-right: ${layoutPadding?.right || 15}px;
 }
 .page74-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
+.page74-title {
+    font-family: 'Lato', sans-serif;
+    font-size: 41px;
+    font-weight: bold;
+    color: var(--gc-text);
+    margin-top: 0;
+    margin-bottom: 25px;
+    line-height: 1.25;
+    position: relative;
+    padding-bottom: 0.5em;
+    text-transform: none;
+}
+.page74-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0.2em;
+    width: 72px;
+    height: 6px;
+    background-color: var(--gc-red);
+}
 .page74-chart-frame {
     background-color: #f5f5f5;
     padding: 20px;
@@ -540,6 +537,7 @@ const Page74 = () => {
 .page74-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
 .page74-table-scrollbar > div { height: 20px; }
 @media (max-width: 768px) {
+    .page74-title { font-size: 37px; }
     .page74-chart-title { font-size: 26px; }
 }
 .page74-loading, .page74-error {
@@ -549,8 +547,20 @@ const Page74 = () => {
     padding: 24px 0;
 }
             `}</style>
-
             <div className="page74-inner">
+                <h1 id="page74-title" className="page74-title">{pageTitle}</h1>
+
+                {loading && (
+                    <p className="page74-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>
+                )}
+                {!loading && error && (
+                    <p className="page74-error" role="alert">{error}</p>
+                )}
+                {!loading && !error && !tableRows.length && (
+                    <p className="page74-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>
+                )}
+
+                {hasChartData && (
                 <div className="page74-chart-frame">
                     <h2 id="page74-chart-title" className="page74-chart-title">{chartTitle}</h2>
 
@@ -580,6 +590,8 @@ const Page74 = () => {
                             key={`page74-${selectedPoints ? selectedPoints.map((arr) => arr.join('-')).join('_') : 'all'}-${plotHeight}`}
                             data={plotData}
                             layout={{
+                                barmode: 'stack',
+                                bargap: 0.15,
                                 showlegend: false,
                                 hoverlabel: {
                                     bgcolor: '#ffffff',
@@ -745,6 +757,7 @@ const Page74 = () => {
                         </div>
                     </details>
                 </div>
+                )}
             </div>
         </main>
     );

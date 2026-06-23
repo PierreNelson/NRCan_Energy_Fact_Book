@@ -26,7 +26,7 @@ python main.py export
 | **106** | No | — | — | — | Hardcoded — `src/pages/Page106.jsx` |
 | **107** | No | — | — | — | Hardcoded — `src/pages/Page107.jsx` |
 | **108** | No | — | — | — | Hardcoded world crude data — `src/pages/Page108.jsx` |
-| **111** | Yes | `getPage111Data()` | `canadian_production` | `build_canadian_production_rows()` · `canadian_production.py` | StatCan WDS + `constants.py` → `CP_PROVINCE_GEOS` |
+| **111** | Yes | `getPage111Data()` | `canadian_production` | `update_canadian_production()` / `transform_canadian_production()` · `canadian_production.py` | StatCan 25-10-0014-01 + 25-10-0063-01 |
 | **112** | No | — | — | — | Hardcoded — `src/pages/Page112.jsx` |
 | **113** | Yes | `getPage113Data()` | `oil_sands` | `build_oil_sands_rows()` · `oil_sands.py` | CAPP XLSX + StatCan in `oil_sands.py` / `constants.py` |
 | **117** | Yes | `getPage117Data()` | `crude_prices` | `build_crude_price_rows()` · `crude_prices.py` | `constants.py` → EIA, Sproule, BoC URLs |
@@ -85,10 +85,15 @@ python main.py export
 
 | Item | Location |
 |------|----------|
-| Handler | `build_canadian_production_rows()` in `canadian_production.py` |
-| StatCan | Table 25-10-0063-01 |
-| Province map | `constants.py` → `CP_PROVINCE_GEOS` |
-| Vectors | `cp_*` |
+| Handlers | `update_canadian_production()` / `transform_canadian_production()` in `canadian_production.py` |
+| EEDAS table | `stc_canadian_production` |
+| StatCan sources | Table **25-10-0014-01** (Canada by type, 2000–2015) + **25-10-0063-01** (Canada by type and province, 2016+) |
+| Website getter | `getPage111Data()` in `src/utils/dataLoader.js` |
+| Update (raw) | `raw_cp_s14_*_m3` category totals from 25100014; `raw_cp_s63_*_m3` from 25100063 (Canada + provinces) |
+| Transform | Oil sands = synthetic + bitumen; conventional = heavy + light/medium + condensate + pentanes plus; MMb/d = m³ × 6.2898 ÷ 1000 ÷ 365 |
+| Production vectors | `cp_oil_sands_*`, `cp_conventional_*`, `cp_total_*`, `cp_share_pct` |
+| Province vectors | `cp_prov_{ab,sk,nl,mb,bc,other}_{thousand_m3,pct}`; Other = Canada − (NL + MB + SK + AB + BC) |
+| Static UI only | Infographic PNG, overlay positions (`Page111ProvinceInfographic.constants.js`), chart colours |
 
 ### `kal_gas_prices` — Page 138
 

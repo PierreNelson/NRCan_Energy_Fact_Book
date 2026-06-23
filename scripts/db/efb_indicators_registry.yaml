@@ -127,10 +127,30 @@ indicators:
     depends_on: [cer_electricity_trade_summary]
     vector_prefixes: [elec_trade_]
 
+  electricity_generation_by_source:
+    section_id: 5
+    depends_on: [nrcan_elegen_can]
+    vector_prefixes: [elegen_]
+
   wind_capacity_by_province:
     section_id: 5
     depends_on: [nrcan_windcapbyprov]
     vector_prefixes: [wind_cap_]
+
+  wind_power_canada:
+    section_id: 5
+    depends_on: [nrcan_windpwr_can]
+    vector_prefixes: [win_pwr_]
+
+  world_wind_power:
+    section_id: 5
+    depends_on: [nrcan_worldwind]
+    vector_prefixes: [win_world_, win_can_wind_]
+
+  world_solar_pv:
+    section_id: 5
+    depends_on: [nrcan_worldsolar]
+    vector_prefixes: [sol_world_]
 
   renewable_electricity_capacity:
     section_id: 5
@@ -152,10 +172,20 @@ indicators:
     depends_on: [can_largestsolprojects]
     vector_prefixes: [solar_proj_]
 
+  major_hydro_facilities:
+    section_id: 5
+    depends_on: [can_largesthydrofac]
+    vector_prefixes: [hydro_fac_]
+
   solid_biofuels:
     section_id: 5
     depends_on: [nrcan_solid_biofuels]
     vector_prefixes: [sbio_]
+
+  electrical_energy_use:
+    section_id: 5
+    depends_on: [nrcan_electrical_energy_use]
+    vector_prefixes: [elec_eu_]
 
   rpp_supply_demand:
     section_id: 6

@@ -453,7 +453,8 @@ const Page84 = () => {
         setSelectedPoints(null);
     };
 
-    const chartTitleFull = `${stripHtml(getText('page84_chart_title', lang))}*${stripHtml(getText('page84_chart_title_suffix', lang))}`;
+    const chartTitleSuffix = substitute(getText('page84_chart_title_suffix', lang), { year: referenceYear ?? '' });
+    const chartTitleFull = `${stripHtml(getText('page84_chart_title', lang))}*${stripHtml(chartTitleSuffix)}`;
     const tableCaption = substitute(getText('page84_table_caption', lang), { year: referenceYear ?? '' });
 
     const downloadChartWithLegend = async () => {
@@ -635,9 +636,7 @@ const Page84 = () => {
 .page84-table-scrollbar > div { height: 20px; }
 .page84-table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; scrollbar-width: none; -ms-overflow-style: none; }
 .page84-table-responsive::-webkit-scrollbar { display: none; }
-.page84-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.page84-table-responsive table.table { font-family: var(--font-body); color: var(--gc-text); }
-.page84-table-responsive th, .page84-table-responsive td { white-space: nowrap; padding: 8px 12px; font-family: var(--font-body); color: var(--gc-text); border: 1px solid #ddd; }
+.page84-table-responsive table { width: max-content !important; min-width: 100%; }
 .page84-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
 .page84-download-buttons button { padding: 8px 16px; border: 1px solid #404040; border-radius: 4px; background: #8C8C8C; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; }
 .page84-chart-frame button:hover, .page84-table-wrapper summary:hover, .page84-download-buttons button:hover { background-color: #404040 !important; }
@@ -663,7 +662,7 @@ const Page84 = () => {
                                 <span aria-hidden="true">*</span>
                             </a>
                         </span>
-                        {getText('page84_chart_title_suffix', lang)}
+                        {chartTitleSuffix}
                     </h2>
 
                     {selectedPoints !== null && (
@@ -730,7 +729,7 @@ const Page84 = () => {
                                 aria-labelledby="page84-table-caption"
                                 tabIndex={0}
                             >
-                                <table className="table table-striped table-hover">
+                                <table className="table table-bordered table-striped table-hover">
                                     <caption id="page84-table-caption" className="wb-inv">{tableCaption}</caption>
                                     <thead>
                                         <tr>

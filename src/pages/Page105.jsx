@@ -687,7 +687,7 @@ const Page105 = () => {
                     flex-direction: column;
                     box-sizing: border-box;
                 }
-                .page105-intro {
+                .page-105 p.page105-intro {
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
                     color: #332f30;
@@ -695,14 +695,19 @@ const Page105 = () => {
                     max-width: 80ch;
                     margin: 0 0 16px 0;
                 }
-                .page105-intro-emphasis {
+                .page-105 p.page105-intro-emphasis {
                     font-family: 'Noto Sans', sans-serif;
-                    font-size: 26px;
+                    font-size: 30px;
                     font-weight: bold;
                     color: #423330;
                     line-height: 1.45;
                     max-width: 80ch;
                     margin: 0 0 18px 0;
+                }
+                .page-105 .page105-intro-direct,
+                .page-105 .page105-intro-alberta {
+                    color: #000000;
+                    font-weight: bold;
                 }
                 .page105-chart-frame {
                     background-color: #f5f5f5;
@@ -896,7 +901,8 @@ const Page105 = () => {
                     background: #404040 !important;
                 }
                 @media (max-width: 768px) {
-                    .page105-intro { font-size: 18px; }
+                    .page-105 p.page105-intro { font-size: 18px; }
+                    .page-105 p.page105-intro-emphasis { font-size: 24px; }
                     .page105-chart-heading { font-size: 26px; }
                     .page105-legend-label { font-size: 16px; }
                     .page105-chart-totals { font-size: 16px; }
@@ -923,17 +929,15 @@ const Page105 = () => {
                 <header>
                     <p className="page105-intro">
                         <span>{getText('page105_p1a', lang)}</span>
-                        <strong>{getText('page105_p1b', lang)}</strong>
+                        <strong className="page105-intro-direct">{getText('page105_p1b', lang)}</strong>
                         <span>{getText('page105_p1c', lang)}</span>
                     </p>
                     <p className="page105-intro-emphasis">
-                        <strong>
-                            {getText('page105_p1d', lang)}
-                            {getText('page105_p1e', lang)}
-                        </strong>
+                        {getText('page105_p1d', lang)}
+                        {getText('page105_p1e', lang)}
                     </p>
                     <p className="page105-intro">
-                        <strong>{getText('page105_p2a', lang)}</strong>
+                        <strong className="page105-intro-alberta">{getText('page105_p2a', lang)}</strong>
                         <span>{getText('page105_p2b', lang)}</span>
                     </p>
                 </header>

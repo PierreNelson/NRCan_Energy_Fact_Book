@@ -115,7 +115,7 @@ const SectorColumn = ({ sectorKey, lang, getText }) => {
     );
 };
 
-const Page57SectorTrendsInfographic = ({ figureRef, lang, getText, ariaLabel }) => {
+const Page57SectorTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, title, titleId }) => {
     const isFr = lang === 'fr';
 
     return (
@@ -255,6 +255,24 @@ const Page57SectorTrendsInfographic = ({ figureRef, lang, getText, ariaLabel }) 
 .page-57.page-content .page57-infographic-wrapper--fr span.page57-metric-value {
     font-size: 2.15cqw;
 }
+.page57-infographic-title-overlay {
+    position: absolute;
+    top: 2.5%;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    margin: 0;
+    padding: 0 3%;
+    font-family: 'Lato', sans-serif;
+    font-weight: bold;
+    font-size: 3.4cqw;
+    line-height: 1.15;
+    color: #333333;
+    text-align: center;
+    text-transform: none;
+    pointer-events: none;
+    box-sizing: border-box;
+}
 @media (max-width: 768px) {
     .page57-sector-title { font-size: 2.1cqw; }
     .page57-sector-title .page57-sector-subtitle { font-size: 1.4cqw; }
@@ -269,6 +287,11 @@ const Page57SectorTrendsInfographic = ({ figureRef, lang, getText, ariaLabel }) 
 
         <div className={`page57-infographic-wrapper${isFr ? ' page57-infographic-wrapper--fr' : ''}`}>
             <img src={page57Bg} alt="" className="page57-bg-image" draggable={false} aria-hidden="true" />
+            {title && (
+                <h2 id={titleId} className="page57-infographic-title-overlay">
+                    {title}
+                </h2>
+            )}
             {SECTOR_KEYS.map((key) => (
                 <SectorColumn key={key} sectorKey={key} lang={lang} getText={getText} />
             ))}

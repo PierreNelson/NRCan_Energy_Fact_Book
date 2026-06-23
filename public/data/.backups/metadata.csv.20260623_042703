@@ -136,6 +136,50 @@ econ_investment_value,"Annual investment - Fuel, energy and pipelines",Millions 
 econ_investment_value_billions,Annual investment (billions),Billions of dollars,billions,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_jobs,Economic contributions - Jobs (direct + indirect),Number,units,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_jobs_thousands,Economic contributions - Jobs (thousands),Thousands,thousands,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
+elec_eu_A,Electrical energy use - Agriculture,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_A_pct,Electrical energy use share - Agriculture,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_ALTA,Electrical energy use - Alberta,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_ALTA_pct,Electrical energy use share - Alberta,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_ATL,Electrical energy use - Atlantic provinces,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_ATL_pct,Electrical energy use share - Atlantic provinces,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_BC_TERR,Electrical energy use - B.C. and Territories,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_BC_TERR_pct,Electrical energy use share - B.C. and Territories,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_C,Electrical energy use - Commercial,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_C_pct,Electrical energy use share - Commercial,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_I,Electrical energy use - Industrial,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_I_pct,Electrical energy use share - Industrial,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_MAN,Electrical energy use - Manitoba,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_MAN_pct,Electrical energy use share - Manitoba,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_ONT,Electrical energy use - Ontario,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_ONT_pct,Electrical energy use share - Ontario,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_QUE,Electrical energy use - Quebec,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_QUE_pct,Electrical energy use share - Quebec,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_R,Electrical energy use - Residential,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_R_pct,Electrical energy use share - Residential,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_SASK,Electrical energy use - Saskatchewan,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_SASK_pct,Electrical energy use share - Saskatchewan,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_T,Electrical energy use - Transportation,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_T_pct,Electrical energy use share - Transportation,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_total,Total electrical energy use,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_ghg_coal,"Electricity sector GHG emissions, coal",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_natural_gas,"Electricity sector GHG emissions, natural gas",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_other,"Electricity sector GHG emissions, other",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_base_year,Electricity GHG narrative base year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_coal_gen_share_pct,Coal electricity generation share (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_coal_ghg_share_pct,Coal share of electricity-related GHG emissions (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_reference_year,Electricity GHG narrative reference year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_stat_total_pct_change,Electricity GHG total percent change (base to reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_total,"Electricity sector GHG emissions, total",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_trade_exports,Electricity exports to the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
+elec_trade_imports,Electricity imports from the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
+elec_trade_net,Net electricity trade with the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
+elegen_can_coal_pct,Canadian electricity generation share — coal,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
+elegen_can_hydro_pct,Canadian electricity generation share — hydro,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
+elegen_can_natural_gas_pct,Canadian electricity generation share — natural gas,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
+elegen_can_nuclear_pct,Canadian electricity generation share — nuclear,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
+elegen_can_other_renewables_pct,Canadian electricity generation share — other renewables,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
+elegen_can_petroleum_pct,Canadian electricity generation share — petroleum/others,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
+elegen_can_total_twh,Total Canadian electricity generation,TWh,terawatt hours,Canadian and provincial electricity generation by source,Natural Resources Canada,
 energy_prod_australia_pct,Australia Share of World Energy Production,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
 energy_prod_canada_growth_since_2005,Canada Energy Production Growth Since 2005,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
 energy_prod_canada_pct,Canada Share of World Energy Production,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
@@ -300,6 +344,15 @@ kal_vancouver_marketing,Gasoline marketing (vancouver),cents per litre,units,Gas
 kal_vancouver_price,Gasoline price (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
 kal_vancouver_refining,Gasoline refining (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
 kal_vancouver_taxes,Gasoline taxes (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
+oee_neud_A,Energy use - Agriculture,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_C,Energy use - Commercial,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_EL,Energy use - Energy losses,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_FK,Energy use - Non-covered producer/consumption,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_I,Energy use - Industrial,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_NPC,Energy use - Non-energy (feedstock),PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_P,Energy use - Pipeline,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_R,Energy use - Residential,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+oee_neud_T,Energy use - Transportation,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 os_capex_capp_m,Oil sands capital expenditures (CAPP),millions of dollars,units,Oil sands capex and production share,,
 os_capex_cumulative_bn,Cumulative oil sands capital expenditures,billions of dollars,units,Oil sands capex and production share,,
 os_capex_statcan_m,Oil sands capital expenditures (StatCan),millions of dollars,units,Oil sands capex and production share,,
@@ -434,12 +487,81 @@ sbio_use_residential,Residential wood fuel use,PJ,petajoules,Canadian production
 sbio_use_total,Total wood fuel use,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
 seu_BM,Secondary energy use - Biomass,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_Ele,Secondary energy use - Electricity,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_NG,Secondary energy use - Natural gas,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OOP,Secondary energy use - Other oil products,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OT,Secondary energy use - Other,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_TE,Secondary energy use (final demand) total,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+sol_world_canada_rank,Canada rank in world solar PV capacity,Rank,rank,Unknown,IEA-PVPS,
+sol_world_canada_share_pct,Canada share of world solar PV capacity,%,percent,Unknown,IEA-PVPS,
+sol_world_top1_country_id,World solar PV capacity country rank 1,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top1_share_pct,World solar PV capacity share rank 1,%,percent,Unknown,IEA-PVPS,
+sol_world_top2_country_id,World solar PV capacity country rank 2,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top2_share_pct,World solar PV capacity share rank 2,%,percent,Unknown,IEA-PVPS,
+sol_world_top3_country_id,World solar PV capacity country rank 3,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top3_share_pct,World solar PV capacity share rank 3,%,percent,Unknown,IEA-PVPS,
+sol_world_top4_country_id,World solar PV capacity country rank 4,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top4_share_pct,World solar PV capacity share rank 4,%,percent,Unknown,IEA-PVPS,
+sol_world_top5_country_id,World solar PV capacity country rank 5,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top5_share_pct,World solar PV capacity share rank 5,%,percent,Unknown,IEA-PVPS,
+sol_world_total_gw,World solar PV capacity,GW,gigawatts,Unknown,IEA-PVPS,
+solar_proj_01_mw,Travers,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_01_prov,Travers province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_02_mw,Big Sky,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_02_prov,Big Sky province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_03_mw,Claresholm (1 & 2),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_03_prov,Claresholm (1 & 2) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_04_mw,Grand Renewable,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_04_prov,Grand Renewable province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_05_mw,Kingston,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_05_prov,Kingston province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_06_mw,Saddlebrook,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_06_prov,Saddlebrook province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_07_mw,Fox Coulee,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_07_prov,Fox Coulee province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_08_mw,Sarnia (1-8),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_08_prov,Sarnia (1-8) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_09_mw,Clydesdale (1 & 2),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_09_prov,Clydesdale (1 & 2) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_10_mw,Sollair,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_10_prov,Sollair province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_11_mw,Sault Ste. Marie (1 - 3),MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_11_prov,Sault Ste. Marie (1 - 3) province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_12_mw,Loyalist,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_12_prov,Loyalist province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_13_mw,Southgate,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_13_prov,Southgate province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_14_mw,Windsor,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_14_prov,Windsor province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_15_mw,Wheatcrest,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
+solar_proj_15_prov,Wheatcrest province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+win_can_wind_elec_share_pct,Wind share of Canadian electricity generation,%,percent,Unknown,Natural Resources Canada,
+win_pwr_cap_add_mw,"Installed wind capacity, annual additions",MW,megawatts,Wind power in Canada,Natural Resources Canada,
+win_pwr_cap_cum_gw,"Installed wind capacity, cumulative",GW,gigawatts,Wind power in Canada,Natural Resources Canada,
+win_pwr_cap_cum_mw,"Installed wind capacity, cumulative",MW,megawatts,Wind power in Canada,Natural Resources Canada,
+win_pwr_gen_twh,Wind electricity generation,TWh,terawatt-hours,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_cap_gw,"Wind capacity, latest year",GW,gigawatts,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_cap_mult,Wind capacity growth multiplier vs 2011,Multiplier,multiplier,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_cap_ratio,Wind capacity ratio vs 2011,Ratio,ratio,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_cap_year,Wind capacity reference year,Year,year,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_gen_mult,Wind generation growth multiplier vs 2011,Multiplier,multiplier,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_gen_ratio,Wind generation ratio vs 2011,Ratio,ratio,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_gen_twh,"Wind generation, latest year",TWh,terawatt-hours,Wind power in Canada,Natural Resources Canada,
+win_pwr_stat_gen_year,Wind generation reference year,Year,year,Wind power in Canada,Natural Resources Canada,
+win_world_canada_rank,Canada rank in world wind capacity,Rank,rank,Unknown,Global Wind Energy Council,
+win_world_canada_share_pct,Canada share of world wind capacity,%,percent,Unknown,Global Wind Energy Council,
+win_world_top1_country_id,World wind capacity country rank 1,ID,country_id,Unknown,Global Wind Energy Council,
+win_world_top1_share_pct,World wind capacity share rank 1,%,percent,Unknown,Global Wind Energy Council,
+win_world_top2_country_id,World wind capacity country rank 2,ID,country_id,Unknown,Global Wind Energy Council,
+win_world_top2_share_pct,World wind capacity share rank 2,%,percent,Unknown,Global Wind Energy Council,
+win_world_top3_country_id,World wind capacity country rank 3,ID,country_id,Unknown,Global Wind Energy Council,
+win_world_top3_share_pct,World wind capacity share rank 3,%,percent,Unknown,Global Wind Energy Council,
+win_world_top4_country_id,World wind capacity country rank 4,ID,country_id,Unknown,Global Wind Energy Council,
+win_world_top4_share_pct,World wind capacity share rank 4,%,percent,Unknown,Global Wind Energy Council,
+win_world_top5_country_id,World wind capacity country rank 5,ID,country_id,Unknown,Global Wind Energy Council,
+win_world_top5_share_pct,World wind capacity share rank 5,%,percent,Unknown,Global Wind Energy Council,
+win_world_total_gw,World wind power capacity,GW,gigawatts,Unknown,Global Wind Energy Council,
 wind_cap_alta,"Wind capacity, Alta.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
 wind_cap_bc,"Wind capacity, B.C.",MW,megawatts,Wind capacity by province,Natural Resources Canada,
 wind_cap_man,"Wind capacity, Man.",MW,megawatts,Wind capacity by province,Natural Resources Canada,

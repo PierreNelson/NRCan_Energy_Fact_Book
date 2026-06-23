@@ -1,7 +1,5 @@
 /**
  * Data Loader Utility
- * 
- * Loads pre-calculated data from data.csv stored in public/data/
  * All calculations are done in the scripts/main.py pipeline - this module just loads and parses.
  * 
  * Data is stored with semantic vector prefixes:
@@ -17,6 +15,8 @@
  * - gdp_prov_*: Provincial GDP data
  * - oee_neud_*: Energy use (secondary by sector + primary demand components), PJ
  */
+
+import { PAGE66_PROVINCE_ORDER } from '../components/Page66GenerationInfographic.constants.js';
 
 let dataCache = null;
 let metadataCache = null;
@@ -535,9 +535,25 @@ export async function getOilGasGhgSpotlightData() {
 }
 
 /**
+ * Page 61 shows a year only when every infographic stat is populated (excludes partial/future
+ * StatCan rows such as market GDP without matching eco-sector indicators).
+ */
+export function page61SnapshotHasCompleteData(snap) {
+    if (!snap) return false;
+    return snap.eco_gdp != null
+        && snap.gdp_pct != null
+        && snap.eco_jobs_total != null
+        && snap.jobs_pct != null
+        && snap.eco_exports != null
+        && snap.clean_energy_gdp_pct != null
+        && snap.eco_jobs_clean_energy != null;
+}
+
+/**
  * Get environmental and clean technology snapshot data.
- * Returns { snapshots, years, tmx }. snapshots: array of snapshot objects (one per year 2007..latest);
- * years: [2007, ..., latest]; tmx: TSX stats if available (from most recent year with tmx data).
+ * Returns { snapshots, years, startYear, endYear, tmx }.
+ * snapshots/years: only years with complete infographic and table data;
+ * tmx: TSX stats if available (from most recent year with tmx data).
  */
 export async function getEnvironmentalCleanTechData() {
     const allData = await loadAllData();
@@ -554,8 +570,9 @@ export async function getEnvironmentalCleanTechData() {
     });
     const sorted = Object.values(yearMap).sort((a, b) => Number(a.year) - Number(b.year));
     const minYear = 2007;
-    const maxYear = sorted.length ? Math.max(...sorted.map((s) => Number(s.year))) : minYear;
-    const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+    const candidateYears = sorted
+        .map((s) => Number(s.year))
+        .filter((y) => !Number.isNaN(y) && y >= minYear);
     const marketGdpByYear = {};
     ectData.forEach((row) => {
         if (row.vector === 'envcleantech_canada_gdp_market') {
@@ -568,7 +585,7 @@ export async function getEnvironmentalCleanTechData() {
         const yr = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
         if (!Number.isNaN(yr) && marketGdpByYear[yr] == null) marketGdpByYear[yr] = Number(row.value);
     });
-    const snapshots = years.map((y) => {
+    const snapshots = candidateYears.map((y) => {
         const row = yearMap[y] || { year: y };
         const emp = row.employment_total;
         const ecoGdp = row.eco_gdp;
@@ -600,6 +617,10 @@ export async function getEnvironmentalCleanTechData() {
             jobs_pct: jobsPct,
         };
     });
+    const snapshotsComplete = snapshots.filter(page61SnapshotHasCompleteData);
+    const years = snapshotsComplete.map((s) => s.year);
+    const startYear = years.length ? years[0] : null;
+    const endYear = years.length ? years[years.length - 1] : null;
     // TMX: from the most recent year that has tmx data
     const withTmx = sorted.filter((y) => y.tmx_count != null || y.tmx_mcap_total != null);
     const tmxSource = withTmx.length ? withTmx[withTmx.length - 1] : null;
@@ -608,8 +629,10 @@ export async function getEnvironmentalCleanTechData() {
     const tmxCanCount = tmxSource?.tmx_can_count;
     const tmxCanMcap = tmxSource?.tmx_can_mcap;
     return {
-        snapshots,
+        snapshots: snapshotsComplete,
         years,
+        startYear,
+        endYear,
         tmx: (tmxCount != null || tmxMcap != null) ? { count: tmxCount, mcap_total: tmxMcap, can_count: tmxCanCount, can_mcap: tmxCanMcap } : null,
     };
 }
@@ -1321,23 +1344,26 @@ export async function getPage111Data() {
         .sort((a, b) => a.year - b.year);
 
     const provinceFieldMap = {
-        ab: 'cp_prov_ab_thousand_m3',
-        sk: 'cp_prov_sk_thousand_m3',
-        nl: 'cp_prov_nl_thousand_m3',
-        mb: 'cp_prov_mb_thousand_m3',
-        bc: 'cp_prov_bc_thousand_m3',
-        other: 'cp_prov_other_thousand_m3',
+        ab: { thousandM3: 'cp_prov_ab_thousand_m3', sharePct: 'cp_prov_ab_pct' },
+        sk: { thousandM3: 'cp_prov_sk_thousand_m3', sharePct: 'cp_prov_sk_pct' },
+        nl: { thousandM3: 'cp_prov_nl_thousand_m3', sharePct: 'cp_prov_nl_pct' },
+        mb: { thousandM3: 'cp_prov_mb_thousand_m3', sharePct: 'cp_prov_mb_pct' },
+        bc: { thousandM3: 'cp_prov_bc_thousand_m3', sharePct: 'cp_prov_bc_pct' },
+        other: { thousandM3: 'cp_prov_other_thousand_m3', sharePct: 'cp_prov_other_pct' },
     };
 
     const provinces = Object.values(byYear)
         .filter((row) => row.year >= 2016 && row.cp_prov_canada_thousand_m3 != null)
         .map((row) => {
             const canadaThousandM3 = Number(row.cp_prov_canada_thousand_m3);
-            const entries = Object.entries(provinceFieldMap).map(([key, field]) => {
-                const thousandM3 = row[field] != null ? Number(row[field]) : null;
-                const sharePct = thousandM3 != null && canadaThousandM3 > 0
-                    ? Math.round((thousandM3 / canadaThousandM3) * 1000) / 10
-                    : null;
+            const entries = Object.entries(provinceFieldMap).map(([key, fields]) => {
+                const thousandM3 = row[fields.thousandM3] != null ? Number(row[fields.thousandM3]) : null;
+                const pipelinePct = row[fields.sharePct] != null ? Number(row[fields.sharePct]) : null;
+                const sharePct = pipelinePct != null
+                    ? pipelinePct
+                    : thousandM3 != null && canadaThousandM3 > 0
+                        ? Math.round((thousandM3 / canadaThousandM3) * 1000) / 10
+                        : null;
                 return { key, thousandM3, sharePct };
             });
             return {
@@ -1654,6 +1680,253 @@ export async function getPage74Data() {
     };
 }
 
+const PAGE79_COUNTRY_IDS = {
+    1: 'china',
+    2: 'usa',
+    3: 'germany',
+    4: 'india',
+    5: 'brazil',
+    6: 'spain',
+    7: 'uk',
+    8: 'canada',
+};
+
+export async function getPage79Data() {
+    const allData = await loadAllData();
+    const byYear = {};
+    const windShareByYear = {};
+
+    allData.forEach((row) => {
+        if (!row.vector) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        const value = Number(row.value);
+        if (Number.isNaN(value)) return;
+
+        if (row.vector === 'win_world_total_gw') {
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            byYear[year].totalGw = value;
+            return;
+        }
+        if (row.vector === 'win_world_canada_rank') {
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            byYear[year].canadaRank = value;
+            return;
+        }
+        if (row.vector === 'win_world_canada_share_pct') {
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            byYear[year].canadaSharePct = value;
+            return;
+        }
+        const topShareMatch = row.vector.match(/^win_world_top([1-5])_share_pct$/);
+        if (topShareMatch) {
+            const rank = Number(topShareMatch[1]);
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            if (!byYear[year].topSlots[rank]) byYear[year].topSlots[rank] = {};
+            byYear[year].topSlots[rank].sharePct = value;
+            return;
+        }
+        const topCountryMatch = row.vector.match(/^win_world_top([1-5])_country_id$/);
+        if (topCountryMatch) {
+            const rank = Number(topCountryMatch[1]);
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            if (!byYear[year].topSlots[rank]) byYear[year].topSlots[rank] = {};
+            byYear[year].topSlots[rank].countryId = value;
+            return;
+        }
+        if (row.vector === 'win_can_wind_elec_share_pct') {
+            windShareByYear[year] = value;
+        }
+    });
+
+    const rows = Object.values(byYear)
+        .filter((row) => row.totalGw != null)
+        .map((row) => {
+            const top5 = [1, 2, 3, 4, 5]
+                .map((rank) => {
+                    const slot = row.topSlots?.[rank];
+                    if (!slot || slot.sharePct == null || slot.countryId == null) return null;
+                    const key = PAGE79_COUNTRY_IDS[Math.round(slot.countryId)];
+                    if (!key) return null;
+                    return { rank, key, sharePct: slot.sharePct };
+                })
+                .filter(Boolean);
+            return { ...row, top5 };
+        })
+        .sort((a, b) => a.year - b.year);
+
+    const years = rows.map((row) => row.year);
+    const windShareYears = Object.keys(windShareByYear).map(Number).sort((a, b) => a - b);
+    const latestWindShareYear = windShareYears.length ? windShareYears[windShareYears.length - 1] : null;
+
+    return {
+        rows,
+        years,
+        startYear: years[0] ?? null,
+        endYear: years.length ? years[years.length - 1] : null,
+        windShareByYear,
+        latestWindShareYear,
+        latestWindSharePct: latestWindShareYear != null ? windShareByYear[latestWindShareYear] : null,
+    };
+}
+
+const PAGE82_COUNTRY_IDS = {
+    1: 'china',
+    2: 'usa',
+    3: 'germany',
+    4: 'india',
+    5: 'japan',
+    6: 'canada',
+};
+
+export async function getPage82Data() {
+    const allData = await loadAllData();
+    const byYear = {};
+
+    allData.forEach((row) => {
+        if (!row.vector) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        const value = Number(row.value);
+        if (Number.isNaN(value)) return;
+
+        if (row.vector === 'sol_world_total_gw') {
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            byYear[year].totalGw = value;
+            return;
+        }
+        if (row.vector === 'sol_world_canada_rank') {
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            byYear[year].canadaRank = value;
+            return;
+        }
+        if (row.vector === 'sol_world_canada_share_pct') {
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            byYear[year].canadaSharePct = value;
+            return;
+        }
+        const topShareMatch = row.vector.match(/^sol_world_top([1-5])_share_pct$/);
+        if (topShareMatch) {
+            const rank = Number(topShareMatch[1]);
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            if (!byYear[year].topSlots[rank]) byYear[year].topSlots[rank] = {};
+            byYear[year].topSlots[rank].sharePct = value;
+            return;
+        }
+        const topCountryMatch = row.vector.match(/^sol_world_top([1-5])_country_id$/);
+        if (topCountryMatch) {
+            const rank = Number(topCountryMatch[1]);
+            if (!byYear[year]) byYear[year] = { year, topSlots: {} };
+            if (!byYear[year].topSlots[rank]) byYear[year].topSlots[rank] = {};
+            byYear[year].topSlots[rank].countryId = value;
+            return;
+        }
+    });
+
+    const rows = Object.values(byYear)
+        .filter((row) => row.totalGw != null)
+        .map((row) => {
+            const top5 = [1, 2, 3, 4, 5]
+                .map((rank) => {
+                    const slot = row.topSlots?.[rank];
+                    if (!slot || slot.sharePct == null || slot.countryId == null) return null;
+                    const key = PAGE82_COUNTRY_IDS[Math.round(slot.countryId)];
+                    if (!key) return null;
+                    return { rank, key, sharePct: slot.sharePct };
+                })
+                .filter(Boolean);
+            return { ...row, top5 };
+        })
+        .sort((a, b) => a.year - b.year);
+
+    const chartRows = rows.filter(
+        (row) =>
+            row.canadaRank != null
+            && row.canadaSharePct != null
+            && row.top5?.length >= 5,
+    );
+    const years = chartRows.map((row) => row.year);
+
+    return {
+        rows: chartRows,
+        years,
+        startYear: years[0] ?? null,
+        endYear: years.length ? years[years.length - 1] : null,
+    };
+}
+
+export async function getPage80Data() {
+    const allData = await loadAllData();
+    const stats = {};
+    const byYear = {};
+
+    allData.forEach((row) => {
+        if (!row.vector?.startsWith('win_pwr_')) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        const value = Number(row.value);
+        if (Number.isNaN(value)) return;
+
+        if (row.vector.startsWith('win_pwr_stat_')) {
+            stats[row.vector.replace('win_pwr_stat_', '')] = value;
+            return;
+        }
+
+        if (row.vector === 'win_pwr_cap_cum_mw' || row.vector === 'win_pwr_cap_add_mw') {
+            if (!byYear[year]) byYear[year] = { year };
+            if (row.vector === 'win_pwr_cap_cum_mw') byYear[year].cumulativeMw = value;
+            if (row.vector === 'win_pwr_cap_add_mw') byYear[year].annualMw = value;
+        }
+    });
+
+    const chartRows = Object.values(byYear)
+        .filter((row) => row.cumulativeMw != null)
+        .sort((a, b) => a.year - b.year);
+
+    const capRatio = stats.cap_ratio ?? null;
+    const genRatio = stats.gen_ratio ?? null;
+
+    const growthKey = (ratio) => {
+        if (ratio == null) return 'increased';
+        if (ratio >= 3.5) return 'quadrupled';
+        if (ratio >= 3) return 'more_than_tripled';
+        if (ratio >= 2.5) return 'tripled';
+        if (ratio >= 1.75) return 'doubled';
+        return 'increased';
+    };
+
+    const multLabel = (ratio) => {
+        if (ratio == null) return '';
+        if (ratio >= 3.5) return '= 4x';
+        if (ratio > 3) return '> 3x';
+        if (ratio >= 2.5) return '= 3x';
+        if (ratio >= 1.75) return '= 2x';
+        return `= ${Math.max(1, Math.round(ratio))}x`;
+    };
+
+    const years = chartRows.map((row) => row.year);
+
+    return {
+        chartRows,
+        years,
+        startYear: years[0] ?? null,
+        endYear: years.length ? years[years.length - 1] : null,
+        stats: {
+            capYear: stats.cap_year ?? null,
+            capGw: stats.cap_gw ?? null,
+            capRatio,
+            capMult: stats.cap_mult ?? null,
+            capGrowthKey: growthKey(capRatio),
+            capMultLabel: multLabel(capRatio),
+            genYear: stats.gen_year ?? null,
+            genTwh: stats.gen_twh ?? null,
+            genRatio,
+            genMult: stats.gen_mult ?? null,
+            genGrowthKey: growthKey(genRatio),
+            genMultLabel: multLabel(genRatio),
+        },
+    };
+}
+
 export async function getPage81Data() {
     const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
 
@@ -1700,6 +1973,50 @@ const SOLAR_PROJECT_PROV_FROM_CODE = {
     1: 'ab',
     2: 'on',
 };
+
+const HYDRO_FAC_PROV_FROM_CODE = {
+    1: 'on',
+    2: 'qc',
+    3: 'bc',
+    4: 'man',
+    5: 'nl',
+};
+
+export async function getPage76Data() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+
+    const facilities = allData
+        .filter((row) => row.vector && /^hydro_fac_\d+_mw$/.test(row.vector))
+        .map((row) => {
+            const match = row.vector.match(/^hydro_fac_(\d+)_mw$/);
+            const index = match ? match[1] : '';
+            const provRow = allData.find((item) => item.vector === `hydro_fac_${index}_prov`);
+            const provCode = provRow != null ? Number(provRow.value) : null;
+            const provKey = HYDRO_FAC_PROV_FROM_CODE[provCode] || null;
+            const facility = metadata[row.vector]?.title || row.vector;
+            return {
+                index,
+                facility,
+                capacity: Number(row.value),
+                provKey,
+                year: row.ref_date,
+            };
+        })
+        .filter((row) => !Number.isNaN(row.capacity) && row.capacity > 0)
+        .sort((a, b) => b.capacity - a.capacity);
+
+    const referenceYear = facilities.length ? facilities[0].year : null;
+    const hydroRow = referenceYear != null
+        ? allData.find((row) => row.vector === 'ren_cap_hydro' && String(row.ref_date) === String(referenceYear))
+        : null;
+    const totalHydroMw = hydroRow != null ? Number(hydroRow.value) : null;
+
+    return {
+        referenceYear,
+        totalHydroMw: totalHydroMw != null && !Number.isNaN(totalHydroMw) ? totalHydroMw : null,
+        facilities,
+    };
+}
 
 export async function getPage84Data() {
     const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
@@ -1810,5 +2127,208 @@ export async function getPage78Data() {
         startYear: years[0] ?? null,
         endYear: referenceYear,
         referenceYear,
+    };
+}
+
+const PAGE66_PIE_ORDER = ['petroleum', 'hydro', 'nuclear', 'other_renewables', 'natural_gas', 'coal'];
+
+const PAGE66_PIE_VECTORS = {
+    petroleum: 'elegen_can_petroleum_pct',
+    hydro: 'elegen_can_hydro_pct',
+    nuclear: 'elegen_can_nuclear_pct',
+    other_renewables: 'elegen_can_other_renewables_pct',
+    natural_gas: 'elegen_can_natural_gas_pct',
+    coal: 'elegen_can_coal_pct',
+};
+
+const PAGE66_INFOGRAPHIC_SOURCES = ['hydro', 'nuclear', 'wind'];
+
+const PAGE67_SOURCE_PIPELINE = {
+    biomass: 'biomass',
+    naturalGas: 'natural_gas',
+    petroleum: 'petroleum',
+    solar: 'solar',
+    coal: 'coal',
+    other: 'other',
+};
+
+const PAGE67_SOURCE_KEYS = Object.keys(PAGE67_SOURCE_PIPELINE);
+
+const ELEGEN_PROVINCE_LOC_KEYS = [
+    'bc', 'nb', 'ns', 'alta', 'ont', 'que', 'pei', 'man', 'sask', 'nl', 'nwt', 'yt', 'nvt',
+];
+
+function normalizeSharePct(pct, { floorDisplay = false } = {}) {
+    if (pct == null || Number.isNaN(Number(pct))) return null;
+    const n = Number(pct);
+    if (floorDisplay && n > 0) {
+        if (n < 0.1) return 'lt0.1';
+        if (n > 0.1 && n <= 0.2) return 'lt0.2';
+    }
+    return n;
+}
+
+function elegenRows(allData, prefix) {
+    return allData.filter((row) => row.vector && row.vector.startsWith(prefix));
+}
+
+function latestYearFromRows(rows) {
+    const years = rows
+        .map((row) => Number(row.ref_date))
+        .filter((y) => !Number.isNaN(y));
+    return years.length ? Math.max(...years) : null;
+}
+
+function valueForVector(rows, vector, year) {
+    const match = rows.find((row) => row.vector === vector && Number(row.ref_date) === year);
+    return match != null ? Number(match.value) : null;
+}
+
+function elegenPctSortValue(value) {
+    if (value === 'lt0.1') return 0.05;
+    if (value === 'lt0.2') return 0.15;
+    return Number(value);
+}
+
+function buildProvincialBlock(allData, pipelineSourceKey, year, { excludeZeroProvinces = false, floorDisplay = false, keepZeroProvinces = [] } = {}) {
+    const canadaVec = `elegen_prov_${pipelineSourceKey}_canada_pct`;
+    const canadaRaw = valueForVector(allData, canadaVec, year);
+    const canada = normalizeSharePct(canadaRaw);
+
+    const provinces = ELEGEN_PROVINCE_LOC_KEYS.map((key) => {
+        const vec = `elegen_prov_${pipelineSourceKey}_${key}_pct`;
+        const raw = valueForVector(allData, vec, year);
+        if (raw == null || Number.isNaN(raw)) return null;
+        if (excludeZeroProvinces && raw === 0 && !keepZeroProvinces.includes(key)) return null;
+        const value = normalizeSharePct(raw, { floorDisplay });
+        if (value == null) return null;
+        return { key, value, sortPct: elegenPctSortValue(value) };
+    })
+        .filter(Boolean)
+        .sort((a, b) => b.sortPct - a.sortPct);
+
+    return { canada, provinces };
+}
+
+function buildPage66ProvincialBlock(allData, pipelineSourceKey, year) {
+    const canadaVec = `elegen_prov_${pipelineSourceKey}_canada_pct`;
+    const canada = normalizeSharePct(valueForVector(allData, canadaVec, year));
+    const order = PAGE66_PROVINCE_ORDER[pipelineSourceKey] || [];
+
+    const provinces = order.map((key) => {
+        const vec = `elegen_prov_${pipelineSourceKey}_${key}_pct`;
+        const raw = valueForVector(allData, vec, year);
+        if (raw == null || Number.isNaN(raw)) {
+            if (pipelineSourceKey === 'wind' && key === 'nl') {
+                return { key, value: 0, sortPct: 0 };
+            }
+            return null;
+        }
+        const value = normalizeSharePct(raw);
+        if (value == null) return null;
+        return { key, value, sortPct: elegenPctSortValue(value) };
+    }).filter(Boolean);
+
+    return { canada, provinces };
+}
+
+export async function getPage66Data() {
+    const allData = await loadAllData();
+    const rows = elegenRows(allData, 'elegen_');
+    const latestYear = latestYearFromRows(rows);
+    if (latestYear == null) {
+        return { latestYear: null, years: [], national: null, infographic: null };
+    }
+
+    const years = [...new Set(rows.map((row) => Number(row.ref_date)).filter((y) => !Number.isNaN(y)))].sort((a, b) => a - b);
+    const totalTwh = valueForVector(allData, 'elegen_can_total_twh', latestYear);
+
+    const slices = PAGE66_PIE_ORDER.map((key) => ({
+        key,
+        pct: normalizeSharePct(valueForVector(allData, PAGE66_PIE_VECTORS[key], latestYear)),
+    })).filter((slice) => slice.pct != null);
+
+    const infographicSources = {};
+    PAGE66_INFOGRAPHIC_SOURCES.forEach((sourceKey) => {
+        infographicSources[sourceKey] = buildPage66ProvincialBlock(allData, sourceKey, latestYear);
+    });
+
+    return {
+        latestYear,
+        years,
+        national: {
+            year: latestYear,
+            totalTwh,
+            slices,
+        },
+        infographic: {
+            year: latestYear,
+            sources: infographicSources,
+        },
+    };
+}
+
+const PAGE68_SECTOR_KEYS = ['R', 'C', 'I', 'T', 'A'];
+const PAGE68_PROVINCE_PIPELINE_KEYS = ['ATL', 'BC_TERR', 'ALTA', 'SASK', 'MAN', 'ONT', 'QUE'];
+const PAGE68_PROVINCE_UI_KEYS = ['atl', 'bc_terr', 'alta', 'sask', 'man', 'ont', 'que'];
+
+export async function getPage68Data() {
+    const allData = await loadAllData();
+    const byYear = {};
+    allData.forEach((row) => {
+        if (!row.vector || !row.vector.startsWith('elec_eu_')) return;
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        const field = row.vector.replace('elec_eu_', '');
+        byYear[year][field] = row.value;
+    });
+    const data = Object.values(byYear)
+        .map((row) => {
+            const sectors = PAGE68_SECTOR_KEYS.map((key) => ({
+                key,
+                value: row[key] ?? null,
+                pct: row[`${key}_pct`] ?? null,
+            }));
+            const provinces = PAGE68_PROVINCE_PIPELINE_KEYS.map((key, index) => ({
+                key: PAGE68_PROVINCE_UI_KEYS[index],
+                value: row[key] ?? null,
+                pct: row[`${key}_pct`] ?? null,
+            }));
+            const total = row.total ?? sectors.reduce((sum, sector) => sum + (sector.value || 0), 0);
+            return { year: row.year, total, sectors, provinces };
+        })
+        .filter((row) => row.total != null && row.sectors.every((sector) => sector.value != null && sector.pct != null))
+        .filter((row) => row.provinces.every((province) => province.value != null && province.pct != null))
+        .sort((a, b) => a.year - b.year);
+    const years = data.map((item) => item.year);
+    return {
+        data,
+        years,
+        latestYear: years.length ? years[years.length - 1] : null,
+    };
+}
+
+export async function getPage67Data() {
+    const allData = await loadAllData();
+    const rows = elegenRows(allData, 'elegen_prov_');
+    const latestYear = latestYearFromRows(rows);
+    if (latestYear == null) {
+        return { latestYear: null, sourceKeys: PAGE67_SOURCE_KEYS, sources: {} };
+    }
+
+    const sources = {};
+    PAGE67_SOURCE_KEYS.forEach((uiKey) => {
+        const pipelineKey = PAGE67_SOURCE_PIPELINE[uiKey];
+        sources[uiKey] = buildProvincialBlock(allData, pipelineKey, latestYear, {
+            excludeZeroProvinces: true,
+            floorDisplay: true,
+        });
+    });
+
+    return {
+        latestYear,
+        sourceKeys: PAGE67_SOURCE_KEYS,
+        sources,
     };
 }

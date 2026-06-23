@@ -1,0 +1,22 @@
+Log file: scripts/logs/efb_20260623_024656.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-06-23 02:46:56
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: wind_power_canada
+    Stored 58 indicator rows for wind_power_canada
+  Completed: 58 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  wind_power_canada: success (58 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-06-23 02:46:56

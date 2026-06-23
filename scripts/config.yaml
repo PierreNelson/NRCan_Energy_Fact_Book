@@ -197,6 +197,13 @@ sections:
         description: "Plug-in electric vehicle registrations (Page 96)"
         source_type: "statcan"
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501"
+      electricity_generation_by_source:
+        enabled: true
+        description: "Canadian and provincial electricity generation by source (Pages 66–67, gencap src_elegen_can / src_elegen_prov)"
+        source_type: "external"
+        source_url: ""
+        file_path: "secondary Master gencap file.xlsx"
+        sheet_name: "src_elegen_can, src_elegen_prov"
       electricity_trade_us:
         enabled: true
         description: "Electricity trade with the U.S. (Page 65, CER XLSM)"
@@ -209,6 +216,27 @@ sections:
         source_url: ""
         file_path: "secondary Master gencap file.xlsx"
         sheet_name: "src_elecap_prov"
+      wind_power_canada:
+        enabled: true
+        description: "Wind power capacity and generation in Canada (Page 80, cap/gen workbook)"
+        source_type: "external"
+        source_url: ""
+        file_path: "Wind capacity and generation_Canada.xlsx"
+        sheet_name: "cap, gen"
+      world_wind_power:
+        enabled: true
+        description: "World wind power capacity ranking and Canada wind generation share (Page 79)"
+        source_type: "external"
+        source_url: ""
+        file_path: "World capacity of wind and solar power.xlsx"
+        sheet_name: "worldcap_wind"
+      world_solar_pv:
+        enabled: true
+        description: "World solar PV capacity ranking (Page 82)"
+        source_type: "external"
+        source_url: ""
+        file_path: "World capacity of wind and solar power.xlsx"
+        sheet_name: "worldcap_solar"
       renewable_electricity_capacity:
         enabled: true
         description: "Canadian renewable electricity generating capacity (Page 74, gencap ren_elecap sheet)"
@@ -238,6 +266,13 @@ sections:
         source_url: ""
         file_path: "Largest hydrofac, wind and solar projects.xlsx"
         sheet_name: "solprojects"
+      major_hydro_facilities:
+        enabled: true
+        description: "Major hydro facilities in Canada 1,000 MW+ (Page 76, Manual Data workbook)"
+        source_type: "external"
+        source_url: ""
+        file_path: "Largest hydrofac, wind and solar projects.xlsx"
+        sheet_name: "hydrofac"
       solid_biofuels:
         enabled: true
         description: "Canadian production of solid biofuels (Page 78, RenAQ + StatCan 25-10-0031-01)"
@@ -245,6 +280,11 @@ sections:
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003101"
         file_path: "RenAQ.xlsx"
         statcan_table: "25100031"
+      electrical_energy_use:
+        enabled: true
+        description: "Electrical energy use by sector and province (Page 68, OEE NEUD)"
+        source_type: "external"
+        source_url: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html"
 
   # Section 6: Oil, Natural Gas and Coal
   section6_indicators:

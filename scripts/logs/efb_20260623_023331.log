@@ -1,0 +1,22 @@
+Log file: scripts/logs/efb_20260623_023331.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-06-23 02:33:31
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: energy_use
+    Stored 18 indicator rows for energy_use (2 years)
+  Completed: 18 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  energy_use: success (18 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-06-23 02:33:32

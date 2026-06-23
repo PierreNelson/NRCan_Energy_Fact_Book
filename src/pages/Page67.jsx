@@ -2,27 +2,29 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { getPage67Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page67GenerationInfographic from '../components/Page67GenerationInfographic';
 import {
     SOURCE_KEYS,
-    PAGE67_DATA,
     formatSharePct,
+    pctSortValue,
     exportPage67InfographicPng,
 } from '../components/Page67GenerationInfographic.constants';
 
-const YEAR = 2023;
-
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-const pctSortValue = (value) => {
-    if (value === 'lt0.1') return 0.05;
-    if (value === 'lt0.2') return 0.15;
-    return Number(value);
-};
+const substitute = (text, vars) =>
+    Object.keys(vars || {}).reduce(
+        (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
+        text || '',
+    );
 
 const Page67 = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [pageData, setPageData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const figureRef = useRef(null);
@@ -30,26 +32,45 @@ const Page67 = () => {
     const tableScrollRef = useRef(null);
     const bottomScrollRef = useRef(null);
 
-    const infographicTitle = getText('page67_infographic_title', lang).replace(/\{\{year\}\}/g, String(YEAR));
-    const ariaLabel = getText('page67_infographic_aria', lang);
-    const fileSlugBase = getText('page67_download_title', lang).replace(/\{\{year\}\}/g, String(YEAR)).replace(/\s+/g, '_');
+    useEffect(() => {
+        getPage67Data()
+            .then(setPageData)
+            .catch((err) => setError(err?.message || 'Failed to load data'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    useEffect(() => {
+        const onResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    const year = pageData?.latestYear ?? null;
+    const vars = { year: year ?? '' };
+
+    const infographicTitle = substitute(getText('page67_infographic_title', lang), vars);
+    const ariaLabel = substitute(getText('page67_infographic_aria', lang), vars);
+    const fileSlugBase = substitute(getText('page67_download_title', lang), vars).replace(/\s+/g, '_');
 
     const tableRows = useMemo(() => {
-        const rows = SOURCE_KEYS.flatMap((sourceKey) =>
-            PAGE67_DATA[sourceKey].provinces.map((row) => ({
+        if (!pageData?.sources) return [];
+        const rows = SOURCE_KEYS.flatMap((sourceKey) => {
+            const block = pageData.sources[sourceKey];
+            if (!block?.provinces?.length) return [];
+            return block.provinces.map((row) => ({
                 sourceKey,
                 source: getText(`page67_source_${sourceKey}`, lang),
                 province: getText(`page67_prov_${row.key}`, lang),
                 share: formatSharePct(row.value, lang),
                 sortPct: pctSortValue(row.value),
-            })),
-        );
+            }));
+        });
         return rows.sort((a, b) => {
             const sourceDiff = SOURCE_KEYS.indexOf(a.sourceKey) - SOURCE_KEYS.indexOf(b.sourceKey);
             if (sourceDiff !== 0) return sourceDiff;
             return b.sortPct - a.sortPct;
         });
-    }, [lang]);
+    }, [pageData, lang]);
 
     const tableHeaders = [
         getText('page67_table_col_source', lang),
@@ -69,12 +90,6 @@ const Page67 = () => {
     };
 
     const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
 
     const syncTableScroll = useCallback(() => {
         const topScroll = topScrollRef.current;
@@ -179,15 +194,16 @@ const Page67 = () => {
     };
 
     const downloadPng = async () => {
-        const canvas = await exportPage67InfographicPng(figureRef.current, {
-            title: stripHtml(infographicTitle),
-            scale: 2,
-        });
+        const canvas = await exportPage67InfographicPng(figureRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}.png`);
         });
     };
+
+    if (loading) return <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>;
+    if (error) return <p>{error}</p>;
+    if (!pageData?.latestYear) return <p>{getText('page67_no_data', lang)}</p>;
 
     return (
         <main
@@ -208,16 +224,6 @@ const Page67 = () => {
     padding-right: ${layoutPadding?.right || 15}px;
 }
 .page67-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
-.page67-infographic-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
-    color: #333333;
-    text-align: center;
-    margin: 0 0 16px 0;
-    line-height: 1.25;
-    text-transform: none;
-}
 .page67-infographic-section { width: 100%; margin-bottom: 0; }
 .page67-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 .page67-download-buttons button:hover { background-color: #404040 !important; }
@@ -240,33 +246,23 @@ const Page67 = () => {
 .page-67 .data-table-wrapper button:hover { background-color: #404040 !important; }
 .page67-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
 .page67-table-scrollbar > div { height: 20px; }
-@media (max-width: 768px) {
-    .page67-infographic-title { font-size: 26px; }
-}
             `}</style>
 
             <div className="page67-inner">
-                <h1 id="page67-infographic-title" className="page67-infographic-title">
-                    {infographicTitle}
-                </h1>
-
                 <div className="page67-infographic-section">
                     <Page67GenerationInfographic
                         lang={lang}
                         getText={getText}
                         figureRef={figureRef}
                         ariaLabel={ariaLabel}
+                        data={pageData}
+                        title={infographicTitle}
+                        titleId="page67-infographic-title"
                     />
 
                     <div className="page67-download-buttons">
                         <button type="button" onClick={downloadPng} style={downloadBtnStyle}>
                             {getText('page67_download_png', lang)}
-                        </button>
-                        <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                            {getText('page67_download_csv', lang)}
-                        </button>
-                        <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                            {getText('page67_download_docx', lang)}
                         </button>
                     </div>
 
@@ -287,7 +283,7 @@ const Page67 = () => {
                             tabIndex={0}
                         >
                             <table className="table table-bordered table-striped table-hover">
-                                <caption className="wb-inv">{getText('page67_table_caption', lang)}</caption>
+                                <caption className="wb-inv">{substitute(getText('page67_table_caption', lang), vars)}</caption>
                                 <thead>
                                     <tr>
                                         {tableHeaders.map((header, index) => (

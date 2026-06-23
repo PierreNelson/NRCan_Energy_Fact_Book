@@ -292,7 +292,7 @@ const Page71 = () => {
     const downloadChartPng = async (plotEl = null) => {
         const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement || !window.Plotly) return;
-        const title = `${stripHtml(chartTitle)} (${startYear}–${endYear})`;
+        const title = stripHtml(chartTitle);
         try {
             const imgData = await window.Plotly.toImage(plotElement, {
                 format: 'png',
@@ -381,7 +381,7 @@ const Page71 = () => {
                 {
                     children: [
                         new Paragraph({
-                            children: [new TextRun({ text: `${stripHtml(chartTitle)} (${startYear}–${endYear})`, bold: true, size: 28 })],
+                            children: [new TextRun({ text: stripHtml(chartTitle), bold: true, size: 28 })],
                             alignment: AlignmentType.CENTER,
                             spacing: { after: 300 },
                         }),

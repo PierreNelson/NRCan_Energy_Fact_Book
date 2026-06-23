@@ -31,21 +31,16 @@ const formatPct = (value, lang) => {
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-const exportPage57InfographicPng = async (figureEl, { title, scale = 2 }) => {
+const exportPage57InfographicPng = async (figureEl, { scale = 2 }) => {
     if (!figureEl) return null;
 
-    const exportRoot = figureEl.closest('.page57-inner');
-    const titleEl = exportRoot?.querySelector('#page57-chart-title');
     const wrapper = figureEl.querySelector('.page57-infographic-wrapper');
-    if (!exportRoot || !titleEl || !wrapper) return null;
+    const titleEl = wrapper?.querySelector('#page57-chart-title');
+    if (!wrapper) return null;
 
-    const rootRect = exportRoot.getBoundingClientRect();
-    const canvasW = Math.ceil(exportRoot.clientWidth);
-    const canvasH = Math.ceil(
-        Math.max(figureEl.getBoundingClientRect().bottom, titleEl.getBoundingClientRect().bottom) -
-            rootRect.top +
-            16,
-    );
+    const rootRect = figureEl.getBoundingClientRect();
+    const canvasW = Math.ceil(figureEl.clientWidth);
+    const canvasH = Math.ceil(figureEl.clientHeight);
 
     const canvas = document.createElement('canvas');
     canvas.width = canvasW * scale;
@@ -81,13 +76,14 @@ const exportPage57InfographicPng = async (figureEl, { title, scale = 2 }) => {
         });
 
     const drawTitle = () => {
+        if (!titleEl) return;
         const box = rel(titleEl);
         const style = window.getComputedStyle(titleEl);
         ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
         ctx.fillStyle = style.color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText(title, box.x + box.w / 2, box.y);
+        ctx.fillText(titleEl.textContent?.trim() || '', box.x + box.w / 2, box.y);
     };
 
     const drawTextNodesIn = (rootEl) => {
@@ -117,13 +113,13 @@ const exportPage57InfographicPng = async (figureEl, { title, scale = 2 }) => {
         }
     };
 
-    drawTitle();
-
     const bgLoaded = await waitForImage(wrapper.querySelector('.page57-bg-image'));
     if (bgLoaded) {
         const box = rel(bgLoaded);
         ctx.drawImage(bgLoaded, box.x, box.y, box.w, box.h);
     }
+
+    drawTitle();
 
     wrapper.querySelectorAll('.page57-sector-title, .page57-metric-label, .page57-metric-value').forEach(drawTextNodesIn);
 
@@ -226,10 +222,7 @@ const Page57 = () => {
     };
 
     const downloadPng = async () => {
-        const canvas = await exportPage57InfographicPng(figureRef.current, {
-            title: stripHtml(chartTitle),
-            scale: 2,
-        });
+        const canvas = await exportPage57InfographicPng(figureRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}.png`);
@@ -254,15 +247,6 @@ const Page57 = () => {
     padding-right: ${layoutPadding?.right || 15}px;
 }
 .page57-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
-.page57-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
-    color: var(--gc-text);
-    text-align: center;
-    margin: 0 0 16px 0;
-    text-transform: none;
-}
 .page57-infographic-section { width: 100%; margin-bottom: 28px; }
 .page57-download-buttons {
     display: flex;
@@ -281,22 +265,17 @@ const Page57 = () => {
     color: #ffffff;
 }
 .page57-download-btn:hover { background-color: #404040 !important; }
-@media (max-width: 768px) {
-    .page57-chart-title { font-size: 26px; }
-}
             `}</style>
 
             <div className="page57-inner">
                 <div className="page57-infographic-section">
-                    <h2 id="page57-chart-title" className="page57-chart-title">
-                        {chartTitle}
-                    </h2>
-
                     <Page57SectorTrendsInfographic
                         figureRef={figureRef}
                         lang={lang}
                         getText={getText}
                         ariaLabel={ariaLabel}
+                        title={chartTitle}
+                        titleId="page57-chart-title"
                     />
 
                     <div className="page57-download-buttons">

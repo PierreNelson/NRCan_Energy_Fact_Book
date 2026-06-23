@@ -4,7 +4,6 @@ import page67BgFr from '../assets/page67_bg_fr.png';
 import {
     NATIVE_SIZE,
     OVERLAY_LAYOUT,
-    PAGE67_DATA,
     formatSharePct,
     getCanadaPctSlot,
     getProvinceAbbrSlot,
@@ -31,12 +30,13 @@ const OverlaySlot = ({ left, top, align = 'left', className, children }) => (
     </span>
 );
 
-const Page67GenerationInfographic = ({ lang, getText, figureRef, ariaLabel }) => {
+const Page67GenerationInfographic = ({ lang, getText, figureRef, ariaLabel, data, title, titleId }) => {
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const bgImage = overlayLang === 'fr' ? page67BgFr : page67BgEn;
     const native = NATIVE_SIZE[overlayLang];
     const layout = OVERLAY_LAYOUT[overlayLang];
     const { fonts, columns } = layout;
+    const sources = data?.sources || {};
 
     return (
         <figure ref={figureRef} className="page67-infographic-figure" aria-label={ariaLabel}>
@@ -90,14 +90,38 @@ const Page67GenerationInfographic = ({ lang, getText, figureRef, ariaLabel }) =>
     font-size: ${fonts.prov}cqw;
     line-height: 1.28;
 }
+.page67-infographic-title-overlay {
+    position: absolute;
+    top: 2.5%;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    margin: 0;
+    padding: 0 3%;
+    font-family: 'Lato', sans-serif;
+    font-weight: bold;
+    font-size: 3.1cqw;
+    line-height: 1.15;
+    color: #333333;
+    text-align: center;
+    text-transform: none;
+    pointer-events: none;
+    box-sizing: border-box;
+}
             `}</style>
 
             <div className="page67-infographic-wrapper">
                 <img src={bgImage} alt="" className="page67-bg-image" draggable={false} aria-hidden="true" />
+                {title && (
+                    <h1 id={titleId} className="page67-infographic-title-overlay">
+                        {title}
+                    </h1>
+                )}
 
                 <div className="page67-overlay-layer" aria-hidden="true">
                     {columns.map((column) => {
-                        const block = PAGE67_DATA[column.key];
+                        const block = sources[column.key];
+                        if (!block) return null;
                         const canadaSlot = getCanadaPctSlot(column);
 
                         return (

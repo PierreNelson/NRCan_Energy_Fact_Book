@@ -10,6 +10,10 @@ from typing import Dict
 from ..base import SectionProcessor
 from .cleantech_companies_geo import transform_cleantech_companies_geo, update_cleantech_companies_geo
 from .cleantech_companies_industry import transform_cleantech_companies_industry, update_cleantech_companies_industry
+from .electricity_generation import (
+    transform_electricity_generation_by_source,
+    update_electricity_generation_by_source,
+)
 from .electricity_trade_us import transform_electricity_trade_us, update_electricity_trade_us
 from .environmental_clean_tech import transform_environmental_clean_tech, update_environmental_clean_tech
 from .ev_sales import transform_ev_sales, update_ev_sales
@@ -26,11 +30,19 @@ from .largest_solar_projects import (
     transform_largest_solar_projects,
     update_largest_solar_projects,
 )
+from .major_hydro_facilities import transform_major_hydro_facilities, update_major_hydro_facilities
+from .wind_power_canada import transform_wind_power_canada, update_wind_power_canada
+from .world_wind_power import transform_world_wind_power, update_world_wind_power
+from .world_solar_pv import transform_world_solar_pv, update_world_solar_pv
 from .wind_capacity import (
     transform_largest_wind_projects,
     transform_wind_capacity_by_province,
     update_largest_wind_projects,
     update_wind_capacity_by_province,
+)
+from .electrical_energy_use import (
+    transform_electrical_energy_use,
+    update_electrical_energy_use,
 )
 
 
@@ -69,13 +81,19 @@ class Section5CleanPower(SectionProcessor):
             'cleantech_companies_geo': lambda: update_cleantech_companies_geo(self),
             'cleantech_companies_industry': lambda: update_cleantech_companies_industry(self),
             'ev_sales': lambda: update_ev_sales(self),
+            'electricity_generation_by_source': lambda: update_electricity_generation_by_source(self),
             'electricity_trade_us': lambda: update_electricity_trade_us(self),
             'ghg_electricity_spotlight': lambda: update_ghg_electricity_spotlight(self),
             'renewable_electricity_capacity': lambda: update_renewable_electricity_capacity(self),
             'wind_capacity_by_province': lambda: update_wind_capacity_by_province(self),
+            'wind_power_canada': lambda: update_wind_power_canada(self),
+            'world_wind_power': lambda: update_world_wind_power(self),
+            'world_solar_pv': lambda: update_world_solar_pv(self),
             'largest_wind_projects': lambda: update_largest_wind_projects(self),
             'largest_solar_projects': lambda: update_largest_solar_projects(self),
+            'major_hydro_facilities': lambda: update_major_hydro_facilities(self),
             'solid_biofuels': lambda: update_solid_biofuels(self),
+            'electrical_energy_use': lambda: update_electrical_energy_use(self),
         }
 
     def get_transform_handlers(self) -> Dict[str, callable]:
@@ -84,13 +102,19 @@ class Section5CleanPower(SectionProcessor):
             'cleantech_companies_geo': lambda: transform_cleantech_companies_geo(self),
             'cleantech_companies_industry': lambda: transform_cleantech_companies_industry(self),
             'ev_sales': lambda: transform_ev_sales(self),
+            'electricity_generation_by_source': lambda: transform_electricity_generation_by_source(self),
             'electricity_trade_us': lambda: transform_electricity_trade_us(self),
             'ghg_electricity_spotlight': lambda: transform_ghg_electricity_spotlight(self),
             'renewable_electricity_capacity': lambda: transform_renewable_electricity_capacity(self),
             'wind_capacity_by_province': lambda: transform_wind_capacity_by_province(self),
+            'wind_power_canada': lambda: transform_wind_power_canada(self),
+            'world_wind_power': lambda: transform_world_wind_power(self),
+            'world_solar_pv': lambda: transform_world_solar_pv(self),
             'largest_wind_projects': lambda: transform_largest_wind_projects(self),
             'largest_solar_projects': lambda: transform_largest_solar_projects(self),
+            'major_hydro_facilities': lambda: transform_major_hydro_facilities(self),
             'solid_biofuels': lambda: transform_solid_biofuels(self),
+            'electrical_energy_use': lambda: transform_electrical_energy_use(self),
         }
 
     def get_source_handlers(self) -> Dict[str, callable]:

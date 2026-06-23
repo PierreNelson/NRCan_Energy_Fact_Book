@@ -201,11 +201,41 @@ source_tables:
     detail: sbio
     source_table: nrcan_solid_biofuels
 
+  electrical_energy_use:
+    org_code: nrcan
+    report_code: neud
+    detail: elec_eu
+    source_table: nrcan_electrical_energy_use
+
+  electricity_generation_by_source:
+    org_code: nrcan
+    report_code: elegen
+    detail: by_source
+    source_table: nrcan_elegen_can
+
   wind_capacity_by_province:
     org_code: nrcan
     report_code: windcap
     detail: by_prov
     source_table: nrcan_windcapbyprov
+
+  wind_power_canada:
+    org_code: nrcan
+    report_code: windpwr
+    detail: canada
+    source_table: nrcan_windpwr_can
+
+  world_wind_power:
+    org_code: gwec
+    report_code: worldwind
+    detail: capacity
+    source_table: nrcan_worldwind
+
+  world_solar_pv:
+    org_code: iea
+    report_code: pvps
+    detail: worldcapsolarpv
+    source_table: nrcan_worldsolar
 
   renewable_electricity_capacity:
     org_code: nrcan
@@ -230,3 +260,9 @@ source_tables:
     report_code: solarproj
     detail: largest
     source_table: can_largestsolprojects
+
+  major_hydro_facilities:
+    org_code: nrcan
+    report_code: hydrofac
+    detail: largest
+    source_table: can_largesthydrofac

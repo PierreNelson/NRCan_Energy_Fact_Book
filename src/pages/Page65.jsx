@@ -175,7 +175,10 @@ const Page65 = () => {
     const exportsLabel = getText('page65_legend_exports', lang);
     const importsLabel = getText('page65_legend_imports', lang);
     const netLabel = getText('page65_legend_net', lang);
-    const chartTitle = getText('page65_chart_title', lang);
+    const chartTitle = substitute(getText('page65_chart_title', lang), {
+        startYear: chartStartYear ?? '',
+        endYear: chartEndYear ?? '',
+    });
     const exportChartTitle = stripHtml(chartTitle);
     const yearRangeLabel = chartStartYear && chartEndYear ? `${chartStartYear}–${chartEndYear}` : '';
     const fileTitle = yearRangeLabel

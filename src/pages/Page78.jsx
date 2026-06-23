@@ -473,6 +473,7 @@ const Page78 = () => {
             linewidth: 1,
             mirror: false,
             showgrid: false,
+            fixedrange: true,
         },
         yaxis: {
             title: { text: getText('page78_yaxis', lang), font: axisTitleFont, standoff: 12 },
@@ -484,9 +485,10 @@ const Page78 = () => {
             linewidth: 1,
             mirror: false,
             showgrid: false,
+            fixedrange: true,
         },
         clickmode: 'event',
-        dragmode: windowWidth <= 768 ? false : 'zoom',
+        dragmode: false,
     };
 
     const pieLayout = {
@@ -706,13 +708,17 @@ const Page78 = () => {
     }) => (
         <div className="page78-table-wrapper">
             <details className="page78-data-table" open={isOpen} onToggle={(e) => setIsOpen(e.currentTarget.open)}>
-                <summary>
+                <summary role="button" aria-expanded={isOpen}>
+                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isOpen ? '▼' : '▶'}</span>
                     {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+                    <span className="wb-inv">
+                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
+                    </span>
                 </summary>
                 <p id={captionId} className="wb-inv">{caption}</p>
                 <div ref={topRef} className="page78-table-scrollbar" aria-hidden="true"><div /></div>
                 <div ref={tableRef} className="page78-table-responsive" role="region" aria-labelledby={captionId}>
-                    <table className="table table-striped table-hover">
+                    <table className="table table-bordered table-striped table-hover">
                         <thead>
                             <tr>
                                 {headers.map((header) => <th key={header} scope="col">{header}</th>)}
@@ -755,12 +761,17 @@ const Page78 = () => {
             className="page-content page-78"
             role="main"
             aria-labelledby="page78-title"
-            style={{
-                paddingLeft: layoutPadding?.left || 55,
-                paddingRight: layoutPadding?.right || 15,
-            }}
+            style={{ backgroundColor: '#ffffff' }}
         >
             <style>{`
+.page-78.page-content { max-width: none !important; overflow-x: visible !important; }
+.page-78 {
+    margin-left: -${layoutPadding?.left || 55}px;
+    margin-right: -${layoutPadding?.right || 15}px;
+    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
+    padding-left: ${layoutPadding?.left || 55}px;
+    padding-right: ${layoutPadding?.right || 15}px;
+}
 .page78-container { width: 100%; padding: 15px 0 0 0; box-sizing: border-box; }
 .page78-title {
     font-family: 'Lato', sans-serif;
@@ -856,15 +867,7 @@ const Page78 = () => {
     -ms-overflow-style: none;
 }
 .page78-table-responsive::-webkit-scrollbar { display: none; }
-.page78-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.page78-table-responsive table.table { font-family: var(--font-body); color: var(--gc-text); }
-.page78-table-responsive th, .page78-table-responsive td {
-    white-space: nowrap;
-    padding: 8px 12px;
-    font-family: var(--font-body);
-    color: var(--gc-text);
-    border: 1px solid #ddd;
-}
+.page78-table-responsive table { width: max-content !important; min-width: 100%; }
 .page78-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
 .page78-download-buttons button {
     padding: 8px 16px;

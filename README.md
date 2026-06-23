@@ -151,7 +151,7 @@ Operational details: **[`docs/DATA_UPDATE_GUIDE.md`](./docs/DATA_UPDATE_GUIDE.md
 | **[`docs/PAGE_CREATION_GUIDE.md`](./docs/PAGE_CREATION_GUIDE.md)** | Frontend devs | Building and wiring new pages |
 | **[`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)** | Hosting / release | Static deploy, zips, Azure CI |
 | **[`docs/GLOSSARY_UPDATE_GUIDE.md`](./docs/GLOSSARY_UPDATE_GUIDE.md)** | Operators | Regenerate `public/glossary/` |
-| **[`AGENTS.md`](./AGENTS.md)** | Coding agents | Stack, commands, repo conventions |
+| **[`AGENTS.md`](./AGENTS.md)**  Stack, commands, repo conventions |
 
 ## Static deployment
 

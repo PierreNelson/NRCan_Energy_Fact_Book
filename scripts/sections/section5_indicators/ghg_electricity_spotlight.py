@@ -208,31 +208,54 @@ def _pct_change(base: float, end: float) -> int:
     return round((end - base) / base * 100)
 
 
-def _build_indicator_rows(
-    config=None,
-) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]], str]:
-    content, source_url = _fetch_electricity_csv(config)
-    emissions = _parse_electricity_csv(content)
-    reference_year = int(emissions['year'].max())
-    base_row = emissions[emissions['year'] == GHG_ELECTRICITY_NARRATIVE_BASE_YEAR]
-    ref_row = emissions[emissions['year'] == reference_year]
-    if base_row.empty:
-        raise ValueError(
-            f'ghg_electricity_spotlight: missing base year {GHG_ELECTRICITY_NARRATIVE_BASE_YEAR} in electricity GHG CSV'
-        )
-    if ref_row.empty:
-        raise ValueError(f'ghg_electricity_spotlight: missing reference year {reference_year} in electricity GHG CSV')
+def _raw_by_year_from_dataframe(df: pd.DataFrame) -> Tuple[Dict[str, Dict[str, float]], Optional[float]]:
+    raw_by_year: Dict[str, Dict[str, float]] = {}
+    coal_gen_share: Optional[float] = None
+    for _, row in df.iterrows():
+        vector = str(row['vector'])
+        if not vector.startswith(f'{RAW_PREFIX}_'):
+            continue
+        suffix = vector[len(RAW_PREFIX) + 1:]
+        year_key = str(row['ref_date'])
+        try:
+            value = float(row['value'])
+        except (TypeError, ValueError):
+            continue
+        if suffix == 'coal_gen_share':
+            coal_gen_share = value
+            continue
+        raw_by_year.setdefault(year_key, {})[suffix] = value
+    return raw_by_year, coal_gen_share
 
-    coal_gen_share = _read_coal_generation_share(reference_year, config)
+
+def _transform_indicator_rows_from_raw(
+    raw_by_year: Dict[str, Dict[str, float]],
+    coal_gen_share: Optional[float],
+    source_url: str = GHG_ELECTRICITY_SOURCE_URL,
+) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]]]:
+    if not raw_by_year:
+        raise ValueError('ghg_electricity_spotlight transform: no emission raw rows found')
+    if coal_gen_share is None:
+        raise ValueError('ghg_electricity_spotlight transform: missing coal generation share raw row')
+
+    reference_year = max(int(year) for year in raw_by_year.keys())
+    base_key = str(GHG_ELECTRICITY_NARRATIVE_BASE_YEAR)
+    ref_key = str(reference_year)
+    if base_key not in raw_by_year:
+        raise ValueError(
+            f'ghg_electricity_spotlight transform: missing base year {GHG_ELECTRICITY_NARRATIVE_BASE_YEAR}'
+        )
+    if ref_key not in raw_by_year:
+        raise ValueError(f'ghg_electricity_spotlight transform: missing reference year {reference_year}')
 
     data_rows: List[Tuple[str, str, float]] = []
     metadata_rows: List[Tuple[str, str, str, str, str, str]] = []
 
-    for _, row in emissions.iterrows():
-        year = int(row['year'])
-        coal = round(float(row['coal']), 1)
-        gas = round(float(row['natural_gas']), 1)
-        other = round(float(row['other']), 1)
+    for year_key in sorted(raw_by_year.keys(), key=int):
+        raw = raw_by_year[year_key]
+        coal = round(float(raw.get('coal', 0.0)), 1)
+        gas = round(float(raw.get('natural_gas', 0.0)), 1)
+        other = round(float(raw.get('other', 0.0)), 1)
         total = round(coal + gas + other, 1)
         for key, value in (
             ('coal', coal),
@@ -241,13 +264,15 @@ def _build_indicator_rows(
             ('total', total),
         ):
             vector = f'elec_ghg_{key}'
-            data_rows.append((vector, str(year), value))
+            data_rows.append((vector, year_key, value))
             title = next(item[1] for item in GHG_ELECTRICITY_METADATA if item[0] == vector)
             metadata_rows.append((vector, title, 'Mt CO2 eq', 'megatonnes', GHG_ELECTRICITY_SOURCE_ORG, source_url))
 
-    base_total = float(base_row.iloc[0]['coal'] + base_row.iloc[0]['natural_gas'] + base_row.iloc[0]['other'])
-    ref_total = float(ref_row.iloc[0]['coal'] + ref_row.iloc[0]['natural_gas'] + ref_row.iloc[0]['other'])
-    ref_coal = float(ref_row.iloc[0]['coal'])
+    base_raw = raw_by_year[base_key]
+    ref_raw = raw_by_year[ref_key]
+    base_total = float(base_raw.get('coal', 0.0) + base_raw.get('natural_gas', 0.0) + base_raw.get('other', 0.0))
+    ref_total = float(ref_raw.get('coal', 0.0) + ref_raw.get('natural_gas', 0.0) + ref_raw.get('other', 0.0))
+    ref_coal = float(ref_raw.get('coal', 0.0))
 
     stat_values = {
         'elec_ghg_stat_base_year': float(GHG_ELECTRICITY_NARRATIVE_BASE_YEAR),
@@ -257,10 +282,35 @@ def _build_indicator_rows(
         'elec_ghg_stat_coal_ghg_share_pct': round(ref_coal / ref_total * 100),
     }
     for vector, value in stat_values.items():
-        data_rows.append((vector, str(reference_year), value))
+        data_rows.append((vector, ref_key, value))
         title, uom, scalar = next(item[1:] for item in GHG_ELECTRICITY_STAT_METADATA if item[0] == vector)
         metadata_rows.append((vector, title, uom, scalar, GHG_ELECTRICITY_SOURCE_ORG, source_url))
 
+    return data_rows, metadata_rows
+
+
+def _build_indicator_rows(
+    config=None,
+) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]], str]:
+    content, source_url = _fetch_electricity_csv(config)
+    emissions = _parse_electricity_csv(content)
+    reference_year = int(emissions['year'].max())
+    coal_gen_share = _read_coal_generation_share(reference_year, config)
+
+    raw_by_year: Dict[str, Dict[str, float]] = {}
+    for _, row in emissions.iterrows():
+        year_key = str(int(row['year']))
+        raw_by_year[year_key] = {
+            'coal': round(float(row['coal']), 4),
+            'natural_gas': round(float(row['natural_gas']), 4),
+            'other': round(float(row['other']), 4),
+        }
+
+    data_rows, metadata_rows = _transform_indicator_rows_from_raw(
+        raw_by_year,
+        coal_gen_share,
+        source_url=source_url,
+    )
     return data_rows, metadata_rows, source_url
 
 
@@ -305,8 +355,13 @@ def update_ghg_electricity_spotlight(processor) -> int:
 
 
 def transform_ghg_electricity_spotlight(processor) -> int:
-    """EFB transform: elec_ghg_* vectors for Page 71."""
-    data_rows, metadata_rows, _ = _build_indicator_rows(processor.config)
+    """EFB transform: elec_ghg_* vectors for Page 71 from stored ECCC + gencap raw rows."""
+    df = processor.get_raw_dataframe(SOURCE_KEY)
+    if df.empty:
+        raise RuntimeError('ghg_electricity_spotlight transform: no raw rows found — re-run eedas update')
+
+    raw_by_year, coal_gen_share = _raw_by_year_from_dataframe(df)
+    data_rows, metadata_rows = _transform_indicator_rows_from_raw(raw_by_year, coal_gen_share)
     n = processor.store_indicators(SOURCE_KEY, data_rows, metadata_rows)
     print(f'    Stored {n} indicator rows for {SOURCE_KEY}')
     return n

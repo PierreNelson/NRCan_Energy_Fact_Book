@@ -93,6 +93,12 @@ CANADIAN_PRODUCTION_METADATA = [
     ('cp_prov_mb_thousand_m3', 'Manitoba crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_bc_thousand_m3', 'British Columbia crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_other_thousand_m3', 'Other provinces crude oil production', 'thousand cubic metres', 'units'),
+    ('cp_prov_ab_pct', 'Alberta share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_sk_pct', 'Saskatchewan share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_nl_pct', 'Newfoundland and Labrador share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_mb_pct', 'Manitoba share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_bc_pct', 'British Columbia share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_other_pct', 'Other provinces share of Canadian crude oil production (Page 111)', 'percent', 'units'),
 ]
 
 CP_PROVINCE_GEOS = {
@@ -101,4 +107,13 @@ CP_PROVINCE_GEOS = {
     'cp_prov_nl_thousand_m3': 'Newfoundland and Labrador',
     'cp_prov_mb_thousand_m3': 'Manitoba',
     'cp_prov_bc_thousand_m3': 'British Columbia',
+}
+
+CP_PROVINCE_PCT_VECTORS = {
+    'cp_prov_ab_thousand_m3': 'cp_prov_ab_pct',
+    'cp_prov_sk_thousand_m3': 'cp_prov_sk_pct',
+    'cp_prov_nl_thousand_m3': 'cp_prov_nl_pct',
+    'cp_prov_mb_thousand_m3': 'cp_prov_mb_pct',
+    'cp_prov_bc_thousand_m3': 'cp_prov_bc_pct',
+    'cp_prov_other_thousand_m3': 'cp_prov_other_pct',
 }

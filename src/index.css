@@ -1101,6 +1101,7 @@ details .table-responsive {
 
 /* Target the <main> element inside page components */
 .stacked-page-wrapper main,
+.stacked-page-wrapper section.page-content,
 .section-four-page main {
   /* Allow content to flow naturally - remove internal scroll */
   overflow-y: visible !important;
@@ -1443,6 +1444,16 @@ details .table-responsive {
   text-align: center !important;
 }
 
+.page66-chart-title {
+  font-family: 'Lato', sans-serif !important;
+  font-size: 29px !important;
+  font-weight: bold !important;
+  color: #333333 !important;
+  margin-top: 0 !important;
+  margin-bottom: 10px !important;
+  text-align: center !important;
+}
+
 @media (max-width: 768px) {
   .page2-chart-title,
   .page2-rankings-title,
@@ -1467,7 +1478,8 @@ details .table-responsive {
   .page48-chart-title,
   .page49-chart-title,
   .page51-chart-title,
-  .page52-chart-title {
+  .page52-chart-title,
+  .page66-chart-title {
     font-size: 26px !important;
   }
 }

@@ -48,6 +48,9 @@ KALIBRATE_MARKET_ALIASES = {
 
 KALIBRATE_COMPONENTS = ('crude', 'refining', 'marketing', 'taxes', 'price')
 
+KAL_RAW_PREFIX = 'raw_kal'
+KAL_RAW_SERIES = ('retail', 'retail_ex', 'wholesale', 'crude')
+
 KALIBRATE_PRICE_SERIES_KEYS = (
     'Retail Price',
     'Retail Price Excluding Taxes',
@@ -124,19 +127,43 @@ def _annual_kalibrate_components(series: Dict[str, List[float]]) -> Dict[str, fl
     }
 
 
-def _kalibrate_metadata_rows() -> List[Tuple]:
-    return [
-        (
-            f'kal_{market}_{comp}',
-            f'Gasoline {comp} ({market})',
-            'cents per litre',
-            'units',
-            'Kalibrate',
-            KALIBRATE_SOURCE_URL,
-        )
-        for market in sorted(set(KALIBRATE_WEB_MARKETS))
-        for comp in KALIBRATE_COMPONENTS
-    ]
+def _kalibrate_components_from_series(
+    retail: float,
+    retail_ex: float,
+    wholesale: float,
+    crude: float,
+) -> Dict[str, float]:
+    return {
+        'crude': crude,
+        'refining': wholesale - crude,
+        'marketing': retail_ex - wholesale,
+        'taxes': retail - retail_ex,
+        'price': retail,
+    }
+
+
+def _kalibrate_raw_metadata_rows() -> List[Tuple]:
+    rows: List[Tuple] = []
+    for market in sorted(set(KALIBRATE_WEB_MARKETS)):
+        for series in KAL_RAW_SERIES:
+            rows.append((
+                f'{KAL_RAW_PREFIX}_{market}_{series}',
+                f'Kalibrate raw {series} ({market})',
+                'cents per litre',
+                'units',
+                'Kalibrate',
+                KALIBRATE_SOURCE_URL,
+            ))
+        for comp in KALIBRATE_COMPONENTS:
+            rows.append((
+                f'{KAL_RAW_PREFIX}_{market}_src_{comp}',
+                f'Kalibrate source {comp} ({market})',
+                'cents per litre',
+                'units',
+                'Kalibrate',
+                KALIBRATE_SOURCE_URL,
+            ))
+    return rows
 
 
 def build_kalibrate_gas_price_rows_from_web(
@@ -145,7 +172,7 @@ def build_kalibrate_gas_price_rows_from_web(
 ) -> Tuple[List[Tuple[str, str, float]], List[Tuple]]:
     """
     Fetch Kalibrate Margins (Price View) data from charting.kalibrate.com per Page 138 spec.
-    For each market: Unleaded, monthly Jan–Dec, average to annual crude/refining/marketing/taxes/price.
+    Stores annual average price-series inputs (retail, retail ex tax, wholesale, crude).
     """
     if end_year is None:
         end_year = datetime.utcnow().year - 1
@@ -159,16 +186,28 @@ def build_kalibrate_gas_price_rows_from_web(
                 series = _fetch_kalibrate_price_series(session, market_id, year)
                 if not series:
                     continue
-                components = _annual_kalibrate_components(series)
-                for comp, value in components.items():
-                    data_rows.append((f'kal_{market}_{comp}', str(year), round(float(value), 2)))
+                retail = statistics.mean(series['Retail Price'])
+                retail_ex = statistics.mean(series['Retail Price Excluding Taxes'])
+                wholesale = statistics.mean(series['Wholesale Price'])
+                crude = statistics.mean(series['Crude Price'])
+                for suffix, value in (
+                    ('retail', retail),
+                    ('retail_ex', retail_ex),
+                    ('wholesale', wholesale),
+                    ('crude', crude),
+                ):
+                    data_rows.append((
+                        f'{KAL_RAW_PREFIX}_{market}_{suffix}',
+                        str(year),
+                        round(float(value), 4),
+                    ))
             except Exception as exc:
                 print(f'    Kalibrate web warning ({market} {year}): {exc}')
             time.sleep(0.25)
 
     if data_rows:
-        print(f'    Kalibrate web: {len(data_rows)} annual price component rows ({start_year}–{end_year})')
-        return data_rows, _kalibrate_metadata_rows()
+        print(f'    Kalibrate web: {len(data_rows)} raw price-series rows ({start_year}–{end_year})')
+        return data_rows, _kalibrate_raw_metadata_rows()
 
     print('    Kalibrate web: no rows fetched from charting.kalibrate.com')
     return [], []
@@ -188,7 +227,7 @@ def _pick_column(columns: List[str], *needles: str) -> Optional[str]:
 
 
 def _parse_kalibrate_monthly_archive(df: pd.DataFrame) -> List[Tuple[str, str, float]]:
-    """Average monthly Kalibrate inputs to annual components per market (Page 138 spec)."""
+    """Parse Kalibrate archive to source-native raw rows (price series or source components)."""
     if df.empty:
         return []
 
@@ -225,11 +264,20 @@ def _parse_kalibrate_monthly_archive(df: pd.DataFrame) -> List[Tuple[str, str, f
                 continue
             year_int = int(year)
             if pre_crude:
-                crude = pd.to_numeric(grp[pre_crude], errors='coerce').mean()
-                refining = pd.to_numeric(grp[pre_refining], errors='coerce').mean()
-                marketing = pd.to_numeric(grp[pre_marketing], errors='coerce').mean()
-                taxes = pd.to_numeric(grp[pre_taxes], errors='coerce').mean()
-                price = pd.to_numeric(grp[pre_price or retail_col], errors='coerce').mean()
+                for comp, col in (
+                    ('crude', pre_crude),
+                    ('refining', pre_refining),
+                    ('marketing', pre_marketing),
+                    ('taxes', pre_taxes),
+                    ('price', pre_price or retail_col),
+                ):
+                    val = pd.to_numeric(grp[col], errors='coerce').mean()
+                    if pd.notna(val):
+                        rows.append((
+                            f'{KAL_RAW_PREFIX}_{market}_src_{comp}',
+                            str(year_int),
+                            round(float(val), 4),
+                        ))
             else:
                 retail = pd.to_numeric(grp[retail_col], errors='coerce').mean()
                 retail_ex = pd.to_numeric(grp[retail_ex_col], errors='coerce').mean()
@@ -237,22 +285,81 @@ def _parse_kalibrate_monthly_archive(df: pd.DataFrame) -> List[Tuple[str, str, f
                 crude = pd.to_numeric(grp[crude_col], errors='coerce').mean()
                 if any(pd.isna(v) for v in (retail, retail_ex, wholesale, crude)):
                     continue
-                price = retail
-                taxes = retail - retail_ex
-                refining = wholesale - crude
-                marketing = retail_ex - wholesale
-            for comp, val in (
-                ('crude', crude),
-                ('refining', refining),
-                ('marketing', marketing),
-                ('taxes', taxes),
-                ('price', price),
-            ):
-                if pd.notna(val):
-                    rows.append((f'kal_{market}_{comp}', str(year_int), round(float(val), 2)))
+                for suffix, val in (
+                    ('retail', retail),
+                    ('retail_ex', retail_ex),
+                    ('wholesale', wholesale),
+                    ('crude', crude),
+                ):
+                    rows.append((
+                        f'{KAL_RAW_PREFIX}_{market}_{suffix}',
+                        str(year_int),
+                        round(float(val), 4),
+                    ))
         return rows
 
     return []
+
+
+def _kalibrate_metadata_rows() -> List[Tuple]:
+    return [
+        (
+            f'kal_{market}_{comp}',
+            f'Gasoline {comp} ({market})',
+            'cents per litre',
+            'units',
+            'Kalibrate',
+            KALIBRATE_SOURCE_URL,
+        )
+        for market in sorted(set(KALIBRATE_WEB_MARKETS))
+        for comp in KALIBRATE_COMPONENTS
+    ]
+
+
+def _raw_by_market_year_from_dataframe(df: pd.DataFrame) -> Dict[str, Dict[str, Dict[str, float]]]:
+    """Group raw Kalibrate rows as market → year → {series/component: value}."""
+    grouped: Dict[str, Dict[str, Dict[str, float]]] = {}
+    prefix = f'{KAL_RAW_PREFIX}_'
+    for _, row in df.iterrows():
+        vector = str(row['vector'])
+        if not vector.startswith(prefix):
+            continue
+        body = vector[len(prefix):]
+        parts = body.split('_', 1)
+        if len(parts) != 2:
+            continue
+        market, suffix = parts
+        year_key = str(row['ref_date'])
+        try:
+            value = float(row['value'])
+        except (TypeError, ValueError):
+            continue
+        grouped.setdefault(market, {}).setdefault(year_key, {})[suffix] = value
+    return grouped
+
+
+def _transform_kalibrate_from_raw(
+    grouped: Dict[str, Dict[str, Dict[str, float]]],
+) -> List[Tuple[str, str, float]]:
+    data_rows: List[Tuple[str, str, float]] = []
+    for market in sorted(grouped.keys()):
+        for year_key in sorted(grouped[market].keys(), key=int):
+            raw = grouped[market][year_key]
+            if all(key in raw for key in KAL_RAW_SERIES):
+                components = _kalibrate_components_from_series(
+                    raw['retail'],
+                    raw['retail_ex'],
+                    raw['wholesale'],
+                    raw['crude'],
+                )
+            elif all(f'src_{comp}' in raw for comp in KALIBRATE_COMPONENTS):
+                components = {comp: raw[f'src_{comp}'] for comp in KALIBRATE_COMPONENTS}
+            else:
+                continue
+            for comp, value in components.items():
+                if pd.notna(value):
+                    data_rows.append((f'kal_{market}_{comp}', year_key, round(float(value), 2)))
+    return data_rows
 
 
 def build_kalibrate_gas_price_rows(xlsx_path: Optional[Path] = None) -> Tuple[List[Tuple[str, str, float]], List[Tuple]]:
@@ -260,7 +367,29 @@ def build_kalibrate_gas_price_rows(xlsx_path: Optional[Path] = None) -> Tuple[Li
     Page 138 Kalibrate gasoline margins.
     Primary: charting.kalibrate.com Margins tool (Price View, per spec).
     Fallback: Section 6.xlsx kalibrate_archive if web fetch returns no rows.
+    Returns final kal_* indicator rows for offline export.
     """
+    data_rows, metadata_rows = build_kalibrate_raw_rows(xlsx_path)
+    if not data_rows:
+        return [], []
+
+    grouped: Dict[str, Dict[str, Dict[str, float]]] = {}
+    prefix = f'{KAL_RAW_PREFIX}_'
+    for vector, year_key, value in data_rows:
+        body = vector[len(prefix):]
+        market, suffix = body.split('_', 1)
+        grouped.setdefault(market, {}).setdefault(year_key, {})[suffix] = value
+
+    indicator_rows = _transform_kalibrate_from_raw(grouped)
+    if not indicator_rows:
+        return [], []
+
+    print(f'    Kalibrate: {len(indicator_rows)} annual price component rows')
+    return indicator_rows, _kalibrate_metadata_rows()
+
+
+def build_kalibrate_raw_rows(xlsx_path: Optional[Path] = None) -> Tuple[List[Tuple[str, str, float]], List[Tuple]]:
+    """Fetch source-native Kalibrate raw rows (price series or archive components)."""
     data_rows, metadata_rows = build_kalibrate_gas_price_rows_from_web()
     if data_rows:
         return data_rows, metadata_rows
@@ -281,49 +410,36 @@ def build_kalibrate_gas_price_rows(xlsx_path: Optional[Path] = None) -> Tuple[Li
         print(f'    Kalibrate skipped: no rows parsed from {KALIBRATE_SHEET}')
         return [], []
 
-    metadata_rows = _kalibrate_metadata_rows()
-    print(f'    Kalibrate archive: {len(data_rows)} annual price component rows')
-    return data_rows, metadata_rows
+    print(f'    Kalibrate archive: {len(data_rows)} raw price rows')
+    return data_rows, _kalibrate_raw_metadata_rows()
 
 
 SOURCE_KEY = 'kal_gas_prices'
 
 
 def update_kal_gas_prices(processor, xlsx_path: Optional[Path] = None) -> int:
-    """EEDAS ingest: Kalibrate gasoline margin components (source-native)."""
+    """EEDAS ingest: Kalibrate price-series inputs (source-native)."""
     from xlsx_paths import resolve_root_xlsx
     print('  Fetching Kalibrate gasoline retail prices (raw)...')
     cfg = processor.config.sections.get('section6_indicators', {}).get('sources', {}).get('kal_gas_prices', {})
     xlsx_name = cfg.get('section6_xlsx') or SECTION6_XLSX
     path = xlsx_path or resolve_root_xlsx(xlsx_name)
-    data_rows, metadata_rows = build_kalibrate_gas_price_rows(path)
+    data_rows, metadata_rows = build_kalibrate_raw_rows(path)
     if not data_rows:
         raise RuntimeError('kal_gas_prices: no source-native rows produced')
-    raw_rows = [(f'raw_{vec}', ref, val) for vec, ref, val in data_rows]
-    raw_meta = [
-        (f'raw_{row[0]}', row[1], row[2], row[3], row[4], row[5])
-        if len(row) >= 6 else (f'raw_{row[0]}', row[1], row[2], row[3])
-        for row in metadata_rows
-    ]
-    return processor.replace_raw_data(SOURCE_KEY, raw_rows, raw_meta)
+    n = processor.replace_raw_data(SOURCE_KEY, data_rows, metadata_rows)
+    print(f'    Stored {n} source-native rows for {SOURCE_KEY}')
+    return n
 
 
 def transform_kal_gas_prices(processor) -> int:
-    """EFB transform: map raw Kalibrate rows to kal_* indicators."""
+    """EFB transform: derive kal_* margin components from stored Kalibrate raw rows."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
-        raise RuntimeError('kal_gas_prices transform: no raw rows found')
+        raise RuntimeError('kal_gas_prices transform: no raw rows found — re-run eedas update')
 
-    data_rows: List[Tuple[str, str, float]] = []
-    for _, row in df.iterrows():
-        vec = str(row['vector'])
-        if not vec.startswith('raw_'):
-            continue
-        try:
-            data_rows.append((vec[4:], str(row['ref_date']), float(row['value'])))
-        except (TypeError, ValueError):
-            continue
-
+    grouped = _raw_by_market_year_from_dataframe(df)
+    data_rows = _transform_kalibrate_from_raw(grouped)
     if not data_rows:
         raise RuntimeError('kal_gas_prices transform: no indicator rows produced')
 

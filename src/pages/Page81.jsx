@@ -330,6 +330,8 @@ const Page81 = () => {
     const provinces = useMemo(() => result?.provinces ?? [], [result]);
     const projects = useMemo(() => result?.projects ?? [], [result]);
     const referenceYear = result?.referenceYear;
+    const provChartTitle = substitute(getText('page81_prov_chart_title', lang), { year: referenceYear ?? '' });
+    const projChartTitleSuffix = substitute(getText('page81_proj_chart_title_suffix', lang), { year: referenceYear ?? '' });
 
     const zoomEffective = Math.max(
         viewportZoom.pinScale,
@@ -797,7 +799,7 @@ const Page81 = () => {
                     aria-labelledby={captionId}
                     tabIndex={0}
                 >
-                    <table className="table table-striped table-hover">
+                    <table className="table table-bordered table-striped table-hover">
                         <caption id={captionId} className="wb-inv">{caption}</caption>
                         <thead>
                             <tr>
@@ -875,9 +877,7 @@ const Page81 = () => {
 .page81-table-scrollbar > div { height: 20px; }
 .page81-table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; scrollbar-width: none; -ms-overflow-style: none; }
 .page81-table-responsive::-webkit-scrollbar { display: none; }
-.page81-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.page81-table-responsive table.table { font-family: var(--font-body); color: var(--gc-text); }
-.page81-table-responsive th, .page81-table-responsive td { white-space: nowrap; padding: 8px 12px; font-family: var(--font-body); color: var(--gc-text); border: 1px solid #ddd; }
+.page81-table-responsive table { width: max-content !important; min-width: 100%; }
 .page81-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
 .page81-download-buttons button { padding: 8px 16px; border: 1px solid #404040; border-radius: 4px; background: #8C8C8C; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; }
 .page81-chart-frame button:hover, .page81-table-wrapper summary:hover, .page81-download-buttons button:hover { background-color: #404040 !important; }
@@ -900,7 +900,7 @@ const Page81 = () => {
                 {!loading && !error && provinces.length > 0 && (
                     <div className="page81-chart-frame">
                         <h2 id="page81-prov-chart-title" className="page81-chart-title">
-                            {getText('page81_prov_chart_title', lang)}
+                            {provChartTitle}
                         </h2>
 
                         {selectedProvPoints !== null && (
@@ -915,7 +915,7 @@ const Page81 = () => {
                                 className="page81-chart"
                                 style={{ height: provPlotHeight, margin: 0 }}
                                 role="region"
-                                aria-label={getText('page81_prov_chart_title', lang)}
+                                aria-label={provChartTitle}
                                 tabIndex={0}
                             >
                                 <Plot
@@ -962,7 +962,7 @@ const Page81 = () => {
                                     <span aria-hidden="true">*</span>
                                 </a>
                             </span>
-                            {getText('page81_proj_chart_title_suffix', lang)}
+                            {projChartTitleSuffix}
                         </h2>
 
                         {selectedProjPoints !== null && (

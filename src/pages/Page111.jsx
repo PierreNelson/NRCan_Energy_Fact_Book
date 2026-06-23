@@ -391,7 +391,7 @@ const Page111 = () => {
     const oilSandsFocused = selectedTraceIds === null || selectedTraceIds.includes(1);
 
     const chartYearMin = years.length ? years[0] : 2006;
-    const chartYearMax = years.length ? years[years.length - 1] : 2024;
+    const chartYearMax = years.length ? years[years.length - 1] : chartStartYear;
 
     const handleChartClick = useCallback(
         (data) => {

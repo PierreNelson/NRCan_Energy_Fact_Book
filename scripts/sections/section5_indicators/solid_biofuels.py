@@ -140,28 +140,23 @@ def _compute_industrial_pj(is_tj: float, sww: float, spl: float) -> int:
     return round(isc_tj / 1000)
 
 
-def _compute_year_row(
-    year: int,
-    sg: pd.DataFrame,
-    pb: pd.DataFrame,
-    statcan_df: pd.DataFrame,
+def _compute_indicator_values(
+    *,
+    fwr: float,
+    wp: float,
+    bl: float,
+    res: float,
+    ts: float,
+    is_val: float,
+    sww: float,
+    spl: float,
 ) -> Dict[str, int]:
-    fwr = _value_for(sg, year, 'Product', PRODUCT_FWR)
-    wp = _value_for(sg, year, 'Product', PRODUCT_WP)
-    bl = _value_for(sg, year, 'Product', PRODUCT_BL)
-    res = _value_for(pb, year, 'Sector/flow', SECTOR_RES)
-    ts = _value_for(pb, year, 'Sector/flow', SECTOR_TS)
-    is_val = _value_for(pb, year, 'Sector/flow', SECTOR_IS)
-
     swr = round((fwr - wp - res) / 1000)
     pellets = round(wp / 1000)
     pulping = round(bl / 1000)
     firewood = round(res / 1000)
     electricity = round(ts / 1000)
     residential = round(res / 1000)
-
-    sww = _canada_wood_waste_tj(statcan_df, year, FUEL_SWW)
-    spl = _canada_wood_waste_tj(statcan_df, year, FUEL_SPL)
     industrial = _compute_industrial_pj(is_val, sww, spl)
     total = electricity + residential + industrial
 
@@ -175,6 +170,99 @@ def _compute_year_row(
         'industrial': industrial,
         'total': total,
     }
+
+
+def _compute_year_row(
+    year: int,
+    sg: pd.DataFrame,
+    pb: pd.DataFrame,
+    statcan_df: pd.DataFrame,
+) -> Dict[str, int]:
+    return _compute_indicator_values(
+        fwr=_value_for(sg, year, 'Product', PRODUCT_FWR),
+        wp=_value_for(sg, year, 'Product', PRODUCT_WP),
+        bl=_value_for(sg, year, 'Product', PRODUCT_BL),
+        res=_value_for(pb, year, 'Sector/flow', SECTOR_RES),
+        ts=_value_for(pb, year, 'Sector/flow', SECTOR_TS),
+        is_val=_value_for(pb, year, 'Sector/flow', SECTOR_IS),
+        sww=_canada_wood_waste_tj(statcan_df, year, FUEL_SWW),
+        spl=_canada_wood_waste_tj(statcan_df, year, FUEL_SPL),
+    )
+
+
+def _raw_by_year_from_dataframe(df: pd.DataFrame) -> Dict[str, Dict[str, float]]:
+    raw_by_year: Dict[str, Dict[str, float]] = {}
+    prefix = f'{SBIO_RAW_PREFIX}_'
+    for _, row in df.iterrows():
+        vector = str(row['vector'])
+        if not vector.startswith(prefix):
+            continue
+        suffix = vector[len(prefix):]
+        year_key = str(row['ref_date'])
+        try:
+            value = float(row['value'])
+        except (TypeError, ValueError):
+            continue
+        raw_by_year.setdefault(year_key, {})[suffix] = value
+    return raw_by_year
+
+
+def _transform_indicator_rows_from_raw(
+    raw_by_year: Dict[str, Dict[str, float]],
+) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]]]:
+    data_rows: List[Tuple[str, str, float]] = []
+    metadata_rows: List[Tuple[str, str, str, str, str, str]] = []
+    seen_meta: set[str] = set()
+    skipped_years: List[str] = []
+    required = ('fwr_bp', 'wp', 'bl', 'res', 'ts', 'is', 'sww', 'spl')
+
+    vector_map = {
+        'pulping': 'sbio_prod_pulping',
+        'swr': 'sbio_prod_swr',
+        'firewood': 'sbio_prod_firewood',
+        'pellets': 'sbio_prod_pellets',
+        'electricity': 'sbio_use_electricity',
+        'residential': 'sbio_use_residential',
+        'industrial': 'sbio_use_industrial',
+        'total': 'sbio_use_total',
+    }
+
+    for year_key in sorted(raw_by_year.keys(), key=int):
+        raw = raw_by_year[year_key]
+        missing = [key for key in required if key not in raw]
+        if missing:
+            skipped_years.append(f'{year_key} (missing raw: {", ".join(missing)})')
+            continue
+        try:
+            values = _compute_indicator_values(
+                fwr=raw['fwr_bp'],
+                wp=raw['wp'],
+                bl=raw['bl'],
+                res=raw['res'],
+                ts=raw['ts'],
+                is_val=raw['is'],
+                sww=raw['sww'],
+                spl=raw['spl'],
+            )
+        except ValueError as exc:
+            skipped_years.append(f'{year_key} ({exc})')
+            continue
+        for key, value in values.items():
+            vector = vector_map[key]
+            data_rows.append((vector, year_key, float(value)))
+            if vector not in seen_meta:
+                meta = next((row for row in SBIO_METADATA if row[0] == vector), None)
+                if meta:
+                    metadata_rows.append(meta)
+                    seen_meta.add(vector)
+
+    if skipped_years:
+        print(f'    Warning: solid_biofuels transform skipped {len(skipped_years)} year(s): {", ".join(skipped_years)}')
+
+    if not data_rows:
+        raise ValueError('solid_biofuels transform: no publishable rows produced')
+
+    return data_rows, metadata_rows
 
 
 def _build_indicator_rows(config=None) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]]]:
@@ -284,8 +372,13 @@ def update_solid_biofuels(processor) -> int:
 
 
 def transform_solid_biofuels(processor) -> int:
-    """EFB transform: sbio_* vectors for Page 78."""
-    data_rows, metadata_rows = _build_indicator_rows(processor.config)
+    """EFB transform: sbio_* vectors for Page 78 from stored RenAQ + StatCan raw rows."""
+    df = processor.get_raw_dataframe(SOURCE_KEY)
+    if df.empty:
+        raise RuntimeError('solid_biofuels transform: no raw rows found — re-run eedas update')
+
+    raw_by_year = _raw_by_year_from_dataframe(df)
+    data_rows, metadata_rows = _transform_indicator_rows_from_raw(raw_by_year)
     n = processor.store_indicators(SOURCE_KEY, data_rows, metadata_rows)
     print(f'    Stored {n} indicator rows for {SOURCE_KEY}')
     return n
@@ -295,4 +388,22 @@ def build_solid_biofuels_indicator_rows(
     config=None,
 ) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]]]:
     """Build indicator rows without SQL (offline export / tests)."""
-    return _build_indicator_rows(config)
+    sg, pb = _read_renaq_sheets(config)
+    statcan_df = _load_statcan_wood_waste(config)
+    years = sorted(set(sg['Year']) & set(pb['Year']))
+    raw_by_year: Dict[str, Dict[str, float]] = {}
+    for year in years:
+        try:
+            raw_by_year[str(year)] = {
+                'fwr_bp': _value_for(sg, year, 'Product', PRODUCT_FWR),
+                'wp': _value_for(sg, year, 'Product', PRODUCT_WP),
+                'bl': _value_for(sg, year, 'Product', PRODUCT_BL),
+                'res': _value_for(pb, year, 'Sector/flow', SECTOR_RES),
+                'ts': _value_for(pb, year, 'Sector/flow', SECTOR_TS),
+                'is': _value_for(pb, year, 'Sector/flow', SECTOR_IS),
+                'sww': _canada_wood_waste_tj(statcan_df, year, FUEL_SWW),
+                'spl': _canada_wood_waste_tj(statcan_df, year, FUEL_SPL),
+            }
+        except ValueError:
+            continue
+    return _transform_indicator_rows_from_raw(raw_by_year)

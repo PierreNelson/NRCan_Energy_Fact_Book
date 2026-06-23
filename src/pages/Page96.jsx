@@ -59,7 +59,6 @@ const Page96 = () => {
     const tableBottomRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-
     const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     const formatNumber = (num, digits = 0) => {
@@ -250,7 +249,7 @@ const Page96 = () => {
 
     const barsLabel = getText('page96_legend_bars', lang);
     const lineLabel = getText('page96_legend_line', lang);
-    const chartTitle = getText('page96_chart_title', lang);
+    const chartTitle = substitute(getText('page96_chart_title', lang), textVars);
     const chartDownloadSlug = substitute(getText('page96_download_title', lang), textVars)
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
@@ -315,7 +314,7 @@ const Page96 = () => {
     const downloadChartWithTitle = async (plotEl = null) => {
         const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement || !window.Plotly) return;
-        const title = `${stripHtml(chartTitle)} (${textVars.startYear}-${textVars.endYear})`;
+        const title = stripHtml(chartTitle);
         try {
             const imgData = await window.Plotly.toImage(plotElement, {
                 format: 'png',
@@ -522,7 +521,6 @@ const Page96 = () => {
     line-height: 1.45;
     margin: 0 0 20px 0;
     padding-left: 1.35rem;
-    max-width: 78ch;
 }
 .page96-bullets li { margin-bottom: 10px; }
 .page96-chart-frame {
