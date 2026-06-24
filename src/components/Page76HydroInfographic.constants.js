@@ -52,14 +52,14 @@ export const TOTAL_CAPACITY_CALLOUT = {
         size: 2.8,
     },
     en: {
-        line1: { left: 72, top: 16, width: 36, align: 'right' },
-        line2: { left: 72, top: 22, width: 36, align: 'right' },
-        line3: { left: 72, top: 28, width: 36, align: 'right' },
+        line1: { left: 100, top: 16, width: 36, align: 'right' },
+        line2: { left: 100, top: 22, width: 36, align: 'right' },
+        line3: { left: 100, top: 28, width: 36, align: 'right' },
     },
     fr: {
-        line1: { left: 72, top: 16, width: 38, align: 'right' },
-        line2: { left: 72, top: 22, width: 38, align: 'right' },
-        line3: { left: 72, top: 28, width: 38, align: 'right' },
+        line1: { left: 95, top: 16, width: 38, align: 'right' },
+        line2: { left: 95, top: 22, width: 38, align: 'right' },
+        line3: { left: 101, top: 28, width: 38, align: 'right' },
     },
 };
 

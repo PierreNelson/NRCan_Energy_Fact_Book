@@ -680,8 +680,7 @@ const Page76 = () => {
     box-sizing: border-box;
     width: 100%;
 }
-.page76-column-headers span:first-child { text-align: right; padding-right: 2px; box-sizing: border-box; }
-.page76-column-headers span:last-child { text-align: right; box-sizing: border-box; }
+.page76-column-headers span { text-align: right; padding-right: 2px; box-sizing: border-box; }
 .page76-legend {
     display: flex;
     flex-wrap: wrap;
@@ -774,7 +773,6 @@ const Page76 = () => {
                         <div className="page76-chart-overlay">
                             <div className="page76-column-headers" style={facColumnHeaderStyle} aria-hidden="true">
                                 <span>{getText('page76_table_col_facility', lang)}</span>
-                                <span>{getText('page76_table_col_capacity', lang)}</span>
                             </div>
 
                             <div className="page76-chart-scroll">
