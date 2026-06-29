@@ -25,6 +25,7 @@ from .canadian_production import transform_canadian_production, update_canadian_
 from .crude_prices import transform_crude_prices, update_crude_prices
 from .kalibrate import transform_kal_gas_prices, update_kal_gas_prices
 from .oil_sands import transform_oil_sands, update_oil_sands
+from .petroleum_reserves import transform_petroleum_reserves, update_petroleum_reserves
 from .refinery_capacity import transform_osm_refin_cap, update_osm_refin_cap
 from .rpp import (
     transform_rpp_refinery_input,
@@ -32,6 +33,7 @@ from .rpp import (
     update_rpp_refinery_input,
     update_rpp_supply_demand,
 )
+from .western_canada_oil_wells import transform_western_canada_oil_wells, update_western_canada_oil_wells
 
 
 def _chain(update_fn, transform_fn):
@@ -58,6 +60,8 @@ class Section6OilGas(SectionProcessor):
             'canadian_production': lambda: update_canadian_production(self),
             'kal_gas_prices': lambda: update_kal_gas_prices(self),
             'osm_refin_cap': lambda: update_osm_refin_cap(self),
+            'petroleum_reserves': lambda: update_petroleum_reserves(self),
+            'western_canada_oil_wells': lambda: update_western_canada_oil_wells(self),
         }
 
     def get_transform_handlers(self) -> Dict[str, callable]:
@@ -69,6 +73,8 @@ class Section6OilGas(SectionProcessor):
             'canadian_production': lambda: transform_canadian_production(self),
             'kal_gas_prices': lambda: transform_kal_gas_prices(self),
             'osm_refin_cap': lambda: transform_osm_refin_cap(self),
+            'petroleum_reserves': lambda: transform_petroleum_reserves(self),
+            'western_canada_oil_wells': lambda: transform_western_canada_oil_wells(self),
         }
 
     def get_source_handlers(self) -> Dict[str, callable]:

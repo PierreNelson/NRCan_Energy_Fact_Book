@@ -92,7 +92,7 @@ python main.py export
 | Update (raw) | `raw_cp_s14_*_m3` category totals from 25100014; `raw_cp_s63_*_m3` from 25100063 (Canada + provinces) |
 | Transform | Oil sands = synthetic + bitumen; conventional = heavy + light/medium + condensate + pentanes plus; MMb/d = m³ × 6.2898 ÷ 1000 ÷ 365 |
 | Production vectors | `cp_oil_sands_*`, `cp_conventional_*`, `cp_total_*`, `cp_share_pct` |
-| Province vectors | `cp_prov_{ab,sk,nl,mb,bc,other}_{thousand_m3,pct}`; Other = Canada − (NL + MB + SK + AB + BC) |
+| Province vectors | `cp_prov_{ab,sk,nl,mb,bc,ns,on,nt,other}_{thousand_m3,pct}`; Other = Canada − (AB + SK + NL + MB + BC + NS + ON + NT) |
 | Static UI only | Infographic PNG, overlay positions (`Page111ProvinceInfographic.constants.js`), chart colours |
 
 ### `kal_gas_prices` — Page 138

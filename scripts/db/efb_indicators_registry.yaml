@@ -187,6 +187,21 @@ indicators:
     depends_on: [nrcan_electrical_energy_use]
     vector_prefixes: [elec_eu_]
 
+  electricity_prices:
+    section_id: 5
+    depends_on: [nrcan_hydroq_prices]
+    vector_prefixes: [elec_price_]
+
+  wind_solar_electricity_growth:
+    section_id: 5
+    depends_on: [nrcan_wselec_growth]
+    vector_prefixes: [ws_elec_]
+
+  uranium_international:
+    section_id: 5
+    depends_on: [wna_uraniumprod]
+    vector_prefixes: [urani_]
+
   rpp_supply_demand:
     section_id: 6
     depends_on: [stc_rppsd_25100081]
@@ -221,3 +236,13 @@ indicators:
     section_id: 6
     depends_on: [osm_refin_cap]
     vector_prefixes: [refcap_]
+
+  petroleum_reserves:
+    section_id: 6
+    depends_on: [ca_petroleum_reserves_summary]
+    vector_prefixes: [cr_res_]
+
+  western_canada_oil_wells:
+    section_id: 6
+    depends_on: [ca_western_canada_oil_wells_count_depth]
+    vector_prefixes: [wc_oil_]

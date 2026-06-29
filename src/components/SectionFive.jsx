@@ -10,6 +10,8 @@ import Page65 from '../pages/Page65';
 import Page66 from '../pages/Page66';
 import Page67 from '../pages/Page67';
 import Page68 from '../pages/Page68';
+import Page69 from '../pages/Page69';
+import Page70 from '../pages/Page70';
 import Page71 from '../pages/Page71';
 import Page74 from '../pages/Page74';
 import Page76 from '../pages/Page76';
@@ -19,7 +21,19 @@ import Page80 from '../pages/Page80';
 import Page81 from '../pages/Page81';
 import Page82 from '../pages/Page82';
 import Page84 from '../pages/Page84';
+import Page85 from '../pages/Page85';
+import Page86 from '../pages/Page86';
+import Page87 from '../pages/Page87';
+import Page89 from '../pages/Page89';
+import Page90 from '../pages/Page90';
+import Page91 from '../pages/Page91';
+import Page93 from '../pages/Page93';
+import Page95 from '../pages/Page95';
 import Page96 from '../pages/Page96';
+import Page97 from '../pages/Page97';
+import Page98 from '../pages/Page98';
+import Page99 from '../pages/Page99';
+import Page102 from '../pages/Page102';
 
 const SectionFive = () => {
     const location = useLocation();
@@ -84,6 +98,12 @@ const SectionFive = () => {
             <div id="electricity-energy-use" className="stacked-page-wrapper">
                 <Page68 />
             </div>
+            <div id="electricity-prices" className="stacked-page-wrapper page-with-title-divider">
+                <Page69 />
+            </div>
+            <div id="wind-solar-electricity-growth" className="stacked-page-wrapper">
+                <Page70 />
+            </div>
             <div id="electricity-ghg-spotlight" className="stacked-page-wrapper">
                 <Page71 />
             </div>
@@ -111,8 +131,44 @@ const SectionFive = () => {
             <div id="largest-solar-projects" className="stacked-page-wrapper">
                 <Page84 />
             </div>
+            <div id="uranium-international" className="stacked-page-wrapper">
+                <Page85 />
+            </div>
+            <div id="nuclear-power" className="stacked-page-wrapper">
+                <Page86 />
+            </div>
+            <div id="canadian-uranium-supply-demand" className="stacked-page-wrapper">
+                <Page87 />
+            </div>
+            <div id="candu-nuclear-reactors" className="stacked-page-wrapper">
+                <Page89 />
+            </div>
+            <div id="nuclear-power-plants-uranium-prices" className="stacked-page-wrapper">
+                <Page90 />
+            </div>
+            <div id="biofuels-transportation" className="stacked-page-wrapper page-with-title-divider">
+                <Page91 />
+            </div>
+            <div id="canadian-biofuel-production" className="stacked-page-wrapper">
+                <Page93 />
+            </div>
+            <div id="transportation-fuel-mix" className="stacked-page-wrapper">
+                <Page95 />
+            </div>
             <div id="ev-sales" className="stacked-page-wrapper">
                 <Page96 />
+            </div>
+            <div id="transportation-ghg-spotlight" className="stacked-page-wrapper">
+                <Page97 />
+            </div>
+            <div id="electric-vehicle-charging" className="stacked-page-wrapper">
+                <Page98 />
+            </div>
+            <div id="public-ev-charging-stations" className="stacked-page-wrapper">
+                <Page99 />
+            </div>
+            <div id="hydrogen-industry" className="stacked-page-wrapper">
+                <Page102 />
             </div>
         </div>
     );

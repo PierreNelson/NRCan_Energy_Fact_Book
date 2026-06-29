@@ -8,6 +8,7 @@ import pandas as pd
 
 from config_loader import get_config
 from utils.http_retry import fetch_get, resilience_from_config
+from utils.io_retry import run_with_retry
 
 from .constants import (
     CER_ELECTRICITY_TRADE_METADATA,
@@ -146,8 +147,17 @@ def update_electricity_trade_us(processor) -> int:
     """EEDAS ingest: annual exports/imports in MWh from CER XLSM."""
     print('  Fetching CER electricity trade summary XLSM...')
     xlsm_bytes = _fetch_xlsm_bytes(processor.config)
-    annual = _parse_annual_trade_rows(xlsm_bytes)
-    month_counts = _parse_monthly_month_counts(xlsm_bytes)
+
+    def _load_rows():
+        annual_rows = _parse_annual_trade_rows(xlsm_bytes)
+        month_counts = _parse_monthly_month_counts(xlsm_bytes)
+        return annual_rows, month_counts
+
+    annual, month_counts = run_with_retry(
+        _load_rows,
+        config=processor.config,
+        label='CER electricity trade XLSM parse',
+    )
     data_rows: List[Tuple[str, str, float]] = []
     for year, exports_mwh, imports_mwh in annual:
         data_rows.append((RAW_EXPORTS, str(year), round(exports_mwh, 4)))

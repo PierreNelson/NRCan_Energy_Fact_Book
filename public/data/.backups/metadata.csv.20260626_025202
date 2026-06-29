@@ -113,16 +113,28 @@ cp_conventional_mmbd,Conventional crude production (Page 111),million barrels pe
 cp_conventional_thousand_m3,Conventional crude production (Page 111),thousand cubic metres,units,Canadian crude production by type and province,,
 cp_oil_sands_mmbd,Oil sands production (Page 111),million barrels per day,units,Canadian crude production by type and province,,
 cp_oil_sands_thousand_m3,Oil sands production (Page 111),thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_ab_pct,Alberta share of Canadian crude oil production (Page 111),percent,units,Canadian crude production by type and province,,
 cp_prov_ab_thousand_m3,Alberta crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_bc_pct,British Columbia share of Canadian crude oil production (Page 111),percent,units,Canadian crude production by type and province,,
 cp_prov_bc_thousand_m3,British Columbia crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
 cp_prov_canada_thousand_m3,Canadian crude oil production by province total,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_mb_pct,Manitoba share of Canadian crude oil production (Page 111),percent,units,Canadian crude production by type and province,,
 cp_prov_mb_thousand_m3,Manitoba crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_nl_pct,Newfoundland and Labrador share of Canadian crude oil production (Page 111),percent,units,Canadian crude production by type and province,,
 cp_prov_nl_thousand_m3,Newfoundland and Labrador crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_other_pct,Other provinces share of Canadian crude oil production (Page 111),percent,units,Canadian crude production by type and province,,
 cp_prov_other_thousand_m3,Other provinces crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_sk_pct,Saskatchewan share of Canadian crude oil production (Page 111),percent,units,Canadian crude production by type and province,,
 cp_prov_sk_thousand_m3,Saskatchewan crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
 cp_share_pct,Oil sands share of Canadian oil production (Page 111),percent,units,Canadian crude production by type and province,,
 cp_total_mmbd,Total crude oil production (Page 111),million barrels per day,units,Canadian crude production by type and province,,
 cp_total_thousand_m3,Total crude oil production (Page 111),thousand cubic metres,units,Canadian crude production by type and province,,
+cr_res_conventional_bb,Conventional remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
+cr_res_insitu_bb,In situ remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
+cr_res_mining_bb,Mining remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
+cr_res_oil_sands_bb,Oil sands remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
+cr_res_reporting_year,Petroleum reserves reporting year,year,units,Canadian proved reserves of crude oil,,
+cr_res_total_bb,Total remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
 crude_differential,WTI minus WCS (USD) differential,US dollars per barrel,units,WTI and WCS crude prices,,
 crude_usd_cad,USD to CAD exchange rate,CAD per USD,units,WTI and WCS crude prices,,
 crude_wcs_cad,Western Canadian Select (WCS) price,Canadian dollars per barrel,units,WTI and WCS crude prices,,
@@ -137,11 +149,11 @@ econ_investment_value_billions,Annual investment (billions),Billions of dollars,
 econ_jobs,Economic contributions - Jobs (direct + indirect),Number,units,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_jobs_thousands,Economic contributions - Jobs (thousands),Thousands,thousands,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 elec_eu_A,Electrical energy use - Agriculture,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-elec_eu_A_pct,Electrical energy use share - Agriculture,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ALTA,Electrical energy use - Alberta,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ALTA_pct,Electrical energy use share - Alberta,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ATL,Electrical energy use - Atlantic provinces,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ATL_pct,Electrical energy use share - Atlantic provinces,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_A_pct,Electrical energy use share - Agriculture,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_BC_TERR,Electrical energy use - B.C. and Territories,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_BC_TERR_pct,Electrical energy use share - B.C. and Territories,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_C,Electrical energy use - Commercial,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
@@ -161,15 +173,39 @@ elec_eu_SASK_pct,Electrical energy use share - Saskatchewan,Percent,percent,Elec
 elec_eu_T,Electrical energy use - Transportation,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_T_pct,Electrical energy use share - Transportation,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_total,Total electrical energy use,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-elec_ghg_coal,"Electricity sector GHG emissions, coal",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_natural_gas,"Electricity sector GHG emissions, natural gas",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_other,"Electricity sector GHG emissions, other",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_stat_base_year,Electricity GHG narrative base year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_stat_coal_gen_share_pct,Coal electricity generation share (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_stat_coal_ghg_share_pct,Coal share of electricity-related GHG emissions (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_stat_reference_year,Electricity GHG narrative reference year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_stat_total_pct_change,Electricity GHG total percent change (base to reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
-elec_ghg_total,"Electricity sector GHG emissions, total",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv
+elec_ghg_coal,"Electricity sector GHG emissions, coal",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_natural_gas,"Electricity sector GHG emissions, natural gas",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_other,"Electricity sector GHG emissions, other",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_stat_base_year,Electricity GHG narrative base year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_stat_coal_gen_share_pct,Coal electricity generation share (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_stat_coal_ghg_share_pct,Coal share of electricity-related GHG emissions (reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_stat_reference_year,Electricity GHG narrative reference year,year,none,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_stat_total_pct_change,Electricity GHG total percent change (base to reference year),percent,units,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_ghg_total,"Electricity sector GHG emissions, total",Mt CO2 eq,megatonnes,GHG spotlight: electricity,Environment and Climate Change Canada,https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html
+elec_price_calgary_industrial,"Calgary — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_calgary_residential,"Calgary — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_charlottetown_industrial,"Charlottetown — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_charlottetown_residential,"Charlottetown — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_edmonton_industrial,"Edmonton — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_edmonton_residential,"Edmonton — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_halifax_industrial,"Halifax — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_halifax_residential,"Halifax — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_moncton_industrial,"Moncton — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_moncton_residential,"Moncton — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_montreal_industrial,"Montréal — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_montreal_residential,"Montréal — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_ottawa_industrial,"Ottawa — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_ottawa_residential,"Ottawa — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_regina_industrial,"Regina — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_regina_residential,"Regina — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_st_johns_industrial,"St. John's — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_st_johns_residential,"St. John's — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_toronto_industrial,"Toronto — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_toronto_residential,"Toronto — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_vancouver_industrial,"Vancouver — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_vancouver_residential,"Vancouver — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_winnipeg_industrial,"Winnipeg — industrial electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
+elec_price_winnipeg_residential,"Winnipeg — residential electricity price, 2025",Cents per kilowatt hour,cents per kilowatt hour,Average large industrial and residential electricity prices,Natural Resources Canada,https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578
 elec_trade_exports,Electricity exports to the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
 elec_trade_imports,Electricity imports from the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
 elec_trade_net,Net electricity trade with the U.S.,Terawatt hours,terawatt hours,Electricity trade with the U.S.,Canada Energy Regulator,https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm
@@ -275,6 +311,46 @@ ghg_stat_oil_gas_spotlight_total_pct,Oil and gas spotlight total emissions perce
 ghg_stat_oil_sands_emissions_ratio,Oil sands emissions ratio (end year / base year),ratio,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_transportation,GHG Emissions - Transportation,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_waste_others,GHG Emissions - Waste and Others,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
+hydro_fac_01_mw,Robert-Bourassa,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_01_prov,Robert-Bourassa province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_02_mw,Churchill Falls,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_02_prov,Churchill Falls province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_03_mw,La Grande 4,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_03_prov,La Grande 4 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_04_mw,Mica,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_04_prov,Mica province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_05_mw,Gordon M Shrum,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_05_prov,Gordon M Shrum province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_06_mw,Revelstoke,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_06_prov,Revelstoke province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_07_mw,La Grande 3,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_07_prov,La Grande 3 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_08_mw,La Grande 2A,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_08_prov,La Grande 2A province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_09_mw,Beauharnois,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_09_prov,Beauharnois province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_10_mw,Manic 5,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_10_prov,Manic 5 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_11_mw,Sir Adam Beck 2,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_11_prov,Sir Adam Beck 2 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_12_mw,La Grande 1,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_12_prov,La Grande 1 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_13_mw,Limestone,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_13_prov,Limestone province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_14_mw,Manic-3,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_14_prov,Manic-3 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_15_mw,Manic-2,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_15_prov,Manic-2 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_16_mw,Kettle,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_16_prov,Kettle province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_17_mw,Bersimis 1,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_17_prov,Bersimis 1 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_18_mw,Manic-5-PA,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_18_prov,Manic-5-PA province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_19_mw,Robert H Saunders,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_19_prov,Robert H Saunders province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_20_mw,Outardes 3,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hydro_fac_20_prov,Outardes 3 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
 ind_ccog,Industrial coke and coke oven gas (PJ),PJ,petajoules,Industrial sector energy use by fuel type,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0
 ind_cl,Industrial coal (PJ),PJ,petajoules,Industrial sector energy use by fuel type,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0
 ind_dfox,"Industrial diesel fuel oil, light fuel oil and kerosene (PJ)",PJ,petajoules,Industrial sector energy use by fuel type,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0
@@ -487,12 +563,25 @@ sbio_use_residential,Residential wood fuel use,PJ,petajoules,Canadian production
 sbio_use_total,Total wood fuel use,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
 seu_BM,Secondary energy use - Biomass,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_Ele,Secondary energy use - Electricity,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_NG,Secondary energy use - Natural gas,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OOP,Secondary energy use - Other oil products,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OT,Secondary energy use - Other,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_TE,Secondary energy use (final demand) total,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+sol_world_canada_rank,Canada rank in world solar PV capacity,Rank,rank,Unknown,IEA-PVPS,
+sol_world_canada_share_pct,Canada share of world solar PV capacity,%,percent,Unknown,IEA-PVPS,
+sol_world_top1_country_id,World solar PV capacity country rank 1,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top1_share_pct,World solar PV capacity share rank 1,%,percent,Unknown,IEA-PVPS,
+sol_world_top2_country_id,World solar PV capacity country rank 2,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top2_share_pct,World solar PV capacity share rank 2,%,percent,Unknown,IEA-PVPS,
+sol_world_top3_country_id,World solar PV capacity country rank 3,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top3_share_pct,World solar PV capacity share rank 3,%,percent,Unknown,IEA-PVPS,
+sol_world_top4_country_id,World solar PV capacity country rank 4,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top4_share_pct,World solar PV capacity share rank 4,%,percent,Unknown,IEA-PVPS,
+sol_world_top5_country_id,World solar PV capacity country rank 5,ID,country_id,Unknown,IEA-PVPS,
+sol_world_top5_share_pct,World solar PV capacity share rank 5,%,percent,Unknown,IEA-PVPS,
+sol_world_total_gw,World solar PV capacity,GW,gigawatts,Unknown,IEA-PVPS,
 solar_proj_01_mw,Travers,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
 solar_proj_01_prov,Travers province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
 solar_proj_02_mw,Big Sky,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
@@ -523,6 +612,48 @@ solar_proj_14_mw,Windsor,MW,megawatts,Largest solar projects (50 MW+),Natural Re
 solar_proj_14_prov,Windsor province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
 solar_proj_15_mw,Wheatcrest,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
 solar_proj_15_prov,Wheatcrest province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+urani_exp_canada_rank,Canada rank in world uranium exports,Rank,rank,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_canada_share_pct,Canada share of world uranium exports,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top1_country_id,World uranium exports top 1 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top1_share_pct,World uranium exports top 1 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top2_country_id,World uranium exports top 2 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top2_share_pct,World uranium exports top 2 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top3_country_id,World uranium exports top 3 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top3_share_pct,World uranium exports top 3 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top4_country_id,World uranium exports top 4 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top4_share_pct,World uranium exports top 4 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top5_country_id,World uranium exports top 5 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_top5_share_pct,World uranium exports top 5 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_exp_total_kt,World uranium exports total,kt,kilotonnes,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_canada_rank,Canada rank in world uranium production,Rank,rank,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_canada_share_pct,Canada share of world uranium production,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top1_country_id,World uranium production top 1 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top1_share_pct,World uranium production top 1 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top2_country_id,World uranium production top 2 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top2_share_pct,World uranium production top 2 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top3_country_id,World uranium production top 3 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top3_share_pct,World uranium production top 3 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top4_country_id,World uranium production top 4 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top4_share_pct,World uranium production top 4 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top5_country_id,World uranium production top 5 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_top5_share_pct,World uranium production top 5 share,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_prod_total_kt,World uranium production total,kt,kilotonnes,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
+urani_res_canada_rank,Canada rank in world known recoverable uranium resources,Rank,rank,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_canada_share_pct,Canada share of world known recoverable uranium resources,Percent,percent,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top1_country_id,World known recoverable uranium resources top 1 country,Country ID,country,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top1_share_pct,World known recoverable uranium resources top 1 share,Percent,percent,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top2_country_id,World known recoverable uranium resources top 2 country,Country ID,country,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top2_share_pct,World known recoverable uranium resources top 2 share,Percent,percent,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top3_country_id,World known recoverable uranium resources top 3 country,Country ID,country,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top3_share_pct,World known recoverable uranium resources top 3 share,Percent,percent,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top4_country_id,World known recoverable uranium resources top 4 country,Country ID,country,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top4_share_pct,World known recoverable uranium resources top 4 share,Percent,percent,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top5_country_id,World known recoverable uranium resources top 5 country,Country ID,country,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_top5_share_pct,World known recoverable uranium resources top 5 share,Percent,percent,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+urani_res_total_mt,World known recoverable uranium resources total,Mt,megatonnes,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+wc_oil_avg_depth_m,Western Canada oil wells average depth,metres,units,Western Canada oil wells completed,,
+wc_oil_total_metres,Western Canada oil wells total metres drilled,metres,units,Western Canada oil wells completed,,
+wc_oil_wells_completed,Western Canada oil wells completed,wells,units,Western Canada oil wells completed,,
 win_can_wind_elec_share_pct,Wind share of Canadian electricity generation,%,percent,Unknown,Natural Resources Canada,
 win_pwr_cap_add_mw,"Installed wind capacity, annual additions",MW,megawatts,Wind power in Canada,Natural Resources Canada,
 win_pwr_cap_cum_gw,"Installed wind capacity, cumulative",GW,gigawatts,Wind power in Canada,Natural Resources Canada,
@@ -603,3 +734,23 @@ wind_proj_20_mw,Bekevar,MW,megawatts,Largest wind projects (200 MW+),Natural Res
 wind_proj_20_prov,Bekevar province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
 wind_proj_21_mw,Apuiat Wind Farm,MW,megawatts,Largest wind projects (200 MW+),Natural Resources Canada,
 wind_proj_21_prov,Apuiat Wind Farm province code,Code,code,Largest wind projects (200 MW+),Natural Resources Canada,
+ws_elec_end_year,Wind and solar series end year,Year,year,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_hydro_pct,Hydroelectricity share of generation,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_non_ghg_pct,Non-GHG emitting electricity share,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_nuclear_pct,Nuclear electricity share of generation,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_other_renewables_pct,Other renewables share of generation,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_canada_order,Canada non-emitting electricity rank,Rank,rank,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_canada_pct,Canada non-emitting electricity share,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_china_order,China non-emitting electricity rank,Rank,rank,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_china_pct,China non-emitting electricity share,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_india_order,India non-emitting electricity rank,Rank,rank,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_india_pct,India non-emitting electricity share,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_russia_order,Russia non-emitting electricity rank,Rank,rank,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_russia_pct,Russia non-emitting electricity share,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_usa_order,United States non-emitting electricity rank,Rank,rank,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_rank_usa_pct,United States non-emitting electricity share,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_ranking_year,Non-emitting electricity ranking reference year,Year,year,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_renewable_pct_change,Renewable electricity generation percent change,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_solar_gwh,Solar net electricity generation,GWh,gigawatt-hours,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_start_year,Wind and solar series start year,Year,year,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
+ws_elec_wind_gwh,Wind net electricity generation,GWh,gigawatt-hours,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,

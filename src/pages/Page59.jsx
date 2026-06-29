@@ -147,7 +147,11 @@ const Page59 = () => {
                             </Link>
                         </li>
                         <li className="page59-list-item">{getText('page59_item2', lang)}</li>
-                        <li className="page59-list-item">{getText('page59_item3', lang)}</li>
+                        <li className="page59-list-item">
+                            <Link to="/section-5#biofuels-transportation" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                                {getText('page59_item3', lang)}
+                            </Link>
+                        </li>
                     </ul>
                 </nav>
             </div>

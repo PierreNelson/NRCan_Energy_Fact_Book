@@ -235,8 +235,8 @@ const Page96 = () => {
 
     const textVars = {
         startYear: result?.chartStartYear ?? 2011,
-        endYear: result?.chartEndYear ?? 2024,
-        year: result?.referenceYear ?? 2024,
+        endYear: result?.chartEndYear ?? '',
+        year: result?.referenceYear ?? '',
         share: result?.referenceRow
             ? Number(result.referenceRow.sharePct).toLocaleString(locale, {
                   minimumFractionDigits: 1,
@@ -244,7 +244,7 @@ const Page96 = () => {
               })
             : '',
         evCount: result?.referenceRow ? formatNumber(result.referenceRow.evRegs) : '',
-        multiplier: result?.multiplier ?? 14,
+        multiplier: result?.multiplier ?? '',
     };
 
     const barsLabel = getText('page96_legend_bars', lang);

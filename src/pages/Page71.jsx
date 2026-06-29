@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
@@ -37,6 +37,22 @@ const markerOpacityFor = (selectedPoints, years, traceIndex) => {
     return years.map((_, i) => (selectedPoints[traceIndex]?.includes(i) ? 1 : 0.3));
 };
 
+const Page71Plot = memo(function Page71Plot({
+    plotData, plotLayout, chartConfig, plotHeight, onPlotReady,
+}) {
+    return (
+        <Plot
+            key={`page71-${plotHeight}`}
+            data={plotData}
+            layout={plotLayout}
+            config={chartConfig}
+            style={{ width: '100%', height: '100%' }}
+            useResizeHandler
+            onInitialized={onPlotReady}
+        />
+    );
+});
+
 const Page71 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [result, setResult] = useState(null);
@@ -47,6 +63,7 @@ const Page71 = () => {
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
+    const clickHandlerRef = useRef(null);
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
     const bottomScrollRef = useRef(null);
@@ -287,6 +304,25 @@ const Page71 = () => {
             });
         },
         [windowWidth],
+    );
+
+    useEffect(() => {
+        clickHandlerRef.current = handleChartClick;
+    }, [handleChartClick]);
+
+    const bindPlotHandlers = useCallback((graphDiv) => {
+        if (!graphDiv?.on) return;
+        if (graphDiv._page71Click) {
+            graphDiv.removeListener('plotly_click', graphDiv._page71Click);
+        }
+        const clickHandler = (event) => clickHandlerRef.current?.(event);
+        graphDiv._page71Click = clickHandler;
+        graphDiv.on('plotly_click', clickHandler);
+    }, []);
+
+    const onPlotReady = useCallback(
+        (_figure, graphDiv) => bindPlotHandlers(graphDiv),
+        [bindPlotHandlers],
     );
 
     const downloadChartPng = async (plotEl = null) => {
@@ -617,10 +653,9 @@ const Page71 = () => {
                     )}
 
                     <figure ref={chartRef} className="page71-chart" role="region" aria-label={chartTitle} tabIndex={0} style={{ margin: 0 }}>
-                        <Plot
-                            key={`page71-${selectedPoints ? selectedPoints.map((arr) => arr.join('-')).join('_') : 'all'}-${plotHeight}`}
-                            data={plotData}
-                            layout={{
+                        <Page71Plot
+                            plotData={plotData}
+                            plotLayout={{
                                 barmode: 'stack',
                                 showlegend: false,
                                 hoverlabel: {
@@ -650,7 +685,7 @@ const Page71 = () => {
                                     fixedrange: true,
                                 },
                             }}
-                            config={{
+                            chartConfig={{
                                 displayModeBar: true,
                                 displaylogo: false,
                                 responsive: true,
@@ -676,9 +711,8 @@ const Page71 = () => {
                                     click: (gd) => downloadChartPng(gd),
                                 }],
                             }}
-                            style={{ width: '100%', height: '100%' }}
-                            useResizeHandler
-                            onClick={handleChartClick}
+                            plotHeight={plotHeight}
+                            onPlotReady={onPlotReady}
                         />
                     </figure>
 

@@ -195,6 +195,18 @@ source_tables:
     detail: capacity
     source_table: osm_refin_cap
 
+  petroleum_reserves:
+    org_code: cer
+    report_code: petroleum
+    detail: reserves_summary
+    source_table: ca_petroleum_reserves_summary
+
+  western_canada_oil_wells:
+    org_code: cer
+    report_code: oil
+    detail: wells_count_depth
+    source_table: ca_western_canada_oil_wells_count_depth
+
   solid_biofuels:
     org_code: nrcan
     report_code: renaq
@@ -206,6 +218,24 @@ source_tables:
     report_code: neud
     detail: elec_eu
     source_table: nrcan_electrical_energy_use
+
+  electricity_prices:
+    org_code: nrcan
+    report_code: hydroq
+    detail: prices
+    source_table: nrcan_hydroq_prices
+
+  wind_solar_electricity_growth:
+    org_code: nrcan
+    report_code: wselec
+    detail: growth
+    source_table: nrcan_wselec_growth
+
+  uranium_international:
+    org_code: wna
+    report_code: uraniumprod
+    detail: international
+    source_table: wna_uraniumprod
 
   electricity_generation_by_source:
     org_code: nrcan

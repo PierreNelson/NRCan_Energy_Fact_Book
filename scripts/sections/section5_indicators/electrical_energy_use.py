@@ -140,11 +140,3 @@ def transform_electrical_energy_use(processor) -> int:
     n = processor.store_indicators(SOURCE_KEY, data_rows, metadata_rows)
     print(f'    Stored {n} indicator rows for {SOURCE_KEY}')
     return n
-
-
-def build_electrical_energy_use_indicator_rows() -> Tuple[
-    List[Tuple[str, str, float]],
-    List[Tuple[str, str, str, str, str, str]],
-]:
-    """Build indicator rows without SQL (offline export / tests)."""
-    return _transform_indicator_rows_from_raw(_bootstrap_raw_by_year())

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
@@ -17,10 +17,72 @@ const COLORS = {
     biomass: '#6D91B3',
 };
 
-const markerOpacityFor = (selectedPoints, yearCount, traceIndex) => {
-    if (selectedPoints === null) return 1;
-    return Array.from({ length: yearCount }, (_, i) =>
-        (selectedPoints[traceIndex]?.includes(i) ? 1 : 0.3));
+const HOVER_LABEL = {
+    bgcolor: '#ffffff',
+    bordercolor: '#000000',
+    font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
+};
+
+const DENSIFY_STEPS = 12;
+
+const densifyBandSeries = (years, yTops, yBases, label, categoryValues, formatHoverMw) => {
+    if (!years.length) return { x: [], y: [], hover: [] };
+
+    const xDense = [];
+    const topDense = [];
+    const baseDense = [];
+    const hover = [];
+
+    const pushPoint = (xVal, top, bottom, nearestIdx) => {
+        xDense.push(xVal);
+        topDense.push(top);
+        baseDense.push(bottom);
+        hover.push(`<b>${label}</b><br>${years[nearestIdx]}: ${formatHoverMw(categoryValues[nearestIdx])}<extra></extra>`);
+    };
+
+    if (years.length === 1) {
+        pushPoint(years[0], yTops[0], yBases[0] ?? 0, 0);
+    } else {
+        for (let i = 0; i < years.length - 1; i += 1) {
+            for (let s = 0; s < DENSIFY_STEPS; s += 1) {
+                const t = s / DENSIFY_STEPS;
+                const xVal = years[i] + t * (years[i + 1] - years[i]);
+                const top = yTops[i] + t * (yTops[i + 1] - yTops[i]);
+                const bottom = yBases[i] + t * (yBases[i + 1] - yBases[i]);
+                const nearestIdx = t < 0.5 ? i : i + 1;
+                pushPoint(xVal, top, bottom, nearestIdx);
+            }
+        }
+        const last = years.length - 1;
+        pushPoint(years[last], yTops[last], yBases[last], last);
+    }
+
+    const hoverClosed = [...hover, ...hover.slice().reverse()];
+    return {
+        x: [...xDense, ...xDense.slice().reverse()],
+        y: [...topDense, ...baseDense.slice().reverse()],
+        hover: hoverClosed,
+    };
+};
+
+const traceIndexFromCurveNumber = (curveNumber) => {
+    if (curveNumber == null || curveNumber < 0) return null;
+    if (curveNumber < TRACE_COUNT) return curveNumber;
+    if (curveNumber < TRACE_COUNT * 2) return curveNumber - TRACE_COUNT;
+    return null;
+};
+
+const traceOpacityFor = (selectedTraceIds, traceIndex) => {
+    if (selectedTraceIds === null || selectedTraceIds.includes(traceIndex)) return 1;
+    return 0.3;
+};
+
+const hexToRgba = (hex, opacity = 1) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
+    }
+    return hex;
 };
 
 const substitute = (text, vars) =>
@@ -42,16 +104,109 @@ const computeYAxis = (maxTotal) => {
     return { tickvals, range: [0, axisMax] };
 };
 
+const resolveHoverFromPointer = (graphDiv, clientX, clientY, data) => {
+    if (!graphDiv?._fullLayout || !data?.years?.length) return null;
+
+    const {
+        years, traceLabels, traceValueArrays, hydroValues,
+        cumWindTops, cumSolarTidalTops, cumBiomassTops, yRangeMax, formatHoverMw,
+    } = data;
+
+    const xax = graphDiv._fullLayout.xaxis;
+    const yax = graphDiv._fullLayout.yaxis;
+    const gdRect = graphDiv.getBoundingClientRect();
+    const xPx = clientX - gdRect.left - xax._offset;
+    const yPx = clientY - gdRect.top - yax._offset;
+
+    if (xPx < 0 || xPx > xax._length || yPx < 0 || yPx > yax._length) return null;
+
+    const xData = xax.p2l(xPx);
+    const yData = yax.p2l(yPx);
+    if (xData < years[0] || xData > years[years.length - 1]) return null;
+    if (yData < 0 || yData > yRangeMax) return null;
+
+    let nearestIndex = 0;
+    let minDist = Infinity;
+    years.forEach((year, i) => {
+        const dist = Math.abs(year - xData);
+        if (dist < minDist) {
+            minDist = dist;
+            nearestIndex = i;
+        }
+    });
+
+    let segIndex = years.length - 2;
+    for (let i = 0; i < years.length - 1; i += 1) {
+        if (xData <= years[i + 1]) {
+            segIndex = i;
+            break;
+        }
+    }
+    segIndex = Math.max(0, Math.min(segIndex, years.length - 2));
+
+    const x0 = years[segIndex];
+    const x1 = years[segIndex + 1];
+    const t = x1 === x0 ? 0 : (xData - x0) / (x1 - x0);
+    const lerp = (arr) => arr[segIndex] + t * (arr[segIndex + 1] - arr[segIndex]);
+
+    const bandBounds = [
+        [0, lerp(hydroValues)],
+        [lerp(hydroValues), lerp(cumWindTops)],
+        [lerp(cumWindTops), lerp(cumSolarTidalTops)],
+        [lerp(cumSolarTidalTops), lerp(cumBiomassTops)],
+    ];
+
+    const yEpsilon = yRangeMax * 0.002;
+    let traceIndex = null;
+    for (let i = TRACE_COUNT - 1; i >= 0; i -= 1) {
+        const [lo, hi] = bandBounds[i];
+        if (yData >= lo - yEpsilon && yData <= hi + yEpsilon) {
+            traceIndex = i;
+            break;
+        }
+    }
+    if (traceIndex === null) return null;
+
+    return {
+        traceIndex,
+        nearestIndex,
+        xData,
+        category: traceLabels[traceIndex],
+        year: years[nearestIndex],
+        value: formatHoverMw(traceValueArrays[traceIndex][nearestIndex]),
+    };
+};
+
+const Page74Plot = memo(function Page74Plot({
+    plotData, plotLayout, chartConfig, plotHeight, onPlotReady,
+}) {
+    return (
+        <Plot
+            key={`page74-${plotHeight}`}
+            data={plotData}
+            layout={plotLayout}
+            config={chartConfig}
+            style={{ width: '100%', height: '100%' }}
+            useResizeHandler
+            onInitialized={onPlotReady}
+            onUpdate={onPlotReady}
+        />
+    );
+});
+
 const Page74 = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const [selectedTraceIds, setSelectedTraceIds] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
+    const graphDivRef = useRef(null);
+    const clickHandlerRef = useRef(null);
+    const lastClickRef = useRef({ time: 0, traceIndex: null });
+    const hoverDataRef = useRef(null);
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
     const bottomScrollRef = useRef(null);
@@ -91,6 +246,7 @@ const Page74 = () => {
     const windLabel = getText('page74_legend_wind', lang);
     const solarTidalLabel = getText('page74_legend_solarTidal', lang);
     const biomassLabel = getText('page74_legend_biomass', lang);
+    const traceLabels = [hydroLabel, windLabel, solarTidalLabel, biomassLabel];
     const chartTitle = substitute(getText('page74_chart_title', lang), {
         startYear: startYear ?? '',
         endYear: endYear ?? '',
@@ -130,13 +286,12 @@ const Page74 = () => {
     );
     const { tickvals: yTickvals, range: yRange } = useMemo(() => computeYAxis(maxTotal), [maxTotal]);
 
-    const buildHoverTexts = (label, values) =>
-        years.map((yearValue, i) => `<b>${label}</b><br>${yearValue}: ${formatHoverMw(values[i])}<extra></extra>`);
-
-    const hydroHoverTexts = buildHoverTexts(hydroLabel, hydroValues);
-    const windHoverTexts = buildHoverTexts(windLabel, windValues);
-    const solarTidalHoverTexts = buildHoverTexts(solarTidalLabel, solarTidalValues);
-    const biomassHoverTexts = buildHoverTexts(biomassLabel, biomassValues);
+    const traceValueArrays = [hydroValues, windValues, solarTidalValues, biomassValues];
+    const cumWindTops = years.map((_, i) => hydroValues[i] + windValues[i]);
+    const cumSolarTidalTops = years.map((_, i) => hydroValues[i] + windValues[i] + solarTidalValues[i]);
+    const cumBiomassTops = years.map(
+        (_, i) => hydroValues[i] + windValues[i] + solarTidalValues[i] + biomassValues[i],
+    );
 
     useEffect(() => {
         const onResize = () => setWindowWidth(window.innerWidth);
@@ -178,7 +333,7 @@ const Page74 = () => {
             clearTimeout(timer);
             observer.disconnect();
         };
-    }, [lang, loading, error, result, selectedPoints]);
+    }, [lang, loading, error, result, selectedTraceIds]);
 
     const syncTableScroll = useCallback(() => {
         const topScroll = topScrollRef.current;
@@ -229,45 +384,75 @@ const Page74 = () => {
         };
     }, [isTableOpen, windowWidth, syncTableScroll]);
 
-    const handleChartClick = useCallback(
-        (data) => {
-            if (!data?.points?.length) return;
-            const traceIndex = data.points[0].curveNumber;
-            const pointIndex = data.points[0].pointIndex;
-            if (traceIndex === undefined || traceIndex < 0 || traceIndex >= TRACE_COUNT) return;
-            if (pointIndex === undefined || pointIndex < 0) return;
+    const toggleTraceSelection = useCallback((traceIndex) => {
+        setSelectedTraceIds((prev) => {
+            if (prev === null) return [traceIndex];
+            if (prev.includes(traceIndex)) {
+                const next = prev.filter((t) => t !== traceIndex);
+                return next.length === 0 ? null : next;
+            }
+            return [...prev, traceIndex];
+        });
+    }, []);
+
+    const applyTraceSelection = useCallback(
+        (traceIndex) => {
+            if (traceIndex == null || traceIndex < 0 || traceIndex >= TRACE_COUNT) return;
 
             if (windowWidth <= 768) {
                 const currentTime = Date.now();
                 const lastClick = lastClickRef.current;
-                const isSamePoint =
-                    traceIndex === lastClick.traceIndex &&
-                    pointIndex === lastClick.pointIndex &&
-                    lastClick.traceIndex != null;
-                const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-                lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
+                const isDoubleTap = traceIndex === lastClick.traceIndex && currentTime - lastClick.time < 300;
+                lastClickRef.current = { time: currentTime, traceIndex };
                 if (!isDoubleTap) return;
             }
 
-            setSelectedPoints((prev) => {
-                if (prev === null) {
-                    const newSelection = TRACE_KEYS.map(() => []);
-                    newSelection[traceIndex].push(pointIndex);
-                    return newSelection;
-                }
-                const isSelected = prev[traceIndex]?.includes(pointIndex);
-                if (isSelected) {
-                    const newSelection = prev.map((tracePoints, idx) =>
-                        idx === traceIndex ? tracePoints.filter((p) => p !== pointIndex) : [...tracePoints],
-                    );
-                    return newSelection.every((arr) => arr.length === 0) ? null : newSelection;
-                }
-                return prev.map((tracePoints, idx) =>
-                    idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints],
-                );
-            });
+            toggleTraceSelection(traceIndex);
         },
-        [windowWidth],
+        [windowWidth, toggleTraceSelection],
+    );
+
+    const handleChartClick = useCallback(
+        (event) => {
+            let traceIndex = null;
+            if (event?.points?.length) {
+                traceIndex = traceIndexFromCurveNumber(event.points[0].curveNumber);
+            }
+            if (traceIndex == null && event?.event && graphDivRef.current) {
+                const resolved = resolveHoverFromPointer(
+                    graphDivRef.current,
+                    event.event.clientX,
+                    event.event.clientY,
+                    hoverDataRef.current,
+                );
+                if (resolved) traceIndex = resolved.traceIndex;
+            }
+            if (traceIndex == null) return;
+            applyTraceSelection(traceIndex);
+        },
+        [applyTraceSelection],
+    );
+
+    useEffect(() => {
+        clickHandlerRef.current = handleChartClick;
+    }, [handleChartClick]);
+
+    const bindPlotHandlers = useCallback((graphDiv) => {
+        if (!graphDiv?.on) return;
+        graphDivRef.current = graphDiv;
+
+        if (graphDiv._page74Click) {
+            graphDiv.removeListener('plotly_click', graphDiv._page74Click);
+        }
+
+        const clickHandler = (event) => clickHandlerRef.current?.(event);
+        graphDiv._page74Click = clickHandler;
+        graphDiv.on('plotly_click', clickHandler);
+    }, []);
+
+    const onPlotReady = useCallback(
+        (_figure, graphDiv) => bindPlotHandlers(graphDiv),
+        [bindPlotHandlers],
     );
 
     const downloadChartPng = async (plotEl = null) => {
@@ -388,58 +573,66 @@ const Page74 = () => {
         color: '#ffffff',
     };
 
-    const plotData = [
-        {
-            type: 'bar',
-            name: hydroLabel,
-            x: years,
-            y: hydroValues,
-            marker: {
-                color: COLORS.hydro,
-                opacity: markerOpacityFor(selectedPoints, years.length, 0),
-                line: { width: 0 },
-            },
-            hovertemplate: hydroHoverTexts,
-        },
-        {
-            type: 'bar',
-            name: windLabel,
-            x: years,
-            y: windValues,
-            marker: {
-                color: COLORS.wind,
-                opacity: markerOpacityFor(selectedPoints, years.length, 1),
-                line: { width: 0 },
-            },
-            hovertemplate: windHoverTexts,
-        },
-        {
-            type: 'bar',
-            name: solarTidalLabel,
-            x: years,
-            y: solarTidalValues,
-            marker: {
-                color: COLORS.solarTidal,
-                opacity: markerOpacityFor(selectedPoints, years.length, 2),
-                line: { width: 0 },
-            },
-            hovertemplate: solarTidalHoverTexts,
-        },
-        {
-            type: 'bar',
-            name: biomassLabel,
-            x: years,
-            y: biomassValues,
-            marker: {
-                color: COLORS.biomass,
-                opacity: markerOpacityFor(selectedPoints, years.length, 3),
-                line: { width: 0 },
-            },
-            hovertemplate: biomassHoverTexts,
-        },
+    const zeroBases = years.map(() => 0);
+    const hydroDense = densifyBandSeries(years, hydroValues, zeroBases, hydroLabel, hydroValues, formatHoverMw);
+    const windDense = densifyBandSeries(years, cumWindTops, hydroValues, windLabel, windValues, formatHoverMw);
+    const solarTidalDense = densifyBandSeries(years, cumSolarTidalTops, cumWindTops, solarTidalLabel, solarTidalValues, formatHoverMw);
+    const biomassDense = densifyBandSeries(years, cumBiomassTops, cumSolarTidalTops, biomassLabel, biomassValues, formatHoverMw);
+
+    hoverDataRef.current = {
+        years,
+        traceLabels,
+        traceValueArrays,
+        hydroValues,
+        cumWindTops,
+        cumSolarTidalTops,
+        cumBiomassTops,
+        yRangeMax: yRange[1],
+        formatHoverMw,
+    };
+
+    const traceDefs = [
+        { key: 'hydro', values: hydroValues, fill: 'tozeroy', traceIndex: 0 },
+        { key: 'wind', values: windValues, fill: 'tonexty', traceIndex: 1 },
+        { key: 'solarTidal', values: solarTidalValues, fill: 'tonexty', traceIndex: 2 },
+        { key: 'biomass', values: biomassValues, fill: 'tonexty', traceIndex: 3 },
     ];
 
-    const pageTitle = getText('page74_title', lang);
+    const hitTraceDefs = [
+        { ...hydroDense, traceIndex: 0 },
+        { ...windDense, traceIndex: 1 },
+        { ...solarTidalDense, traceIndex: 2 },
+        { ...biomassDense, traceIndex: 3 },
+    ];
+
+    const plotData = [
+        ...traceDefs.map(({ key, values, fill, traceIndex }) => ({
+            type: 'scatter',
+            mode: 'lines',
+            x: years,
+            y: values,
+            stackgroup: 'renewable',
+            fill,
+            line: { color: hexToRgba(COLORS[key], traceOpacityFor(selectedTraceIds, traceIndex)), width: 0 },
+            fillcolor: hexToRgba(COLORS[key], traceOpacityFor(selectedTraceIds, traceIndex)),
+            connectgaps: true,
+            hoverinfo: 'skip',
+            showlegend: false,
+        })),
+        ...hitTraceDefs.map(({ x, y, hover }) => ({
+            type: 'scatter',
+            x,
+            y,
+            fill: 'toself',
+            fillcolor: 'rgba(0,0,0,0.001)',
+            line: { color: 'rgba(0,0,0,0)', width: 0 },
+            hoveron: 'points+fills',
+            hovertemplate: hover,
+            showlegend: false,
+            name: '',
+        })),
+    ];
+
     const hasChartData = !loading && !error && tableRows.length > 0;
 
     return (
@@ -447,7 +640,7 @@ const Page74 = () => {
             tabIndex="-1"
             className="page-content page-74"
             role="main"
-            aria-labelledby="page74-title"
+            aria-labelledby="page74-chart-title"
             style={{ backgroundColor: '#ffffff' }}
         >
             <style>{`
@@ -460,27 +653,6 @@ const Page74 = () => {
     padding-right: ${layoutPadding?.right || 15}px;
 }
 .page74-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
-.page74-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin-top: 0;
-    margin-bottom: 25px;
-    line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
-    text-transform: none;
-}
-.page74-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
-}
 .page74-chart-frame {
     background-color: #f5f5f5;
     padding: 20px;
@@ -513,7 +685,12 @@ const Page74 = () => {
     font-size: 14px;
     color: var(--gc-text);
 }
-.page74-legend-item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.page74-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
 .page74-legend-swatch { width: 22px; height: 14px; display: inline-block; border: 1px solid rgba(0, 0, 0, 0.12); }
 .page74-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 .page74-download-buttons button:hover,
@@ -537,7 +714,6 @@ const Page74 = () => {
 .page74-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
 .page74-table-scrollbar > div { height: 20px; }
 @media (max-width: 768px) {
-    .page74-title { font-size: 37px; }
     .page74-chart-title { font-size: 26px; }
 }
 .page74-loading, .page74-error {
@@ -548,8 +724,6 @@ const Page74 = () => {
 }
             `}</style>
             <div className="page74-inner">
-                <h1 id="page74-title" className="page74-title">{pageTitle}</h1>
-
                 {loading && (
                     <p className="page74-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>
                 )}
@@ -564,11 +738,11 @@ const Page74 = () => {
                 <div className="page74-chart-frame">
                     <h2 id="page74-chart-title" className="page74-chart-title">{chartTitle}</h2>
 
-                    {selectedPoints !== null && (
+                    {selectedTraceIds !== null && (
                         <div style={{ marginBottom: 8 }}>
                             <button
                                 type="button"
-                                onClick={() => setSelectedPoints(null)}
+                                onClick={() => setSelectedTraceIds(null)}
                                 style={{
                                     padding: '6px 12px',
                                     backgroundColor: '#8C8C8C',
@@ -585,20 +759,21 @@ const Page74 = () => {
                         </div>
                     )}
 
-                    <figure ref={chartRef} className="page74-chart" role="region" aria-label={chartTitle} tabIndex={0} style={{ margin: 0 }}>
-                        <Plot
-                            key={`page74-${selectedPoints ? selectedPoints.map((arr) => arr.join('-')).join('_') : 'all'}-${plotHeight}`}
-                            data={plotData}
-                            layout={{
-                                barmode: 'stack',
-                                bargap: 0.15,
+                    <figure
+                        ref={chartRef}
+                        className="page74-chart"
+                        role="region"
+                        aria-label={chartTitle}
+                        tabIndex={0}
+                        style={{ margin: 0 }}
+                    >
+                        <Page74Plot
+                            plotData={plotData}
+                            plotLayout={{
                                 showlegend: false,
-                                hoverlabel: {
-                                    bgcolor: '#ffffff',
-                                    font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
-                                },
                                 hovermode: 'closest',
-                                hoverdistance: 40,
+                                hoverdistance: 50,
+                                hoverlabel: HOVER_LABEL,
                                 clickmode: 'event',
                                 dragmode: false,
                                 margin: { t: plotTopMargin, b: plotBottomMargin, l: 72, r: 24 },
@@ -606,8 +781,12 @@ const Page74 = () => {
                                 plot_bgcolor: 'rgba(0,0,0,0)',
                                 autosize: true,
                                 xaxis: {
+                                    tickmode: 'array',
                                     tickvals: yearTicks,
                                     ticktext: yearTicks.map(String),
+                                    range: years.length
+                                        ? [years[0], years[years.length - 1]]
+                                        : undefined,
                                     tickfont: tickFont,
                                     showgrid: false,
                                     showline: true,
@@ -631,7 +810,7 @@ const Page74 = () => {
                                     fixedrange: true,
                                 },
                             }}
-                            config={{
+                            chartConfig={{
                                 displayModeBar: true,
                                 displaylogo: false,
                                 responsive: true,
@@ -657,9 +836,8 @@ const Page74 = () => {
                                     click: (gd) => downloadChartPng(gd),
                                 }],
                             }}
-                            style={{ width: '100%', height: '100%' }}
-                            useResizeHandler
-                            onClick={handleChartClick}
+                            plotHeight={plotHeight}
+                            onPlotReady={onPlotReady}
                         />
                     </figure>
 

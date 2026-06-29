@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import Page76HydroMapLayer, { Page76HydroForegroundOverlays } from '../components/Page76HydroInfographic';
+import Page76HydroMapLayer, { Page76HydroForegroundOverlays, Page76HoverTooltip } from '../components/Page76HydroInfographic';
 import { getPage76Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
@@ -29,6 +29,29 @@ const MODEBAR_REMOVE = [
 ];
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
+
+const getPlotTooltipPosition = (event, bgRef, chartRef) => {
+    const bgEl = bgRef.current;
+    if (!bgEl) return null;
+    const bgRect = bgEl.getBoundingClientRect();
+    const mouseEv = event?.event ?? event?.nativeEvent;
+    if (mouseEv && Number.isFinite(mouseEv.clientX) && Number.isFinite(mouseEv.clientY)) {
+        return {
+            left: mouseEv.clientX - bgRect.left,
+            top: mouseEv.clientY - bgRect.top,
+        };
+    }
+    const pt = event?.points?.[0];
+    const plotEl = chartRef.current?.querySelector('.plot-container') ?? chartRef.current;
+    if (pt?.bbox && plotEl) {
+        const plotRect = plotEl.getBoundingClientRect();
+        return {
+            left: plotRect.left - bgRect.left + (pt.bbox.x0 + pt.bbox.x1) / 2,
+            top: plotRect.top - bgRect.top + (pt.bbox.y0 + pt.bbox.y1) / 2,
+        };
+    }
+    return null;
+};
 
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
@@ -68,6 +91,22 @@ const wrapTickLabel = (text, maxLength) => {
 const PAGE76_FAC_WRAP_ZOOM = 2.5;
 const PAGE76_FAC_WRAP_DEEP_ZOOM = 3.25;
 
+const Page76Plot = memo(function Page76Plot({
+    plotKey, plotData, plotLayout, chartConfig, onPlotReady,
+}) {
+    return (
+        <Plot
+            key={plotKey}
+            data={plotData}
+            layout={plotLayout}
+            config={chartConfig}
+            style={{ width: '100%', height: '100%' }}
+            useResizeHandler
+            onInitialized={onPlotReady}
+        />
+    );
+});
+
 const createInitialViewportZoom = () => {
     if (typeof window === 'undefined') {
         return { pinScale: 1, layoutRatio: 1, cssZoomFactor: 1, dprZoomFactor: 1, screenZoomHint: 1, outerInnerZoom: 1 };
@@ -98,16 +137,21 @@ const Page76 = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedPoints, setSelectedPoints] = useState(null);
+    const [hoverTip, setHoverTip] = useState(null);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [viewportZoom, setViewportZoom] = useState(createInitialViewportZoom);
 
     const chartRef = useRef(null);
+    const chartBgRef = useRef(null);
     const zoomBaselineRef = useRef(null);
     const tableTopRef = useRef(null);
     const tableScrollRef = useRef(null);
     const tableBottomRef = useRef(null);
     const lastClickRef = useRef({ time: 0, pointIndex: null });
+    const hoverHandlerRef = useRef(null);
+    const clickHandlerRef = useRef(null);
+    const hoverClearRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
@@ -364,7 +408,8 @@ const Page76 = () => {
         textfont: insideBarLabelFont,
         insidetextfont: insideBarLabelFont,
         cliponaxis: false,
-        hovertemplate: '<b>%{y}</b><br>%{customdata} MW<extra></extra>',
+        hoverinfo: 'none',
+        hovertemplate: '<extra></extra>',
     }], [facLabels, facValues, facilities, facBaseColors, selectedPoints, insideBarLabelFont, locale]);
 
     const facPlotLayout = useMemo(() => ({
@@ -414,18 +459,39 @@ const Page76 = () => {
         return undefined;
     };
 
+    const handleChartHover = useCallback((event) => {
+        const pt = event?.points?.[0];
+        if (!pt) return;
+        const pointIndex = getPointIndex(pt);
+        const row = pointIndex != null ? facilities[pointIndex] : null;
+        if (!row) return;
+        const position = getPlotTooltipPosition(event, chartBgRef, chartRef);
+        if (!position) return;
+        setHoverTip({
+            left: position.left,
+            top: position.top,
+            title: row.facility,
+            value: `${formatMw(row.capacity)} MW`,
+        });
+    }, [facilities, locale]);
+
     const handleChartClick = useCallback((event) => {
         if (!event?.points?.length) return;
         const pointIndex = getPointIndex(event.points[0]);
         if (pointIndex === undefined) return;
 
-        if (windowWidth <= 768) {
+        const isCoarsePointer = typeof window !== 'undefined'
+            && window.matchMedia('(pointer: coarse)').matches;
+
+        if (isCoarsePointer) {
             const now = Date.now();
             const last = lastClickRef.current;
             const isDoubleTap = pointIndex === last.pointIndex && now - last.time < 300;
             lastClickRef.current = { time: now, pointIndex };
             if (!isDoubleTap) return;
         }
+
+        setHoverTip(null);
 
         setSelectedPoints((prev) => {
             if (prev === null) return [pointIndex];
@@ -435,26 +501,45 @@ const Page76 = () => {
             }
             return [...prev, pointIndex];
         });
-    }, [windowWidth]);
+    }, []);
 
-    const bindPlotClickHandler = useCallback((graphDiv) => {
+    hoverHandlerRef.current = handleChartHover;
+    clickHandlerRef.current = handleChartClick;
+    hoverClearRef.current = () => setHoverTip(null);
+
+    const bindPlotHandlers = useCallback((graphDiv) => {
         if (!graphDiv?.on) return;
+        if (graphDiv._page76Hover) {
+            graphDiv.removeListener('plotly_hover', graphDiv._page76Hover);
+        }
+        if (graphDiv._page76Unhover) {
+            graphDiv.removeListener('plotly_unhover', graphDiv._page76Unhover);
+        }
         if (graphDiv._page76Click) {
             graphDiv.removeListener('plotly_click', graphDiv._page76Click);
         }
-        graphDiv._page76Click = handleChartClick;
-        graphDiv.on('plotly_click', handleChartClick);
-    }, [handleChartClick]);
+        const hoverHandler = (event) => hoverHandlerRef.current?.(event);
+        const unhoverHandler = () => hoverClearRef.current?.();
+        const clickHandler = (event) => clickHandlerRef.current?.(event);
+        graphDiv._page76Hover = hoverHandler;
+        graphDiv._page76Unhover = unhoverHandler;
+        graphDiv._page76Click = clickHandler;
+        graphDiv.on('plotly_hover', hoverHandler);
+        graphDiv.on('plotly_unhover', unhoverHandler);
+        graphDiv.on('plotly_click', clickHandler);
+    }, []);
 
     const onPlotReady = useCallback(
-        (_figure, graphDiv) => bindPlotClickHandler(graphDiv),
-        [bindPlotClickHandler],
+        (_figure, graphDiv) => bindPlotHandlers(graphDiv),
+        [bindPlotHandlers],
     );
 
     const clearSelection = () => {
         lastClickRef.current = { time: 0, pointIndex: null };
         setSelectedPoints(null);
     };
+
+    const handleChartWrapperLeave = useCallback(() => setHoverTip(null), []);
 
     const chartTitleSuffix = substitute(getText('page76_chart_title_suffix', lang), { year: referenceYear ?? '' });
     const chartTitleFull = `${stripHtml(getText('page76_chart_title', lang))}${stripHtml(chartTitleSuffix)}`;
@@ -648,15 +733,17 @@ const Page76 = () => {
 .page76-chart-bg-wrapper {
     position: relative;
     width: 100%;
+    isolation: isolate;
 }
-.page76-chart-overlay { position: relative; z-index: 2; width: 100%; }
-.page76-chart-scroll { width: 100%; overflow: visible; position: relative; }
+.page76-chart-overlay { position: relative; z-index: 2; width: 100%; pointer-events: auto; }
+.page76-chart-scroll { width: 100%; overflow: visible; position: relative; pointer-events: auto; }
 .page76-chart { width: 100%; min-width: 0; position: relative; z-index: 1; overflow: visible; }
 .page76-chart > div { width: 100%; height: 100%; overflow: visible; }
 .page76-chart .js-plotly-plot,
 .page76-chart .plot-container,
 .page76-chart .svg-container { overflow: visible !important; pointer-events: auto !important; }
 .page76-chart .js-plotly-plot .plotly .modebar { right: 4px !important; top: 2px !important; }
+.page76-chart .hoverlayer { display: none !important; }
 .page76-clear-selection {
     padding: 6px 12px;
     background-color: #8C8C8C;
@@ -679,6 +766,7 @@ const Page76 = () => {
     padding: 0;
     box-sizing: border-box;
     width: 100%;
+    pointer-events: none;
 }
 .page76-column-headers span { text-align: right; padding-right: 2px; box-sizing: border-box; }
 .page76-legend {
@@ -767,7 +855,12 @@ const Page76 = () => {
                         </button>
                     )}
 
-                    <div className="page76-chart-bg-wrapper" style={{ minHeight: facPlotHeight }}>
+                    <div
+                        className="page76-chart-bg-wrapper"
+                        ref={chartBgRef}
+                        style={{ minHeight: facPlotHeight }}
+                        onMouseLeave={handleChartWrapperLeave}
+                    >
                         <Page76HydroMapLayer minHeight={facPlotHeight} />
 
                         <div className="page76-chart-overlay">
@@ -784,15 +877,12 @@ const Page76 = () => {
                                     aria-label={chartTitleFull}
                                     tabIndex={0}
                                 >
-                                    <Plot
-                                        key={`page76-${useWrapLabels ? 'wrap' : 'plain'}-${Math.round(zoomEffective * 100)}-${facPlotHeight}-${facLeftMargin}`}
-                                        data={facPlotData}
-                                        layout={facPlotLayout}
-                                        config={chartConfig}
-                                        style={{ width: '100%', height: '100%' }}
-                                        useResizeHandler
-                                        onInitialized={onPlotReady}
-                                        onUpdate={onPlotReady}
+                                    <Page76Plot
+                                        plotKey={`page76-${useWrapLabels ? 'wrap' : 'plain'}-${Math.round(zoomEffective * 100)}-${facPlotHeight}-${facLeftMargin}`}
+                                        plotData={facPlotData}
+                                        plotLayout={facPlotLayout}
+                                        chartConfig={chartConfig}
+                                        onPlotReady={onPlotReady}
                                     />
                                 </figure>
                             </div>
@@ -803,7 +893,9 @@ const Page76 = () => {
                             damLabel={getText('page76_dam_label', lang)}
                             minHeight={facPlotHeight}
                             calloutLines={calloutLines}
+                            style={{ pointerEvents: 'none' }}
                         />
+                        <Page76HoverTooltip tip={hoverTip} />
                     </div>
 
                     <div className="page76-legend" aria-hidden="false">

@@ -7,13 +7,10 @@ import { getPage111Data } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page111ProvinceInfographic from '../components/Page111ProvinceInfographic';
 import {
-    IMAGE_TRIM,
-    NATIVE_SIZE,
-    OVERLAY_COLORS,
-    PCT_SLOTS,
     PROVINCE_ORDER,
+    exportPage111InfographicPng,
 } from '../components/Page111ProvinceInfographic.constants';
-import page111Bg from '../assets/page111_bg_1.png';
+import { getOtherFootnoteKeys } from '../utils/buildPage111BarrelSvg';
 
 const COLORS = {
     conventional: '#3C95C8',
@@ -622,110 +619,19 @@ const Page111 = () => {
     };
 
     const downloadInfographicPng = async () => {
-        const bgImage = page111Bg;
-        const slots = PCT_SLOTS;
-        const pctSuffix = lang === 'fr' ? ' %' : '%';
-        const native = NATIVE_SIZE;
-
-        const img = new Image();
-        img.src = bgImage;
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-        });
-
-        const scale = 2;
-        const layoutEl = infographicFigureRef.current;
-        const wrapperEl = layoutEl?.querySelector('.page111-infographic-wrapper');
-        const artEl = layoutEl?.querySelector('.page111-infographic-art');
-        const namesEl = layoutEl?.querySelector('.page111-province-names');
-        const exportGraphicHeight = wrapperEl?.offsetHeight ?? infographicHeight;
-        const exportGraphicWidth = wrapperEl?.offsetWidth ?? Math.round(exportGraphicHeight * (native.width / native.height));
-        const exportTotalWidth = layoutEl?.offsetWidth ?? (exportGraphicWidth + (namesEl?.offsetWidth ?? 0));
-        const trim = IMAGE_TRIM;
-        const contentWidthFrac = 1 - trim.left - trim.right;
-        const artWidth = artEl?.offsetWidth ?? exportGraphicWidth / contentWidthFrac;
-        const artOffsetX = artEl?.offsetLeft ?? (-trim.left / contentWidthFrac) * exportGraphicWidth;
-        const graphicHeight = exportGraphicHeight;
-        const canvas = document.createElement('canvas');
-        canvas.width = exportTotalWidth * scale;
-        canvas.height = graphicHeight * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(
-            img,
-            0,
-            0,
-            img.width,
-            img.height,
-            artOffsetX * scale,
-            0,
-            artWidth * scale,
-            graphicHeight * scale,
-        );
-
-        const pctFont = `bold ${Math.round(artWidth * scale * 0.045)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
-        const nameFont = `600 ${Math.round(graphicHeight * scale * 0.036)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
-        const labelX = exportTotalWidth * scale;
-        const labelColumnWidth = (namesEl?.offsetWidth ?? (lang === 'fr' ? 168 : 152)) * scale;
-        const wrapCanvasText = (text, maxWidth) => {
-            ctx.font = nameFont;
-            const words = text.split(/\s+/);
-            const lines = [];
-            let current = words[0] ?? '';
-            for (let i = 1; i < words.length; i += 1) {
-                const next = `${current} ${words[i]}`;
-                if (ctx.measureText(next).width <= maxWidth) {
-                    current = next;
-                } else {
-                    lines.push(current);
-                    current = words[i];
-                }
-            }
-            if (current) lines.push(current);
-            return lines;
-        };
-
-        PROVINCE_ORDER.forEach((key) => {
-            const slot = slots[key];
-            const values = provinceOverlayValues?.[key];
-            if (!slot || !values) return;
-            const color = OVERLAY_COLORS[key];
-            const pctText = values.sharePct != null ? `${formatPct(values.sharePct, 1)}${pctSuffix}` : null;
-            const nameText = getProvinceLabel(key);
-
-            if (pctText && pctText !== '–') {
-                ctx.fillStyle = color;
-                ctx.font = pctFont;
-                ctx.textBaseline = 'middle';
-                ctx.textAlign = slot.align === 'left' ? 'left' : 'right';
-                const x = artOffsetX * scale + (slot.left / 100) * artWidth * scale;
-                const y = (slot.top / 100) * graphicHeight * scale;
-                ctx.fillText(pctText, x, y);
-            }
-
-            if (nameText) {
-                ctx.fillStyle = color;
-                ctx.font = nameFont;
-                ctx.textAlign = 'right';
-                const anchorY = (slot.top / 100) * graphicHeight * scale;
-                const lines = wrapCanvasText(nameText, labelColumnWidth);
-                const lineHeight = Math.round(graphicHeight * scale * 0.036 * 1.2);
-                const blockHeight = lineHeight * lines.length;
-                let lineY = anchorY - blockHeight / 2 + lineHeight / 2;
-                lines.forEach((line) => {
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(line, labelX, lineY);
-                    lineY += lineHeight;
-                });
-            }
-        });
-
+        const canvas = await exportPage111InfographicPng(infographicFigureRef.current, { scale: 2 });
+        if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${infographicPngSlug}.png`);
         });
     };
+
+    const otherFootnoteKeys = getOtherFootnoteKeys(provinceOverlayValues);
+    const otherFootnoteText = otherFootnoteKeys.length
+        ? (lang === 'en'
+            ? `Other: ${otherFootnoteKeys.map((key) => getProvinceLabel(key)).join(', ')}.`
+            : `Autres : ${otherFootnoteKeys.map((key) => getProvinceLabel(key)).join(', ')}.`)
+        : null;
 
     if (loading) return <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>;
     if (error) return <p>{error}</p>;
@@ -1224,9 +1130,11 @@ const Page111 = () => {
 
                 <h2 className="page111-infographic-heading">
                     <span id="fn-province-rf-page111">{infographicTitleBase}</span>
-                    <a className="fn-lnk" href="#fn-province-page111" onClick={scrollToElement('fn-province-page111')}>
-                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
-                    </a>
+                    {otherFootnoteText ? (
+                        <a className="fn-lnk" href="#fn-province-page111" onClick={scrollToElement('fn-province-page111')}>
+                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                        </a>
+                    ) : null}
                 </h2>
 
                 <Page111ProvinceInfographic
@@ -1292,17 +1200,19 @@ const Page111 = () => {
                     <h2 id="fn-page111">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
                     <dl>
                         <dt className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</dt>
-                        <dd id="fn-province-page111">
-                            <a
-                                href="#fn-province-rf-page111"
-                                onClick={scrollToElement('fn-province-rf-page111')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('page111_footnote_other', lang)}
-                        </dd>
+                        {otherFootnoteText ? (
+                            <dd id="fn-province-page111">
+                                <a
+                                    href="#fn-province-rf-page111"
+                                    onClick={scrollToElement('fn-province-rf-page111')}
+                                    className="fn-num"
+                                    title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
+                                >
+                                    <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
+                                </a>
+                                {' '}{otherFootnoteText}
+                            </dd>
+                        ) : null}
                     </dl>
                 </aside>
             </div>

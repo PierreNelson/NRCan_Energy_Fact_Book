@@ -436,3 +436,169 @@ ELEC_EU_METADATA = [
     ("elec_eu_ONT_pct", "Electrical energy use share - Ontario", "Percent", "percent", "Natural Resources Canada (OEE)", ELEC_EU_SOURCE_URL),
     ("elec_eu_QUE_pct", "Electrical energy use share - Quebec", "Percent", "percent", "Natural Resources Canada (OEE)", ELEC_EU_SOURCE_URL),
 ]
+
+ELECTRICITY_PRICES_XLSX = "Average prices (ELE-Res&Ind).xlsx"
+ELECTRICITY_PRICES_SHEET = "Average Prices (ELE-Res&Ind)"
+ELECTRICITY_PRICES_SOURCE_URL = (
+    "https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578"
+)
+ELECTRICITY_PRICES_SOURCE_ORG = "Natural Resources Canada"
+ELECTRICITY_PRICES_IN_SCOPE_CITY_KEYS = [
+    "montreal",
+    "calgary",
+    "charlottetown",
+    "edmonton",
+    "halifax",
+    "moncton",
+    "ottawa",
+    "regina",
+    "st_johns",
+    "toronto",
+    "vancouver",
+    "winnipeg",
+]
+WIND_SOLAR_ELEC_BASE_YEAR = 2011
+WIND_SOLAR_ELEC_RANKING_YEAR = 2023
+WIND_SOLAR_ELEC_GEN_2011_XLSX = "2011 Electricity generation.xlsx"
+WIND_SOLAR_ELEC_GEN_2011_SHEET = "Ele generation data (2011)"
+WIND_SOLAR_ELEC_GEN_DIST_XLSX = "Generation - 2020-2024 NRCan External Distribution.xlsx"
+WIND_SOLAR_ELEC_SOURCE_URL = ELECTRICITY_GENERATION_SOURCE_URL
+WIND_SOLAR_ELEC_SOURCE_ORG = ELECTRICITY_GENERATION_SOURCE_ORG
+
+WIND_SOLAR_ELEC_NON_EMITTING_RANK = [
+    ("canada", 1, 80),
+    ("usa", 2, 40),
+    ("russia", 3, 37),
+    ("china", 4, 35),
+    ("india", 5, 22),
+]
+
+WIND_SOLAR_ELEC_METADATA = [
+    ("ws_elec_wind_gwh", "Wind net electricity generation", "GWh", "gigawatt-hours", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_solar_gwh", "Solar net electricity generation", "GWh", "gigawatt-hours", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_renewable_pct_change", "Renewable electricity generation percent change", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_non_ghg_pct", "Non-GHG emitting electricity share", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_hydro_pct", "Hydroelectricity share of generation", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_nuclear_pct", "Nuclear electricity share of generation", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_other_renewables_pct", "Other renewables share of generation", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_start_year", "Wind and solar series start year", "Year", "year", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_end_year", "Wind and solar series end year", "Year", "year", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_ranking_year", "Non-emitting electricity ranking reference year", "Year", "year", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_canada_pct", "Canada non-emitting electricity share", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_usa_pct", "United States non-emitting electricity share", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_russia_pct", "Russia non-emitting electricity share", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_china_pct", "China non-emitting electricity share", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_india_pct", "India non-emitting electricity share", "Percent", "percent", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_canada_order", "Canada non-emitting electricity rank", "Rank", "rank", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_usa_order", "United States non-emitting electricity rank", "Rank", "rank", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_russia_order", "Russia non-emitting electricity rank", "Rank", "rank", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_china_order", "China non-emitting electricity rank", "Rank", "rank", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+    ("ws_elec_rank_india_order", "India non-emitting electricity rank", "Rank", "rank", WIND_SOLAR_ELEC_SOURCE_ORG, WIND_SOLAR_ELEC_SOURCE_URL),
+]
+
+WNA_URANIUM_PRODUCTION_URL = (
+    "https://world-nuclear.org/information-library/nuclear-fuel-cycle/"
+    "mining-of-uranium/world-uranium-mining-production.aspx"
+)
+WNA_URANIUM_SOURCE_ORG = "World Nuclear Association"
+REDBOOK_XLSX = "oecd-nea_theredbook.xlsx"
+REDBOOK_SOURCE_ORG = "OECD NEA / IAEA"
+REDBOOK_SOURCE_URL = "https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand"
+
+URANIUM_COUNTRY_IDS = {
+    "kazakhstan": 1,
+    "canada": 2,
+    "namibia": 3,
+    "australia": 4,
+    "uzbekistan": 5,
+    "russia": 6,
+    "niger": 7,
+    "china": 8,
+    "india": 9,
+    "south_africa": 10,
+    "ukraine": 11,
+    "usa": 12,
+    "pakistan": 13,
+    "brazil": 14,
+}
+
+URANIUM_WNA_NAME_TO_KEY = {
+    "kazakhstan": "kazakhstan",
+    "canada": "canada",
+    "namibia": "namibia",
+    "australia": "australia",
+    "uzbekistan": "uzbekistan",
+    "russia": "russia",
+    "niger": "niger",
+    "china": "china",
+    "india": "india",
+    "south africa": "south_africa",
+    "ukraine": "ukraine",
+    "usa": "usa",
+    "united states": "usa",
+    "pakistan": "pakistan",
+    "brazil": "brazil",
+}
+
+URANIUM_EXPORT_MULTIPLIERS = {
+    "kazakhstan": 1.0,
+    "canada": 0.8,
+    "namibia": 1.0,
+    "australia": 1.0,
+    "uzbekistan": 1.0,
+    "niger": 1.0,
+}
+
+URANIUM_REDBOOK_LOCATION_TO_KEY = {
+    "australia": "australia",
+    "kazakhstan": "kazakhstan",
+    "canada": "canada",
+    "namibia": "namibia",
+    "russia": "russia",
+    "niger": "niger",
+    "china": "china",
+    "india": "india",
+    "south africa": "south_africa",
+    "ukraine": "ukraine",
+    "usa": "usa",
+    "united states": "usa",
+    "pakistan": "pakistan",
+    "brazil": "brazil",
+}
+
+URANIUM_INTERNATIONAL_METADATA = [
+    ("urani_prod_total_kt", "World uranium production total", "kt", "kilotonnes", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+    ("urani_prod_canada_share_pct", "Canada share of world uranium production", "Percent", "percent", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+    ("urani_prod_canada_rank", "Canada rank in world uranium production", "Rank", "rank", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+    ("urani_exp_total_kt", "World uranium exports total", "kt", "kilotonnes", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+    ("urani_exp_canada_share_pct", "Canada share of world uranium exports", "Percent", "percent", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+    ("urani_exp_canada_rank", "Canada rank in world uranium exports", "Rank", "rank", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+    ("urani_res_total_mt", "World known recoverable uranium resources total", "Mt", "megatonnes", REDBOOK_SOURCE_ORG, REDBOOK_SOURCE_URL),
+    ("urani_res_canada_share_pct", "Canada share of world known recoverable uranium resources", "Percent", "percent", REDBOOK_SOURCE_ORG, REDBOOK_SOURCE_URL),
+    ("urani_res_canada_rank", "Canada rank in world known recoverable uranium resources", "Rank", "rank", REDBOOK_SOURCE_ORG, REDBOOK_SOURCE_URL),
+]
+
+for _rank in range(1, 6):
+    URANIUM_INTERNATIONAL_METADATA.extend([
+        (f"urani_prod_top{_rank}_share_pct", f"World uranium production top {_rank} share", "Percent", "percent", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+        (f"urani_prod_top{_rank}_country_id", f"World uranium production top {_rank} country", "Country ID", "country", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+        (f"urani_exp_top{_rank}_share_pct", f"World uranium exports top {_rank} share", "Percent", "percent", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+        (f"urani_exp_top{_rank}_country_id", f"World uranium exports top {_rank} country", "Country ID", "country", WNA_URANIUM_SOURCE_ORG, WNA_URANIUM_PRODUCTION_URL),
+        (f"urani_res_top{_rank}_share_pct", f"World known recoverable uranium resources top {_rank} share", "Percent", "percent", REDBOOK_SOURCE_ORG, REDBOOK_SOURCE_URL),
+        (f"urani_res_top{_rank}_country_id", f"World known recoverable uranium resources top {_rank} country", "Country ID", "country", REDBOOK_SOURCE_ORG, REDBOOK_SOURCE_URL),
+    ])
+
+ELECTRICITY_PRICES_CITY_TITLES = {
+    "vancouver": "Vancouver",
+    "edmonton": "Edmonton",
+    "regina": "Regina",
+    "winnipeg": "Winnipeg",
+    "toronto": "Toronto",
+    "montreal": "Montréal",
+    "charlottetown": "Charlottetown",
+    "halifax": "Halifax",
+    "moncton": "Moncton",
+    "st_johns": "St. John's",
+    "calgary": "Calgary",
+    "ottawa": "Ottawa",
+}

@@ -1,5 +1,6 @@
 """Section 6 shared constants: vector IDs, URLs, and metadata tuples."""
 
+from pathlib import Path
 from typing import Dict
 
 # StatCan vector IDs (numeric, without leading v)
@@ -93,12 +94,18 @@ CANADIAN_PRODUCTION_METADATA = [
     ('cp_prov_mb_thousand_m3', 'Manitoba crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_bc_thousand_m3', 'British Columbia crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_other_thousand_m3', 'Other provinces crude oil production', 'thousand cubic metres', 'units'),
+    ('cp_prov_ns_thousand_m3', 'Nova Scotia crude oil production', 'thousand cubic metres', 'units'),
+    ('cp_prov_on_thousand_m3', 'Ontario crude oil production', 'thousand cubic metres', 'units'),
+    ('cp_prov_nt_thousand_m3', 'Northwest Territories crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_ab_pct', 'Alberta share of Canadian crude oil production (Page 111)', 'percent', 'units'),
     ('cp_prov_sk_pct', 'Saskatchewan share of Canadian crude oil production (Page 111)', 'percent', 'units'),
     ('cp_prov_nl_pct', 'Newfoundland and Labrador share of Canadian crude oil production (Page 111)', 'percent', 'units'),
     ('cp_prov_mb_pct', 'Manitoba share of Canadian crude oil production (Page 111)', 'percent', 'units'),
     ('cp_prov_bc_pct', 'British Columbia share of Canadian crude oil production (Page 111)', 'percent', 'units'),
     ('cp_prov_other_pct', 'Other provinces share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_ns_pct', 'Nova Scotia share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_on_pct', 'Ontario share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_nt_pct', 'Northwest Territories share of Canadian crude oil production (Page 111)', 'percent', 'units'),
 ]
 
 CP_PROVINCE_GEOS = {
@@ -109,11 +116,60 @@ CP_PROVINCE_GEOS = {
     'cp_prov_bc_thousand_m3': 'British Columbia',
 }
 
+CP_OTHER_SUB_GEOS = {
+    'cp_prov_ns_thousand_m3': 'Nova Scotia',
+    'cp_prov_on_thousand_m3': 'Ontario',
+    'cp_prov_nt_thousand_m3': 'Northwest Territories',
+}
+
 CP_PROVINCE_PCT_VECTORS = {
     'cp_prov_ab_thousand_m3': 'cp_prov_ab_pct',
     'cp_prov_sk_thousand_m3': 'cp_prov_sk_pct',
     'cp_prov_nl_thousand_m3': 'cp_prov_nl_pct',
     'cp_prov_mb_thousand_m3': 'cp_prov_mb_pct',
     'cp_prov_bc_thousand_m3': 'cp_prov_bc_pct',
+    'cp_prov_ns_thousand_m3': 'cp_prov_ns_pct',
+    'cp_prov_on_thousand_m3': 'cp_prov_on_pct',
+    'cp_prov_nt_thousand_m3': 'cp_prov_nt_pct',
     'cp_prov_other_thousand_m3': 'cp_prov_other_pct',
 }
+
+# Page 110 — petroleum reserves and Western Canada oil wells
+PETROLEUM_EMP_XLSX = 'energy_rankings_and_petroleum_emp.xlsx'
+PETROLEUM_RESERVES_SUMMARY_SHEET = 'petroleum_reserves_summary'
+MB_OIL_WELLS_SHEET = 'mb_oil_wells_count_depth'
+PETROLEUM_RESERVES_SEED_DIR = Path(__file__).resolve().parents[3].parent / 'NRCan_Energy_Factbook_data'
+
+AER_ST59_URL = 'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59'
+SK_OIL_WELLS_URL = (
+    'https://www.petrinex.gov.ab.ca/publicdata/API/Files/SK/Infra/Well%20Infrastructure/CSV'
+)
+# BC ER data centre landing page lists several downloads; completion/workover
+# data for oil wells is in the IRIS "Drilling Data for All Wells" CSV zip.
+BC_OIL_WELLS_URL = 'https://iris.bcogc.ca/download/drill_csv.zip'
+BC_OIL_WELLS_COMPLETIONS_CSV = 'compl_wo.csv'
+
+BROWSER_HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    ),
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-CA,en;q=0.9',
+    'Referer': 'https://www.aer.ca/',
+}
+
+PETROLEUM_RESERVES_METADATA = [
+    ('cr_res_total_bb', 'Total remaining established crude oil reserves', 'billion barrels', 'units'),
+    ('cr_res_conventional_bb', 'Conventional remaining established crude oil reserves', 'billion barrels', 'units'),
+    ('cr_res_oil_sands_bb', 'Oil sands remaining established crude oil reserves', 'billion barrels', 'units'),
+    ('cr_res_mining_bb', 'Mining remaining established crude oil reserves', 'billion barrels', 'units'),
+    ('cr_res_insitu_bb', 'In situ remaining established crude oil reserves', 'billion barrels', 'units'),
+    ('cr_res_reporting_year', 'Petroleum reserves reporting year', 'year', 'units'),
+]
+
+WESTERN_CANADA_OIL_WELLS_METADATA = [
+    ('wc_oil_wells_completed', 'Western Canada oil wells completed', 'wells', 'units'),
+    ('wc_oil_total_metres', 'Western Canada oil wells total metres drilled', 'metres', 'units'),
+    ('wc_oil_avg_depth_m', 'Western Canada oil wells average depth', 'metres', 'units'),
+]

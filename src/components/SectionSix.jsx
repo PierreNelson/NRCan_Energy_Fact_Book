@@ -7,6 +7,7 @@ import Page107 from '../pages/Page107';
 import Page108 from '../pages/Page108';
 import Page111 from '../pages/Page111';
 import Page112 from '../pages/Page112';
+import Page110 from '../pages/Page110';
 import Page113 from '../pages/Page113';
 import Page117 from '../pages/Page117';
 import Page119 from '../pages/Page119';
@@ -63,6 +64,9 @@ const SectionSix = () => {
             </div>
             <div id="canadian-crude-production" className="stacked-page-wrapper">
                 <Page111 />
+            </div>
+            <div id="canadian-crude-reserves" className="stacked-page-wrapper">
+                <Page110 />
             </div>
             <div id="canadian-supply-demand" className="stacked-page-wrapper">
                 <Page112 />

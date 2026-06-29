@@ -52,8 +52,12 @@ SOURCE_VECTOR_PREFIXES = {
     'major_hydro_facilities': ['hydro_fac_'],
     'solid_biofuels': ['sbio_'],
     'electrical_energy_use': ['elec_eu_'],
+    'electricity_prices': ['elec_price_'],
+    'wind_solar_electricity_growth': ['ws_elec_'],
     'kal_gas_prices': ['kal_'],
     'osm_refin_cap': ['refcap_'],
+    'petroleum_reserves': ['cr_res_'],
+    'western_canada_oil_wells': ['wc_oil_'],
 }
 
 # Source name to display name mapping (human-readable)
@@ -98,8 +102,12 @@ SOURCE_DISPLAY_NAMES = {
     'major_hydro_facilities': 'Major hydro facilities in Canada (1,000 MW+)',
     'solid_biofuels': 'Canadian production of solid biofuels',
     'electrical_energy_use': 'Electrical energy use by sector and province',
+    'electricity_prices': 'Average large industrial and residential electricity prices',
+    'wind_solar_electricity_growth': 'Wind and solar net electricity generation growth in Canada',
     'kal_gas_prices': 'Gasoline retail price components (Kalibrate)',
     'osm_refin_cap': 'Canadian refinery capacity (Oil Sands Magazine)',
+    'petroleum_reserves': 'Canadian proved reserves of crude oil',
+    'western_canada_oil_wells': 'Western Canada oil wells completed',
 }
 
 

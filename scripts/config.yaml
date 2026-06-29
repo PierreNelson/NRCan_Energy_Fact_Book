@@ -285,6 +285,24 @@ sections:
         description: "Electrical energy use by sector and province (Page 68, OEE NEUD)"
         source_type: "external"
         source_url: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html"
+      electricity_prices:
+        enabled: true
+        description: "Average large industrial and residential electricity prices (Page 69, HydroQ)"
+        source_type: "external"
+        source_url: "https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578"
+        file_path: "Average prices (ELE-Res&Ind).xlsx"
+      wind_solar_electricity_growth:
+        enabled: true
+        description: "Wind and solar net electricity generation growth in Canada (Page 70)"
+        source_type: "external"
+        source_url: "https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-generation/20579"
+        file_path: "2011 Electricity generation.xlsx"
+      uranium_international:
+        enabled: true
+        description: "Uranium international context — world exports, production, recoverable resources (Page 85)"
+        source_type: "web"
+        source_url: "https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx"
+        file_path: "oecd-nea_theredbook.xlsx"
 
   # Section 6: Oil, Natural Gas and Coal
   section6_indicators:
@@ -327,6 +345,16 @@ sections:
         description: "Canadian refinery capacity by province (Oil Sands Magazine, Page 139)"
         source_type: "web"
         source_url: "https://www.oilsandsmagazine.com/projects/canadian-refineries"
+      petroleum_reserves:
+        enabled: true
+        description: "Canadian proved reserves of crude oil (Page 110 infographic)"
+        source_type: "file"
+        file_path: "../NRCan_Energy_Factbook_data/energy_rankings_and_petroleum_emp.xlsx"
+      western_canada_oil_wells:
+        enabled: true
+        description: "Count and average depth of oil wells completed in Western Canada (Page 110)"
+        source_type: "external"
+        source_url: "https://www.aer.ca/data-and-performance-reports/statistical-reports/st59"
 
 # ============================================================================
 # EXPORT CONFIGURATION

@@ -436,6 +436,12 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_page60_clean_technology_economy', lang)}
                             </NavLink>
+                            <NavLink
+                                to="/section-5#biofuels-transportation"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_page91_biofuels_transportation', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>

@@ -44,6 +44,18 @@ from .electrical_energy_use import (
     transform_electrical_energy_use,
     update_electrical_energy_use,
 )
+from .electricity_prices import (
+    transform_electricity_prices,
+    update_electricity_prices,
+)
+from .wind_solar_electricity_growth import (
+    transform_wind_solar_electricity_growth,
+    update_wind_solar_electricity_growth,
+)
+from .uranium_international import (
+    transform_uranium_international,
+    update_uranium_international,
+)
 
 
 def _chain(update_fn, transform_fn):
@@ -94,6 +106,9 @@ class Section5CleanPower(SectionProcessor):
             'major_hydro_facilities': lambda: update_major_hydro_facilities(self),
             'solid_biofuels': lambda: update_solid_biofuels(self),
             'electrical_energy_use': lambda: update_electrical_energy_use(self),
+            'electricity_prices': lambda: update_electricity_prices(self),
+            'wind_solar_electricity_growth': lambda: update_wind_solar_electricity_growth(self),
+            'uranium_international': lambda: update_uranium_international(self),
         }
 
     def get_transform_handlers(self) -> Dict[str, callable]:
@@ -115,6 +130,9 @@ class Section5CleanPower(SectionProcessor):
             'major_hydro_facilities': lambda: transform_major_hydro_facilities(self),
             'solid_biofuels': lambda: transform_solid_biofuels(self),
             'electrical_energy_use': lambda: transform_electrical_energy_use(self),
+            'electricity_prices': lambda: transform_electricity_prices(self),
+            'wind_solar_electricity_growth': lambda: transform_wind_solar_electricity_growth(self),
+            'uranium_international': lambda: transform_uranium_international(self),
         }
 
     def get_source_handlers(self) -> Dict[str, callable]:

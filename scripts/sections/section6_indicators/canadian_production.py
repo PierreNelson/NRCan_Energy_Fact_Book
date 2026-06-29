@@ -7,7 +7,12 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from .constants import CANADIAN_PRODUCTION_METADATA, CP_PROVINCE_GEOS, CP_PROVINCE_PCT_VECTORS
+from .constants import (
+    CANADIAN_PRODUCTION_METADATA,
+    CP_OTHER_SUB_GEOS,
+    CP_PROVINCE_GEOS,
+    CP_PROVINCE_PCT_VECTORS,
+)
 from .oil_sands import (
     _download_os_statcan_csv,
     _os_annual_canada_totals,
@@ -41,7 +46,7 @@ S63_CANADA_CATEGORY_KEYS = {
 
 S63_PROVINCE_RAW_KEYS = {
     vector: f's63_prov_{vector.removeprefix("cp_prov_").removesuffix("_thousand_m3")}_m3'
-    for vector in CP_PROVINCE_GEOS
+    for vector in {**CP_PROVINCE_GEOS, **CP_OTHER_SUB_GEOS}
 }
 
 
@@ -147,7 +152,15 @@ def _build_raw_statcan_rows(
             province_sum += value
         if not complete:
             continue
-        year_rows.append(('raw_cp_s63_prov_other_m3', year_key, max(canada_m3 - province_sum, 0.0)))
+        other_sub_sum = 0.0
+        for thousand_vec, geo in CP_OTHER_SUB_GEOS.items():
+            value = max(_cp_annual_crude_m3(df_new, year, geo), 0.0)
+            raw_key = S63_PROVINCE_RAW_KEYS[thousand_vec]
+            year_rows.append((f'raw_cp_{raw_key}', year_key, value))
+            other_sub_sum += value
+        year_rows.append(
+            ('raw_cp_s63_prov_other_m3', year_key, max(canada_m3 - province_sum - other_sub_sum, 0.0)),
+        )
         rows.extend(year_rows)
 
     return rows
@@ -223,7 +236,7 @@ def _transform_province_rows(raw_by_year: Dict[str, Dict[str, float]]) -> List[T
 
         province_m3: Dict[str, float] = {}
         complete = True
-        for thousand_vec, geo in CP_PROVINCE_GEOS.items():
+        for thousand_vec in CP_PROVINCE_GEOS:
             raw_key = S63_PROVINCE_RAW_KEYS[thousand_vec]
             value = _raw_lookup(raw_by_year, year_key, raw_key)
             if value <= 0:
@@ -232,6 +245,10 @@ def _transform_province_rows(raw_by_year: Dict[str, Dict[str, float]]) -> List[T
             province_m3[thousand_vec] = value
         if not complete:
             continue
+
+        for thousand_vec in CP_OTHER_SUB_GEOS:
+            raw_key = S63_PROVINCE_RAW_KEYS[thousand_vec]
+            province_m3[thousand_vec] = max(_raw_lookup(raw_by_year, year_key, raw_key), 0.0)
 
         other_m3 = _raw_lookup(raw_by_year, year_key, 's63_prov_other_m3')
         rows.append(('cp_prov_canada_thousand_m3', year_key, round(canada_m3 / 1000, 1)))

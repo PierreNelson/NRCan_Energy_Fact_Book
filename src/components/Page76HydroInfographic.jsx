@@ -65,9 +65,12 @@ const foregroundStyles = (calloutFonts, labelFonts) => `
     inset: 0;
     width: 100%;
     container-type: inline-size;
-    pointer-events: none;
+    pointer-events: none !important;
     z-index: 4;
     overflow: visible;
+}
+.page76-foreground-overlays * {
+    pointer-events: none !important;
 }
 .page76-dam-image {
     position: absolute;
@@ -77,6 +80,7 @@ const foregroundStyles = (calloutFonts, labelFonts) => `
     height: auto;
     z-index: 1;
     display: block;
+    pointer-events: none;
 }
 .page76-overlay-layer {
     position: absolute;
@@ -132,6 +136,7 @@ export const Page76HydroForegroundOverlays = ({
     damLabel,
     calloutLines,
     minHeight,
+    style,
 }) => {
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const calloutSlots = TOTAL_CAPACITY_CALLOUT[overlayLang];
@@ -140,7 +145,7 @@ export const Page76HydroForegroundOverlays = ({
     const labelFonts = TOTAL_CAPACITY_LABEL.fonts;
 
     return (
-        <div className="page76-foreground-overlays" style={{ minHeight }} aria-hidden="true">
+        <div className="page76-foreground-overlays" style={{ minHeight, ...style }} aria-hidden="true">
             <style>{foregroundStyles(calloutFonts, labelFonts)}</style>
 
             <img src={page76BgDam} alt="" className="page76-dam-image" draggable={false} />
@@ -174,6 +179,51 @@ export const Page76HydroForegroundOverlays = ({
                 </div>
             ) : null}
         </div>
+    );
+};
+
+const hoverTipStyles = `
+.page76-hover-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    overflow: visible;
+}
+.page76-hover-tip {
+    position: absolute;
+    z-index: 10;
+    pointer-events: none;
+    background: #ffffff;
+    border: 1px solid #000000;
+    padding: 8px 12px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #000000;
+    line-height: 1.3;
+    transform: translate(12px, -50%);
+}
+.page76-hover-tip strong { display: block; font-weight: 700; }
+.page76-hover-tip span { display: block; }
+`;
+
+export const Page76HoverTooltip = ({ tip }) => {
+    if (!tip) return null;
+    return (
+        <>
+            <style>{hoverTipStyles}</style>
+            <div className="page76-hover-layer" aria-hidden={false}>
+                <div
+                    className="page76-hover-tip"
+                    style={{ left: tip.left, top: tip.top }}
+                    role="tooltip"
+                >
+                    <strong>{tip.title}</strong>
+                    <span>{tip.value}</span>
+                </div>
+            </div>
+        </>
     );
 };
 
