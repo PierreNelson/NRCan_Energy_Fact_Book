@@ -1,0 +1,36 @@
+trigger: none 
+
+schedules:
+- cron: "0 9 * * *" 
+  displayName: Daily GitHub Sync
+  branches:
+    include:
+    - main
+  always: true
+
+jobs:
+- job: SyncGitHubToADO
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - checkout: none 
+
+  - script: |
+      echo "Cloning from GitHub..."
+      git clone --mirror https://$GitHubPAT@github.com/PierreNelson/NRCan_Energy_Fact_Book.git repo-mirror.git
+      
+      cd repo-mirror.git
+      
+      echo "Setting ADO remote..."
+      git remote add ado https://dev.azure.com/nrcan-ess-energy-fact-book-modernization/_git/Project
+      
+      echo "Injecting ADO Authentication Header..."
+      git config http.extraheader "AUTHORIZATION: bearer $ADO_TOKEN"
+      
+      echo "Pushing mirror to Azure DevOps..."
+      git push --mirror ado
+      
+    env:
+      GitHubPAT: $(GitHub_PAT_Secret)
+      ADO_TOKEN: $(System.AccessToken)
+    displayName: 'Mirror Git History from GitHub to ADO'
