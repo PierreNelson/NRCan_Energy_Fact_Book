@@ -3,14 +3,14 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage111Data } from '../utils/dataLoader';
+import { getCanadianCrudeProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page111ProvinceInfographic from '../components/Page111ProvinceInfographic';
 import {
     PROVINCE_ORDER,
-    exportPage111InfographicPng,
+    exportCanadianProductionInfographicPng,
 } from '../components/Page111ProvinceInfographic.constants';
-import { getOtherFootnoteKeys } from '../utils/buildPage111BarrelSvg';
+import { getOtherFootnoteKeys } from '../utils/buildCanadianProductionBarrelSvg';
 
 const COLORS = {
     conventional: '#3C95C8',
@@ -131,7 +131,7 @@ const Page111 = () => {
     );
 
     useEffect(() => {
-        getPage111Data()
+        getCanadianCrudeProductionData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -619,7 +619,7 @@ const Page111 = () => {
     };
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportPage111InfographicPng(infographicFigureRef.current, { scale: 2 });
+        const canvas = await exportCanadianProductionInfographicPng(infographicFigureRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${infographicPngSlug}.png`);

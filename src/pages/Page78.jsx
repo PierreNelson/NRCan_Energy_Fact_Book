@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage78Data } from '../utils/dataLoader';
+import { getSolidBiofuelsProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const BAR_KEYS = ['pulping', 'swr', 'firewood', 'pellets'];
@@ -59,7 +59,7 @@ const substitute = (text, vars) =>
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-/** ~400% browser zoom — same DPR band as Page138. */
+/** ~400% browser zoom — same DPR band as retail prices chart. */
 const PAGE78_VERTICAL_TICK_ZOOM_MIN = 3.55;
 const PAGE78_VERTICAL_TICK_ZOOM_MAX = 5.45;
 const LIKELY_OS_DPR_BASES = [1, 1.25, 1.3333333333333333, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5];
@@ -120,7 +120,7 @@ const Page78 = () => {
     const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     useEffect(() => {
-        getPage78Data()
+        getSolidBiofuelsProductionData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -554,7 +554,7 @@ const Page78 = () => {
             };
             img.src = imgData;
         } catch (err) {
-            console.warn('Unable to download Page 78 chart image.', err);
+            console.warn('Unable to download chart image.', err);
         }
     };
 

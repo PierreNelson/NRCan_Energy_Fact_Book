@@ -38,8 +38,8 @@ const HOVER_LABEL = {
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
 
-/** Hardcoded until data pipeline is available — approximates page 97 reference trends. */
-const buildPage97Data = () => {
+/** Hardcoded until data pipeline is available — approximates GHG spotlight: Transportation reference trends. */
+const buildTransportationGhgChartData = () => {
     const rows = [];
     for (let year = START_YEAR; year <= END_YEAR; year += 1) {
         const progress = (year - START_YEAR) / (END_YEAR - START_YEAR);
@@ -81,7 +81,7 @@ const buildPage97Data = () => {
     return rows;
 };
 
-const PAGE97_CHART_DATA = buildPage97Data();
+const PAGE97_CHART_DATA = buildTransportationGhgChartData();
 
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(

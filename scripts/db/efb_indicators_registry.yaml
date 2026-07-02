@@ -246,3 +246,13 @@ indicators:
     section_id: 6
     depends_on: [ca_western_canada_oil_wells_count_depth]
     vector_prefixes: [wc_oil_]
+
+  petroleum_sector_employment:
+    section_id: 6
+    depends_on: [ca_statcan_petroleum_sector_employment_summary]
+    vector_prefixes: [pet_emp_]
+
+  world_proved_crude_reserves:
+    section_id: 6
+    depends_on: [ca_ogj_petroleum_world_proved_reserves]
+    vector_prefixes: [wr_crude_res_]

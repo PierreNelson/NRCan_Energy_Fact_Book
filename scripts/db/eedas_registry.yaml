@@ -207,6 +207,18 @@ source_tables:
     detail: wells_count_depth
     source_table: ca_western_canada_oil_wells_count_depth
 
+  petroleum_sector_employment:
+    org_code: stc
+    report_code: petroleum
+    detail: sector_employment_summary
+    source_table: ca_statcan_petroleum_sector_employment_summary
+
+  world_proved_crude_reserves:
+    org_code: ogj
+    report_code: petroleum
+    detail: world_proved_reserves
+    source_table: ca_ogj_petroleum_world_proved_reserves
+
   solid_biofuels:
     org_code: nrcan
     report_code: renaq

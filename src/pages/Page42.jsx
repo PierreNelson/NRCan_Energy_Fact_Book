@@ -34,7 +34,7 @@ const COLORS = {
     all: '#9f346d',
 };
 
-const formatPage42Pct = (value, lang) => {
+const formatDemographicsPct = (value, lang) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
     const formatted = Number(value).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', {
         minimumFractionDigits: 0,
@@ -89,7 +89,7 @@ const buildLegendRelayout = (legendSettings, titleX, bottomMargin) => ({
     annotations: [buildLegendTitleAnnotation(legendSettings, titleX)],
 });
 
-/** Vertical category ticks from ~300% page zoom (Ctrl+/pinch), matching Page 96 / Page 111. */
+/** Vertical category ticks from ~300% page zoom (Ctrl+/pinch), matching GHG emissions sector and spotlight. */
 const PAGE42_VERTICAL_TICK_ZOOM = 2.85;
 const LIKELY_OS_DPR_BASES = [1, 1.25, 1.3333333333333333, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5];
 
@@ -224,7 +224,7 @@ const Page42 = () => {
             },
             hovertext: CATEGORY_KEYS.map(
                 (key, i) =>
-                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_energy', lang)}: ${formatPage42Pct(energyValues[i], lang)}`,
+                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_energy', lang)}: ${formatDemographicsPct(energyValues[i], lang)}`,
             ),
             hoverinfo: 'text',
             hoverlabel: {
@@ -250,7 +250,7 @@ const Page42 = () => {
             },
             hovertext: CATEGORY_KEYS.map(
                 (key, i) =>
-                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_all', lang)}: ${formatPage42Pct(allValues[i], lang)}`,
+                    `<b>${categoryLabelsFull[i]}</b><br>${getText('page42_legend_all', lang)}: ${formatDemographicsPct(allValues[i], lang)}`,
             ),
             hoverinfo: 'text',
             hoverlabel: {
@@ -601,7 +601,7 @@ const Page42 = () => {
     const getChartSummary = () => {
         const parts = CATEGORY_KEYS.map(
             (key, i) =>
-                `${categoryLabelsFull[i]}: ${getText('page42_legend_energy', lang)} ${formatPage42Pct(energyValues[i], lang)}, ${getText('page42_legend_all', lang)} ${formatPage42Pct(allValues[i], lang)}`,
+                `${categoryLabelsFull[i]}: ${getText('page42_legend_energy', lang)} ${formatDemographicsPct(energyValues[i], lang)}, ${getText('page42_legend_all', lang)} ${formatDemographicsPct(allValues[i], lang)}`,
         ).join('; ');
         return `${stripHtml(chartTitle)}. ${parts}.`;
     };
@@ -820,11 +820,11 @@ const Page42 = () => {
                                                 <th scope="row" style={{ fontWeight: 'bold' }}>
                                                     {categoryLabelsFull[i]}
                                                 </th>
-                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_energy', lang)}: ${formatPage42Pct(PAGE42_DATA[key].energy, lang)}`}>
-                                                    {formatPage42Pct(PAGE42_DATA[key].energy, lang)}
+                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_energy', lang)}: ${formatDemographicsPct(PAGE42_DATA[key].energy, lang)}`}>
+                                                    {formatDemographicsPct(PAGE42_DATA[key].energy, lang)}
                                                 </td>
-                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_all', lang)}: ${formatPage42Pct(PAGE42_DATA[key].all, lang)}`}>
-                                                    {formatPage42Pct(PAGE42_DATA[key].all, lang)}
+                                                <td style={{ textAlign: 'center' }} aria-label={`${categoryLabelsFull[i]}, ${getText('page42_table_all', lang)}: ${formatDemographicsPct(PAGE42_DATA[key].all, lang)}`}>
+                                                    {formatDemographicsPct(PAGE42_DATA[key].all, lang)}
                                                 </td>
                                             </tr>
                                         ))}

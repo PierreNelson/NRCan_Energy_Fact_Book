@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
-import { getPage139RefineryCapacityData } from '../utils/dataLoader';
+import { getRefineryCapacityData } from '../utils/dataLoader';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -13,7 +13,7 @@ const Page139 = () => {
     const [loadError, setLoadError] = useState(null);
 
     useEffect(() => {
-        getPage139RefineryCapacityData()
+        getRefineryCapacityData()
             .then(({ tableRows: rows, totalRow: total }) => {
                 if (!rows?.length || !total) {
                     setLoadError('no_data');

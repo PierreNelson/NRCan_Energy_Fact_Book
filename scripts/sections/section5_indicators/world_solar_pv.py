@@ -1,4 +1,4 @@
-"""Page 82 — World solar PV capacity ranking."""
+"""World solar PV capacity ranking."""
 
 from __future__ import annotations
 

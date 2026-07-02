@@ -25,7 +25,7 @@ const PAGE17_COLORS = {
     pipelines: '#4AA56F'
 };
 
-const formatPage17Number = (num, lang) => {
+const formatEnergyRevenueNumber = (num, lang) => {
     if (num === undefined || num === null) return '—';
     return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
 };
@@ -113,7 +113,7 @@ const Page17 = () => {
             const hovertext = PAGE17_HARDCODED.map((row) => {
                 const val = row[key];
                 const total = PAGE17_CATEGORIES.reduce((s, k) => s + row[k], 0);
-                return `<b>${row.year}</b><br>${label}: ${formatPage17Number(val, lang)} ${lang === 'en' ? '$ billion' : 'milliards de dollars'}<br>${lang === 'en' ? 'Total' : 'Total'}: ${formatPage17Number(total, lang)}`;
+                return `<b>${row.year}</b><br>${label}: ${formatEnergyRevenueNumber(val, lang)} ${lang === 'en' ? '$ billion' : 'milliards de dollars'}<br>${lang === 'en' ? 'Total' : 'Total'}: ${formatEnergyRevenueNumber(total, lang)}`;
             });
             const baseColor = PAGE17_COLORS[key];
             const markerColor = selectedPoints === null
@@ -238,7 +238,7 @@ const Page17 = () => {
         const rows = PAGE17_HARDCODED.map(row => {
             const vals = PAGE17_CATEGORIES.map(k => row[k]);
             const total = vals.reduce((a, b) => a + b, 0);
-            return [row.year, ...vals.map(v => formatPage17Number(v, lang)), formatPage17Number(total, lang)];
+            return [row.year, ...vals.map(v => formatEnergyRevenueNumber(v, lang)), formatEnergyRevenueNumber(total, lang)];
         });
         const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -265,7 +265,7 @@ const Page17 = () => {
         const dataRows = PAGE17_HARDCODED.map(row => {
             const vals = PAGE17_CATEGORIES.map(k => row[k]);
             const total = vals.reduce((a, b) => a + b, 0);
-            const cells = [row.year, ...vals.map(v => formatPage17Number(v, lang)), formatPage17Number(total, lang)].map((text, i) =>
+            const cells = [row.year, ...vals.map(v => formatEnergyRevenueNumber(v, lang)), formatEnergyRevenueNumber(total, lang)].map((text, i) =>
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(text), size: 22 })], alignment: i === 0 ? AlignmentType.CENTER : AlignmentType.CENTER })] })
             );
             return new TableRow({ children: cells });
@@ -397,9 +397,9 @@ const Page17 = () => {
                                                 <tr key={row.year}>
                                                     <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{row.year}</th>
                                                     {vals.map((v, i) => (
-                                                        <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${row.year}, ${getText(`page17_legend_${PAGE17_CATEGORIES[i]}`, lang)}: ${formatPage17Number(v, lang)} ${getText('page17_yaxis', lang)}`}>{formatPage17Number(v, lang)}</td>
+                                                        <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${row.year}, ${getText(`page17_legend_${PAGE17_CATEGORIES[i]}`, lang)}: ${formatEnergyRevenueNumber(v, lang)} ${getText('page17_yaxis', lang)}`}>{formatEnergyRevenueNumber(v, lang)}</td>
                                                     ))}
-                                                    <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatPage17Number(total, lang)}</td>
+                                                    <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatEnergyRevenueNumber(total, lang)}</td>
                                                 </tr>
                                             );
                                         })}

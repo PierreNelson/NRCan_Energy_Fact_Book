@@ -1,4 +1,4 @@
-"""Page 81 — Wind capacity by province and largest wind projects (Manual Data Excel)."""
+"""Wind capacity by province and largest wind projects (Manual Data Excel)."""
 
 from __future__ import annotations
 
@@ -257,7 +257,7 @@ def _prov_key_to_code(prov_key: str) -> int:
 
 
 def transform_largest_wind_projects(processor) -> int:
-    """EFB transform: wind_proj_* vectors for Page 81 projects chart."""
+    """EFB transform: wind_proj_* vectors for this indicator projects chart."""
     df = processor.get_raw_dataframe(SOURCE_KEY_PROJECTS)
     if df.empty:
         raise ValueError(

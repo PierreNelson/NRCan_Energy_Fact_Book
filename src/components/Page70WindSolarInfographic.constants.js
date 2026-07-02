@@ -1,4 +1,4 @@
-/** Page 70 — wind/solar growth overlay on page70_bg.png (436×280 native). */
+/** wind/solar growth overlay on page70_bg.png (436×280 native). */
 import page70Bg from '../assets/page70_bg.png';
 
 export { page70Bg };
@@ -29,7 +29,7 @@ export const OVERLAY_LAYOUT = {
     },
 };
 
-export const exportPage70InfographicPng = async (figureEl, { title, scale = 2 }) => {
+export const exportWindSolarGrowthInfographicPng = async (figureEl, { title, scale = 2 }) => {
     if (!figureEl) return null;
 
     const wrapper = figureEl.querySelector?.('.page70-infographic-wrapper') ?? figureEl;

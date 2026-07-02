@@ -479,6 +479,7 @@ Examples:
   python main.py sharepoint sync
   python main.py status --failed-only
   python main.py list
+  python main.py inventory
         """,
     )
     parser.add_argument('--config', '-c', help='Path to config.yaml')
@@ -520,6 +521,10 @@ Examples:
     subparsers.add_parser('list', help='List sections and sources')
     subparsers.add_parser('test-connection', help='Test database connection')
 
+    inventory_parser = subparsers.add_parser('inventory', help='Generate page coverage inventory (CSV + Markdown)')
+    inventory_parser.add_argument('--csv', help='Output CSV path (default: docs/page_inventory.csv)')
+    inventory_parser.add_argument('--md', help='Output Markdown path (default: docs/page_inventory.md)')
+
     args = parser.parse_args()
 
     if not args.command:
@@ -537,6 +542,15 @@ Examples:
     try:
         if args.command == 'list':
             return cmd_list(args, config)
+
+        if args.command == 'inventory':
+            from page_inventory import main as inventory_main
+            inv_argv = []
+            if getattr(args, 'csv', None):
+                inv_argv.extend(['--csv', args.csv])
+            if getattr(args, 'md', None):
+                inv_argv.extend(['--md', args.md])
+            return inventory_main(inv_argv)
 
         if args.command == 'sharepoint':
             if args.sharepoint_command != 'sync':

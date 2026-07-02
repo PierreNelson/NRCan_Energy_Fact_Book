@@ -28,7 +28,7 @@ const hexToRgba = (hex, opacity = 1) => {
     return hex;
 };
 
-const exportPage44InfographicPng = async (rowEl, { title, scale = 2 }) => {
+const exportEnergyIntensityInfographicPng = async (rowEl, { title, scale = 2 }) => {
     if (!rowEl) return null;
 
     const exportRoot = rowEl.closest('.page44-inner');
@@ -419,7 +419,7 @@ const Page44 = () => {
     };
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportPage44InfographicPng(topRowRef.current, {
+        const canvas = await exportEnergyIntensityInfographicPng(topRowRef.current, {
             title: stripHtml(pageTitle),
             scale: 2,
         });

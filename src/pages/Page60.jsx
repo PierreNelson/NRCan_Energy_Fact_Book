@@ -7,7 +7,7 @@ import page60BgFr from '../assets/page60_bg_fr.png';
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-const exportPage60InfographicPng = async (exportRoot, { title, scale = 2 }) => {
+const exportCleantechInfographicPng = async (exportRoot, { title, scale = 2 }) => {
     if (!exportRoot) return null;
 
     const titleEl = exportRoot.querySelector('#page60-title');
@@ -117,7 +117,7 @@ const Page60 = () => {
     const fileSlugBase = getText('page60_download_title', lang).replace(/\s+/g, '_');
 
     const downloadPng = async () => {
-        const canvas = await exportPage60InfographicPng(contentRef.current, {
+        const canvas = await exportCleantechInfographicPng(contentRef.current, {
             title: stripHtml(pageTitle),
             scale: 2,
         });

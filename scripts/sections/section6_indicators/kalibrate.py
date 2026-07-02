@@ -1,4 +1,4 @@
-"""Page 138 — Kalibrate gasoline retail prices (charting.kalibrate.com Margins tool)."""
+"""Kalibrate gasoline retail prices (charting.kalibrate.com Margins tool)."""
 
 import json
 import re
@@ -113,7 +113,7 @@ def _fetch_kalibrate_price_series(
 
 
 def _annual_kalibrate_components(series: Dict[str, List[float]]) -> Dict[str, float]:
-    """Average monthly inputs and derive margin components (Page 138 spec formulas)."""
+    """Average monthly inputs and derive margin components (indicator spec formulas)."""
     retail = statistics.mean(series['Retail Price'])
     retail_ex = statistics.mean(series['Retail Price Excluding Taxes'])
     wholesale = statistics.mean(series['Wholesale Price'])
@@ -171,7 +171,7 @@ def build_kalibrate_gas_price_rows_from_web(
     end_year: Optional[int] = None,
 ) -> Tuple[List[Tuple[str, str, float]], List[Tuple]]:
     """
-    Fetch Kalibrate Margins (Price View) data from charting.kalibrate.com per Page 138 spec.
+    Fetch Kalibrate Margins (Price View) data from charting.kalibrate.com per indicator spec.
     Stores annual average price-series inputs (retail, retail ex tax, wholesale, crude).
     """
     if end_year is None:
@@ -364,7 +364,7 @@ def _transform_kalibrate_from_raw(
 
 def build_kalibrate_gas_price_rows(xlsx_path: Optional[Path] = None) -> Tuple[List[Tuple[str, str, float]], List[Tuple]]:
     """
-    Page 138 Kalibrate gasoline margins.
+    Kalibrate gasoline margins gasoline margins.
     Primary: charting.kalibrate.com Margins tool (Price View, per spec).
     Fallback: Section 6.xlsx kalibrate_archive if web fetch returns no rows.
     Returns final kal_* indicator rows for offline export.

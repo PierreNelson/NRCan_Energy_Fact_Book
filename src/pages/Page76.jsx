@@ -4,7 +4,7 @@ import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import Page76HydroMapLayer, { Page76HydroForegroundOverlays, Page76HoverTooltip } from '../components/Page76HydroInfographic';
-import { getPage76Data } from '../utils/dataLoader';
+import { getHydroelectricCapacityData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const FACILITY_PROV_COLORS = {
@@ -166,7 +166,7 @@ const Page76 = () => {
     const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     useEffect(() => {
-        getPage76Data()
+        getHydroelectricCapacityData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

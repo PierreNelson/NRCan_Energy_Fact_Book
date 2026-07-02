@@ -1,4 +1,4 @@
-"""Page 69 — Average large industrial and residential electricity prices (HydroQ / ELE-Res&Ind)."""
+"""Average large industrial and residential electricity prices (HydroQ / ELE-Res&Ind)."""
 
 from __future__ import annotations
 
@@ -264,7 +264,7 @@ def update_electricity_prices(processor) -> int:
 
 
 def transform_electricity_prices(processor) -> int:
-    """EFB transform: elec_price_* vectors for Page 69 from stored raw rows (latest year only)."""
+    """EFB transform: elec_price_* vectors for this indicator from stored raw rows (latest year only)."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise RuntimeError('electricity_prices transform: no raw rows found — re-run eedas update')

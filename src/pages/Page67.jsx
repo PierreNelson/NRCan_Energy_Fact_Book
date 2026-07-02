@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage67Data } from '../utils/dataLoader';
+import { getProvincialElectricityGenerationData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page67GenerationInfographic from '../components/Page67GenerationInfographic';
 import {
     SOURCE_KEYS,
     formatSharePct,
     pctSortValue,
-    exportPage67InfographicPng,
+    exportProvincialGenerationInfographicPng,
 } from '../components/Page67GenerationInfographic.constants';
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
@@ -33,7 +33,7 @@ const Page67 = () => {
     const bottomScrollRef = useRef(null);
 
     useEffect(() => {
-        getPage67Data()
+        getProvincialElectricityGenerationData()
             .then(setPageData)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -194,7 +194,7 @@ const Page67 = () => {
     };
 
     const downloadPng = async () => {
-        const canvas = await exportPage67InfographicPng(figureRef.current, { scale: 2 });
+        const canvas = await exportProvincialGenerationInfographicPng(figureRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}.png`);

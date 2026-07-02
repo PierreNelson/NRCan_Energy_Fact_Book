@@ -151,7 +151,7 @@ export function buildLeaderPolyline(segment, rowIndex, leaderSlotY) {
  * Build stacked band layout for the barrel interior.
  * Band heights follow sharePct; label slots are evenly spaced by row index.
  */
-export function buildPage111BarrelLayout(provinces, options = {}) {
+export function buildCanadianProductionBarrelLayout(provinces, options = {}) {
     const shares = resolveDisplayItems(provinces, options);
     if (!shares.length) {
         return { displayKeys: [], segments: [], labels: [] };

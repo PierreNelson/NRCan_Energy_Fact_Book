@@ -1,39 +1,24 @@
 -- ============================================================================
 -- NRCan Energy Factbook Database Setup Script
 --
--- This script creates the database and all required tables for the
--- Energy Factbook data pipeline.
+-- Creates and updates tables for the Energy Factbook data pipeline.
+-- Run while connected to your target database (name comes from config / .env).
 --
 -- EEDAS-style physical names: per-source series tables are listed in
 -- eedas_registry.yaml. When adding a source, update that file and the matching
 -- CREATE TABLE blocks in this script (see scripts/db/eedas_registry.py).
 --
 -- Usage:
---   1. Preferred: create an empty database matching config, then run
+--   1. Preferred: connect to the configured database, then run
 --      `python main.py eedas update ...` — ensure_schema applies this script's
---      DDL (except CREATE DATABASE / destructive seed) automatically.
---   2. Or connect as an admin and run this script in SSMS/sqlcmd for a full
---      install including CREATE DATABASE and default data-source rows.
+--      DDL (except destructive seed) automatically.
+--   2. Or connect in SSMS/sqlcmd to your database and run this script for a
+--      full manual install including default data-source rows.
 --
 -- Requirements:
 --   - SQL Server 2019+ or SQL Server Developer Edition
---   - Sufficient permissions to create databases
+--   - Connected to the target database with DDL permissions
 -- ============================================================================
-
--- Create the database if it doesn't exist
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'NRCanEnergyFactbook')
-BEGIN
-    CREATE DATABASE NRCanEnergyFactbook;
-    PRINT 'Database NRCanEnergyFactbook created.';
-END
-ELSE
-BEGIN
-    PRINT 'Database NRCanEnergyFactbook already exists.';
-END
-GO
-
-USE NRCanEnergyFactbook;
-GO
 
 -- ============================================================================
 -- CONFIGURATION TABLES
@@ -290,6 +275,8 @@ WHERE schema_id = SCHEMA_ID('dbo')
     'stc_rppsd_25100081','stc_refinput_25100063','nrcan_crude_prices','stc_oil_sands',
     'stc_ev_sales','stc_canadian_production','kal_gas_prices','osm_refin_cap',
     'ca_petroleum_reserves_summary','ca_western_canada_oil_wells_count_depth',
+    'ca_statcan_petroleum_sector_employment_summary',
+    'ca_ogj_petroleum_world_proved_reserves',
     'cer_electricity_trade_summary','nrcan_windcapbyprov','can_largestwindprojects',
     'can_largestsolprojects','can_largesthydrofac','nrcan_solid_biofuels','nrcan_renelecap','nrcan_elegen_can','nrcan_windpwr_can','nrcan_worldwind','nrcan_worldsolar','nrcan_electrical_energy_use','nrcan_hydroq_prices','nrcan_wselec_growth','wna_uraniumprod','ecc_ghg_electricity'
   );
@@ -1447,6 +1434,52 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ca_statcan_petroleum_sector_employment_summary')
+BEGIN
+    CREATE TABLE [ca_statcan_petroleum_sector_employment_summary] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_ca_statcan_petroleum_sector_employment_summary_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_ca_statcan_petroleum_sector_employment_summary_vector ON [ca_statcan_petroleum_sector_employment_summary](vector);
+    CREATE INDEX IX_ca_statcan_petroleum_sector_employment_summary_source ON [ca_statcan_petroleum_sector_employment_summary](source_key);
+    CREATE INDEX IX_ca_statcan_petroleum_sector_employment_summary_ref_date ON [ca_statcan_petroleum_sector_employment_summary](ref_date);
+    PRINT 'Table ca_statcan_petroleum_sector_employment_summary created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ca_ogj_petroleum_world_proved_reserves')
+BEGIN
+    CREATE TABLE [ca_ogj_petroleum_world_proved_reserves] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_ca_ogj_petroleum_world_proved_reserves_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_ca_ogj_petroleum_world_proved_reserves_vector ON [ca_ogj_petroleum_world_proved_reserves](vector);
+    CREATE INDEX IX_ca_ogj_petroleum_world_proved_reserves_source ON [ca_ogj_petroleum_world_proved_reserves](source_key);
+    CREATE INDEX IX_ca_ogj_petroleum_world_proved_reserves_ref_date ON [ca_ogj_petroleum_world_proved_reserves](ref_date);
+    PRINT 'Table ca_ogj_petroleum_world_proved_reserves created.';
+END
+GO
+
 -- ============================================================================
 -- EXPORT STAGING (wide table: replaces nrcan_fb_export_data + _metadata)
 -- ============================================================================
@@ -1598,7 +1631,9 @@ VALUES
 ('kal_gas_prices', 'Gasoline retail price components (Kalibrate)', 6, 'Oil, Natural Gas and Coal', N'https://kalibrate.com/', 1),
 ('osm_refin_cap', 'Canadian refinery capacity (Oil Sands Magazine)', 6, 'Oil, Natural Gas and Coal', N'https://www.oilsandsmagazine.com/projects/canadian-refineries', 1),
 ('petroleum_reserves', 'Canadian proved reserves of crude oil', 6, 'Oil, Natural Gas and Coal', N'', 1),
-('western_canada_oil_wells', 'Western Canada oil wells completed', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59', 1);
+('western_canada_oil_wells', 'Western Canada oil wells completed', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59', 1),
+('petroleum_sector_employment', 'Petroleum sector employment by region', 6, 'Oil, Natural Gas and Coal', N'', 1),
+('world_proved_crude_reserves', 'World proved reserves of crude oil', 6, 'Oil, Natural Gas and Coal', N'', 1);
 
 PRINT 'Default data sources inserted.';
 GO
@@ -1663,7 +1698,7 @@ PRINT '=========================================================================
 PRINT '';
 PRINT 'Next steps:';
 PRINT '1. Create a SQL Server login for the application';
-PRINT '2. Grant appropriate permissions to the NRCanEnergyFactbook database';
-PRINT '3. Update the config.yaml with connection details';
+PRINT '2. Grant appropriate permissions on this database';
+PRINT '3. Copy scripts/.env.example to scripts/.env and set connection details';
 PRINT '';
 GO

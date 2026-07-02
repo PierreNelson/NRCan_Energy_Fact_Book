@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage53Data, page53RowHasCompleteData } from '../utils/dataLoader';
+import { getIndustrialEnergyUseData, industrialEnergyUseRowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const PIE_ORDER = ['NG', 'DFOx', 'SGPC', 'WWPL', 'Other_x', 'Ele'];
@@ -69,7 +69,7 @@ const Page53 = () => {
     };
 
     useEffect(() => {
-        getPage53Data()
+        getIndustrialEnergyUseData()
             .then((d) => {
                 setResult(d);
                 const available = (d?.years || []).filter((y) => y >= MIN_DISPLAY_YEAR);
@@ -169,12 +169,12 @@ const Page53 = () => {
     }, [result, lang]);
 
     const dataRows = result?.data || [];
-    const years = [...new Set(dataRows.filter(page53RowHasCompleteData).map((r) => r.year))]
+    const years = [...new Set(dataRows.filter(industrialEnergyUseRowHasCompleteData).map((r) => r.year))]
         .filter((y) => y >= MIN_DISPLAY_YEAR)
         .sort((a, b) => b - a);
     const selectedRow = selectedYear == null ? null : dataRows.find((r) => r.year === selectedYear) || null;
     const tableRows = dataRows
-        .filter((r) => r.year >= MIN_DISPLAY_YEAR && page53RowHasCompleteData(r))
+        .filter((r) => r.year >= MIN_DISPLAY_YEAR && industrialEnergyUseRowHasCompleteData(r))
         .sort((a, b) => a.year - b.year);
     const chartTitle = substitute(getText('page53_chart_title', lang), { year: selectedYear ?? '' });
     const yearRange = tableRows.length ? `${tableRows[0].year}-${tableRows[tableRows.length - 1].year}` : '';
@@ -278,11 +278,11 @@ const Page53 = () => {
             };
             img.src = imgData;
         } catch (error) {
-            console.warn('Unable to download Page 53 chart image.', error);
+            console.warn('Unable to download chart image.', error);
             try {
                 await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' });
             } catch (restoreError) {
-                console.warn('Unable to restore Page 53 chart background.', restoreError);
+                console.warn('Unable to restore chart background.', restoreError);
             }
         }
     };

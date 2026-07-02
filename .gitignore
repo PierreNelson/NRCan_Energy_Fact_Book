@@ -24,10 +24,13 @@ release/
 *.sln
 *.sw?
 
-# Environment files with credentials
+# Environment files with credentials (never commit)
 .env
-.env.local
+.env.*
+!.env.example
 scripts/.env
+scripts/.env.*
+!scripts/.env.example
 
 # SharePoint Excel cache (downloaded workbooks)
 data/sharepoint_cache/

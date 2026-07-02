@@ -1,4 +1,4 @@
-/** Page 80 wind infographic — overlay positions on page80_bg.png (562×219 native). */
+/** Wind power infographic — overlay positions on page80_bg.png (562×219 native). */
 export const NATIVE_SIZE = { width: 562, height: 219 };
 
 /** Slightly inset bg so “since 2011” clears the arrow edges (tune here only). */
@@ -48,7 +48,7 @@ export const getGrowthOverlayParts = (growthKey, getText, lang) => {
     };
 };
 
-export const exportPage80InfographicPng = async (figureEl, { scale = 2 }) => {
+export const exportCanadianWindInfographicPng = async (figureEl, { scale = 2 }) => {
     if (!figureEl) return null;
 
     const wrapper = figureEl.querySelector('.page80-infographic-wrapper');

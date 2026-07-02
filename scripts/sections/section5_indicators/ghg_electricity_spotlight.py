@@ -1,4 +1,4 @@
-"""Page 71 — GHG spotlight: electricity (ECCC environmental indicators + gencap coal_elegen)."""
+"""GHG spotlight: electricity (ECCC environmental indicators + gencap coal_elegen)."""
 
 from __future__ import annotations
 
@@ -355,7 +355,7 @@ def update_ghg_electricity_spotlight(processor) -> int:
 
 
 def transform_ghg_electricity_spotlight(processor) -> int:
-    """EFB transform: elec_ghg_* vectors for Page 71 from stored ECCC + gencap raw rows."""
+    """EFB transform: elec_ghg_* vectors for this indicator from stored ECCC + gencap raw rows."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise RuntimeError('ghg_electricity_spotlight transform: no raw rows found — re-run eedas update')

@@ -4,7 +4,7 @@ import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, Width
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
 import Page41WagesInfographic from '../components/Page41WagesInfographic';
-import { BULLET_KEYS, exportPage41InfographicPng } from '../components/Page41WagesInfographic.constants';
+import { BULLET_KEYS, exportWagesInfographicPng } from '../components/Page41WagesInfographic.constants';
 
 const YEAR = '2023';
 
@@ -105,7 +105,7 @@ const Page41 = () => {
     };
 
     const downloadPng = async () => {
-        const canvas = await exportPage41InfographicPng(figureRef.current, {
+        const canvas = await exportWagesInfographicPng(figureRef.current, {
             title: stripHtml(pageTitle),
             scale: 2,
         });

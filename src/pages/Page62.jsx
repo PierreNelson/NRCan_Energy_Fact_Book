@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage62Data } from '../utils/dataLoader';
+import { getCleantechCompaniesByRegionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const REGION_KEYS = ['terr', 'atl', 'que', 'ont', 'man', 'sask', 'alta', 'bc'];
@@ -78,7 +78,7 @@ const Page62 = () => {
     };
 
     useEffect(() => {
-        getPage62Data()
+        getCleantechCompaniesByRegionData()
             .then((data) => {
                 setResult(data);
                 setSelectedYear(data?.years?.includes(2025) ? 2025 : data?.latestYear ?? 2025);
@@ -275,11 +275,11 @@ const Page62 = () => {
             };
             img.src = imgData;
         } catch (err) {
-            console.warn('Unable to download Page 62 chart image.', err);
+            console.warn('Unable to download chart image.', err);
             try {
                 await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' });
             } catch (restoreError) {
-                console.warn('Unable to restore Page 62 chart background.', restoreError);
+                console.warn('Unable to restore chart background.', restoreError);
             }
         }
     };

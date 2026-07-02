@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
-import { getPage117Data } from '../utils/dataLoader';
+import { getCrudeOilPricesData } from '../utils/dataLoader';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -65,7 +65,7 @@ const Page117 = () => {
 
     useEffect(() => {
         let cancelled = false;
-        getPage117Data()
+        getCrudeOilPricesData()
             .then((data) => {
                 if (!cancelled) {
                     setResult(data);

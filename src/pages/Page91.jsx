@@ -19,7 +19,7 @@ const TOP5_DATA = [
 
 const CANADA_DATA = { rank: 12, key: 'canada', sharePct: 1 };
 
-const page91CountryLabel = (key, lang) => {
+const nuclearGenerationCountryLabel = (key, lang) => {
     const text = getText(`page91_country_${key}`, lang);
     if (text && text !== `page91_country_${key}`) return text;
     return String(key || '')
@@ -181,7 +181,7 @@ const Page91 = () => {
         () =>
             TOP5_DATA.map((row) => ({
                 ...row,
-                name: page91CountryLabel(row.key, lang),
+                name: nuclearGenerationCountryLabel(row.key, lang),
                 shareLabel: formatSharePct(row.sharePct, locale),
                 pct: Number(row.sharePct),
             })),
@@ -191,7 +191,7 @@ const Page91 = () => {
     const canadaRow = useMemo(
         () => ({
             ...CANADA_DATA,
-            name: page91CountryLabel(CANADA_DATA.key, lang),
+            name: nuclearGenerationCountryLabel(CANADA_DATA.key, lang),
             shareLabel: formatSharePct(CANADA_DATA.sharePct, locale),
             pct: Number(CANADA_DATA.sharePct),
             isCanada: true,
@@ -215,7 +215,7 @@ const Page91 = () => {
     const formatTopCountryCell = useCallback(
         (entry) => {
             if (!entry) return '—';
-            return `${page91CountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
+            return `${nuclearGenerationCountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
         },
         [lang, locale],
     );

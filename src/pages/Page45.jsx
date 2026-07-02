@@ -24,7 +24,7 @@ const COLORS = {
 
 const EXPORT_CHART_WIDTH = 1100;
 
-/** Vertical country ticks from ~200% page zoom (Ctrl+/pinch), matching Page 42 / Page 96 pattern. */
+/** Vertical country ticks from ~200% page zoom (Ctrl+/pinch), matching GHG emissions sector and spotlight pattern. */
 const PAGE45_VERTICAL_TICK_ZOOM = 2.0;
 const LIKELY_OS_DPR_BASES = [1, 1.25, 1.3333333333333333, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5];
 

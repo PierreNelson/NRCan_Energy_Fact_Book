@@ -1,4 +1,4 @@
-"""Page 117 — WTI and WCS crude prices."""
+"""WTI and WCS crude prices."""
 
 import io
 import re

@@ -6,7 +6,7 @@ export const NATIVE_SIZE = {
 };
 
 /**
- * Overlay calibration — all positions are % of the infographic wrapper (same as Page 55 / Page 112).
+ * Overlay calibration — all positions are % of the infographic wrapper (same as GHG emissions sector and spotlight).
  *
  * HOW TO ADJUST (per column, independently of other columns)
  * - `left` / `width`              — horizontal band for province rows
@@ -242,7 +242,7 @@ export const formatSharePct = (value, lang) => {
     return lang === 'fr' ? `${text} %` : `${text}%`;
 };
 
-export const exportPage67InfographicPng = async (figureEl, { scale = 2 }) => {
+export const exportProvincialGenerationInfographicPng = async (figureEl, { scale = 2 }) => {
     if (!figureEl) return null;
 
     const wrapper = figureEl.querySelector('.page67-infographic-wrapper');

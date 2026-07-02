@@ -6,7 +6,7 @@ import {
     OVERLAY_LAYOUT,
     formatSharePct,
     getCanadaPctSlot,
-    getPage66ProvinceRows,
+    getCanadianGenerationProvinceRows,
     getProvinceAbbrSlot,
     getProvincePctSlot,
 } from './Page66GenerationInfographic.constants';
@@ -100,7 +100,7 @@ const Page66GenerationInfographic = ({ lang, getText, figureRef, ariaLabel, data
                     {columns.map((column) => {
                         const block = sources[column.key];
                         if (!block) return null;
-                        const provinceRows = getPage66ProvinceRows(column.key, block);
+                        const provinceRows = getCanadianGenerationProvinceRows(column.key, block);
                         const canadaSlot = getCanadaPctSlot(column);
 
                         return (

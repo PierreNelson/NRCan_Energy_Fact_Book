@@ -7,7 +7,7 @@ Handles data for:
 - Provincial GDP
 - World energy production rankings
 - Canadian Energy Assets (CEA)
-- GHG emissions by economic sector (Page 20 / Page 132)
+- GHG emissions by economic sector (GHG emissions sector and spotlight)
 """
 
 from typing import Dict

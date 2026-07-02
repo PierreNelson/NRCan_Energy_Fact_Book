@@ -8,7 +8,7 @@ import {
     getImageTrimStyles,
     labelRightInsetPct,
 } from './Page111ProvinceInfographic.constants';
-import { buildPage111BarrelLayout } from '../utils/buildPage111BarrelSvg';
+import { buildCanadianProductionBarrelLayout } from '../utils/buildCanadianProductionBarrelSvg';
 
 export default function Page111ProvinceInfographic({
     lang,
@@ -24,7 +24,7 @@ export default function Page111ProvinceInfographic({
     const maxGraphicHeight = `min(${graphicHeight}px, 42vw)`;
 
     const layout = useMemo(
-        () => buildPage111BarrelLayout(provinceValues),
+        () => buildCanadianProductionBarrelLayout(provinceValues),
         [provinceValues],
     );
 

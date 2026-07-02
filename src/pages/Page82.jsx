@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage82Data } from '../utils/dataLoader';
+import { getWorldSolarPowerData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const CANADA_CAPSULE = '#819476';
 const TOP_RANKS = [1, 2, 3, 4, 5];
 
-const page82CountryLabel = (key, lang) => {
+const worldSolarCountryLabel = (key, lang) => {
     const text = getText(`page82_country_${key}`, lang);
     if (text && text !== `page82_country_${key}`) return text;
     return String(key || '')
@@ -155,7 +155,7 @@ const Page82 = () => {
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
     useEffect(() => {
-        getPage82Data()
+        getWorldSolarPowerData()
             .then((data) => {
                 setResult(data);
                 if (data.years?.length) setYear(data.years[data.years.length - 1]);
@@ -207,7 +207,7 @@ const Page82 = () => {
         if (!yearBundle?.top5) return [];
         return yearBundle.top5.map((row) => ({
             ...row,
-            name: page82CountryLabel(row.key, lang),
+            name: worldSolarCountryLabel(row.key, lang),
             shareLabel: formatSharePct(row.sharePct, locale),
             pct: Number(row.sharePct),
         }));
@@ -218,7 +218,7 @@ const Page82 = () => {
         if (yearBundle.canadaSharePct == null || yearBundle.canadaRank == null) return null;
         return {
             rank: Math.round(yearBundle.canadaRank ?? 0),
-            name: page82CountryLabel('canada', lang),
+            name: worldSolarCountryLabel('canada', lang),
             shareLabel: formatSharePct(yearBundle.canadaSharePct, locale),
             pct: Number(yearBundle.canadaSharePct ?? 0),
             isCanada: true,
@@ -248,7 +248,7 @@ const Page82 = () => {
     const formatTopCountryCell = useCallback(
         (entry) => {
             if (!entry) return '—';
-            return `${page82CountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
+            return `${worldSolarCountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
         },
         [lang, locale],
     );

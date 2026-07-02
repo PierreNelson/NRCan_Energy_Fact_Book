@@ -28,7 +28,7 @@ const COLORS = {
     other: '#519CC8',
 };
 
-/** Hardcoded until data pipeline is available — values from Energy Fact Book page 95 (2023 reference). */
+/** Hardcoded until data pipeline is available — transportation sector fuel mix reference values (2023). */
 const HARDCODED_DATA = [
     {
         year: DATA_YEAR,
@@ -488,7 +488,7 @@ const Page95 = () => {
             };
             img.src = imgData;
         } catch (err) {
-            console.warn('Unable to download Page 95 chart image.', err);
+            console.warn('Unable to download chart image.', err);
         }
     }, [chartTitle, fileTitle, centerAnnotation, slices, textSize, zoomLegendMode]);
 

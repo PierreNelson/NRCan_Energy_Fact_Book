@@ -80,13 +80,13 @@ OIL_SANDS_METADATA = [
 ]
 
 CANADIAN_PRODUCTION_METADATA = [
-    ('cp_oil_sands_thousand_m3', 'Oil sands production (Page 111)', 'thousand cubic metres', 'units'),
-    ('cp_conventional_thousand_m3', 'Conventional crude production (Page 111)', 'thousand cubic metres', 'units'),
-    ('cp_total_thousand_m3', 'Total crude oil production (Page 111)', 'thousand cubic metres', 'units'),
-    ('cp_oil_sands_mmbd', 'Oil sands production (Page 111)', 'million barrels per day', 'units'),
-    ('cp_conventional_mmbd', 'Conventional crude production (Page 111)', 'million barrels per day', 'units'),
-    ('cp_total_mmbd', 'Total crude oil production (Page 111)', 'million barrels per day', 'units'),
-    ('cp_share_pct', 'Oil sands share of Canadian oil production (Page 111)', 'percent', 'units'),
+    ('cp_oil_sands_thousand_m3', 'Oil sands production', 'thousand cubic metres', 'units'),
+    ('cp_conventional_thousand_m3', 'Conventional crude production', 'thousand cubic metres', 'units'),
+    ('cp_total_thousand_m3', 'Total crude oil production', 'thousand cubic metres', 'units'),
+    ('cp_oil_sands_mmbd', 'Oil sands production', 'million barrels per day', 'units'),
+    ('cp_conventional_mmbd', 'Conventional crude production', 'million barrels per day', 'units'),
+    ('cp_total_mmbd', 'Total crude oil production', 'million barrels per day', 'units'),
+    ('cp_share_pct', 'Oil sands share of Canadian oil production', 'percent', 'units'),
     ('cp_prov_canada_thousand_m3', 'Canadian crude oil production by province total', 'thousand cubic metres', 'units'),
     ('cp_prov_ab_thousand_m3', 'Alberta crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_sk_thousand_m3', 'Saskatchewan crude oil production', 'thousand cubic metres', 'units'),
@@ -97,15 +97,15 @@ CANADIAN_PRODUCTION_METADATA = [
     ('cp_prov_ns_thousand_m3', 'Nova Scotia crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_on_thousand_m3', 'Ontario crude oil production', 'thousand cubic metres', 'units'),
     ('cp_prov_nt_thousand_m3', 'Northwest Territories crude oil production', 'thousand cubic metres', 'units'),
-    ('cp_prov_ab_pct', 'Alberta share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_sk_pct', 'Saskatchewan share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_nl_pct', 'Newfoundland and Labrador share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_mb_pct', 'Manitoba share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_bc_pct', 'British Columbia share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_other_pct', 'Other provinces share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_ns_pct', 'Nova Scotia share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_on_pct', 'Ontario share of Canadian crude oil production (Page 111)', 'percent', 'units'),
-    ('cp_prov_nt_pct', 'Northwest Territories share of Canadian crude oil production (Page 111)', 'percent', 'units'),
+    ('cp_prov_ab_pct', 'Alberta share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_sk_pct', 'Saskatchewan share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_nl_pct', 'Newfoundland and Labrador share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_mb_pct', 'Manitoba share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_bc_pct', 'British Columbia share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_other_pct', 'Other provinces share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_ns_pct', 'Nova Scotia share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_on_pct', 'Ontario share of Canadian crude oil production', 'percent', 'units'),
+    ('cp_prov_nt_pct', 'Northwest Territories share of Canadian crude oil production', 'percent', 'units'),
 ]
 
 CP_PROVINCE_GEOS = {
@@ -134,7 +134,7 @@ CP_PROVINCE_PCT_VECTORS = {
     'cp_prov_other_thousand_m3': 'cp_prov_other_pct',
 }
 
-# Page 110 — petroleum reserves and Western Canada oil wells
+# petroleum reserves and Western Canada oil wells
 PETROLEUM_EMP_XLSX = 'energy_rankings_and_petroleum_emp.xlsx'
 PETROLEUM_RESERVES_SUMMARY_SHEET = 'petroleum_reserves_summary'
 MB_OIL_WELLS_SHEET = 'mb_oil_wells_count_depth'
@@ -172,4 +172,154 @@ WESTERN_CANADA_OIL_WELLS_METADATA = [
     ('wc_oil_wells_completed', 'Western Canada oil wells completed', 'wells', 'units'),
     ('wc_oil_total_metres', 'Western Canada oil wells total metres drilled', 'metres', 'units'),
     ('wc_oil_avg_depth_m', 'Western Canada oil wells average depth', 'metres', 'units'),
+]
+
+# petroleum sector employment by region
+PETROLEUM_EMPLOYMENT_SHEET = 'petroleum_sector_employment'
+PETROLEUM_EMPLOYMENT_SHEET_ALIASES = (
+    'petroleum_sector_employment',
+    'statcan_petroleum_sector_employment_summary',
+)
+PETROLEUM_EMP_REGION_KEYS = ('bc', 'alta', 'sask', 'man', 'ont', 'que', 'maritimes', 'nl')
+PETROLEUM_EMP_REGION_MAP: Dict[str, str] = {
+    'bc': 'bc',
+    'b.c.': 'bc',
+    'british columbia': 'bc',
+    'colombie-britannique': 'bc',
+    'alta': 'alta',
+    'ab': 'alta',
+    'alberta': 'alta',
+    'sask': 'sask',
+    'sk': 'sask',
+    'saskatchewan': 'sask',
+    'man': 'man',
+    'mb': 'man',
+    'manitoba': 'man',
+    'ont': 'ont',
+    'on': 'ont',
+    'ontario': 'ont',
+    'que': 'que',
+    'qc': 'que',
+    'quebec': 'que',
+    'québec': 'que',
+    'maritimes': 'maritimes',
+    'maritime region': 'maritimes',
+    'maritime': 'maritimes',
+    'nl': 'nl',
+    'n.l.': 'nl',
+    'newfoundland and labrador': 'nl',
+    'terre-neuve-et-labrador': 'nl',
+    'canada': 'canada',
+}
+
+PETROLEUM_EMPLOYMENT_METADATA = [
+    ('pet_emp_reporting_year', 'Petroleum sector employment reporting year', 'year', 'units'),
+    ('pet_emp_direct_total', 'Direct petroleum sector employment total', 'persons', 'units'),
+    ('pet_emp_indirect_total', 'Indirect petroleum sector employment total', 'persons', 'units'),
+    ('pet_emp_bc_direct_pct', 'British Columbia direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_bc_indirect_pct', 'British Columbia indirect petroleum employment share', 'percent', 'units'),
+    ('pet_emp_alta_direct_pct', 'Alberta direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_alta_indirect_pct', 'Alberta indirect petroleum employment share', 'percent', 'units'),
+    ('pet_emp_sask_direct_pct', 'Saskatchewan direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_sask_indirect_pct', 'Saskatchewan indirect petroleum employment share', 'percent', 'units'),
+    ('pet_emp_man_direct_pct', 'Manitoba direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_man_indirect_pct', 'Manitoba indirect petroleum employment share', 'percent', 'units'),
+    ('pet_emp_ont_direct_pct', 'Ontario direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_ont_indirect_pct', 'Ontario indirect petroleum employment share', 'percent', 'units'),
+    ('pet_emp_que_direct_pct', 'Quebec direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_que_indirect_pct', 'Quebec indirect petroleum employment share', 'percent', 'units'),
+    ('pet_emp_maritimes_direct_pct', 'Maritime region direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_maritimes_indirect_pct', 'Maritime region indirect petroleum employment share', 'percent', 'units'),
+    ('pet_emp_nl_direct_pct', 'Newfoundland and Labrador direct petroleum employment share', 'percent', 'units'),
+    ('pet_emp_nl_indirect_pct', 'Newfoundland and Labrador indirect petroleum employment share', 'percent', 'units'),
+]
+
+PETROLEUM_EMPLOYMENT_SEED_ROWS = [
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'bc', 'value': 5},
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'alta', 'value': 73},
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'sask', 'value': 6},
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'man', 'value': 1},
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'ont', 'value': 8},
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'que', 'value': 4},
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'maritimes', 'value': 1},
+    {'reporting_year': 2024, 'metric': 'direct', 'province_territory': 'nl', 'value': 2},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'bc', 'value': 11},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'alta', 'value': 46},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'sask', 'value': 5},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'man', 'value': 2},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'ont', 'value': 24},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'que', 'value': 6},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'maritimes', 'value': 4},
+    {'reporting_year': 2024, 'metric': 'indirect', 'province_territory': 'nl', 'value': 2},
+    {'reporting_year': 2024, 'metric': 'direct_total', 'province_territory': 'canada', 'value': 190000},
+    {'reporting_year': 2024, 'metric': 'indirect_total', 'province_territory': 'canada', 'value': 313000},
+]
+
+# world proved reserves of crude oil
+WORLD_CRUDE_RES_CRUDE_SHEET = 'proved_reserves_crude_oil'
+WORLD_CRUDE_RES_CRUDE_SHEET_ALIASES = (
+    'proved_reserves_crude_oil',
+    'ogj_petroleum_world_proved_reserves',
+)
+WORLD_CRUDE_RES_METRICS_SHEET = 'proved_reserves_metrics'
+WORLD_CRUDE_RES_METRICS_SHEET_ALIASES = (
+    'proved_reserves_metrics',
+    'proved_reserves_crude_oil_metrics',
+)
+WORLD_CRUDE_RES_COUNTRY_KEYS = ('other', 'venezuela', 'saudi', 'iran', 'canada', 'iraq')
+WORLD_CRUDE_RES_COUNTRY_MAP: Dict[str, str] = {
+    'other': 'other',
+    'others': 'other',
+    'autres': 'other',
+    'venezuela': 'venezuela',
+    'vénezuela': 'venezuela',
+    'saudi': 'saudi',
+    'saudi arabia': 'saudi',
+    'saudi_arabia': 'saudi',
+    'arabie saoudite': 'saudi',
+    'iran': 'iran',
+    'canada': 'canada',
+    'iraq': 'iraq',
+    'irak': 'iraq',
+}
+WORLD_CRUDE_RES_OIL_SANDS_METRIC = 'canada_oil_sands_share_of_proved_reserves'
+WORLD_CRUDE_RES_METRIC_MAP: Dict[str, str] = {
+    'canada_oil_sands_share_of_proved_reserves': WORLD_CRUDE_RES_OIL_SANDS_METRIC,
+    'oil_sands_share': WORLD_CRUDE_RES_OIL_SANDS_METRIC,
+    'canada_oil_sands_share': WORLD_CRUDE_RES_OIL_SANDS_METRIC,
+}
+
+WORLD_CRUDE_RES_METADATA = [
+    ('wr_crude_res_reporting_year', 'World crude proved reserves reporting year', 'year', 'units'),
+    ('wr_crude_res_total_bb', 'World crude proved reserves total', 'billion barrels', 'units'),
+    ('wr_crude_res_oil_sands_share_pct', 'Canada oil sands share of proved reserves', 'percent', 'units'),
+    ('wr_crude_res_other_bb', 'Other world crude proved reserves', 'billion barrels', 'units'),
+    ('wr_crude_res_other_pct', 'Other world crude proved reserves share', 'percent', 'units'),
+    ('wr_crude_res_venezuela_bb', 'Venezuela crude proved reserves', 'billion barrels', 'units'),
+    ('wr_crude_res_venezuela_pct', 'Venezuela crude proved reserves share', 'percent', 'units'),
+    ('wr_crude_res_saudi_bb', 'Saudi Arabia crude proved reserves', 'billion barrels', 'units'),
+    ('wr_crude_res_saudi_pct', 'Saudi Arabia crude proved reserves share', 'percent', 'units'),
+    ('wr_crude_res_iran_bb', 'Iran crude proved reserves', 'billion barrels', 'units'),
+    ('wr_crude_res_iran_pct', 'Iran crude proved reserves share', 'percent', 'units'),
+    ('wr_crude_res_canada_bb', 'Canada crude proved reserves', 'billion barrels', 'units'),
+    ('wr_crude_res_canada_pct', 'Canada crude proved reserves share', 'percent', 'units'),
+    ('wr_crude_res_iraq_bb', 'Iraq crude proved reserves', 'billion barrels', 'units'),
+    ('wr_crude_res_iraq_pct', 'Iraq crude proved reserves share', 'percent', 'units'),
+]
+
+WORLD_CRUDE_RES_SEED_CRUDE_ROWS = [
+    {'reporting_year': 2023, 'country_category': 'other', 'value_bb': 672},
+    {'reporting_year': 2023, 'country_category': 'venezuela', 'value_bb': 301},
+    {'reporting_year': 2023, 'country_category': 'saudi', 'value_bb': 265},
+    {'reporting_year': 2023, 'country_category': 'iran', 'value_bb': 212},
+    {'reporting_year': 2023, 'country_category': 'canada', 'value_bb': 177},
+    {'reporting_year': 2023, 'country_category': 'iraq', 'value_bb': 141},
+]
+
+WORLD_CRUDE_RES_SEED_METRICS_ROWS = [
+    {
+        'reporting_year': 2023,
+        'metric': 'canada_oil_sands_share_of_proved_reserves',
+        'value': 97,
+    },
 ]

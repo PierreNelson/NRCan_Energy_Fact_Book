@@ -1,4 +1,4 @@
-"""Page 110 — Canadian proved reserves of crude oil (petroleum_reserves_summary)."""
+"""Canadian proved reserves of crude oil (petroleum_reserves_summary)."""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ from xlsx_paths import resolve_root_xlsx
 
 from .constants import (
     PETROLEUM_EMP_XLSX,
+    PETROLEUM_EMPLOYMENT_SEED_ROWS,
+    PETROLEUM_EMPLOYMENT_SHEET,
     PETROLEUM_RESERVES_METADATA,
     PETROLEUM_RESERVES_SEED_DIR,
     PETROLEUM_RESERVES_SUMMARY_SHEET,
@@ -30,8 +32,6 @@ REPORTING_YEAR_VECTOR = 'cr_res_reporting_year'
 
 
 def _workbook_path(config=None) -> Path:
-    from xlsx_paths import resolve_root_xlsx
-
     cached = resolve_root_xlsx(PETROLEUM_EMP_XLSX)
     if cached.is_file():
         return cached
@@ -44,14 +44,22 @@ def _workbook_path(config=None) -> Path:
         )
         rel = src.get('file_path')
         if rel:
-            p = Path(rel)
-            if p.is_file():
-                return p
+            rel_path = Path(rel)
+            if rel_path.is_file():
+                return rel_path
             root = Path(__file__).resolve().parents[2]
             candidate = (root / rel).resolve()
             if candidate.is_file():
                 return candidate
-    return PETROLEUM_RESERVES_SEED_DIR / PETROLEUM_EMP_XLSX
+            sharepoint_candidate = resolve_root_xlsx(rel_path.name)
+            if sharepoint_candidate.is_file():
+                return sharepoint_candidate
+
+    seed_path = PETROLEUM_RESERVES_SEED_DIR / PETROLEUM_EMP_XLSX
+    if seed_path.is_file():
+        return seed_path
+
+    return cached
 
 
 def ensure_petroleum_reserves_seed_workbook(path: Optional[Path] = None) -> Path:
@@ -89,9 +97,12 @@ def ensure_petroleum_reserves_seed_workbook(path: Optional[Path] = None) -> Path
         })
     mb_df = pd.DataFrame(mb_rows)
 
+    employment_df = pd.DataFrame(EMPLOYMENT_SEED_ROWS)
+
     with pd.ExcelWriter(target, engine='openpyxl') as writer:
         reserves_df.to_excel(writer, sheet_name=PETROLEUM_RESERVES_SUMMARY_SHEET, index=False)
         mb_df.to_excel(writer, sheet_name='mb_oil_wells_count_depth', index=False)
+        employment_df.to_excel(writer, sheet_name=PETROLEUM_EMPLOYMENT_SHEET, index=False)
 
     print(f'    Created seed workbook: {target}')
     return target
@@ -117,7 +128,10 @@ def _normalize_reserves_sheet(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_petroleum_reserves_raw_rows(config=None) -> List[Tuple[str, str, float]]:
-    path = ensure_petroleum_reserves_seed_workbook(_workbook_path(config))
+    path = _workbook_path(config)
+    if not path.is_file():
+        path = ensure_petroleum_reserves_seed_workbook(path)
+    print(f'    Using workbook: {path}')
     df = pd.read_excel(path, sheet_name=PETROLEUM_RESERVES_SUMMARY_SHEET)
     df = _normalize_reserves_sheet(df)
     rows: List[Tuple[str, str, float]] = []

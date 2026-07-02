@@ -1,4 +1,4 @@
-"""Page 139 — Oil Sands Magazine refinery capacity."""
+"""Oil Sands Magazine refinery capacity."""
 
 import re
 from datetime import datetime

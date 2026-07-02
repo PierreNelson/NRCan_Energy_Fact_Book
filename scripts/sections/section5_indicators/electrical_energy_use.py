@@ -1,4 +1,4 @@
-"""Page 68 — Electrical energy use by sector and province (OEE NEUD EEDAS tables)."""
+"""Electrical energy use by sector and province (OEE NEUD EEDAS tables)."""
 
 from __future__ import annotations
 
@@ -127,7 +127,7 @@ def update_electrical_energy_use(processor) -> int:
 
 
 def transform_electrical_energy_use(processor) -> int:
-    """EFB transform: elec_eu_* vectors for Page 68 from stored raw rows."""
+    """EFB transform: elec_eu_* vectors for this indicator from stored raw rows."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise RuntimeError('electrical_energy_use transform: no raw rows found — re-run eedas update')

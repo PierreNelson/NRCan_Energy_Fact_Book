@@ -31,7 +31,7 @@ const formatPct = (value, lang) => {
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-const exportPage57InfographicPng = async (figureEl, { scale = 2 }) => {
+const exportSectorTrendsInfographicPng = async (figureEl, { scale = 2 }) => {
     if (!figureEl) return null;
 
     const wrapper = figureEl.querySelector('.page57-infographic-wrapper');
@@ -222,7 +222,7 @@ const Page57 = () => {
     };
 
     const downloadPng = async () => {
-        const canvas = await exportPage57InfographicPng(figureRef.current, { scale: 2 });
+        const canvas = await exportSectorTrendsInfographicPng(figureRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}.png`);

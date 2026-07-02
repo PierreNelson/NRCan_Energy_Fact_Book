@@ -40,7 +40,7 @@ const PAGE8_PROVINCE_CENTROIDS = {
     'nu': { lat: 67.0, lon: -95.0 }
 };
 
-const formatPage8Number = (num, lang) => {
+const formatProvincialGdpNumber = (num, lang) => {
     if (num === undefined || num === null) return '—';
     return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
 };
@@ -248,7 +248,7 @@ const Page8 = () => {
                 setLoading(false);
             })
             .catch(err => {
-                console.error('Error loading Page 8 data:', err);
+                console.error('Error loading page data:', err);
                 setError(err.message);
                 setLoading(false);
             });
@@ -366,7 +366,7 @@ const Page8 = () => {
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: name, size: 20 })], alignment: AlignmentType.LEFT })] }),
                     ...allData.map(yearData => new TableCell({ 
-                        children: [new Paragraph({ children: [new TextRun({ text: formatPage8Number(yearData[code] || 0, lang), size: 20 })], alignment: AlignmentType.RIGHT })] 
+                        children: [new Paragraph({ children: [new TextRun({ text: formatProvincialGdpNumber(yearData[code] || 0, lang), size: 20 })], alignment: AlignmentType.RIGHT })] 
                     }))
                 ]
             });
@@ -375,7 +375,7 @@ const Page8 = () => {
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Canada Total' : 'Total Canada', bold: true, size: 20 })], alignment: AlignmentType.LEFT })] }),
                 ...allData.map(yearData => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: formatPage8Number(yearData.national_total || 0, lang), bold: true, size: 20 })], alignment: AlignmentType.RIGHT })] 
+                    children: [new Paragraph({ children: [new TextRun({ text: formatProvincialGdpNumber(yearData.national_total || 0, lang), bold: true, size: 20 })], alignment: AlignmentType.RIGHT })] 
                 }))
             ]
         });
@@ -408,12 +408,12 @@ const Page8 = () => {
 
         if (lang === 'en') {
             return `Energy's nominal GDP contribution by province and territory for ${year}. ` +
-                   `The national total is ${formatPage8Number(total, lang)} million dollars. ` +
-                   `${topProvince} has the highest contribution at ${formatPage8Number(topValue, lang)} million dollars.`;
+                   `The national total is ${formatProvincialGdpNumber(total, lang)} million dollars. ` +
+                   `${topProvince} has the highest contribution at ${formatProvincialGdpNumber(topValue, lang)} million dollars.`;
         } else {
             return `Contribution de l'énergie au PIB nominal par province et territoire pour ${year}. ` +
-                   `Le total national est de ${formatPage8Number(total, lang)} millions de dollars. ` +
-                   `${topProvince} a la contribution la plus élevée à ${formatPage8Number(topValue, lang)} millions de dollars.`;
+                   `Le total national est de ${formatProvincialGdpNumber(total, lang)} millions de dollars. ` +
+                   `${topProvince} a la contribution la plus élevée à ${formatProvincialGdpNumber(topValue, lang)} millions de dollars.`;
         }
     };
     const chartData = useMemo(() => {
@@ -448,13 +448,13 @@ const Page8 = () => {
             const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
 
             values.push(value);
-            hoverTexts.push(`<b>${name}</b><br>$${formatPage8Number(value, lang)}M`);
+            hoverTexts.push(`<b>${name}</b><br>$${formatProvincialGdpNumber(value, lang)}M`);
             geoJsonNames.push(info.geoJsonName);
             const centroid = PAGE8_PROVINCE_CENTROIDS[code];
             const latOffset = windowWidth <= 480 ? (highZoomOffsets[code] || 0) : 0;
             labelLats.push(centroid.lat + latOffset);
             labelLons.push(centroid.lon);
-            labelTexts.push(`${abbrev}\n${formatPage8Number(value, lang)}`);
+            labelTexts.push(`${abbrev}\n${formatProvincialGdpNumber(value, lang)}`);
         });
 
         return { values, hoverTexts, labelLats, labelLons, labelTexts, geoJsonNames };
@@ -1135,7 +1135,7 @@ const Page8 = () => {
                                     text: PAGE8_PROVINCE_CODES.map((code, i) => {
                                         const info = PAGE8_PROVINCE_INFO[code];
                                         const name = lang === 'en' ? info.nameEn : info.nameFr;
-                                        return `<b>${name}</b><br>${year}<br>$${formatPage8Number(chartData.values[i], lang)}M`;
+                                        return `<b>${name}</b><br>${year}<br>$${formatProvincialGdpNumber(chartData.values[i], lang)}M`;
                                     }),
                                     hoverinfo: 'text',
                                     hoverlabel: {
@@ -1174,9 +1174,9 @@ const Page8 = () => {
                                         const info = PAGE8_PROVINCE_INFO[code];
                                         const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
                                         if (windowWidth <= 480) {
-                                            return `${abbrev}<br>${formatPage8Number(chartData.values[i], lang)}`;
+                                            return `${abbrev}<br>${formatProvincialGdpNumber(chartData.values[i], lang)}`;
                                         }
-                                        return `<b>${abbrev}</b><br><b>${formatPage8Number(chartData.values[i], lang)}</b>`;
+                                        return `<b>${abbrev}</b><br><b>${formatProvincialGdpNumber(chartData.values[i], lang)}</b>`;
                                     }),
                                     textfont: {
                                         family: 'Arial, sans-serif',
@@ -1189,7 +1189,7 @@ const Page8 = () => {
                                     hovertext: PAGE8_PROVINCE_CODES.map((code, i) => {
                                         const info = PAGE8_PROVINCE_INFO[code];
                                         const name = lang === 'en' ? info.nameEn : info.nameFr;
-                                        return `<b>${name}</b><br>${year}<br>$${formatPage8Number(chartData.values[i], lang)}M`;
+                                        return `<b>${name}</b><br>${year}<br>$${formatProvincialGdpNumber(chartData.values[i], lang)}M`;
                                     }),
                                     hoverlabel: {
                                         bgcolor: '#ffffff',
@@ -1352,9 +1352,9 @@ const Page8 = () => {
                                                 <td 
                                                     key={yearData.year} 
                                                     style={{ textAlign: 'right' }}
-                                                    aria-label={`${name}, ${yearData.year}: ${formatPage8Number(yearData[code], lang)}${cellUnitSR}`}
+                                                    aria-label={`${name}, ${yearData.year}: ${formatProvincialGdpNumber(yearData[code], lang)}${cellUnitSR}`}
                                                 >
-                                                    {formatPage8Number(yearData[code], lang)}
+                                                    {formatProvincialGdpNumber(yearData[code], lang)}
                                                 </td>
                                             ))}
                                         </tr>
@@ -1369,9 +1369,9 @@ const Page8 = () => {
                                             <td 
                                                 key={yearData.year} 
                                                 style={{ textAlign: 'right' }}
-                                                aria-label={`${totalLabel}, ${yearData.year}: ${formatPage8Number(yearData.national_total, lang)}${cellUnitSR}`}
+                                                aria-label={`${totalLabel}, ${yearData.year}: ${formatProvincialGdpNumber(yearData.national_total, lang)}${cellUnitSR}`}
                                             >
-                                                {formatPage8Number(yearData.national_total, lang)}
+                                                {formatProvincialGdpNumber(yearData.national_total, lang)}
                                             </td>
                                         );
                                     })}

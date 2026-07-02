@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage51Data, page51RowHasCompleteData } from '../utils/dataLoader';
+import { getResidentialEnergyUseData, residentialEnergyUseRowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const REU_BY_TYPE_ORDER = ['space_heating', 'water_heating', 'appliances', 'lighting', 'space_cooling'];
@@ -111,7 +111,7 @@ const Page51 = () => {
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
     useEffect(() => {
-        getPage51Data()
+        getResidentialEnergyUseData()
             .then((d) => {
                 setResult(d);
             })
@@ -135,7 +135,7 @@ const Page51 = () => {
 
     const years = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...new Set(result.data.filter(page51RowHasCompleteData).map((r) => r.year))]
+        return [...new Set(result.data.filter(residentialEnergyUseRowHasCompleteData).map((r) => r.year))]
             .filter((y) => y !== 2000 && y >= PAGE51_MIN_DISPLAY_YEAR)
             .sort((a, b) => b - a);
     }, [result]);
@@ -178,7 +178,7 @@ const Page51 = () => {
 
     const table1AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => residentialEnergyUseRowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const reu = r.reuByType || {};
             const total = reu.total ?? 0;
             const row = { year: r.year, total };
@@ -192,7 +192,7 @@ const Page51 = () => {
     }, [result]);
     const table2AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => residentialEnergyUseRowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const wh = r.waterHeating || {};
             const total = wh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(wh[k]) || 0), 0);
             const row = { year: r.year, total };
@@ -206,7 +206,7 @@ const Page51 = () => {
     }, [result]);
     const table3AllYearsRows = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...result.data].filter((r) => page51RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
+        return [...result.data].filter((r) => residentialEnergyUseRowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE51_MIN_DISPLAY_YEAR).sort((a, b) => a.year - b.year).map((r) => {
             const sh = r.spaceHeating || {};
             const total = sh.total ?? SOURCE_ORDER.reduce((sum, k) => sum + (Number(sh[k]) || 0), 0);
             const row = { year: r.year, total };

@@ -3,13 +3,13 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage66Data } from '../utils/dataLoader';
+import { getCanadianElectricityGenerationData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page66GenerationInfographic from '../components/Page66GenerationInfographic';
 import {
     formatSharePct,
-    exportPage66InfographicPng,
-    getPage66ProvinceRows,
+    exportCanadianGenerationInfographicPng,
+    getCanadianGenerationProvinceRows,
 } from '../components/Page66GenerationInfographic.constants';
 
 const PIE_KEYS = ['petroleum', 'hydro', 'nuclear', 'other_renewables', 'natural_gas', 'coal'];
@@ -60,7 +60,7 @@ const Page66 = () => {
     const bottomScrollRef = useRef(null);
 
     useEffect(() => {
-        getPage66Data()
+        getCanadianElectricityGenerationData()
             .then(setPageData)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -200,7 +200,7 @@ const Page66 = () => {
             };
             img.src = imgData;
         } catch (err) {
-            console.warn('Unable to download Page 66 chart image.', err);
+            console.warn('Unable to download chart image.', err);
         }
     };
 
@@ -240,7 +240,7 @@ const Page66 = () => {
             const block = infographic?.sources?.[sourceKey];
             if (!block) return;
             const sourceLabel = getText(INFOGRAPHIC_LABEL_KEYS[sourceKey], lang);
-            getPage66ProvinceRows(sourceKey, block).forEach((row, index) => {
+            getCanadianGenerationProvinceRows(sourceKey, block).forEach((row, index) => {
                 rows.push({
                     year: selectedYear,
                     source: sourceLabel,
@@ -364,7 +364,7 @@ const Page66 = () => {
     };
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportPage66InfographicPng(figureRef.current, { scale: 2 });
+        const canvas = await exportCanadianGenerationInfographicPng(figureRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}_infographic.png`);

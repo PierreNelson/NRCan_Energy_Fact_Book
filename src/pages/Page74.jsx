@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage74Data } from '../utils/dataLoader';
+import { getRenewableElectricityCapacityData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const TRACE_KEYS = ['hydro', 'wind', 'solarTidal', 'biomass'];
@@ -229,7 +229,7 @@ const Page74 = () => {
     };
 
     useEffect(() => {
-        getPage74Data()
+        getRenewableElectricityCapacityData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

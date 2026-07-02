@@ -73,7 +73,7 @@ const PAGE9_COLORS = {
     'map_fill': '#AA9255'
 };
 
-const formatPage9Number = (num, lang) => {
+const formatNationalAccountsNumber = (num, lang) => {
     if (num === undefined || num === null) return '—';
     return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
 };
@@ -509,7 +509,7 @@ const Page9 = () => {
                 children: [
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: name, size: 18 })], alignment: AlignmentType.LEFT })] }),
                     ...yearlyProvinceData.map(yearData => new TableCell({ 
-                        children: [new Paragraph({ children: [new TextRun({ text: formatPage9Number(yearData[code], lang), size: 18 })], alignment: AlignmentType.RIGHT })] 
+                        children: [new Paragraph({ children: [new TextRun({ text: formatNationalAccountsNumber(yearData[code], lang), size: 18 })], alignment: AlignmentType.RIGHT })] 
                     }))
                 ]
             });
@@ -520,7 +520,7 @@ const Page9 = () => {
             children: [
                 new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Canada Total (Direct)' : 'Total Canada (direct)', bold: true, size: 18 })], alignment: AlignmentType.LEFT })] }),
                 ...yearlyProvinceData.map(yearData => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: formatPage9Number(yearData.national_total, lang), bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
+                    children: [new Paragraph({ children: [new TextRun({ text: formatNationalAccountsNumber(yearData.national_total, lang), bold: true, size: 18 })], alignment: AlignmentType.RIGHT })] 
                 }))
             ]
         });
@@ -575,9 +575,9 @@ const Page9 = () => {
 
     const getMapSRSummary = () => {
         if (lang === 'en') {
-            return `Map showing energy sector direct employment by province and territory for ${year}. Alberta has the highest employment at ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.ab.direct, lang)} jobs. Total direct employment is ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} jobs.`;
+            return `Map showing energy sector direct employment by province and territory for ${year}. Alberta has the highest employment at ${formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.ab.direct, lang)} jobs. Total direct employment is ${formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} jobs.`;
         } else {
-            return `Carte montrant les emplois directs du secteur de l'énergie par province et territoire pour ${year}. L'Alberta a le plus grand nombre d'emplois avec ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.ab.direct, lang)} emplois. Le total des emplois directs est de ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} emplois.`;
+            return `Carte montrant les emplois directs du secteur de l'énergie par province et territoire pour ${year}. L'Alberta a le plus grand nombre d'emplois avec ${formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.ab.direct, lang)} emplois. Le total des emplois directs est de ${formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} emplois.`;
         }
     };
 
@@ -636,13 +636,13 @@ const Page9 = () => {
             const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
 
             values.push(value);
-            hoverTexts.push(`<b>${name}</b><br>${formatPage9Number(value, lang)} ${lang === 'en' ? 'jobs' : 'emplois'}`);
+            hoverTexts.push(`<b>${name}</b><br>${formatNationalAccountsNumber(value, lang)} ${lang === 'en' ? 'jobs' : 'emplois'}`);
             geoJsonNames.push(info.geoJsonName);
             const centroid = PAGE9_PROVINCE_CENTROIDS[code];
             const latOffset = windowWidth <= 480 ? (highZoomOffsets[code] || 0) : 0;
             labelLats.push(centroid.lat + latOffset);
             labelLons.push(centroid.lon);
-            labelTexts.push(`${abbrev}\n${formatPage9Number(value, lang)}`);
+            labelTexts.push(`${abbrev}\n${formatNationalAccountsNumber(value, lang)}`);
         });
 
         return { values, hoverTexts, labelLats, labelLons, labelTexts, geoJsonNames };
@@ -1234,13 +1234,13 @@ const Page9 = () => {
                         <div className="page9-left-column">
                             <div className="page9-stats">
                                 <div className="page9-stats-line">
-                                    {getText('page9_direct', lang)}: {formatPage9Number(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} {getText('page9_jobs', lang)}
+                                    {getText('page9_direct', lang)}: {formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.direct_total, lang)} {getText('page9_jobs', lang)}
                                 </div>
                                 <div className="page9-stats-line">
-                                    {getText('page9_indirect', lang)}: {formatPage9Number(PAGE9_EMPLOYMENT_DATA.indirect_total, lang)} {getText('page9_jobs', lang)}
+                                    {getText('page9_indirect', lang)}: {formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.indirect_total, lang)} {getText('page9_jobs', lang)}
                                 </div>
                                 <div className="page9-stats-line page9-stats-total">
-                                    {getText('page9_total_label', lang)}: {formatPage9Number(PAGE9_EMPLOYMENT_DATA.total, lang)} {getText('page9_jobs', lang)}
+                                    {getText('page9_total_label', lang)}: {formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.total, lang)} {getText('page9_jobs', lang)}
                                 </div>
                             </div>
 
@@ -1314,9 +1314,9 @@ const Page9 = () => {
                                                     const info = PAGE9_PROVINCE_INFO[code];
                                                     const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
                                                     if (windowWidth <= 480) {
-                                                        return `${abbrev}<br>${formatPage9Number(mapChartData.values[i], lang)}`;
+                                                        return `${abbrev}<br>${formatNationalAccountsNumber(mapChartData.values[i], lang)}`;
                                                     }
-                                                    return `<b>${abbrev}</b><br><b>${formatPage9Number(mapChartData.values[i], lang)}</b>`;
+                                                    return `<b>${abbrev}</b><br><b>${formatNationalAccountsNumber(mapChartData.values[i], lang)}</b>`;
                                                 }),
                                                 textfont: {
                                                     family: 'Arial, sans-serif',
@@ -1423,11 +1423,11 @@ const Page9 = () => {
                         <div className="page9-right-column">
                             <ul className="page9-indigenous-bullet" style={{ listStyle: 'disc', paddingLeft: '20px', margin: 0 }}>
                                 <li aria-label={lang === 'en' 
-                                    ? `About ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)} Indigenous people were directly employed in the energy sector in 2023.`
-                                    : `Le secteur de l'énergie employait directement environ ${formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)} Autochtones en 2023.`
+                                    ? `About ${formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)} Indigenous people were directly employed in the energy sector in 2023.`
+                                    : `Le secteur de l'énergie employait directement environ ${formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)} Autochtones en 2023.`
                                 }>
                                     <span aria-hidden="true">
-                                        {getText('page9_indigenous_bullet', lang).replace('18,200', formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)).replace('18 200', formatPage9Number(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang))}
+                                        {getText('page9_indigenous_bullet', lang).replace('18,200', formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang)).replace('18 200', formatNationalAccountsNumber(PAGE9_EMPLOYMENT_DATA.indigenous_employed, lang))}
                                     </span>
                                 </li>
                             </ul>
@@ -1576,9 +1576,9 @@ const Page9 = () => {
                                                         <td 
                                                             key={yearData.year} 
                                                             style={{ textAlign: 'right' }}
-                                                            aria-label={`${name}, ${yearData.year}: ${formatPage9Number(yearData[code], lang)}${cellUnitSR}`}
+                                                            aria-label={`${name}, ${yearData.year}: ${formatNationalAccountsNumber(yearData[code], lang)}${cellUnitSR}`}
                                                         >
-                                                            {formatPage9Number(yearData[code], lang)}
+                                                            {formatNationalAccountsNumber(yearData[code], lang)}
                                                         </td>
                                                     ))}
                                                 </tr>
@@ -1593,9 +1593,9 @@ const Page9 = () => {
                                                     <td 
                                                         key={yearData.year} 
                                                         style={{ textAlign: 'right' }}
-                                                        aria-label={`${totalLabel}, ${yearData.year}: ${formatPage9Number(yearData.national_total, lang)}${cellUnitSR}`}
+                                                        aria-label={`${totalLabel}, ${yearData.year}: ${formatNationalAccountsNumber(yearData.national_total, lang)}${cellUnitSR}`}
                                                     >
-                                                        {formatPage9Number(yearData.national_total, lang)}
+                                                        {formatNationalAccountsNumber(yearData.national_total, lang)}
                                                     </td>
                                                 );
                                             })}

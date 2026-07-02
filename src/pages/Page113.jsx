@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage113Data } from '../utils/dataLoader';
+import { getOilSandsProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page113OilSandsInfographic from '../components/Page113OilSandsInfographic';
 import { OVERLAY_COLORS, OVERLAY_SLOTS } from '../components/Page113OilSandsInfographic.constants';
@@ -67,7 +67,7 @@ const Page113 = () => {
     const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     useEffect(() => {
-        getPage113Data()
+        getOilSandsProductionData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

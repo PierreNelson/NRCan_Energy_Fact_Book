@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage81Data } from '../utils/dataLoader';
+import { getWindProjectsMapData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const PROV_BAR_COLOR = '#2B5C3F';
@@ -43,7 +43,7 @@ const substitute = (text, vars) =>
         text || '',
     );
 
-/** ~300% browser zoom — same threshold as Page96 / Page111. */
+/** ~300% browser zoom — same threshold as plug-in EV registrations / Canadian production infographics. */
 const PAGE81_PROV_VERTICAL_TICK_ZOOM = 2.85;
 const PAGE81_PROJ_WRAP_ZOOM = 2.85;
 const PAGE81_PROJ_WRAP_DEEP_ZOOM = 3.55;
@@ -150,7 +150,7 @@ const Page81 = () => {
     };
 
     useEffect(() => {
-        getPage81Data()
+        getWindProjectsMapData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

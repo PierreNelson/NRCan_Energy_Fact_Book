@@ -1,4 +1,4 @@
-"""Page 85 — Uranium international context (world exports, production, recoverable resources)."""
+"""Uranium international context (world exports, production, recoverable resources)."""
 
 from __future__ import annotations
 

@@ -1,27 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import { getPetroleumEmploymentByRegionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
 const REGION_ORDER = ['bc', 'alta', 'sask', 'man', 'ont', 'que', 'maritimes', 'nl'];
 
+/** Segments below this share (%) get leader-line callouts; wider segments label inside the bar. */
+const CALLOUT_THRESHOLD = 6;
+
 const LEGEND_ROWS = [
     ['bc', 'sask', 'ont', 'maritimes'],
     ['alta', 'man', 'que', 'nl']
 ];
-
-const REGION_PCTS = {
-    bc: { direct: 5, indirect: 11 },
-    alta: { direct: 73, indirect: 46 },
-    sask: { direct: 6, indirect: 5 },
-    man: { direct: 1, indirect: 2 },
-    ont: { direct: 8, indirect: 24 },
-    que: { direct: 4, indirect: 6 },
-    maritimes: { direct: 1, indirect: 4 },
-    nl: { direct: 2, indirect: 2 }
-};
 
 const REGION_COLORS = {
     bc: '#7EBAE4',
@@ -34,12 +27,10 @@ const REGION_COLORS = {
     nl: '#3D9A9A'
 };
 
-const JOB_TOTALS = {
-    en: { direct: 190000, indirect: 313000 },
-    fr: { direct: 189700, indirect: 313400 }
-};
+const PAGE105_HIGH_ZOOM_MIN = 1.09;
 
-const PAGE105_HIGH_ZOOM_MIN = 1.49;
+const substitute = (text, vars) =>
+    (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
 
 const getPageZoomScale = () => {
     if (typeof window === 'undefined') return 1;
@@ -53,17 +44,17 @@ const getPageZoomScale = () => {
         }
         if (vv.width > 0 && iw > 0) {
             const sIw = iw / vv.width;
-            if (sIw >= 1.45 && sIw <= 4) return sIw;
+            if (sIw >= 1.08 && sIw <= 4) return sIw;
         }
         if (vv.width > 0 && cw > 0) {
             const sCw = cw / vv.width;
-            if (sCw >= 1.45 && sCw <= 4) return sCw;
+            if (sCw >= 1.08 && sCw <= 4) return sCw;
         }
     }
 
     if (iw > 0 && typeof window.outerWidth === 'number' && window.outerWidth > 0) {
         const r = window.outerWidth / iw;
-        if (r >= 1.38) return Math.min(r, 4);
+        if (r >= 1.08) return Math.min(r, 4);
     }
 
     return 1;
@@ -71,6 +62,9 @@ const getPageZoomScale = () => {
 
 const Page105 = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [pageData, setPageData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [highBrowserZoom, setHighBrowserZoom] = useState(false);
     const [isTableOpen, setIsTableOpen] = useState(false);
@@ -80,13 +74,58 @@ const Page105 = () => {
     const topScrollRef = useRef(null);
     const tableScrollRef = useRef(null);
 
+    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
+    const reportingYear = pageData?.reportingYear ?? null;
+    const regionPcts = pageData?.regionPcts ?? {};
+    const directTotal = pageData?.directTotal ?? null;
+    const indirectTotal = pageData?.indirectTotal ?? null;
+    const topIndirect = pageData?.topIndirect ?? [];
+
     const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
+
+    useEffect(() => {
+        getPetroleumEmploymentByRegionData()
+            .then(setPageData)
+            .catch((err) => setError(err?.message || 'Failed to load data'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const formatJobsShort = (n) => {
+        if (n == null || Number.isNaN(n)) return '\u2014';
+        if (lang === 'en' && n >= 1000) return `${Math.round(n / 1000)}K`;
+        return Math.round(n).toLocaleString(locale);
+    };
+
+    const narrativePct = (v) => {
+        if (v == null || Number.isNaN(v)) return '\u2014';
+        const s = v.toLocaleString(locale);
+        return lang === 'en' ? `${s}%` : `${s}\u00a0%`;
+    };
+
+    const textVars = useMemo(() => {
+        const provinceName = (key) => getText(`page105_region_${key}_full`, lang);
+        const top = topIndirect;
+        return {
+            year: reportingYear ?? '',
+            directJobs: formatJobsShort(directTotal),
+            indirectJobs: formatJobsShort(indirectTotal),
+            province1: top[0] ? provinceName(top[0].key) : '',
+            share1: top[0] ? narrativePct(top[0].share) : '',
+            province2: top[1] ? provinceName(top[1].key) : '',
+            share2: top[1] ? narrativePct(top[1].share) : '',
+            province3: top[2] ? provinceName(top[2].key) : '',
+            share3: top[2] ? narrativePct(top[2].share) : '',
+            province4: top[3] ? provinceName(top[3].key) : '',
+            share4: top[3] ? narrativePct(top[3].share) : '',
+            province5: top[4] ? provinceName(top[4].key) : '',
+            share5: top[4] ? narrativePct(top[4].share) : ''
+        };
+    }, [lang, reportingYear, directTotal, indirectTotal, topIndirect]);
 
     const directRowLabel = getText('page105_row_direct', lang);
     const indirectRowLabel = getText('page105_row_indirect', lang);
     const plotYDirectLabel = highBrowserZoom ? getText('page105_row_direct_compact', lang) : directRowLabel;
     const plotYIndirectLabel = highBrowserZoom ? getText('page105_row_indirect_compact', lang) : indirectRowLabel;
-    const totals = JOB_TOTALS[lang === 'en' ? 'en' : 'fr'];
 
     // X-axis ticks are percentage scale (0%–100%); keep sizes moderate per request.
     const tickFontX = {
@@ -116,10 +155,8 @@ const Page105 = () => {
     };
 
     const formatJobsAnnotation = (n) => {
-        if (lang === 'en' && n === 190000) return `190K ${getText('page105_jobs_word', lang)}`;
-        if (lang === 'en' && n === 313000) return `313K ${getText('page105_jobs_word', lang)}`;
-        const s = n.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-        return `${s} ${getText('page105_jobs_word', lang)}`;
+        if (n == null || Number.isNaN(n)) return '\u2014';
+        return `${formatJobsShort(n)} ${getText('page105_jobs_word', lang)}`;
     };
 
     const formatPctCell = (v) => {
@@ -138,7 +175,12 @@ const Page105 = () => {
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') || 'petroleum-employment-by-region'}-2024`;
+        .replace(/^-|-$/g, '') || 'petroleum-employment-by-region'}-${reportingYear ?? 'latest'}`;
+
+    const barPctFontBase = windowWidth <= 480 ? 16 : 20;
+    const barPctFontLarge = windowWidth <= 480 ? 22 : 26;
+    /** Leader-line callout labels (direct + indirect rows) at 100% zoom. */
+    const calloutFontSize = windowWidth <= 480 ? 14 : 16;
 
     const hexToRgba = (hex, opacity = 1) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -150,8 +192,9 @@ const Page105 = () => {
 
     const plotTraces = REGION_ORDER.map((key, traceIndex) => {
         const base = REGION_COLORS[key];
-        const d = REGION_PCTS[key].direct;
-        const ind = REGION_PCTS[key].indirect;
+        const shares = regionPcts[key] ?? {};
+        const d = shares.direct ?? 0;
+        const ind = shares.indirect ?? 0;
         const markerColor =
             selectedPoints === null
                 ? base
@@ -161,7 +204,7 @@ const Page105 = () => {
                       );
                       return isSelected ? base : hexToRgba(base, 0.28);
                   });
-        const textInside = (v) => (v >= 10 ? formatPctCell(v).replace('\u00a0', ' ') : '');
+        const textInside = (v) => (v >= CALLOUT_THRESHOLD ? formatPctCell(v).replace('\u00a0', ' ') : '');
         const full = regionFullName(key);
         const showBarPctLabels = !highBrowserZoom;
         return {
@@ -176,7 +219,10 @@ const Page105 = () => {
             insidetextanchor: 'middle',
             textfont: {
                 family: 'Arial, sans-serif',
-                size: windowWidth <= 480 ? 11 : 13,
+                size: [
+                    d >= 20 ? barPctFontLarge : barPctFontBase,
+                    ind >= 20 ? barPctFontLarge : barPctFontBase
+                ],
                 color: '#ffffff'
             },
             hovertext: [
@@ -188,14 +234,12 @@ const Page105 = () => {
     });
 
     const chartAriaParts = REGION_ORDER.map((k) => {
-        const r = REGION_PCTS[k];
+        const r = regionPcts[k] ?? {};
         const nm = getText(`page105_region_${k}_full`, lang);
         return `${nm}: ${formatPctCell(r.direct)} ${getText('page105_aria_direct', lang)}, ${formatPctCell(r.indirect)} ${getText('page105_aria_indirect', lang)}`;
     });
     const chartAria =
-        (lang === 'en'
-            ? 'Horizontal stacked bars for 2024 direct and indirect petroleum employment by region. '
-            : 'Bandes horizontales empilées pour 2024, emplois directs et indirects du secteur pétrolier par région. ') +
+        substitute(getText('page105_chart_aria_prefix', lang), textVars) +
         chartAriaParts.join('. ') +
         '.';
 
@@ -306,7 +350,7 @@ const Page105 = () => {
         const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
         if (!plotElement || !window.Plotly) return;
         try {
-            const title = stripHtml(getText('page105_chart_heading', lang));
+            const title = stripHtml(substitute(getText('page105_chart_heading', lang), textVars));
             const imgData = await window.Plotly.toImage(plotElement, {
                 format: 'png',
                 width: 1100,
@@ -363,13 +407,13 @@ const Page105 = () => {
         const h3 = getText('page105_table_col_indirect_pct', lang);
         const headers = [h1, h2, h3];
         const rows = REGION_ORDER.map((k) => {
-            const r = REGION_PCTS[k];
-            return [regionLabel(k), r.direct, r.indirect];
+            const r = regionPcts[k] ?? {};
+            return [regionLabel(k), r.direct ?? '', r.indirect ?? ''];
         });
         const totalRow = [
             getText('page105_table_total_jobs_row', lang),
-            formatJobsTableCell(totals.direct),
-            formatJobsTableCell(totals.indirect)
+            formatJobsTableCell(directTotal),
+            formatJobsTableCell(indirectTotal)
         ];
         const csvContent = [headers.join(','), ...rows.map((row) => row.join(',')), totalRow.join(',')].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -384,7 +428,7 @@ const Page105 = () => {
                         new Paragraph({
                             children: [
                                 new TextRun({
-                                    text: stripHtml(getText('page105_chart_heading', lang)),
+                                    text: stripHtml(substitute(getText('page105_chart_heading', lang), textVars)),
                                     bold: true,
                                     size: 28
                                 })
@@ -453,7 +497,7 @@ const Page105 = () => {
                                                             alignment: AlignmentType.CENTER,
                                                             children: [
                                                                 new TextRun({
-                                                                    text: String(REGION_PCTS[k].direct)
+                                                                    text: String((regionPcts[k] ?? {}).direct ?? '')
                                                                 })
                                                             ]
                                                         })
@@ -465,7 +509,7 @@ const Page105 = () => {
                                                             alignment: AlignmentType.CENTER,
                                                             children: [
                                                                 new TextRun({
-                                                                    text: String(REGION_PCTS[k].indirect)
+                                                                    text: String((regionPcts[k] ?? {}).indirect ?? '')
                                                                 })
                                                             ]
                                                         })
@@ -494,7 +538,7 @@ const Page105 = () => {
                                                     alignment: AlignmentType.CENTER,
                                                     children: [
                                                         new TextRun({
-                                                            text: formatJobsTableCell(totals.direct),
+                                                            text: formatJobsTableCell(directTotal),
                                                             bold: true
                                                         })
                                                     ]
@@ -507,7 +551,7 @@ const Page105 = () => {
                                                     alignment: AlignmentType.CENTER,
                                                     children: [
                                                         new TextRun({
-                                                            text: formatJobsTableCell(totals.indirect),
+                                                            text: formatJobsTableCell(indirectTotal),
                                                             bold: true
                                                         })
                                                     ]
@@ -570,58 +614,161 @@ const Page105 = () => {
         });
     };
 
-    const calloutThreshold = 10;
-    const calloutAyShortPx = -42;
-    const calloutAyLongPx = -58;
+    const plotTopMargin = highBrowserZoom ? 16 : 52;
+    const plotLeftMargin = highBrowserZoom ? 58 : 158;
+    const plotRightMargin = highBrowserZoom ? 8 : 112;
+    const plotBottomMargin = 48;
+    const barGap = highBrowserZoom ? 0.52 : 0.35;
 
-    const buildAlternatingPctCallouts = (rowKey, yCat) => {
-        const items = [];
+    const calloutThreshold = CALLOUT_THRESHOLD;
+
+    const plotHeightPx = chartHeight - plotTopMargin - plotBottomMargin;
+    const yBandPx = plotHeightPx / 2;
+    const barThicknessPx = yBandPx / (1 + barGap);
+    const barHalfPx = barThicknessPx / 2;
+    const gapPx = barGap * barThicknessPx;
+    const calloutFontH = calloutFontSize + 2;
+    /** Sit in the lower half of the inter-bar gap — just above the indirect bar, below the direct bar. */
+    const indirectAyBase = Math.round(
+        barHalfPx + Math.max(2, (gapPx - calloutFontH) * 0.28) - 7
+    );
+    const NL_CALLOUT_ANGLE_DEG = 20;
+
+    const estimateLabelHalfWidthPct = (text, fontSize) => {
+        const digits = String(text).replace(/\D/g, '').length || 1;
+        const unit = fontSize >= 16 ? 2.2 : 2.0;
+        return Math.max(2.4, digits * unit + 0.8);
+    };
+
+    const labelSpan = (it) => {
+        const hw = it.halfW;
+        return [it.anchorX - hw, it.anchorX + hw];
+    };
+
+    const labelsOverlap = (a, b) => {
+        const [aL, aR] = labelSpan(a);
+        const [bL, bR] = labelSpan(b);
+        return aL < bR - 0.35 && bL < aR - 0.35;
+    };
+
+    const collectSmallSegmentCallouts = (rowKey, fontSize) => {
+        const raw = [];
         let acc = 0;
         REGION_ORDER.forEach((key) => {
-            const v = REGION_PCTS[key][rowKey];
-            const cx = acc + v / 2;
+            const shares = regionPcts[key] ?? {};
+            const v = shares[rowKey] ?? 0;
+            const segStart = acc;
             acc += v;
             if (v > 0 && v < calloutThreshold) {
-                items.push({
-                    cx,
+                raw.push({
+                    regionKey: key,
+                    segStart,
+                    segEnd: segStart + v,
+                    cx: segStart + v / 2,
+                    v,
                     text: formatPctCell(v).replace(/\u00a0/g, ' ')
                 });
             }
         });
-        items.sort((a, b) => a.cx - b.cx);
-        return items.map((it, idx) => ({
-            x: it.cx,
-            y: yCat,
-            xref: 'x',
-            yref: 'y',
-            text: it.text,
-            showarrow: true,
-            arrowhead: 2,
-            arrowsize: 1,
-            arrowwidth: 1,
-            arrowcolor: '#333333',
-            ax: 0,
-            ay: idx % 2 === 0 ? calloutAyShortPx : calloutAyLongPx,
-            axref: 'pixel',
-            ayref: 'pixel',
-            font: { color: '#333333', size: 12, family: 'Arial, sans-serif' },
-            xanchor: 'center',
-            yanchor: 'middle',
-            cliponaxis: false
+
+        return raw.map((it) => ({
+            ...it,
+            halfW: estimateLabelHalfWidthPct(it.text, fontSize),
+            anchorX: it.cx,
+            xanchor: 'center'
         }));
     };
 
+    const assignCalloutSlots = (items, ayTiers, maxTier = ayTiers.length - 1) => {
+        const sorted = [...items].sort((a, b) => a.anchorX - b.anchorX);
+        const placed = [];
+
+        sorted.forEach((it) => {
+            let tier = 0;
+            for (let t = 0; t <= maxTier; t += 1) {
+                const conflict = placed.some((p) => p.tier === t && labelsOverlap(it, p));
+                if (!conflict) {
+                    tier = t;
+                    break;
+                }
+                tier = t;
+            }
+            tier = Math.min(tier, maxTier);
+            placed.push({ ...it, tier, ay: ayTiers[tier] });
+        });
+
+        for (let pass = 0; pass < 2; pass += 1) {
+            for (let i = 1; i < placed.length; i += 1) {
+                const prev = placed[i - 1];
+                const curr = placed[i];
+                if (prev.tier === curr.tier && labelsOverlap(prev, curr)) {
+                    const nextTier = Math.min(curr.tier + 1, maxTier);
+                    curr.tier = nextTier;
+                    curr.ay = ayTiers[nextTier];
+                }
+            }
+        }
+
+        return placed;
+    };
+
+    const calloutToAnnotation = (it, yCat, fontSize) => ({
+        x: it.anchorX,
+        y: yCat,
+        xref: 'x',
+        yref: 'y',
+        text: `<b>${it.text}</b>`,
+        showarrow: true,
+        arrowhead: 0,
+        arrowsize: 1,
+        arrowwidth: 1.5,
+        arrowcolor: '#333333',
+        ax: it.ax ?? 0,
+        ay: it.ay,
+        axref: 'pixel',
+        ayref: 'pixel',
+        font: { color: '#333333', size: fontSize, family: 'Arial, sans-serif' },
+        xanchor: 'center',
+        yanchor: 'bottom',
+        cliponaxis: false
+    });
+
+    const directAyTiers = [-28, -40, -52, -64];
+    const indirectAyTiers = [
+        -indirectAyBase,
+        -(indirectAyBase + 6),
+        -(indirectAyBase + 12)
+    ];
+
+    const buildDirectCallouts = () =>
+        assignCalloutSlots(
+            collectSmallSegmentCallouts('direct', calloutFontSize),
+            directAyTiers,
+            directAyTiers.length - 1
+        ).map((it) => {
+            if (it.regionKey === 'nl') {
+                const angleRad = (NL_CALLOUT_ANGLE_DEG * Math.PI) / 180;
+                it.ax = Math.round(Math.abs(it.ay) * Math.tan(angleRad));
+            }
+            return calloutToAnnotation(it, directRowLabel, calloutFontSize);
+        });
+
+    const buildIndirectCallouts = () =>
+        assignCalloutSlots(
+            collectSmallSegmentCallouts('indirect', calloutFontSize),
+            indirectAyTiers,
+            indirectAyTiers.length - 1
+        ).map((it) => {
+            if (it.regionKey === 'nl') {
+                const angleRad = (NL_CALLOUT_ANGLE_DEG * Math.PI) / 180;
+                it.ax = Math.round(Math.abs(it.ay) * Math.tan(angleRad));
+            }
+            return calloutToAnnotation(it, indirectRowLabel, calloutFontSize);
+        });
+
     const pctCalloutAnnotations = highBrowserZoom
         ? []
-        : [
-              ...buildAlternatingPctCallouts('direct', directRowLabel),
-              ...buildAlternatingPctCallouts('indirect', indirectRowLabel)
-          ];
-
-    const plotTopMargin = highBrowserZoom ? 16 : 32;
-    const plotLeftMargin = highBrowserZoom ? 58 : 158;
-    const plotRightMargin = highBrowserZoom ? 8 : 112;
-    const barGap = highBrowserZoom ? 0.52 : 0.35;
+        : [...buildDirectCallouts(), ...buildIndirectCallouts()];
 
     const jobTotalAnnotations = highBrowserZoom
         ? []
@@ -631,7 +778,7 @@ const Page105 = () => {
                   y: directRowLabel,
                   xref: 'x',
                   yref: 'y',
-                  text: formatJobsAnnotation(totals.direct),
+                  text: `<b>${formatJobsAnnotation(directTotal)}</b>`,
                   showarrow: false,
                   xanchor: 'left',
                   yanchor: 'middle',
@@ -642,7 +789,7 @@ const Page105 = () => {
                   y: indirectRowLabel,
                   xref: 'x',
                   yref: 'y',
-                  text: formatJobsAnnotation(totals.indirect),
+                  text: `<b>${formatJobsAnnotation(indirectTotal)}</b>`,
                   showarrow: false,
                   xanchor: 'left',
                   yanchor: 'middle',
@@ -652,12 +799,28 @@ const Page105 = () => {
 
     const allSharesDirect = REGION_ORDER.map((key) => ({
         key,
-        v: REGION_PCTS[key].direct
+        v: (regionPcts[key] ?? {}).direct ?? 0
     }));
     const allSharesIndirect = REGION_ORDER.map((key) => ({
         key,
-        v: REGION_PCTS[key].indirect
+        v: (regionPcts[key] ?? {}).indirect ?? 0
     }));
+
+    if (loading) {
+        return (
+            <main id="main-content" className="page-content page-105" role="main" style={{ backgroundColor: '#ffffff' }}>
+                <p>{lang === 'en' ? 'Loading petroleum employment data…' : 'Chargement des données sur l\'emploi pétrolier…'}</p>
+            </main>
+        );
+    }
+
+    if (error || !pageData) {
+        return (
+            <main id="main-content" className="page-content page-105" role="main" style={{ backgroundColor: '#ffffff' }}>
+                <p role="alert">{error || (lang === 'en' ? 'Petroleum employment data is unavailable.' : 'Les données sur l\'emploi pétrolier ne sont pas disponibles.')}</p>
+            </main>
+        );
+    }
 
     return (
         <main
@@ -924,26 +1087,26 @@ const Page105 = () => {
 
             <div className="page105-container">
                 <h1 id="page105-main-title" className="wb-inv">
-                    {getText('page105_aria_page', lang)}
+                    {substitute(getText('page105_aria_page', lang), textVars)}
                 </h1>
                 <header>
                     <p className="page105-intro">
                         <span>{getText('page105_p1a', lang)}</span>
-                        <strong className="page105-intro-direct">{getText('page105_p1b', lang)}</strong>
-                        <span>{getText('page105_p1c', lang)}</span>
+                        <strong className="page105-intro-direct">{substitute(getText('page105_p1b', lang), textVars)}</strong>
+                        <span>{substitute(getText('page105_p1c', lang), textVars)}</span>
                     </p>
                     <p className="page105-intro-emphasis">
-                        {getText('page105_p1d', lang)}
+                        {substitute(getText('page105_p1d', lang), textVars)}
                         {getText('page105_p1e', lang)}
                     </p>
                     <p className="page105-intro">
-                        <strong className="page105-intro-alberta">{getText('page105_p2a', lang)}</strong>
-                        <span>{getText('page105_p2b', lang)}</span>
+                        <strong className="page105-intro-alberta">{substitute(getText('page105_p2a', lang), textVars)}</strong>
+                        <span>{substitute(getText('page105_p2b', lang), textVars)}</span>
                     </p>
                 </header>
 
                 <div className="page105-chart-frame">
-                    <h2 className="page105-chart-heading">{getText('page105_chart_heading', lang)}</h2>
+                    <h2 className="page105-chart-heading">{substitute(getText('page105_chart_heading', lang), textVars)}</h2>
                     <div className="page105-chart-block">
                         <div role="region" aria-label={chartAria} tabIndex="0">
                             {selectedPoints !== null && (
@@ -1045,10 +1208,10 @@ const Page105 = () => {
                             {highBrowserZoom && (
                                 <div className="page105-chart-totals">
                                     <span>
-                                        <strong>{directRowLabel}:</strong> {formatJobsAnnotation(totals.direct)}
+                                        <strong>{directRowLabel}:</strong> {formatJobsAnnotation(directTotal)}
                                     </span>
                                     <span>
-                                        <strong>{indirectRowLabel}:</strong> {formatJobsAnnotation(totals.indirect)}
+                                        <strong>{indirectRowLabel}:</strong> {formatJobsAnnotation(indirectTotal)}
                                     </span>
                                 </div>
                             )}
@@ -1217,8 +1380,8 @@ const Page105 = () => {
                                                 >
                                                     {regionLabel(k)}
                                                 </th>
-                                                <td style={{ textAlign: 'center' }}>{REGION_PCTS[k].direct}</td>
-                                                <td style={{ textAlign: 'center' }}>{REGION_PCTS[k].indirect}</td>
+                                                <td style={{ textAlign: 'center' }}>{(regionPcts[k] ?? {}).direct ?? '\u2014'}</td>
+                                                <td style={{ textAlign: 'center' }}>{(regionPcts[k] ?? {}).indirect ?? '\u2014'}</td>
                                             </tr>
                                         ))}
                                         <tr>
@@ -1236,10 +1399,10 @@ const Page105 = () => {
                                                 {getText('page105_table_total_jobs_row', lang)}
                                             </th>
                                             <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                                                {formatJobsTableCell(totals.direct)}
+                                                {formatJobsTableCell(directTotal)}
                                             </td>
                                             <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                                                {formatJobsTableCell(totals.indirect)}
+                                                {formatJobsTableCell(indirectTotal)}
                                             </td>
                                         </tr>
                                     </tbody>

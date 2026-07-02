@@ -1,4 +1,4 @@
-"""Page 136 — RPP supply/demand and refinery input (StatCan WDS vectors)."""
+"""RPP supply/demand and refinery input (StatCan WDS vectors)."""
 
 from collections import defaultdict
 from typing import Dict, List, Tuple
@@ -87,7 +87,7 @@ def _annual_from_raw(df, vector_id: int) -> Dict[int, float]:
 
 
 def transform_rpp_supply_demand(processor) -> int:
-    """EFB transform: aggregate WDS vectors into rpp_* Page 136 indicators."""
+    """EFB transform: aggregate WDS vectors into rpp_* indicators."""
     df = processor.get_raw_dataframe(SUPPLY_SOURCE_KEY)
     if df.empty:
         print('    rpp_supply_demand transform: no raw rows found')

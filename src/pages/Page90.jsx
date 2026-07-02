@@ -327,7 +327,7 @@ const Page90 = () => {
             };
             img.src = imgData;
         } catch (err) {
-            console.warn('Unable to download Page 90 chart image.', err);
+            console.warn('Unable to download chart image.', err);
         }
     };
 

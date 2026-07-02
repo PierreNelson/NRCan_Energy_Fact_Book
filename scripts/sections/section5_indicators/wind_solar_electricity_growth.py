@@ -1,4 +1,4 @@
-"""Page 70 — Wind and solar net electricity generation growth in Canada."""
+"""Wind and solar net electricity generation growth in Canada."""
 
 from __future__ import annotations
 

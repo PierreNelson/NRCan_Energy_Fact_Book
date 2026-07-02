@@ -1129,7 +1129,7 @@ def process_provincial_gdp_data():
         return data_rows, metadata_rows
         
     except Exception as e:
-        print(f"  ERROR fetching Page 8 data: {e}")
+        print(f"  ERROR fetching provincial GDP data: {e}")
         import traceback
         traceback.print_exc()
         print("  Returning empty data")

@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage68Data } from '../utils/dataLoader';
+import { getElectricalEnergyUseData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const SECTOR_KEYS = ['R', 'C', 'I', 'T', 'A'];
@@ -102,7 +102,7 @@ const Page68 = () => {
     };
 
     useEffect(() => {
-        getPage68Data()
+        getElectricalEnergyUseData()
             .then((data) => {
                 setResult(data);
                 setSelectedYear(data?.latestYear ?? null);
@@ -318,7 +318,7 @@ const Page68 = () => {
             };
             img.src = imgData;
         } catch (err) {
-            console.warn('Unable to download Page 68 chart image.', err);
+            console.warn('Unable to download chart image.', err);
         }
     };
 

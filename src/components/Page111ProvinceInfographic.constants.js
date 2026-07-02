@@ -87,7 +87,7 @@ export const BARREL_CLIP_PATH_D = (() => {
 })();
 
 /** Rasterize the live infographic DOM (SVG + overlay label rows) to canvas. */
-export const exportPage111InfographicPng = async (figureEl, { scale = 2 } = {}) => {
+export const exportCanadianProductionInfographicPng = async (figureEl, { scale = 2 } = {}) => {
     if (!figureEl) return null;
 
     const wrapper = figureEl.querySelector('.page111-infographic-wrapper');

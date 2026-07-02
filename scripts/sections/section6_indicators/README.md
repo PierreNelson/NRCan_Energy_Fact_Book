@@ -22,10 +22,11 @@ python main.py export
 | Page | In pipeline? | Website getter | `source_key` | Handler function | Edit data here |
 |------|--------------|----------------|--------------|------------------|----------------|
 | **103** | No | — | — | — | Section cover — `src/pages/Page103.jsx` |
-| **105** | No | — | — | — | Hardcoded — `src/pages/Page105.jsx` |
+| **105** | Yes | `getPage105Data()` | `petroleum_sector_employment` | `update_petroleum_sector_employment()` / `transform_petroleum_sector_employment()` · `petroleum_sector_employment.py` | SharePoint `energy_rankings_and_petroleum_emp.xlsx`, sheet `petroleum_sector_employment` |
 | **106** | No | — | — | — | Hardcoded — `src/pages/Page106.jsx` |
 | **107** | No | — | — | — | Hardcoded — `src/pages/Page107.jsx` |
 | **108** | No | — | — | — | Hardcoded world crude data — `src/pages/Page108.jsx` |
+| **110** | Yes | `getPage110Data()` | `petroleum_reserves`, `western_canada_oil_wells` | `update_petroleum_reserves()` / `update_western_canada_oil_wells()` · `petroleum_reserves.py`, `western_canada_oil_wells.py` | SharePoint `energy_rankings_and_petroleum_emp.xlsx` + provincial web sources |
 | **111** | Yes | `getPage111Data()` | `canadian_production` | `update_canadian_production()` / `transform_canadian_production()` · `canadian_production.py` | StatCan 25-10-0014-01 + 25-10-0063-01 |
 | **112** | No | — | — | — | Hardcoded — `src/pages/Page112.jsx` |
 | **113** | Yes | `getPage113Data()` | `oil_sands` | `build_oil_sands_rows()` · `oil_sands.py` | CAPP XLSX + StatCan in `oil_sands.py` / `constants.py` |
@@ -81,6 +82,38 @@ python main.py export
 | Sources | CAPP XLSX + StatCan vectors — URLs in `constants.py` and `oil_sands.py` |
 | Vectors | `os_*` |
 
+### `petroleum_sector_employment` — Page 105
+
+| Item | Location |
+|------|----------|
+| Handler | `update_petroleum_sector_employment()` / `transform_petroleum_sector_employment()` in `petroleum_sector_employment.py` |
+| EEDAS table | `ca_statcan_petroleum_sector_employment_summary` |
+| Source | SharePoint Manual Data → `energy_rankings_and_petroleum_emp.xlsx`, sheet `petroleum_sector_employment` |
+| Website getter | `getPage105Data()` in `src/utils/dataLoader.js` |
+| Vectors | `pet_emp_{region}_{direct\|indirect}_pct`, `pet_emp_direct_total`, `pet_emp_indirect_total`, `pet_emp_reporting_year` |
+
+### `petroleum_reserves` — Page 110 (infographic reserves)
+
+| Item | Location |
+|------|----------|
+| Handler | `update_petroleum_reserves()` / `transform_petroleum_reserves()` in `petroleum_reserves.py` |
+| EEDAS table | `ca_petroleum_reserves_summary` |
+| Source | SharePoint Manual Data → `energy_rankings_and_petroleum_emp.xlsx`, sheet `petroleum_reserves_summary` |
+| Website getter | `getPage110Data()` in `src/utils/dataLoader.js` |
+| Vectors | `cr_res_total_bb`, `cr_res_conventional_bb`, `cr_res_oil_sands_bb`, `cr_res_mining_bb`, `cr_res_insitu_bb`, `cr_res_reporting_year` |
+
+### `western_canada_oil_wells` — Page 110 (combo chart)
+
+| Item | Location |
+|------|----------|
+| Handler | `update_western_canada_oil_wells()` / `transform_western_canada_oil_wells()` in `western_canada_oil_wells.py` |
+| EEDAS table | `ca_western_canada_oil_wells_count_depth` |
+| Alberta | AER ST59 (`https://www.aer.ca/data-and-performance-reports/statistical-reports/st59`) |
+| Saskatchewan | Petrinex SK well infrastructure CSV |
+| Manitoba | SharePoint `energy_rankings_and_petroleum_emp.xlsx`, sheet `mb_oil_wells_count_depth` |
+| British Columbia | BC ER IRIS `drill_csv.zip` → `compl_wo.csv` |
+| Vectors | `wc_oil_wells_completed`, `wc_oil_total_metres`, `wc_oil_avg_depth_m` |
+
 ### `canadian_production` — Page 111
 
 | Item | Location |
@@ -128,7 +161,7 @@ python main.py export
 | File | Purpose |
 |------|---------|
 | `constants.py` | StatCan vector IDs, external URLs, province maps |
-| `rpp.py`, `crude_prices.py`, `oil_sands.py`, `canadian_production.py`, `kalibrate.py`, `refinery_capacity.py` | One module per source |
+| `rpp.py`, `crude_prices.py`, `oil_sands.py`, `canadian_production.py`, `petroleum_reserves.py`, `western_canada_oil_wells.py`, `kalibrate.py`, `refinery_capacity.py` | One module per source |
 
 ---
 

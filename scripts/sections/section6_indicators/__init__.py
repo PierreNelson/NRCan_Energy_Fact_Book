@@ -1,18 +1,18 @@
 """
 Section 6: Oil, natural gas and coal data processor.
 
-Page 136 — supply and demand of refined petroleum products (RPPs):
+supply and demand of refined petroleum products (RPPs):
 - StatCan Table 25-10-0081-01 (supply, disposition, product shares)
 - StatCan Table 25-10-0063-01 (refinery input)
 
-Page 113 — oil sands capex and production share:
+oil sands capex and production share:
 - CAPP historical capex (1958–2005)
 - StatCan 34-10-0036-01 vector v95928097 (2006+)
 - StatCan 25-10-0014-01 (2000–2015) + 25-10-0063-01 (2016+)
 - CAPP Statistics Handbook 07-01 (upgrader capacity)
 - CAPP Statistics Handbook 02-07/02-08/02-02 (proved reserves share)
 
-Page 117 — WTI and WCS crude prices:
+WTI and WCS crude prices:
 - U.S. EIA WTI spot (monthly)
 - Sproule ERCE WCS (monthly)
 - Bank of Canada USD/CAD (monthly)
@@ -26,6 +26,14 @@ from .crude_prices import transform_crude_prices, update_crude_prices
 from .kalibrate import transform_kal_gas_prices, update_kal_gas_prices
 from .oil_sands import transform_oil_sands, update_oil_sands
 from .petroleum_reserves import transform_petroleum_reserves, update_petroleum_reserves
+from .petroleum_sector_employment import (
+    transform_petroleum_sector_employment,
+    update_petroleum_sector_employment,
+)
+from .world_proved_crude_reserves import (
+    transform_world_proved_crude_reserves,
+    update_world_proved_crude_reserves,
+)
 from .refinery_capacity import transform_osm_refin_cap, update_osm_refin_cap
 from .rpp import (
     transform_rpp_refinery_input,
@@ -61,6 +69,8 @@ class Section6OilGas(SectionProcessor):
             'kal_gas_prices': lambda: update_kal_gas_prices(self),
             'osm_refin_cap': lambda: update_osm_refin_cap(self),
             'petroleum_reserves': lambda: update_petroleum_reserves(self),
+            'petroleum_sector_employment': lambda: update_petroleum_sector_employment(self),
+            'world_proved_crude_reserves': lambda: update_world_proved_crude_reserves(self),
             'western_canada_oil_wells': lambda: update_western_canada_oil_wells(self),
         }
 
@@ -74,6 +84,8 @@ class Section6OilGas(SectionProcessor):
             'kal_gas_prices': lambda: transform_kal_gas_prices(self),
             'osm_refin_cap': lambda: transform_osm_refin_cap(self),
             'petroleum_reserves': lambda: transform_petroleum_reserves(self),
+            'petroleum_sector_employment': lambda: transform_petroleum_sector_employment(self),
+            'world_proved_crude_reserves': lambda: transform_world_proved_crude_reserves(self),
             'western_canada_oil_wells': lambda: transform_western_canada_oil_wells(self),
         }
 

@@ -5,7 +5,7 @@ export const NATIVE_SIZE = { width: 431, height: 368 };
 
 export const LABEL_SLOTS = {
     en: {
-        canada_total: { left: 10, top: 20, align: 'left', fontSize: 50 },
+        canada_total: { left: 10, top: 20, align: 'left', },
         conventional: { left: 50, top: 8, align: 'left' },
         oil_sands: { left: 50, top: 36, align: 'left' },
         mining: { left: 52, top: 70, align: 'left' },

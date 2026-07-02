@@ -57,7 +57,7 @@ def _get_ect_eco_exports_url() -> str:
 
 
 def _get_ect_eco_gdp_url() -> str:
-    """Get URL for Table 36-10-0645-01 (ECT GDP by industry, Page 61 step 3)."""
+    """Get URL for Table 36-10-0645-01 (ECT GDP by industry, eco-sector GDP step)."""
     end_date = _get_future_end_date()
     return (
         f"https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData-nonTraduit.action?"

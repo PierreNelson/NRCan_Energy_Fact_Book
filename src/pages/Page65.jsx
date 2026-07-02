@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage65Data } from '../utils/dataLoader';
+import { getElectricityTradeData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page65TradeInfographic from '../components/Page65TradeInfographic';
 
@@ -63,7 +63,7 @@ const Page65 = () => {
     };
 
     useEffect(() => {
-        getPage65Data()
+        getElectricityTradeData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

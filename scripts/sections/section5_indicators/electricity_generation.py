@@ -1,4 +1,4 @@
-"""Pages 66–67 — Canadian and provincial electricity generation by source (gencap workbook)."""
+"""Canadian and provincial electricity generation by source (gencap workbook)."""
 
 from __future__ import annotations
 
@@ -234,7 +234,7 @@ def update_electricity_generation_by_source(processor) -> int:
 
 
 def transform_electricity_generation_by_source(processor) -> int:
-    """EFB transform: elegen_can_* and elegen_prov_* vectors for Pages 66–67."""
+    """EFB transform: elegen_can_* and elegen_prov_* vectors for Canadian and provincial generation."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise ValueError(

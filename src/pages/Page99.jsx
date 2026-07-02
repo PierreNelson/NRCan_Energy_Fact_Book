@@ -19,7 +19,7 @@ const SLICE_COLORS = {
 
 const BAR_COLOR = '#2B5C3F';
 
-/** Hardcoded until data pipeline is available — page 99 reference values. */
+/** Hardcoded until data pipeline is available — reference values from the published fact book. */
 const PIE_HARDCODED_DATA = [
     {
         year: PIE_DATA_YEAR,

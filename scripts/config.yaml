@@ -65,7 +65,7 @@ sections:
         enabled: true
         description: "GHG emissions by Canadian economic sector (ECCC)"
         source_type: "external"
-        # Page 20 spec: ECCC B-Economic-Sector CSV (catalogue name GHG_Econ_Can_Prov_Terr.csv)
+        # Indicator spec: ECCC B-Economic-Sector CSV (catalogue name GHG_Econ_Can_Prov_Terr.csv)
         source_url: "https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv"
 
   # Section 2: Investment
@@ -194,59 +194,59 @@ sections:
         source_url: "https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies"
       ev_sales:
         enabled: true
-        description: "Plug-in electric vehicle registrations (Page 96)"
+        description: "Plug-in electric vehicle registrations"
         source_type: "statcan"
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501"
       electricity_generation_by_source:
         enabled: true
-        description: "Canadian and provincial electricity generation by source (Pages 66–67, gencap src_elegen_can / src_elegen_prov)"
+        description: "Canadian and provincial electricity generation by source (gencap src_elegen_can / src_elegen_prov)"
         source_type: "external"
         source_url: ""
         file_path: "secondary Master gencap file.xlsx"
         sheet_name: "src_elegen_can, src_elegen_prov"
       electricity_trade_us:
         enabled: true
-        description: "Electricity trade with the U.S. (Page 65, CER XLSM)"
+        description: "Electricity trade with the U.S. ( CER XLSM)"
         source_type: "web"
         source_url: "https://www.cer-rec.gc.ca/en/data-analysis/energy-commodities/electricity/statistics/electricity-trade-summary/electricity-trades-summary-resume-echanges-commerciaux-electricite.xlsm"
       wind_capacity_by_province:
         enabled: true
-        description: "Wind capacity by province (Page 81, gencap workbook)"
+        description: "Wind capacity by province ( gencap workbook)"
         source_type: "external"
         source_url: ""
         file_path: "secondary Master gencap file.xlsx"
         sheet_name: "src_elecap_prov"
       wind_power_canada:
         enabled: true
-        description: "Wind power capacity and generation in Canada (Page 80, cap/gen workbook)"
+        description: "Wind power capacity and generation in Canada ( cap/gen workbook)"
         source_type: "external"
         source_url: ""
         file_path: "Wind capacity and generation_Canada.xlsx"
         sheet_name: "cap, gen"
       world_wind_power:
         enabled: true
-        description: "World wind power capacity ranking and Canada wind generation share (Page 79)"
+        description: "World wind power capacity ranking and Canada wind generation share"
         source_type: "external"
         source_url: ""
         file_path: "World capacity of wind and solar power.xlsx"
         sheet_name: "worldcap_wind"
       world_solar_pv:
         enabled: true
-        description: "World solar PV capacity ranking (Page 82)"
+        description: "World solar PV capacity ranking"
         source_type: "external"
         source_url: ""
         file_path: "World capacity of wind and solar power.xlsx"
         sheet_name: "worldcap_solar"
       renewable_electricity_capacity:
         enabled: true
-        description: "Canadian renewable electricity generating capacity (Page 74, gencap ren_elecap sheet)"
+        description: "Canadian renewable electricity generating capacity ( gencap ren_elecap sheet)"
         source_type: "external"
         source_url: ""
         file_path: "secondary Master gencap file.xlsx"
         sheet_name: "ren_elecap"
       ghg_electricity_spotlight:
         enabled: true
-        description: "GHG spotlight electricity (Page 71, ECCC environmental indicators + gencap coal_elegen)"
+        description: "GHG spotlight electricity ( ECCC environmental indicators + gencap coal_elegen)"
         source_type: "web"
         source_url: "https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html"
         csv_url: "https://www.canada.ca/content/dam/eccc/documents/csv/cesindicators/ghg-emissions/2026/ghg-emissions-electricity-en.csv"
@@ -254,52 +254,52 @@ sections:
         sheet_name: "coal_elegen"
       largest_wind_projects:
         enabled: true
-        description: "Largest wind projects 200 MW+ (Page 81, Manual Data workbook)"
+        description: "Largest wind projects 200 MW+ ( Manual Data workbook)"
         source_type: "external"
         source_url: ""
         file_path: "Largest hydrofac, wind and solar projects.xlsx"
         sheet_name: "windprojects"
       largest_solar_projects:
         enabled: true
-        description: "Largest solar projects 50 MW+ (Page 84, Manual Data workbook)"
+        description: "Largest solar projects 50 MW+ ( Manual Data workbook)"
         source_type: "external"
         source_url: ""
         file_path: "Largest hydrofac, wind and solar projects.xlsx"
         sheet_name: "solprojects"
       major_hydro_facilities:
         enabled: true
-        description: "Major hydro facilities in Canada 1,000 MW+ (Page 76, Manual Data workbook)"
+        description: "Major hydro facilities in Canada 1,000 MW+ ( Manual Data workbook)"
         source_type: "external"
         source_url: ""
         file_path: "Largest hydrofac, wind and solar projects.xlsx"
         sheet_name: "hydrofac"
       solid_biofuels:
         enabled: true
-        description: "Canadian production of solid biofuels (Page 78, RenAQ + StatCan 25-10-0031-01)"
+        description: "Canadian production of solid biofuels ( RenAQ + StatCan 25-10-0031-01)"
         source_type: "external"
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003101"
         file_path: "RenAQ.xlsx"
         statcan_table: "25100031"
       electrical_energy_use:
         enabled: true
-        description: "Electrical energy use by sector and province (Page 68, OEE NEUD)"
+        description: "Electrical energy use by sector and province ( OEE NEUD)"
         source_type: "external"
         source_url: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html"
       electricity_prices:
         enabled: true
-        description: "Average large industrial and residential electricity prices (Page 69, HydroQ)"
+        description: "Average large industrial and residential electricity prices ( HydroQ)"
         source_type: "external"
         source_url: "https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-prices/20578"
         file_path: "Average prices (ELE-Res&Ind).xlsx"
       wind_solar_electricity_growth:
         enabled: true
-        description: "Wind and solar net electricity generation growth in Canada (Page 70)"
+        description: "Wind and solar net electricity generation growth in Canada"
         source_type: "external"
         source_url: "https://www.nrcan.gc.ca/science-data/data-analysis/energy-data-analysis/energy-facts/electricity-generation/20579"
         file_path: "2011 Electricity generation.xlsx"
       uranium_international:
         enabled: true
-        description: "Uranium international context — world exports, production, recoverable resources (Page 85)"
+        description: "Uranium international context — world exports, production, recoverable resources"
         source_type: "web"
         source_url: "https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx"
         file_path: "oecd-nea_theredbook.xlsx"
@@ -331,30 +331,45 @@ sections:
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601"
       canadian_production:
         enabled: true
-        description: "Canadian crude production by type and province (Page 111)"
+        description: "Canadian crude production by type and province"
         source_type: "statcan"
         source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301"
       kal_gas_prices:
         enabled: true
-        description: "Gasoline retail price components (Kalibrate charting tool, Page 138)"
+        description: "Gasoline retail price components (Kalibrate charting tool)"
         source_type: "web"
         source_url: "https://charting.kalibrate.com/Charting/Margins"
         section6_xlsx: "Section 6.xlsx"
       osm_refin_cap:
         enabled: true
-        description: "Canadian refinery capacity by province (Oil Sands Magazine, Page 139)"
+        description: "Canadian refinery capacity by province (Oil Sands Magazine)"
         source_type: "web"
         source_url: "https://www.oilsandsmagazine.com/projects/canadian-refineries"
       petroleum_reserves:
         enabled: true
-        description: "Canadian proved reserves of crude oil (Page 110 infographic)"
+        description: "Canadian proved reserves of crude oil"
         source_type: "file"
-        file_path: "../NRCan_Energy_Factbook_data/energy_rankings_and_petroleum_emp.xlsx"
+        file_path: "energy_rankings_and_petroleum_emp.xlsx"
+        sheet: "petroleum_reserves_summary"
       western_canada_oil_wells:
         enabled: true
-        description: "Count and average depth of oil wells completed in Western Canada (Page 110)"
+        description: "Count and average depth of oil wells completed in Western Canada"
         source_type: "external"
         source_url: "https://www.aer.ca/data-and-performance-reports/statistical-reports/st59"
+        mb_file_path: "energy_rankings_and_petroleum_emp.xlsx"
+        mb_sheet: "mb_oil_wells_count_depth"
+      petroleum_sector_employment:
+        enabled: true
+        description: "Petroleum sector direct and indirect employment by region"
+        source_type: "file"
+        file_path: "energy_rankings_and_petroleum_emp.xlsx"
+        sheet: "petroleum_sector_employment"
+      world_proved_crude_reserves:
+        enabled: true
+        description: "World proved reserves of crude oil"
+        source_type: "file"
+        file_path: "energy_rankings_and_petroleum_emp.xlsx"
+        sheet: "proved_reserves_crude_oil"
 
 # ============================================================================
 # EXPORT CONFIGURATION

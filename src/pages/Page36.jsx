@@ -8,7 +8,7 @@ import {
     COLUMN_KEYS,
     ROW_KEYS,
     INFOGRAPHIC_DATA,
-    exportPage36InfographicPng,
+    exportRddInfographicPng,
 } from '../components/Page36RddInfographic.constants';
 
 const Page36 = () => {
@@ -166,7 +166,7 @@ const Page36 = () => {
     };
 
     const downloadPng = async () => {
-        const canvas = await exportPage36InfographicPng(figureRef.current, {
+        const canvas = await exportRddInfographicPng(figureRef.current, {
             title: stripHtml(pageTitle),
             scale: 2,
         });

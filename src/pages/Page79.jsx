@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage79Data } from '../utils/dataLoader';
+import { getWorldWindPowerData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const CANADA_CAPSULE = '#819476';
@@ -24,7 +24,7 @@ const resolveWindShareForYear = (windShareByYear, selectedYear) => {
     return { year: null, share: null };
 };
 
-const page79CountryLabel = (key, lang) => {
+const worldWindCountryLabel = (key, lang) => {
     const text = getText(`page79_country_${key}`, lang);
     if (text && text !== `page79_country_${key}`) return text;
     return String(key || '')
@@ -162,7 +162,7 @@ const Page79 = () => {
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
     useEffect(() => {
-        getPage79Data()
+        getWorldWindPowerData()
             .then((data) => {
                 setResult(data);
                 const shareYears = Object.keys(data.windShareByYear ?? {})
@@ -234,7 +234,7 @@ const Page79 = () => {
         if (!yearBundle?.top5) return [];
         return yearBundle.top5.map((row) => ({
             ...row,
-            name: page79CountryLabel(row.key, lang),
+            name: worldWindCountryLabel(row.key, lang),
             pctRounded: Math.round(row.sharePct),
         }));
     }, [yearBundle, lang]);
@@ -243,7 +243,7 @@ const Page79 = () => {
         if (!yearBundle) return null;
         return {
             rank: Math.round(yearBundle.canadaRank ?? 0),
-            name: page79CountryLabel('canada', lang),
+            name: worldWindCountryLabel('canada', lang),
             pctRounded: Math.round(yearBundle.canadaSharePct ?? 0),
             isCanada: true,
         };
@@ -277,7 +277,7 @@ const Page79 = () => {
     const formatTopCountryCell = useCallback(
         (entry) => {
             if (!entry) return '—';
-            return `${page79CountryLabel(entry.key, lang)} (${Math.round(entry.sharePct)}%)`;
+            return `${worldWindCountryLabel(entry.key, lang)} (${Math.round(entry.sharePct)}%)`;
         },
         [lang],
     );

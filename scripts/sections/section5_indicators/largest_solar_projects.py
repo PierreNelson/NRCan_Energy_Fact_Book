@@ -1,4 +1,4 @@
-"""Page 84 — Largest solar projects (Manual Data Excel, solprojects sheet)."""
+"""Largest solar projects (Manual Data Excel, solprojects sheet)."""
 
 from __future__ import annotations
 
@@ -136,7 +136,7 @@ def update_largest_solar_projects(processor) -> int:
 
 
 def transform_largest_solar_projects(processor) -> int:
-    """EFB transform: solar_proj_* vectors for Page 84."""
+    """EFB transform: solar_proj_* vectors for this indicator."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise ValueError(

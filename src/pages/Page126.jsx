@@ -8,7 +8,7 @@ import { saveAs } from 'file-saver';
 const BAR_COLOR = '#4a8eb8';
 const LINE_COLOR = '#e07020';
 
-/** Shown on exported PNG/DOCX titles (matches Page106 year suffix style). */
+/** Shown on exported PNG/DOCX titles (matches petroleum employment year suffix style). */
 const PAGE126_YEAR_RANGE_SUFFIX = ' (2000-2024)';
 
 const lerpAnchors = (anchors, year) => {

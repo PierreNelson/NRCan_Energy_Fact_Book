@@ -1,4 +1,4 @@
-"""Page 111 — Canadian crude production by type and province (StatCan 25-10-0014-01 + 25-10-0063-01)."""
+"""Canadian crude production by type and province (StatCan 25-10-0014-01 + 25-10-0063-01)."""
 
 from __future__ import annotations
 
@@ -299,7 +299,7 @@ def build_canadian_production_raw_rows(config=None) -> List[Tuple[str, str, floa
 def build_canadian_production_indicator_rows(
     config=None,
 ) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]]]:
-    """Build Page 111 indicator rows without SQL (offline export / tests)."""
+    """Build indicator rows without SQL (offline export / tests)."""
     raw_rows = build_canadian_production_raw_rows(config)
     raw_by_year: Dict[str, Dict[str, float]] = {}
     for vector, year_key, value in raw_rows:
@@ -337,7 +337,7 @@ def update_canadian_production(processor) -> int:
 
 
 def transform_canadian_production(processor) -> int:
-    """EFB transform: amalgamate StatCan raw rows into cp_* indicators for Page 111."""
+    """EFB transform: amalgamate StatCan raw rows into cp_* indicators for this indicator."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         print('    canadian_production transform: no raw rows found — re-run eedas update')

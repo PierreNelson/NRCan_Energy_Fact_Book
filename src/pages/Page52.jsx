@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage52Data, page52RowHasCompleteData } from '../utils/dataLoader';
+import { getCommercialInstitutionalEnergyUseData, commercialInstitutionalEnergyUseRowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import page52Bg1 from '../assets/page52_bg1.png';
 import page52Bg2 from '../assets/page52_bg2.png';
@@ -66,7 +66,7 @@ const Page52 = () => {
     const tableScrollRef = useRef(null);
 
     useEffect(() => {
-        getPage52Data()
+        getCommercialInstitutionalEnergyUseData()
             .then((d) => {
                 setResult(d ?? null);
             })
@@ -130,7 +130,7 @@ const Page52 = () => {
     const pad = { left: 0, right: 0 };
     const years = useMemo(() => {
         if (!result?.data?.length) return [];
-        return [...new Set(result.data.filter(page52RowHasCompleteData).map((r) => r.year))]
+        return [...new Set(result.data.filter(commercialInstitutionalEnergyUseRowHasCompleteData).map((r) => r.year))]
             .filter((y) => y !== 2000 && y >= PAGE52_MIN_DISPLAY_YEAR)
             .sort((a, b) => b - a);
     }, [result]);
@@ -140,7 +140,7 @@ const Page52 = () => {
     const selectedRow = useMemo(() => (result?.data && selectedYear != null ? result.data.find((r) => r.year === selectedYear) : null), [result, selectedYear]);
     const latestWithEe = useMemo(() => {
         if (!result?.data?.length) return null;
-        const filtered = result.data.filter((r) => page52RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE52_MIN_DISPLAY_YEAR);
+        const filtered = result.data.filter((r) => commercialInstitutionalEnergyUseRowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE52_MIN_DISPLAY_YEAR);
         return [...filtered].reverse().find((r) => r.ee_improvement_pct != null && r.ee_savings_pj != null) || filtered[filtered.length - 1] || null;
     }, [result]);
 
@@ -206,7 +206,7 @@ const Page52 = () => {
         const data = result?.data;
         if (!Array.isArray(data) || data.length === 0) return [];
         return [...data]
-            .filter((r) => page52RowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE52_MIN_DISPLAY_YEAR)
+            .filter((r) => commercialInstitutionalEnergyUseRowHasCompleteData(r) && r.year !== 2000 && r.year >= PAGE52_MIN_DISPLAY_YEAR)
             .sort((a, b) => a.year - b.year)
             .map((r) => {
                 const row = {

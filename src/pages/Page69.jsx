@@ -7,13 +7,13 @@ import { Page69CityLabels, Page69HoverTooltip, Page69IconLayer, Page69LeaderLine
 import {
     BAR_COLORS,
     CHART_AXIS,
-    exportPage69ChartPng,
-    getPage69PriceToY,
-    getPage69SlotBarY,
+    exportElectricityPricesChartPng,
+    getElectricityPriceToY,
+    getElectricityPriceSlotBarY,
     MAP_ASPECT_RATIO,
     MAP_CITY_SLOTS,
 } from '../components/Page69ElectricityInfographic.constants';
-import { getPage69Data } from '../utils/dataLoader';
+import { getElectricityPricesMapData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const TRACE_KEYS = ['industrial', 'residential'];
@@ -143,7 +143,7 @@ const Page69 = () => {
     };
 
     useEffect(() => {
-        getPage69Data()
+        getElectricityPricesMapData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -237,7 +237,7 @@ const Page69 = () => {
     }, []);
 
     const priceToY = useMemo(
-        () => getPage69PriceToY(cities, CHART_AXIS.barHeightMax),
+        () => getElectricityPriceToY(cities, CHART_AXIS.barHeightMax),
         [cities],
     );
 
@@ -252,7 +252,7 @@ const Page69 = () => {
         cities.forEach((city, cityIndex) => {
             const slot = citySlotsByKey[city.key];
             if (!slot) return;
-            const baseY = getPage69SlotBarY(slot);
+            const baseY = getElectricityPriceSlotBarY(slot);
 
             TRACE_KEYS.forEach((priceKey, traceIndex) => {
                 const price = city[priceKey];
@@ -441,7 +441,7 @@ const Page69 = () => {
                 scale: 2,
             });
             const scale = 2;
-            const chartCanvas = await exportPage69ChartPng(wrapper, plotlyImgData, { scale });
+            const chartCanvas = await exportElectricityPricesChartPng(wrapper, plotlyImgData, { scale });
             if (!chartCanvas) return;
 
             const titleHeight = 56;

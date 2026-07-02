@@ -1,4 +1,4 @@
-"""Page 74 — Canadian renewable electricity generating capacity (Manual Data gencap workbook)."""
+"""Canadian renewable electricity generating capacity (Manual Data gencap workbook)."""
 
 from __future__ import annotations
 
@@ -165,7 +165,7 @@ def update_renewable_electricity_capacity(processor) -> int:
 
 
 def transform_renewable_electricity_capacity(processor) -> int:
-    """EFB transform: ren_cap_* vectors for Page 74 stacked area chart."""
+    """EFB transform: ren_cap_* vectors for this indicator stacked area chart."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise ValueError(

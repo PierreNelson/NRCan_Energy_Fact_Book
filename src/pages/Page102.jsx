@@ -40,7 +40,7 @@ const waitForImage = (img) =>
         img.onerror = reject;
     });
 
-const exportPage102InfographicPng = async (exportRoot, { scale = 2 }) => {
+const exportNuclearInfographicPng = async (exportRoot, { scale = 2 }) => {
     if (!exportRoot) return null;
 
     const bulletsEl = exportRoot.querySelector('.page102-bullets');
@@ -331,7 +331,7 @@ const Page102 = () => {
     };
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportPage102InfographicPng(exportRef.current, { scale: 2 });
+        const canvas = await exportNuclearInfographicPng(exportRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, getText('page102_png_slug', lang));

@@ -1,4 +1,4 @@
-"""Page 113 — oil sands capex and production share."""
+"""oil sands capex and production share."""
 
 import io
 import zipfile
@@ -626,7 +626,7 @@ def build_oil_sands_raw_rows(config=None) -> List[Tuple[str, str, float]]:
 
 
 def build_oil_sands_indicator_rows(config=None) -> List[Tuple[str, str, float]]:
-    """Build Page 113 indicator rows without SQL (offline export / tests)."""
+    """Build indicator rows without SQL (offline export / tests)."""
     raw_rows = build_oil_sands_raw_rows(config)
     raw_by_year: Dict[str, Dict[str, float]] = {}
     for vector, year_key, value in raw_rows:
@@ -661,7 +661,7 @@ def update_oil_sands(processor) -> int:
 
 
 def transform_oil_sands(processor) -> int:
-    """EFB transform: amalgamate oil sands raw rows into os_* indicators for Page 113."""
+    """EFB transform: amalgamate oil sands raw rows into os_* indicators for this indicator."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise RuntimeError('oil_sands transform: no raw rows found — re-run eedas update')

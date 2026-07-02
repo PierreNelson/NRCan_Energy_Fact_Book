@@ -1,4 +1,4 @@
-"""Page 76 — Major hydro facilities in Canada (Manual Data Excel, hydrofac sheet)."""
+"""Major hydro facilities in Canada (Manual Data Excel, hydrofac sheet)."""
 
 from __future__ import annotations
 

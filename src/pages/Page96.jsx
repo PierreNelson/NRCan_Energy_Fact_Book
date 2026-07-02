@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage96Data } from '../utils/dataLoader';
+import { getEvSalesRegistrationsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import page96Bg from '../assets/page96_bg.png';
 
@@ -81,7 +81,7 @@ const Page96 = () => {
     const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     useEffect(() => {
-        getPage96Data()
+        getEvSalesRegistrationsData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

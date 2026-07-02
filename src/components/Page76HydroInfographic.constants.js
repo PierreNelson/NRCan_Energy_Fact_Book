@@ -1,5 +1,5 @@
 /**
- * Page 76 chart backdrop — tune overlay positions and dam image (page76_bg_1.png) here.
+ * Hydroelectric infographic chart backdrop — tune overlay positions and dam image (page76_bg_1.png) here.
  * Asset filenames on disk: bg_1 = dam graphic, bg_2 = Canada map.
  */
 import page76BgDam from '../assets/page76_bg_1.png';
@@ -7,7 +7,7 @@ import page76BgMap from '../assets/page76_bg_2.png';
 
 export { page76BgDam, page76BgMap };
 
-/** Canada map layer (page84-style full chart backdrop). */
+/** Canada map layer (full chart backdrop style). */
 export const MAP_BG_LAYER = {
     /** Flex alignment when map is narrower than the chart area. */
     justify: 'center',

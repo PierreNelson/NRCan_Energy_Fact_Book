@@ -3,10 +3,10 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage80Data } from '../utils/dataLoader';
+import { getCanadianWindPowerData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page80WindInfographic from '../components/Page80WindInfographic';
-import { exportPage80InfographicPng, getGrowthOverlayParts } from '../components/Page80WindInfographic.constants';
+import { exportCanadianWindInfographicPng, getGrowthOverlayParts } from '../components/Page80WindInfographic.constants';
 
 const TRACE_KEYS = ['cumulative', 'annual'];
 const COLORS = {
@@ -60,7 +60,7 @@ const Page80 = () => {
     const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     useEffect(() => {
-        getPage80Data()
+        getCanadianWindPowerData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -292,7 +292,7 @@ const Page80 = () => {
     );
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportPage80InfographicPng(infographicRef.current, { scale: 2 });
+        const canvas = await exportCanadianWindInfographicPng(infographicRef.current, { scale: 2 });
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${getText('page80_download_infographic_title', lang)}.png`);

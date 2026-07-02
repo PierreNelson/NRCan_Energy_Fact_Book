@@ -13,7 +13,7 @@ export const BG1_SIZE = { width: 550, height: 109 };
 export const BG2_SIZE = { width: 76, height: 232 };
 
 /** Export infographic + title to canvas using live DOM measurements (matches on-screen layout). */
-export const exportPage36InfographicPng = async (figureEl, { title, scale = 2 }) => {
+export const exportRddInfographicPng = async (figureEl, { title, scale = 2 }) => {
     if (!figureEl) return null;
 
     const exportRoot = figureEl.closest('.page36-inner');

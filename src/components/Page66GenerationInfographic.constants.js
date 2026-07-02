@@ -1,18 +1,18 @@
-/** Must match actual page66_bg.png / page66_bg_fr.png pixel dimensions (aspect ~763:560, same as page 67). */
+/** Must match actual page66_bg.png / page66_bg_fr.png pixel dimensions (aspect ~763:560, same as provincial generation infographic). */
 export const NATIVE_SIZE = {
     en: { width: 1464, height: 1075 },
     fr: { width: 1464, height: 1075 },
 };
 
 /** Province rows per source — order and membership match Energy Fact Book p. 66. */
-export const PAGE66_PROVINCE_ORDER = {
+export const CANADIAN_GENERATION_PROVINCE_ORDER = {
     hydro: ['nl', 'man', 'que', 'bc', 'yt', 'ont', 'nb', 'nwt', 'sask', 'ns', 'alta'],
     nuclear: ['ont', 'nb'],
     wind: ['pei', 'ns', 'alta', 'ont', 'nb', 'sask', 'que', 'man', 'bc', 'nwt', 'yt', 'nl'],
 };
 
-export const getPage66ProvinceRows = (sourceKey, block) => {
-    const order = PAGE66_PROVINCE_ORDER[sourceKey] || [];
+export const getCanadianGenerationProvinceRows = (sourceKey, block) => {
+    const order = CANADIAN_GENERATION_PROVINCE_ORDER[sourceKey] || [];
     if (!block?.provinces?.length) return [];
     const byKey = Object.fromEntries(block.provinces.map((row) => [row.key, row]));
     return order.map((key) => byKey[key]).filter(Boolean);
@@ -171,7 +171,7 @@ export const formatSharePct = (value, lang) => {
     return lang === 'fr' ? `${text} %` : `${text}%`;
 };
 
-export const exportPage66InfographicPng = async (figureEl, { scale = 2 }) => {
+export const exportCanadianGenerationInfographicPng = async (figureEl, { scale = 2 }) => {
     if (!figureEl) return null;
 
     const wrapper = figureEl.querySelector('.page66-infographic-wrapper');

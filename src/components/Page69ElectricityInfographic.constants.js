@@ -1,5 +1,5 @@
 /**
- * Page 69 — bar + icon layout tuning (compare to page69.png / page69fr.png).
+ * bar + icon layout tuning (compare to page69.png / page69fr.png).
  *
  * MANUAL TUNING GUIDE
  * -------------------
@@ -51,7 +51,7 @@ export const CHART_AXIS = {
 };
 
 /** y-units per cent/kWh — derived from loaded data so bar heights stay proportional. */
-export function getPage69PriceToY(cities, barHeightMax = CHART_AXIS.barHeightMax) {
+export function getElectricityPriceToY(cities, barHeightMax = CHART_AXIS.barHeightMax) {
     const maxPrice = (cities ?? []).reduce((max, city) => {
         const peak = Math.max(Number(city?.industrial) || 0, Number(city?.residential) || 0);
         return peak > max ? peak : max;
@@ -78,50 +78,50 @@ export const ICON_LABEL_GAP_PCT = 0.35;
 export const PAGE69_ICONS_ASPECT = 1912 / 823;
 
 /** Bar-pair centre (x) in chart axis units (% from left). */
-export function getPage69SlotBarX(slot) {
+export function getElectricityPriceSlotBarX(slot) {
     return slot?.x ?? 50;
 }
 
 /** Bar-pair base (y) in chart axis units (% from bottom). */
-export function getPage69SlotBarY(slot) {
+export function getElectricityPriceSlotBarY(slot) {
     if (slot?.y != null) return slot.y;
     if (slot?.iconBottom != null) return slot.iconBottom;
     return 10;
 }
 
 /** Icon sprite anchor (% from left); defaults to bar x. */
-export function getPage69SlotIconX(slot) {
+export function getElectricityPriceSlotIconX(slot) {
     if (slot?.iconX != null) return slot.iconX;
-    return getPage69SlotBarX(slot);
+    return getElectricityPriceSlotBarX(slot);
 }
 
 /** Icon sprite anchor (% from bottom); defaults to bar y. */
-export function getPage69SlotIconY(slot) {
+export function getElectricityPriceSlotIconY(slot) {
     if (slot?.iconY != null) return slot.iconY;
     if (slot?.iconBottom != null) return slot.iconBottom;
-    return getPage69SlotBarY(slot);
+    return getElectricityPriceSlotBarY(slot);
 }
 
 /** Leader line start (% from left / bottom); defaults to bar x / y. */
-export function getPage69LeaderFrom(slot) {
+export function getElectricityPriceLeaderFrom(slot) {
     const leader = slot?.leader;
     if (!leader) return null;
     return {
-        x: leader.fromX ?? leader.x ?? getPage69SlotBarX(slot),
-        y: leader.fromY ?? leader.y ?? getPage69SlotBarY(slot),
+        x: leader.fromX ?? leader.x ?? getElectricityPriceSlotBarX(slot),
+        y: leader.fromY ?? leader.y ?? getElectricityPriceSlotBarY(slot),
     };
 }
 
 /** Leader line end on map (% from left / bottom). */
-export function getPage69LeaderTo(slot) {
+export function getElectricityPriceLeaderTo(slot) {
     const leader = slot?.leader;
     if (!leader || leader.mapX == null || leader.mapY == null) return null;
     return { x: leader.mapX, y: leader.mapY };
 }
 
-/** @deprecated Use getPage69SlotIconY */
-export function getPage69SlotIconBottom(slot) {
-    return getPage69SlotIconY(slot);
+/** @deprecated Use getElectricityPriceSlotIconY */
+export function getElectricityPriceSlotIconBottom(slot) {
+    return getElectricityPriceSlotIconY(slot);
 }
 
 const loadImage = (src) =>
@@ -143,7 +143,7 @@ const relBox = (el, rootRect) => {
 };
 
 /** Composite map, leaders, Plotly chart, icons, and city labels for PNG download. */
-export const exportPage69ChartPng = async (wrapperEl, plotlyImgDataUrl, { scale = 2 } = {}) => {
+export const exportElectricityPricesChartPng = async (wrapperEl, plotlyImgDataUrl, { scale = 2 } = {}) => {
     if (!wrapperEl || !plotlyImgDataUrl) return null;
 
     const rootRect = wrapperEl.getBoundingClientRect();

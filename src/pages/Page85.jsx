@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage85Data } from '../utils/dataLoader';
+import { getUraniumInternationalData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const CANADA_CAPSULE = '#819476';
 const TOP_RANKS = [1, 2, 3, 4, 5];
 
-const page85CountryLabel = (key, lang) => getText(`page85_country_${key}`, lang);
+const uraniumCountryLabel = (key, lang) => getText(`page85_country_${key}`, lang);
 
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
@@ -143,7 +143,7 @@ const UraniumRankingSection = ({
         if (!yearBundle?.top5) return [];
         return yearBundle.top5.map((row) => ({
             ...row,
-            name: page85CountryLabel(row.key, lang),
+            name: uraniumCountryLabel(row.key, lang),
             pctRounded: Math.round(row.sharePct),
             isCanada: row.key === 'canada',
         }));
@@ -176,7 +176,7 @@ const UraniumRankingSection = ({
     const formatTopCountryCell = useCallback(
         (entry) => {
             if (!entry) return '—';
-            return `${page85CountryLabel(entry.key, lang)} (${Math.round(entry.sharePct)}%)`;
+            return `${uraniumCountryLabel(entry.key, lang)} (${Math.round(entry.sharePct)}%)`;
         },
         [lang],
     );
@@ -433,7 +433,7 @@ const Page85 = () => {
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
     useEffect(() => {
-        getPage85Data()
+        getUraniumInternationalData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

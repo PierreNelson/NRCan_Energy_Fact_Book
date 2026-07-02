@@ -6,8 +6,8 @@ export const TRANSLATIONS = {
         
         // Navigation
         'nav_introduction': 'Introduction',
-        'nav_energy_overview': 'Energy overview (Page 6)',
-        'nav_energy_data': 'Energy data (Page 11)',
+        'nav_energy_overview': 'Energy overview',
+        'nav_energy_data': 'Energy data',
         'nav_section1': 'Section 1: Key energy, economic and environmental indicators',
         'nav_section1_title': 'Key energy, economic and environmental indicators',
         'nav_section2': 'Section 2: Investment',
@@ -32,14 +32,14 @@ export const TRANSLATIONS = {
         'glossary_link_aria': 'Opens the full data glossary in a new tab',
         'glossary_note': 'The standalone page reads only the public CSV files; it does not connect to a database.',
 
-        // Page 1
+        // Key energy, economic and environmental indicators
         'page1_section': 'Section 1:',
         'page1_title': 'Key energy, economic and environmental indicators',
         'page1_item1': 'Energy production and supply',
         'page1_item2': 'Economic contributions',
         'page1_item3': 'Energy and GHG emissions',
 
-        // Page 2
+        // Energy production and supply
         'page2_title': 'Energy production and supply',
         'page2_subtitle': 'Canada: a global energy leader',
         'page2_narrative_part1': 'The amount of primary energy produced by Canada in ',
@@ -80,12 +80,12 @@ export const TRANSLATIONS = {
         'nav_energy_production': 'Energy production and supply',
         'nav_canadian_energy_production': 'Canadian energy production',
 
-        // Page 3
+        // Canadian energy production
         'page3_title': 'Canadian energy production',
         'page3_para1': 'Primary energy is energy that is found in nature before any processing or conversion. <em>The Energy Fact Book</em> calculates primary energy production by using two methods. The first method treats the energy embodied in uranium as primary energy, thereby capturing the uranium Canada produces and then exports. This method provides a more accurate picture of energy production in Canada.',
         'page3_para2': 'The second method–also employed by the International Energy Agency (IEA), the Energy Information Administration (EIA) and others–treats domestic electricity production from nuclear energy as primary energy, but not uranium itself. Uranium is energy-dense, and Canada exports most of its uranium production, which explains why the two methods produce such different results.',
 
-        // Page 4
+        // Primary energy production by source (2023)
         'page4_title': 'Primary energy production by source (2023)',
         'page4_chart1_title': 'Primary energy production, including uranium',
         'page4_chart2_title': 'Primary energy production, excluding uranium',
@@ -151,7 +151,7 @@ export const TRANSLATIONS = {
         'page17_legend_utilities': 'Utilities',
         'page17_legend_pipelines': 'Pipelines',
 
-        // Page 20
+        // Émissions de GES au Canada par secteur économique canadien
         'nav_ghg_emissions': 'GHG emissions by Canadian economic sector',
         'page20_title': 'GHG emissions by Canadian economic sector',
         'page20_chart_title_prefix': 'GHG emissions by Canadian economic sector, ',
@@ -337,7 +337,7 @@ export const TRANSLATIONS = {
         'page15_summary_bold_imp': '$500 billion',
         'page15_summary_after': '.',
 
-        // Page 7
+        // Contributions économiques
         'page7_title': 'Economic contributions',
         'page7_subtitle': 'Nominal gross domestic product',
         'page7_subtitle2': "Energy's nominal GDP contribution for Canada",
@@ -353,14 +353,14 @@ export const TRANSLATIONS = {
         'page7_footnote': 'Parts may not sum to total due to rounding. For more information on the methodology used by Statistics Canada to estimate \nindirect contributions, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
         'nav_econ_contributions': 'Economic contributions',
 
-        // Page 8
+        // translations
         'page8_title': "Energy's nominal GDP contribution by province/territory",
         'page8_subtitle': 'Energy sector direct nominal GDP*\n($ millions)',
         'page8_footnote': 'Provincial/territorial figures do not sum precisely to the national total, due to rounding.',
         'page8_footnote_2024': ' Distribution is based on 2023 proportions.',
         'nav_provincial_gdp': "Energy's nominal GDP contribution by province/territory",
 
-        // Page 9
+        // translations
         'nav_employment': "Employment in Canada's energy sector",
         'page9_title': "Employment in Canada's energy sector (2024)",
         'page9_direct': 'Direct',
@@ -380,7 +380,7 @@ export const TRANSLATIONS = {
         'page9_other': 'Other',
         'page9_footnote': 'The indirect contribution is not comparable to previously published estimates due to revisions and a change in estimation methodology by Statistics Canada. For more information on Statistics Canada\'s estimation methodology, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
 
-        // Page 10
+        // Energy sector employment
         'page10_title': 'Energy sector employment',
         'page10_chart_title': 'Energy sector employment',
         'page10_chart_subtitle': '(Thousands of jobs)',
@@ -388,7 +388,7 @@ export const TRANSLATIONS = {
         'page10_legend_indirect': 'Indirect employment',
         'page10_footnote': 'Parts may not sum to total due to rounding. The indirect contribution is not comparable to previously published estimates due to revisions and a change in estimation methodology by Statistics Canada. For more information on Statistics Canada\'s estimation methodology, please contact statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
 
-        // Page 11
+        // translations
         'page11_chart_title': 'Energy sector GDP',
         'page11_chart_subtitle': '(Billions of dollars)',
         'page11_legend_direct': 'Direct GDP',
@@ -408,7 +408,7 @@ export const TRANSLATIONS = {
 
 
 
-        // Page 23
+        // Investissement
         'page23_section': 'Section 2:',
         'page23_title': 'Investment',
         'page23_item1': 'Capital expenditures',
@@ -419,7 +419,7 @@ export const TRANSLATIONS = {
         'page23_item6': 'Environmental protection expenditures',
 
 
-        // Page 24
+        // Dépenses en immobilisations
         'page24_chart_title_prefix': 'Capital expenditures* in the energy industry, ',
         'page24_title': 'Capital expenditures',
         'page24_yaxis':'$ billion',
@@ -445,7 +445,7 @@ export const TRANSLATIONS = {
         'page24_hover_total': 'Total',
 
 
-        // Page 25
+        // translations
         'page25_title': "Canada's energy infrastructure",
         'page25_subtitle_part1': "Fuel, energy and pipeline infrastructure",
         'page25_subtitle_part2': " made up the largest proportion of Canada's infrastructure at ",
@@ -475,7 +475,7 @@ export const TRANSLATIONS = {
         'total': 'Total',
         'language_toggle': 'Français',
 
-        // Page 26
+        // Contributions économiques des infrastructures de carburant, d'énergie et de pipelines
         'page26_title': 'Fuel, energy and pipeline infrastructure investment and operations',
         'page26_supported': 'supported',
         'page26_jobs': 'jobs',
@@ -489,7 +489,7 @@ export const TRANSLATIONS = {
         'page26_footer_part2': 'was',
         'page26_footer_part3': '(nominal).',
 
-        // Page 27
+        // Investissements publics et privés dans les infrastructures de carburant, d'énergie et de pipeline, 2009 à 2024
         'page27_title': 'Public and private investment in fuel, energy and pipeline infrastructure, 2009 to 2024',
         'page27_yaxis': '$ billion (constant 2012 dollars)',
         'page27_legend_transmission': 'Transmission, distribution, and transformers',
@@ -510,7 +510,7 @@ export const TRANSLATIONS = {
         'page27_chart_title_prefix': 'Public and private investment in fuel, energy and pipeline infrastructure, ',
         'nav_investment_detail': 'Public and private investment',
 
-        // Page 31
+        // Investissements et investisseurs internationaux
         'nav_international_investment': 'International investments and investors',
         'page31_title': 'International investments and investors',
         'page31_subtitle': "Canada's energy industries operate in free markets, where investments by both Canadian and foreign companies ensure an efficient, competitive and innovative energy system.",
@@ -523,7 +523,7 @@ export const TRANSLATIONS = {
         'page31_footnote': 'Direct investment is defined as a company owning a minimum of 10% of voting equity interest in a foreign enterprise and is measured as the total equity value at the time of acquisition. Excludes residential expenditures and intellectual property investments such as exploration expenses.',
         'page31_footnote1': 'FDI and CDIA include investments in renewable electricity, do not capture other forms of renewable energy.',
 
-        // Page 32
+        // Foreign control of Canadian assets
         'nav_fdi_stock': 'Stock of foreign direct investment in Canada\nand Canadian direct investment abroad',
         'page32_title': 'Foreign control of Canadian assets',
         'page32_bullet1_part1': 'The stock of ',
@@ -563,7 +563,7 @@ export const TRANSLATIONS = {
         'page32_hover_oil_gas': 'Oil and gas extraction and support activities',
         'page32_hover_all_industries': 'All non-financial industries',
 
-        // Page 33
+        // Actifs énergétiques canadiens
         'nav_canadian_energy_assets': 'Canadian energy assets',
         'page33_title': 'Canadian Energy Assets',
         'page33_chart_title': 'Canadian energy assets by region,',
@@ -573,7 +573,7 @@ export const TRANSLATIONS = {
         'page33_card_abroad': 'Total Canadian energy assets abroad',
         'page33_footnote': 'A Canadian company is here defined as a publicly traded company headquartered in Canada and not foreign-controlled.',
 
-        // Page 37
+        // Environmental protection expenditures
         'nav_environmental_protection': 'Environmental protection expenditures',
         'page37_title': 'Environmental protection expenditures',
         'page37_subtitle_part1': 'Environmental protection expenditures (operating and capital spending combined) by the energy sector totalled ',
@@ -607,7 +607,7 @@ export const TRANSLATIONS = {
         'page37_million': 'million',
         'page37_source': 'Source: Statistics Canada. Table 38-10-0130-01, Capital and operating expenditures on environmental activities by industry.',
 
-        // Page 39
+        // Compétences, diversité et communautés
         'page39_section': 'Section 3:',
         'page39_title': 'Skills, diversity and community',
         'page39_item1': 'Energy sector demographics',
@@ -761,7 +761,7 @@ export const TRANSLATIONS = {
         'page43_table_geo': 'Geography',
         'page43_table_pct': '%',
 
-        // Page 44
+        // Dépenses énergétiques des ménages
         'page44_title': 'Household expenditures on energy',
         'page44_infographic_aria': 'Illustration of three residential houses representing household energy expenditures.',
         'page44_top_bullet1_part1': 'Canadian households spent ',
@@ -793,7 +793,7 @@ export const TRANSLATIONS = {
         'page44_download_csv': 'Download data (CSV)',
         'page44_download_docx': 'Download table (DOCX)',
 
-        // Page 45
+        // translations
         'page45_title_line1': 'In comparison with other developed economies,',
         'page45_title_line2': "Canada's energy prices are relatively low.",
         'page45_chart_title': 'Household energy prices per unit, 2024',
@@ -815,7 +815,7 @@ export const TRANSLATIONS = {
         'page45_table_caption': 'Household energy prices per unit, 2024, by country.',
         'page45_download_title': 'Household_energy_prices_per_unit_2024',
 
-        // Page 46
+        // Energy reliant communities
         'page46_title': 'Energy reliant communities',
         'page46_para1': 'A community that has a higher share of employment from a specific sector, a relatively high share of total income from that sector, and relatively low sectoral diversity in their economy compared to the average Canadian community can be described as reliant on that sector.',
         'page46_para2_part1': 'There are ',
@@ -843,7 +843,7 @@ export const TRANSLATIONS = {
         'page46_bar_download_title': 'Energy_reliant_communities_by_province',
         'page46_map_download_title': 'Energy_reliant_communities_map',
 
-        // Page 47
+        // Efficacité énergétique
         'page47_section': 'Section 4:',
         'page47_title': 'Energy efficiency',
         'page47_item1': 'Energy use',
@@ -988,7 +988,7 @@ export const TRANSLATIONS = {
         'page53_source_ee': 'EE Improvement.',
         'page53_no_data': 'No data available for this page.',
 
-        // Page 54
+        // Efficiency trends
         'page54_title': 'Efficiency trends',
         'page54_subtitle': 'Historical energy efficiency',
         'page54_bullet1_bold': 'Energy efficiency',
@@ -1022,7 +1022,7 @@ export const TRANSLATIONS = {
         'page54_download_title': 'Secondary_energy_use_with_and_without_energy_efficiency_effect_2000-2022',
         'page54_nav_label': 'Efficiency trends',
 
-        // Page 55
+        // translations
         'page55_chart_title': 'Indexed total secondary energy use intensity per capita and per unit of GDP, 2000–2022 (2000=100)',
         'page55_yaxis': 'Index',
         'page55_legend_per_capita': 'Energy use intensity per capita',
@@ -1038,7 +1038,7 @@ export const TRANSLATIONS = {
         'page55_info_right_pct': '25%',
         'page55_info_right_suffix': 'less energy<br>per dollar of GDP in<br>2022 than in 2000.',
 
-        // Page 56
+        // translations
         'page56_chart_title': 'Summary of factors influencing the change in energy use, 2000–2022',
         'page56_yaxis': 'Petajoules',
         'page56_cat_total': 'Total change in energy use',
@@ -1062,7 +1062,7 @@ export const TRANSLATIONS = {
         'page56_chart_aria': 'Bar chart summarizing factors influencing the change in energy use from 2000 to 2022, in petajoules.',
         'page56_download_title': 'Summary_of_factors_influencing_the_change_in_energy_use_2000-2022',
 
-        // Page 57
+        // translations
         'page57_chart_title': 'Trends in energy use and intensity by sector, 2000–2022',
         'page57_energy_use': 'Energy<br>use',
         'page57_energy_intensity': 'Energy<br>intensity',
@@ -1081,7 +1081,7 @@ export const TRANSLATIONS = {
         'page57_download_csv': 'Download data (CSV)',
         'page57_download_docx': 'Download table (DOCX)',
 
-        // Page 59
+        // Énergie propre et carburants faibles en carbone
         'page59_section': 'Section 5:',
         'page59_title': 'Clean power and low carbon fuels',
         'page59_item1': 'Clean technology and electricity generation mix',
@@ -1176,7 +1176,7 @@ export const TRANSLATIONS = {
         'page63_industry_waste_recycling': 'Waste and recycling',
         'page63_industry_mining_manufacturing': 'Mining and manufacturing',
 
-        // Page 64
+        // Électricité
         'page64_title': 'Electricity',
         'page64_subtitle': 'International context',
         'page64_production_label': 'World production',
@@ -1770,7 +1770,7 @@ export const TRANSLATIONS = {
         'page65_infographic_aria': 'Electricity exports and imports in {{year}}: {{exports}} terawatt hours exported and {{imports}} terawatt hours imported',
         'page65_col_year': 'Year',
 
-        // Page 96
+        // translations
         'page96_chart_title': 'Plug-in electric vehicle registrations portion of total vehicle sales, {{startYear}}–{{endYear}}',
         'page96_legend_bars': 'New EV registrations',
         'page96_legend_line': 'Proportion of total new vehicle registrations (%)',
@@ -1797,7 +1797,7 @@ export const TRANSLATIONS = {
         'page96_no_data': 'Data for this page are not available.',
         'page96_bg_alt': 'Light grey electric car with charging plug behind the chart.',
 
-        // Page 103
+        // Pétrole, gaz naturel et charbon
         'page103_section': 'Section 6:',
         'page103_title': 'Oil, natural gas and coal',
         'page103_item1': 'Crude oil',
@@ -2233,6 +2233,36 @@ export const TRANSLATIONS = {
         'page108_country_saudi': 'Saudi Arabia',
         'page108_country_canada': 'Canada',
         'page108_country_iraq': 'Iraq',
+        'page109_title': 'World proved reserves',
+        'page109_headline_total': '{{total}} billion barrels',
+        'page109_headline_value': '{{total}} billion',
+        'page109_headline_barrels_word': 'barrels',
+        'page109_headline_year': '(at the end of {{year}})',
+        'page109_definition': 'Proved reserves\nare those reserves\nexpected to be\nrecoverable with\na high degree of\ncertainty.',
+        'page109_oil_sands_text': 'of Canada\'s proven oil reserves\nare located in the oil sands.',
+        'page109_country_other': 'Other',
+        'page109_country_venezuela': 'Venezuela',
+        'page109_country_saudi': 'Saudi Arabia',
+        'page109_country_iran': 'Iran',
+        'page109_country_canada': 'Canada',
+        'page109_country_iraq': 'Iraq',
+        'page109_footnote_saudi': 'Saudi Arabia and Kuwait reserves include the Saudi-Kuwaiti "neutral zone," with total proved reserves of 5 billion barrels.',
+        'page109_chart_title': 'World proved reserves of crude oil, {{year}}',
+        'page109_chart_aria': 'Pie chart of world proved crude oil reserves by country or region for {{year}}. Total reserves {{total}} billion barrels.',
+        'page109_table_caption': 'World proved reserves of crude oil by country or region.',
+        'page109_table_col_year': 'Year',
+        'page109_table_col_country': 'Country or region',
+        'page109_table_col_reserves': 'Reserves (Bb)',
+        'page109_table_col_share': 'Share (%)',
+        'page109_download_chart': 'Download chart as PNG',
+        'page109_download_csv': 'Download table (CSV)',
+        'page109_download_docx': 'Download table (DOCX)',
+        'page109_download_title': 'World proved reserves of crude oil {{year}}',
+        'page109_download_csv_slug': 'world-proved-crude-oil-reserves',
+        'page109_export_slug': 'world-proved-crude-oil-reserves',
+        'page109_bg_alt': 'Illustration of oil barrels, pumpjack, oil sands truck, and world proved reserves pie chart.',
+        'page109_clear_selection': 'Clear selection',
+        'page109_no_data': 'World proved crude oil reserves data are not available.',
         'page119_title': 'Oil by rail',
         'page119_para1': 'Over the past decade, rail shipments of oil have varied widely, reflecting swings in world oil prices and available take-away capacity. Exports fell sharply in 2015–2016 as prices dropped, then surged in 2018 when pipeline constraints in Western Canada led to greater use of rail.',
         'page119_para2': 'Exports reached a high of 412 Mb/d in February 2020, before a pandemic-related drop in prices led to much lower volumes. Although exports briefly rebounded, they have since settled below previous peaks.',
@@ -2379,16 +2409,17 @@ export const TRANSLATIONS = {
             'Canadian petroleum refineries by count and capacity, capacities in Mb/d, 2024.',
         'page139_table_aria': 'Refinery capacity by province, petroleum refineries, asphalt and lubricant plants',
         'page105_export_slug': 'petroleum-employment-by-region',
-        'page105_aria_page': 'Direct and indirect petroleum employment by region, 2024',
+        'page105_aria_page': 'Direct and indirect petroleum employment by region, {{year}}',
         'page105_p1a': "While Canada's petroleum sector ",
-        'page105_p1b': 'directly employed 190K people',
-        'page105_p1c': " in 2024, the sector's use of inputs from other industries created an additional ",
-        'page105_p1d': '313K indirect jobs in the supply chain',
+        'page105_p1b': 'directly employed {{directJobs}} people',
+        'page105_p1c': " in {{year}}, the sector's use of inputs from other industries created an additional ",
+        'page105_p1d': '{{indirectJobs}} indirect jobs in the supply chain',
         'page105_p1e': '.',
-        'page105_p2a': 'Alberta employed the largest share (46%) of the supply chain',
+        'page105_p2a': '{{province1}} employed the largest share ({{share1}}) of the supply chain',
         'page105_p2b':
-            ' workers followed by Ontario (24%). B.C. (11%), Quebec (8%), and Saskatchewan (5%) also accounted for sizeable shares of supply chain jobs.',
-        'page105_chart_heading': 'Share of employment by region, 2024',
+            ' workers followed by {{province2}} ({{share2}}). {{province3}} ({{share3}}), {{province4}} ({{share4}}), and {{province5}} ({{share5}}) also accounted for sizeable shares of supply chain jobs.',
+        'page105_chart_heading': 'Share of employment by region, {{year}}',
+        'page105_chart_aria_prefix': 'Horizontal stacked bars for {{year}} direct and indirect petroleum employment by region. ',
         'page105_row_direct': 'Direct employment',
         'page105_row_indirect': 'Indirect employment',
         'page105_row_direct_compact': 'Direct',
@@ -2456,7 +2487,7 @@ export const TRANSLATIONS = {
         'page107_download_docx': 'Download table (DOCX)',
         'page107_table_col_year': 'Year',
 
-        // Page 28
+        // Les grands projets énergétiques au Canada
         'nav_major_projects': "Canada's major energy projects",
         'page28_title': "Canada's major energy projects",
         'page28_chart_title_prefix': 'Trends in major energy projects, ',
@@ -2531,8 +2562,8 @@ export const TRANSLATIONS = {
         
         // Navigation
         'nav_introduction': 'Introduction',
-        'nav_energy_overview': "Aperçu de l'énergie (Page 6)",
-        'nav_energy_data': 'Données énergétiques (Page 11)',
+        'nav_energy_overview': "Aperçu de l'énergie",
+        'nav_energy_data': 'Données énergétiques',
         'nav_section1': "Section 1 : Indicateurs clés sur l'énergie, l'économie et l'environnement",
         'nav_section1_title': "Indicateurs clés sur l'énergie, l'économie et l'environnement",
         'nav_section2': 'Section 2 : Investissement',
@@ -2557,14 +2588,14 @@ export const TRANSLATIONS = {
         'glossary_link_aria': 'Ouvre le glossaire complet des données dans un nouvel onglet',
         'glossary_note': 'La page autonome lit uniquement les fichiers CSV publics; elle ne se connecte pas à une base de données.',
 
-        // Page 1
+        // Key energy, economic and environmental indicators
         'page1_section': 'Section 1 :',
         'page1_title': "Indicateurs clés sur l'énergie, l'économie et l'environnement",
         'page1_item1': "Production d'énergie et approvisionnement",
         'page1_item2': 'Contributions économiques',
         'page1_item3': 'Énergie et émissions de GES',
 
-        // Page 2
+        // Energy production and supply
         'page2_title': "Production d'énergie et approvisionnement",
         'page2_subtitle': "Le Canada : un chef de file mondial en matière d'énergie",
         'page2_narrative_part1': "La quantité d'énergie primaire produite par le Canada en ",
@@ -2605,12 +2636,12 @@ export const TRANSLATIONS = {
         'nav_energy_production': "Production d'énergie et approvisionnement",
         'nav_canadian_energy_production': "Production canadienne d'énergie",
 
-        // Page 3
+        // Canadian energy production
         'page3_title': "Production canadienne d'énergie",
         'page3_para1': "L'énergie primaire est celle que l'on trouve dans la nature, avant qu'elle ne soit traitée ou convertie. Le <em>Cahier d'information sur l'énergie</em> calcule la production d'énergie primaire au moyen de deux méthodes. La première traite l'énergie de l'uranium comme une énergie primaire et tient donc compte de l'uranium produit et exporté par le Canada. Cette méthode présente un portait plus juste de la production d'énergie au Canada.",
         'page3_para2': "La deuxième méthode, qui est également employée par l'Agence internationale de l'énergie (AIE) et l'Energy Information Administration (EIA), entre autres, traite la production nationale d'électricité à partir d'énergie nucléaire comme une énergie primaire, mais pas l'uranium en soi. L'uranium est dense en énergie et le Canada exporte la majorité de sa production, ce qui explique pourquoi les deux méthodes produisent des résultats si disparates.",
 
-        // Page 4
+        // Primary energy production by source (2023)
         'page4_title': "Production d'énergie primaire par source (2023)",
         'page4_chart1_title': "Production d'énergie primaire, incluant l'uranium",
         'page4_chart2_title': "Production d'énergie primaire, excluant l'uranium",
@@ -2676,7 +2707,7 @@ export const TRANSLATIONS = {
         'page17_legend_utilities': 'Services publics',
         'page17_legend_pipelines': 'Pipelines',
 
-        // Page 20
+        // Émissions de GES au Canada par secteur économique canadien
         'nav_ghg_emissions': 'Émissions de GES au Canada par secteur économique canadien',
         'page20_title': 'Émissions de GES au Canada par secteur économique canadien',
         'page20_chart_title_prefix': 'Émissions de GES au Canada par secteur économique canadien, ',
@@ -2864,7 +2895,7 @@ export const TRANSLATIONS = {
         'page15_summary_bold_imp': '500 milliards de dollars',
         'page15_summary_after': '.',
 
-        // Page 7
+        // Contributions économiques
         'page7_title': 'Contributions économiques',
         'page7_subtitle': 'Produit intérieur brut nominal',
         'page7_subtitle2': "Contribution de l'énergie au PIB nominal du Canada",
@@ -2880,14 +2911,14 @@ export const TRANSLATIONS = {
         'page7_footnote': 'La somme des parties peut ne pas correspondre au total en raison de l\'arrondissement. Pour plus d\'informations sur la méthodologie utilisée par Statistique Canada pour estimer les contributions indirectes, veuillez contacter statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.',
         'nav_econ_contributions': 'Contributions économiques',
 
-        // Page 8
+        // translations
         'page8_title': "Contribution de l'énergie au PIB nominal par province ou territoire",
         'page8_subtitle': 'PIB nominal direct du secteur de l\'énergie*\n(millions de $)',
         'page8_footnote': 'La somme des données provinciales et territoriales n\'est pas tout à fait exacte en raison de l\'arrondissement.',
         'page8_footnote_2024': ' La distribution est basée sur les proportions de 2023.',
         'nav_provincial_gdp': "Contribution de l'énergie au PIB nominal par province ou territoire",
 
-        // Page 9
+        // translations
         'nav_employment': "Emplois au sein du secteur de l'énergie canadien",
         'page9_title': "Emplois au sein du secteur de l'énergie canadien (2024)",
         'page9_direct': 'Emplois directs',
@@ -2907,7 +2938,7 @@ export const TRANSLATIONS = {
         'page9_other': 'Autres',
         'page9_footnote': "La contribution indirecte n'est pas comparable aux estimées publiées antérieurement en raison de révisions et d'un changement de méthodologie effectué par Statistique Canada. Pour obtenir des renseignements supplémentaires sur la méthode d'estimation de Statistique Canada, veuillez communiquer avec statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.",
 
-        // Page 10
+        // Energy sector employment
         'page10_title': "Emplois dans le secteur de l'énergie",
         'page10_chart_title': "Emplois dans le secteur de l'énergie",
         'page10_chart_subtitle': "(milliers d'emplois)",
@@ -2915,7 +2946,7 @@ export const TRANSLATIONS = {
         'page10_legend_indirect': 'Emplois indirects',
         'page10_footnote': "La somme des parties peut ne pas correspondre au total en raison de l'arrondissement. La contribution indirecte n'est pas comparable aux estimés publiés antérieurement en raison de révisions et d'un changement de méthodologie effectué par Statistique Canada. Pour obtenir des renseignements supplémentaires sur la méthode d'estimation de Statistique Canada, veuillez communiquer avec statcan.iadinfoddci-dciinfoiad.statcan@statcan.gc.ca.",
 
-        // Page 11
+        // translations
         'page11_chart_title': "PIB du secteur de l'énergie",
         'page11_chart_subtitle': '(milliards de dollars)',
         'page11_legend_direct': 'PIB direct',
@@ -2934,7 +2965,7 @@ export const TRANSLATIONS = {
         'table_of_contents': 'Table des matières',
 
 
-        // Page 23
+        // Investissement
         'page23_section': 'Section 2:',
         'page23_title': 'Investissement',
         'page23_item1': 'Dépenses en immobilisation',
@@ -2945,7 +2976,7 @@ export const TRANSLATIONS = {
         'page23_item6': 'Dépenses de protection de l’environnement',
 
 
-        // Page 24
+        // Dépenses en immobilisations
         'page24_chart_title_prefix': 'Dépenses en immobilisations* de l’industrie de l’énergie, ',
         'page24_title': 'Dépenses en immobilisations',
         'page24_yaxis':'milliards $',
@@ -2970,7 +3001,7 @@ export const TRANSLATIONS = {
         'page24_hover_other': 'Autre',
         'page24_hover_total': 'Total',
 
-        // Page 25
+        // translations
         'page25_title': "L'infrastructure énergétique du Canada",
         'page25_subtitle_part1': "Les infrastructures de carburant, d’énergie et de pipelines",
         'page25_subtitle_part2': " constituent la plus grande proportion\n de l'infrastructure du Canada avec ",
@@ -3000,7 +3031,7 @@ export const TRANSLATIONS = {
         'total': 'Total',
         'language_toggle': 'English',
 
-        // Page 26
+        // Contributions économiques des infrastructures de carburant, d'énergie et de pipelines
         'page26_title': 'Contributions économiques des infrastructures de carburant, d\'énergie et de pipelines',
         'page26_supported': 'A soutenu',
         'page26_jobs': 'emplois',
@@ -3014,7 +3045,7 @@ export const TRANSLATIONS = {
         'page26_footer_part2': 'était de',
         'page26_footer_part3': '(nominal).',
 
-        // Page 27
+        // Investissements publics et privés dans les infrastructures de carburant, d'énergie et de pipeline, 2009 à 2024
         'page27_title': 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline, 2009 à 2024',
         'page27_yaxis': 'En milliards de $ (dollars constants de 2012)',
         'page27_legend_transmission': 'Réseaux de transport et de distribution d\'électricité',
@@ -3035,7 +3066,7 @@ export const TRANSLATIONS = {
         'page27_chart_title_prefix': 'Investissements publics et privés dans les infrastructures de carburant, d\'énergie et de pipeline, ',
         'nav_investment_detail': 'Investissements publics et privés',
 
-        // Page 31
+        // Investissements et investisseurs internationaux
         'nav_international_investment': 'Investissements et investisseurs internationaux',
         'page31_title': 'Investissements et investisseurs internationaux',
         'page31_subtitle': "Les industries de l’énergie du Canada opèrent sur des marchés ouverts où les investissements des sociétés canadiennes et étrangères assurent ainsi l’efficacité, la compétitivité et l’innovation du système énergétique.",
@@ -3048,7 +3079,7 @@ export const TRANSLATIONS = {
         'page31_footnote': "L'investissement direct est défini comme une société détenant au moins 10 % des actions avec droit de vote dans une entreprise étrangère et est mesuré comme la valeur totale des capitaux propres au moment de l'acquisition. Exclut les dépenses résidentielles et les investissements en propriété intellectuelle tels que les dépenses d'exploration.",
         'page31_footnote1': "L'IDE et l'IDCE incluent les investissements dans l'électricité renouvelable, ne comprennent pas d'autres formes d'énergie renouvelable.",
 
-        // Page 32
+        // Foreign control of Canadian assets
         'nav_fdi_stock': "Stock d'investissement direct étranger au Canada et d'investissement direct canadien à l'étranger",
         'page32_title': "Contrôle étranger d'actifs canadiens",
         'page32_bullet1_part1': 'Le stock ',
@@ -3088,7 +3119,7 @@ export const TRANSLATIONS = {
         'page32_hover_oil_gas': 'Extraction de pétrole et de gaz et activités de soutien',
         'page32_hover_all_industries': 'Total des industries non financières',
 
-        // Page 33
+        // Actifs énergétiques canadiens
         'nav_canadian_energy_assets': 'Actifs énergétiques canadiens',
         'page33_title': 'Actifs énergétiques canadiens',
         'page33_chart_title': 'Actifs énergétiques canadiens par région,',
@@ -3098,7 +3129,7 @@ export const TRANSLATIONS = {
         'page33_card_abroad': "Total des actifs énergétiques canadiens à l'étranger",
         'page33_footnote': "Une entreprise canadienne désigne ici une entreprise cotée en bourse, dont le siège est au Canada et qui n'est pas sous contrôle étranger.",
 
-        // Page 37
+        // Environmental protection expenditures
         'nav_environmental_protection': "Dépenses de protection de l'environnement",
         'page37_title': "Dépenses de protection de l'environnement",
         'page37_subtitle_part1': "Les dépenses de protection de l'environnement (dépenses d'exploitation et d'immobilisations combinées) du secteur de l'énergie ont totalisé ",
@@ -3132,7 +3163,7 @@ export const TRANSLATIONS = {
         'page37_million': 'millions de dollars',
         'page37_source': 'Source : Statistique Canada. Tableau 38-10-0130-01, Dépenses en capital et d\'exploitation pour les activités de protection de l\'environnement par industrie.',
 
-        // Page 39
+        // Compétences, diversité et communautés
         'page39_section': 'Section 3 :',
         'page39_title': 'Compétences, diversité et communautés',
         'page39_item1': "Démographie du secteur de l'énergie",
@@ -3289,7 +3320,7 @@ export const TRANSLATIONS = {
         'page43_table_geo': 'Zone géographique',
         'page43_table_pct': '%',
 
-        // Page 44
+        // Dépenses énergétiques des ménages
         'page44_title': 'Dépenses énergétiques des ménages',
         'page44_infographic_aria': 'Illustration de trois maisons représentant les dépenses énergétiques des ménages.',
         'page44_top_bullet1_part1': "La facture d'énergie des ménages canadiens s'élevait à ",
@@ -3321,7 +3352,7 @@ export const TRANSLATIONS = {
         'page44_download_csv': 'Télécharger les données (CSV)',
         'page44_download_docx': 'Télécharger le tableau (DOCX)',
 
-        // Page 45
+        // translations
         'page45_title_line1': "En comparaison avec d'autres économies développées,",
         'page45_title_line2': "les prix de l'énergie au Canada sont relativement bas.",
         'page45_chart_title': "Prix unitaires de l'énergie domestique, 2024",
@@ -3343,7 +3374,7 @@ export const TRANSLATIONS = {
         'page45_table_caption': "Prix unitaires de l'énergie domestique, 2024, par pays.",
         'page45_download_title': 'Prix_unitaires_de_l_energie_domestique_2024',
 
-        // Page 46
+        // Energy reliant communities
         'page46_title': "Communautés dépendantes de l'énergie",
         'page46_para1': "Une communauté qui a une part d'emploi plus élevée dans un secteur spécifique, une part relativement élevée du revenu total provenant de ce secteur et une diversité sectorielle relativement faible dans son économie par rapport à la communauté canadienne moyenne peut être décrite comme dépendante de ce secteur.",
         'page46_para2_part1': 'Il y a ',
@@ -3371,7 +3402,7 @@ export const TRANSLATIONS = {
         'page46_bar_download_title': 'Communautes_dependantes_energie_par_province',
         'page46_map_download_title': 'Carte_communautes_dependantes_energie',
 
-        // Page 47
+        // Efficacité énergétique
         'page47_section': 'Section 4 :',
         'page47_title': 'Efficacité énergétique',
         'page47_item1': "Consommation d'énergie",
@@ -3521,7 +3552,7 @@ export const TRANSLATIONS = {
         'page53_source_ee': 'EE Improvement.',
         'page53_no_data': 'Aucune donnée disponible pour cette page.',
 
-        // Page 54
+        // Efficiency trends
         'page54_title': "Évolution de l'efficacité énergétique",
         'page54_subtitle': 'Efficacité énergétique historique',
         'page54_bullet1_bold': "L'efficacité énergétique",
@@ -3555,7 +3586,7 @@ export const TRANSLATIONS = {
         'page54_download_title': 'Utilisation_energie_secondaire_avec_sans_efficacite_energetique_2000-2022',
         'page54_nav_label': "Évolution de l'efficacité énergétique",
 
-        // Page 55
+        // translations
         'page55_chart_title': "Intensité de la consommation d'énergie secondaire totale par habitant et unité de l'indice du PIB, 2000-2022 (2000=100)",
         'page55_yaxis': 'Indice',
         'page55_legend_per_capita': "Intensité de la consommation d'énergie par habitant",
@@ -3571,7 +3602,7 @@ export const TRANSLATIONS = {
         'page55_info_right_pct': '25 %',
         'page55_info_right_suffix': "moins d'énergie par<br>dollar de PIB en<br>2022 qu'en 2000.",
 
-        // Page 56
+        // translations
         'page56_chart_title': "Sommaire des facteurs ayant une incidence sur la variation de la consommation d'énergie, 2000-2022",
         'page56_yaxis': 'Pétajoules',
         'page56_cat_total': "Variation globale de la consommation d'énergie",
@@ -3595,7 +3626,7 @@ export const TRANSLATIONS = {
         'page56_chart_aria': "Graphique à barres résumant les facteurs ayant une incidence sur la variation de la consommation d'énergie de 2000 à 2022, en pétajoules.",
         'page56_download_title': 'Sommaire_facteurs_incidence_variation_consommation_energie_2000-2022',
 
-        // Page 57
+        // translations
         'page57_chart_title': "Tendances d'utilisation et d'efficacité énergétique par secteur, 2000-2022",
         'page57_energy_use': 'Utilisation<br>énergétique',
         'page57_energy_intensity': 'Intensité<br>énergétique',
@@ -3614,7 +3645,7 @@ export const TRANSLATIONS = {
         'page57_download_csv': 'Télécharger les données (CSV)',
         'page57_download_docx': 'Télécharger le tableau (DOCX)',
 
-        // Page 59
+        // Énergie propre et carburants faibles en carbone
         'page59_section': 'Section 5 :',
         'page59_title': 'Énergie propre et carburants faibles en carbone',
         'page59_item1': "Technologies propres et production d'électricité au Canada",
@@ -3709,7 +3740,7 @@ export const TRANSLATIONS = {
         'page63_industry_waste_recycling': 'Déchets et recyclage',
         'page63_industry_mining_manufacturing': 'Mines et industries manufacturières',
 
-        // Page 64
+        // Électricité
         'page64_title': 'Électricité',
         'page64_subtitle': 'Contexte international',
         'page64_production_label': 'Production mondiale',
@@ -4303,7 +4334,7 @@ export const TRANSLATIONS = {
         'page65_infographic_aria': 'Exportations et importations d\'électricité en {{year}} : {{exports}} térawattheures exportées et {{imports}} térawattheures importées',
         'page65_col_year': 'Année',
 
-        // Page 96
+        // translations
         'page96_chart_title': 'Immatriculations de véhicules électriques rechargeables par rapport au total des immatriculations de véhicules, {{startYear}}–{{endYear}}',
         'page96_legend_bars': 'Immatriculations de véhicules électriques',
         'page96_legend_line': 'Proportion totale des immatriculations de véhicules (%)',
@@ -4330,7 +4361,7 @@ export const TRANSLATIONS = {
         'page96_no_data': 'Les données de cette page ne sont pas disponibles.',
         'page96_bg_alt': 'Voiture électrique gris pâle avec fiche de recharge derrière le graphique.',
 
-        // Page 103
+        // Pétrole, gaz naturel et charbon
         'page103_section': 'Section 6 :',
         'page103_title': 'Pétrole, gaz naturel et charbon',
         'page103_item1': 'Pétrole brut',
@@ -4767,6 +4798,36 @@ export const TRANSLATIONS = {
         'page108_country_saudi': 'Arabie saoudite',
         'page108_country_canada': 'Canada',
         'page108_country_iraq': 'Irak',
+        'page109_title': 'Réserves mondiales prouvées',
+        'page109_headline_total': '{{total}} milliards de barils',
+        'page109_headline_value': '{{total}} milliards de',
+        'page109_headline_barrels_word': 'barils',
+        'page109_headline_year': '(fin de {{year}})',
+        'page109_definition': 'Les réserves\nprouvées sont\n les réserves \nrecouvrables pouvant\n être récupérées avec\n un degré de \ncertitude élevé.',
+        'page109_oil_sands_text': 'des réserves prouvées de pétrole\n au Canada proviennent des\n sables bitumineux.',
+        'page109_country_other': 'Autres',
+        'page109_country_venezuela': 'Vénézuela',
+        'page109_country_saudi': 'Arabie saoudite',
+        'page109_country_iran': 'Iran',
+        'page109_country_canada': 'Canada',
+        'page109_country_iraq': 'Irak',
+        'page109_footnote_saudi': 'Les réserves d\'Arabie saoudite et du Koweït comprennent la « zone neutre » saoudo-koweïtienne de 5 milliards de barils de réserves totales prouvées.',
+        'page109_chart_title': 'Réserves mondiales prouvées de pétrole brut, {{year}}',
+        'page109_chart_aria': 'Diagramme à secteurs des réserves mondiales prouvées de pétrole brut par pays ou région pour {{year}}. Réserves totales de {{total}} milliards de barils.',
+        'page109_table_caption': 'Réserves mondiales prouvées de pétrole brut par pays ou région.',
+        'page109_table_col_year': 'Année',
+        'page109_table_col_country': 'Pays ou région',
+        'page109_table_col_reserves': 'Réserves (Md de barils)',
+        'page109_table_col_share': 'Part (%)',
+        'page109_download_chart': 'Télécharger le graphique en PNG',
+        'page109_download_csv': 'Télécharger le tableau (CSV)',
+        'page109_download_docx': 'Télécharger le tableau (DOCX)',
+        'page109_download_title': 'Réserves mondiales prouvées de pétrole brut {{year}}',
+        'page109_download_csv_slug': 'reserves-mondiales-prouvees-petrole-brut',
+        'page109_export_slug': 'reserves-mondiales-prouvees-petrole-brut',
+        'page109_bg_alt': 'Illustration de barils de pétrole, chevalet de pompage, camion de sables bitumineux et diagramme à secteurs des réserves mondiales prouvées.',
+        'page109_clear_selection': 'Effacer la sélection',
+        'page109_no_data': 'Les données sur les réserves mondiales prouvées de pétrole brut ne sont pas disponibles.',
         'page119_title': 'Pétrole brut par voie ferrée',
         'page119_para1': 'Au cours de la dernière décennie, les expéditions de pétrole par chemin de fer ont fortement varié, sous l\'effet des fluctuations des prix mondiaux du pétrole et de la capacité de transport disponible. Les exportations ont chuté de façon marquée en 2015-2016 dans un contexte de baisse des prix, puis ont bondi en 2018, les contraintes touchant les pipelines dans l\'Ouest canadien ayant entraîné un recours accru au transport ferroviaire.',
         'page119_para2': 'Les exportations ont atteint un sommet de 412 Mb/j en février 2020, juste avant qu\'un repli des prix lié à la pandémie entraîne une forte baisse des volumes. Bien que les exportations aient brièvement rebondi, elles se sont depuis stabilisées à des niveaux inférieurs aux sommets précédents.',
@@ -4917,17 +4978,18 @@ export const TRANSLATIONS = {
         'page139_table_aria':
             'Capacité des raffineries par province, raffineries de pétrole, usines d\'asphalte et de lubrifiant',
         'page105_export_slug': 'emploi-petrolier-par-region',
-        'page105_aria_page': 'Emplois directs et indirects du secteur pétrolier par région, 2024',
+        'page105_aria_page': 'Emplois directs et indirects du secteur pétrolier par région, {{year}}',
         'page105_p1a': 'Alors que le secteur pétrolier du Canada a ',
-        'page105_p1b': 'directement employé 189 700 individus',
+        'page105_p1b': 'directement employé {{directJobs}} individus',
         'page105_p1c':
-            ' en 2024, le secteur utilise des intrants provenant d\'autres industries, créant des emplois indirects supplémentaires s\'élevant à ',
-        'page105_p1d': '313 400 emplois indirects dans la chaîne d\'approvisionnement',
+            ' en {{year}}, le secteur utilise des intrants provenant d\'autres industries, créant des emplois indirects supplémentaires s\'élevant à ',
+        'page105_p1d': '{{indirectJobs}} emplois indirects dans la chaîne d\'approvisionnement',
         'page105_p1e': '.',
-        'page105_p2a': 'l\'Alberta employait la plus grande part (46 %) des employés de la chaîne d\'approvisionnement',
+        'page105_p2a': '{{province1}} employait la plus grande part ({{share1}}) des employés de la chaîne d\'approvisionnement',
         'page105_p2b':
-            ', suivie de l\'Ontario (24 %). La Colombie-Britannique (11 %), le Québec (8 %) et la Saskatchewan (5 %) comptaient aussi des parts importantes.',
-        'page105_chart_heading': 'Répartition des emplois par région, 2024',
+            ', suivie de {{province2}} ({{share2}}). {{province3}} ({{share3}}), {{province4}} ({{share4}}) et {{province5}} ({{share5}}) comptaient aussi des parts importantes.',
+        'page105_chart_heading': 'Répartition des emplois par région, {{year}}',
+        'page105_chart_aria_prefix': 'Bandes horizontales empilées pour {{year}}, emplois directs et indirects du secteur pétrolier par région. ',
         'page105_row_direct': 'Emplois directs',
         'page105_row_indirect': 'Emplois indirects',
         'page105_row_direct_compact': 'Directs',
@@ -4996,7 +5058,7 @@ export const TRANSLATIONS = {
         'page107_download_docx': 'Télécharger le tableau (DOCX)',
         'page107_table_col_year': 'Année',
 
-        // Page 28
+        // Les grands projets énergétiques au Canada
         'nav_major_projects': 'Les grands projets énergétiques au Canada',
         'page28_title': 'Les grands projets énergétiques au Canada',
         'page28_chart_title_prefix': 'Tendances des grands projets énergétiques, ',

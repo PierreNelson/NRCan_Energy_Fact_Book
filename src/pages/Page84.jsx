@@ -4,7 +4,7 @@ import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import page84Bg from '../assets/page84_bg.png';
-import { getPage84Data } from '../utils/dataLoader';
+import { getLargestSolarProjectsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const PROJECT_PROV_COLORS = {
@@ -130,7 +130,7 @@ const Page84 = () => {
     };
 
     useEffect(() => {
-        getPage84Data()
+        getLargestSolarProjectsData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));

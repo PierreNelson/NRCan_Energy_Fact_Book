@@ -2,10 +2,10 @@ import React from 'react';
 import {
     ICON_LABEL_GAP_PCT,
     ICON_SLOT_WIDTH_PCT,
-    getPage69LeaderFrom,
-    getPage69LeaderTo,
-    getPage69SlotIconX,
-    getPage69SlotIconY,
+    getElectricityPriceLeaderFrom,
+    getElectricityPriceLeaderTo,
+    getElectricityPriceSlotIconX,
+    getElectricityPriceSlotIconY,
     MAP_BG_LAYER,
     MAP_CITY_SLOTS,
     page69BgIcons,
@@ -146,8 +146,8 @@ export const Page69IconLayer = ({ cities, minHeight }) => (
                     key={city.key}
                     className="page69-icon-slot"
                     style={{
-                        left: `${getPage69SlotIconX(slot)}%`,
-                        bottom: `${getPage69SlotIconY(slot)}%`,
+                        left: `${getElectricityPriceSlotIconX(slot)}%`,
+                        bottom: `${getElectricityPriceSlotIconY(slot)}%`,
                     }}
                 >
                     <img
@@ -170,8 +170,8 @@ export const Page69LeaderLines = ({ minHeight }) => {
         <svg className="page69-leader-lines" style={{ minHeight }} aria-hidden="true" preserveAspectRatio="none">
             <style>{overlayStyles}</style>
             {lines.map((slot) => {
-                const from = getPage69LeaderFrom(slot);
-                const to = getPage69LeaderTo(slot);
+                const from = getElectricityPriceLeaderFrom(slot);
+                const to = getElectricityPriceLeaderTo(slot);
                 if (!from || !to) return null;
                 return (
                     <line
@@ -213,13 +213,13 @@ export const Page69CityLabels = ({ cities, lang, minHeight }) => (
             const slot = MAP_CITY_SLOTS.find((s) => s.key === city.key);
             if (!slot) return null;
             const label = lang === 'fr' ? (city.labelFr || city.label) : city.label;
-            const labelTop = 100 - getPage69SlotIconY(slot) + ICON_LABEL_GAP_PCT;
+            const labelTop = 100 - getElectricityPriceSlotIconY(slot) + ICON_LABEL_GAP_PCT;
             return (
                 <div
                     key={city.key}
                     className="page69-label-slot"
                     style={{
-                        left: `${getPage69SlotIconX(slot)}%`,
+                        left: `${getElectricityPriceSlotIconX(slot)}%`,
                         top: `${labelTop}%`,
                     }}
                 >

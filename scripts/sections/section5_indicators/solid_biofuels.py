@@ -1,4 +1,4 @@
-"""Page 78 — Canadian production of solid biofuels (RenAQ + StatCan 25-10-0031-01)."""
+"""Canadian production of solid biofuels (RenAQ + StatCan 25-10-0031-01)."""
 
 from __future__ import annotations
 
@@ -372,7 +372,7 @@ def update_solid_biofuels(processor) -> int:
 
 
 def transform_solid_biofuels(processor) -> int:
-    """EFB transform: sbio_* vectors for Page 78 from stored RenAQ + StatCan raw rows."""
+    """EFB transform: sbio_* vectors for this indicator from stored RenAQ + StatCan raw rows."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise RuntimeError('solid_biofuels transform: no raw rows found — re-run eedas update')

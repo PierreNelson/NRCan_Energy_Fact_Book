@@ -51,7 +51,7 @@ function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          {/* Section 1: Energy Factbook Introduction (Page 1) */}
+          {/* Section 1: Energy Factbook Introduction */}
           <Route index element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionOne />
@@ -63,35 +63,35 @@ function App() {
             </Suspense>
           } />
           
-          {/* Section 2: Energy & Infrastructure (Pages 23, 24, 25, 26, 27, 31, 32, 37) */}
+          {/* Section 2: Energy & Infrastructure */}
           <Route path="section-2" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionTwo />
             </Suspense>
           } />
           
-          {/* Section 3: Skills, Diversity and Community (Page 39+) */}
+          {/* Section 3: Skills, Diversity and Community  */}
           <Route path="section-3" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionThree />
             </Suspense>
           } />
           
-          {/* Section 4: Energy Efficiency (Page 47+) */}
+          {/* Section 4: Energy Efficiency  */}
           <Route path="section-4" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionFour />
             </Suspense>
           } />
           
-          {/* Section 5: Clean Power and Low Carbon Fuels (Page 59+) */}
+          {/* Section 5: Clean Power and Low Carbon Fuels  */}
           <Route path="section-5" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionFive />
             </Suspense>
           } />
           
-          {/* Section 6: Oil, Natural Gas and Coal (Page 103+) */}
+          {/* Section 6: Oil, Natural Gas and Coal  */}
           <Route path="section-6" element={
             <Suspense fallback={<LoadingSpinner />}>
               <SectionSix />

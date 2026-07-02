@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage136Data } from '../utils/dataLoader';
+import { getRppSupplyDemandData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import Page136SupplyInfographic, { OVERLAY_SLOTS, SUPPLY_KEYS, TEXT_COLORS } from '../components/Page136SupplyInfographic';
 import page136BgEn from '../assets/page136_bg.png';
@@ -107,7 +107,7 @@ const Page136 = () => {
     };
 
     useEffect(() => {
-        getPage136Data()
+        getRppSupplyDemandData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
@@ -316,11 +316,11 @@ const Page136 = () => {
             };
             img.src = imgData;
         } catch (err) {
-            console.warn('Unable to download Page 136 chart image.', err);
+            console.warn('Unable to download chart image.', err);
             try {
                 await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' });
             } catch (restoreError) {
-                console.warn('Unable to restore Page 136 chart background.', restoreError);
+                console.warn('Unable to restore chart background.', restoreError);
             }
         }
     };

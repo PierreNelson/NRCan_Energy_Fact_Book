@@ -25,7 +25,7 @@ const SectionTwo = () => {
         // Immediate scroll to top to prevent flash
         window.scrollTo(0, 0);
         
-        // Delayed scroll to override any page auto-focus effects (e.g., Page37 focuses at 100ms)
+        // Delayed scroll to override any page auto-focus effects (e.g., environmental protection expenditures focuses at 100ms)
         const scrollTimer = setTimeout(() => {
             if (location.hash) {
                 const elementId = location.hash.replace('#', '');
@@ -41,7 +41,7 @@ const SectionTwo = () => {
                     overviewPage.scrollIntoView({ behavior: 'instant', block: 'start' });
                 }
             }
-        }, 300); // Run after Page37's 100ms auto-focus effect
+        }, 300); // Run after environmental protection expenditures page 100ms auto-focus effect
         
         return () => clearTimeout(scrollTimer);
     }, [location.pathname, location.hash]);

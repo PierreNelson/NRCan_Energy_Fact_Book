@@ -1,4 +1,4 @@
-"""GHG emissions by economic sector (Page 20 / Page 132) — ECCC GHG_Econ_Can_Prov_Terr.csv."""
+"""GHG emissions by economic sector (GHG emissions sector and spotlight) — ECCC GHG_Econ_Can_Prov_Terr.csv."""
 
 import io
 from typing import Dict, List, Optional, Tuple
@@ -189,7 +189,7 @@ def _build_ghg_spotlight_rows(
     min_year: int = GHG_SPOTLIGHT_MIN_YEAR,
     max_year: int = GHG_SPOTLIGHT_MAX_YEAR,
 ) -> List[Tuple[str, int, float]]:
-    """Page 132 stacked chart: oil sands, conventional oil, natural gas, other."""
+    """Oil and gas GHG spotlight stacked chart: oil sands, conventional oil, natural gas, other."""
     years = sorted(
         y for y in df["Year"].dropna().astype(int).unique()
         if min_year <= y <= max_year
@@ -219,7 +219,7 @@ def _build_ghg_stat_rows(
     base_year: int = GHG_NARRATIVE_BASE_YEAR,
     end_year: int = GHG_NARRATIVE_END_YEAR,
 ) -> List[Tuple[str, int, float]]:
-    """Derived narrative statistics (not used for Page 20/132 charts)."""
+    """Derived narrative statistics (not used for this indicator/132 charts)."""
     canada = df[df["Region"] == "Canada"].copy()
     rows: List[Tuple[str, int, float]] = [
         ("ghg_stat_narrative_base_year", end_year, float(base_year)),
@@ -362,7 +362,7 @@ def build_ghg_emissions_rows(
     """
     Build pipeline rows from ECCC GHG_Econ_Can_Prov_Terr.csv.
 
-    Returns chart series (2020+), Page 132 spotlight (2000–2023), and narrative stats.
+    Returns chart series (2020+), Oil and gas GHG spotlight (2000–2023), and narrative stats.
     """
     print("Processing GHG Emissions by Economic Sector data (ECCC CSV)...")
     content, source_url = _fetch_ghg_econ_csv(

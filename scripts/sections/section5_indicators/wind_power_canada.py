@@ -1,4 +1,4 @@
-"""Page 80 — Wind power capacity and generation in Canada (Manual Data workbook)."""
+"""Wind power capacity and generation in Canada (Manual Data workbook)."""
 
 from __future__ import annotations
 
@@ -272,7 +272,7 @@ def update_wind_power_canada(processor) -> int:
 
 
 def transform_wind_power_canada(processor) -> int:
-    """EFB transform: win_pwr_* vectors for Page 80."""
+    """EFB transform: win_pwr_* vectors for this indicator."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise RuntimeError('wind_power_canada transform: no raw rows found — re-run eedas update')

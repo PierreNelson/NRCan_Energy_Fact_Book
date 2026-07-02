@@ -29,7 +29,7 @@ export const BUBBLE_SLOTS = {
 };
 
 /** Export title + infographic using live DOM measurements. */
-export const exportPage40InfographicPng = async (figureEl, { title, scale = 2 }) => {
+export const exportDemographicsInfographicPng = async (figureEl, { title, scale = 2 }) => {
     if (!figureEl) return null;
 
     const exportRoot = figureEl.closest('.page40-inner');

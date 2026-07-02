@@ -1,4 +1,4 @@
-"""Page 79 — World wind power capacity ranking and Canada wind generation share."""
+"""World wind power capacity ranking and Canada wind generation share."""
 
 from __future__ import annotations
 

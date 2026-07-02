@@ -1,4 +1,4 @@
-"""Page 110 — Western Canada oil wells completed (count and average depth)."""
+"""Western Canada oil wells completed (count and average depth)."""
 
 from __future__ import annotations
 
@@ -141,7 +141,10 @@ def _fetch_sk_provincial_rows(config=None) -> List[Dict[str, float]]:
 
 
 def _load_mb_provincial_rows(config=None) -> List[Dict[str, float]]:
-    path = ensure_petroleum_reserves_seed_workbook(reserves_workbook_path(config))
+    path = reserves_workbook_path(config)
+    if not path.is_file():
+        path = ensure_petroleum_reserves_seed_workbook(path)
+    print(f'    Manitoba wells workbook: {path}')
     df = pd.read_excel(path, sheet_name=MB_OIL_WELLS_SHEET)
     cols = {str(c).strip().lower(): c for c in df.columns}
     province_col = cols.get('province', 'Province')

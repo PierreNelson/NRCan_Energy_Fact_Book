@@ -16,7 +16,7 @@
  * - oee_neud_*: Energy use (secondary by sector + primary demand components), PJ
  */
 
-import { PAGE66_PROVINCE_ORDER } from '../components/Page66GenerationInfographic.constants.js';
+import { CANADIAN_GENERATION_PROVINCE_ORDER } from '../components/Page66GenerationInfographic.constants.js';
 
 let dataCache = null;
 let metadataCache = null;
@@ -535,10 +535,10 @@ export async function getOilGasGhgSpotlightData() {
 }
 
 /**
- * Page 61 shows a year only when every infographic stat is populated (excludes partial/future
+ * Environmental and clean technology shows a year only when every infographic stat is populated (excludes partial/future
  * StatCan rows such as market GDP without matching eco-sector indicators).
  */
-export function page61SnapshotHasCompleteData(snap) {
+export function environmentalCleanTechSnapshotHasCompleteData(snap) {
     if (!snap) return false;
     return snap.eco_gdp != null
         && snap.gdp_pct != null
@@ -617,7 +617,7 @@ export async function getEnvironmentalCleanTechData() {
             jobs_pct: jobsPct,
         };
     });
-    const snapshotsComplete = snapshots.filter(page61SnapshotHasCompleteData);
+    const snapshotsComplete = snapshots.filter(environmentalCleanTechSnapshotHasCompleteData);
     const years = snapshotsComplete.map((s) => s.year);
     const startYear = years.length ? years[0] : null;
     const endYear = years.length ? years[years.length - 1] : null;
@@ -637,10 +637,10 @@ export async function getEnvironmentalCleanTechData() {
     };
 }
 
-const PAGE138_LOCATION_KEYS = ['canada', 'vancouver', 'calgary', 'toronto', 'montreal', 'halifax'];
-const PAGE138_COMPONENTS = ['crude', 'refining', 'marketing', 'taxes'];
+const RETAIL_GASOLINE_LOCATION_KEYS = ['canada', 'vancouver', 'calgary', 'toronto', 'montreal', 'halifax'];
+const RETAIL_GASOLINE_COMPONENTS = ['crude', 'refining', 'marketing', 'taxes'];
 
-export async function getPage138GasolineData() {
+export async function getRetailGasolinePricesData() {
     const allData = await loadAllData();
     const rows = allData.filter((row) => row.vector && row.vector.startsWith('kal_'));
     const dataByYear = {};
@@ -654,26 +654,26 @@ export async function getPage138GasolineData() {
         if (!dataByYear[year][market]) {
             dataByYear[year][market] = { crude: null, refining: null, marketing: null, taxes: null };
         }
-        if (PAGE138_COMPONENTS.includes(component)) {
+        if (RETAIL_GASOLINE_COMPONENTS.includes(component)) {
             dataByYear[year][market][component] = Number(row.value);
         }
     });
     const years = Object.keys(dataByYear)
         .map(Number)
         .filter((y) =>
-            PAGE138_LOCATION_KEYS.every((loc) => {
+            RETAIL_GASOLINE_LOCATION_KEYS.every((loc) => {
                 const bundle = dataByYear[y]?.[loc];
-                return bundle && PAGE138_COMPONENTS.every((c) => bundle[c] != null);
+                return bundle && RETAIL_GASOLINE_COMPONENTS.every((c) => bundle[c] != null);
             }),
         )
         .sort((a, b) => b - a);
     return { years, dataByYear };
 }
 
-const PAGE139_PROVINCE_KEYS = ['ab', 'bc', 'nb', 'on', 'qc', 'sk'];
-const PAGE139_TYPES = ['petroleum', 'asphalt', 'lubricant', 'total'];
+const REFINERY_CAPACITY_PROVINCE_KEYS = ['ab', 'bc', 'nb', 'on', 'qc', 'sk'];
+const REFINERY_CAPACITY_TYPES = ['petroleum', 'asphalt', 'lubricant', 'total'];
 
-export async function getPage139RefineryCapacityData() {
+export async function getRefineryCapacityData() {
     const allData = await loadAllData();
     const rows = allData.filter((row) => row.vector && row.vector.startsWith('refcap_'));
     if (rows.length === 0) {
@@ -692,7 +692,7 @@ export async function getPage139RefineryCapacityData() {
         capacity: valueMap[`refcap_${prov}_${type}_capacity`] ?? null,
     });
 
-    const tableRows = PAGE139_PROVINCE_KEYS.map((key) => {
+    const tableRows = REFINERY_CAPACITY_PROVINCE_KEYS.map((key) => {
         const petroleum = pair(key, 'petroleum');
         const asphalt = pair(key, 'asphalt');
         const lubricant = pair(key, 'lubricant');
@@ -719,9 +719,9 @@ export async function getPage139RefineryCapacityData() {
     return { vintage, tableRows, totalRow };
 }
 
-const PAGE62_REGION_KEYS = ['terr', 'atl', 'que', 'ont', 'man', 'sask', 'alta', 'bc'];
+const CLEANTECH_GEO_REGION_KEYS = ['terr', 'atl', 'que', 'ont', 'man', 'sask', 'alta', 'bc'];
 
-export async function getPage62Data() {
+export async function getCleantechCompaniesByRegionData() {
     const allData = await loadAllData();
     const rows = allData.filter(row => row.vector && row.vector.startsWith('cleantech_geo_'));
     const byYear = {};
@@ -735,7 +735,7 @@ export async function getPage62Data() {
     const data = Object.values(byYear)
         .map((row) => {
             const total = row.total;
-            const slices = PAGE62_REGION_KEYS.map((key) => {
+            const slices = CLEANTECH_GEO_REGION_KEYS.map((key) => {
                 const count = row[`${key}_count`];
                 const pct = row[`${key}_pct`];
                 return {
@@ -756,7 +756,7 @@ export async function getPage62Data() {
     };
 }
 
-const PAGE63_INDUSTRY_KEYS = [
+const CLEANTECH_INDUSTRY_KEYS = [
     'renewable_energy',
     'energy_efficiency',
     'biofuels_bioenergy',
@@ -769,7 +769,7 @@ const PAGE63_INDUSTRY_KEYS = [
     'mining_manufacturing'
 ];
 
-export async function getPage63Data() {
+export async function getCleantechCompaniesByIndustryData() {
     const allData = await loadAllData();
     const rows = allData.filter(row => row.vector && row.vector.startsWith('cleantech_ind_'));
     const byYear = {};
@@ -782,7 +782,7 @@ export async function getPage63Data() {
     });
     const data = Object.values(byYear)
         .map((row) => {
-            const industries = PAGE63_INDUSTRY_KEYS.map((key) => {
+            const industries = CLEANTECH_INDUSTRY_KEYS.map((key) => {
                 const count = row[`${key}_count`];
                 const pct = row[`${key}_pct`];
                 return { key, count, pct };
@@ -791,7 +791,7 @@ export async function getPage63Data() {
                 .sort((a, b) => b.count - a.count);
             return { ...row, industries };
         })
-        .filter((row) => row.industries.length === PAGE63_INDUSTRY_KEYS.length)
+        .filter((row) => row.industries.length === CLEANTECH_INDUSTRY_KEYS.length)
         .sort((a, b) => a.year - b.year);
     const years = data.map((row) => row.year);
     return {
@@ -913,7 +913,7 @@ export async function getSEUByFuelData() {
     };
 }
 
-export async function getPage50ResidentialData() {
+export async function getResidentialSectorOverviewData() {
     const allData = await loadAllData();
     const byYear = {};
     allData.forEach(row => {
@@ -1001,15 +1001,15 @@ export async function getPage50ResidentialData() {
 }
 
 /**
- * Page 51 shows a year only when residential end-use totals exist (HB / res_reu_total path).
+ * Residential energy use shows a year only when residential end-use totals exist (HB / res_reu_total path).
  * Excludes future or partial CSV years until the pipeline fills a positive total.
  */
-export function page51RowHasCompleteData(row) {
+export function residentialEnergyUseRowHasCompleteData(row) {
     const t = row?.reuByType?.total;
     return t != null && !Number.isNaN(Number(t)) && Number(t) > 0;
 }
 
-export async function getPage51Data() {
+export async function getResidentialEnergyUseData() {
     const allData = await loadAllData();
     const resData = allData.filter(row => row.vector && row.vector.startsWith('res_'));
     const byYear = {};
@@ -1074,7 +1074,7 @@ export async function getPage51Data() {
         };
         return { year, reuByType, spaceHeating, waterHeating };
     });
-    const dataComplete = data.filter(page51RowHasCompleteData);
+    const dataComplete = data.filter(residentialEnergyUseRowHasCompleteData);
     const yearsComplete = dataComplete.map((r) => r.year);
     const latestYear = yearsComplete.length ? yearsComplete[yearsComplete.length - 1] : null;
     return { years: yearsComplete, data: dataComplete, latestYear };
@@ -1083,15 +1083,15 @@ export async function getPage51Data() {
 const CIEU_END_USE_KEYS = ['sh', 'wh', 'ae', 'am', 'lt', 'sc'];
 
 /**
- * Page 52 shows a year only when commercial/institutional total energy use (TEU / pie) exists and is positive.
+ * Commercial and institutional sector shows a year only when total energy use (TEU / pie) exists and is positive.
  * Excludes future or partial CSV years until the pipeline fills a positive total.
  */
-export function page52RowHasCompleteData(row) {
+export function commercialInstitutionalEnergyUseRowHasCompleteData(row) {
     const t = row?.teu;
     return t != null && !Number.isNaN(Number(t)) && Number(t) > 0;
 }
 
-export async function getPage52Data() {
+export async function getCommercialInstitutionalEnergyUseData() {
     const allData = await loadAllData();
     const byYear = {};
     allData.forEach(row => {
@@ -1159,28 +1159,28 @@ export async function getPage52Data() {
             ee_savings_billion: r.ee_savings_billion != null ? r.ee_savings_billion : null
         };
     });
-    const dataComplete = data.filter(page52RowHasCompleteData);
+    const dataComplete = data.filter(commercialInstitutionalEnergyUseRowHasCompleteData);
     const yearsComplete = dataComplete.map((r) => r.year);
     const latestYear = yearsComplete.length ? yearsComplete[yearsComplete.length - 1] : null;
     return { data: dataComplete, years: yearsComplete, latestYear };
 }
 
-const PAGE53_FUEL_KEYS = ['Ele', 'NG', 'DFOx', 'SGPC', 'WWPL', 'Other_x'];
+const INDUSTRIAL_ENERGY_FUEL_KEYS = ['Ele', 'NG', 'DFOx', 'SGPC', 'WWPL', 'Other_x'];
 
-export function page53RowHasCompleteData(row) {
+export function industrialEnergyUseRowHasCompleteData(row) {
     const t = row?.teu;
     return (
         t != null &&
         !Number.isNaN(Number(t)) &&
         Number(t) > 0 &&
-        PAGE53_FUEL_KEYS.every((k) => row[k] != null && !Number.isNaN(Number(row[k]))) &&
+        INDUSTRIAL_ENERGY_FUEL_KEYS.every((k) => row[k] != null && !Number.isNaN(Number(row[k]))) &&
         row.ee_improvement_pct != null &&
         row.ee_savings_pj != null &&
         row.ee_savings_billion != null
     );
 }
 
-export async function getPage53Data() {
+export async function getIndustrialEnergyUseData() {
     const allData = await loadAllData();
     const byYear = {};
     allData.forEach(row => {
@@ -1236,20 +1236,20 @@ export async function getPage53Data() {
         } else {
             row.change_since_2000_pct = null;
         }
-        row.slices = PAGE53_FUEL_KEYS.map(k => ({
+        row.slices = INDUSTRIAL_ENERGY_FUEL_KEYS.map(k => ({
             key: k,
             pj: row[k],
             pct: row.teu != null && row.teu > 0 && row[k] != null ? Number(((row[k] / row.teu) * 100).toFixed(1)) : null
         }));
         return row;
     });
-    const dataComplete = data.filter(page53RowHasCompleteData);
+    const dataComplete = data.filter(industrialEnergyUseRowHasCompleteData);
     const yearsComplete = dataComplete.filter((r) => r.year >= 2022).map((r) => r.year);
     const latestYear = yearsComplete.length ? yearsComplete[yearsComplete.length - 1] : null;
     return { data, years: yearsComplete, latestYear };
 }
 
-const PAGE136_PRODUCT_KEYS = [
+const RPP_SUPPLY_PRODUCT_KEYS = [
     'asphalt',
     'other',
     'motor_gasoline',
@@ -1260,7 +1260,7 @@ const PAGE136_PRODUCT_KEYS = [
     'residual',
 ];
 
-const PAGE136_SUPPLY_FIELDS = [
+const RPP_SUPPLY_FIELDS = [
     { key: 'net_production', mmbd: 'rpp_net_prod_mmbd', bl: 'rpp_net_prod_bl' },
     { key: 'exports', mmbd: 'rpp_exports_mmbd', bl: 'rpp_exports_bl' },
     { key: 'imports', mmbd: 'rpp_imports_mmbd', bl: 'rpp_imports_bl' },
@@ -1268,7 +1268,7 @@ const PAGE136_SUPPLY_FIELDS = [
     { key: 'refinery_input', mmbd: 'rpp_refinery_mmbd', bl: 'rpp_refinery_bl' },
 ];
 
-const PAGE136_PCT_VECTORS = {
+const RPP_SUPPLY_PCT_VECTORS = {
     motor_gasoline: 'rpp_motor_gasoline_pct',
     distillate: 'rpp_distillate_pct',
     still_gas: 'rpp_still_gas_pct',
@@ -1279,7 +1279,7 @@ const PAGE136_PCT_VECTORS = {
     other: 'rpp_other_pct',
 };
 
-export async function getPage136Data() {
+export async function getRppSupplyDemandData() {
     const allData = await loadAllData();
     const rppRows = allData.filter((row) => row.vector && row.vector.startsWith('rpp_'));
     const byYear = {};
@@ -1292,18 +1292,18 @@ export async function getPage136Data() {
     const data = Object.values(byYear)
         .map((raw) => {
             const supply = {};
-            PAGE136_SUPPLY_FIELDS.forEach(({ key, mmbd, bl }) => {
+            RPP_SUPPLY_FIELDS.forEach(({ key, mmbd, bl }) => {
                 supply[key] = {
                     mmbd: raw[mmbd] != null ? Number(raw[mmbd]) : null,
                     billion_l: raw[bl] != null ? Number(raw[bl]) : null,
                 };
             });
-            const products = PAGE136_PRODUCT_KEYS.map((key) => ({
+            const products = RPP_SUPPLY_PRODUCT_KEYS.map((key) => ({
                 key,
-                pct: raw[PAGE136_PCT_VECTORS[key]] != null ? Number(raw[PAGE136_PCT_VECTORS[key]]) : null,
+                pct: raw[RPP_SUPPLY_PCT_VECTORS[key]] != null ? Number(raw[RPP_SUPPLY_PCT_VECTORS[key]]) : null,
             }));
             const complete =
-                PAGE136_SUPPLY_FIELDS.every(({ key }) => supply[key].mmbd != null && supply[key].billion_l != null) &&
+                RPP_SUPPLY_FIELDS.every(({ key }) => supply[key].mmbd != null && supply[key].billion_l != null) &&
                 products.every((p) => p.pct != null);
             return { year: raw.year, supply, products, complete };
         })
@@ -1318,7 +1318,7 @@ export async function getPage136Data() {
     };
 }
 
-export async function getPage111Data() {
+export async function getCanadianCrudeProductionData() {
     const allData = await loadAllData();
     const cpRows = allData.filter((row) => row.vector && row.vector.startsWith('cp_'));
     const byYear = {};
@@ -1402,7 +1402,7 @@ export async function getPage111Data() {
     };
 }
 
-export async function getPage65Data() {
+export async function getElectricityTradeData() {
     const allData = await loadAllData();
     const tradeRows = allData.filter((row) => row.vector && row.vector.startsWith('elec_trade_'));
     const byYear = {};
@@ -1433,7 +1433,7 @@ export async function getPage65Data() {
     };
 }
 
-export async function getPage96Data() {
+export async function getEvSalesRegistrationsData() {
     const allData = await loadAllData();
     const evRows = allData.filter((row) => row.vector && row.vector.startsWith('ev_'));
     const byYear = {};
@@ -1479,7 +1479,7 @@ export async function getPage96Data() {
     };
 }
 
-export async function getPage113Data() {
+export async function getOilSandsProductionData() {
     const allData = await loadAllData();
     const osRows = allData.filter((row) => row.vector && row.vector.startsWith('os_'));
     const byYear = {};
@@ -1544,7 +1544,116 @@ export async function getPage113Data() {
     };
 }
 
-export async function getPage110Data() {
+const PETROLEUM_EMPLOYMENT_REGION_KEYS = ['bc', 'alta', 'sask', 'man', 'ont', 'que', 'maritimes', 'nl'];
+
+export async function getPetroleumEmploymentByRegionData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('pet_emp_'));
+
+    const byYear = {};
+    rows.forEach((row) => {
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) {
+            byYear[year] = { reportingYear: year, regionPcts: {}, directTotal: null, indirectTotal: null };
+        }
+        const bucket = byYear[year];
+        const val = Number(row.value);
+
+        if (row.vector === 'pet_emp_reporting_year') bucket.reportingYear = val;
+        if (row.vector === 'pet_emp_direct_total') bucket.directTotal = val;
+        if (row.vector === 'pet_emp_indirect_total') bucket.indirectTotal = val;
+
+        const shareMatch = row.vector.match(/^pet_emp_(.+)_(direct|indirect)_pct$/);
+        if (shareMatch) {
+            const [, region, metric] = shareMatch;
+            if (!bucket.regionPcts[region]) bucket.regionPcts[region] = {};
+            bucket.regionPcts[region][metric] = val;
+        }
+    });
+
+    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+    const latestYear = years[0];
+    if (latestYear == null) return null;
+
+    const latest = byYear[latestYear];
+    const topIndirect = PETROLEUM_EMPLOYMENT_REGION_KEYS.map((key) => ({
+        key,
+        share: latest.regionPcts[key]?.indirect ?? 0,
+    }))
+        .filter((entry) => entry.share > 0)
+        .sort((a, b) => b.share - a.share)
+        .slice(0, 5);
+
+    return { ...latest, topIndirect };
+}
+
+const WORLD_CRUDE_RESERVES_SLICE_KEYS = ['other', 'venezuela', 'saudi', 'iran', 'canada', 'iraq'];
+
+export async function getWorldProvedCrudeReservesData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('wr_crude_res_'));
+
+    const byYear = {};
+    rows.forEach((row) => {
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) {
+            byYear[year] = {
+                reportingYear: year,
+                totalBb: null,
+                oilSandsSharePct: null,
+                slices: [],
+            };
+        }
+        const bucket = byYear[year];
+        const val = Number(row.value);
+
+        if (row.vector === 'wr_crude_res_reporting_year') bucket.reportingYear = val;
+        if (row.vector === 'wr_crude_res_total_bb') bucket.totalBb = val;
+        if (row.vector === 'wr_crude_res_oil_sands_share_pct') bucket.oilSandsSharePct = val;
+
+        const bbMatch = row.vector.match(/^wr_crude_res_(.+)_bb$/);
+        if (bbMatch && bbMatch[1] !== 'total') {
+            const key = bbMatch[1];
+            let slice = bucket.slices.find((s) => s.key === key);
+            if (!slice) {
+                slice = { key, valueBb: null, sharePct: null };
+                bucket.slices.push(slice);
+            }
+            slice.valueBb = val;
+        }
+
+        const pctMatch = row.vector.match(/^wr_crude_res_(.+)_pct$/);
+        if (pctMatch && pctMatch[1] !== 'oil_sands_share') {
+            const key = pctMatch[1];
+            let slice = bucket.slices.find((s) => s.key === key);
+            if (!slice) {
+                slice = { key, valueBb: null, sharePct: null };
+                bucket.slices.push(slice);
+            }
+            slice.sharePct = val;
+        }
+    });
+
+    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+    const latestYear = years[0];
+    if (latestYear == null) return null;
+
+    const latest = byYear[latestYear];
+    const orderedSlices = WORLD_CRUDE_RESERVES_SLICE_KEYS.map((key) => latest.slices.find((s) => s.key === key)).filter(Boolean);
+
+    return {
+        years,
+        byYear,
+        reportingYear: latest.reportingYear ?? latestYear,
+        totalBb: latest.totalBb,
+        oilSandsSharePct: latest.oilSandsSharePct,
+        slices: orderedSlices,
+    };
+}
+
+export async function getCanadianCrudeReservesData() {
     const allData = await loadAllData();
     const crRows = allData.filter((row) => row.vector && row.vector.startsWith('cr_res_'));
     const wcRows = allData.filter((row) => row.vector && row.vector.startsWith('wc_oil_'));
@@ -1588,7 +1697,7 @@ export async function getPage110Data() {
     };
 }
 
-export async function getPage117Data() {
+export async function getCrudeOilPricesData() {
     const allData = await loadAllData();
     const crudeRows = allData.filter((row) => row.vector && row.vector.startsWith('crude_'));
     const byMonth = {};
@@ -1640,7 +1749,7 @@ const ELEC_GHG_SERIES = {
     elec_ghg_other: 'other',
 };
 
-export async function getPage71Data() {
+export async function getElectricityGhgSpotlightData() {
     const allData = await loadAllData();
     const byYear = {};
     const stats = {};
@@ -1693,7 +1802,7 @@ const REN_CAP_VECTORS = {
     ren_cap_solar_tidal: 'solarTidal',
 };
 
-export async function getPage74Data() {
+export async function getRenewableElectricityCapacityData() {
     const allData = await loadAllData();
     const byYear = {};
 
@@ -1726,7 +1835,7 @@ export async function getPage74Data() {
     };
 }
 
-const PAGE79_COUNTRY_IDS = {
+const WORLD_WIND_COUNTRY_IDS = {
     1: 'china',
     2: 'usa',
     3: 'germany',
@@ -1737,7 +1846,7 @@ const PAGE79_COUNTRY_IDS = {
     8: 'canada',
 };
 
-export async function getPage79Data() {
+export async function getWorldWindPowerData() {
     const allData = await loadAllData();
     const byYear = {};
     const windShareByYear = {};
@@ -1792,7 +1901,7 @@ export async function getPage79Data() {
                 .map((rank) => {
                     const slot = row.topSlots?.[rank];
                     if (!slot || slot.sharePct == null || slot.countryId == null) return null;
-                    const key = PAGE79_COUNTRY_IDS[Math.round(slot.countryId)];
+                    const key = WORLD_WIND_COUNTRY_IDS[Math.round(slot.countryId)];
                     if (!key) return null;
                     return { rank, key, sharePct: slot.sharePct };
                 })
@@ -1816,7 +1925,7 @@ export async function getPage79Data() {
     };
 }
 
-const PAGE82_COUNTRY_IDS = {
+const WORLD_SOLAR_COUNTRY_IDS = {
     1: 'china',
     2: 'usa',
     3: 'germany',
@@ -1825,7 +1934,7 @@ const PAGE82_COUNTRY_IDS = {
     6: 'canada',
 };
 
-export async function getPage82Data() {
+export async function getWorldSolarPowerData() {
     const allData = await loadAllData();
     const byYear = {};
 
@@ -1876,7 +1985,7 @@ export async function getPage82Data() {
                 .map((rank) => {
                     const slot = row.topSlots?.[rank];
                     if (!slot || slot.sharePct == null || slot.countryId == null) return null;
-                    const key = PAGE82_COUNTRY_IDS[Math.round(slot.countryId)];
+                    const key = WORLD_SOLAR_COUNTRY_IDS[Math.round(slot.countryId)];
                     if (!key) return null;
                     return { rank, key, sharePct: slot.sharePct };
                 })
@@ -1901,7 +2010,7 @@ export async function getPage82Data() {
     };
 }
 
-const PAGE85_COUNTRY_IDS = {
+const URANIUM_COUNTRY_IDS = {
     1: 'kazakhstan',
     2: 'canada',
     3: 'namibia',
@@ -1918,7 +2027,7 @@ const PAGE85_COUNTRY_IDS = {
     14: 'brazil',
 };
 
-function parsePage85RankingSeries(allData, vectorPrefix, totalVector) {
+function parseUraniumRankingSeries(allData, vectorPrefix, totalVector) {
     const byYear = {};
 
     allData.forEach((row) => {
@@ -1966,7 +2075,7 @@ function parsePage85RankingSeries(allData, vectorPrefix, totalVector) {
                 .map((rank) => {
                     const slot = row.topSlots?.[rank];
                     if (!slot || slot.sharePct == null || slot.countryId == null) return null;
-                    const key = PAGE85_COUNTRY_IDS[Math.round(slot.countryId)];
+                    const key = URANIUM_COUNTRY_IDS[Math.round(slot.countryId)];
                     if (!key) return null;
                     return { rank, key, sharePct: slot.sharePct };
                 })
@@ -1987,16 +2096,16 @@ function parsePage85RankingSeries(allData, vectorPrefix, totalVector) {
     };
 }
 
-export async function getPage85Data() {
+export async function getUraniumInternationalData() {
     const allData = await loadAllData();
     return {
-        exports: parsePage85RankingSeries(allData, 'urani_exp_', 'urani_exp_total_kt'),
-        production: parsePage85RankingSeries(allData, 'urani_prod_', 'urani_prod_total_kt'),
-        resources: parsePage85RankingSeries(allData, 'urani_res_', 'urani_res_total_mt'),
+        exports: parseUraniumRankingSeries(allData, 'urani_exp_', 'urani_exp_total_kt'),
+        production: parseUraniumRankingSeries(allData, 'urani_prod_', 'urani_prod_total_kt'),
+        resources: parseUraniumRankingSeries(allData, 'urani_res_', 'urani_res_total_mt'),
     };
 }
 
-export async function getPage80Data() {
+export async function getCanadianWindPowerData() {
     const allData = await loadAllData();
     const stats = {};
     const byYear = {};
@@ -2068,7 +2177,7 @@ export async function getPage80Data() {
     };
 }
 
-export async function getPage81Data() {
+export async function getWindProjectsMapData() {
     const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
 
     const provinces = allData
@@ -2123,7 +2232,7 @@ const HYDRO_FAC_PROV_FROM_CODE = {
     5: 'nl',
 };
 
-export async function getPage76Data() {
+export async function getHydroelectricCapacityData() {
     const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
 
     const facilities = allData
@@ -2159,7 +2268,7 @@ export async function getPage76Data() {
     };
 }
 
-export async function getPage84Data() {
+export async function getLargestSolarProjectsData() {
     const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
 
     const projects = allData
@@ -2204,7 +2313,7 @@ const SBIO_PIE_VECTORS = {
     sbio_use_total: 'total',
 };
 
-export async function getPage78Data() {
+export async function getSolidBiofuelsProductionData() {
     const allData = await loadAllData();
     const byYear = {};
 
@@ -2271,9 +2380,9 @@ export async function getPage78Data() {
     };
 }
 
-const PAGE66_PIE_ORDER = ['petroleum', 'hydro', 'nuclear', 'other_renewables', 'natural_gas', 'coal'];
+const CANADIAN_GENERATION_PIE_ORDER = ['petroleum', 'hydro', 'nuclear', 'other_renewables', 'natural_gas', 'coal'];
 
-const PAGE66_PIE_VECTORS = {
+const CANADIAN_GENERATION_PIE_VECTORS = {
     petroleum: 'elegen_can_petroleum_pct',
     hydro: 'elegen_can_hydro_pct',
     nuclear: 'elegen_can_nuclear_pct',
@@ -2282,9 +2391,9 @@ const PAGE66_PIE_VECTORS = {
     coal: 'elegen_can_coal_pct',
 };
 
-const PAGE66_INFOGRAPHIC_SOURCES = ['hydro', 'nuclear', 'wind'];
+const CANADIAN_GENERATION_INFOGRAPHIC_SOURCES = ['hydro', 'nuclear', 'wind'];
 
-const PAGE67_SOURCE_PIPELINE = {
+const PROVINCIAL_GENERATION_SOURCE_PIPELINE = {
     biomass: 'biomass',
     naturalGas: 'natural_gas',
     petroleum: 'petroleum',
@@ -2293,7 +2402,7 @@ const PAGE67_SOURCE_PIPELINE = {
     other: 'other',
 };
 
-const PAGE67_SOURCE_KEYS = Object.keys(PAGE67_SOURCE_PIPELINE);
+const PROVINCIAL_GENERATION_SOURCE_KEYS = Object.keys(PROVINCIAL_GENERATION_SOURCE_PIPELINE);
 
 const ELEGEN_PROVINCE_LOC_KEYS = [
     'bc', 'nb', 'ns', 'alta', 'ont', 'que', 'pei', 'man', 'sask', 'nl', 'nwt', 'yt', 'nvt',
@@ -2354,7 +2463,7 @@ function buildProvincialBlock(allData, pipelineSourceKey, year, { excludeZeroPro
 function buildPage66ProvincialBlock(allData, pipelineSourceKey, year) {
     const canadaVec = `elegen_prov_${pipelineSourceKey}_canada_pct`;
     const canada = normalizeSharePct(valueForVector(allData, canadaVec, year));
-    const order = PAGE66_PROVINCE_ORDER[pipelineSourceKey] || [];
+    const order = CANADIAN_GENERATION_PROVINCE_ORDER[pipelineSourceKey] || [];
 
     const provinces = order.map((key) => {
         const vec = `elegen_prov_${pipelineSourceKey}_${key}_pct`;
@@ -2373,7 +2482,7 @@ function buildPage66ProvincialBlock(allData, pipelineSourceKey, year) {
     return { canada, provinces };
 }
 
-export async function getPage66Data() {
+export async function getCanadianElectricityGenerationData() {
     const allData = await loadAllData();
     const rows = elegenRows(allData, 'elegen_');
     const latestYear = latestYearFromRows(rows);
@@ -2384,13 +2493,13 @@ export async function getPage66Data() {
     const years = [...new Set(rows.map((row) => Number(row.ref_date)).filter((y) => !Number.isNaN(y)))].sort((a, b) => a - b);
     const totalTwh = valueForVector(allData, 'elegen_can_total_twh', latestYear);
 
-    const slices = PAGE66_PIE_ORDER.map((key) => ({
+    const slices = CANADIAN_GENERATION_PIE_ORDER.map((key) => ({
         key,
-        pct: normalizeSharePct(valueForVector(allData, PAGE66_PIE_VECTORS[key], latestYear)),
+        pct: normalizeSharePct(valueForVector(allData, CANADIAN_GENERATION_PIE_VECTORS[key], latestYear)),
     })).filter((slice) => slice.pct != null);
 
     const infographicSources = {};
-    PAGE66_INFOGRAPHIC_SOURCES.forEach((sourceKey) => {
+    CANADIAN_GENERATION_INFOGRAPHIC_SOURCES.forEach((sourceKey) => {
         infographicSources[sourceKey] = buildPage66ProvincialBlock(allData, sourceKey, latestYear);
     });
 
@@ -2409,11 +2518,11 @@ export async function getPage66Data() {
     };
 }
 
-const PAGE68_SECTOR_KEYS = ['R', 'C', 'I', 'T', 'A'];
-const PAGE68_PROVINCE_PIPELINE_KEYS = ['ATL', 'BC_TERR', 'ALTA', 'SASK', 'MAN', 'ONT', 'QUE'];
-const PAGE68_PROVINCE_UI_KEYS = ['atl', 'bc_terr', 'alta', 'sask', 'man', 'ont', 'que'];
+const ELECTRICAL_ENERGY_SECTOR_KEYS = ['R', 'C', 'I', 'T', 'A'];
+const ELECTRICAL_ENERGY_PROVINCE_PIPELINE_KEYS = ['ATL', 'BC_TERR', 'ALTA', 'SASK', 'MAN', 'ONT', 'QUE'];
+const ELECTRICAL_ENERGY_PROVINCE_UI_KEYS = ['atl', 'bc_terr', 'alta', 'sask', 'man', 'ont', 'que'];
 
-export async function getPage68Data() {
+export async function getElectricalEnergyUseData() {
     const allData = await loadAllData();
     const byYear = {};
     allData.forEach((row) => {
@@ -2426,13 +2535,13 @@ export async function getPage68Data() {
     });
     const data = Object.values(byYear)
         .map((row) => {
-            const sectors = PAGE68_SECTOR_KEYS.map((key) => ({
+            const sectors = ELECTRICAL_ENERGY_SECTOR_KEYS.map((key) => ({
                 key,
                 value: row[key] ?? null,
                 pct: row[`${key}_pct`] ?? null,
             }));
-            const provinces = PAGE68_PROVINCE_PIPELINE_KEYS.map((key, index) => ({
-                key: PAGE68_PROVINCE_UI_KEYS[index],
+            const provinces = ELECTRICAL_ENERGY_PROVINCE_PIPELINE_KEYS.map((key, index) => ({
+                key: ELECTRICAL_ENERGY_PROVINCE_UI_KEYS[index],
                 value: row[key] ?? null,
                 pct: row[`${key}_pct`] ?? null,
             }));
@@ -2450,18 +2559,18 @@ export async function getPage68Data() {
     };
 }
 
-const PAGE69_MAP_CITY_KEYS = [
+const ELECTRICITY_PRICES_MAP_CITY_KEYS = [
     'vancouver', 'calgary', 'edmonton', 'regina', 'winnipeg',
     'toronto', 'ottawa', 'montreal', 'moncton', 'halifax',
     'charlottetown', 'st_johns',
 ];
 
-const PAGE69_PRICE_RE = /^elec_price_(.+)_(industrial|residential)$/;
+const ELECTRICITY_PRICES_VECTOR_RE = /^elec_price_(.+)_(industrial|residential)$/;
 
-export async function getPage69Data() {
+export async function getElectricityPricesMapData() {
     const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
 
-    const priceRows = allData.filter((row) => row.vector && PAGE69_PRICE_RE.test(row.vector));
+    const priceRows = allData.filter((row) => row.vector && ELECTRICITY_PRICES_VECTOR_RE.test(row.vector));
     if (!priceRows.length) {
         return { referenceDate: null, cities: [] };
     }
@@ -2490,7 +2599,7 @@ export async function getPage69Data() {
     const byCity = {};
 
     latestRows.forEach((row) => {
-        const match = row.vector.match(PAGE69_PRICE_RE);
+        const match = row.vector.match(ELECTRICITY_PRICES_VECTOR_RE);
         if (!match) return;
         const [, cityKey, priceType] = match;
         if (!byCity[cityKey]) {
@@ -2502,7 +2611,7 @@ export async function getPage69Data() {
         }
     });
 
-    const cities = PAGE69_MAP_CITY_KEYS
+    const cities = ELECTRICITY_PRICES_MAP_CITY_KEYS
         .filter((key) => byCity[key]?.industrial != null && byCity[key]?.residential != null)
         .map((key) => {
             const metaIndustrial = metadata[`elec_price_${key}_industrial`];
@@ -2519,9 +2628,9 @@ export async function getPage69Data() {
     return { referenceDate, cities };
 }
 
-const PAGE70_RANK_COUNTRY_KEYS = ['canada', 'usa', 'russia', 'china', 'india'];
+const WIND_SOLAR_RANK_COUNTRY_KEYS = ['canada', 'usa', 'russia', 'china', 'india'];
 
-function page70RankingYears(allData) {
+function windSolarRankingYears(allData) {
     const refDates = new Set();
     allData.forEach((row) => {
         if (!row.vector?.startsWith('ws_elec_rank_') || !row.vector.endsWith('_pct')) return;
@@ -2530,9 +2639,9 @@ function page70RankingYears(allData) {
 
     return [...refDates]
         .filter((refDate) =>
-            PAGE70_RANK_COUNTRY_KEYS.every((key) => {
-                const pct = page70Scalar(allData, `ws_elec_rank_${key}_pct`, refDate);
-                const order = page70Scalar(allData, `ws_elec_rank_${key}_order`, refDate);
+            WIND_SOLAR_RANK_COUNTRY_KEYS.every((key) => {
+                const pct = windSolarScalar(allData, `ws_elec_rank_${key}_pct`, refDate);
+                const order = windSolarScalar(allData, `ws_elec_rank_${key}_order`, refDate);
                 return pct != null && order != null;
             }),
         )
@@ -2541,32 +2650,32 @@ function page70RankingYears(allData) {
         .sort((a, b) => b - a);
 }
 
-function page70RankingForYear(allData, year) {
+function windSolarRankingForYear(allData, year) {
     const refDate = String(year);
-    return PAGE70_RANK_COUNTRY_KEYS
+    return WIND_SOLAR_RANK_COUNTRY_KEYS
         .map((key) => ({
             key,
-            rank: Math.round(page70Scalar(allData, `ws_elec_rank_${key}_order`, refDate) ?? 0),
-            pct: Math.round(page70Scalar(allData, `ws_elec_rank_${key}_pct`, refDate) ?? 0),
+            rank: Math.round(windSolarScalar(allData, `ws_elec_rank_${key}_order`, refDate) ?? 0),
+            pct: Math.round(windSolarScalar(allData, `ws_elec_rank_${key}_pct`, refDate) ?? 0),
         }))
         .filter((row) => row.pct > 0)
         .sort((a, b) => a.rank - b.rank);
 }
 
-function page70RankingHistoryRows(allData, rankingYears) {
+function windSolarRankingHistoryRows(allData, rankingYears) {
     return rankingYears
         .slice()
         .sort((a, b) => b - a)
         .map((year) => ({
             year,
-            pcts: PAGE70_RANK_COUNTRY_KEYS.map((key) => {
-                const pct = page70Scalar(allData, `ws_elec_rank_${key}_pct`, String(year));
+            pcts: WIND_SOLAR_RANK_COUNTRY_KEYS.map((key) => {
+                const pct = windSolarScalar(allData, `ws_elec_rank_${key}_pct`, String(year));
                 return pct != null ? Math.round(pct) : '';
             }),
         }));
 }
 
-function page70Scalar(allData, vector, refDate) {
+function windSolarScalar(allData, vector, refDate) {
     const rows = allData.filter((row) => row.vector === vector);
     if (!rows.length) return null;
     if (refDate != null) {
@@ -2581,23 +2690,23 @@ function page70Scalar(allData, vector, refDate) {
     return latest?.value != null && !Number.isNaN(Number(latest.value)) ? Number(latest.value) : null;
 }
 
-export async function getPage70Data() {
+export async function getWindSolarElectricityGrowthData() {
     const allData = await loadAllData();
 
-    const endYear = Math.round(page70Scalar(allData, 'ws_elec_end_year') ?? 0) || null;
-    const startYear = Math.round(page70Scalar(allData, 'ws_elec_start_year') ?? 0) || null;
+    const endYear = Math.round(windSolarScalar(allData, 'ws_elec_end_year') ?? 0) || null;
+    const startYear = Math.round(windSolarScalar(allData, 'ws_elec_start_year') ?? 0) || null;
     const metaYear = endYear != null ? String(endYear) : '2024';
 
-    const rankingYears = page70RankingYears(allData);
+    const rankingYears = windSolarRankingYears(allData);
     const defaultRankingYear = rankingYears[0]
-        ?? (Math.round(page70Scalar(allData, 'ws_elec_ranking_year') ?? 0) || null);
+        ?? (Math.round(windSolarScalar(allData, 'ws_elec_ranking_year') ?? 0) || null);
 
     const rankingsByYear = {};
     rankingYears.forEach((year) => {
-        rankingsByYear[year] = page70RankingForYear(allData, year);
+        rankingsByYear[year] = windSolarRankingForYear(allData, year);
     });
 
-    const rankingHistoryRows = page70RankingHistoryRows(allData, rankingYears);
+    const rankingHistoryRows = windSolarRankingHistoryRows(allData, rankingYears);
 
     return {
         startYear,
@@ -2606,11 +2715,11 @@ export async function getPage70Data() {
         defaultRankingYear,
         rankingsByYear,
         rankingHistoryRows,
-        pctChange: Math.round(page70Scalar(allData, 'ws_elec_renewable_pct_change', metaYear) ?? 0),
-        nonGhgPct: Math.round(page70Scalar(allData, 'ws_elec_non_ghg_pct', metaYear) ?? 0),
-        hydroPct: Math.round(page70Scalar(allData, 'ws_elec_hydro_pct', metaYear) ?? 0),
-        nuclearPct: Math.round(page70Scalar(allData, 'ws_elec_nuclear_pct', metaYear) ?? 0),
-        otherRenewablesPct: Math.round(page70Scalar(allData, 'ws_elec_other_renewables_pct', metaYear) ?? 0),
+        pctChange: Math.round(windSolarScalar(allData, 'ws_elec_renewable_pct_change', metaYear) ?? 0),
+        nonGhgPct: Math.round(windSolarScalar(allData, 'ws_elec_non_ghg_pct', metaYear) ?? 0),
+        hydroPct: Math.round(windSolarScalar(allData, 'ws_elec_hydro_pct', metaYear) ?? 0),
+        nuclearPct: Math.round(windSolarScalar(allData, 'ws_elec_nuclear_pct', metaYear) ?? 0),
+        otherRenewablesPct: Math.round(windSolarScalar(allData, 'ws_elec_other_renewables_pct', metaYear) ?? 0),
         windStart: startYear != null ? valueForVector(allData, 'ws_elec_wind_gwh', startYear) : null,
         windEnd: endYear != null ? valueForVector(allData, 'ws_elec_wind_gwh', endYear) : null,
         solarStart: startYear != null ? valueForVector(allData, 'ws_elec_solar_gwh', startYear) : null,
@@ -2618,17 +2727,17 @@ export async function getPage70Data() {
     };
 }
 
-export async function getPage67Data() {
+export async function getProvincialElectricityGenerationData() {
     const allData = await loadAllData();
     const rows = elegenRows(allData, 'elegen_prov_');
     const latestYear = latestYearFromRows(rows);
     if (latestYear == null) {
-        return { latestYear: null, sourceKeys: PAGE67_SOURCE_KEYS, sources: {} };
+        return { latestYear: null, sourceKeys: PROVINCIAL_GENERATION_SOURCE_KEYS, sources: {} };
     }
 
     const sources = {};
-    PAGE67_SOURCE_KEYS.forEach((uiKey) => {
-        const pipelineKey = PAGE67_SOURCE_PIPELINE[uiKey];
+    PROVINCIAL_GENERATION_SOURCE_KEYS.forEach((uiKey) => {
+        const pipelineKey = PROVINCIAL_GENERATION_SOURCE_PIPELINE[uiKey];
         sources[uiKey] = buildProvincialBlock(allData, pipelineKey, latestYear, {
             excludeZeroProvinces: true,
             floorDisplay: true,
@@ -2637,7 +2746,7 @@ export async function getPage67Data() {
 
     return {
         latestYear,
-        sourceKeys: PAGE67_SOURCE_KEYS,
+        sourceKeys: PROVINCIAL_GENERATION_SOURCE_KEYS,
         sources,
     };
 }

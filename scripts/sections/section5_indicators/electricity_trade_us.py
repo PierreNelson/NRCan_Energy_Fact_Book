@@ -1,4 +1,4 @@
-"""Page 65 — Canada electricity trade with the U.S. (CER Electricity Trade Summary XLSM)."""
+"""Canada electricity trade with the U.S. (CER Electricity Trade Summary XLSM)."""
 
 import io
 from collections import defaultdict
@@ -174,7 +174,7 @@ def update_electricity_trade_us(processor) -> int:
 
 
 def transform_electricity_trade_us(processor) -> int:
-    """EFB transform: MWh → TWh indicators for Page 65 (full years only)."""
+    """EFB transform: MWh → TWh indicators for this indicator (full years only)."""
     df = processor.get_raw_dataframe(SOURCE_KEY)
     if df.empty:
         raise RuntimeError('electricity_trade_us transform: no raw rows found')

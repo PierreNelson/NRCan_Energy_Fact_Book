@@ -4,7 +4,7 @@ export const LEFT_BULLET_KEYS = ['wages', 'gender_gap'];
 export const RIGHT_BULLET_KEYS = ['degree', 'occupations', 'occupation_gaps'];
 export const BULLET_KEYS = [...LEFT_BULLET_KEYS, ...RIGHT_BULLET_KEYS];
 
-export const exportPage41InfographicPng = async (figureEl, { scale = 2 } = {}) => {
+export const exportWagesInfographicPng = async (figureEl, { scale = 2 } = {}) => {
     if (!figureEl) return null;
 
     const exportRoot = figureEl.closest('.page41-inner');

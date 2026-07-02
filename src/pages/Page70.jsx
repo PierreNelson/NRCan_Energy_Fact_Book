@@ -3,15 +3,15 @@ import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import Page70WindSolarInfographic from '../components/Page70WindSolarInfographic';
-import { exportPage70InfographicPng } from '../components/Page70WindSolarInfographic.constants';
-import { getPage70Data } from '../utils/dataLoader';
+import { exportWindSolarGrowthInfographicPng } from '../components/Page70WindSolarInfographic.constants';
+import { getWindSolarElectricityGrowthData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 
 const CANADA_CAPSULE = '#819476';
 const RANKING_COUNTRY_KEYS = ['canada', 'usa', 'russia', 'china', 'india'];
 
-const page70CountryLabel = (key, lang) => getText(`page70_country_${key}`, lang);
-const page70TableColLabel = (key, lang) => getText(`page70_table_col_${key}`, lang);
+const windSolarCountryLabel = (key, lang) => getText(`page70_country_${key}`, lang);
+const windSolarTableColLabel = (key, lang) => getText(`page70_table_col_${key}`, lang);
 
 const formatRankingPct = (value) => (value === '' ? '\u2014' : `${value}%`);
 
@@ -136,7 +136,7 @@ const Page70 = () => {
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
     useEffect(() => {
-        getPage70Data()
+        getWindSolarElectricityGrowthData()
             .then((data) => {
                 setResult(data);
                 setYear(data.defaultRankingYear ?? data.rankingYears?.[0] ?? null);
@@ -251,7 +251,7 @@ const Page70 = () => {
         const source = year != null ? result?.rankingsByYear?.[year] ?? [] : [];
         return source.map((row) => ({
             ...row,
-            name: page70CountryLabel(row.key, lang),
+            name: windSolarCountryLabel(row.key, lang),
             pctRounded: Math.round(row.pct),
             isCanada: row.key === 'canada',
         }));
@@ -264,7 +264,7 @@ const Page70 = () => {
     const tableHeaders = useMemo(
         () => [
             getText('page70_table_col_year', lang),
-            ...RANKING_COUNTRY_KEYS.map((k) => page70TableColLabel(k, lang)),
+            ...RANKING_COUNTRY_KEYS.map((k) => windSolarTableColLabel(k, lang)),
         ],
         [lang],
     );
@@ -354,7 +354,7 @@ const Page70 = () => {
     };
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportPage70InfographicPng(infographicRef.current, {
+        const canvas = await exportWindSolarGrowthInfographicPng(infographicRef.current, {
             title: stripHtml(infographicTitle),
             scale: 2,
         });
@@ -725,7 +725,7 @@ const Page70 = () => {
                                         </th>
                                         {RANKING_COUNTRY_KEYS.map((k) => (
                                             <th key={k} scope="col" style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
-                                                {page70TableColLabel(k, lang)}
+                                                {windSolarTableColLabel(k, lang)}
                                             </th>
                                         ))}
                                     </tr>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { getPage50ResidentialData } from '../utils/dataLoader';
+import { getResidentialSectorOverviewData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import page50Bg1 from '../assets/page50_bg1.png';
 import page50Bg2 from '../assets/page50_bg2.png';
@@ -48,7 +48,7 @@ const Page50 = () => {
     const yearButtonRef = useRef(null);
 
     useEffect(() => {
-        getPage50ResidentialData()
+        getResidentialSectorOverviewData()
             .then((d) => {
                 setResult(d);
             })

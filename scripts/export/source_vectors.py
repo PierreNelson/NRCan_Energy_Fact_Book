@@ -58,6 +58,8 @@ SOURCE_VECTOR_PREFIXES = {
     'osm_refin_cap': ['refcap_'],
     'petroleum_reserves': ['cr_res_'],
     'western_canada_oil_wells': ['wc_oil_'],
+    'petroleum_sector_employment': ['pet_emp_'],
+    'world_proved_crude_reserves': ['wr_crude_res_'],
 }
 
 # Source name to display name mapping (human-readable)
@@ -108,6 +110,8 @@ SOURCE_DISPLAY_NAMES = {
     'osm_refin_cap': 'Canadian refinery capacity (Oil Sands Magazine)',
     'petroleum_reserves': 'Canadian proved reserves of crude oil',
     'western_canada_oil_wells': 'Western Canada oil wells completed',
+    'petroleum_sector_employment': 'Petroleum sector employment by region',
+    'world_proved_crude_reserves': 'World proved reserves of crude oil',
 }
 
 
