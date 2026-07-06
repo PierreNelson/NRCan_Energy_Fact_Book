@@ -21,23 +21,23 @@ python main.py export
 
 | Page | In pipeline? | Website getter | `source_key` | Handler function | Edit data here |
 |------|--------------|----------------|--------------|------------------|----------------|
-| **59** | No | — | — | — | Section cover — `src/pages/Page59.jsx` |
-| **60** | No | — | — | — | Static infographic — `src/pages/Page60.jsx` |
+| **59** | No | — | — | — | Section cover — `src/pages/CleanPowerLowCarbonOverview.jsx` |
+| **60** | No | — | — | — | Static infographic — `src/pages/CleanTechnologyEconomy.jsx` |
 | **61** | Yes | `getEnvironmentalCleanTechData()` | `environmental_clean_tech` | `process_environmental_clean_tech()` · `environmental_clean_tech.py` | StatCan URLs in handler + optional TSX XLSX |
-| **62** | Yes | `getPage62Data()` | `cleantech_companies_geo` | `process_cleantech_companies_geo()` · `cleantech_companies_geo.py` | NRCan web page + `constants.py` regions |
-| **63** | Yes | `getPage63Data()` | `cleantech_companies_industry` | `process_cleantech_companies_industry()` · `cleantech_companies_industry.py` | Same NRCan URL + `constants.py` industries |
-| **64** | No | — | — | — | Hardcoded / static — `src/pages/Page64.jsx` |
-| **65** | Yes | `getPage65Data()` | `electricity_trade_us` | `update_electricity_trade_us()` / `transform_electricity_trade_us()` · `electricity_trade_us.py` | CER Electricity Trade Summary XLSM |
-| **66** | Yes | `getPage66Data()` | `electricity_generation_by_source` | `update_electricity_generation_by_source()` / `transform_electricity_generation_by_source()` · `electricity_generation.py` | gencap `src_elegen_can` / `src_elegen_prov` |
-| **67** | Yes | `getPage67Data()` | `electricity_generation_by_source` | same as Page 66 | same as Page 66 |
-| **68** | Yes | `getPage68Data()` | `electrical_energy_use` | `update_electrical_energy_use()` / `transform_electrical_energy_use()` · `electrical_energy_use.py` | OEE NEUD electrical energy use (sector + province) |
-| **71** | Yes | `getPage71Data()` | `ghg_electricity_spotlight` | `update_ghg_electricity_spotlight()` / `transform_ghg_electricity_spotlight()` · `ghg_electricity_spotlight.py` | ECCC environmental indicators CSV + gencap `coal_elegen` |
-| **74** | Yes | `getPage74Data()` | `renewable_electricity_capacity` | `update_renewable_electricity_capacity()` / `transform_renewable_electricity_capacity()` · `renewable_electricity_capacity.py` | SharePoint gencap `ren_elecap` sheet |
-| **96** | Yes | `getPage96Data()` | `ev_sales` | `build_ev_sales_rows()` · `ev_sales.py` | `constants.py` → `EV_SALES_*` |
-| **78** | Yes | `getPage78Data()` | `solid_biofuels` | `update_solid_biofuels()` / `transform_solid_biofuels()` · `solid_biofuels.py` | SharePoint `RenAQ.xlsx` + StatCan 25-10-0031-01 |
-| **80** | Yes | `getPage80Data()` | `wind_power_canada` | `update_wind_power_canada()` / `transform_wind_power_canada()` · `wind_power_canada.py` | `Wind capacity and generation_Canada.xlsx` → `cap`, `gen` |
-| **81** | Yes | `getPage81Data()` | `wind_capacity_by_province`, `largest_wind_projects` | `update_*` / `transform_*` · `wind_capacity.py` | SharePoint gencap + largest-projects workbooks |
-| **84** | Yes | `getPage84Data()` | `largest_solar_projects` | `update_largest_solar_projects()` / `transform_largest_solar_projects()` · `largest_solar_projects.py` | SharePoint `Largest hydrofac, wind and solar projects.xlsx` → `solprojects` |
+| **62** | Yes | `getCleantechCompaniesByRegionData()` | `cleantech_companies_geo` | `process_cleantech_companies_geo()` · `cleantech_companies_geo.py` | NRCan web page + `constants.py` regions |
+| **63** | Yes | `getCleantechCompaniesByIndustryData()` | `cleantech_companies_industry` | `process_cleantech_companies_industry()` · `cleantech_companies_industry.py` | Same NRCan URL + `constants.py` industries |
+| **64** | No | — | — | — | Hardcoded / static — `src/pages/ElectricityInternationalContext.jsx` |
+| **65** | Yes | `getElectricityTradeData()` | `electricity_trade_us` | `update_electricity_trade_us()` / `transform_electricity_trade_us()` · `electricity_trade_us.py` | CER Electricity Trade Summary XLSM |
+| **66** | Yes | `getCanadianElectricityGenerationData()` | `electricity_generation_by_source` | `update_electricity_generation_by_source()` / `transform_electricity_generation_by_source()` · `electricity_generation.py` | gencap `src_elegen_can` / `src_elegen_prov` |
+| **67** | Yes | `getProvincialElectricityGenerationData()` | `electricity_generation_by_source` | same as Page 66 | same as Page 66 |
+| **68** | Yes | `getElectricalEnergyUseData()` | `electrical_energy_use` | `update_electrical_energy_use()` / `transform_electrical_energy_use()` · `electrical_energy_use.py` | OEE NEUD electrical energy use (sector + province) |
+| **71** | Yes | `getElectricityGhgSpotlightData()` | `ghg_electricity_spotlight` | `update_ghg_electricity_spotlight()` / `transform_ghg_electricity_spotlight()` · `ghg_electricity_spotlight.py` | ECCC environmental indicators CSV + gencap `coal_elegen` |
+| **74** | Yes | `getRenewableElectricityCapacityData()` | `renewable_electricity_capacity` | `update_renewable_electricity_capacity()` / `transform_renewable_electricity_capacity()` · `renewable_electricity_capacity.py` | SharePoint gencap `ren_elecap` sheet |
+| **96** | Yes | `getEvSalesRegistrationsData()` | `ev_sales` | `build_ev_sales_rows()` · `ev_sales.py` | `constants.py` → `EV_SALES_*` |
+| **78** | Yes | `getSolidBiofuelsProductionData()` | `solid_biofuels` | `update_solid_biofuels()` / `transform_solid_biofuels()` · `solid_biofuels.py` | SharePoint `RenAQ.xlsx` + StatCan 25-10-0031-01 |
+| **80** | Yes | `getCanadianWindPowerData()` | `wind_power_canada` | `update_wind_power_canada()` / `transform_wind_power_canada()` · `wind_power_canada.py` | `Wind capacity and generation_Canada.xlsx` → `cap`, `gen` |
+| **81** | Yes | `getWindProjectsMapData()` | `wind_capacity_by_province`, `largest_wind_projects` | `update_*` / `transform_*` · `wind_capacity.py` | SharePoint gencap + largest-projects workbooks |
+| **84** | Yes | `getLargestSolarProjectsData()` | `largest_solar_projects` | `update_largest_solar_projects()` / `transform_largest_solar_projects()` · `largest_solar_projects.py` | SharePoint `Largest hydrofac, wind and solar projects.xlsx` → `solprojects` |
 
 ---
 
@@ -97,12 +97,12 @@ python main.py export
 | Handlers | `update_electricity_generation_by_source()` / `transform_electricity_generation_by_source()` in `electricity_generation.py` |
 | EEDAS table | `nrcan_elegen_can` |
 | Workbook | `secondary Master gencap file.xlsx` → sheets `src_elegen_can`, `src_elegen_prov` |
-| Website getters | `getPage66Data()`, `getPage67Data()` in `src/utils/dataLoader.js` |
+| Website getters | `getCanadianElectricityGenerationData()`, `getProvincialElectricityGenerationData()` in `src/utils/dataLoader.js` |
 | Page 66 — donut chart | `elegen_can_total_twh`, `elegen_can_{coal,natural_gas,petroleum,nuclear,hydro,other_renewables}_pct` |
-| Page 66 — infographic | `elegen_prov_{hydro,nuclear,wind}_{canada\|province}_pct` (province order in `Page66GenerationInfographic.constants.js`) |
+| Page 66 — infographic | `elegen_prov_{hydro,nuclear,wind}_{canada\|province}_pct` (province order in `CanadianElectricityGenerationGenerationInfographic.constants.js`) |
 | Page 67 — infographic | `elegen_prov_{biomass,natural_gas,petroleum,solar,coal,other}_{canada\|province}_pct` |
 | Vector prefix | `elegen_` |
-| Static UI only | Background PNGs, overlay positions/fonts, chart colours (`src/pages/Page66.jsx`, `Page67.jsx`, infographic components) |
+| Static UI only | Background PNGs, overlay positions/fonts, chart colours (`src/pages/CanadianElectricityGeneration.jsx`, `ProvincialElectricityGeneration.jsx`, infographic components) |
 
 ### `ghg_electricity_spotlight` — Page 71
 
@@ -147,7 +147,7 @@ python main.py export
 | Workbook | `Wind capacity and generation_Canada.xlsx` → sheets `cap`, `gen` |
 | Infographic | `win_pwr_stat_cap_gw`, `win_pwr_stat_gen_twh`, growth ratios vs 2011 |
 | Chart vectors | `win_pwr_cap_cum_mw`, `win_pwr_cap_add_mw` (2011–latest) |
-| Website getter | `getPage80Data()` in `src/utils/dataLoader.js` |
+| Website getter | `getCanadianWindPowerData()` in `src/utils/dataLoader.js` |
 
 ### `wind_capacity_by_province` — Page 81 (province bar chart)
 

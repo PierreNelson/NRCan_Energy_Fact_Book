@@ -148,11 +148,11 @@ const Layout = () => {
                 }
                 
                 /* Allow chart titles to be centered */
-                .page10-chart-title,
-                .page11-chart-title,
-                .page24-chart-title,
-                .page24h-chart-title,
-                .page37h-chart-title {
+                .employment-chart-chart-title,
+                .gdp-chart-chart-title,
+                .capital-expenditure-chart-title,
+                .capital-expenditureh-chart-title,
+                .environmental-protectionh-chart-title {
                     text-align: center !important;
                 }
 

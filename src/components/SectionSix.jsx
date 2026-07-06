@@ -1,26 +1,27 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Page103 from '../pages/Page103';
-import Page105 from '../pages/Page105';
-import Page106 from '../pages/Page106';
-import Page107 from '../pages/Page107';
-import Page108 from '../pages/Page108';
-import Page109 from '../pages/Page109';
-import Page110 from '../pages/Page110';
-import Page111 from '../pages/Page111';
-import Page112 from '../pages/Page112';
-import Page113 from '../pages/Page113';
-import Page117 from '../pages/Page117';
-import Page119 from '../pages/Page119';
-import Page122 from '../pages/Page122';
-import Page123 from '../pages/Page123';
-import Page126 from '../pages/Page126';
-import Page132 from '../pages/Page132';
-import Page135 from '../pages/Page135';
-import Page136 from '../pages/Page136';
-import Page138 from '../pages/Page138';
-import Page139 from '../pages/Page139';
-import Page140 from '../pages/Page140';
+import OilGasCoalOverview from '../pages/OilGasCoalOverview';
+import PetroleumEmploymentByRegion from '../pages/PetroleumEmploymentByRegion';
+import PetroleumEmployment from '../pages/PetroleumEmployment';
+import PetroleumGdp from '../pages/PetroleumGdp';
+import CrudeOilInternational from '../pages/CrudeOilInternational';
+import WorldProvedCrudeReserves from '../pages/WorldProvedCrudeReserves';
+import CanadianCrudeReserves from '../pages/CanadianCrudeReserves';
+import CanadianCrudeProduction from '../pages/CanadianCrudeProduction';
+import CanadianSupplyDemand from '../pages/CanadianSupplyDemand';
+import OilSandsProduction from '../pages/OilSandsProduction';
+import CrudeOilPrices from '../pages/CrudeOilPrices';
+import OilByRail from '../pages/OilByRail';
+import NaturalGasInternational from '../pages/NaturalGasInternational';
+import WorldProvedGasReserves from '../pages/WorldProvedGasReserves';
+import WesternCanadaGasWellCompletions from '../pages/WesternCanadaGasWellCompletions';
+import OilGasGhgSpotlight from '../pages/OilGasGhgSpotlight';
+import RefinedPetroleumProducts from '../pages/RefinedPetroleumProducts';
+import RppSupplyDemand from '../pages/RppSupplyDemand';
+import RetailGasolinePrices from '../pages/RetailGasolinePrices';
+import RefineryCapacity from '../pages/RefineryCapacity';
+import CoalInternational from '../pages/CoalInternational';
+import CanadianCoalSupplyDemand from '../pages/CanadianCoalSupplyDemand';
 const SectionSix = () => {
     const location = useLocation();
 
@@ -49,67 +50,70 @@ const SectionSix = () => {
     return (
         <div className="stacked-section-container">
             <div id="oil-gas-coal-overview" className="stacked-page-wrapper page-with-title-divider">
-                <Page103 />
+                <OilGasCoalOverview />
             </div>
             <div id="petroleum-employment-by-region" className="stacked-page-wrapper">
-                <Page105 />
+                <PetroleumEmploymentByRegion />
             </div>
             <div id="petroleum-employment" className="stacked-page-wrapper">
-                <Page106 />
+                <PetroleumEmployment />
             </div>
             <div id="petroleum-gdp" className="stacked-page-wrapper">
-                <Page107 />
+                <PetroleumGdp />
             </div>
             <div id="crude-oil-international" className="stacked-page-wrapper">
-                <Page108 />
+                <CrudeOilInternational />
             </div>
             <div id="world-crude-oil-proved-reserves" className="stacked-page-wrapper">
-                <Page109 />
+                <WorldProvedCrudeReserves />
             </div>
             <div id="canadian-crude-reserves" className="stacked-page-wrapper">
-                <Page110 />
+                <CanadianCrudeReserves />
             </div>
             <div id="canadian-crude-production" className="stacked-page-wrapper">
-                <Page111 />
+                <CanadianCrudeProduction />
             </div>
             <div id="canadian-supply-demand" className="stacked-page-wrapper">
-                <Page112 />
+                <CanadianSupplyDemand />
             </div>
             <div id="oil-sands" className="stacked-page-wrapper">
-                <Page113 />
+                <OilSandsProduction />
             </div>
             <div id="crude-oil-prices" className="stacked-page-wrapper">
-                <Page117 />
+                <CrudeOilPrices />
             </div>
             <div id="oil-by-rail" className="stacked-page-wrapper">
-                <Page119 />
+                <OilByRail />
             </div>
             <div id="natural-gas-international" className="stacked-page-wrapper">
-                <Page122 />
+                <NaturalGasInternational />
             </div>
             <div id="world-natural-gas-proved-reserves" className="stacked-page-wrapper">
-                <Page123 />
+                <WorldProvedGasReserves />
             </div>
             <div id="western-canada-gas-well-completions" className="stacked-page-wrapper">
-                <Page126 />
+                <WesternCanadaGasWellCompletions />
             </div>
             <div id="ghg-spotlight-oil-gas" className="stacked-page-wrapper">
-                <Page132 />
+                <OilGasGhgSpotlight />
             </div>
             <div id="refined-petroleum-products" className="stacked-page-wrapper">
-                <Page135 />
+                <RefinedPetroleumProducts />
             </div>
             <div id="rpp-supply-demand" className="stacked-page-wrapper">
-                <Page136 />
+                <RppSupplyDemand />
             </div>
             <div id="retail-gasoline-prices" className="stacked-page-wrapper">
-                <Page138 />
+                <RetailGasolinePrices />
             </div>
             <div id="refinery-capacity" className="stacked-page-wrapper">
-                <Page139 />
+                <RefineryCapacity />
             </div>
             <div id="coal-international" className="stacked-page-wrapper">
-                <Page140 />
+                <CoalInternational />
+            </div>
+            <div id="canadian-coal-supply-demand" className="stacked-page-wrapper">
+                <CanadianCoalSupplyDemand />
             </div>
         </div>
     );

@@ -16,7 +16,7 @@
  * - oee_neud_*: Energy use (secondary by sector + primary demand components), PJ
  */
 
-import { CANADIAN_GENERATION_PROVINCE_ORDER } from '../components/Page66GenerationInfographic.constants.js';
+import { CANADIAN_GENERATION_PROVINCE_ORDER } from '../components/CanadianElectricityGenerationInfographic.constants.js';
 
 let dataCache = null;
 let metadataCache = null;
@@ -1663,7 +1663,6 @@ export async function getCanadianCrudeReservesData() {
         const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
         if (Number.isNaN(year)) return;
         if (!reservesByYear[year]) reservesByYear[year] = { reportingYear: year };
-        const key = row.vector.replace('cr_res_', '').replace('_bb', 'Bb').replace('_year', 'Year');
         if (row.vector === 'cr_res_total_bb') reservesByYear[year].totalBb = Number(row.value);
         if (row.vector === 'cr_res_conventional_bb') reservesByYear[year].conventionalBb = Number(row.value);
         if (row.vector === 'cr_res_oil_sands_bb') reservesByYear[year].oilSandsBb = Number(row.value);
@@ -2460,7 +2459,7 @@ function buildProvincialBlock(allData, pipelineSourceKey, year, { excludeZeroPro
     return { canada, provinces };
 }
 
-function buildPage66ProvincialBlock(allData, pipelineSourceKey, year) {
+function buildCanadianElectricityGenerationProvincialBlock(allData, pipelineSourceKey, year) {
     const canadaVec = `elegen_prov_${pipelineSourceKey}_canada_pct`;
     const canada = normalizeSharePct(valueForVector(allData, canadaVec, year));
     const order = CANADIAN_GENERATION_PROVINCE_ORDER[pipelineSourceKey] || [];
@@ -2500,7 +2499,7 @@ export async function getCanadianElectricityGenerationData() {
 
     const infographicSources = {};
     CANADIAN_GENERATION_INFOGRAPHIC_SOURCES.forEach((sourceKey) => {
-        infographicSources[sourceKey] = buildPage66ProvincialBlock(allData, sourceKey, latestYear);
+        infographicSources[sourceKey] = buildCanadianElectricityGenerationProvincialBlock(allData, sourceKey, latestYear);
     });
 
     return {

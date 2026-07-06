@@ -524,6 +524,7 @@ Examples:
     inventory_parser = subparsers.add_parser('inventory', help='Generate page coverage inventory (CSV + Markdown)')
     inventory_parser.add_argument('--csv', help='Output CSV path (default: docs/page_inventory.csv)')
     inventory_parser.add_argument('--md', help='Output Markdown path (default: docs/page_inventory.md)')
+    inventory_parser.add_argument('--audit', action='store_true', help='Also write docs/page_inventory_audit.md')
 
     args = parser.parse_args()
 
@@ -550,7 +551,12 @@ Examples:
                 inv_argv.extend(['--csv', args.csv])
             if getattr(args, 'md', None):
                 inv_argv.extend(['--md', args.md])
-            return inventory_main(inv_argv)
+            code = inventory_main(inv_argv)
+            if getattr(args, 'audit', False):
+                from page_inventory_audit import main as audit_main
+                audit_code = audit_main([])
+                return code or audit_code
+            return code
 
         if args.command == 'sharepoint':
             if args.sharepoint_command != 'sync':

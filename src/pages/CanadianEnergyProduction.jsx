@@ -1,0 +1,95 @@
+import React from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { getText } from '../utils/translations';
+
+const CanadianEnergyProduction = () => {
+    const { lang, layoutPadding } = useOutletContext();
+
+    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+
+    return (
+        <main id="main-content" tabIndex="-1" className="canadian-energy-production-main" role="main">
+            <style>{`
+                .canadian-energy-production-main {
+                    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
+                    margin-left: -${layoutPadding?.left || 55}px;
+                    margin-right: -${layoutPadding?.right || 15}px;
+                    padding: 0;
+                    background-color: var(--gc-background);
+                    min-height: calc(100vh - 100px);
+                    overflow-x: hidden;
+                }
+
+                .canadian-energy-production-container {
+                    padding-left: ${layoutPadding?.left || 55}px;
+                    padding-right: ${layoutPadding?.right || 15}px;
+                    padding-top: 40px;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .canadian-energy-production-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    color: var(--gc-text);
+                    margin-top: 0;
+                    margin-bottom: 25px;
+                    line-height: 1.2;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .canadian-energy-production-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+
+                .canadian-energy-production-paragraph {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    line-height: 1.5;
+                    color: var(--gc-text);
+                    margin-top: 0;
+                    margin-bottom: 20px;
+                }
+
+                .canadian-energy-production-paragraph em {
+                    font-style: italic;
+                }
+
+                @media (max-width: 768px) {
+                    .canadian-energy-production-title {
+                        font-size: 37px;
+                    }
+
+                    .canadian-energy-production-paragraph {
+                        font-size: 18px;
+                    }
+                }
+            `}</style>
+
+            <div className="canadian-energy-production-container">
+                <header>
+                    <h1 className="canadian-energy-production-title">{getText('canadian_energy_production_title', lang)}</h1>
+                </header>
+
+                <article>
+                    <p className="canadian-energy-production-paragraph" role="region" aria-label={stripHtml(getText('canadian_energy_production_para1', lang))}>
+                        <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: getText('canadian_energy_production_para1', lang) }} />
+                    </p>
+                    <p className="canadian-energy-production-paragraph" role="region" aria-label={stripHtml(getText('canadian_energy_production_para2', lang))}>
+                        <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: getText('canadian_energy_production_para2', lang) }} />
+                    </p>
+                </article>
+            </div>
+        </main>
+    );
+};
+
+export default CanadianEnergyProduction;

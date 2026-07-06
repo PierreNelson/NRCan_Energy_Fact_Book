@@ -288,7 +288,7 @@ def transform_largest_wind_projects(processor) -> int:
     return n
 
 
-def build_wind_page81_indicator_rows(
+def build_wind_largest_wind_projects_indicator_rows(
     config=None,
 ) -> Tuple[List[Tuple[str, str, float]], List[Tuple[str, str, str, str, str, str]]]:
     """Build indicator rows without SQL (offline export / tests)."""

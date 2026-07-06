@@ -1,0 +1,1042 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import Plot from '../components/LazyPlot';
+import { getForeignControlData } from '../utils/dataLoader';
+import { getText } from '../utils/translations';
+import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
+
+const foreign_control_COLORS = {
+    'utilities': '#284162',
+    'oil_gas': '#419563',
+    'all_non_financial': '#8B7355',
+};
+
+const ForeignControl = () => {
+    const { lang } = useOutletContext();
+    const [chartData, setChartData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const [isTableOpen, setIsTableOpen] = useState(false);
+    const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
+    const [selectedPoints, setSelectedPoints] = useState(null);
+    const chartRef = useRef(null);
+    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
+    const topScrollRef = useRef(null);
+    const tableScrollRef = useRef(null);
+
+    useEffect(() => {
+        const topScroll = topScrollRef.current;
+        const tableScroll = tableScrollRef.current;
+
+        if (!topScroll || !tableScroll) return;
+
+        const syncScrollbars = () => {
+            const table = tableScroll.querySelector('table');
+            if (!table) return;
+
+            const scrollWidth = table.offsetWidth;
+            const containerWidth = tableScroll.clientWidth;
+
+            const topSpacer = topScroll.firstElementChild;
+            if (topSpacer) {
+                topSpacer.style.width = `${scrollWidth}px`;
+            }
+
+            if (scrollWidth > containerWidth) {
+                topScroll.style.display = 'block';
+                topScroll.style.opacity = '1';
+            } else {
+                topScroll.style.display = 'none';
+            }
+        };
+
+        const handleTopScroll = () => {
+            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
+                tableScroll.scrollLeft = topScroll.scrollLeft;
+            }
+        };
+
+        const handleTableScroll = () => {
+            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
+                topScroll.scrollLeft = tableScroll.scrollLeft;
+            }
+        };
+
+        topScroll.addEventListener('scroll', handleTopScroll);
+        tableScroll.addEventListener('scroll', handleTableScroll);
+
+        const observer = new ResizeObserver(() => {
+            window.requestAnimationFrame(syncScrollbars);
+        });
+
+        const tableElement = tableScroll.querySelector('table');
+        if (tableElement) observer.observe(tableElement);
+        observer.observe(tableScroll);
+
+        syncScrollbars();
+
+        return () => {
+            topScroll.removeEventListener('scroll', handleTopScroll);
+            tableScroll.removeEventListener('scroll', handleTableScroll);
+            observer.disconnect();
+        };
+    }, [isTableOpen, windowWidth]);
+
+    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isChartInteractive && chartRef.current && !chartRef.current.contains(event.target)) {
+                setIsChartInteractive(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isChartInteractive]);
+    useEffect(() => {
+        const handleResize = () => {
+            const newWidth = window.innerWidth;
+            setWindowWidth(newWidth);
+            if (newWidth > 768) {
+                setIsChartInteractive(true);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    useEffect(() => {
+        getForeignControlData()
+            .then(foreignData => {
+                setChartData(foreignData);
+            })
+            .catch(err => {
+                console.error("Failed to load page 32 data:", err);
+                setError(err.message || 'Failed to load data');
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
+
+    useEffect(() => {
+        if (!chartRef.current) return;
+        
+        const setupChartAccessibility = () => {
+            const plotContainer = chartRef.current;
+            if (!plotContainer) return;
+
+            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
+            svgElements.forEach(svg => {
+                svg.setAttribute('aria-hidden', 'true');
+            });
+
+            // Find the download button using data-title attribute
+            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
+            
+            if (downloadBtn) {
+                // Make it tabbable
+                downloadBtn.setAttribute('tabindex', '0');
+                downloadBtn.setAttribute('role', 'button');
+                
+                // Ensure it has a label
+                const title = downloadBtn.getAttribute('data-title');
+                if (title) downloadBtn.setAttribute('aria-label', title);
+
+                // Add keyboard click support (crucial for screen readers)
+                downloadBtn.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        downloadBtn.click();
+                    }
+                };
+            }
+
+            // Hide other modebar buttons from screen readers
+            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
+            otherButtons.forEach(btn => {
+                const dataTitle = btn.getAttribute('data-title');
+                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
+                    btn.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+        };
+
+        // Watch for changes (Plotly deletes/re-creates the modebar often)
+        const observer = new MutationObserver(setupChartAccessibility);
+        observer.observe(chartRef.current, { childList: true, subtree: true });
+
+        // Run once immediately
+        setupChartAccessibility();
+
+        return () => observer.disconnect();
+    }, [chartData, lang]);
+
+    const processedChartData = useMemo(() => {
+        if (chartData.length === 0) return null;
+
+        const years = chartData.map(d => d.year);
+        const minYear = Math.min(...years);
+        const maxYear = Math.max(...years);
+        const tickVals = [];
+        for (let y = 2010; y <= maxYear; y += 2) {
+            tickVals.push(y);
+        }
+
+        const utilitiesValues = chartData.map(d => d.utilities || 0);
+        const oilGasValues = chartData.map(d => d.oil_gas || 0);
+        const allIndustriesValues = chartData.map(d => d.all_non_financial || 0);
+        const buildHoverText = (values, labelKey) => values.map((v, i) => {
+            return `<b>${getText(labelKey, lang)}</b><br>${years[i]}: ${v.toFixed(1)}%`;
+        });
+        const traces = [
+            {
+                name: getText('foreign_control_legend_all_industries', lang),
+                x: years,
+                y: allIndustriesValues,
+                type: 'bar',
+                marker: { 
+                    color: foreign_control_COLORS.all_non_financial,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[0]?.includes(i) ? 1 : 0.3)
+                },
+                hovertext: buildHoverText(allIndustriesValues, 'foreign_control_hover_all_industries'),
+                hoverinfo: 'text',
+                hoverlabel: {
+                    bgcolor: '#ffffff',
+                    bordercolor: '#000000',
+                    font: { color: '#000000', size: windowWidth <= 480 ? 12 : 14, family: 'Arial, sans-serif' }
+                },
+            },
+            {
+                name: getText('foreign_control_legend_oil_gas', lang),
+                x: years,
+                y: oilGasValues,
+                type: 'bar',
+                marker: { 
+                    color: foreign_control_COLORS.oil_gas,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[1]?.includes(i) ? 1 : 0.3)
+                },
+                hovertext: buildHoverText(oilGasValues, 'foreign_control_hover_oil_gas'),
+                hoverinfo: 'text',
+                hoverlabel: {
+                    bgcolor: '#ffffff',
+                    bordercolor: '#000000',
+                    font: { color: '#000000', size: windowWidth <= 480 ? 12 : 14, family: 'Arial, sans-serif' }
+                },
+            },
+            {
+                name: getText('foreign_control_legend_utilities', lang),
+                x: years,
+                y: utilitiesValues,
+                type: 'bar',
+                marker: { 
+                    color: foreign_control_COLORS.utilities,
+                    opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[2]?.includes(i) ? 1 : 0.3)
+                },
+                hovertext: buildHoverText(utilitiesValues, 'foreign_control_hover_utilities'),
+                hoverinfo: 'text',
+                hoverlabel: {
+                    bgcolor: '#ffffff',
+                    bordercolor: '#000000',
+                    font: { color: '#000000', size: windowWidth <= 480 ? 12 : 14, family: 'Arial, sans-serif' }
+                },
+            }
+        ];
+
+        return { traces, years, tickVals, minYear, maxYear, utilitiesValues, oilGasValues, allIndustriesValues };
+    }, [chartData, lang, windowWidth, selectedPoints]);
+    const getChartTitleSR = () => {
+        if (lang === 'en') {
+            return 'Foreign control of Canadian assets';
+        } else {
+            return "Contrôle étranger d'actifs canadiens";
+        }
+    };
+    const getChartDataSummary = () => {
+        if (!chartData || chartData.length === 0) return '';
+
+        const latestYear = chartData[chartData.length - 1];
+        const latestYearNum = latestYear.year;
+
+        if (lang === 'en') {
+            return `Grouped bar chart showing foreign control of Canadian assets from ${processedChartData?.minYear} to ${latestYearNum}. Expand the data table below for detailed values.`;
+        } else {
+            return `Graphique à barres groupées montrant le contrôle étranger des actifs canadiens de ${processedChartData?.minYear} à ${latestYearNum}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
+        }
+    };
+    const formatNumber = (val) => {
+        return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
+            minimumFractionDigits: 1, 
+            maximumFractionDigits: 1 
+        });
+    };
+    const getAccessibleDataTable = () => {
+        if (!chartData || chartData.length === 0) return null;
+
+        const captionId = 'foreign-control-table-caption';
+
+        const utilitiesLabel = getText('foreign_control_legend_utilities', lang);
+        const oilGasLabel = getText('foreign_control_legend_oil_gas', lang);
+        const allIndustriesLabel = getText('foreign_control_legend_all_industries', lang);
+        const cellUnitSR = lang === 'en' ? ' percent' : ' pour cent';
+        const headerUnitVisual = '(%)';
+        const headerUnitSR = lang === 'en' ? '(percentage)' : '(pourcentage)';
+
+        return (
+            <details 
+                onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
+                className="foreign-control-data-table"
+                style={{ cursor: 'pointer' }} 
+            >
+                <summary 
+                    role="button"
+                    aria-expanded={isTableOpen}
+                    style={{ 
+                        cursor: 'pointer', 
+                        color: '#ffffff', 
+                        fontWeight: 'bold', 
+                        padding: '10px', 
+                        border: '1px solid #404040',
+                        backgroundColor: '#8C8C8C',
+                        borderRadius: '4px',
+                        listStyle: 'none'
+                    }}
+                >
+                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
+                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
+                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
+                </summary>
+
+                <div 
+                    ref={topScrollRef}
+                    style={{ 
+                        width: '100%', 
+                        overflowX: 'auto', 
+                        overflowY: 'hidden',
+                        marginBottom: '0px',
+                        marginTop: '10px',
+                        display: windowWidth <= 768 ? 'none' : 'block' 
+                    }}
+                    aria-hidden="true"
+                >
+                    <div style={{ height: '20px' }}></div>
+                </div>
+
+                <div 
+                    ref={tableScrollRef}
+                    className="table-responsive" 
+                    role="region" 
+                    aria-labelledby={captionId}
+                    tabIndex="0"
+                >
+                    <table className="table table-striped table-hover">
+                        <caption id={captionId} className="wb-inv">
+                            {lang === 'en' 
+                                ? 'Foreign control of Canadian assets (percentage of total assets)'
+                                : "Contrôle étranger d'actifs canadiens (pourcentage des actifs totaux)"}
+                        </caption>
+                        <thead>
+                            <tr>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                    {utilitiesLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                    {oilGasLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </th>
+                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
+                                    {allIndustriesLabel}<br/>
+                                    <span aria-hidden="true">{headerUnitVisual}</span>
+                                    <span className="wb-inv">{headerUnitSR}</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {chartData.map(yearData => (
+                                <tr key={yearData.year}>
+                                    <th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
+                                    <td 
+                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                        aria-label={`${yearData.year}, ${utilitiesLabel}: ${formatNumber(yearData.utilities || 0)}${cellUnitSR}`}
+                                    >
+                                        {formatNumber(yearData.utilities || 0)}%
+                                    </td>
+                                    <td 
+                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumber(yearData.oil_gas || 0)}${cellUnitSR}`}
+                                    >
+                                        {formatNumber(yearData.oil_gas || 0)}%
+                                    </td>
+                                    <td 
+                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
+                                        aria-label={`${yearData.year}, ${allIndustriesLabel}: ${formatNumber(yearData.all_non_financial || 0)}${cellUnitSR}`}
+                                    >
+                                        {formatNumber(yearData.all_non_financial || 0)}%
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <button
+                        onClick={() => downloadTableAsCSV()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#ffffff'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                    </button>
+                    <button
+                        onClick={() => downloadTableAsDocx()}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#8C8C8C',
+                            border: '1px solid #404040',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontWeight: 'bold',
+                            color: '#ffffff'
+                        }}
+                    >
+                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
+                    </button>
+                </div>
+            </details>
+        );
+    };
+    const downloadTableAsCSV = () => {
+        if (!chartData || chartData.length === 0) return;
+
+        const utilitiesLabel = getText('foreign_control_legend_utilities', lang);
+        const oilGasLabel = getText('foreign_control_legend_oil_gas', lang);
+        const allIndustriesLabel = getText('foreign_control_legend_all_industries', lang);
+        const unitHeader = '(%)';
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${utilitiesLabel} ${unitHeader}`,
+            `${oilGasLabel} ${unitHeader}`,
+            `${allIndustriesLabel} ${unitHeader}`
+        ];
+        const rows = chartData.map(yearData => [
+            yearData.year,
+            (yearData.utilities || 0).toFixed(1),
+            (yearData.oil_gas || 0).toFixed(1),
+            (yearData.all_non_financial || 0).toFixed(1)
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = lang === 'en' ? 'environmental_protection_data.csv' : 'protection_environnement_donnees.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+    const downloadTableAsDocx = async () => {
+        if (!chartData || chartData.length === 0) return;
+
+        const utilitiesLabel = getText('foreign_control_legend_utilities', lang);
+        const oilGasLabel = getText('foreign_control_legend_oil_gas', lang);
+        const allIndustriesLabel = getText('foreign_control_legend_all_industries', lang);
+        const unitHeader = '(%)';
+        const title = stripHtml(getText('foreign_control_title', lang));
+
+        const headers = [
+            lang === 'en' ? 'Year' : 'Année',
+            `${utilitiesLabel} ${unitHeader}`,
+            `${oilGasLabel} ${unitHeader}`,
+            `${allIndustriesLabel} ${unitHeader}`
+        ];
+
+        const headerRow = new TableRow({
+            children: headers.map(header => new TableCell({
+                children: [new Paragraph({
+                    children: [new TextRun({ text: header, bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                })],
+                shading: { fill: 'E6E6E6' }
+            }))
+        });
+
+        const dataRows = chartData.map(yearData => new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.utilities || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.oil_gas || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.all_non_financial || 0).toFixed(1), size: 22 })], alignment: AlignmentType.RIGHT })] })
+            ]
+        }));
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [1800, 2200, 2200, 3000],
+                        rows: [headerRow, ...dataRows]
+                    })
+                ]
+            }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, lang === 'en' ? 'environmental_protection_table.docx' : 'protection_environnement_tableau.docx');
+    };
+    const downloadChartWithTitle = async (plotEl = null) => {
+        const plotElement = plotEl || document.querySelector('.foreign-control-chart .js-plotly-plot') || document.querySelector('#page-32 .js-plotly-plot');
+        if (!plotElement) {
+            console.error('Plot element not found');
+            alert('Could not find chart element. Please try again.');
+            return;
+        }
+        const title = stripHtml(getText('foreign_control_chart_title', lang));
+
+        try {
+            if (!window.Plotly) {
+                console.error('Plotly not available on window');
+                alert('Plotly library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
+            const imgData = await window.Plotly.toImage(plotElement, {
+                format: 'png',
+                width: 1200,
+                height: 600,
+                scale: 2
+            });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                const titleHeight = 80;
+                canvas.width = img.width;
+                canvas.height = img.height + titleHeight;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#333333';
+                ctx.font = 'bold 36px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(title, canvas.width / 2, 50);
+
+                ctx.drawImage(img, 0, titleHeight);
+
+                const link = document.createElement('a');
+                link.download = lang === 'en' ? 'environmental_protection_chart.png' : 'protection_environnement_graphique.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            img.onerror = () => {
+                console.error('Failed to load chart image');
+                alert('Failed to generate chart image. Please try again.');
+            };
+
+            img.src = imgData;
+        } catch (error) {
+            console.error('Error downloading chart:', error);
+            alert('Error downloading chart: ' + error.message);
+        }
+    };
+
+    if (loading) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
+    }
+
+    if (error) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'red' }}>Error: {error}. Please refresh the page.</div>;
+    }
+
+    if (!processedChartData) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>No data available. Please refresh the page.</div>;
+    }
+
+    return (
+        <main 
+            id="main-content"
+            tabIndex="-1"
+            className="page-content page-32" 
+            role="main"
+            aria-label={getText('foreign_control_title', lang)}
+            style={{
+                backgroundColor: 'white',
+                flex: '1 1 auto',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'visible',
+                boxSizing: 'border-box',
+            }}
+        >
+            <style>{`
+
+                .page-32 {
+                    width: 100%; 
+                }
+
+                .wb-inv {
+                    clip: rect(1px, 1px, 1px, 1px);
+                    height: 1px;
+                    margin: 0;
+                    overflow: hidden;
+                    position: absolute;
+                    width: 1px;
+                }
+
+                .foreign-control-container {
+                    width: 100%;
+                    padding: 15px 0 20px 0;
+                    display: flex;
+                    flex-direction: column;
+                    box-sizing: border-box;
+                    flex: 1;
+                    overflow: visible;
+                }
+
+                .foreign-control-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    margin-top: 0;
+                    margin-bottom: 25px;
+                    color: var(--gc-text);
+                    margin-top: 5px;
+                    line-height: 1.3;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .foreign-control-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+
+                .foreign-control-bullets {
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
+                    margin-bottom: 10px;
+                    line-height: 1.6;
+                    list-style-type: disc;
+                    padding-left: 20px;
+                }
+
+                .foreign-control-bullets li {
+                    margin-bottom: 8px;
+                }
+
+                .foreign-control-bullets li::marker {
+                    font-size: 1rem; 
+                }
+
+                .visual-bold {
+                    font-weight: bold;
+                }
+
+                .foreign-control-section-text {
+                    font-family: 'Noto Sans', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 20px;
+                    margin-bottom: 20px;
+                    line-height: 1.5;
+                    position: relative;
+                }
+
+                .foreign-control-chart-title {
+                    font-family: 'Lato', sans-serif;
+                    color: var(--gc-text);
+                    font-size: 29px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin-bottom: 5px;
+                }
+
+                .foreign-control-chart-wrapper {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+                    gap: 40px;
+                    width: 100%;
+                }
+
+                .foreign-control-chart {
+                    flex: 1;
+                    min-width: 0;
+                    width: 100%;
+                    height: calc(100vh - 680px);
+                    min-height: 260px;
+                }
+
+                .foreign-control-data-table {
+                    width: 100%;
+                    margin-top: 160px;
+                    margin-bottom: 0;
+                    margin-left: 0;
+                    margin-right: 0;
+                }
+
+                @media (max-width: 1745px) {
+                    .foreign-control-chart {
+                        height: calc(100vh - 660px);
+                        min-height: 264px;
+                    }
+                }
+
+                @media (max-width: 1536px) {
+                    .foreign-control-title {
+                        font-size: 1.8rem;
+                    }
+                    .foreign-control-chart {
+                        height: calc(100vh - 640px);
+                        min-height: 268px;
+                    }
+                }
+
+                @media (max-width: 1280px) {
+                    .foreign-control-title {
+                        font-size: 1.6rem;
+                    }
+                    .foreign-control-chart {
+                        height: calc(100vh - 620px);
+                        min-height: 272px;
+                    }
+
+                    .foreign-control-data-table {
+                        margin-top: 180px;
+                    }
+                }
+
+                @media (max-width: 1097px) {
+                    .foreign-control-title {
+                        font-size: 1.5rem;
+                    }
+                    .foreign-control-chart {
+                        height: calc(100vh - 600px);
+                        min-height: 276px;
+                    }
+                }
+
+                @media (max-width: 960px) {
+                    .foreign-control-title {
+                        font-size: 1.4rem;
+                    }
+                    .foreign-control-chart {
+                        min-height: 280px;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .page-32 { border-left: none !important; }
+                    .foreign-control-title {
+                        font-size: 37px;
+                    }
+                    .foreign-control-bullets {
+                        font-size: 18px;
+                    }
+                    .foreign-control-section-text {
+                        font-size: 18px;
+                    }
+                    .foreign-control-chart-title {
+                        font-size: 26px;
+                    }
+                    .foreign-control-chart {
+                        height: calc(100vh - 550px);
+                        min-height: 285px;
+                    }
+                }
+
+                @media (max-width: 640px) {
+                    .foreign-control-title {
+                        font-size: 1.2rem;
+                    }
+                    .foreign-control-chart {
+                        height: calc(100vh - 520px);
+                        min-height: 290px;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .foreign-control-title {
+                        font-size: 1.1rem;
+                    }
+                    .foreign-control-chart {
+                        height: calc(100vh - 500px);
+                        min-height: 295px;
+                    }
+                }
+
+                @media (max-width: 384px) {
+                    .foreign-control-title {
+                        font-size: 1rem;
+                    }
+                    .foreign-control-chart {
+                        height: calc(100vh - 480px);
+                        min-height: 300px;
+                    }
+                }
+
+                details summary::-webkit-details-marker,
+                details summary::marker {
+                    display: none;
+                }
+
+                .foreign-control-chart-frame {
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-sizing: border-box;
+                }
+
+                .foreign-control-table-wrapper {
+                    display: block;
+                    width: 100%;
+                    margin: 0;
+                }
+
+                .foreign-control-table-wrapper details > summary {
+                    display: block;
+                    width: 100%;
+                    padding: 12px 15px;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    color: #ffffff;
+                    box-sizing: border-box;
+                    list-style: none;
+                }
+
+                .foreign-control-table-wrapper details > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .foreign-control-table-wrapper details > summary:hover {
+                    background-color: #404040 !important;
+                }
+
+                .foreign-control-table-wrapper button[type="button"]:hover,
+                .foreign-control-table-wrapper button:hover {
+                    background-color: #404040 !important;
+                }
+
+                .foreign-control-chart-frame button[type="button"]:hover,
+                .foreign-control-chart-frame button:hover {
+                    background-color: #404040 !important;
+                }
+
+                /* Table horizontal scroll */
+                .table-responsive {
+                    display: block;
+                    width: 100%;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                    border: 1px solid #ddd;
+                    background: #fff;
+                }
+
+                .table-responsive table {
+                    width: max-content !important;
+                    min-width: 100%;
+                    border-collapse: collapse;
+                }
+            `}</style>
+
+            <div className="foreign-control-container">
+                <h1 className="foreign-control-title">
+                    {getText('foreign_control_title', lang)}
+                </h1>
+                <p 
+                    className="foreign-control-section-text"
+                    role="region"
+                    aria-label={getText('foreign_control_section_text', lang)}
+                    tabIndex="0"
+                >
+                    <span 
+                        aria-hidden="true"
+                        dangerouslySetInnerHTML={{
+                            __html: getText('foreign_control_section_text', lang).replace(
+                                getText('foreign_control_section_bold_text', lang),
+                                `<span class="visual-bold">${getText('foreign_control_section_bold_text', lang)}</span>`
+                            )
+                        }}
+                    />
+                </p>
+                <div className="foreign-control-chart-frame">
+                    <h3 
+                        className="foreign-control-chart-title" 
+                        aria-label={getChartTitleSR()} 
+                    >
+                        {getText('foreign_control_chart_title', lang)}
+                    </h3>
+
+                        <div role="region" aria-label={getChartDataSummary()} tabIndex="0">
+                        <div className="foreign-control-chart-wrapper">
+                            {selectedPoints !== null && (
+                                    <div style={{ marginBottom: 8 }}>
+                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
+                                    </div>
+                                )}
+                                <figure ref={chartRef} className="foreign-control-chart" style={{ margin: 0, position: 'relative' }}>
+                                <div aria-hidden="true">
+                                <Plot
+                                    data={processedChartData.traces}
+                                    layout={{
+                                        barmode: 'group',
+                                        hovermode: 'closest',
+                                        clickmode: 'event',
+                                        dragmode: windowWidth <= 768 ? false : 'zoom',
+                                        showlegend: true,
+                                        legend: {
+                                            orientation: windowWidth <= 1280 ? 'h' : 'v',
+                                            x: windowWidth <= 1280 ? 0.5 : 1.02,
+                                            xanchor: windowWidth <= 1280 ? 'center' : 'left',
+                                            y: windowWidth <= 1280 ? -0.1 : 0.1,
+                                            yanchor: windowWidth <= 1280 ? 'top' : 'middle',
+                                            font: { size: windowWidth <= 480 ? 13 : 16, family: 'Arial, sans-serif' },
+                                            itemclick: false,
+                                            itemdoubleclick: false
+                                        },
+                                        xaxis: {
+                                            tickvals: processedChartData.tickVals,
+                                            showgrid: false,
+                                            zeroline: false,
+                                            range: [processedChartData.minYear - 0.5, processedChartData.maxYear + 0.5],
+                                            tickangle: windowWidth <= 640 ? -45 : 0,
+                                            tickfont: { size: windowWidth <= 480 ? 11 : 12, family: 'Arial, sans-serif' },
+                                            automargin: true,
+                                        },
+                                        yaxis: {
+                                            title: { 
+                                                text: getText('foreign_control_yaxis', lang), 
+                                                font: { size: windowWidth <= 768 ? 14 : windowWidth <= 960 ? 16 : 18, family: 'Arial, sans-serif', color: '#333'},
+                                                standoff: 5
+                                            },
+                                            range: [0, 55],
+                                            dtick: 10,
+                                            tickformat: '.0f',
+                                            ticksuffix: '%',
+                                            showgrid: false,
+                                            showline: true,
+                                            linewidth: 1,
+                                            linecolor: '#333',
+                                            automargin: true,
+                                            tickfont: { size: windowWidth <= 480 ? 11 : 12, family: 'Arial, sans-serif' }
+                                        },
+                                        margin: { 
+                                            l: 0, 
+                                            r: 0,
+                                            t: 20, 
+                                            b: windowWidth <= 1280 ? 80 : 50
+                                        },
+                                        autosize: true,
+                                        bargap: 0.15,
+                                        bargroupgap: 0.1,
+                                        paper_bgcolor: 'rgba(0,0,0,0)',
+                                        plot_bgcolor: 'rgba(0,0,0,0)'
+                                    }}
+                                    style={{ width: '100%', height: '100%' }}
+                                    useResizeHandler={true}
+                                    onClick={(data) => {
+                                        if (!data.points || data.points.length === 0) return;
+                                        const clickedPoint = data.points[0];
+                                        const traceIndex = clickedPoint.curveNumber;
+                                        const pointIndex = clickedPoint.pointIndex;
+                                        if (windowWidth <= 768) {
+                                            const currentTime = new Date().getTime();
+                                            const lastClick = lastClickRef.current;
+                                            const isSamePoint = (traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex);
+                                            const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
+                                            
+                                            lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
+                                            
+                                            if (!isDoubleTap) {
+                                                return; // Single tap: show hover label only
+                                            }
+                                        }
+
+                                        setSelectedPoints(prev => {
+                                            if (prev === null) {
+                                                const newSelection = [[], [], []];
+                                                newSelection[traceIndex].push(pointIndex);
+                                                return newSelection;
+                                            }
+
+                                            const isSelected = prev[traceIndex]?.includes(pointIndex);
+
+                                            if (isSelected) {
+                                                const newSelection = prev.map((tracePoints, idx) => 
+                                                    idx === traceIndex ? tracePoints.filter(p => p !== pointIndex) : [...tracePoints]
+                                                );
+                                                if (newSelection.every(arr => arr.length === 0)) {
+                                                    return null;
+                                                }
+                                                return newSelection;
+                                            } else {
+                                                const newSelection = prev.map((tracePoints, idx) => 
+                                                    idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
+                                                );
+                                                return newSelection;
+                                            }
+                                        });
+                                    }}
+                                    config={{ 
+                                        displayModeBar: true, 
+                                        displaylogo: false,
+                                        responsive: true,
+                                        modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
+                                        modeBarButtonsToAdd: [{
+                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+                                        icon: {
+                                            width: 24,
+                                            height: 24,
+                                            path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
+                                        },
+                                            click: (gd) => downloadChartWithTitle(gd)
+                                        }]
+                                    }}
+                                />
+                                </div>
+                            </figure>
+                        </div>
+
+                        <div className="foreign-control-table-wrapper">
+                            {getAccessibleDataTable()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    );
+};
+
+export default ForeignControl;

@@ -343,8 +343,8 @@ In `src/utils/dataLoader.js`:
 | envcleantech_ | getEnvironmentalCleanTechData | environmental_clean_tech |
 | oee_neud_ | getEnergyUseData | energy_use |
 | seu_ | getSEUByFuelData | seu_by_fuel |
-| res_ | getPage50ResidentialData, getPage51Data | residential_daily_lives, residential_pie_charts |
-| com_ | getPage52Data | commercial_institutional |
+| res_ | getEnergyInDailyLivesResidentialData, getResidentialEnergyUseData | residential_daily_lives, residential_pie_charts |
+| com_ | getCommercialInstitutionalEnergyUseData | commercial_institutional |
 
 See `dataLoader.js` for the full list.
 
@@ -357,7 +357,7 @@ See `dataLoader.js` for the full list.
 3. **Find handlers** in the matching section folder (`update_*` + `transform_*`).
 4. **Find the getter** in `dataLoader.js`.
 5. **Find the page** — grep the getter in `src/pages/`.
-6. **Find the section anchor** — grep `PageNN` in `Section*.jsx`.
+6. **Find the section anchor** — grep the component name in `Section*.jsx`.
 
 **Worked example:**
 
@@ -371,7 +371,7 @@ nrcan_efb_indicators → export → data.csv (capex_*)
   ↓
 dataLoader.js → getCapitalExpendituresData()
   ↓
-Page23.jsx, Page24.jsx → SectionTwo.jsx (#capital-expenditure)
+Investment.jsx, CapitalExpenditures.jsx → SectionTwo.jsx (#capital-expenditure)
 ```
 
 Page-by-page maps: [`scripts/sections/section*_indicators/README.md`](../scripts/sections/).

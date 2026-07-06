@@ -21,17 +21,17 @@ python main.py export
 
 | Page | In pipeline? | Website getter | `source_key` | Handler function | Edit data here |
 |------|--------------|----------------|--------------|------------------|----------------|
-| **47** | No | — | — | — | Section cover — `src/pages/Page47.jsx` |
+| **47** | No | — | — | — | Section cover — `src/pages/EnergyEfficiencyOverview.jsx` |
 | **48** | Yes | `getEnergyUseData()` | `energy_use` | `update_energy_use()` · `energy_use.py` | `Energy Efficiency.xlsx` → `Primary and secondary demand` |
 | **49** | Yes | `getSEUByFuelData()` | `seu_by_fuel` | `update_seu_by_fuel()` · `seu.py` | `Energy Efficiency.xlsx` → `SEU (final demand)` |
-| **50** | Yes | `getPage50ResidentialData()` | `residential_daily_lives` | `update_residential_daily_lives()` · `residential.py` | OEE web + `Energy Efficiency.xlsx` → `EE Improvement` |
-| **51** | Yes | `getPage51Data()` | `residential_pie_charts` | `update_residential_pie_charts()` · `residential.py` | OEE HB / Table 7 / Table 14 HTML |
-| **52** | Yes | `getPage52Data()` | `commercial_institutional` | `update_commercial_institutional()` · `commercial.py` | OEE commercial HB/AN + `Energy Efficiency.xlsx` → `EE Improvement` |
-| **53** | Yes | `getPage53Data()` | `industrial_sector` | `update_industrial_sector()` · `industrial.py` | OEE industrial CP + `Energy Efficiency.xlsx` → `EE Improvement` |
-| **54** | No | — | — | — | Hardcoded — `src/pages/Page54.jsx` |
-| **55** | No | — | — | — | Hardcoded — `src/pages/Page55.jsx` |
-| **56** | No | — | — | — | Hardcoded — `src/pages/Page56.jsx` |
-| **57** | No | — | — | — | Hardcoded — `src/pages/Page57.jsx` |
+| **50** | Yes | `getEnergyInDailyLivesResidentialData()` | `residential_daily_lives` | `update_residential_daily_lives()` · `residential.py` | OEE web + `Energy Efficiency.xlsx` → `EE Improvement` |
+| **51** | Yes | `getResidentialEnergyUseData()` | `residential_pie_charts` | `update_residential_pie_charts()` · `residential.py` | OEE HB / Table 7 / Table 14 HTML |
+| **52** | Yes | `getCommercialInstitutionalEnergyUseData()` | `commercial_institutional` | `update_commercial_institutional()` · `commercial.py` | OEE commercial HB/AN + `Energy Efficiency.xlsx` → `EE Improvement` |
+| **53** | Yes | `getIndustrialSectorEnergyData()` | `industrial_sector` | `update_industrial_sector()` · `industrial.py` | OEE industrial CP + `Energy Efficiency.xlsx` → `EE Improvement` |
+| **54** | No | — | — | — | Hardcoded — `src/pages/EfficiencyTrends.jsx` |
+| **55** | No | — | — | — | Hardcoded — `src/pages/EnergyIntensityIndex.jsx` |
+| **56** | No | — | — | — | Hardcoded — `src/pages/EnergyUseFactors.jsx` |
+| **57** | No | — | — | — | Hardcoded — `src/pages/SectorEnergyTrends.jsx` |
 
 \*Pages 50 and 51 share the `res_*` prefix but different `source_key` values — update and transform both when residential data changes. Config key `energy_use.oee_neud_file_path` is **not used** (OEE NEUD comes from web ZIPs).
 

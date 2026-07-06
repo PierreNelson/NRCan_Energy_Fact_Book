@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Page39 from '../pages/Page39';
-import Page40 from '../pages/Page40';
-import Page41 from '../pages/Page41';
-import Page42 from '../pages/Page42';
-import Page43 from '../pages/Page43';
-import Page44 from '../pages/Page44';
-import Page45 from '../pages/Page45';
-import Page46 from '../pages/Page46';
+import SkillsDiversityCommunityOverview from '../pages/SkillsDiversityCommunityOverview';
+import EnergySectorDemographics from '../pages/EnergySectorDemographics';
+import EnergySectorWages from '../pages/EnergySectorWages';
+import DemographicRepresentation from '../pages/DemographicRepresentation';
+import EnergyAffordability from '../pages/EnergyAffordability';
+import HouseholdEnergyExpenditures from '../pages/HouseholdEnergyExpenditures';
+import HouseholdEnergyPricesComparison from '../pages/HouseholdEnergyPricesComparison';
+import EnergyReliantCommunities from '../pages/EnergyReliantCommunities';
 
 const SectionThree = () => {
     const location = useLocation();
@@ -29,28 +29,28 @@ const SectionThree = () => {
     return (
         <div className="section-three-container stacked-section-container">
             <div id="skills-diversity-community-overview" className="stacked-page-wrapper">
-                <Page39 />
+                <SkillsDiversityCommunityOverview />
             </div>
             <div id="energy-sector-demographics" className="stacked-page-wrapper page-with-title-divider">
-                <Page40 />
+                <EnergySectorDemographics />
             </div>
             <div id="energy-sector-wages" className="stacked-page-wrapper">
-                <Page41 />
+                <EnergySectorWages />
             </div>
             <div id="demographic-representation" className="stacked-page-wrapper">
-                <Page42 />
+                <DemographicRepresentation />
             </div>
             <div id="energy-affordability" className="stacked-page-wrapper page-with-title-divider">
-                <Page43 />
+                <EnergyAffordability />
             </div>
             <div id="household-energy-expenditures" className="stacked-page-wrapper">
-                <Page44 />
+                <HouseholdEnergyExpenditures />
             </div>
             <div id="household-energy-prices-comparison" className="stacked-page-wrapper">
-                <Page45 />
+                <HouseholdEnergyPricesComparison />
             </div>
             <div id="energy-reliant-communities" className="stacked-page-wrapper page-with-title-divider">
-                <Page46 />
+                <EnergyReliantCommunities />
             </div>
         </div>
     );

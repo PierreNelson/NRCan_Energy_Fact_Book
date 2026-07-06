@@ -21,26 +21,26 @@ python main.py export
 
 | Page | In pipeline? | Website getter | `source_key` | Handler function | Edit data here |
 |------|--------------|----------------|--------------|------------------|----------------|
-| **103** | No | — | — | — | Section cover — `src/pages/Page103.jsx` |
-| **105** | Yes | `getPage105Data()` | `petroleum_sector_employment` | `update_petroleum_sector_employment()` / `transform_petroleum_sector_employment()` · `petroleum_sector_employment.py` | SharePoint `energy_rankings_and_petroleum_emp.xlsx`, sheet `petroleum_sector_employment` |
-| **106** | No | — | — | — | Hardcoded — `src/pages/Page106.jsx` |
-| **107** | No | — | — | — | Hardcoded — `src/pages/Page107.jsx` |
-| **108** | No | — | — | — | Hardcoded world crude data — `src/pages/Page108.jsx` |
-| **110** | Yes | `getPage110Data()` | `petroleum_reserves`, `western_canada_oil_wells` | `update_petroleum_reserves()` / `update_western_canada_oil_wells()` · `petroleum_reserves.py`, `western_canada_oil_wells.py` | SharePoint `energy_rankings_and_petroleum_emp.xlsx` + provincial web sources |
-| **111** | Yes | `getPage111Data()` | `canadian_production` | `update_canadian_production()` / `transform_canadian_production()` · `canadian_production.py` | StatCan 25-10-0014-01 + 25-10-0063-01 |
-| **112** | No | — | — | — | Hardcoded — `src/pages/Page112.jsx` |
-| **113** | Yes | `getPage113Data()` | `oil_sands` | `build_oil_sands_rows()` · `oil_sands.py` | CAPP XLSX + StatCan in `oil_sands.py` / `constants.py` |
-| **117** | Yes | `getPage117Data()` | `crude_prices` | `build_crude_price_rows()` · `crude_prices.py` | `constants.py` → EIA, Sproule, BoC URLs |
-| **119** | No | — | — | — | Hardcoded — `src/pages/Page119.jsx` |
-| **122** | No | — | — | — | Hardcoded world gas production — `src/pages/Page122.jsx` |
-| **123** | No | — | — | — | Hardcoded world gas reserves — `src/pages/Page123.jsx` |
-| **126** | No | — | — | — | Hardcoded — `src/pages/Page126.jsx` |
+| **103** | No | — | — | — | Section cover — `src/pages/OilGasCoalOverview.jsx` |
+| **105** | Yes | `getPetroleumEmploymentByRegionData()` | `petroleum_sector_employment` | `update_petroleum_sector_employment()` / `transform_petroleum_sector_employment()` · `petroleum_sector_employment.py` | SharePoint `energy_rankings_and_petroleum_emp.xlsx`, sheet `petroleum_sector_employment` |
+| **106** | No | — | — | — | Hardcoded — `src/pages/PetroleumEmployment.jsx` |
+| **107** | No | — | — | — | Hardcoded — `src/pages/PetroleumGdp.jsx` |
+| **108** | No | — | — | — | Hardcoded world crude data — `src/pages/CrudeOilInternational.jsx` |
+| **110** | Yes | `getCanadianCrudeReservesData()` | `petroleum_reserves`, `western_canada_oil_wells` | `update_petroleum_reserves()` / `update_western_canada_oil_wells()` · `petroleum_reserves.py`, `western_canada_oil_wells.py` | SharePoint `energy_rankings_and_petroleum_emp.xlsx` + provincial web sources |
+| **111** | Yes | `getCanadianCrudeProductionData()` | `canadian_production` | `update_canadian_production()` / `transform_canadian_production()` · `canadian_production.py` | StatCan 25-10-0014-01 + 25-10-0063-01 |
+| **112** | No | — | — | — | Hardcoded — `src/pages/CanadianSupplyDemand.jsx` |
+| **113** | Yes | `getOilSandsProductionData()` | `oil_sands` | `build_oil_sands_rows()` · `oil_sands.py` | CAPP XLSX + StatCan in `oil_sands.py` / `constants.py` |
+| **117** | Yes | `getCrudeOilPricesData()` | `crude_prices` | `build_crude_price_rows()` · `crude_prices.py` | `constants.py` → EIA, Sproule, BoC URLs |
+| **119** | No | — | — | — | Hardcoded — `src/pages/OilByRail.jsx` |
+| **122** | No | — | — | — | Hardcoded world gas production — `src/pages/NaturalGasInternational.jsx` |
+| **123** | No | — | — | — | Hardcoded world gas reserves — `src/pages/WorldProvedGasReserves.jsx` |
+| **126** | No | — | — | — | Hardcoded — `src/pages/WesternCanadaGasWellCompletions.jsx` |
 | **132** | Yes* | `getOilGasGhgSpotlightData()`, `getGhgNarrativeStats()` | `ghg_emissions`* | Section 1 `ghg_emissions.py`* | Section 1 README |
-| **135** | No | — | — | — | Static — `src/pages/Page135.jsx` |
-| **136** | Yes | `getPage136Data()` | `rpp_supply_demand`, `rpp_refinery_input` | `process_rpp_*()` · `rpp.py` | `constants.py` StatCan vector IDs |
-| **138** | Yes | `getPage138GasolineData()` | `kal_gas_prices` | `build_kalibrate_gas_price_rows()` · `kalibrate.py` | Kalibrate web + `Section 6.xlsx` |
-| **139** | Yes | `getPage139RefineryCapacityData()` | `osm_refin_cap` | `build_refinery_capacity_rows()` · `refinery_capacity.py` | Oil Sands Magazine HTML |
-| **140** | No | — | — | — | Hardcoded world coal data — `src/pages/Page140.jsx` |
+| **135** | No | — | — | — | Static — `src/pages/RefinedPetroleumProducts.jsx` |
+| **136** | Yes | `getRppSupplyDemandData()` | `rpp_supply_demand`, `rpp_refinery_input` | `process_rpp_*()` · `rpp.py` | `constants.py` StatCan vector IDs |
+| **138** | Yes | `getRetailGasolinePricesGasolineData()` | `kal_gas_prices` | `build_kalibrate_gas_price_rows()` · `kalibrate.py` | Kalibrate web + `Section 6.xlsx` |
+| **139** | Yes | `getRefineryCapacityRefineryCapacityData()` | `osm_refin_cap` | `build_refinery_capacity_rows()` · `refinery_capacity.py` | Oil Sands Magazine HTML |
+| **140** | No | — | — | — | Hardcoded world coal data — `src/pages/CoalInternational.jsx` |
 
 \*Source owned by **Section 1** — run EEDAS update / EFB transform with `--source ghg_emissions`.
 
@@ -89,7 +89,7 @@ python main.py export
 | Handler | `update_petroleum_sector_employment()` / `transform_petroleum_sector_employment()` in `petroleum_sector_employment.py` |
 | EEDAS table | `ca_statcan_petroleum_sector_employment_summary` |
 | Source | SharePoint Manual Data → `energy_rankings_and_petroleum_emp.xlsx`, sheet `petroleum_sector_employment` |
-| Website getter | `getPage105Data()` in `src/utils/dataLoader.js` |
+| Website getter | `getPetroleumEmploymentByRegionData()` in `src/utils/dataLoader.js` |
 | Vectors | `pet_emp_{region}_{direct\|indirect}_pct`, `pet_emp_direct_total`, `pet_emp_indirect_total`, `pet_emp_reporting_year` |
 
 ### `petroleum_reserves` — Page 110 (infographic reserves)
@@ -99,7 +99,7 @@ python main.py export
 | Handler | `update_petroleum_reserves()` / `transform_petroleum_reserves()` in `petroleum_reserves.py` |
 | EEDAS table | `ca_petroleum_reserves_summary` |
 | Source | SharePoint Manual Data → `energy_rankings_and_petroleum_emp.xlsx`, sheet `petroleum_reserves_summary` |
-| Website getter | `getPage110Data()` in `src/utils/dataLoader.js` |
+| Website getter | `getCanadianCrudeReservesData()` in `src/utils/dataLoader.js` |
 | Vectors | `cr_res_total_bb`, `cr_res_conventional_bb`, `cr_res_oil_sands_bb`, `cr_res_mining_bb`, `cr_res_insitu_bb`, `cr_res_reporting_year` |
 
 ### `western_canada_oil_wells` — Page 110 (combo chart)
@@ -121,12 +121,12 @@ python main.py export
 | Handlers | `update_canadian_production()` / `transform_canadian_production()` in `canadian_production.py` |
 | EEDAS table | `stc_canadian_production` |
 | StatCan sources | Table **25-10-0014-01** (Canada by type, 2000–2015) + **25-10-0063-01** (Canada by type and province, 2016+) |
-| Website getter | `getPage111Data()` in `src/utils/dataLoader.js` |
+| Website getter | `getCanadianCrudeProductionData()` in `src/utils/dataLoader.js` |
 | Update (raw) | `raw_cp_s14_*_m3` category totals from 25100014; `raw_cp_s63_*_m3` from 25100063 (Canada + provinces) |
 | Transform | Oil sands = synthetic + bitumen; conventional = heavy + light/medium + condensate + pentanes plus; MMb/d = m³ × 6.2898 ÷ 1000 ÷ 365 |
 | Production vectors | `cp_oil_sands_*`, `cp_conventional_*`, `cp_total_*`, `cp_share_pct` |
 | Province vectors | `cp_prov_{ab,sk,nl,mb,bc,ns,on,nt,other}_{thousand_m3,pct}`; Other = Canada − (AB + SK + NL + MB + BC + NS + ON + NT) |
-| Static UI only | Infographic PNG, overlay positions (`Page111ProvinceInfographic.constants.js`), chart colours |
+| Static UI only | Infographic PNG, overlay positions (`CanadianCrudeProductionProvinceInfographic.constants.js`), chart colours |
 
 ### `kal_gas_prices` — Page 138
 

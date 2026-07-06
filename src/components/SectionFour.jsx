@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Page47 from '../pages/Page47';
-import Page48 from '../pages/Page48';
-import Page49 from '../pages/Page49';
-import Page50 from '../pages/Page50';
-import Page51 from '../pages/Page51';
-import Page52 from '../pages/Page52';
-import Page53 from '../pages/Page53';
-import Page54 from '../pages/Page54';
-import Page55 from '../pages/Page55';
-import Page56 from '../pages/Page56';
-import Page57 from '../pages/Page57';
+import EnergyEfficiencyOverview from '../pages/EnergyEfficiencyOverview';
+import EnergyUse from '../pages/EnergyUse';
+import SEUByFuel from '../pages/SEUByFuel';
+import EnergyInDailyLives from '../pages/EnergyInDailyLives';
+import ResidentialEnergyUse from '../pages/ResidentialEnergyUse';
+import CommercialInstitutionalEnergyUse from '../pages/CommercialInstitutionalEnergyUse';
+import IndustrialSectorEnergy from '../pages/IndustrialSectorEnergy';
+import EfficiencyTrends from '../pages/EfficiencyTrends';
+import EnergyIntensityIndex from '../pages/EnergyIntensityIndex';
+import EnergyUseFactors from '../pages/EnergyUseFactors';
+import SectorEnergyTrends from '../pages/SectorEnergyTrends';
 
 const SectionFour = () => {
     const location = useLocation();
@@ -32,17 +32,17 @@ const SectionFour = () => {
     return (
         <div className="section-four-container stacked-section-container">
             <style>{`
-                #commercial-institutional-energy .page52-stack {
+                #commercial-institutional-energy .commercial-institutional-energy-stack {
                     padding-bottom: 0 !important;
                 }
 
-                #energy-use .page48-chart-frame,
-                #secondary-energy-by-fuel .page49-chart-frame,
-                #residential-energy-use .page51-chart-frame-before-footnote,
-                #industrial-sector-energy .page53-chart-frame,
-                #efficiency-trends .page54-chart-frame,
-                #energy-intensity-index .page55-chart-frame,
-                #energy-use-factors .page56-chart-frame {
+                #energy-use .energy-use-chart-frame,
+                #secondary-energy-by-fuel .secondary-energy-by-fuel-chart-frame,
+                #residential-energy-use .residential-energy-use-chart-frame-before-footnote,
+                #industrial-sector-energy .industrial-sector-energy-chart-frame,
+                #efficiency-trends .efficiency-trends-chart-frame,
+                #energy-intensity-index .energy-intensity-index-chart-frame,
+                #energy-use-factors .energy-use-factors-chart-frame {
                     padding-bottom: 20px !important;
                     margin-bottom: 20px !important;
                 }
@@ -97,37 +97,37 @@ const SectionFour = () => {
                 }
             `}</style>
             <div id="energy-efficiency-overview" className="section-four-page stacked-page-wrapper">
-                <Page47 />
+                <EnergyEfficiencyOverview />
             </div>
             <div id="energy-use" className="section-four-page stacked-page-wrapper page-with-title-divider">
-                <Page48 />
+                <EnergyUse />
             </div>
             <div id="secondary-energy-by-fuel" className="section-four-page stacked-page-wrapper">
-                <Page49 />
+                <SEUByFuel />
             </div>
             <div id="energy-in-daily-lives" className="section-four-page stacked-page-wrapper">
-                <Page50 />
+                <EnergyInDailyLives />
             </div>
             <div id="residential-energy-use" className="section-four-page stacked-page-wrapper">
-                <Page51 />
+                <ResidentialEnergyUse />
             </div>
             <div id="commercial-institutional-energy" className="section-four-page stacked-page-wrapper">
-                <Page52 />
+                <CommercialInstitutionalEnergyUse />
             </div>
             <div id="industrial-sector-energy" className="section-four-page stacked-page-wrapper">
-                <Page53 />
+                <IndustrialSectorEnergy />
             </div>
             <div id="efficiency-trends" className="section-four-page stacked-page-wrapper page-with-title-divider">
-                <Page54 />
+                <EfficiencyTrends />
             </div>
             <div id="energy-intensity-index" className="section-four-page stacked-page-wrapper">
-                <Page55 />
+                <EnergyIntensityIndex />
             </div>
             <div id="energy-use-factors" className="section-four-page stacked-page-wrapper">
-                <Page56 />
+                <EnergyUseFactors />
             </div>
             <div id="sector-energy-trends" className="section-four-page stacked-page-wrapper">
-                <Page57 />
+                <SectorEnergyTrends />
             </div>
         </div>
     );

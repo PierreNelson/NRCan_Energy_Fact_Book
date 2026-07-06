@@ -1,20 +1,20 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Page23 from '../pages/Page23';
-import Page24 from '../pages/Page24';
-import Page25 from '../pages/Page25';
-import Page26 from '../pages/Page26';
-import Page27 from '../pages/Page27';
-import Page28 from '../pages/Page28';
-import Page29 from '../pages/Page29';
-import Page30 from '../pages/Page30';
-import Page31 from '../pages/Page31';
-import Page32 from '../pages/Page32';
-import Page33 from '../pages/Page33';
-import Page34 from '../pages/Page34';
-import Page35 from '../pages/Page35';
-import Page36 from '../pages/Page36';
-import Page37 from '../pages/Page37';
+import Investment from '../pages/Investment';
+import CapitalExpenditures from '../pages/CapitalExpenditures';
+import Infrastructure from '../pages/Infrastructure';
+import EconomicContributions from '../pages/EconomicContributions';
+import InvestmentByAsset from '../pages/InvestmentByAsset';
+import MajorEnergyProjects from '../pages/MajorEnergyProjects';
+import CleanTechTrends from '../pages/CleanTechTrends';
+import MajorProjectsMap from '../pages/MajorProjectsMap';
+import InternationalInvestment from '../pages/InternationalInvestment';
+import ForeignControl from '../pages/ForeignControl';
+import CEA from '../pages/CEA';
+import ResearchDevelopmentDemonstration from '../pages/ResearchDevelopmentDemonstration';
+import PublicEnergyRddExpenditures from '../pages/PublicEnergyRddExpenditures';
+import EnergyRddByTechnology from '../pages/EnergyRddByTechnology';
+import EnvironmentalProtection from '../pages/EnvironmentalProtection';
 
 const SectionTwo = () => {
     const location = useLocation();
@@ -51,63 +51,63 @@ const SectionTwo = () => {
             {/* Each page wrapper has a semantic ID for anchor links */}
             
             <div id="investment-overview" className="stacked-page-wrapper">
-                <Page23 />
+                <Investment />
             </div>
 
             <div id="capital-expenditure" className="stacked-page-wrapper page-with-title-divider">
-                <Page24 />
+                <CapitalExpenditures />
             </div>
 
             <div id="infrastructure-stock" className="stacked-page-wrapper page-with-title-divider">
-                <Page25 />
+                <Infrastructure />
             </div>
 
             <div id="economic-contributions" className="stacked-page-wrapper">
-                <Page26 />
+                <EconomicContributions />
             </div>
 
             <div id="investment-by-asset" className="stacked-page-wrapper">
-                <Page27 />
+                <InvestmentByAsset />
             </div>
 
             <div id="major-projects" className="stacked-page-wrapper">
-                <Page28 />
+                <MajorEnergyProjects />
             </div>
 
             <div id="clean-tech-trends" className="stacked-page-wrapper">
-                <Page29 />
+                <CleanTechTrends />
             </div>
 
             <div id="projects-map" className="stacked-page-wrapper">
-                <Page30 />
+                <MajorProjectsMap />
             </div>
 
             <div id="international-investment" className="stacked-page-wrapper page-with-title-divider">
-                <Page31 />
+                <InternationalInvestment />
             </div>
 
             <div id="foreign-control" className="stacked-page-wrapper">
-                <Page32 />
+                <ForeignControl />
             </div>
 
             <div id="canadian-energy-assets" className="stacked-page-wrapper page-with-title-divider">
-                <Page33 />
+                <CEA />
             </div>
 
             <div id="research-development-demonstration" className="stacked-page-wrapper">
-                <Page34 />
+                <ResearchDevelopmentDemonstration />
             </div>
 
             <div id="public-energy-rdd-expenditures" className="stacked-page-wrapper">
-                <Page35 />
+                <PublicEnergyRddExpenditures />
             </div>
 
             <div id="energy-rdd-by-technology" className="stacked-page-wrapper">
-                <Page36 />
+                <EnergyRddByTechnology />
             </div>
 
             <div id="environmental-protection" className="stacked-page-wrapper page-with-title-divider">
-                <Page37 />
+                <EnvironmentalProtection />
             </div>
         </div>
     );

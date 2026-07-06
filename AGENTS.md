@@ -31,7 +31,7 @@ See [docs/DATA_UPDATE_GUIDE.md](docs/DATA_UPDATE_GUIDE.md) for partial updates a
 
 ## Layout (pages)
 
-- **Page components:** [`src/pages/Page*.jsx`](src/pages) — one file per factbook page where possible.
+- **Page components:** [`src/pages/*.jsx`](src/pages) — semantic PascalCase names (e.g. `EnergyOverview.jsx`); legacy page numbers live in [`docs/page_registry.yaml`](docs/page_registry.yaml).
 - **Sections:** [`src/components/SectionOne.jsx`](src/components/SectionOne.jsx) … `SectionSix.jsx` lazy-load pages for each sidebar section.
 - **Routing:** [`src/App.jsx`](src/App.jsx) — `HashRouter` routes: `/`, `section-1` … `section-6`, `Glossary`.
 - **Navigation:** [`src/components/Sidebar.jsx`](src/components/Sidebar.jsx) — adding a page often requires a sidebar entry and matching route/section imports.
@@ -46,7 +46,7 @@ See [docs/DATA_UPDATE_GUIDE.md](docs/DATA_UPDATE_GUIDE.md) for partial updates a
 
 ## Definition of done (typical page task)
 
-1. Implement or update the relevant `PageNN.jsx` (and sidebar/route/translations if required).
+1. Implement or update the relevant page component in `src/pages/` (semantic PascalCase name from [`docs/page_registry.yaml`](docs/page_registry.yaml); sidebar/route/translations if required).
 2. `npm run build` succeeds.
 3. `npm run lint` passes with zero issues.
 4. No secrets committed; use `.env` only locally (see `.gitignore`).

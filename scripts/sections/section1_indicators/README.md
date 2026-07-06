@@ -21,22 +21,22 @@ python main.py export
 
 | Page | In pipeline? | Website getter | `source_key` | Handler function | Edit data here |
 |------|--------------|----------------|--------------|------------------|----------------|
-| **1** | No | — | — | — | Cover page — `src/pages/Page1.jsx` |
+| **1** | No | — | — | — | Cover page — `src/pages/EnergyOverview.jsx` |
 | **2** | Yes | `getWorldEnergyProductionData()` | `world_energy_production` | `process_world_energy_production()` · `world_energy_production.py` | Excel + maps in `constants.py` |
-| **3** | No | — | — | — | Static content — `src/pages/Page3.jsx` |
-| **4** | No | — | — | — | Hardcoded chart data — `src/pages/Page4.jsx` |
-| **5** | No | — | — | — | Hardcoded regional data — `src/pages/Page5.jsx` |
+| **3** | No | — | — | — | Static content — `src/pages/CanadianEnergyProduction.jsx` |
+| **4** | No | — | — | — | Hardcoded chart data — `src/pages/PrimaryEnergyProduction.jsx` |
+| **5** | No | — | — | — | Hardcoded regional data — `src/pages/PrimaryEnergyByRegion.jsx` |
 | **7** | Yes | `getNominalGDPData()` | `nominal_gdp` | `process_nominal_gdp()` · `nominal_gdp.py` | `_statcan.py` → `get_gdp_emp_forecast_url()`; parse in `nominal_gdp.py` |
 | **8** | Yes | `getProvincialGdpData()` | `provincial_gdp` | `process_provincial_gdp()` · `provincial_gdp.py` | `_statcan.py` + `constants.py` → `PROVINCE_VECTORS` |
-| **9** | No | — | — | — | Hardcoded employment data — `src/pages/Page9.jsx` |
-| **10** | No | — | — | — | Hardcoded employment data — `src/pages/Page10.jsx` |
-| **11** | No | — | — | — | Hardcoded GDP data — `src/pages/Page11.jsx` |
-| **14** | No | — | — | — | Static / hardcoded table — `src/pages/Page14.jsx` |
-| **15** | No | — | — | — | Static infographic — `src/pages/Page15.jsx` |
-| **16** | No | — | — | — | Hardcoded government revenues — `src/pages/Page16.jsx` |
-| **17** | No | — | — | — | Hardcoded corporate taxes — `src/pages/Page17.jsx` |
+| **9** | No | — | — | — | Hardcoded employment data — `src/pages/Employment.jsx` |
+| **10** | No | — | — | — | Hardcoded employment data — `src/pages/EmploymentChart.jsx` |
+| **11** | No | — | — | — | Hardcoded GDP data — `src/pages/GdpChart.jsx` |
+| **14** | No | — | — | — | Static / hardcoded table — `src/pages/CanadianEnergyExportsUsStates.jsx` |
+| **15** | No | — | — | — | Static infographic — `src/pages/CanadaGlobalEnergyTrade.jsx` |
+| **16** | No | — | — | — | Hardcoded government revenues — `src/pages/GovernmentRevenues.jsx` |
+| **17** | No | — | — | — | Hardcoded corporate taxes — `src/pages/CorporateIncomeTaxes.jsx` |
 | **20** | Yes | `getGHGEmissionsData()`, `getGhgNarrativeStats()` | `ghg_emissions`* | `process_ghg_emissions()` · `ghg_emissions.py` | `config.yaml` → `ghg_emissions.source_url`; parsing in `ghg_emissions.py` |
-| **21** | No | — | — | — | Static reference content — `src/pages/Page21.jsx` |
+| **21** | No | — | — | — | Static reference content — `src/pages/EnergyInformationLandscape.jsx` |
 
 \*Also feeds Page **132** (Section 6). Sources `economic_contributions` and `canadian_energy_assets` feed Section 2 pages — see pipeline detail below.
 

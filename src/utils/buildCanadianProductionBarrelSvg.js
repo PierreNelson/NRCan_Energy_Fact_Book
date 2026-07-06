@@ -9,9 +9,9 @@ import {
     OTHER_SUB_KEYS,
     OVERLAY_COLORS,
     PRIMARY_PROVINCE_ORDER,
-} from '../components/Page111ProvinceInfographic.constants';
+} from '../components/CanadianCrudeProductionInfographic.constants';
 
-/** Barrel interior right edge (constant across Y in page111_bg.svg). */
+/** Barrel interior right edge (constant across Y in canadian_production_bg.svg). */
 export const barrelRightEdgeX = () => BARREL_INTERIOR.rightEdge;
 
 /** @deprecated Use barrelRightEdgeX — kept for any external callers. */
@@ -203,4 +203,4 @@ export function buildCanadianProductionBarrelLayout(provinces, options = {}) {
     return { displayKeys, segments, labels };
 }
 
-export { BARREL_CLIP_PATH_D } from '../components/Page111ProvinceInfographic.constants';
+export { BARREL_CLIP_PATH_D } from '../components/CanadianCrudeProductionInfographic.constants';

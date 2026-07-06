@@ -117,7 +117,7 @@ Use **semantic hash ids** (e.g. `#capital-expenditure`), not page numbers. Trust
 These rules are **non-negotiable** and must be followed exactly when generating page code.
 
 1. **NO COMMENTS:** Do not add any comments (`//`, `/* */`) to the final output code.
-2. **NAMING CONVENTION:** All CSS classes must follow `.page[[PAGE_NUMBER]]-element` pattern (e.g., `.page28-title`, `.page28-chart-frame`).
+2. **NAMING CONVENTION:** All CSS classes must follow `.page[[PAGE_NUMBER]]-element` pattern (e.g., `.major-projects-title`, `.major-projects-chart-frame`).
 3. **COMPONENT NAMING:** Component name must be `Page[[PAGE_NUMBER]]` and export must be `export default Page[[PAGE_NUMBER]];`
 4. **IMPORTS:** Always include these imports exactly:
    - `useOutletContext` from `react-router-dom`
@@ -1087,11 +1087,11 @@ export default Page[[PAGE_NUMBER]];
 ### Naming Rules
 | Pattern | Example |
 |---------|---------|
-| Component | `Page[[PAGE_NUMBER]]` → `Page28` |
-| CSS class | `.page[[PAGE_NUMBER]]-element` → `.page28-title` |
-| Translation key | `page[[PAGE_NUMBER]]_key` → `page28_title` |
+| Component | `Page[[PAGE_NUMBER]]` → `MajorEnergyProjects` |
+| CSS class | `.page[[PAGE_NUMBER]]-element` → `.major-projects-title` |
+| Translation key | `page[[PAGE_NUMBER]]_key` → `major_energy_projects_title` |
 | Data function | `get[[DATA_FUNCTION]]` → `getMajorProjectsData` |
-| IDs | `page[[PAGE_NUMBER]]-element` → `page28-title` |
+| IDs | `page[[PAGE_NUMBER]]-element` → `major-projects-title` |
 
 ### Color Palette
 | Use | Color |
@@ -1152,7 +1152,7 @@ CORRECT: /section-2#major-projects
 Section wrapper ID must match hash:
 ```jsx
 <div id="major-projects" className="stacked-page-wrapper">
-    <Page28 />
+    <MajorEnergyProjects />
 </div>
 ```
 

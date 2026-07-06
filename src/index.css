@@ -1144,17 +1144,17 @@ details .table-responsive {
 
 /* Zero every common page bottom-spacer so ONLY the flex gap between wrappers creates space.
    Override all page-level margin/padding (including !important) so spacing is consistent. */
-.stacked-page-wrapper main .page37-chart-area,
-.stacked-page-wrapper main .page37-chart-column,
-.stacked-page-wrapper main .page28h-container,
-.stacked-page-wrapper main .page24h-container,
-.stacked-page-wrapper main .page16-chart-column,
-.stacked-page-wrapper main .page20-chart-column,
-.stacked-page-wrapper main .page24-chart-column,
-.stacked-page-wrapper main .page25-chart-column,
-.stacked-page-wrapper main .page33-chart-column,
-.section-four-page main .page37-chart-area,
-.section-four-page main .page37-chart-column,
+.stacked-page-wrapper main .environmental-protection-chart-area,
+.stacked-page-wrapper main .environmental-protection-chart-column,
+.stacked-page-wrapper main .major-projectsh-container,
+.stacked-page-wrapper main .capital-expenditureh-container,
+.stacked-page-wrapper main .government-revenues-chart-column,
+.stacked-page-wrapper main .ghg-emissions-chart-column,
+.stacked-page-wrapper main .capital-expenditure-chart-column,
+.stacked-page-wrapper main .infrastructure-stock-chart-column,
+.stacked-page-wrapper main .canadian-energy-assets-chart-column,
+.section-four-page main .environmental-protection-chart-area,
+.section-four-page main .environmental-protection-chart-column,
 .stacked-page-wrapper main [class*="-chart-column"],
 .stacked-page-wrapper main [class*="-chart-area"],
 .stacked-page-wrapper main [class*="-chart-frame"],
@@ -1310,22 +1310,22 @@ details .table-responsive {
   }
 }
 
-.page49-root {
+.secondary-energy-by-fuel-root {
   font-family: var(--font-body);
 }
 
 
-.page49-bullets {
+.secondary-energy-by-fuel-bullets {
   margin: 0 0 1rem 0;
   padding-left: 1.25rem;
   list-style-type: disc;
 }
 
-.page49-bullets li {
+.secondary-energy-by-fuel-bullets li {
   margin-bottom: 0.5rem;
 }
 
-.page49-chart-title {
+.secondary-energy-by-fuel-chart-title {
   font-family: var(--font-body);
   font-size: 20px;
   font-weight: bold;
@@ -1341,13 +1341,13 @@ details .table-responsive {
   padding: 0 8px;
 }
 
-.page49-chart-title a {
+.secondary-energy-by-fuel-chart-title a {
   color: var(--gc-link);
   text-decoration: underline;
 }
 
 /* Page 49: footnote inside chart block - same typography, tighter spacing */
-.page49-chart-block .wb-fnote {
+.secondary-energy-by-fuel-chart-block .wb-fnote {
   margin-top: 1rem;
   margin-bottom: 0;
   font-family: var(--font-body);
@@ -1355,14 +1355,14 @@ details .table-responsive {
   color: var(--gc-text);
 }
 
-.page49-chart-block .wb-fnote h2 {
+.secondary-energy-by-fuel-chart-block .wb-fnote h2 {
   font-family: var(--font-heading);
   font-size: 1rem;
   margin-bottom: 0.5rem;
   color: var(--gc-text);
 }
 
-.page49-chart-frame {
+.secondary-energy-by-fuel-chart-frame {
   background-color: #f5f5f5;
   padding: 20px;
   border-radius: 8px;
@@ -1371,7 +1371,7 @@ details .table-responsive {
   min-height: 500px;
 }
 
-.page49-chart-wrap {
+.secondary-energy-by-fuel-chart-wrap {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -1379,9 +1379,9 @@ details .table-responsive {
   margin-bottom: 0;
 }
 
-/* Standardised footnote appearance for page 48/49 when using .page48-footnote or .page49-footnote with .wb-fnote */
-.page48-footnote,
-.page49-footnote {
+/* Standardised footnote appearance for page 48/49 when using .energy-use-footnote or .secondary-energy-by-fuel-footnote with .wb-fnote */
+.energy-use-footnote,
+.secondary-energy-by-fuel-footnote {
   border-top: 1px solid #e0e0e0;
   padding-top: 12px;
   margin-top: 24px;
@@ -1394,15 +1394,15 @@ details .table-responsive {
   box-sizing: border-box;
 }
 
-.page49-loading,
-.page49-error {
+.secondary-energy-by-fuel-loading,
+.secondary-energy-by-fuel-error {
   padding: 24px;
   font-family: var(--font-body);
 }
 
 /* Page 52: tight spacing for the three narrative lines (arrow + text) */
-.page52-visual-narrative-wrap .page52-visual-row .page52-visual-text,
-.page52-visual-narrative-wrap .page52-visual-row p {
+.commercial-institutional-energy-visual-narrative-wrap .commercial-institutional-energy-visual-row .commercial-institutional-energy-visual-text,
+.commercial-institutional-energy-visual-narrative-wrap .commercial-institutional-energy-visual-row p {
   margin: 0 !important;
   padding: 0 !important;
 }
@@ -1411,30 +1411,30 @@ details .table-responsive {
    CHART TITLES – same as Page 5 (all pages)
    font: Lato 29px bold, color #333333, centered
    =============================================== */
-.page2-chart-title,
-.page2-rankings-title,
-.page4-chart-title,
-.page5-chart-title,
-.page8-chart-frame .page8-chart-title,
-.page10-chart-title,
-.page11-chart-title,
-.page16-chart-title,
-.page17-chart-title,
-.page20-chart-title,
-.page24-chart-title,
-.page24h-chart-title,
-.page28-chart-title,
-.page28h-chart-title,
-.page30-chart-title,
-.page31-chart-title,
-.page32-chart-title,
-.page37-chart-title,
-.page37h-chart-title,
-.page43-chart-title,
-.page48-chart-title,
-.page49-chart-title,
-.page51-chart-title,
-.page52-chart-title {
+.energy-production-chart-title,
+.energy-production-rankings-title,
+.primary-energy-production-chart-title,
+.primary-energy-by-region-chart-title,
+.provincial-gdp-chart-frame .provincial-gdp-chart-title,
+.employment-chart-chart-title,
+.gdp-chart-chart-title,
+.government-revenues-chart-title,
+.corporate-income-taxes-chart-title,
+.ghg-emissions-chart-title,
+.capital-expenditure-chart-title,
+.capital-expenditureh-chart-title,
+.major-projects-chart-title,
+.major-projectsh-chart-title,
+.projects-map-chart-title,
+.international-investment-chart-title,
+.foreign-control-chart-title,
+.environmental-protection-chart-title,
+.environmental-protectionh-chart-title,
+.energy-affordability-chart-title,
+.energy-use-chart-title,
+.secondary-energy-by-fuel-chart-title,
+.residential-energy-use-chart-title,
+.commercial-institutional-energy-chart-title {
   font-family: 'Lato', sans-serif !important;
   font-size: 29px !important;
   font-weight: bold !important;
@@ -1444,7 +1444,7 @@ details .table-responsive {
   text-align: center !important;
 }
 
-.page66-chart-title {
+.canadian-electricity-generation-chart-title {
   font-family: 'Lato', sans-serif !important;
   font-size: 29px !important;
   font-weight: bold !important;
@@ -1455,31 +1455,31 @@ details .table-responsive {
 }
 
 @media (max-width: 768px) {
-  .page2-chart-title,
-  .page2-rankings-title,
-  .page4-chart-title,
-  .page5-chart-title,
-  .page8-chart-frame .page8-chart-title,
-  .page10-chart-title,
-  .page11-chart-title,
-  .page16-chart-title,
-  .page17-chart-title,
-  .page20-chart-title,
-  .page24-chart-title,
-  .page24h-chart-title,
-  .page28-chart-title,
-  .page28h-chart-title,
-  .page30-chart-title,
-  .page31-chart-title,
-  .page32-chart-title,
-  .page37-chart-title,
-  .page37h-chart-title,
-  .page43-chart-title,
-  .page48-chart-title,
-  .page49-chart-title,
-  .page51-chart-title,
-  .page52-chart-title,
-  .page66-chart-title {
+  .energy-production-chart-title,
+  .energy-production-rankings-title,
+  .primary-energy-production-chart-title,
+  .primary-energy-by-region-chart-title,
+  .provincial-gdp-chart-frame .provincial-gdp-chart-title,
+  .employment-chart-chart-title,
+  .gdp-chart-chart-title,
+  .government-revenues-chart-title,
+  .corporate-income-taxes-chart-title,
+  .ghg-emissions-chart-title,
+  .capital-expenditure-chart-title,
+  .capital-expenditureh-chart-title,
+  .major-projects-chart-title,
+  .major-projectsh-chart-title,
+  .projects-map-chart-title,
+  .international-investment-chart-title,
+  .foreign-control-chart-title,
+  .environmental-protection-chart-title,
+  .environmental-protectionh-chart-title,
+  .energy-affordability-chart-title,
+  .energy-use-chart-title,
+  .secondary-energy-by-fuel-chart-title,
+  .residential-energy-use-chart-title,
+  .commercial-institutional-energy-chart-title,
+  .canadian-electricity-generation-chart-title {
     font-size: 26px !important;
   }
 }

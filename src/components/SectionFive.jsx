@@ -1,39 +1,39 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Page59 from '../pages/Page59';
-import Page60 from '../pages/Page60';
-import Page61 from '../pages/Page61';
-import Page62 from '../pages/Page62';
-import Page63 from '../pages/Page63';
-import Page64 from '../pages/Page64';
-import Page65 from '../pages/Page65';
-import Page66 from '../pages/Page66';
-import Page67 from '../pages/Page67';
-import Page68 from '../pages/Page68';
-import Page69 from '../pages/Page69';
-import Page70 from '../pages/Page70';
-import Page71 from '../pages/Page71';
-import Page74 from '../pages/Page74';
-import Page76 from '../pages/Page76';
-import Page78 from '../pages/Page78';
-import Page79 from '../pages/Page79';
-import Page80 from '../pages/Page80';
-import Page81 from '../pages/Page81';
-import Page82 from '../pages/Page82';
-import Page84 from '../pages/Page84';
-import Page85 from '../pages/Page85';
-import Page86 from '../pages/Page86';
-import Page87 from '../pages/Page87';
-import Page89 from '../pages/Page89';
-import Page90 from '../pages/Page90';
-import Page91 from '../pages/Page91';
-import Page93 from '../pages/Page93';
-import Page95 from '../pages/Page95';
-import Page96 from '../pages/Page96';
-import Page97 from '../pages/Page97';
-import Page98 from '../pages/Page98';
-import Page99 from '../pages/Page99';
-import Page102 from '../pages/Page102';
+import CleanPowerLowCarbonOverview from '../pages/CleanPowerLowCarbonOverview';
+import CleanTechnologyEconomy from '../pages/CleanTechnologyEconomy';
+import EnvironmentalCleanTech from '../pages/EnvironmentalCleanTech';
+import CleantechCompaniesByRegion from '../pages/CleantechCompaniesByRegion';
+import CleantechCompaniesByIndustry from '../pages/CleantechCompaniesByIndustry';
+import ElectricityInternationalContext from '../pages/ElectricityInternationalContext';
+import ElectricityTrade from '../pages/ElectricityTrade';
+import CanadianElectricityGeneration from '../pages/CanadianElectricityGeneration';
+import ProvincialElectricityGeneration from '../pages/ProvincialElectricityGeneration';
+import ElectricalEnergyUse from '../pages/ElectricalEnergyUse';
+import ElectricityPricesMap from '../pages/ElectricityPricesMap';
+import WindSolarElectricityGrowth from '../pages/WindSolarElectricityGrowth';
+import ElectricityGhgSpotlight from '../pages/ElectricityGhgSpotlight';
+import RenewableElectricityCapacity from '../pages/RenewableElectricityCapacity';
+import HydroelectricCapacity from '../pages/HydroelectricCapacity';
+import SolidBiofuelsProduction from '../pages/SolidBiofuelsProduction';
+import WorldWindPower from '../pages/WorldWindPower';
+import CanadianWindPower from '../pages/CanadianWindPower';
+import WindProjectsMap from '../pages/WindProjectsMap';
+import WorldSolarPower from '../pages/WorldSolarPower';
+import LargestSolarProjects from '../pages/LargestSolarProjects';
+import UraniumInternational from '../pages/UraniumInternational';
+import NuclearPower from '../pages/NuclearPower';
+import CanadianUraniumSupplyDemand from '../pages/CanadianUraniumSupplyDemand';
+import CanduNuclearReactors from '../pages/CanduNuclearReactors';
+import NuclearPowerPlantsUraniumPrices from '../pages/NuclearPowerPlantsUraniumPrices';
+import BiofuelsTransportation from '../pages/BiofuelsTransportation';
+import CanadianBiofuelProduction from '../pages/CanadianBiofuelProduction';
+import TransportationFuelMix from '../pages/TransportationFuelMix';
+import EvSalesRegistrations from '../pages/EvSalesRegistrations';
+import TransportationGhgSpotlight from '../pages/TransportationGhgSpotlight';
+import ElectricVehicleCharging from '../pages/ElectricVehicleCharging';
+import PublicEvChargingStations from '../pages/PublicEvChargingStations';
+import HydrogenIndustry from '../pages/HydrogenIndustry';
 
 const SectionFive = () => {
     const location = useLocation();
@@ -69,106 +69,106 @@ const SectionFive = () => {
     return (
         <div className="section-five-container stacked-section-container">
             <div id="clean-power-low-carbon-overview" className="stacked-page-wrapper">
-                <Page59 />
+                <CleanPowerLowCarbonOverview />
             </div>
             <div id="clean-technology-economy" className="stacked-page-wrapper">
-                <Page60 />
+                <CleanTechnologyEconomy />
             </div>
             <div id="environmental-clean-technology" className="stacked-page-wrapper">
-                <Page61 />
+                <EnvironmentalCleanTech />
             </div>
             <div id="cleantech-companies" className="stacked-page-wrapper">
-                <Page62 />
+                <CleantechCompaniesByRegion />
             </div>
             <div id="cleantech-companies-industry" className="stacked-page-wrapper">
-                <Page63 />
+                <CleantechCompaniesByIndustry />
             </div>
             <div id="electricity-international-context" className="stacked-page-wrapper">
-                <Page64 />
+                <ElectricityInternationalContext />
             </div>
             <div id="electricity-trade-us" className="stacked-page-wrapper">
-                <Page65 />
+                <ElectricityTrade />
             </div>
             <div id="canadian-electricity-generation" className="stacked-page-wrapper">
-                <Page66 />
+                <CanadianElectricityGeneration />
             </div>
             <div id="provincial-electricity-generation" className="stacked-page-wrapper">
-                <Page67 />
+                <ProvincialElectricityGeneration />
             </div>
             <div id="electricity-energy-use" className="stacked-page-wrapper">
-                <Page68 />
+                <ElectricalEnergyUse />
             </div>
             <div id="electricity-prices" className="stacked-page-wrapper page-with-title-divider">
-                <Page69 />
+                <ElectricityPricesMap />
             </div>
             <div id="wind-solar-electricity-growth" className="stacked-page-wrapper">
-                <Page70 />
+                <WindSolarElectricityGrowth />
             </div>
             <div id="electricity-ghg-spotlight" className="stacked-page-wrapper">
-                <Page71 />
+                <ElectricityGhgSpotlight />
             </div>
             <div id="renewable-electricity-capacity" className="stacked-page-wrapper page-with-title-divider">
-                <Page74 />
+                <RenewableElectricityCapacity />
             </div>
             <div id="major-hydro-facilities" className="stacked-page-wrapper page-with-title-divider">
-                <Page76 />
+                <HydroelectricCapacity />
             </div>
             <div id="solid-biofuels" className="stacked-page-wrapper">
-                <Page78 />
+                <SolidBiofuelsProduction />
             </div>
             <div id="world-wind-power" className="stacked-page-wrapper">
-                <Page79 />
+                <WorldWindPower />
             </div>
             <div id="wind-power-canada" className="stacked-page-wrapper">
-                <Page80 />
+                <CanadianWindPower />
             </div>
             <div id="wind-capacity" className="stacked-page-wrapper">
-                <Page81 />
+                <WindProjectsMap />
             </div>
             <div id="world-solar-pv" className="stacked-page-wrapper">
-                <Page82 />
+                <WorldSolarPower />
             </div>
             <div id="largest-solar-projects" className="stacked-page-wrapper">
-                <Page84 />
+                <LargestSolarProjects />
             </div>
             <div id="uranium-international" className="stacked-page-wrapper">
-                <Page85 />
+                <UraniumInternational />
             </div>
             <div id="nuclear-power" className="stacked-page-wrapper">
-                <Page86 />
+                <NuclearPower />
             </div>
             <div id="canadian-uranium-supply-demand" className="stacked-page-wrapper">
-                <Page87 />
+                <CanadianUraniumSupplyDemand />
             </div>
             <div id="candu-nuclear-reactors" className="stacked-page-wrapper">
-                <Page89 />
+                <CanduNuclearReactors />
             </div>
             <div id="nuclear-power-plants-uranium-prices" className="stacked-page-wrapper">
-                <Page90 />
+                <NuclearPowerPlantsUraniumPrices />
             </div>
             <div id="biofuels-transportation" className="stacked-page-wrapper page-with-title-divider">
-                <Page91 />
+                <BiofuelsTransportation />
             </div>
             <div id="canadian-biofuel-production" className="stacked-page-wrapper">
-                <Page93 />
+                <CanadianBiofuelProduction />
             </div>
             <div id="transportation-fuel-mix" className="stacked-page-wrapper">
-                <Page95 />
+                <TransportationFuelMix />
             </div>
             <div id="ev-sales" className="stacked-page-wrapper">
-                <Page96 />
+                <EvSalesRegistrations />
             </div>
             <div id="transportation-ghg-spotlight" className="stacked-page-wrapper">
-                <Page97 />
+                <TransportationGhgSpotlight />
             </div>
             <div id="electric-vehicle-charging" className="stacked-page-wrapper">
-                <Page98 />
+                <ElectricVehicleCharging />
             </div>
             <div id="public-ev-charging-stations" className="stacked-page-wrapper">
-                <Page99 />
+                <PublicEvChargingStations />
             </div>
             <div id="hydrogen-industry" className="stacked-page-wrapper">
-                <Page102 />
+                <HydrogenIndustry />
             </div>
         </div>
     );

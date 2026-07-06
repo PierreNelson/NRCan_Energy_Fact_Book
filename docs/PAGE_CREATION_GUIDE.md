@@ -41,11 +41,11 @@ The `id` is used for sidebar navigation (hash links).
 
 ### Steps to add a new page
 
-1. **Create the page component** in `src/pages/` (e.g. `PageNN.jsx`).
+1. **Create the page component** in `src/pages/` (semantic PascalCase, e.g. `EnergyOverview.jsx`; see [`docs/page_registry.yaml`](../docs/page_registry.yaml)).
 2. **Import and render it** in the correct Section component:
    - Open `src/components/SectionOne.jsx` (or SectionTwo, etc.).
-   - Add: `import PageNN from '../pages/PageNN';`
-   - Add a wrapper in the JSX: `<div id="your-anchor-id" className="stacked-page-wrapper"><PageNN /></div>`. Use a unique, kebab-case `id` that matches the page’s topic (e.g. `employment`, `primary-energy-by-region`).
+   - Add: `import EnergyOverview from '../pages/EnergyOverview';` (use your component name)
+   - Add a wrapper in the JSX: `<div id="your-anchor-id" className="stacked-page-wrapper"><EnergyOverview /></div>`. Use a unique, kebab-case `id` that matches the page’s topic (e.g. `employment`, `primary-energy-by-region`).
 3. **Add the sidebar link** in `src/components/Sidebar.jsx`: inside the appropriate section’s NavLinks, add a link to the same section path with hash, e.g. `to="/section-1#your-anchor-id"` and label from translations.
 4. **Add nav text** in `src/utils/translations.js` (e.g. `nav_employment`, `nav_primary_energy_region`) in both `en` and `fr.
 
@@ -158,7 +158,7 @@ If the subtitle contains a footnote asterisk, split or render it with the same f
 
 ### Optional bullets
 
-Some pages (e.g. Page 31) have a bullet list under the subtitle. Use a `<ul className="pageN-bullets" role="list">` with `<li role="listitem">` items. Bullet text can be built from translation parts (e.g. `page32_bullet1_part1`, …) and dynamic values (year, totals, etc.). Use `aria-label` on each `<li>` for the full read-out and `<span className="visual-bold">` for bold segments. **Reference:** Page 31.
+Some pages (e.g. Page 31) have a bullet list under the subtitle. Use a `<ul className="pageN-bullets" role="list">` with `<li role="listitem">` items. Bullet text can be built from translation parts (e.g. `foreign_control_bullet1_part1`, …) and dynamic values (year, totals, etc.). Use `aria-label` on each `<li>` for the full read-out and `<span className="visual-bold">` for bold segments. **Reference:** Page 31.
 
 ---
 
@@ -771,8 +771,8 @@ Use it for the chart title: `{renderTextWithFootnoteLink(getText('pageN_chart_ti
 
 | File | When |
 |------|------|
-| `src/pages/PageNN.jsx` | New page component. |
-| `src/components/SectionX.jsx` | Import and render `<PageNN />` in a wrapper with unique `id`. |
+| `src/pages/YourComponent.jsx` | New page component (semantic PascalCase name). |
+| `src/components/SectionX.jsx` | Import and render `<YourComponent />` in a wrapper with unique `id`. |
 | `src/components/Sidebar.jsx` | Add NavLink to section and hash (e.g. `#your-anchor-id`). |
 | `src/utils/translations.js` | Add all `pageN_*` and any `nav_*` keys in EN and FR. |
 | `src/index.css` | Only if you need page-specific modebar/chart overrides (rare). |

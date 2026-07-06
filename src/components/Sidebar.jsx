@@ -258,7 +258,7 @@ const Sidebar = ({ lang }) => {
                                 to="/section-2#capital-expenditure"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page23_item1', lang)}
+                                {getText('investment_item1', lang)}
                             </NavLink>
 
                             {/* Energy infrastructure and major projects */}
@@ -266,7 +266,7 @@ const Sidebar = ({ lang }) => {
                                 to="/section-2#infrastructure-stock"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page23_item2', lang)}
+                                {getText('investment_item2', lang)}
                             </NavLink>
 
                             {/* FDI and investment abroad */}
@@ -274,7 +274,7 @@ const Sidebar = ({ lang }) => {
                                 to="/section-2#international-investment"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page23_item3', lang)}
+                                {getText('investment_item3', lang)}
                             </NavLink>
 
                             {/* Energy assets */}
@@ -282,7 +282,7 @@ const Sidebar = ({ lang }) => {
                                 to="/section-2#canadian-energy-assets"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page23_item4', lang)}
+                                {getText('investment_item4', lang)}
                             </NavLink>
 
                             {/* Environmental Protection */}
@@ -290,7 +290,7 @@ const Sidebar = ({ lang }) => {
                                 to="/section-2#environmental-protection"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page23_item6', lang)}
+                                {getText('investment_item6', lang)}
                             </NavLink>
                         </div>
                     )}
@@ -332,19 +332,19 @@ const Sidebar = ({ lang }) => {
                                 to="/section-3#energy-sector-demographics"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page39_item1', lang)}
+                                {getText('skills_diversity_community_overview_item1', lang)}
                             </NavLink>
                             <NavLink
                                 to="/section-3#energy-affordability"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page39_item2', lang)}
+                                {getText('skills_diversity_community_overview_item2', lang)}
                             </NavLink>
                             <NavLink
                                 to="/section-3#energy-reliant-communities"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page39_item3', lang)}
+                                {getText('skills_diversity_community_overview_item3', lang)}
                             </NavLink>
                         </div>
                     )}
@@ -386,13 +386,13 @@ const Sidebar = ({ lang }) => {
                                 to="/section-4#energy-use"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page48_nav_label', lang)}
+                                {getText('energy_use_nav_label', lang)}
                             </NavLink>
                             <NavLink
                                 to="/section-4#efficiency-trends"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('page54_nav_label', lang)}
+                                {getText('efficiency_trends_nav_label', lang)}
                             </NavLink>
                         </div>
                     )}
@@ -434,13 +434,13 @@ const Sidebar = ({ lang }) => {
                                 to="/section-5#clean-technology-economy"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('nav_page60_clean_technology_economy', lang)}
+                                {getText('nav_clean_technology_economy_clean_technology_economy', lang)}
                             </NavLink>
                             <NavLink
                                 to="/section-5#biofuels-transportation"
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
-                                {getText('nav_page91_biofuels_transportation', lang)}
+                                {getText('nav_biofuels_transportation_biofuels_transportation', lang)}
                             </NavLink>
                         </div>
                     )}

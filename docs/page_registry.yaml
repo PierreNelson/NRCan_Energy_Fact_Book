@@ -1,0 +1,1279 @@
+pages:
+- legacy_page_num: 1
+  legacy_component: Page1
+  component_name: EnergyOverview
+  file_name: EnergyOverview.jsx
+  translation_prefix: energy_overview
+  css_prefix: energy-overview
+  section_anchor_id: energy-overview
+  title: Key energy, economic and environmental indicators
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 2
+  legacy_component: Page2
+  component_name: WorldEnergyProduction
+  file_name: WorldEnergyProduction.jsx
+  translation_prefix: world_energy_production
+  css_prefix: energy-production
+  section_anchor_id: energy-production
+  title: Energy production and supply
+  indicator_keys:
+  - world_energy_production
+  data_getters:
+  - getWorldEnergyProductionData
+  data_status: pipeline_partial
+- legacy_page_num: 3
+  legacy_component: Page3
+  component_name: CanadianEnergyProduction
+  file_name: CanadianEnergyProduction.jsx
+  translation_prefix: canadian_energy_production
+  css_prefix: canadian-energy-production
+  section_anchor_id: canadian-energy-production
+  title: Canadian energy production
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 4
+  legacy_component: Page4
+  component_name: PrimaryEnergyProduction
+  file_name: PrimaryEnergyProduction.jsx
+  translation_prefix: primary_energy_production
+  css_prefix: primary-energy-production
+  section_anchor_id: primary-energy-production
+  title: Primary energy production by source (2023)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 5
+  legacy_component: Page5
+  component_name: PrimaryEnergyByRegion
+  file_name: PrimaryEnergyByRegion.jsx
+  translation_prefix: primary_energy_by_region
+  css_prefix: primary-energy-by-region
+  section_anchor_id: primary-energy-by-region
+  title: Primary energy production by region and source (2023)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 7
+  legacy_component: Page7
+  component_name: NominalGdp
+  file_name: NominalGdp.jsx
+  translation_prefix: nominal_gdp
+  css_prefix: nominal-gdp
+  section_anchor_id: economic-contributions
+  title: Economic contributions
+  indicator_keys:
+  - nominal_gdp
+  data_getters:
+  - getNominalGDPData
+  data_status: pipeline_present
+- legacy_page_num: 8
+  legacy_component: Page8
+  component_name: ProvincialGdp
+  file_name: ProvincialGdp.jsx
+  translation_prefix: provincial_gdp
+  css_prefix: provincial-gdp
+  section_anchor_id: provincial-gdp
+  title: Energy's nominal GDP contribution by province/territory
+  indicator_keys:
+  - provincial_gdp
+  data_getters:
+  - getProvincialGdpData
+  data_status: pipeline_present
+- legacy_page_num: 9
+  legacy_component: Page9
+  component_name: Employment
+  file_name: Employment.jsx
+  translation_prefix: employment
+  css_prefix: employment
+  section_anchor_id: employment
+  title: Employment in Canada's energy sector (2024)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 10
+  legacy_component: Page10
+  component_name: EmploymentChart
+  file_name: EmploymentChart.jsx
+  translation_prefix: employment_chart
+  css_prefix: employment-chart
+  section_anchor_id: employment-chart
+  title: Energy sector employment
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 11
+  legacy_component: Page11
+  component_name: GdpChart
+  file_name: GdpChart.jsx
+  translation_prefix: gdp_chart
+  css_prefix: gdp-chart
+  section_anchor_id: gdp-chart
+  title: Energy sector GDP
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 14
+  legacy_component: Page14
+  component_name: CanadianEnergyExportsUsStates
+  file_name: CanadianEnergyExportsUsStates.jsx
+  translation_prefix: canadian_energy_exports_us_states
+  css_prefix: canadian-energy-exports-us-states
+  section_anchor_id: canadian-energy-exports-us-states
+  title: Canadian energy exports to the U.S. by state ()
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 15
+  legacy_component: Page15
+  component_name: CanadaGlobalEnergyTrade
+  file_name: CanadaGlobalEnergyTrade.jsx
+  translation_prefix: canada_global_energy_trade
+  css_prefix: canada-global-energy-trade
+  section_anchor_id: canada-global-energy-trade
+  title: Canada's global energy trade
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 16
+  legacy_component: Page16
+  component_name: GovernmentRevenues
+  file_name: GovernmentRevenues.jsx
+  translation_prefix: government_revenues
+  css_prefix: government-revenues
+  section_anchor_id: government-revenues
+  title: Government revenues
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 17
+  legacy_component: Page17
+  component_name: CorporateIncomeTaxes
+  file_name: CorporateIncomeTaxes.jsx
+  translation_prefix: corporate_income_taxes
+  css_prefix: corporate-income-taxes
+  section_anchor_id: corporate-income-taxes
+  title: Corporate income taxes paid by energy industries (federal and provincial)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 20
+  legacy_component: Page20
+  component_name: GhgEmissionsBySector
+  file_name: GhgEmissionsBySector.jsx
+  translation_prefix: ghg_emissions_by_sector
+  css_prefix: ghg-emissions
+  section_anchor_id: ghg-emissions
+  title: GHG emissions by Canadian economic sector
+  indicator_keys:
+  - ghg_emissions
+  data_getters:
+  - getGHGEmissionsData
+  data_status: pipeline_present
+- legacy_page_num: 21
+  legacy_component: Page21
+  component_name: EnergyInformationLandscape
+  file_name: EnergyInformationLandscape.jsx
+  translation_prefix: energy_information_landscape
+  css_prefix: energy-information-landscape
+  section_anchor_id: energy-information-landscape
+  title: Canada's energy information landscape
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 23
+  legacy_component: Page23
+  component_name: Investment
+  file_name: Investment.jsx
+  translation_prefix: investment
+  css_prefix: investment-overview
+  section_anchor_id: investment-overview
+  title: Investment
+  indicator_keys:
+  - capital_expenditures
+  - economic_contributions
+  - infrastructure
+  data_getters:
+  - getCapitalExpendituresData
+  - getEconomicContributionsData
+  - getInfrastructureData
+  data_status: pipeline_present
+- legacy_page_num: 24
+  legacy_component: Page24
+  component_name: CapitalExpenditures
+  file_name: CapitalExpenditures.jsx
+  translation_prefix: capital_expenditures
+  css_prefix: capital-expenditure
+  section_anchor_id: capital-expenditure
+  title: Capital expenditures
+  indicator_keys:
+  - capital_expenditures
+  data_getters:
+  - getCapitalExpendituresData
+  data_status: pipeline_present
+- legacy_page_num: 25
+  legacy_component: Page25
+  component_name: Infrastructure
+  file_name: Infrastructure.jsx
+  translation_prefix: infrastructure
+  css_prefix: infrastructure-stock
+  section_anchor_id: infrastructure-stock
+  title: Canada's energy infrastructure
+  indicator_keys:
+  - infrastructure
+  data_getters:
+  - getInfrastructureData
+  data_status: pipeline_present
+- legacy_page_num: 26
+  legacy_component: Page26
+  component_name: EconomicContributions
+  file_name: EconomicContributions.jsx
+  translation_prefix: economic_contributions
+  css_prefix: economic-contributions
+  section_anchor_id: economic-contributions
+  title: Fuel, energy and pipeline infrastructure investment and operations
+  indicator_keys:
+  - economic_contributions
+  data_getters:
+  - getEconomicContributionsData
+  data_status: pipeline_present
+- legacy_page_num: 27
+  legacy_component: Page27
+  component_name: InvestmentByAsset
+  file_name: InvestmentByAsset.jsx
+  translation_prefix: investment_by_asset
+  css_prefix: investment-by-asset
+  section_anchor_id: investment-by-asset
+  title: Public and private investment in fuel, energy and pipeline infrastructure,
+    2009 to 2024
+  indicator_keys:
+  - investment_by_asset
+  data_getters:
+  - getInvestmentByAssetData
+  data_status: pipeline_present
+- legacy_page_num: 28
+  legacy_component: Page28
+  component_name: MajorEnergyProjects
+  file_name: MajorEnergyProjects.jsx
+  translation_prefix: major_energy_projects
+  css_prefix: major-projects
+  section_anchor_id: major-projects
+  title: Canada's major energy projects
+  indicator_keys:
+  - major_projects
+  data_getters:
+  - getMajorProjectsData
+  data_status: pipeline_present
+- legacy_page_num: 29
+  legacy_component: Page29
+  component_name: CleanTechTrends
+  file_name: CleanTechTrends.jsx
+  translation_prefix: clean_tech_trends
+  css_prefix: clean-tech-trends
+  section_anchor_id: clean-tech-trends
+  title: Clean technology project trends
+  indicator_keys:
+  - clean_tech
+  - cleantech_companies_geo
+  - cleantech_companies_industry
+  data_getters:
+  - getCleanTechTrendsData
+  data_status: pipeline_present
+- legacy_page_num: 30
+  legacy_component: Page30
+  component_name: MajorProjectsMap
+  file_name: MajorProjectsMap.jsx
+  translation_prefix: major_projects_map
+  css_prefix: projects-map
+  section_anchor_id: projects-map
+  title: Major energy projects
+  indicator_keys:
+  - major_projects
+  data_getters:
+  - getMajorProjectsData
+  data_status: pipeline_present
+- legacy_page_num: 31
+  legacy_component: Page31
+  component_name: InternationalInvestment
+  file_name: InternationalInvestment.jsx
+  translation_prefix: international_investment
+  css_prefix: international-investment
+  section_anchor_id: international-investment
+  title: International investments and investors
+  indicator_keys:
+  - international_investment
+  data_getters:
+  - getInternationalInvestmentData
+  data_status: pipeline_present
+- legacy_page_num: 32
+  legacy_component: Page32
+  component_name: ForeignControl
+  file_name: ForeignControl.jsx
+  translation_prefix: foreign_control
+  css_prefix: foreign-control
+  section_anchor_id: foreign-control
+  title: Foreign control of Canadian assets
+  indicator_keys:
+  - foreign_control
+  data_getters:
+  - getForeignControlData
+  data_status: pipeline_present
+- legacy_page_num: 33
+  legacy_component: Page33
+  component_name: CEA
+  file_name: CEA.jsx
+  translation_prefix: canadian_energy_assets
+  css_prefix: canadian-energy-assets
+  section_anchor_id: canadian-energy-assets
+  title: Canadian Energy Assets
+  indicator_keys:
+  - canadian_energy_assets
+  data_getters:
+  - getCEAData
+  data_status: pipeline_present
+- legacy_page_num: 34
+  legacy_component: Page34
+  component_name: ResearchDevelopmentDemonstration
+  file_name: ResearchDevelopmentDemonstration.jsx
+  translation_prefix: research_development_demonstration
+  css_prefix: research-development-demonstration
+  section_anchor_id: research-development-demonstration
+  title: Research, development and demonstration
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 35
+  legacy_component: Page35
+  component_name: PublicEnergyRddExpenditures
+  file_name: PublicEnergyRddExpenditures.jsx
+  translation_prefix: public_energy_rdd_expenditures
+  css_prefix: public-energy-rdd-expenditures
+  section_anchor_id: public-energy-rdd-expenditures
+  title: Canadian public expenditures on energy RD&D
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 36
+  legacy_component: Page36
+  component_name: EnergyRddByTechnology
+  file_name: EnergyRddByTechnology.jsx
+  translation_prefix: energy_rdd_by_technology
+  css_prefix: energy-rdd-by-technology
+  section_anchor_id: energy-rdd-by-technology
+  title: Expenditures on energy RD&D by technology area ($ millions)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 37
+  legacy_component: Page37
+  component_name: EnvironmentalProtection
+  file_name: EnvironmentalProtection.jsx
+  translation_prefix: environmental_protection
+  css_prefix: environmental-protection
+  section_anchor_id: environmental-protection
+  title: Environmental protection expenditures
+  indicator_keys:
+  - environmental_protection
+  data_getters:
+  - getEnvironmentalProtectionData
+  data_status: pipeline_present
+- legacy_page_num: 39
+  legacy_component: Page39
+  component_name: SkillsDiversityCommunityOverview
+  file_name: SkillsDiversityCommunityOverview.jsx
+  translation_prefix: skills_diversity_community_overview
+  css_prefix: skills-diversity-community-overview
+  section_anchor_id: skills-diversity-community-overview
+  title: Skills, diversity and community
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 40
+  legacy_component: Page40
+  component_name: EnergySectorDemographics
+  file_name: EnergySectorDemographics.jsx
+  translation_prefix: energy_sector_demographics
+  css_prefix: energy-sector-demographics
+  section_anchor_id: energy-sector-demographics
+  title: Energy sector demographics (2023)
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 41
+  legacy_component: Page41
+  component_name: EnergySectorWages
+  file_name: EnergySectorWages.jsx
+  translation_prefix: energy_sector_wages
+  css_prefix: energy-sector-wages
+  section_anchor_id: energy-sector-wages
+  title: Energy sector wages and the gender wage gap (2023)
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 42
+  legacy_component: Page42
+  component_name: DemographicRepresentation
+  file_name: DemographicRepresentation.jsx
+  translation_prefix: demographic_representation
+  css_prefix: demographic-representation
+  section_anchor_id: demographic-representation
+  title: Demographic representation in the energy sector
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 43
+  legacy_component: Page43
+  component_name: EnergyAffordability
+  file_name: EnergyAffordability.jsx
+  translation_prefix: energy_affordability
+  css_prefix: energy-affordability
+  section_anchor_id: energy-affordability
+  title: Energy affordability
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 44
+  legacy_component: Page44
+  component_name: HouseholdEnergyExpenditures
+  file_name: HouseholdEnergyExpenditures.jsx
+  translation_prefix: household_energy_expenditures
+  css_prefix: household-energy-expenditures
+  section_anchor_id: household-energy-expenditures
+  title: Household expenditures on energy
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 45
+  legacy_component: Page45
+  component_name: HouseholdEnergyPricesComparison
+  file_name: HouseholdEnergyPricesComparison.jsx
+  translation_prefix: household_energy_prices_comparison
+  css_prefix: household-energy-prices-comparison
+  section_anchor_id: household-energy-prices-comparison
+  title: Household energy prices per unit, 2024
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 46
+  legacy_component: Page46
+  component_name: EnergyReliantCommunities
+  file_name: EnergyReliantCommunities.jsx
+  translation_prefix: energy_reliant_communities
+  css_prefix: energy-reliant-communities
+  section_anchor_id: energy-reliant-communities
+  title: Energy reliant communities
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 47
+  legacy_component: Page47
+  component_name: EnergyEfficiencyOverview
+  file_name: EnergyEfficiencyOverview.jsx
+  translation_prefix: energy_efficiency_overview
+  css_prefix: energy-efficiency-overview
+  section_anchor_id: energy-efficiency-overview
+  title: Energy efficiency
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 48
+  legacy_component: Page48
+  component_name: EnergyUse
+  file_name: EnergyUse.jsx
+  translation_prefix: energy_use
+  css_prefix: energy-use
+  section_anchor_id: energy-use
+  title: Energy use
+  indicator_keys:
+  - energy_use
+  data_getters:
+  - getEnergyUseData
+  data_status: pipeline_present
+- legacy_page_num: 49
+  legacy_component: Page49
+  component_name: SEUByFuel
+  file_name: SEUByFuel.jsx
+  translation_prefix: seu_by_fuel
+  css_prefix: secondary-energy-by-fuel
+  section_anchor_id: secondary-energy-by-fuel
+  title: Canada's secondary energy use by fuel type
+  indicator_keys:
+  - seu_by_fuel
+  data_getters:
+  - getSEUByFuelData
+  data_status: pipeline_present
+- legacy_page_num: 50
+  legacy_component: Page50
+  component_name: EnergyInDailyLives
+  file_name: EnergyInDailyLives.jsx
+  translation_prefix: energy_in_daily_lives
+  css_prefix: energy-in-daily-lives
+  section_anchor_id: energy-in-daily-lives
+  title: Energy in our daily lives
+  indicator_keys:
+  - energy_use
+  - residential_daily_lives
+  - residential_pie_charts
+  data_getters:
+  - getResidentialSectorOverviewData
+  data_status: pipeline_present
+- legacy_page_num: 51
+  legacy_component: Page51
+  component_name: ResidentialEnergyUse
+  file_name: ResidentialEnergyUse.jsx
+  translation_prefix: residential_daily_lives
+  css_prefix: residential-energy-use
+  section_anchor_id: residential-energy-use
+  title: Residential energy use
+  indicator_keys:
+  - residential_daily_lives
+  - residential_pie_charts
+  data_getters:
+  - getResidentialEnergyUseData
+  data_status: pipeline_present
+- legacy_page_num: 52
+  legacy_component: Page52
+  component_name: CommercialInstitutionalEnergyUse
+  file_name: CommercialInstitutionalEnergyUse.jsx
+  translation_prefix: commercial_institutional
+  css_prefix: commercial-institutional-energy
+  section_anchor_id: commercial-institutional-energy
+  title: Commercial and institutional sector
+  indicator_keys:
+  - commercial_institutional
+  - energy_use
+  data_getters:
+  - getCommercialInstitutionalEnergyUseData
+  data_status: pipeline_present
+- legacy_page_num: 53
+  legacy_component: Page53
+  component_name: IndustrialSectorEnergy
+  file_name: IndustrialSectorEnergy.jsx
+  translation_prefix: industrial_sector_energy
+  css_prefix: industrial-sector-energy
+  section_anchor_id: industrial-sector-energy
+  title: Industrial sector
+  indicator_keys:
+  - energy_use
+  - industrial_sector
+  data_getters:
+  - getIndustrialEnergyUseData
+  data_status: pipeline_present
+- legacy_page_num: 54
+  legacy_component: Page54
+  component_name: EfficiencyTrends
+  file_name: EfficiencyTrends.jsx
+  translation_prefix: efficiency_trends
+  css_prefix: efficiency-trends
+  section_anchor_id: efficiency-trends
+  title: Efficiency trends
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 55
+  legacy_component: Page55
+  component_name: EnergyIntensityIndex
+  file_name: EnergyIntensityIndex.jsx
+  translation_prefix: energy_intensity_index
+  css_prefix: energy-intensity-index
+  section_anchor_id: energy-intensity-index
+  title: Indexed total secondary energy use intensity per capita and per unit of GDP,
+    2000–2022 (2000=100)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 56
+  legacy_component: Page56
+  component_name: EnergyUseFactors
+  file_name: EnergyUseFactors.jsx
+  translation_prefix: energy_use_factors
+  css_prefix: energy-use-factors
+  section_anchor_id: energy-use-factors
+  title: Summary of factors influencing the change in energy use, 2000–2022
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 57
+  legacy_component: Page57
+  component_name: SectorEnergyTrends
+  file_name: SectorEnergyTrends.jsx
+  translation_prefix: sector_energy_trends
+  css_prefix: sector-energy-trends
+  section_anchor_id: sector-energy-trends
+  title: Trends in energy use and intensity by sector, 2000–2022
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 59
+  legacy_component: Page59
+  component_name: CleanPowerLowCarbonOverview
+  file_name: CleanPowerLowCarbonOverview.jsx
+  translation_prefix: clean_power_low_carbon_overview
+  css_prefix: clean-power-low-carbon-overview
+  section_anchor_id: clean-power-low-carbon-overview
+  title: Clean power and low carbon fuels
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 60
+  legacy_component: Page60
+  component_name: CleanTechnologyEconomy
+  file_name: CleanTechnologyEconomy.jsx
+  translation_prefix: clean_technology_economy
+  css_prefix: clean-technology-economy
+  section_anchor_id: clean-technology-economy
+  title: Clean technology and the economy
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 61
+  legacy_component: Page61
+  component_name: EnvironmentalCleanTech
+  file_name: EnvironmentalCleanTech.jsx
+  translation_prefix: environmental_clean_tech
+  css_prefix: environmental-clean-technology
+  section_anchor_id: environmental-clean-technology
+  title: Environmental and clean technology
+  indicator_keys:
+  - environmental_clean_tech
+  data_getters:
+  - getEnvironmentalCleanTechData
+  data_status: pipeline_present
+- legacy_page_num: 62
+  legacy_component: Page62
+  component_name: CleantechCompaniesByRegion
+  file_name: CleantechCompaniesByRegion.jsx
+  translation_prefix: cleantech_companies_geo
+  css_prefix: cleantech-companies
+  section_anchor_id: cleantech-companies
+  title: Cleantech companies
+  indicator_keys:
+  - clean_tech
+  - cleantech_companies_geo
+  data_getters:
+  - getCleantechCompaniesByRegionData
+  data_status: pipeline_present
+- legacy_page_num: 63
+  legacy_component: Page63
+  component_name: CleantechCompaniesByIndustry
+  file_name: CleantechCompaniesByIndustry.jsx
+  translation_prefix: cleantech_companies_industry
+  css_prefix: cleantech-companies-industry
+  section_anchor_id: cleantech-companies-industry
+  title: Canadian cleantech companies by industry
+  indicator_keys:
+  - clean_tech
+  - cleantech_companies_industry
+  data_getters:
+  - getCleantechCompaniesByIndustryData
+  data_status: pipeline_present
+- legacy_page_num: 64
+  legacy_component: Page64
+  component_name: ElectricityInternationalContext
+  file_name: ElectricityInternationalContext.jsx
+  translation_prefix: electricity_international_context
+  css_prefix: electricity-international-context
+  section_anchor_id: electricity-international-context
+  title: Electricity
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 65
+  legacy_component: Page65
+  component_name: ElectricityTrade
+  file_name: ElectricityTrade.jsx
+  translation_prefix: electricity_trade_us
+  css_prefix: electricity-trade-us
+  section_anchor_id: electricity-trade-us
+  title: Trade ()
+  indicator_keys:
+  - electricity_trade_us
+  data_getters:
+  - getElectricityTradeData
+  data_status: pipeline_present
+- legacy_page_num: 66
+  legacy_component: Page66
+  component_name: CanadianElectricityGeneration
+  file_name: CanadianElectricityGeneration.jsx
+  translation_prefix: electricity_generation_canada
+  css_prefix: canadian-electricity-generation
+  section_anchor_id: canadian-electricity-generation
+  title: Canadian supply
+  indicator_keys:
+  - electricity_generation_by_source
+  data_getters:
+  - getCanadianElectricityGenerationData
+  data_status: pipeline_present
+- legacy_page_num: 67
+  legacy_component: Page67
+  component_name: ProvincialElectricityGeneration
+  file_name: ProvincialElectricityGeneration.jsx
+  translation_prefix: electricity_generation_provincial
+  css_prefix: provincial-electricity-generation
+  section_anchor_id: provincial-electricity-generation
+  title: Provincial electricity generation by source
+  indicator_keys:
+  - electricity_generation_by_source
+  data_getters:
+  - getProvincialElectricityGenerationData
+  data_status: pipeline_partial
+- legacy_page_num: 68
+  legacy_component: Page68
+  component_name: ElectricalEnergyUse
+  file_name: ElectricalEnergyUse.jsx
+  translation_prefix: electrical_energy_use
+  css_prefix: electricity-energy-use
+  section_anchor_id: electricity-energy-use
+  title: Electrical energy use
+  indicator_keys:
+  - electrical_energy_use
+  data_getters:
+  - getElectricalEnergyUseData
+  data_status: pipeline_present
+- legacy_page_num: 69
+  legacy_component: Page69
+  component_name: ElectricityPricesMap
+  file_name: ElectricityPricesMap.jsx
+  translation_prefix: electricity_prices
+  css_prefix: electricity-prices
+  section_anchor_id: electricity-prices
+  title: Electricity prices
+  indicator_keys:
+  - electricity_prices
+  data_getters:
+  - getElectricityPricesMapData
+  data_status: pipeline_present
+- legacy_page_num: 70
+  legacy_component: Page70
+  component_name: WindSolarElectricityGrowth
+  file_name: WindSolarElectricityGrowth.jsx
+  translation_prefix: wind_solar_electricity_growth
+  css_prefix: wind-solar-electricity-growth
+  section_anchor_id: wind-solar-electricity-growth
+  title: Wind and solar net electricity generation growth in Canada, – (GWh)
+  indicator_keys:
+  - wind_solar_electricity_growth
+  data_getters:
+  - getWindSolarElectricityGrowthData
+  data_status: pipeline_present
+- legacy_page_num: 71
+  legacy_component: Page71
+  component_name: ElectricityGhgSpotlight
+  file_name: ElectricityGhgSpotlight.jsx
+  translation_prefix: ghg_electricity_spotlight
+  css_prefix: electricity-ghg-spotlight
+  section_anchor_id: electricity-ghg-spotlight
+  title: 'GHG spotlight: Electricity'
+  indicator_keys:
+  - ghg_electricity_spotlight
+  data_getters:
+  - getElectricityGhgSpotlightData
+  data_status: pipeline_present
+- legacy_page_num: 74
+  legacy_component: Page74
+  component_name: RenewableElectricityCapacity
+  file_name: RenewableElectricityCapacity.jsx
+  translation_prefix: renewable_electricity_capacity
+  css_prefix: renewable-electricity-capacity
+  section_anchor_id: renewable-electricity-capacity
+  title: Canadian renewable electricity generating capacity
+  indicator_keys:
+  - renewable_electricity_capacity
+  data_getters:
+  - getRenewableElectricityCapacityData
+  data_status: pipeline_present
+- legacy_page_num: 76
+  legacy_component: Page76
+  component_name: HydroelectricCapacity
+  file_name: HydroelectricCapacity.jsx
+  translation_prefix: major_hydro_facilities
+  css_prefix: major-hydro-facilities
+  section_anchor_id: major-hydro-facilities
+  title: Hydroelectricity capacity in Canada
+  indicator_keys:
+  - major_hydro_facilities
+  - renewable_electricity_capacity
+  data_getters:
+  - getHydroelectricCapacityData
+  data_status: pipeline_present
+- legacy_page_num: 78
+  legacy_component: Page78
+  component_name: SolidBiofuelsProduction
+  file_name: SolidBiofuelsProduction.jsx
+  translation_prefix: solid_biofuels
+  css_prefix: solid-biofuels
+  section_anchor_id: solid-biofuels
+  title: Canadian production of solid biofuels
+  indicator_keys:
+  - solid_biofuels
+  data_getters:
+  - getSolidBiofuelsProductionData
+  data_status: pipeline_present
+- legacy_page_num: 79
+  legacy_component: Page79
+  component_name: WorldWindPower
+  file_name: WorldWindPower.jsx
+  translation_prefix: world_wind_power
+  css_prefix: world-wind-power
+  section_anchor_id: world-wind-power
+  title: Wind power
+  indicator_keys:
+  - world_wind_power
+  data_getters:
+  - getWorldWindPowerData
+  data_status: pipeline_present
+- legacy_page_num: 80
+  legacy_component: Page80
+  component_name: CanadianWindPower
+  file_name: CanadianWindPower.jsx
+  translation_prefix: wind_power_canada
+  css_prefix: wind-power-canada
+  section_anchor_id: wind-power-canada
+  title: Wind power in Canada
+  indicator_keys:
+  - wind_power_canada
+  data_getters:
+  - getCanadianWindPowerData
+  data_status: pipeline_present
+- legacy_page_num: 81
+  legacy_component: Page81
+  component_name: WindProjectsMap
+  file_name: WindProjectsMap.jsx
+  translation_prefix: largest_wind_projects
+  css_prefix: wind-capacity
+  section_anchor_id: wind-capacity
+  title: Wind_capacity_by_province
+  indicator_keys:
+  - largest_wind_projects
+  - wind_capacity_by_province
+  data_getters:
+  - getWindProjectsMapData
+  data_status: pipeline_present
+- legacy_page_num: 82
+  legacy_component: Page82
+  component_name: WorldSolarPower
+  file_name: WorldSolarPower.jsx
+  translation_prefix: world_solar_pv
+  css_prefix: world-solar-pv
+  section_anchor_id: world-solar-pv
+  title: Solar photovoltaic
+  indicator_keys:
+  - world_solar_pv
+  data_getters:
+  - getWorldSolarPowerData
+  data_status: pipeline_present
+- legacy_page_num: 84
+  legacy_component: Page84
+  component_name: LargestSolarProjects
+  file_name: LargestSolarProjects.jsx
+  translation_prefix: largest_solar_projects
+  css_prefix: largest-solar-projects
+  section_anchor_id: largest-solar-projects
+  title: Largest solar projects
+  indicator_keys:
+  - largest_solar_projects
+  data_getters:
+  - getLargestSolarProjectsData
+  data_status: pipeline_missing
+- legacy_page_num: 85
+  legacy_component: Page85
+  component_name: UraniumInternational
+  file_name: UraniumInternational.jsx
+  translation_prefix: uranium_international
+  css_prefix: uranium-international
+  section_anchor_id: uranium-international
+  title: Uranium
+  indicator_keys:
+  - uranium_international
+  data_getters:
+  - getUraniumInternationalData
+  data_status: pipeline_present
+- legacy_page_num: 86
+  legacy_component: Page86
+  component_name: NuclearPower
+  file_name: NuclearPower.jsx
+  translation_prefix: nuclear_power
+  css_prefix: nuclear-power
+  section_anchor_id: nuclear-power
+  title: Nuclear power
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 87
+  legacy_component: Page87
+  component_name: CanadianUraniumSupplyDemand
+  file_name: CanadianUraniumSupplyDemand.jsx
+  translation_prefix: canadian_uranium_supply_demand
+  css_prefix: canadian-uranium-supply-demand
+  section_anchor_id: canadian-uranium-supply-demand
+  title: Canadian supply and demand
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 89
+  legacy_component: Page89
+  component_name: CanduNuclearReactors
+  file_name: CanduNuclearReactors.jsx
+  translation_prefix: candu_nuclear_reactors
+  css_prefix: candu-nuclear-reactors
+  section_anchor_id: candu-nuclear-reactors
+  title: CANDU nuclear reactors
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 90
+  legacy_component: Page90
+  component_name: NuclearPowerPlantsUraniumPrices
+  file_name: NuclearPowerPlantsUraniumPrices.jsx
+  translation_prefix: nuclear_power_plants_uranium_prices
+  css_prefix: nuclear-power-plants-uranium-prices
+  section_anchor_id: nuclear-power-plants-uranium-prices
+  title: Uranium \u2013 prices
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 91
+  legacy_component: Page91
+  component_name: BiofuelsTransportation
+  file_name: BiofuelsTransportation.jsx
+  translation_prefix: biofuels_transportation
+  css_prefix: biofuels-transportation
+  section_anchor_id: biofuels-transportation
+  title: Biofuels and transportation
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 93
+  legacy_component: Page93
+  component_name: CanadianBiofuelProduction
+  file_name: CanadianBiofuelProduction.jsx
+  translation_prefix: canadian_biofuel_production
+  css_prefix: canadian-biofuel-production
+  section_anchor_id: canadian-biofuel-production
+  title: Canadian biofuel production
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 95
+  legacy_component: Page95
+  component_name: TransportationFuelMix
+  file_name: TransportationFuelMix.jsx
+  translation_prefix: transportation_fuel_mix
+  css_prefix: transportation-fuel-mix
+  section_anchor_id: transportation-fuel-mix
+  title: Fuel mix of the transportation sector
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 96
+  legacy_component: Page96
+  component_name: EvSalesRegistrations
+  file_name: EvSalesRegistrations.jsx
+  translation_prefix: ev_sales
+  css_prefix: ev-sales
+  section_anchor_id: ev-sales
+  title: Plug-in electric vehicle registrations portion of total vehicle sales, –
+  indicator_keys:
+  - ev_sales
+  data_getters:
+  - getEvSalesRegistrationsData
+  data_status: pipeline_present
+- legacy_page_num: 97
+  legacy_component: Page97
+  component_name: TransportationGhgSpotlight
+  file_name: TransportationGhgSpotlight.jsx
+  translation_prefix: ghg_transportation_spotlight
+  css_prefix: transportation-ghg-spotlight
+  section_anchor_id: transportation-ghg-spotlight
+  title: 'GHG spotlight: Transportation'
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 98
+  legacy_component: Page98
+  component_name: ElectricVehicleCharging
+  file_name: ElectricVehicleCharging.jsx
+  translation_prefix: electric_vehicle_charging
+  css_prefix: electric-vehicle-charging
+  section_anchor_id: electric-vehicle-charging
+  title: Electric vehicle charging
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 99
+  legacy_component: Page99
+  component_name: PublicEvChargingStations
+  file_name: PublicEvChargingStations.jsx
+  translation_prefix: public_ev_charging_stations
+  css_prefix: public-ev-charging-stations
+  section_anchor_id: public-ev-charging-stations
+  title: Types_of_EV_chargers_at_public_charging_stations_in_Canada_
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 102
+  legacy_component: Page102
+  component_name: HydrogenIndustry
+  file_name: HydrogenIndustry.jsx
+  translation_prefix: hydrogen_industry
+  css_prefix: hydrogen-industry
+  section_anchor_id: hydrogen-industry
+  title: Hydrogen industry in Canada
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 103
+  legacy_component: Page103
+  component_name: OilGasCoalOverview
+  file_name: OilGasCoalOverview.jsx
+  translation_prefix: oil_gas_coal_overview
+  css_prefix: oil-gas-coal-overview
+  section_anchor_id: oil-gas-coal-overview
+  title: Oil, natural gas and coal
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 105
+  legacy_component: Page105
+  component_name: PetroleumEmploymentByRegion
+  file_name: PetroleumEmploymentByRegion.jsx
+  translation_prefix: petroleum_sector_employment
+  css_prefix: petroleum-employment-by-region
+  section_anchor_id: petroleum-employment-by-region
+  title: Share of employment by region
+  indicator_keys:
+  - petroleum_sector_employment
+  data_getters:
+  - getPetroleumEmploymentByRegionData
+  data_status: pipeline_present
+- legacy_page_num: 106
+  legacy_component: Page106
+  component_name: PetroleumEmployment
+  file_name: PetroleumEmployment.jsx
+  translation_prefix: petroleum_employment
+  css_prefix: petroleum-employment
+  section_anchor_id: petroleum-employment
+  title: Petroleum employment
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 107
+  legacy_component: Page107
+  component_name: PetroleumGdp
+  file_name: PetroleumGdp.jsx
+  translation_prefix: petroleum_gdp
+  css_prefix: petroleum-gdp
+  section_anchor_id: petroleum-gdp
+  title: PETROLEUM GDP (Billions of Canadian Dollars)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 108
+  legacy_component: Page108
+  component_name: CrudeOilInternational
+  file_name: CrudeOilInternational.jsx
+  translation_prefix: crude_oil_international
+  css_prefix: crude-oil-international
+  section_anchor_id: crude-oil-international
+  title: Crude oil
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 109
+  legacy_component: Page109
+  component_name: WorldProvedCrudeReserves
+  file_name: WorldProvedCrudeReserves.jsx
+  translation_prefix: world_crude_reserves
+  css_prefix: world-crude-oil-proved-reserves
+  section_anchor_id: world-crude-oil-proved-reserves
+  title: World proved reserves
+  indicator_keys:
+  - world_proved_crude_reserves
+  data_getters:
+  - getWorldProvedCrudeReservesData
+  data_status: pipeline_present
+- legacy_page_num: 110
+  legacy_component: Page110
+  component_name: CanadianCrudeReserves
+  file_name: CanadianCrudeReserves.jsx
+  translation_prefix: petroleum_reserves
+  css_prefix: canadian-crude-reserves
+  section_anchor_id: canadian-crude-reserves
+  title: Canadian resources
+  indicator_keys:
+  - petroleum_reserves
+  - western_canada_oil_wells
+  data_getters:
+  - getCanadianCrudeReservesData
+  data_status: pipeline_present
+- legacy_page_num: 111
+  legacy_component: Page111
+  component_name: CanadianCrudeProduction
+  file_name: CanadianCrudeProduction.jsx
+  translation_prefix: canadian_production
+  css_prefix: canadian-crude-production
+  section_anchor_id: canadian-crude-production
+  title: Canadian production
+  indicator_keys:
+  - canadian_production
+  data_getters:
+  - getCanadianCrudeProductionData
+  data_status: pipeline_present
+- legacy_page_num: 112
+  legacy_component: Page112
+  component_name: CanadianSupplyDemand
+  file_name: CanadianSupplyDemand.jsx
+  translation_prefix: canadian_supply_demand
+  css_prefix: canadian-supply-demand
+  section_anchor_id: canadian-supply-demand
+  title: Canadian supply and demand
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 113
+  legacy_component: Page113
+  component_name: OilSandsProduction
+  file_name: OilSandsProduction.jsx
+  translation_prefix: oil_sands
+  css_prefix: oil-sands
+  section_anchor_id: oil-sands
+  title: Oil sands
+  indicator_keys:
+  - oil_sands
+  data_getters:
+  - getOilSandsProductionData
+  data_status: pipeline_present
+- legacy_page_num: 117
+  legacy_component: Page117
+  component_name: CrudeOilPrices
+  file_name: CrudeOilPrices.jsx
+  translation_prefix: crude_prices
+  css_prefix: crude-oil-prices
+  section_anchor_id: crude-oil-prices
+  title: Prices
+  indicator_keys:
+  - crude_prices
+  data_getters:
+  - getCrudeOilPricesData
+  data_status: pipeline_present
+- legacy_page_num: 119
+  legacy_component: Page119
+  component_name: OilByRail
+  file_name: OilByRail.jsx
+  translation_prefix: oil_by_rail
+  css_prefix: oil-by-rail
+  section_anchor_id: oil-by-rail
+  title: Oil by rail
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 122
+  legacy_component: Page122
+  component_name: NaturalGasInternational
+  file_name: NaturalGasInternational.jsx
+  translation_prefix: natural_gas_international
+  css_prefix: natural-gas-international
+  section_anchor_id: natural-gas-international
+  title: Natural gas
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 123
+  legacy_component: Page123
+  component_name: WorldProvedGasReserves
+  file_name: WorldProvedGasReserves.jsx
+  translation_prefix: world_gas_reserves
+  css_prefix: world-natural-gas-proved-reserves
+  section_anchor_id: world-natural-gas-proved-reserves
+  title: World proved reserves
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 126
+  legacy_component: Page126
+  component_name: WesternCanadaGasWellCompletions
+  file_name: WesternCanadaGasWellCompletions.jsx
+  translation_prefix: western_canada_gas_well_completions
+  css_prefix: western-canada-gas-well-completions
+  section_anchor_id: western-canada-gas-well-completions
+  title: Count and average depth of natural gas wells completed in Western Canada
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 132
+  legacy_component: Page132
+  component_name: OilGasGhgSpotlight
+  file_name: OilGasGhgSpotlight.jsx
+  translation_prefix: ghg_oilgas_spotlight
+  css_prefix: ghg-spotlight-oil-gas
+  section_anchor_id: ghg-spotlight-oil-gas
+  title: 'GHG spotlight: Oil and gas'
+  indicator_keys:
+  - ghg_emissions
+  data_getters:
+  - getOilGasGhgSpotlightData
+  data_status: pipeline_partial
+- legacy_page_num: 135
+  legacy_component: Page135
+  component_name: RefinedPetroleumProducts
+  file_name: RefinedPetroleumProducts.jsx
+  translation_prefix: refined_petroleum_products
+  css_prefix: refined-petroleum-products
+  section_anchor_id: refined-petroleum-products
+  title: Refined petroleum products (RPPs)
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
+- legacy_page_num: 136
+  legacy_component: Page136
+  component_name: RppSupplyDemand
+  file_name: RppSupplyDemand.jsx
+  translation_prefix: rpp_refinery_input
+  css_prefix: rpp-supply-demand
+  section_anchor_id: rpp-supply-demand
+  title: Supply and demand* ()
+  indicator_keys:
+  - rpp_refinery_input
+  - rpp_supply_demand
+  data_getters:
+  - getRppSupplyDemandData
+  data_status: pipeline_present
+- legacy_page_num: 138
+  legacy_component: Page138
+  component_name: RetailGasolinePrices
+  file_name: RetailGasolinePrices.jsx
+  translation_prefix: kal_gas_prices
+  css_prefix: retail-gasoline-prices
+  section_anchor_id: retail-gasoline-prices
+  title: Retail prices
+  indicator_keys:
+  - kal_gas_prices
+  data_getters:
+  - getRetailGasolinePricesData
+  data_status: pipeline_present
+- legacy_page_num: 139
+  legacy_component: Page139
+  component_name: RefineryCapacity
+  file_name: RefineryCapacity.jsx
+  translation_prefix: osm_refin_cap
+  css_prefix: refinery-capacity
+  section_anchor_id: refinery-capacity
+  title: Refinery capacity
+  indicator_keys:
+  - osm_refin_cap
+  data_getters:
+  - getRefineryCapacityData
+  data_status: pipeline_present
+- legacy_page_num: 140
+  legacy_component: Page140
+  component_name: CoalInternational
+  file_name: CoalInternational.jsx
+  translation_prefix: coal_international
+  css_prefix: coal-international
+  section_anchor_id: coal-international
+  title: Coal
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded

@@ -32,9 +32,9 @@ python main.py export
 | **31** | Yes | `getInternationalInvestmentData()` | `international_investment` | `process_international_investment()` · `international_investment.py` | `_statcan.py` |
 | **32** | Yes | `getForeignControlData()` | `foreign_control` | `process_foreign_control()` · `foreign_control.py` | `_statcan.py` |
 | **33** | Yes | `getCEAData()` | `canadian_energy_assets`* | Section 1 `cea.py`* | Section 1 README |
-| **34** | No | — | — | — | Static layout — `src/pages/Page34.jsx` |
-| **35** | No | — | — | — | Hardcoded / static — `src/pages/Page35.jsx` |
-| **36** | No | — | — | — | Hardcoded / static — `src/pages/Page36.jsx` |
+| **34** | No | — | — | — | Static layout — `src/pages/ResearchDevelopmentDemonstration.jsx` |
+| **35** | No | — | — | — | Hardcoded / static — `src/pages/PublicEnergyRddExpenditures.jsx` |
+| **36** | No | — | — | — | Hardcoded / static — `src/pages/EnergyRddByTechnology.jsx` |
 | **37** | Yes | `getEnvironmentalProtectionData()` | `environmental_protection` | `process_environmental_protection()` · `environmental_protection.py` | `_statcan.py` → `get_environmental_protection_url()` |
 
 \*Source owned by **Section 1** — run EEDAS update / EFB transform with `--source economic_contributions` or `--source canadian_energy_assets`.
