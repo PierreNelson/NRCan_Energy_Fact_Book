@@ -10,6 +10,8 @@ import CanadianCrudeReserves from '../pages/CanadianCrudeReserves';
 import CanadianCrudeProduction from '../pages/CanadianCrudeProduction';
 import CanadianSupplyDemand from '../pages/CanadianSupplyDemand';
 import OilSandsProduction from '../pages/OilSandsProduction';
+import OilSandsMiningMethod from '../pages/OilSandsMiningMethod';
+import OilSandsInSituMethod from '../pages/OilSandsInSituMethod';
 import CrudeOilPrices from '../pages/CrudeOilPrices';
 import OilByRail from '../pages/OilByRail';
 import NaturalGasInternational from '../pages/NaturalGasInternational';
@@ -17,6 +19,8 @@ import WorldProvedGasReserves from '../pages/WorldProvedGasReserves';
 import WesternCanadaGasWellCompletions from '../pages/WesternCanadaGasWellCompletions';
 import OilGasGhgSpotlight from '../pages/OilGasGhgSpotlight';
 import RefinedPetroleumProducts from '../pages/RefinedPetroleumProducts';
+import NaturalGasLiquidsEnergyUse from '../pages/NaturalGasLiquidsEnergyUse';
+import NaturalGasEnergyUse from '../pages/NaturalGasEnergyUse';
 import RppSupplyDemand from '../pages/RppSupplyDemand';
 import RetailGasolinePrices from '../pages/RetailGasolinePrices';
 import RefineryCapacity from '../pages/RefineryCapacity';
@@ -79,6 +83,12 @@ const SectionSix = () => {
             <div id="oil-sands" className="stacked-page-wrapper">
                 <OilSandsProduction />
             </div>
+            <div id="oil-sands-mining" className="stacked-page-wrapper">
+                <OilSandsMiningMethod />
+            </div>
+            <div id="oil-sands-in-situ" className="stacked-page-wrapper">
+                <OilSandsInSituMethod />
+            </div>
             <div id="crude-oil-prices" className="stacked-page-wrapper">
                 <CrudeOilPrices />
             </div>
@@ -99,6 +109,12 @@ const SectionSix = () => {
             </div>
             <div id="refined-petroleum-products" className="stacked-page-wrapper">
                 <RefinedPetroleumProducts />
+            </div>
+            <div id="natural-gas-energy-use" className="stacked-page-wrapper">
+                <NaturalGasEnergyUse />
+            </div>
+            <div id="natural-gas-liquids-energy-use" className="stacked-page-wrapper">
+                <NaturalGasLiquidsEnergyUse />
             </div>
             <div id="rpp-supply-demand" className="stacked-page-wrapper">
                 <RppSupplyDemand />

@@ -33,6 +33,7 @@ import EvSalesRegistrations from '../pages/EvSalesRegistrations';
 import TransportationGhgSpotlight from '../pages/TransportationGhgSpotlight';
 import ElectricVehicleCharging from '../pages/ElectricVehicleCharging';
 import PublicEvChargingStations from '../pages/PublicEvChargingStations';
+import Hydrogen from '../pages/Hydrogen';
 import HydrogenIndustry from '../pages/HydrogenIndustry';
 
 const SectionFive = () => {
@@ -166,6 +167,9 @@ const SectionFive = () => {
             </div>
             <div id="public-ev-charging-stations" className="stacked-page-wrapper">
                 <PublicEvChargingStations />
+            </div>
+            <div id="hydrogen" className="stacked-page-wrapper">
+                <Hydrogen />
             </div>
             <div id="hydrogen-industry" className="stacked-page-wrapper">
                 <HydrogenIndustry />

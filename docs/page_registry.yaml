@@ -1013,6 +1013,17 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 100
+  legacy_component: Page100
+  component_name: Hydrogen
+  file_name: Hydrogen.jsx
+  translation_prefix: hydrogen
+  css_prefix: hydrogen
+  section_anchor_id: hydrogen
+  title: Hydrogen
+  indicator_keys: []
+  data_getters: []
+  data_status: no_data
 - legacy_page_num: 102
   legacy_component: Page102
   component_name: HydrogenIndustry
@@ -1145,6 +1156,28 @@ pages:
   data_getters:
   - getOilSandsProductionData
   data_status: pipeline_present
+- legacy_page_num: 114
+  legacy_component: Page114
+  component_name: OilSandsMiningMethod
+  file_name: OilSandsMiningMethod.jsx
+  translation_prefix: oil_sands_mining
+  css_prefix: oil-sands-mining
+  section_anchor_id: oil-sands-mining
+  title: Mining method
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 115
+  legacy_component: Page115
+  component_name: OilSandsInSituMethod
+  file_name: OilSandsInSituMethod.jsx
+  translation_prefix: oil_sands_in_situ
+  css_prefix: oil-sands-in-situ
+  section_anchor_id: oil-sands-in-situ
+  title: In situ method
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 117
   legacy_component: Page117
   component_name: CrudeOilPrices
@@ -1215,6 +1248,28 @@ pages:
   data_getters:
   - getOilGasGhgSpotlightData
   data_status: pipeline_partial
+- legacy_page_num: 131
+  legacy_component: Page131
+  component_name: NaturalGasEnergyUse
+  file_name: NaturalGasEnergyUse.jsx
+  translation_prefix: natural_gas_energy_use
+  css_prefix: natural-gas-energy-use
+  section_anchor_id: natural-gas-energy-use
+  title: Natural gas energy use
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 134
+  legacy_component: Page134
+  component_name: NaturalGasLiquidsEnergyUse
+  file_name: NaturalGasLiquidsEnergyUse.jsx
+  translation_prefix: natural_gas_liquids_energy_use
+  css_prefix: natural-gas-liquids-energy-use
+  section_anchor_id: natural-gas-liquids-energy-use
+  title: Natural gas liquids energy use
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 135
   legacy_component: Page135
   component_name: RefinedPetroleumProducts
@@ -1266,14 +1321,25 @@ pages:
   data_getters:
   - getRefineryCapacityData
   data_status: pipeline_present
-- legacy_page_num: 140
-  legacy_component: Page140
+- legacy_page_num: 142
+  legacy_component: Page142
   component_name: CoalInternational
   file_name: CoalInternational.jsx
   translation_prefix: coal_international
   css_prefix: coal-international
   section_anchor_id: coal-international
   title: Coal
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 143
+  legacy_component: Page143
+  component_name: CanadianCoalSupplyDemand
+  file_name: CanadianCoalSupplyDemand.jsx
+  translation_prefix: canadian_coal_supply_demand
+  css_prefix: canadian-coal-supply-demand
+  section_anchor_id: canadian-coal-supply-demand
+  title: Canadian coal supply and demand
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded

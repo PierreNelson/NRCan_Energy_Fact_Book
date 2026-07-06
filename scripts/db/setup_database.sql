@@ -1,6 +1,6 @@
 -- ============================================================================
 -- NRCan Energy Factbook Database Setup Script
---
+-- 
 -- Creates and updates tables for the Energy Factbook data pipeline.
 -- Run while connected to your target database (name comes from config / .env).
 --
@@ -38,10 +38,10 @@ BEGIN
         created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
         updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
     );
-
+    
     CREATE INDEX IX_nrcan_fb_data_sources_section ON nrcan_fb_data_sources(section_id);
     CREATE INDEX IX_nrcan_fb_data_sources_enabled ON nrcan_fb_data_sources(is_enabled);
-
+    
     PRINT 'Table nrcan_fb_data_sources created.';
 END
 GO
@@ -59,10 +59,10 @@ BEGIN
         completed_at DATETIME2 NULL,
         duration_seconds AS DATEDIFF(SECOND, started_at, completed_at)
     );
-
+    
     CREATE INDEX IX_nrcan_fb_run_history_source ON nrcan_fb_run_history(source_key);
     CREATE INDEX IX_nrcan_fb_run_history_started ON nrcan_fb_run_history(started_at DESC);
-
+    
     PRINT 'Table nrcan_fb_run_history created.';
 END
 GO
@@ -1653,7 +1653,7 @@ AS
 BEGIN
     INSERT INTO nrcan_fb_run_history (source_key, run_type, status)
     VALUES (@source_key, @run_type, 'started');
-
+    
     SET @run_id = SCOPE_IDENTITY();
 END
 GO

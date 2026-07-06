@@ -58,6 +58,8 @@ HARDCODED_PATTERNS = [
     r"\bbuild\w+Data\s*=\s*\(",
     r"\bbuild\w+Data\s*\(\s*\)\s*=>",
     r"\bINFOGRAPHIC_DATA\b",
+    r"export\w+InfographicPng",
+    r"from\s+['\"].*_bg(_fr)?\.svg['\"]",
 ]
 
 HARDCODED_OVERRIDES: set[int] = {
@@ -608,7 +610,14 @@ def classify_page(
 
 
 def build_inventory() -> list[PageRow]:
-    from page_registry import build_registry, derive_translation_prefix, parse_section_page_anchors
+    from page_registry import (
+        REGISTRY_YAML,
+        build_registry,
+        derive_translation_prefix,
+        load_registry_yaml,
+        page_to_component,
+        parse_section_page_anchors,
+    )
 
     order = parse_section_page_order()
     prefix_titles, section_titles, prefix_title_keys = parse_translations_en()
@@ -620,6 +629,10 @@ def build_inventory() -> list[PageRow]:
     getter_defs = parse_data_loader_getters()
     csv_vectors = load_csv_vectors()
 
+    yaml_by_num: dict[int, object] = {}
+    if REGISTRY_YAML.exists() and yaml is not None:
+        yaml_by_num = {e.legacy_page_num: e for e in load_registry_yaml(REGISTRY_YAML)}
+
     section_counters: dict[int, int] = {}
     rows: list[PageRow] = []
 
@@ -630,11 +643,23 @@ def build_inventory() -> list[PageRow]:
             page_info, getter_defs, csv_vectors, prefix_to_indicator, efb, eedas_tables
         )
 
-        title_prefix = derive_translation_prefix(
-            page_num, f"Page{page_num}", indicators, anchors.get(page_num, "")
+        registry_entry = yaml_by_num.get(page_num)
+        if registry_entry and registry_entry.data_status:
+            status = registry_entry.data_status
+            if status == "static_hardcoded" and not notes:
+                notes = "Uses hardcoded or placeholder data in page file"
+            elif status == "no_data":
+                notes = ""
+
+        title_prefix = (
+            registry_entry.translation_prefix
+            if registry_entry
+            else derive_translation_prefix(
+                page_num, page_to_component(page_num), indicators, anchors.get(page_num, "")
+            )
         )
         title = lookup_prefix_title(title_prefix, prefix_titles, prefix_title_keys) or (
-            f"(no title key for {title_prefix}_title)"
+            registry_entry.title if registry_entry else f"(no title key for {title_prefix}_title)"
         )
         rows.append(
             PageRow(
@@ -642,11 +667,11 @@ def build_inventory() -> list[PageRow]:
                 section_title=section_titles.get(section_num, f"Section {section_num}"),
                 page_order_in_section=section_counters[section_num],
                 page_num=page_num,
-                page_component=f"Page{page_num}",
-                component_name="",
-                translation_prefix="",
+                page_component=page_to_component(page_num),
+                component_name=page_to_component(page_num),
+                translation_prefix=title_prefix,
                 css_prefix="",
-                section_anchor_id="",
+                section_anchor_id=anchors.get(page_num, ""),
                 title=title,
                 data_status=status,
                 data_getters=data_getters,
@@ -663,11 +688,21 @@ def build_inventory() -> list[PageRow]:
     registry_by_num = {e.legacy_page_num: e for e in build_registry(rows)}
     for row in rows:
         entry = registry_by_num[row.page_num]
-        row.component_name = entry.component_name
-        row.translation_prefix = entry.translation_prefix
-        row.css_prefix = entry.css_prefix
-        row.section_anchor_id = entry.section_anchor_id
-        row.page_component = entry.component_name
+        yaml_entry = yaml_by_num.get(row.page_num)
+        if yaml_entry:
+            row.component_name = yaml_entry.component_name
+            row.page_component = yaml_entry.component_name
+            row.translation_prefix = yaml_entry.translation_prefix
+            row.css_prefix = yaml_entry.css_prefix
+            row.section_anchor_id = yaml_entry.section_anchor_id
+            if yaml_entry.title:
+                row.title = yaml_entry.title
+        else:
+            row.component_name = entry.component_name
+            row.page_component = entry.component_name
+            row.translation_prefix = entry.translation_prefix
+            row.css_prefix = entry.css_prefix
+            row.section_anchor_id = entry.section_anchor_id
     return rows
 
 
