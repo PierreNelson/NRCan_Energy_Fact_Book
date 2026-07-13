@@ -13,6 +13,7 @@ import OilSandsProduction from '../pages/OilSandsProduction';
 import OilSandsMiningMethod from '../pages/OilSandsMiningMethod';
 import OilSandsInSituMethod from '../pages/OilSandsInSituMethod';
 import CrudeOilPrices from '../pages/CrudeOilPrices';
+import MajorCerRegulatedOilPipelines from '../pages/MajorCerRegulatedOilPipelines';
 import OilByRail from '../pages/OilByRail';
 import NaturalGasInternational from '../pages/NaturalGasInternational';
 import WorldProvedGasReserves from '../pages/WorldProvedGasReserves';
@@ -91,6 +92,9 @@ const SectionSix = () => {
             </div>
             <div id="crude-oil-prices" className="stacked-page-wrapper">
                 <CrudeOilPrices />
+            </div>
+            <div id="major-cer-regulated-oil-pipelines" className="stacked-page-wrapper">
+                <MajorCerRegulatedOilPipelines />
             </div>
             <div id="oil-by-rail" className="stacked-page-wrapper">
                 <OilByRail />

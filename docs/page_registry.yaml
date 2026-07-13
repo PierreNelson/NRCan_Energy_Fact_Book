@@ -56,6 +56,17 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 6
+  legacy_component: Page6
+  component_name: CanadaEnergySupply
+  file_name: CanadaEnergySupply.jsx
+  translation_prefix: canada_energy_supply
+  css_prefix: canada-energy-supply
+  section_anchor_id: canada-energy-supply
+  title: Canada's energy supply
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 7
   legacy_component: Page7
   component_name: NominalGdp
@@ -115,6 +126,28 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 12
+  legacy_component: Page12
+  component_name: EnergyTrade
+  file_name: EnergyTrade.jsx
+  translation_prefix: energy_trade
+  css_prefix: energy-trade
+  section_anchor_id: energy-trade
+  title: Energy trade (2025)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 13
+  legacy_component: Page13
+  component_name: EnergyImports
+  file_name: EnergyImports.jsx
+  translation_prefix: energy_imports
+  css_prefix: energy-imports
+  section_anchor_id: energy-imports
+  title: Energy imports (2025)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 14
   legacy_component: Page14
   component_name: CanadianEnergyExportsUsStates
@@ -156,6 +189,28 @@ pages:
   css_prefix: corporate-income-taxes
   section_anchor_id: corporate-income-taxes
   title: Corporate income taxes paid by energy industries (federal and provincial)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 18
+  legacy_component: Page18
+  component_name: EnergyAndGhgEmissions
+  file_name: EnergyAndGhgEmissions.jsx
+  translation_prefix: energy_and_ghg_emissions
+  css_prefix: energy-and-ghg-emissions
+  section_anchor_id: energy-and-ghg-emissions
+  title: Energy and GHG emissions
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 19
+  legacy_component: Page19
+  component_name: GhgEmissionsIntensityIndex
+  file_name: GhgEmissionsIntensityIndex.jsx
+  translation_prefix: ghg_emissions_intensity_index
+  css_prefix: ghg-emissions-intensity-index
+  section_anchor_id: ghg-emissions-intensity-index
+  title: Indexed GHG emissions intensity
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
@@ -771,6 +826,28 @@ pages:
   data_getters:
   - getElectricityGhgSpotlightData
   data_status: pipeline_present
+- legacy_page_num: 72
+  legacy_component: Page72
+  component_name: RenewableEnergyInternational
+  file_name: RenewableEnergyInternational.jsx
+  translation_prefix: renewable_energy_international
+  css_prefix: renewable-energy-international
+  section_anchor_id: renewable-energy-international
+  title: Renewable energy
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 73
+  legacy_component: Page73
+  component_name: CanadianRenewableEnergyProduction
+  file_name: CanadianRenewableEnergyProduction.jsx
+  translation_prefix: canadian_renewable_energy_production
+  css_prefix: canadian-renewable-energy-production
+  section_anchor_id: canadian-renewable-energy-production
+  title: Canadian renewable energy production
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 74
   legacy_component: Page74
   component_name: RenewableElectricityCapacity
@@ -784,6 +861,17 @@ pages:
   data_getters:
   - getRenewableElectricityCapacityData
   data_status: pipeline_present
+- legacy_page_num: 75
+  legacy_component: Page75
+  component_name: Hydroelectricity
+  file_name: Hydroelectricity.jsx
+  translation_prefix: hydroelectricity
+  css_prefix: hydroelectricity
+  section_anchor_id: hydroelectricity
+  title: Hydroelectricity
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 76
   legacy_component: Page76
   component_name: HydroelectricCapacity
@@ -798,6 +886,17 @@ pages:
   data_getters:
   - getHydroelectricCapacityData
   data_status: pipeline_present
+- legacy_page_num: 77
+  legacy_component: Page77
+  component_name: Biomass
+  file_name: Biomass.jsx
+  translation_prefix: biomass
+  css_prefix: biomass
+  section_anchor_id: biomass
+  title: Biomass
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 78
   legacy_component: Page78
   component_name: SolidBiofuelsProduction
@@ -864,6 +963,18 @@ pages:
   data_getters:
   - getWorldSolarPowerData
   data_status: pipeline_present
+- legacy_page_num: 83
+  legacy_component: Page83
+  component_name: SolarPvInCanada
+  file_name: SolarPvInCanada.jsx
+  translation_prefix: solar_pv_canada
+  css_prefix: solar-pv-canada
+  section_anchor_id: solar-pv-canada
+  title: Solar PV in Canada
+  indicator_keys:
+  - solar_pv_canada
+  data_getters: []
+  data_status: hardcoded
 - legacy_page_num: 84
   legacy_component: Page84
   component_name: LargestSolarProjects
@@ -912,6 +1023,18 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 88
+  legacy_component: Page88
+  component_name: NuclearFuelCycle
+  file_name: NuclearFuelCycle.jsx
+  translation_prefix: nuclear_fuel_cycle
+  css_prefix: nuclear-fuel-cycle
+  section_anchor_id: nuclear-fuel-cycle
+  title: Nuclear fuel cycle
+  indicator_keys:
+  - nuclear_fuel_cycle
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 89
   legacy_component: Page89
   component_name: CanduNuclearReactors
@@ -945,6 +1068,17 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 92
+  legacy_component: Page92
+  component_name: WorldBiofuelsProduction
+  file_name: WorldBiofuelsProduction.jsx
+  translation_prefix: world_biofuels_production
+  css_prefix: world-biofuels-production
+  section_anchor_id: world-biofuels-production
+  title: World biofuels production
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 93
   legacy_component: Page93
   component_name: CanadianBiofuelProduction
@@ -953,6 +1087,17 @@ pages:
   css_prefix: canadian-biofuel-production
   section_anchor_id: canadian-biofuel-production
   title: Canadian biofuel production
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 94
+  legacy_component: Page94
+  component_name: BiofuelProductionCapacity
+  file_name: BiofuelProductionCapacity.jsx
+  translation_prefix: biofuel_production_capacity
+  css_prefix: biofuel-production-capacity
+  section_anchor_id: biofuel-production-capacity
+  title: Biofuel production capacity
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
@@ -1024,6 +1169,17 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: no_data
+- legacy_page_num: 101
+  legacy_component: Page101
+  component_name: GlobalHydrogenProductionDemand
+  file_name: GlobalHydrogenProductionDemand.jsx
+  translation_prefix: global_hydrogen_production_demand
+  css_prefix: global-hydrogen-production-demand
+  section_anchor_id: global-hydrogen-production-demand
+  title: Global hydrogen production and demand
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 102
   legacy_component: Page102
   component_name: HydrogenIndustry
@@ -1191,6 +1347,17 @@ pages:
   data_getters:
   - getCrudeOilPricesData
   data_status: pipeline_present
+- legacy_page_num: 118
+  legacy_component: Page118
+  component_name: MajorCerRegulatedOilPipelines
+  file_name: MajorCerRegulatedOilPipelines.jsx
+  translation_prefix: major_cer_regulated_oil_pipelines
+  css_prefix: major-cer-regulated-oil-pipelines
+  section_anchor_id: major-cer-regulated-oil-pipelines
+  title: Major CER regulated oil pipelines
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 119
   legacy_component: Page119
   component_name: OilByRail

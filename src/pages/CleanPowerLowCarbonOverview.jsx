@@ -146,7 +146,11 @@ const CleanPowerLowCarbonOverview = () => {
                                 {getText('clean_power_low_carbon_overview_item1', lang)}
                             </Link>
                         </li>
-                        <li className="clean-power-low-carbon-overview-list-item">{getText('clean_power_low_carbon_overview_item2', lang)}</li>
+                        <li className="clean-power-low-carbon-overview-list-item">
+                            <Link to="/section-5#renewable-energy-international" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                                {getText('clean_power_low_carbon_overview_item2', lang)}
+                            </Link>
+                        </li>
                         <li className="clean-power-low-carbon-overview-list-item">
                             <Link to="/section-5#biofuels-transportation" style={{ color: 'inherit', textDecoration: 'underline' }}>
                                 {getText('clean_power_low_carbon_overview_item3', lang)}

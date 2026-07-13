@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1033" height="220" viewBox="0 0 1033 220">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="20" y="20" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="18" font-weight="700" fill="#111111" text-anchor="start">Between 2000 and 2023,</text>
+<text x="20" y="42" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="18" font-weight="700" fill="#111111" text-anchor="start">Canada’s GHG emissions</text>
+<text x="20" y="64" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="18" font-weight="700" fill="#111111" text-anchor="start">decreased by</text>
+<polygon points="35.4,77.0 74.6,77.0 74.6,126.3 90.0,126.3 55.0,162.0 20.0,126.3 35.4,126.3" fill="#a6cf3d"/>
+<text x="93" y="157" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="88" font-weight="700" fill="#2b6489" text-anchor="start">7%</text>
+<text x="360" y="24" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="18" font-weight="700" fill="#111111" text-anchor="start">while GDP increased</text>
+<polygon points="391.0,36.0 426.0,71.3 410.6,71.3 410.6,120.0 371.4,120.0 371.4,71.3 356.0,71.3" fill="#a6cf3d"/>
+<text x="444" y="117" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="88" font-weight="700" fill="#2b6489" text-anchor="start">56%</text>
+<text x="782" y="21" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="18" font-weight="700" fill="#111111" text-anchor="start">GHG emissions decreased</text>
+<polygon points="798.4,30.0 837.6,30.0 837.6,90.3 853.0,90.3 818.0,134.0 783.0,90.3 798.4,90.3" fill="#a6cf3d"/>
+<text x="854" y="85" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="68" font-weight="700" fill="#2b6489" text-anchor="start">39%</text>
+<text x="853" y="113" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="16" font-weight="700" fill="#111111" text-anchor="start">per dollar of GDP and</text>
+<text x="844" y="177" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="66" font-weight="700" fill="#2b6489" text-anchor="start">26.1%</text>
+<text x="913" y="203" font-family="'Arial Narrow', 'Roboto Condensed', 'Helvetica Condensed', Arial, sans-serif" font-size="16" font-weight="700" fill="#111111" text-anchor="start">per capita.</text>
+</svg>

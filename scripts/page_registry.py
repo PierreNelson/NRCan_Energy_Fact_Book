@@ -22,12 +22,14 @@ REGISTRY_CSV = ROOT / "docs" / "page_registry.csv"
 
 # Legacy Factbook page numbers in website scroll order (pre-rename Section*.jsx order).
 LEGACY_PAGE_ORDER: list[int] = [
-    1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 14, 15, 16, 17, 20, 21,
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
     23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
     39, 40, 41, 42, 43, 44, 45, 46,
     47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
-    59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 74, 76, 78, 79, 80, 81, 82, 84, 85, 86, 87, 89, 90, 91, 93, 95, 96, 97, 98, 99, 100, 102,
-    103, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 117, 119, 122, 123, 126, 132, 135, 131, 134, 136, 138, 139, 142, 143,
+    59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
+    78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97,
+    98, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114,
+    115, 117, 118, 119, 122, 123, 126, 132, 135, 131, 134, 136, 138, 139, 142, 143,
 ]
 
 SKIP_SECTION_TAGS = {"Suspense", "Fragment", "LoadingSpinner"}
@@ -39,7 +41,12 @@ SECTION_FILES = [
 
 # (component_name, translation_prefix) — translation_prefix None = auto from indicator/component
 PAGE_NAME_OVERRIDES: dict[int, tuple[str, str | None]] = {
+    6: ("CanadaEnergySupply", "canada_energy_supply"),
     7: ("NominalGdp", "nominal_gdp"),
+    12: ("EnergyTrade", "energy_trade"),
+    13: ("EnergyImports", "energy_imports"),
+    18: ("EnergyAndGhgEmissions", "energy_and_ghg_emissions"),
+    19: ("GhgEmissionsIntensityIndex", "ghg_emissions_intensity_index"),
     20: ("GhgEmissionsBySector", "ghg_emissions_by_sector"),
     23: ("Investment", "investment"),
     24: ("CapitalExpenditures", "capital_expenditures"),
@@ -55,6 +62,7 @@ PAGE_NAME_OVERRIDES: dict[int, tuple[str, str | None]] = {
     66: ("CanadianElectricityGeneration", "electricity_generation_canada"),
     67: ("ProvincialElectricityGeneration", "electricity_generation_provincial"),
     71: ("ElectricityGhgSpotlight", "ghg_electricity_spotlight"),
+    72: ("RenewableEnergyInternational", "renewable_energy_international"),
     97: ("TransportationGhgSpotlight", "ghg_transportation_spotlight"),
     100: ("Hydrogen", "hydrogen"),
     109: ("WorldProvedCrudeReserves", "world_crude_reserves"),

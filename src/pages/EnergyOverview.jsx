@@ -177,7 +177,9 @@ const EnergyOverview = () => {
                             </Link>
                         </li>
                         <li className="energy-overview-list-item">
-                            {getText('energy_overview_item3', lang)}
+                            <Link to="/section-1#energy-and-ghg-emissions">
+                                {getText('energy_overview_item3', lang)}
+                            </Link>
                         </li>
                     </ul>
                 </nav>

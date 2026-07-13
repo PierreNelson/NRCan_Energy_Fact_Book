@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import EnergyOverview from '../pages/EnergyOverview';
 import WorldEnergyProduction from '../pages/WorldEnergyProduction';
 import CanadianEnergyProduction from '../pages/CanadianEnergyProduction';
 import PrimaryEnergyProduction from '../pages/PrimaryEnergyProduction';
 import PrimaryEnergyByRegion from '../pages/PrimaryEnergyByRegion';
+import CanadaEnergySupply from '../pages/CanadaEnergySupply';
 import NominalGdp from '../pages/NominalGdp';
 import ProvincialGdp from '../pages/ProvincialGdp';
 import Employment from '../pages/Employment';
@@ -16,6 +17,11 @@ import GovernmentRevenues from '../pages/GovernmentRevenues';
 import CorporateIncomeTaxes from '../pages/CorporateIncomeTaxes';
 import GhgEmissionsBySector from '../pages/GhgEmissionsBySector';
 import EnergyInformationLandscape from '../pages/EnergyInformationLandscape';
+import EnergyAndGhgEmissions from '../pages/EnergyAndGhgEmissions';
+import GhgEmissionsIntensityIndex from '../pages/GhgEmissionsIntensityIndex';
+
+const EnergyTrade = React.lazy(() => import('../pages/EnergyTrade'));
+const EnergyImports = React.lazy(() => import('../pages/EnergyImports'));
 
 const SectionOne = () => {
     const location = useLocation();
@@ -58,6 +64,9 @@ const SectionOne = () => {
                 <div id="primary-energy-by-region" className="stacked-page-wrapper">
                     <PrimaryEnergyByRegion />
                 </div>
+                <div id="canada-energy-supply" className="stacked-page-wrapper">
+                    <CanadaEnergySupply />
+                </div>
                 <div id="economic-contributions" className="stacked-page-wrapper page-with-title-divider">
                     <NominalGdp />
                 </div>
@@ -73,6 +82,16 @@ const SectionOne = () => {
                 <div id="gdp-chart" className="stacked-page-wrapper">
                     <GdpChart />
                 </div>
+                <div id="energy-trade" className="stacked-page-wrapper">
+                    <Suspense fallback={null}>
+                        <EnergyTrade />
+                    </Suspense>
+                </div>
+                <div id="energy-imports" className="stacked-page-wrapper">
+                    <Suspense fallback={null}>
+                        <EnergyImports />
+                    </Suspense>
+                </div>
                 <div id="canadian-energy-exports-us-states" className="stacked-page-wrapper">
                     <CanadianEnergyExportsUsStates />
                 </div>
@@ -84,6 +103,12 @@ const SectionOne = () => {
                 </div>
                 <div id="corporate-income-taxes" className="stacked-page-wrapper">
                     <CorporateIncomeTaxes />
+                </div>
+                <div id="energy-and-ghg-emissions" className="stacked-page-wrapper">
+                    <EnergyAndGhgEmissions />
+                </div>
+                <div id="ghg-emissions-intensity-index" className="stacked-page-wrapper">
+                    <GhgEmissionsIntensityIndex />
                 </div>
                 <div id="ghg-emissions" className="stacked-page-wrapper">
                     <GhgEmissionsBySector />

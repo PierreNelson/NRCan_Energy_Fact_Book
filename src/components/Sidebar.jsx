@@ -214,6 +214,12 @@ const Sidebar = ({ lang }) => {
                             >
                                 {getText('nav_econ_contributions', lang)}
                             </NavLink>
+                            <NavLink
+                                to="/section-1#energy-and-ghg-emissions"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_energy_and_ghg_emissions', lang)}
+                            </NavLink>
                         </div>
                     )}
                 </div>
@@ -435,6 +441,12 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_clean_technology_economy_clean_technology_economy', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-5#renewable-energy-international"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_renewable_energy_international', lang)}
                             </NavLink>
                             <NavLink
                                 to="/section-5#biofuels-transportation"

@@ -74,7 +74,7 @@ const Hydrogen = () => {
     line-height: 1.25;
     position: relative;
     padding-bottom: 0.5em;
-    text-transform: uppercase;
+    text-transform: none;
 }
 .hydrogen.page-content .hydrogen-title::after {
     content: '';

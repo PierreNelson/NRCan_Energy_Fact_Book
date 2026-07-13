@@ -824,7 +824,7 @@ const WorldEnergyProduction = () => {
                 }
 
                 .energy-production-rankings-table th {
-                    background-color: #48494a !important;
+                    background-color: #49494b !important;
                     color: white !important;
                     padding: 8px 15px;
                     text-align: center;
@@ -839,12 +839,20 @@ const WorldEnergyProduction = () => {
                     white-space: nowrap;
                 }
 
-                /* Removed custom zebra - using .table-striped instead */
+                .energy-production-rankings-table.table-striped > tbody > tr:nth-of-type(odd) > * {
+                    --bs-table-bg-type: #b2bac9;
+                    background-color: #b2bac9 !important;
+                }
+
+                .energy-production-rankings-table.table-striped > tbody > tr:nth-of-type(even) > * {
+                    --bs-table-bg-type: #ffffff;
+                    background-color: #ffffff !important;
+                }
 
                 .energy-production-rankings-table .resource-cell {
                     text-align: left;
                     font-weight: bold;
-                    color: #48494a;
+                    color: #49494b;
                     white-space: nowrap;
                 }
 

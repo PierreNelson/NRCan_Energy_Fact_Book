@@ -13,27 +13,36 @@ import ElectricalEnergyUse from '../pages/ElectricalEnergyUse';
 import ElectricityPricesMap from '../pages/ElectricityPricesMap';
 import WindSolarElectricityGrowth from '../pages/WindSolarElectricityGrowth';
 import ElectricityGhgSpotlight from '../pages/ElectricityGhgSpotlight';
+import RenewableEnergyInternational from '../pages/RenewableEnergyInternational';
+import CanadianRenewableEnergyProduction from '../pages/CanadianRenewableEnergyProduction';
 import RenewableElectricityCapacity from '../pages/RenewableElectricityCapacity';
+import Hydroelectricity from '../pages/Hydroelectricity';
 import HydroelectricCapacity from '../pages/HydroelectricCapacity';
+import Biomass from '../pages/Biomass';
 import SolidBiofuelsProduction from '../pages/SolidBiofuelsProduction';
 import WorldWindPower from '../pages/WorldWindPower';
 import CanadianWindPower from '../pages/CanadianWindPower';
 import WindProjectsMap from '../pages/WindProjectsMap';
 import WorldSolarPower from '../pages/WorldSolarPower';
+import SolarPvInCanada from '../pages/SolarPvInCanada';
 import LargestSolarProjects from '../pages/LargestSolarProjects';
 import UraniumInternational from '../pages/UraniumInternational';
 import NuclearPower from '../pages/NuclearPower';
 import CanadianUraniumSupplyDemand from '../pages/CanadianUraniumSupplyDemand';
+import NuclearFuelCycle from '../pages/NuclearFuelCycle';
 import CanduNuclearReactors from '../pages/CanduNuclearReactors';
 import NuclearPowerPlantsUraniumPrices from '../pages/NuclearPowerPlantsUraniumPrices';
 import BiofuelsTransportation from '../pages/BiofuelsTransportation';
+import WorldBiofuelsProduction from '../pages/WorldBiofuelsProduction';
 import CanadianBiofuelProduction from '../pages/CanadianBiofuelProduction';
+import BiofuelProductionCapacity from '../pages/BiofuelProductionCapacity';
 import TransportationFuelMix from '../pages/TransportationFuelMix';
 import EvSalesRegistrations from '../pages/EvSalesRegistrations';
 import TransportationGhgSpotlight from '../pages/TransportationGhgSpotlight';
 import ElectricVehicleCharging from '../pages/ElectricVehicleCharging';
 import PublicEvChargingStations from '../pages/PublicEvChargingStations';
 import Hydrogen from '../pages/Hydrogen';
+import GlobalHydrogenProductionDemand from '../pages/GlobalHydrogenProductionDemand';
 import HydrogenIndustry from '../pages/HydrogenIndustry';
 
 const SectionFive = () => {
@@ -108,11 +117,23 @@ const SectionFive = () => {
             <div id="electricity-ghg-spotlight" className="stacked-page-wrapper">
                 <ElectricityGhgSpotlight />
             </div>
+            <div id="renewable-energy-international" className="stacked-page-wrapper page-with-title-divider">
+                <RenewableEnergyInternational />
+            </div>
+            <div id="canadian-renewable-energy-production" className="stacked-page-wrapper page-with-title-divider">
+                <CanadianRenewableEnergyProduction />
+            </div>
             <div id="renewable-electricity-capacity" className="stacked-page-wrapper page-with-title-divider">
                 <RenewableElectricityCapacity />
             </div>
+            <div id="hydroelectricity" className="stacked-page-wrapper page-with-title-divider">
+                <Hydroelectricity />
+            </div>
             <div id="major-hydro-facilities" className="stacked-page-wrapper page-with-title-divider">
                 <HydroelectricCapacity />
+            </div>
+            <div id="biomass" className="stacked-page-wrapper">
+                <Biomass />
             </div>
             <div id="solid-biofuels" className="stacked-page-wrapper">
                 <SolidBiofuelsProduction />
@@ -129,6 +150,9 @@ const SectionFive = () => {
             <div id="world-solar-pv" className="stacked-page-wrapper">
                 <WorldSolarPower />
             </div>
+            <div id="solar-pv-canada" className="stacked-page-wrapper">
+                <SolarPvInCanada />
+            </div>
             <div id="largest-solar-projects" className="stacked-page-wrapper">
                 <LargestSolarProjects />
             </div>
@@ -141,6 +165,9 @@ const SectionFive = () => {
             <div id="canadian-uranium-supply-demand" className="stacked-page-wrapper">
                 <CanadianUraniumSupplyDemand />
             </div>
+            <div id="nuclear-fuel-cycle" className="stacked-page-wrapper">
+                <NuclearFuelCycle />
+            </div>
             <div id="candu-nuclear-reactors" className="stacked-page-wrapper">
                 <CanduNuclearReactors />
             </div>
@@ -150,8 +177,14 @@ const SectionFive = () => {
             <div id="biofuels-transportation" className="stacked-page-wrapper page-with-title-divider">
                 <BiofuelsTransportation />
             </div>
+            <div id="world-biofuels-production" className="stacked-page-wrapper">
+                <WorldBiofuelsProduction />
+            </div>
             <div id="canadian-biofuel-production" className="stacked-page-wrapper">
                 <CanadianBiofuelProduction />
+            </div>
+            <div id="biofuel-production-capacity" className="stacked-page-wrapper">
+                <BiofuelProductionCapacity />
             </div>
             <div id="transportation-fuel-mix" className="stacked-page-wrapper">
                 <TransportationFuelMix />
@@ -170,6 +203,9 @@ const SectionFive = () => {
             </div>
             <div id="hydrogen" className="stacked-page-wrapper">
                 <Hydrogen />
+            </div>
+            <div id="global-hydrogen-production-demand" className="stacked-page-wrapper">
+                <GlobalHydrogenProductionDemand />
             </div>
             <div id="hydrogen-industry" className="stacked-page-wrapper">
                 <HydrogenIndustry />
