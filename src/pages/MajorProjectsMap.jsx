@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import { stripHtml } from '../utils/stripHtml';
 
 const major_projects_map_PROVINCE_INFO = {
     'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', geoJsonName: 'Newfoundland and Labrador' },
@@ -157,11 +164,10 @@ const LegendItem = ({ windowWidth, color, symbol, label, isLine, isOutline, size
 
 const MajorProjectsMap = () => {
     const { lang } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [mapData, setMapData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
     const [selectedProvinces, setSelectedProvinces] = useState(null);
     const chartRef = useRef(null);
@@ -187,73 +193,10 @@ const MajorProjectsMap = () => {
     const provinceDropdownRef = useRef(null);
     const typeDropdownRef = useRef(null);
     const locationDropdownRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-
-        if (!topScroll || !tableScroll) return;
-
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-
-            const topSpacer = topScroll.firstElementChild;
-            if (topSpacer) {
-                topSpacer.style.width = `${scrollWidth}px`;
-            }
-
-            if (scrollWidth > containerWidth) {
-                topScroll.style.display = 'block';
-                topScroll.style.opacity = '1';
-            } else {
-                topScroll.style.display = 'none';
-            }
-        };
-
-        const handleTopScroll = () => {
-            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
-                tableScroll.scrollLeft = topScroll.scrollLeft;
-            }
-        };
-
-        const handleTableScroll = () => {
-            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
-                topScroll.scrollLeft = tableScroll.scrollLeft;
-            }
-        };
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-
-        const observer = new ResizeObserver(() => {
-            window.requestAnimationFrame(syncScrollbars);
-        });
-
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-
-        syncScrollbars();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth]);
-
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     useEffect(() => {
         const handleResize = () => {
             const newWidth = window.innerWidth;
-            setWindowWidth(newWidth);
             if (newWidth > 768) {
                 setIsChartInteractive(true);
             }
@@ -420,115 +363,24 @@ const MajorProjectsMap = () => {
             });
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
+    
 
-            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
-            svgElements.forEach(svg => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: lang === 'en' ? 'major_energy_projects_map.png' : 'carte_grands_projets_energetiques.png',
+        title: stripHtml(`${getText('major_projects_map_title', lang)} - ${getText('major_projects_map_subtitle', lang)}`),
+        width: 1400,
+        height: 900,
+    }),
+        [getText, lang, stripHtml],
+    );
 
-            // Find the download button using data-title attribute
-            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
-            
-            if (downloadBtn) {
-                // Make it tabbable
-                downloadBtn.setAttribute('tabindex', '0');
-                downloadBtn.setAttribute('role', 'button');
-                
-                // Ensure it has a label
-                const title = downloadBtn.getAttribute('data-title');
-                if (title) downloadBtn.setAttribute('aria-label', title);
-
-                // Add keyboard click support (crucial for screen readers)
-                downloadBtn.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        downloadBtn.click();
-                    }
-                };
-            }
-
-            // Hide other modebar buttons from screen readers
-            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
-            otherButtons.forEach(btn => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-
-        // Watch for changes (Plotly deletes/re-creates the modebar often)
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-
-        // Run once immediately
-        setupChartAccessibility();
-
-        return () => observer.disconnect();
-    }, [mapData, lang]);
-
-    const downloadChartWithTitle = async () => {
-        const plotElement = chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) {
-            alert('Could not find chart element. Please try again.');
-            return;
-        }
-
-        const title = stripHtml(`${getText('major_projects_map_title', lang)} - ${getText('major_projects_map_subtitle', lang)}`);
-
-        try {
-            if (!window.Plotly) {
-                alert('Plotly library not loaded. Please refresh the page and try again.');
-                return;
-            }
-
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1400,
-                height: 900,
-                scale: 2
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                const titleHeight = 80;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 50);
-
-                ctx.drawImage(img, 0, titleHeight);
-
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? 'major_energy_projects_map.png' : 'carte_grands_projets_energetiques.png';
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-
-            img.src = imgData;
-        } catch (error) {
-            console.error('Error downloading chart:', error);
-            alert('Error downloading chart: ' + error.message);
-        }
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: () => downloadChartWithTitle(),
+        doubleClick: 'reset+autosize',
+    });
 
     const langData = useMemo(() => {
         if (!mapData) return null;
@@ -771,15 +623,6 @@ const MajorProjectsMap = () => {
         return applyFiltersToData(langData.lines);
     }, [langData, applyFiltersToData]);
 
-    const handleSort = (column) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('asc');
-        }
-    };
-
     const clearAllFilters = () => {
         setProjectFilter([]);
         setCompanyFilter([]);
@@ -793,83 +636,23 @@ const MajorProjectsMap = () => {
         setSortDirection('asc');
     };
 
-    const downloadTableAsCSV = () => {
-        if (!filteredTableData || filteredTableData.length === 0) return;
+    const tableCaption = lang === 'en'
+        ? 'Major energy projects data including project name, company, province, location, type, capital cost, status, and clean technology indicator.'
+        : 'Données sur les grands projets énergétiques incluant le nom du projet, l\'entreprise, la province, l\'emplacement, le type, le coût en capital, le statut et l\'indicateur de technologie propre.';
 
-        const headers = lang === 'en' 
-            ? ['Project Name', 'Company', 'Province', 'Location', 'Capital Cost ($M)', 'Status', 'Clean Technology', 'Type']
-            : ['Nom du projet', 'Entreprise', 'Province', 'Emplacement', 'Coût en capital (M$)', 'Statut', 'Technologie propre', 'Type'];
+    const exportTableTitle = stripHtml(`${getText('major_projects_map_title', lang)} - ${getText('major_projects_map_subtitle', lang)}`);
+    const tableDownloadSlug = lang === 'en' ? 'major_energy_projects' : 'grands_projets_energetiques';
 
-        const rows = filteredTableData.map(project => [
-            `"${(project.project_name || '').replace(/"/g, '""')}"`,
-            `"${(project.company || '').replace(/"/g, '""')}"`,
-            `"${(project.province || '').replace(/"/g, '""')}"`,
-            `"${(project.location || '').replace(/"/g, '""')}"`,
-            project.capital_cost || '',
-            `"${(project.status || '').replace(/"/g, '""')}"`,
-            project.clean_technology || '',
-            project.type === 'line' ? (lang === 'en' ? 'Transmission Line' : 'Ligne de transmission') : (lang === 'en' ? 'Project' : 'Projet')
-        ]);
-
-        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'major_energy_projects.csv' : 'grands_projets_energetiques.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-
-    const downloadTableAsDocx = async () => {
-        if (!filteredTableData || filteredTableData.length === 0) return;
-
-        const title = stripHtml(`${getText('major_projects_map_title', lang)} - ${getText('major_projects_map_subtitle', lang)}`);
-
-        const headers = lang === 'en' 
-            ? ['Project Name', 'Company', 'Province', 'Capital Cost ($M)', 'Status', 'Clean Tech']
-            : ['Nom du projet', 'Entreprise', 'Province', 'Coût (M$)', 'Statut', 'Tech. propre'];
-
-        const headerRow = new TableRow({
-            children: headers.map(header => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: header, bold: true, size: 20 })],
-                    alignment: AlignmentType.CENTER
-                })],
-                shading: { fill: 'E6E6E6' }
-            }))
-        });
-
-        const dataRows = filteredTableData.map(project => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: project.project_name || '', size: 18 })], alignment: AlignmentType.LEFT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: project.company || '', size: 18 })], alignment: AlignmentType.LEFT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: project.province || '', size: 18 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: project.capital_cost || '', size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: project.status || '', size: 18 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: project.clean_technology || '', size: 18 })], alignment: AlignmentType.CENTER })] })
-            ]
-        }));
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: title, bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 }
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [2500, 2000, 1500, 1200, 1400, 1000],
-                        rows: [headerRow, ...dataRows]
-                    })
-                ]
-            }]
-        });
-
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'major_energy_projects.docx' : 'grands_projets_energetiques.docx');
-    };
+    const tableColumns = useMemo(() => [
+        { key: 'project_name', header: lang === 'en' ? 'Project Name' : 'Nom du projet', align: 'left' },
+        { key: 'company', header: lang === 'en' ? 'Company' : 'Entreprise', align: 'left' },
+        { key: 'province', header: lang === 'en' ? 'Prov.' : 'Prov.', align: 'left' },
+        { key: 'location', header: lang === 'en' ? 'Location' : 'Lieu', align: 'left' },
+        { key: 'clean_technology_type', header: lang === 'en' ? 'Type' : 'Type', align: 'left' },
+        { key: 'capital_cost', header: lang === 'en' ? 'Cost ($M)' : 'Coût (M$)', align: 'num' },
+        { key: 'status', header: lang === 'en' ? 'Status' : 'Statut', align: 'left' },
+        { key: 'clean_technology', header: lang === 'en' ? 'Clean' : 'Propre', align: 'left' },
+    ], [lang]);
 
     const plotlyData = useMemo(() => {
         if (!langData) return [];
@@ -1039,28 +822,37 @@ const MajorProjectsMap = () => {
     const mapScale = 2.5;
     const mapHeight = windowWidth <= 384 ? 230 : windowWidth <= 480 ? 290 : windowWidth <= 640 ? 350 : windowWidth <= 768 ? 500 : windowWidth <= 1100 ? 600 : 700;
 
-    if (loading) {
+    if (loading || error) {
         return (
-            <main className="page-content page-30" role="main">
-                <div style={{ padding: '40px', textAlign: 'center' }}>
-                    {lang === 'en' ? 'Loading map data...' : 'Chargement des données de la carte...'}
-                </div>
-            </main>
+            <PageShell className="page-content page-30" role="main">
+                <PageStatus
+                    lang={lang}
+                    loading={loading}
+                    error={error}
+                    loadingMessage={lang === 'en' ? 'Loading map data...' : 'Chargement des données de la carte...'}
+                    style={{ padding: '40px', textAlign: 'center' }}
+                />
+            </PageShell>
         );
     }
 
-    if (error) {
-        return (
-            <main className="page-content page-30" role="main">
-                <div style={{ padding: '40px', color: 'red' }}>
-                    Error: {error}
-                </div>
-            </main>
-        );
-    }
+    const getChartSummary = () => {
+        const rows = filteredTableData || tableData || [];
+        const body = summarizeByCategory({
+            categories: rows.slice(0, 40).map((row) => row.name || row.project || row.title || row.province),
+            series: [{ name: lang === 'en' ? 'Value' : 'Valeur', values: rows.slice(0, 40).map((row) => row.value ?? row.capacity ?? row.cost), format: (v) => String(v ?? '—') }],
+            lang,
+        });
+        return joinChartSummary({
+            intro: getText('major_projects_map_sr_summary', lang),
+            body,
+            lang,
+        });
+    };
+    const mapRegionLabel = getChartSummary();
 
     return (
-        <main 
+        <PageShell 
             id="main-content"
             tabIndex="-1"
             className="page-content page-30" 
@@ -1194,53 +986,9 @@ const MajorProjectsMap = () => {
                     gap: 8px 15px;
                 }
 
-                .projects-map-data-table {
-                    margin-top: 20px;
-                    margin-bottom: 0;
-                }
-
-                .projects-map-data-table summary {
-                    cursor: pointer;
-                    padding: 10px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                    list-style: none;
-                }
-
-                .projects-map-data-table summary:hover {
-                    background-color: #404040 !important;
-                }
-
-                .projects-map-data-table button[type="button"]:hover,
-                .projects-map-data-table button:hover,
-                .projects-map-table-wrapper button[type="button"]:hover,
-                .projects-map-table-wrapper button:hover {
-                    background-color: #404040 !important;
-                }
-
                 .projects-map-chart-frame button[type="button"]:hover,
                 .projects-map-chart-frame button:hover {
                     background-color: #404040 !important;
-                }
-
-                .projects-map-data-table summary::-webkit-details-marker {
-                    display: none;
-                }
-
-                .projects-map-data-table th,
-                .projects-map-data-table td {
-                    padding: 8px;
-                    text-align: left;
-                    border: 1px solid #ddd;
-                }
-
-                .projects-map-data-table th {
-                    background-color: #f5f5f5;
-                    font-weight: bold;
                 }
 
                 @media (max-width: 1100px) {
@@ -1315,36 +1063,9 @@ const MajorProjectsMap = () => {
                     }
                 }
 
-                /* FIXED: Grid layout with minmax(0, 1fr) prevents the table from 
-                   blowing out the width of the page, forcing the scrollbar to appear. */
                 .projects-map-table-wrapper {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr);
                     width: 100%;
                     margin-top: 20px;
-                }
-
-                .projects-map-data-table {
-                    width: 100%;
-                    margin-top: 20px;
-                    margin-bottom: 0;
-                }
-
-                /* This is the actual scrolling box */
-                .projects-map-table-wrapper .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                }
-
-                /* FORCE SCROLLBARS TO APPEAR */
-                .projects-map-table-wrapper .table-responsive table {
-                    width: max-content !important;
-                    min-width: 100%;
-                    border-collapse: collapse;
                 }
             `}</style>
 
@@ -1366,13 +1087,11 @@ const MajorProjectsMap = () => {
                                 className="projects-map-map-container" 
                                 style={{ position: 'relative' }}
                                 role="region"
-                                aria-label={getText('major_projects_map_sr_summary', lang)}
+                                aria-label={mapRegionLabel}
                                 tabIndex="0"
                             >
                                 {selectedProvinces !== null && (
-                                    <div style={{ marginBottom: 8 }}>
-                                        <button type="button" onClick={() => setSelectedProvinces(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
-                                    </div>
+                                    <ClearSelectionButton lang={lang} onClick={() => setSelectedProvinces(null)} />
                                 )}
                                 <div aria-hidden="true">
                                 <Plot
@@ -1400,29 +1119,13 @@ const MajorProjectsMap = () => {
                                         margin: { l: 0, r: 0, t: 0, b: 0 },
                                         height: mapHeight,
                                         clickmode: 'event',
-                                        dragmode: windowWidth <= 768 ? false : 'zoom',
+                                        dragmode: false,
                                         paper_bgcolor: 'rgba(0,0,0,0)',
                                         plot_bgcolor: 'rgba(0,0,0,0)',
                                         showlegend: false
                                     }}
                                     onClick={handleMapClick}
-                                    config={{
-                                        displayModeBar: true,
-                                        displaylogo: false,
-                                        responsive: true,
-                                        scrollZoom: false,
-                                        doubleClick: 'reset+autosize',
-                                        modeBarButtonsToRemove: ['lasso2d', 'select2d', 'toImage'],
-                                        modeBarButtonsToAdd: [{
-                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                            },
-                                            click: () => downloadChartWithTitle()
-                                        }]
-                                    }}
+                                    config={plotConfig}
                                     style={{ width: '100%', height: '100%' }}
                                 />
                                 </div>
@@ -2032,194 +1735,25 @@ const MajorProjectsMap = () => {
                 </div>
 
                 <div className="projects-map-table-wrapper">
-                <details 
-                    className="projects-map-data-table"
-                    onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                >
-                    <summary role="button" aria-expanded={isTableOpen}>
-                        <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                        {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                        <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                    </summary>
-
-                    <div 
-                        ref={topScrollRef}
-                        style={{ 
-                            width: '100%', 
-                            overflowX: 'auto', 
-                            overflowY: 'hidden',
-                            marginBottom: '0px',
-                            marginTop: '10px',
-                            display: windowWidth <= 768 ? 'none' : 'block' 
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={filteredTableData}
+                        csvFilename={`${tableDownloadSlug}.csv`}
+                        docx={{
+                            filename: `${tableDownloadSlug}.docx`,
+                            title: exportTableTitle,
+                            titleAlign: 'center',
+                            columnWidths: [2200, 1800, 900, 1400, 1400, 1100, 1200, 900],
+                            fontSize: 18,
                         }}
-                        aria-hidden="true"
-                    >
-                        <div style={{ height: '20px' }}></div>
-                    </div>
-
-                    <div 
-                        ref={tableScrollRef}
-                        className="table-responsive" 
-                        role="region" 
-                        aria-label={lang === 'en' ? 'Data Table' : 'Tableau de données'}
-                        tabIndex="0"
-                    >
-                        <table className="table table-striped table-hover" style={{ fontSize: '11px' }}>
-                            <caption className="wb-inv">
-                                {lang === 'en' 
-                                    ? 'Major energy projects data including project name, company, province, location, type, capital cost, status, and clean technology indicator. Click column headers to sort.' 
-                                    : 'Données sur les grands projets énergétiques incluant le nom du projet, l\'entreprise, la province, l\'emplacement, le type, le coût en capital, le statut et l\'indicateur de technologie propre. Cliquez sur les en-têtes de colonne pour trier.'}
-                            </caption>
-                            <thead>
-                                <tr style={{ backgroundColor: '#e6e6e6' }}>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
-                                        onClick={() => handleSort('project_name')}
-                                        aria-sort={sortColumn === 'project_name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                    >
-                                        {lang === 'en' ? 'Project Name' : 'Nom du projet'}
-                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'project_name' ? 1 : 0.3 }}>
-                                            {sortColumn === 'project_name' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                                        </span>
-                                    </th>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
-                                        onClick={() => handleSort('company')}
-                                        aria-sort={sortColumn === 'company' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                    >
-                                        {lang === 'en' ? 'Company' : 'Entreprise'}
-                                        <span style={{ marginLeft: '4px', opacity: sortColumn === 'company' ? 1 : 0.3 }}>
-                                            {sortColumn === 'company' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                                        </span>
-                                    </th>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
-                                        onClick={() => handleSort('province')}
-                                        aria-sort={sortColumn === 'province' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                    >
-                                        {lang === 'en' ? 'Prov.' : 'Prov.'}
-                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'province' ? 1 : 0.3 }}>
-                                            {sortColumn === 'province' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                                        </span>
-                                    </th>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '6px 4px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
-                                        onClick={() => handleSort('location')}
-                                        aria-sort={sortColumn === 'location' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                    >
-                                        {lang === 'en' ? 'Location' : 'Lieu'}
-                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'location' ? 1 : 0.3 }}>
-                                            {sortColumn === 'location' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                                        </span>
-                                    </th>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '6px 4px', textAlign: 'left', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
-                                        onClick={() => handleSort('clean_technology_type')}
-                                        aria-sort={sortColumn === 'clean_technology_type' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                    >
-                                        {lang === 'en' ? 'Type' : 'Type'}
-                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'clean_technology_type' ? 1 : 0.3 }}>
-                                            {sortColumn === 'clean_technology_type' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                                        </span>
-                                    </th>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd', cursor: 'pointer', userSelect: 'none' }}
-                                        onClick={() => handleSort('capital_cost')}
-                                        aria-sort={sortColumn === 'capital_cost' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                    >
-                                        {lang === 'en' ? 'Cost ($M)' : 'Coût (M$)'}
-                                        <span style={{ marginLeft: '2px', opacity: sortColumn === 'capital_cost' ? 1 : 0.3 }}>
-                                            {sortColumn === 'capital_cost' ? (sortDirection === 'asc' ? '▲' : '▼') : '▲'}
-                                        </span>
-                                    </th>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
-                                    >
-                                        {lang === 'en' ? 'Status' : 'Statut'}
-                                    </th>
-                                    <th 
-                                        scope="col" 
-                                        style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', borderBottom: '2px solid #ccc', border: '1px solid #ddd' }}
-                                    >
-                                        {lang === 'en' ? 'Clean' : 'Propre'}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredTableData.map((project, idx) => (
-                                    <tr key={project.id || idx}>
-                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.project_name || '—'}
-                                        </td>
-                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.company || '—'}
-                                        </td>
-                                        <td style={{ padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.province || '—'}
-                                        </td>
-                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.location || '—'}
-                                        </td>
-                                        <td style={{ padding: '4px 6px', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.clean_technology_type || '—'}
-                                        </td>
-                                        <td style={{ padding: '4px 6px', textAlign: 'right', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.capital_cost || '—'}
-                                        </td>
-                                        <td style={{ padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.status || '—'}
-                                        </td>
-                                        <td style={{ padding: '4px 6px', textAlign: 'center', borderBottom: '1px solid #eee', border: '1px solid #ddd' }}>
-                                            {project.clean_technology || '—'}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                        <button
-                            onClick={() => downloadTableAsCSV()}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#8C8C8C',
-                                border: '1px solid #404040',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontFamily: 'Arial, sans-serif',
-                                fontWeight: 'bold',
-                                color: '#ffffff'
-                            }}
-                        >
-                            {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                        </button>
-                        <button
-                            onClick={() => downloadTableAsDocx()}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#8C8C8C',
-                                border: '1px solid #404040',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontFamily: 'Arial, sans-serif',
-                                fontWeight: 'bold',
-                                color: '#ffffff'
-                            }}
-                        >
-                            {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                        </button>
-                    </div>
-                </details>
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        renderCell={(raw) => (raw == null || raw === '' ? '—' : String(raw))}
+                    />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -1,9 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getUraniumInternationalData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 
 const CANADA_CAPSULE = '#819476';
 const TOP_RANKS = [1, 2, 3, 4, 5];
@@ -15,8 +18,6 @@ const substitute = (text, vars) =>
         (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
         text || '',
     );
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
 const drawRoundedRect = (ctx, x, y, w, h, r) => {
     const radius = Math.min(r, w / 2, h / 2);
@@ -122,22 +123,16 @@ const UraniumRankingSection = ({
     pngSlugKey,
     lang,
     locale,
-    windowWidth,
 }) => {
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
-
     const yearBundle = useMemo(
         () => series?.rows?.find((row) => row.year === series?.defaultYear) ?? series?.rows?.[series?.rows?.length - 1] ?? null,
         [series],
     );
 
-    const formatTotal = useCallback((value) => {
+    const formatTotal = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
         return Number(value).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-    }, [locale]);
+    };
 
     const rankingRows = useMemo(() => {
         if (!yearBundle?.top5) return [];
@@ -154,6 +149,12 @@ const UraniumRankingSection = ({
         year: yearBundle?.year ?? '',
     });
 
+    const tableCaption = substitute(getText(tableCaptionKey, lang), {
+        startYear: series?.startYear ?? '',
+        endYear: series?.endYear ?? '',
+    });
+    const exportTableTitle = stripHtml(tableCaption);
+
     const yearSpanFile = series?.years?.length
         ? `${series.years[0]}-${series.years[series.years.length - 1]}`
         : '';
@@ -165,82 +166,41 @@ const UraniumRankingSection = ({
         return `${match[1]} ${yearSuffix}.${match[2]}`;
     };
 
-    const tableHeaders = [
-        getText('uranium_international_table_col_year', lang),
-        getText(totalColKey, lang),
-        ...TOP_RANKS.map((rank) => getText(`uranium_international_table_col_rank${rank}`, lang)),
-        getText('uranium_international_table_col_canada', lang),
-        getText('uranium_international_table_col_canada_rank', lang),
-    ];
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('uranium_international_table_col_year', lang), align: 'left' },
+        { key: 'total', header: getText(totalColKey, lang), align: 'num' },
+        ...TOP_RANKS.map((rank) => ({
+            key: `rank${rank}`,
+            header: getText(`uranium_international_table_col_rank${rank}`, lang),
+            align: 'left',
+        })),
+        { key: 'canadaPct', header: getText('uranium_international_table_col_canada', lang), align: 'num' },
+        { key: 'canadaRank', header: getText('uranium_international_table_col_canada_rank', lang), align: 'num' },
+    ], [lang, totalColKey]);
 
-    const formatTopCountryCell = useCallback(
-        (entry) => {
-            if (!entry) return '—';
-            return `${uraniumCountryLabel(entry.key, lang)} (${Math.round(entry.sharePct)}%)`;
-        },
-        [lang],
-    );
-
-    const historicalRows = useMemo(
+    const tableRows = useMemo(
         () =>
-            (series?.rows ?? []).slice().reverse().map((row) => ({
-                year: row.year,
-                total: formatTotal(row.total),
-                topCountryCells: TOP_RANKS.map((rank) => formatTopCountryCell(row.top5?.find((item) => item.rank === rank))),
-                canadaPct: row.canadaSharePct != null ? `${Math.round(row.canadaSharePct)}%` : '—',
-                canadaRank: row.canadaRank != null ? Math.round(row.canadaRank) : '—',
-            })),
-        [series, formatTopCountryCell, formatTotal],
+            (series?.rows ?? []).map((row) => {
+                const formatTopCountryCell = (entry) => {
+                    if (!entry) return '—';
+                    return `${uraniumCountryLabel(entry.key, lang)} (${Math.round(entry.sharePct)}%)`;
+                };
+                const rankCells = Object.fromEntries(
+                    TOP_RANKS.map((rank) => [
+                        `rank${rank}`,
+                        formatTopCountryCell(row.top5?.find((item) => item.rank === rank)),
+                    ]),
+                );
+                return {
+                    year: row.year,
+                    total: row.total,
+                    ...rankCells,
+                    canadaPct: row.canadaSharePct != null ? Math.round(row.canadaSharePct) : '',
+                    canadaRank: row.canadaRank != null ? Math.round(row.canadaRank) : '',
+                };
+            }),
+        [series, lang],
     );
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        if (!isTableOpen) return undefined;
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncTableScroll));
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        syncTableScroll();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
 
     const downloadBtnStyle = {
         padding: '8px 16px',
@@ -251,70 +211,6 @@ const UraniumRankingSection = ({
         fontFamily: 'Arial, sans-serif',
         fontWeight: 'bold',
         color: '#ffffff',
-    };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = historicalRows.map((row) =>
-            [row.year, row.total, ...row.topCountryCells, row.canadaPct, row.canadaRank].map(csvEscape).join(','),
-        );
-        saveAs(
-            new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            downloadFilename(csvSlugKey),
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = historicalRows.map((row) =>
-            new TableRow({
-                children: [row.year, row.total, ...row.topCountryCells, row.canadaPct, row.canadaRank].map((value) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(value ?? ''), size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                    }),
-                ),
-            }),
-        );
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({
-                            text: stripHtml(substitute(getText(tableCaptionKey, lang), {
-                                startYear: series?.startYear ?? '',
-                                endYear: series?.endYear ?? '',
-                            })),
-                            bold: true,
-                            size: 28,
-                        })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), downloadFilename(docxSlugKey));
     };
 
     const downloadInfographicPng = () => {
@@ -357,7 +253,7 @@ const UraniumRankingSection = ({
     return (
         <section className="uranium-international-chart-section" aria-labelledby={`${sectionId}-title`}>
             <h3 id={`${sectionId}-title`} className="uranium-international-graphic-title">{graphicTitle}</h3>
-            <div className="uranium-international-capsule-graphic" role="img" aria-label={rankingAria}>
+            <div className="uranium-international-capsule-graphic" role="img" aria-label={rankingAria} tabIndex={0}>
                 {rankingRows.map((row) => renderCapsuleRow(row, maxPct))}
             </div>
 
@@ -367,58 +263,32 @@ const UraniumRankingSection = ({
                 </button>
             </div>
 
-            <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                <summary role="button" aria-expanded={isTableOpen}>
-                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {getText('uranium_international_table_summary', lang)}
-                </summary>
-                <div ref={topScrollRef} className="uranium-international-table-scrollbar" aria-hidden="true"><div /></div>
-                <div ref={tableScrollRef} className="uranium-international-table-responsive table-responsive" role="region" tabIndex={0}>
-                    <table className="table table-bordered table-striped table-hover">
-                        <caption className="wb-inv">
-                            {substitute(getText(tableCaptionKey, lang), {
-                                startYear: series?.startYear ?? '',
-                                endYear: series?.endYear ?? '',
-                            })}
-                        </caption>
-                        <thead>
-                            <tr>
-                                {tableHeaders.map((header) => (
-                                    <th
-                                        key={header}
-                                        scope="col"
-                                        style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
-                                    >
-                                        {header}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {historicalRows.map((row) => (
-                                <tr key={row.year}>
-                                    <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{row.year}</th>
-                                    <td style={{ textAlign: 'center' }}>{row.total}</td>
-                                    {row.topCountryCells.map((cell, index) => (
-                                        <td key={`${row.year}-${index}`} style={{ textAlign: 'center' }}>{cell}</td>
-                                    ))}
-                                    <td style={{ textAlign: 'center' }}>{row.canadaPct}</td>
-                                    <td style={{ textAlign: 'center' }}>{row.canadaRank}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <div ref={bottomScrollRef} className="uranium-international-table-scrollbar" aria-hidden="true"><div /></div>
-                <div className="uranium-international-download-buttons">
-                    <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                        {getText('uranium_international_download_csv', lang)}
-                    </button>
-                    <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                        {getText('uranium_international_download_docx', lang)}
-                    </button>
-                </div>
-            </details>
+            <ChartDataTable
+                lang={lang}
+                columns={tableColumns}
+                rows={tableRows}
+                csvFilename={downloadFilename(csvSlugKey)}
+                docx={{
+                    filename: downloadFilename(docxSlugKey),
+                    title: exportTableTitle,
+                    titleAlign: 'center',
+                    columnWidths: [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100],
+                    fontSize: 22,
+                }}
+                caption={tableCaption}
+                tableAriaLabel={tableCaption}
+                renderCell={(raw, { column }) => {
+                    const key = column?.key;
+                    if (key === 'total') return formatTotal(raw);
+                    if (key === 'canadaPct') {
+                        return raw === '' || raw == null ? '—' : `${raw}%`;
+                    }
+                    if (key === 'canadaRank') {
+                        return raw === '' || raw == null ? '—' : String(raw);
+                    }
+                    return String(raw ?? '');
+                }}
+            />
         </section>
     );
 };
@@ -428,7 +298,6 @@ const UraniumInternational = () => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
@@ -439,31 +308,20 @@ const UraniumInternational = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
 
     const hasData = !loading && !error && result
         && (result.exports?.rows?.length || result.production?.rows?.length || result.resources?.rows?.length);
 
     return (
-        <main
-            tabIndex="-1"
-            className="page-content page-85"
+        <PageShell tabIndex="-1"
+            className="page-content page-85 page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="uranium-international-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-85.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-85 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .uranium-international-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .uranium-international-title {
@@ -563,17 +421,6 @@ const UraniumInternational = () => {
 .uranium-international-capsule-pill-text { font-size: 15px; }
 .uranium-international-capsule-row-canada .uranium-international-capsule-pill { border-width: 2px; border-color: ${CANADA_CAPSULE}; font-weight: bold; }
 .uranium-international-capsule-pill-text-canada { font-size: 16px; font-weight: bold; }
-.uranium-international-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.uranium-international-table-responsive::-webkit-scrollbar { display: none; }
-.uranium-international-table-responsive table { width: max-content !important; min-width: 100%; }
 .uranium-international-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 .uranium-international-loading, .uranium-international-error { font-family: Arial, sans-serif; font-size: 16px; color: var(--gc-text); }
 .uranium-international-chart-section .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
@@ -593,8 +440,6 @@ const UraniumInternational = () => {
 .page-85 .data-table-wrapper summary::-webkit-details-marker { display: none; }
 .page-85 .data-table-wrapper summary:hover,
 .page-85 .data-table-wrapper button:hover { background-color: #404040 !important; }
-.uranium-international-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.uranium-international-table-scrollbar > div { height: 20px; }
 @media (max-width: 480px) {
     .uranium-international-title { font-size: 28px; }
 }
@@ -632,7 +477,6 @@ const UraniumInternational = () => {
                             pngSlugKey="uranium_international_exports_png_slug"
                             lang={lang}
                             locale={locale}
-                            windowWidth={windowWidth}
                         />
 
                         <UraniumRankingSection
@@ -646,7 +490,6 @@ const UraniumInternational = () => {
                             pngSlugKey="uranium_international_production_png_slug"
                             lang={lang}
                             locale={locale}
-                            windowWidth={windowWidth}
                         />
 
                         <UraniumRankingSection
@@ -660,12 +503,11 @@ const UraniumInternational = () => {
                             pngSlugKey="uranium_international_resources_png_slug"
                             lang={lang}
                             locale={locale}
-                            windowWidth={windowWidth}
                         />
                     </>
                 )}
             </div>
-        </main>
+        </PageShell>
     );
 };
 

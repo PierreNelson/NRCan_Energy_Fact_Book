@@ -1,11 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getEvSalesRegistrationsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 import evSalesBg from '../assets/ev_sales_bg.png';
+import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
 
 const COLORS = {
     bars: '#3D7A42',
@@ -25,7 +34,7 @@ const EvSalesRegistrations = () => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [viewportZoom, setViewportZoom] = useState(() => {
         if (typeof window === 'undefined') {
             return { pinScale: 1, layoutRatio: 1, cssZoomFactor: 1, dprZoomFactor: 1, screenZoomHint: 1 };
@@ -48,49 +57,33 @@ const EvSalesRegistrations = () => {
         }
         return { pinScale, layoutRatio, cssZoomFactor: 1, dprZoomFactor: 1, screenZoomHint };
     });
-    const [isTableOpen, setIsTableOpen] = useState(false);
     /** null = no focus; [bar point indices, line point indices] */
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const {
+        selected: selectedPoints,
+        clear,
+        togglePoint,
+        opacityFor,
+    } = usePlotlySelection({ mode: 'points', traceCount: 2, windowWidth });
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
     const zoomBaselineRef = useRef(null);
-    const tableTopRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const tableBottomRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-    const formatNumber = (num, digits = 0) => {
-        if (num === undefined || num === null || Number.isNaN(Number(num))) return '\u2014';
-        return Number(num).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-    };
+    const formatNumber = (num, digits = 0) => formatLocaleNumber(num, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
 
-    const formatPct = (num) => {
-        if (num === undefined || num === null || Number.isNaN(Number(num))) return '\u2014';
-        const formatted = Number(num).toLocaleString(locale, {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
-        });
-        return lang === 'fr' ? `${formatted} %` : `${formatted}%`;
-    };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const formatPct = (num) => formatLocalePct(num, lang, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+    });
 
     useEffect(() => {
         getEvSalesRegistrationsData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
-    }, []);
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     useEffect(() => {
@@ -149,86 +142,9 @@ const EvSalesRegistrations = () => {
         };
     }, []);
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const table = tableScroll.querySelector('table');
-        if (table) observer.observe(table);
-        observer.observe(tableScroll);
-        sync();
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, syncTableScroll, windowWidth]);
-
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints, result]);
+    
 
     const chartRows = useMemo(() => result?.data ?? [], [result]);
-    const tableRows = useMemo(
-        () => [...chartRows].sort((a, b) => b.year - a.year),
-        [chartRows],
-    );
     const years = chartRows.map((row) => row.year);
     const barValues = chartRows.map((row) => row.evRegsThousands);
     const lineValues = chartRows.map((row) => row.sharePct);
@@ -250,20 +166,25 @@ const EvSalesRegistrations = () => {
     const barsLabel = getText('ev_sales_legend_bars', lang);
     const lineLabel = getText('ev_sales_legend_line', lang);
     const chartTitle = substitute(getText('ev_sales_chart_title', lang), textVars);
+    const exportChartTitle = stripHtml(chartTitle);
     const chartDownloadSlug = substitute(getText('ev_sales_download_title', lang), textVars)
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
+    const tableCaption = substitute(getText('ev_sales_table_caption', lang), textVars);
 
-    const tableHeaders = [
-        getText('ev_sales_table_col_year', lang),
-        getText('ev_sales_table_col_total', lang),
-        getText('ev_sales_table_col_ev', lang),
-        getText('ev_sales_table_col_ev_thousands', lang),
-        getText('ev_sales_table_col_share', lang),
-    ];
+    const tableColumns = useMemo(
+        () => [
+            { key: 'year', header: getText('ev_sales_table_col_year', lang), align: 'left' },
+            { key: 'totalRegs', header: getText('ev_sales_table_col_total', lang), align: 'num' },
+            { key: 'evRegs', header: getText('ev_sales_table_col_ev', lang), align: 'num' },
+            { key: 'evRegsThousands', header: getText('ev_sales_table_col_ev_thousands', lang), align: 'num' },
+            { key: 'sharePct', header: getText('ev_sales_table_col_share', lang), align: 'num' },
+        ],
+        [lang],
+    );
 
     const zoomEffective = Math.max(
         viewportZoom.pinScale,
@@ -287,17 +208,9 @@ const EvSalesRegistrations = () => {
     const plotTopMargin = windowWidth <= 480 ? 56 : 48;
     const plotHeight = windowWidth <= 480 ? 320 : windowWidth <= 768 ? 360 : 400;
 
-    const barPointOpacity = (index) => {
-        if (selectedPoints === null) return 1;
-        if (selectedPoints[0].length === 0) return 0.3;
-        return selectedPoints[0].includes(index) ? 1 : 0.3;
-    };
+    const barPointOpacity = (index) => opacityFor(0, index);
 
-    const linePointOpacity = (index) => {
-        if (selectedPoints === null) return 1;
-        if (selectedPoints[1].length === 0) return 0.3;
-        return selectedPoints[1].includes(index) ? 1 : 0.3;
-    };
+    const linePointOpacity = (index) => opacityFor(1, index);
 
     const lineStrokeFocused =
         selectedPoints === null || selectedPoints[1].length > 0 || selectedPoints[0].length === 0;
@@ -311,138 +224,25 @@ const EvSalesRegistrations = () => {
             `<b>${lineLabel}</b><br>${y}: ${formatPct(lineValues[i])}<br><b>${barsLabel}</b>: ${formatNumber(barValues[i])}<extra></extra>`,
     );
 
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        const title = stripHtml(chartTitle);
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 640,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = [
-                    { color: COLORS.bars, label: barsLabel, type: 'box' },
-                    { color: COLORS.line, label: lineLabel, type: 'line' },
-                ];
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'left';
-                const totalLegendWidth =
-                    legendItems.reduce((acc, item) => acc + ctx.measureText(item.label).width + 56, 0) + 40;
-                let x = (canvas.width - totalLegendWidth) / 2;
-                legendItems.forEach((item) => {
-                    ctx.fillStyle = item.color;
-                    if (item.type === 'box') {
-                        ctx.fillRect(x, legendY - 14, 24, 24);
-                    } else {
-                        ctx.fillRect(x, legendY - 4, 24, 4);
-                    }
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 36, legendY + 6);
-                    x += 36 + ctx.measureText(item.label).width + 40;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${chartDownloadSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: 640,
+        legendItems: [
+            { label: barsLabel, color: COLORS.bars },
+            { label: lineLabel, color: COLORS.line },
+        ],
+    }),
+        [COLORS, barsLabel, chartDownloadSlug, exportChartTitle, lineLabel],
+    );
 
-    const downloadChartCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = tableRows.map((row) =>
-            [
-                row.year,
-                row.totalRegs,
-                row.evRegs,
-                row.evRegsThousands,
-                row.sharePct,
-            ]
-                .map(csvEscape)
-                .join(','),
-        );
-        const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${chartDownloadSlug}.csv`);
-    };
-
-    const downloadChartDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })] })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = tableRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        row.year,
-                        formatNumber(row.totalRegs),
-                        formatNumber(row.evRegs),
-                        formatNumber(row.evRegsThousands),
-                        formatPct(row.sharePct),
-                    ].map((value, index) =>
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(value), size: 18 })],
-                                    alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                    ),
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: substitute(getText('ev_sales_table_caption', lang), textVars),
-                                    bold: true,
-                                    size: 28,
-                                }),
-                            ],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 2200, 2200, 2200, 2600],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${chartDownloadSlug}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('ev_sales_download_chart', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const handleChartClick = (event) => {
         if (!event.points?.length) return;
@@ -450,68 +250,26 @@ const EvSalesRegistrations = () => {
         const pointIndex = event.points[0].pointIndex;
         if (seriesIndex === 2) seriesIndex = 0;
         if (seriesIndex !== 0 && seriesIndex !== 1) return;
-
-        if (windowWidth <= 768) {
-            const currentTime = Date.now();
-            const lastClick = lastClickRef.current;
-            const isSamePoint =
-                seriesIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex;
-            const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-            lastClickRef.current = { time: currentTime, traceIndex: seriesIndex, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedPoints((prev) => {
-            if (prev === null) {
-                const next = [[], []];
-                next[seriesIndex] = [pointIndex];
-                return next;
-            }
-            const next = [prev[0] ? [...prev[0]] : [], prev[1] ? [...prev[1]] : []];
-            const current = next[seriesIndex];
-            if (current.includes(pointIndex)) {
-                next[seriesIndex] = current.filter((i) => i !== pointIndex);
-            } else {
-                next[seriesIndex] = [...current, pointIndex];
-            }
-            if (next[0].length === 0 && next[1].length === 0) return null;
-            return next;
-        });
+        togglePoint(seriesIndex, pointIndex);
     };
 
-    if (loading) {
-        return <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>;
-    }
-    if (error) {
-        return (
-            <p>
-                {lang === 'en' ? 'Error: ' : 'Erreur : '}
-                {error}
-            </p>
-        );
-    }
+    if (loading) return <PageStatus lang={lang} loading />;
+    if (error) return <PageStatus lang={lang} error={error} />;
     if (!chartRows.length) {
         return <p>{getText('ev_sales_no_data', lang)}</p>;
     }
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-96 ev-sales-ev-sales"
-            role="main"
+            className="page-content page-96 ev-sales-ev-sales page-chrome page-chrome--bleed"
             aria-labelledby="ev-sales-chart-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-96.ev-sales-ev-sales {
     max-width: none !important;
     overflow-x: visible !important;
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .ev-sales-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .ev-sales-bullets {
@@ -524,19 +282,10 @@ const EvSalesRegistrations = () => {
 }
 .ev-sales-bullets li { margin-bottom: 10px; }
 .ev-sales-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-bottom: 0;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .ev-sales-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 5px 0;
 }
 .ev-sales-chart-figure { margin: 0; position: relative; }
@@ -561,59 +310,8 @@ const EvSalesRegistrations = () => {
 .ev-sales-legend-box { width: 18px; height: 18px; display: inline-block; border-radius: 2px; }
 .ev-sales-legend-line { width: 28px; height: 4px; display: inline-block; border-radius: 2px; }
 .ev-sales-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.ev-sales-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.ev-sales-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.ev-sales-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.ev-sales-table-scrollbar > div { height: 20px; }
-.ev-sales-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.ev-sales-table-responsive::-webkit-scrollbar { display: none; }
-.ev-sales-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.ev-sales-table-responsive table.table {
-    font-family: var(--font-body);
-    color: var(--gc-text);
-}
-.ev-sales-table-responsive th, .ev-sales-table-responsive td {
-    white-space: nowrap;
-    padding: 8px 12px;
-    font-family: var(--font-body);
-    color: var(--gc-text);
-    border: 1px solid #ddd;
-}
-.ev-sales-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.ev-sales-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
-.ev-sales-table-wrapper summary:hover, .ev-sales-download-buttons button:hover { background-color: #404040 !important; }
 @media (max-width: 768px) {
     .ev-sales-bullets { font-size: 18px; }
-    .ev-sales-chart-title { font-size: 26px; }
 }
             `}</style>
 
@@ -643,31 +341,12 @@ const EvSalesRegistrations = () => {
                     </li>
                 </ul>
 
-                <div className="ev-sales-chart-frame">
-                    <h2 id="ev-sales-chart-title" className="ev-sales-chart-title">
+                <div className="ev-sales-chart-frame page-chrome-chart-frame">
+                    <h2 id="ev-sales-chart-title" className="ev-sales-chart-title page-chrome-chart-title">
                         {chartTitle}
                     </h2>
 
-                    {selectedPoints !== null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedPoints(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
-                    )}
+                    {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
 
                     <figure ref={chartRef} className="ev-sales-chart-figure">
                         <div
@@ -809,33 +488,7 @@ const EvSalesRegistrations = () => {
                                     },
                                     font: { family: 'Arial, sans-serif' },
                                 }}
-                                config={{
-                                    displayModeBar: true,
-                                    displaylogo: false,
-                                    responsive: true,
-                                    modeBarButtonsToRemove: [
-                                        'pan2d',
-                                        'select2d',
-                                        'lasso2d',
-                                        'zoom2d',
-                                        'zoomIn2d',
-                                        'zoomOut2d',
-                                        'autoScale2d',
-                                        'resetScale2d',
-                                        'toImage',
-                                    ],
-                                    modeBarButtonsToAdd: [
-                                        {
-                                            name: getText('ev_sales_download_chart', lang),
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                            },
-                                            click: () => downloadChartWithTitle(),
-                                        },
-                                    ],
-                                }}
+                                config={plotConfig}
                                 onClick={handleChartClick}
                                 className="ev-sales-chart"
                                 useResizeHandler
@@ -856,76 +509,31 @@ const EvSalesRegistrations = () => {
                     </div>
 
                     <div className="ev-sales-table-wrapper">
-                        <details className="ev-sales-data-table" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {getText('ev_sales_table_summary', lang)}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={tableTopRef} className="ev-sales-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                            <div
-                                ref={tableScrollRef}
-                                className="ev-sales-table-responsive"
-                                role="region"
-                                aria-labelledby="ev-sales-table-caption"
-                                tabIndex={0}
-                            >
-                                <table className="table table-striped table-hover">
-                                    <caption id="ev-sales-table-caption" className="wb-inv">
-                                        {substitute(getText('ev_sales_table_caption', lang), textVars)}
-                                    </caption>
-                                    <thead>
-                                        <tr>
-                                            {tableHeaders.map((header) => (
-                                                <th key={header} scope="col">
-                                                    {header}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tableRows.map((row) => (
-                                            <tr key={row.year}>
-                                                <th scope="row">{row.year}</th>
-                                                <td style={{ textAlign: 'right' }} aria-label={`${row.year}, ${tableHeaders[1]}: ${formatNumber(row.totalRegs)}`}>
-                                                    {formatNumber(row.totalRegs)}
-                                                </td>
-                                                <td style={{ textAlign: 'right' }} aria-label={`${row.year}, ${tableHeaders[2]}: ${formatNumber(row.evRegs)}`}>
-                                                    {formatNumber(row.evRegs)}
-                                                </td>
-                                                <td style={{ textAlign: 'right' }} aria-label={`${row.year}, ${tableHeaders[3]}: ${formatNumber(row.evRegsThousands)}`}>
-                                                    {formatNumber(row.evRegsThousands)}
-                                                </td>
-                                                <td style={{ textAlign: 'right' }} aria-label={`${row.year}, ${tableHeaders[4]}: ${formatPct(row.sharePct)}`}>
-                                                    {formatPct(row.sharePct)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div ref={tableBottomRef} className="ev-sales-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                            <div className="ev-sales-download-buttons">
-                                <button type="button" onClick={downloadChartCsv}>
-                                    {getText('ev_sales_download_csv', lang)}
-                                </button>
-                                <button type="button" onClick={downloadChartDocx}>
-                                    {getText('ev_sales_download_docx', lang)}
-                                </button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            label={getText('ev_sales_table_summary', lang)}
+                            columns={tableColumns}
+                            rows={chartRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [900, 2200, 2200, 2200, 2600],
+                                fontSize: 18,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex, column }) => {
+                                if (colIndex === 0) return String(raw ?? '');
+                                if (column?.key === 'sharePct') return formatPct(raw);
+                                return formatNumber(raw);
+                            }}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

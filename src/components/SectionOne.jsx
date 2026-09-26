@@ -1,124 +1,75 @@
-import React, { useEffect, Suspense } from 'react';
-import { useLocation } from 'react-router-dom';
-import EnergyOverview from '../pages/EnergyOverview';
-import WorldEnergyProduction from '../pages/WorldEnergyProduction';
-import CanadianEnergyProduction from '../pages/CanadianEnergyProduction';
-import PrimaryEnergyProduction from '../pages/PrimaryEnergyProduction';
-import PrimaryEnergyByRegion from '../pages/PrimaryEnergyByRegion';
-import CanadaEnergySupply from '../pages/CanadaEnergySupply';
-import NominalGdp from '../pages/NominalGdp';
-import ProvincialGdp from '../pages/ProvincialGdp';
-import Employment from '../pages/Employment';
-import EmploymentChart from '../pages/EmploymentChart';
-import GdpChart from '../pages/GdpChart';
-import CanadianEnergyExportsUsStates from '../pages/CanadianEnergyExportsUsStates';
-import CanadaGlobalEnergyTrade from '../pages/CanadaGlobalEnergyTrade';
-import GovernmentRevenues from '../pages/GovernmentRevenues';
-import CorporateIncomeTaxes from '../pages/CorporateIncomeTaxes';
-import GhgEmissionsBySector from '../pages/GhgEmissionsBySector';
-import EnergyInformationLandscape from '../pages/EnergyInformationLandscape';
-import EnergyAndGhgEmissions from '../pages/EnergyAndGhgEmissions';
-import GhgEmissionsIntensityIndex from '../pages/GhgEmissionsIntensityIndex';
+import React from 'react';
+import { lazyWithPreload } from '../utils/lazyWithPreload';
+import { useOutletContext } from 'react-router-dom';
+import ActivePageSection from './ActivePageSection';
 
-const EnergyTrade = React.lazy(() => import('../pages/EnergyTrade'));
-const EnergyImports = React.lazy(() => import('../pages/EnergyImports'));
+const EnergyOverview = lazyWithPreload(() => import('../pages/EnergyOverview'));
+const WorldEnergyProduction = lazyWithPreload(() => import('../pages/WorldEnergyProduction'));
+const CanadianEnergyProduction = lazyWithPreload(() => import('../pages/CanadianEnergyProduction'));
+const PrimaryEnergyProduction = lazyWithPreload(() => import('../pages/PrimaryEnergyProduction'));
+const PrimaryEnergyByRegion = lazyWithPreload(() => import('../pages/PrimaryEnergyByRegion'));
+const CanadaEnergySupply = lazyWithPreload(() => import('../pages/CanadaEnergySupply'));
+const NominalGdp = lazyWithPreload(() => import('../pages/NominalGdp'));
+const ProvincialGdp = lazyWithPreload(() => import('../pages/ProvincialGdp'));
+const Employment = lazyWithPreload(() => import('../pages/Employment'));
+const EmploymentChart = lazyWithPreload(() => import('../pages/EmploymentChart'));
+const GdpChart = lazyWithPreload(() => import('../pages/GdpChart'));
+const EnergyTrade = lazyWithPreload(() => import('../pages/EnergyTrade'));
+const EnergyImports = lazyWithPreload(() => import('../pages/EnergyImports'));
+const CanadianEnergyExportsUsStates = lazyWithPreload(() => import('../pages/CanadianEnergyExportsUsStates'));
+const CanadaGlobalEnergyTrade = lazyWithPreload(() => import('../pages/CanadaGlobalEnergyTrade'));
+const GovernmentRevenues = lazyWithPreload(() => import('../pages/GovernmentRevenues'));
+const CorporateIncomeTaxes = lazyWithPreload(() => import('../pages/CorporateIncomeTaxes'));
+const EnergyAndGhgEmissions = lazyWithPreload(() => import('../pages/EnergyAndGhgEmissions'));
+const GhgEmissionsIntensityIndex = lazyWithPreload(() => import('../pages/GhgEmissionsIntensityIndex'));
+const GhgEmissionsBySector = lazyWithPreload(() => import('../pages/GhgEmissionsBySector'));
+const EnergyInformationLandscape = lazyWithPreload(() => import('../pages/EnergyInformationLandscape'));
+
+const PAGES = [
+  { id: 'energy-overview', Component: EnergyOverview,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'energy-production', Component: WorldEnergyProduction,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'canadian-energy-production', Component: CanadianEnergyProduction },
+  { id: 'primary-energy-production', Component: PrimaryEnergyProduction },
+  { id: 'primary-energy-by-region', Component: PrimaryEnergyByRegion },
+  { id: 'canada-energy-supply', Component: CanadaEnergySupply },
+  { id: 'economic-contributions', Component: NominalGdp,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'provincial-gdp', Component: ProvincialGdp },
+  { id: 'employment', Component: Employment,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'employment-chart', Component: EmploymentChart },
+  { id: 'gdp-chart', Component: GdpChart },
+  { id: 'energy-trade', Component: EnergyTrade },
+  { id: 'energy-imports', Component: EnergyImports },
+  { id: 'canadian-energy-exports-us-states', Component: CanadianEnergyExportsUsStates },
+  { id: 'canada-global-energy-trade', Component: CanadaGlobalEnergyTrade },
+  { id: 'government-revenues', Component: GovernmentRevenues },
+  { id: 'corporate-income-taxes', Component: CorporateIncomeTaxes },
+  { id: 'energy-and-ghg-emissions', Component: EnergyAndGhgEmissions },
+  { id: 'ghg-emissions-intensity-index', Component: GhgEmissionsIntensityIndex },
+  { id: 'ghg-emissions', Component: GhgEmissionsBySector },
+  { id: 'energy-information-landscape', Component: EnergyInformationLandscape }
+];
+
+/** Section overview topic entry hashes (pages linked from EnergyOverview). */
+const TOPIC_ANCHORS = [
+  'energy-production',
+  'economic-contributions',
+  'energy-and-ghg-emissions',
+];
 
 const SectionOne = () => {
-    const location = useLocation();
-    const [nativeWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-
-    useEffect(() => {
-        window.scrollTo(0, 0);
-
-        const scrollTimer = setTimeout(() => {
-            if (location.hash) {
-                const elementId = location.hash.replace('#', '');
-                const element = document.getElementById(elementId);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            } else {
-                window.scrollTo({ top: 0, behavior: 'instant' });
-            }
-        }, 300);
-
-        return () => clearTimeout(scrollTimer);
-    }, [location.pathname, location.hash]);
-
-    return (
-        <div className="stacked-section-container" style={{ backgroundColor: '#ccc' }}>
-            <div className="stacked-section-inner" style={{ maxWidth: nativeWidth, margin: '0 0', backgroundColor: 'white', transition: 'max-width 0.3s ease-in-out', boxShadow: 'none' }}>
-                <div id="energy-overview" className="stacked-page-wrapper page-with-title-divider">
-                    <EnergyOverview />
-                </div>
-                <div id="energy-production" className="stacked-page-wrapper page-with-title-divider">
-                    <WorldEnergyProduction />
-                </div>
-                <div id="canadian-energy-production" className="stacked-page-wrapper">
-                    <CanadianEnergyProduction />
-                </div>
-                <div id="primary-energy-production" className="stacked-page-wrapper">
-                    <PrimaryEnergyProduction />
-                </div>
-                <div id="primary-energy-by-region" className="stacked-page-wrapper">
-                    <PrimaryEnergyByRegion />
-                </div>
-                <div id="canada-energy-supply" className="stacked-page-wrapper">
-                    <CanadaEnergySupply />
-                </div>
-                <div id="economic-contributions" className="stacked-page-wrapper page-with-title-divider">
-                    <NominalGdp />
-                </div>
-                <div id="provincial-gdp" className="stacked-page-wrapper">
-                    <ProvincialGdp />
-                </div>
-                <div id="employment" className="stacked-page-wrapper page-with-title-divider">
-                    <Employment />
-                </div>
-                <div id="employment-chart" className="stacked-page-wrapper">
-                    <EmploymentChart />
-                </div>
-                <div id="gdp-chart" className="stacked-page-wrapper">
-                    <GdpChart />
-                </div>
-                <div id="energy-trade" className="stacked-page-wrapper">
-                    <Suspense fallback={null}>
-                        <EnergyTrade />
-                    </Suspense>
-                </div>
-                <div id="energy-imports" className="stacked-page-wrapper">
-                    <Suspense fallback={null}>
-                        <EnergyImports />
-                    </Suspense>
-                </div>
-                <div id="canadian-energy-exports-us-states" className="stacked-page-wrapper">
-                    <CanadianEnergyExportsUsStates />
-                </div>
-                <div id="canada-global-energy-trade" className="stacked-page-wrapper">
-                    <CanadaGlobalEnergyTrade />
-                </div>
-                <div id="government-revenues" className="stacked-page-wrapper">
-                    <GovernmentRevenues />
-                </div>
-                <div id="corporate-income-taxes" className="stacked-page-wrapper">
-                    <CorporateIncomeTaxes />
-                </div>
-                <div id="energy-and-ghg-emissions" className="stacked-page-wrapper">
-                    <EnergyAndGhgEmissions />
-                </div>
-                <div id="ghg-emissions-intensity-index" className="stacked-page-wrapper">
-                    <GhgEmissionsIntensityIndex />
-                </div>
-                <div id="ghg-emissions" className="stacked-page-wrapper">
-                    <GhgEmissionsBySector />
-                </div>
-                <div id="energy-information-landscape" className="stacked-page-wrapper">
-                    <EnergyInformationLandscape />
-                </div>
-            </div>
-        </div>
-    );
+  const { lang = 'en' } = useOutletContext() || {};
+  return (
+    <ActivePageSection
+      sectionPath="/section-1"
+      pages={PAGES}
+      topicAnchors={TOPIC_ANCHORS}
+      lang={lang}
+    />
+  );
 };
 
 export default SectionOne;

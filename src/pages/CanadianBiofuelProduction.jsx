@@ -1,9 +1,18 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import hexToRgba from '../utils/hexToRgba';
 
 const CHART_START_YEAR = 2020;
 const CHART_END_YEAR = 2025;
@@ -16,12 +25,6 @@ const HOVER_LABEL = {
     bordercolor: '#000000',
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
-
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
 
 const PAGE_ZOOM_VERTICAL_TICK_MIN = 3.55;
 const PAGE_ZOOM_VERTICAL_TICK_MAX = 5.45;
@@ -88,18 +91,6 @@ const substitute = (text, vars) =>
         text || '',
     );
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
-const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
 const formatMonthRef = (refDate, lang) => {
     const year = Math.floor(refDate / 100);
     const month = refDate % 100;
@@ -136,15 +127,14 @@ const CanadianBiofuelProductionPlot = memo(function CanadianBiofuelProductionPlo
 
 const CanadianBiofuelProduction = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedTraceIds, setSelectedTraceIds] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedTraceIds,
+        clear: clearSelection,
+        toggleSlice,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
     const [xAxisVerticalForPageZoom, setXAxisVerticalForPageZoom] = useState(false);
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const textVars = { startYear: CHART_START_YEAR, endYear: CHART_END_YEAR };
@@ -152,18 +142,27 @@ const CanadianBiofuelProduction = () => {
     const ethanolLabel = getText('canadian_biofuel_production_legend_ethanol', lang);
     const biodieselLabel = getText('canadian_biofuel_production_legend_biodiesel', lang);
     const chartTitle = substitute(getText('canadian_biofuel_production_chart_title', lang), textVars);
+    const exportChartTitle = stripHtml(chartTitle);
     const yAxisTitle = getText('canadian_biofuel_production_yaxis', lang);
     const fileTitle = substitute(getText('canadian_biofuel_production_download_title', lang), textVars);
+    const chartDownloadSlug = fileTitle.replace(/\s+/g, '_');
     const tableCaption = substitute(getText('canadian_biofuel_production_table_caption', lang), textVars);
 
-    const tableHeaders = [
-        getText('canadian_biofuel_production_table_col_date', lang),
-        `${ethanolLabel} (${yAxisTitle})`,
-        `${biodieselLabel} (${yAxisTitle})`,
-    ];
+    const tableColumns = useMemo(() => [
+        { key: 'date', header: getText('canadian_biofuel_production_table_col_date', lang), align: 'left' },
+        { key: 'ethanol', header: `${ethanolLabel} (${yAxisTitle})`, align: 'num' },
+        { key: 'biodiesel', header: `${biodieselLabel} (${yAxisTitle})`, align: 'num' },
+    ], [lang, ethanolLabel, biodieselLabel, yAxisTitle]);
 
     const chartData = canadian_biofuel_production_CHART_DATA;
-    const tableRowsDesc = useMemo(() => [...chartData].reverse(), [chartData]);
+    const tableRows = useMemo(
+        () => [...chartData].reverse().map((row) => ({
+            date: formatMonthRef(row.refDate, lang),
+            ethanol: row.ethanol,
+            biodiesel: row.biodiesel,
+        })),
+        [chartData, lang],
+    );
 
     const xDates = useMemo(() => chartData.map((row) => row.dateIso), [chartData]);
     const ethanolValues = useMemo(() => chartData.map((row) => row.ethanol), [chartData]);
@@ -198,7 +197,6 @@ const CanadianBiofuelProduction = () => {
 
     useEffect(() => {
         const syncViewport = () => {
-            setWindowWidth(window.innerWidth);
             const s = window.visualViewport?.scale ?? 1;
             const pinchVertical = isPinchScaleInVerticalTickBands(s);
             setXAxisVerticalForPageZoom(pinchVertical || isBrowserZoomInVerticalTickRange());
@@ -215,113 +213,17 @@ const CanadianBiofuelProduction = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedTraceIds]);
+    
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
 
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
 
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
 
     const handleChartClick = useCallback((event) => {
         if (!event?.points?.length) return;
         const traceIndex = event.points[0].curveNumber;
         if (traceIndex !== 0 && traceIndex !== 1) return;
-
-        if (windowWidth <= 768) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const isDoubleTap = traceIndex === last.traceIndex && now - last.time < 300;
-            lastClickRef.current = { time: now, traceIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedTraceIds((prev) => {
-            if (prev === null) return [traceIndex];
-            if (prev.includes(traceIndex)) {
-                const next = prev.filter((t) => t !== traceIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, traceIndex];
-        });
-    }, [windowWidth]);
+        toggleSlice(traceIndex);
+    }, [toggleSlice]);
 
     const ethanolFocused = selectedTraceIds === null || selectedTraceIds.includes(0);
     const biodieselFocused = selectedTraceIds === null || selectedTraceIds.includes(1);
@@ -362,173 +264,64 @@ const CanadianBiofuelProduction = () => {
         },
     ];
 
-    const downloadChartPng = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        const title = stripHtml(chartTitle);
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 700,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = [
-                    { color: COLORS.biodiesel, label: biodieselLabel },
-                    { color: COLORS.ethanol, label: ethanolLabel },
-                ];
-                const totalWidth = legendItems.reduce((acc, item) => acc + ctx.measureText(item.label).width + 56, 0) + 40;
-                let x = (canvas.width - totalWidth) / 2;
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'left';
-                legendItems.forEach((item) => {
-                    ctx.strokeStyle = item.color;
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.moveTo(x, legendY);
-                    ctx.lineTo(x + 28, legendY);
-                    ctx.stroke();
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 36, legendY + 6);
-                    x += ctx.measureText(item.label).width + 56;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileTitle}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: 700,
+        legendItems: [
+            { label: biodieselLabel, color: COLORS.biodiesel },
+            { label: ethanolLabel, color: COLORS.ethanol },
+        ],
+    }),
+        [COLORS, biodieselLabel, chartDownloadSlug, ethanolLabel, exportChartTitle],
+    );
 
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = tableRowsDesc.map((row) => [
-            formatMonthRef(row.refDate, lang),
-            row.ethanol,
-            row.biodiesel,
-        ].map(csvEscape).join(','));
-        saveAs(new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }), `${fileTitle}.csv`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('canadian_biofuel_production_download_png', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({
-                            children: [new TextRun({ text: header, bold: true, size: 22 })],
-                            alignment: AlignmentType.CENTER,
-                        })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
+    const useStackedLayout = windowWidth <= 1200;
+
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: chartData.map((row) => row.dateLabel || row.date || row.x),
+            series: [
+                { name: getText('canadian_biofuel_production_legend_ethanol', lang), values: ethanolValues, format: (v) => String(v) },
+                { name: getText('canadian_biofuel_production_legend_biodiesel', lang), values: biodieselValues, format: (v) => String(v) },
+            ],
+            lang,
         });
-        const dataRows = tableRowsDesc.map((row) =>
-            new TableRow({
-                children: [
-                    formatMonthRef(row.refDate, lang),
-                    formatVolume(row.ethanol),
-                    formatVolume(row.biodiesel),
-                ].map((value, index) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(value), size: 22 })],
-                                alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                            }),
-                        ],
-                    }),
-                ),
-            }),
-        );
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(chartTitle), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [3200, 2800, 3200],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Line chart of Canadian biofuel production from ${CHART_START_YEAR} to ${CHART_END_YEAR}`
+                : `Graphique linéaire de la production canadienne de biocarburants de ${CHART_START_YEAR} à ${CHART_END_YEAR}`,
+            body,
+            lang,
         });
-        saveAs(await Packer.toBlob(doc), `${fileTitle}.docx`);
     };
-
-    const downloadBtnStyle = {
-        padding: '8px 16px',
-        backgroundColor: '#8C8C8C',
-        border: '1px solid #404040',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        color: '#ffffff',
-    };
-
-    const useStackedLayout = isTableOpen || windowWidth <= 1200;
+    const chartRegionLabel = `${chartTitle}. ${getChartSummary()}`;
 
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content page-93"
+            className="page-content page-93 page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="canadian-biofuel-production-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-93.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-93 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .canadian-biofuel-production-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .canadian-biofuel-production-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin: 0 0 20px 0;
+    margin-bottom: 20px;
     line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
-}
-.canadian-biofuel-production-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .canadian-biofuel-production-content-row {
     display: flex;
@@ -559,20 +352,10 @@ const CanadianBiofuelProduction = () => {
     padding-left: 24px;
     margin: 0;
 }
-.canadian-biofuel-production-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    box-sizing: border-box;
-}
 .canadian-biofuel-production-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
     line-height: 1.2;
-    margin: 0 0 12px 0;
-    text-align: center;
+    margin-bottom: 12px;
     text-transform: none;
 }
 .canadian-biofuel-production-chart { width: 100%; min-width: 0; height: ${plotHeight}px; position: relative; }
@@ -623,8 +406,6 @@ const CanadianBiofuelProduction = () => {
     .canadian-biofuel-production-text-column { padding-top: 0; margin-bottom: 24px; }
 }
 @media (max-width: 768px) {
-    .canadian-biofuel-production-title { font-size: 37px; }
-    .canadian-biofuel-production-chart-title { font-size: 26px; }
     .canadian-biofuel-production-bullet { font-size: 18px; }
 }
 @media (max-width: 480px) {
@@ -632,7 +413,7 @@ const CanadianBiofuelProduction = () => {
 }
             `}</style>
             <div className="canadian-biofuel-production-inner">
-                <h1 id="canadian-biofuel-production-title" className="canadian-biofuel-production-title">{getText('canadian_biofuel_production_title', lang)}</h1>
+                <h1 id="canadian-biofuel-production-title" className="canadian-biofuel-production-title page-chrome-title">{getText('canadian_biofuel_production_title', lang)}</h1>
 
                 <div className={`canadian-biofuel-production-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <aside className="canadian-biofuel-production-text-column" aria-label={getText('canadian_biofuel_production_text_aria', lang)}>
@@ -662,35 +443,18 @@ const CanadianBiofuelProduction = () => {
                     </aside>
 
                     <div className="canadian-biofuel-production-chart-column">
-                        <div className="canadian-biofuel-production-chart-frame">
-                            <h2 id="canadian-biofuel-production-chart-title" className="canadian-biofuel-production-chart-title">{chartTitle}</h2>
+                        <div className="canadian-biofuel-production-chart-frame page-chrome-chart-frame">
+                            <h2 id="canadian-biofuel-production-chart-title" className="canadian-biofuel-production-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
                             {selectedTraceIds !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedTraceIds(null)}
-                                        style={{
-                                            padding: '6px 12px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontSize: 14,
-                                            color: '#fff',
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                    </button>
-                                </div>
+                                <ClearSelectionButton lang={lang} onClick={clearSelection} />
                             )}
 
                             <figure
                                 ref={chartRef}
                                 className="canadian-biofuel-production-chart"
                                 role="region"
-                                aria-label={getText('canadian_biofuel_production_chart_aria', lang)}
+                                aria-label={chartRegionLabel}
                                 tabIndex={0}
                                 style={{ margin: 0 }}
                             >
@@ -739,22 +503,7 @@ const CanadianBiofuelProduction = () => {
                                             fixedrange: true,
                                         },
                                     }}
-                                    chartConfig={{
-                                        displayModeBar: true,
-                                        displaylogo: false,
-                                        responsive: true,
-                                        scrollZoom: false,
-                                        modeBarButtonsToRemove: MODEBAR_REMOVE,
-                                        modeBarButtonsToAdd: [{
-                                            name: getText('canadian_biofuel_production_download_png', lang),
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                            },
-                                            click: (gd) => downloadChartPng(gd),
-                                        }],
-                                    }}
+                                    chartConfig={plotConfig}
                                     plotHeight={plotHeight}
                                     onChartClick={handleChartClick}
                                 />
@@ -771,90 +520,29 @@ const CanadianBiofuelProduction = () => {
                                 </span>
                             </div>
 
-                            <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                                <summary role="button" aria-expanded={isTableOpen}>
-                                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                    <span className="wb-inv">
-                                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                    </span>
-                                </summary>
-                                <div ref={topScrollRef} className="canadian-biofuel-production-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div
-                                    ref={tableScrollRef}
-                                    className="table-responsive"
-                                    role="region"
-                                    aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                    tabIndex={0}
-                                >
-                                    <table className="table table-bordered table-striped table-hover">
-                                        <caption className="wb-inv">{tableCaption}</caption>
-                                        <thead>
-                                            <tr>
-                                                {tableHeaders.map((header, index) => (
-                                                    <th
-                                                        key={header}
-                                                        scope="col"
-                                                        style={{
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'center',
-                                                            whiteSpace: 'nowrap',
-                                                            verticalAlign: 'bottom',
-                                                            ...(index === 0
-                                                                ? {
-                                                                    position: 'sticky',
-                                                                    left: 0,
-                                                                    backgroundColor: '#f8f9fa',
-                                                                    zIndex: 2,
-                                                                    borderRight: '2px solid #dee2e6',
-                                                                }
-                                                                : {}),
-                                                        }}
-                                                    >
-                                                        {header}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {tableRowsDesc.map((row) => (
-                                                <tr key={row.refDate}>
-                                                    <th
-                                                        scope="row"
-                                                        style={{
-                                                            position: 'sticky',
-                                                            left: 0,
-                                                            zIndex: 1,
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'left',
-                                                            whiteSpace: 'nowrap',
-                                                            borderRight: '2px solid #dee2e6',
-                                                        }}
-                                                    >
-                                                        {formatMonthRef(row.refDate, lang)}
-                                                    </th>
-                                                    <td style={{ textAlign: 'right' }}>{formatVolume(row.ethanol)}</td>
-                                                    <td style={{ textAlign: 'right' }}>{formatVolume(row.biodiesel)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div ref={bottomScrollRef} className="canadian-biofuel-production-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div className="canadian-biofuel-production-download-buttons">
-                                    <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                                        {getText('canadian_biofuel_production_download_csv', lang)}
-                                    </button>
-                                    <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                                        {getText('canadian_biofuel_production_download_docx', lang)}
-                                    </button>
-                                </div>
-                            </details>
+                            <ChartDataTable
+                                lang={lang}
+                                columns={tableColumns}
+                                rows={tableRows}
+                                csvFilename={`${chartDownloadSlug}.csv`}
+                                docx={{
+                                    filename: `${chartDownloadSlug}.docx`,
+                                    title: exportChartTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: [3200, 2800, 3200],
+                                    fontSize: 22,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                                renderCell={(raw, { colIndex }) => (
+                                    colIndex === 0 ? String(raw ?? '') : formatVolume(raw)
+                                )}
+                            />
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

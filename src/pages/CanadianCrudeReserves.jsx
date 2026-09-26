@@ -1,10 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import FootnoteMarker from '../components/FootnoteMarker';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCanadianCrudeReservesData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+
 import CanadianCrudeReservesInfographic from '../components/CanadianCrudeReservesInfographic';
 import canadianCrudeReservesBg from '../assets/canadian_crude_reserves_bg.png';
 import { OVERLAY_COLORS, LABEL_SLOTS, VALUE_SLOTS } from '../components/CanadianCrudeReservesInfographic.constants';
@@ -20,19 +33,16 @@ const CanadianCrudeReserves = () => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick: handleChartClick,
+    } = usePlotlySelection({ mode: 'points', traceCount: 2, windowWidth });
     const chartRef = useRef(null);
     const infographicFigureRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     const formatInt = (n) =>
         n == null || Number.isNaN(n)
@@ -47,10 +57,7 @@ const CanadianCrudeReserves = () => {
         });
     };
 
-    const scrollToElement = (id) => (event) => {
-        event?.preventDefault();
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToElement = (id) => makeScrollToIdHandler(id);
 
     useEffect(() => {
         getCanadianCrudeReservesData()
@@ -59,63 +66,7 @@ const CanadianCrudeReserves = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTop = () => syncFrom(topScroll);
-        const handleTable = () => syncFrom(tableScroll);
-        const handleBottom = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTop);
-        tableScroll.addEventListener('scroll', handleTable);
-        bottomScroll.addEventListener('scroll', handleBottom);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTop);
-            tableScroll.removeEventListener('scroll', handleTable);
-            bottomScroll.removeEventListener('scroll', handleBottom);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, result, syncTableScroll]);
-
     const chartData = useMemo(() => result?.wells ?? [], [result]);
-    const chartTableRows = useMemo(() => [...chartData].sort((a, b) => b.year - a.year), [chartData]);
     const reserves = result?.reserves;
     const startYear = result?.startYear ?? 2000;
     const endYear = result?.endYear ?? startYear;
@@ -141,6 +92,14 @@ const CanadianCrudeReserves = () => {
     const chartTitle = getText('petroleum_reserves_chart_title', lang);
     const exportTitleWithRange = `${stripHtml(chartTitle)}${yearRangeSuffix}`;
 
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
+        { key: 'wellsCompleted', header: getText('petroleum_reserves_table_col_count', lang), align: 'num' },
+        { key: 'avgDepthM', header: getText('petroleum_reserves_table_col_depth', lang), align: 'num' },
+    ], [lang]);
+
+    const tableCaption = substitute(getText('petroleum_reserves_table_caption', lang), textVars);
+
     const plotBottomMargin = windowWidth <= 480 ? 100 : windowWidth <= 768 ? 88 : 72;
     const plotTopMargin = windowWidth <= 480 ? 56 : 48;
     const chartHeight = windowWidth <= 480 ? 340 : windowWidth <= 768 ? 380 : 440;
@@ -156,146 +115,24 @@ const CanadianCrudeReserves = () => {
     const maxDepth = depths.length ? Math.max(...depths) : 3000;
     const yDepthMax = Math.ceil(maxDepth / 500) * 500 || 3000;
 
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 700,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 96;
-                const legendHeight = 52;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(exportTitleWithRange, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 30;
-                const items = [
-                    { label: legendBars, color: BAR_COLOR, isLine: false },
-                    { label: legendLine, color: LINE_COLOR, isLine: true },
-                ];
-                const totalW = items.reduce((acc, it) => acc + ctx.measureText(it.label).width + 50, 0) + 40;
-                let xPos = (canvas.width - totalW) / 2;
-                items.forEach((it) => {
-                    if (it.isLine) {
-                        ctx.strokeStyle = it.color;
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-                        ctx.moveTo(xPos, legendY);
-                        ctx.lineTo(xPos + 28, legendY);
-                        ctx.stroke();
-                    } else {
-                        ctx.fillStyle = it.color;
-                        ctx.fillRect(xPos, legendY - 8, 24, 14);
-                    }
-                    ctx.fillStyle = '#333333';
-                    ctx.font = '20px Arial';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(it.label, xPos + 34, legendY + 6);
-                    xPos += 34 + ctx.measureText(it.label).width + 36;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileSlugBase}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${fileSlugBase}.png`,
+        title: exportTitleWithRange,
+        height: 700,
+        legendItems: [
+            { label: legendBars, color: BAR_COLOR },
+            { label: legendLine, color: LINE_COLOR },
+        ],
+    }),
+        [BAR_COLOR, LINE_COLOR, exportTitleWithRange, fileSlugBase, legendBars, legendLine],
+    );
 
-    const downloadTableAsCSV = () => {
-        const headers = [
-            getText('petroleum_employment_table_col_year', lang),
-            getText('petroleum_reserves_table_col_count', lang),
-            getText('petroleum_reserves_table_col_depth', lang),
-        ];
-        const rows = chartTableRows.map((d) => [d.year, Math.round(d.wellsCompleted), Math.round(d.avgDepthM)]);
-        const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-        saveAs(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }), `${fileSlugBase}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const yCol = getText('petroleum_employment_table_col_year', lang);
-        const cCol = getText('petroleum_reserves_table_col_count', lang);
-        const dCol = getText('petroleum_reserves_table_col_depth', lang);
-        const headerRow = new TableRow({
-            children: [yCol, cCol, dCol].map(
-                (h) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: h, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = chartTableRows.map(
-            (d) =>
-                new TableRow({
-                    children: [
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(d.year), size: 22 })],
-                                    alignment: AlignmentType.CENTER,
-                                }),
-                            ],
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: formatInt(d.wellsCompleted), size: 22 })],
-                                    alignment: AlignmentType.CENTER,
-                                }),
-                            ],
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: formatInt(d.avgDepthM), size: 22 })],
-                                    alignment: AlignmentType.CENTER,
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: exportTitleWithRange, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [2000, 3200, 3200],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        saveAs(await Packer.toBlob(doc), `${fileSlugBase}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const downloadInfographicPng = async () => {
         const img = new Image();
@@ -371,51 +208,28 @@ const CanadianCrudeReserves = () => {
     const lineStrokeOpacity =
         selectedPoints === null || (selectedPoints[1] && selectedPoints[1].length > 0) ? 1 : 0.3;
 
-    if (loading) return <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>;
-    if (error) return <p>{error}</p>;
+    if (loading || error) return <PageStatus lang={lang} loading={loading} error={error} />;
     if (!reserves || !chartData.length) return <p>{getText('petroleum_reserves_no_data', lang)}</p>;
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-110"
-            role="main"
+            className="page-content page-110 canadian-crude-reserves page-chrome page-chrome--bleed"
             aria-labelledby="canadian-crude-reserves-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-110.page-content {
     max-width: none !important;
     overflow-x: visible !important;
 }
-.page-110 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
+.page-110.canadian-crude-reserves {
 }
 .canadian-crude-reserves-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .canadian-crude-reserves-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin: 0 0 20px 0;
+    margin-bottom: 20px;
     line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
-}
-.canadian-crude-reserves-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .canadian-crude-reserves-section-title {
     font-family: 'Lato', sans-serif;
@@ -445,19 +259,11 @@ const CanadianCrudeReserves = () => {
 }
 .canadian-crude-reserves-infographic-actions button:hover { background: #404040; }
 .canadian-crude-reserves-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-bottom: 24px;
-    box-sizing: border-box;
 }
 .canadian-crude-reserves-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
-    margin: 0 0 12px 0;
+    margin-bottom: 12px;
     text-transform: none;
 }
 .canadian-crude-reserves-chart { width: 100%; position: relative; min-height: 0; }
@@ -479,30 +285,6 @@ const CanadianCrudeReserves = () => {
 }
 .canadian-crude-reserves-legend-label { font-size: 18px; color: var(--gc-text); }
 .canadian-crude-reserves-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.canadian-crude-reserves-table-wrapper details > summary {
-    display: block; width: 100%; padding: 12px 15px;
-    background-color: #8C8C8C; border: 1px solid #404040; border-radius: 4px;
-    cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; list-style: none;
-}
-.canadian-crude-reserves-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.canadian-crude-reserves-table-wrapper details > summary:hover { background-color: #404040; }
-.canadian-crude-reserves-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.canadian-crude-reserves-table-scrollbar > div { height: 20px; }
-.canadian-crude-reserves-table-responsive {
-    display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; margin-top: 10px;
-    scrollbar-width: none; -ms-overflow-style: none;
-}
-.canadian-crude-reserves-table-responsive::-webkit-scrollbar { display: none; }
-.canadian-crude-reserves-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.canadian-crude-reserves-table-responsive th, .canadian-crude-reserves-table-responsive td {
-    white-space: nowrap; padding: 8px 12px; font-family: Arial, sans-serif; color: var(--gc-text); border: 1px solid #ddd;
-}
-.canadian-crude-reserves-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.canadian-crude-reserves-download-buttons button {
-    padding: 8px 16px; border: 1px solid #404040; border-radius: 4px;
-    background: #8C8C8C; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff;
-}
-.canadian-crude-reserves-download-buttons button:hover { background: #404040; }
 .canadian-crude-reserves-footnotes {
     font-family: var(--font-body); font-size: 1rem; color: var(--gc-text);
     margin-top: 24px; padding-top: 12px; border-top: 1px solid #e0e0e0; line-height: 1.65;
@@ -512,23 +294,23 @@ const CanadianCrudeReserves = () => {
 }
 .canadian-crude-reserves-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
 @media (max-width: 768px) {
-    .canadian-crude-reserves-title { font-size: 37px; }
-    .canadian-crude-reserves-section-title, .canadian-crude-reserves-chart-title { font-size: 26px; }
+    .canadian-crude-reserves-section-title { font-size: 26px; }
     .canadian-crude-reserves-units { font-size: 18px; }
 }
             `}</style>
 
             <div className="canadian-crude-reserves-inner">
-                <h1 id="canadian-crude-reserves-title" className="canadian-crude-reserves-title">{getText('petroleum_reserves_title', lang)}</h1>
+                <h1 id="canadian-crude-reserves-title" className="canadian-crude-reserves-title page-chrome-title">{getText('petroleum_reserves_title', lang)}</h1>
 
                 <h2 id="canadian-crude-reserves-infographic-title" className="canadian-crude-reserves-section-title">
                     {getText('petroleum_reserves_infographic_title', lang)}
-                    <span id="fn-asterisk-rf-canadian-crude-reserves" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
-                        <a className="fn-lnk" href="#fn-asterisk-canadian-crude-reserves" onClick={scrollToElement('fn-asterisk-canadian-crude-reserves')}>
-                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                            <span aria-hidden="true">*</span>
-                        </a>
-                    </span>
+                    <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-canadian-crude-reserves"
+                            id="fn-asterisk-rf-canadian-crude-reserves"
+                            marker="*"
+                            onClick={scrollToElement('fn-asterisk-canadian-crude-reserves')}
+                        />
                 </h2>
                 <p className="canadian-crude-reserves-units">{substitute(getText('petroleum_reserves_infographic_units', lang), textVars)}</p>
 
@@ -546,30 +328,13 @@ const CanadianCrudeReserves = () => {
                     <button type="button" onClick={downloadInfographicPng}>{getText('petroleum_reserves_download_png', lang)}</button>
                 </div>
 
-                <div className="canadian-crude-reserves-chart-frame">
-                    <h2 id="canadian-crude-reserves-chart-title" className="canadian-crude-reserves-chart-title">{chartTitle}</h2>
+                <div className="canadian-crude-reserves-chart-frame page-chrome-chart-frame">
+                    <h2 id="canadian-crude-reserves-chart-title" className="canadian-crude-reserves-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
                     <div className="canadian-crude-reserves-chart-block">
                         <div role="region" aria-label={getText('petroleum_reserves_chart_aria', lang)} tabIndex="0">
                             {selectedPoints !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedPoints(null)}
-                                        style={{
-                                            padding: '6px 12px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontSize: 14,
-                                            color: '#fff',
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                    </button>
-                                </div>
+                                <ClearSelectionButton lang={lang} onClick={clearSelection} />
                             )}
                             <figure ref={chartRef} className="canadian-crude-reserves-chart" style={{ margin: 0 }}>
                                 <div aria-hidden="true">
@@ -661,65 +426,10 @@ const CanadianCrudeReserves = () => {
                                                 automargin: true,
                                             },
                                         }}
-                                        config={{
-                                            displayModeBar: true,
-                                            displaylogo: false,
-                                            responsive: true,
-                                            scrollZoom: false,
-                                            modeBarButtonsToRemove: [
-                                                'toImage', 'select2d', 'lasso2d', 'zoom2d', 'pan2d',
-                                                'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d',
-                                            ],
-                                            modeBarButtonsToAdd: [
-                                                {
-                                                    name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                                    icon: {
-                                                        width: 24, height: 24,
-                                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                                    },
-                                                    click: (gd) => downloadChartWithTitle(gd),
-                                                },
-                                            ],
-                                        }}
+                                        config={plotConfig}
                                         style={{ width: '100%', height: `${chartHeight}px` }}
                                         useResizeHandler
-                                        onClick={(data) => {
-                                            if (!data.points?.length) return;
-                                            const clickedPoint = data.points[0];
-                                            const traceIndex = clickedPoint.curveNumber;
-                                            const pointIndex = clickedPoint.pointIndex;
-                                            if (traceIndex === undefined || pointIndex === undefined) return;
-
-                                            if (windowWidth <= 768) {
-                                                const currentTime = Date.now();
-                                                const lastClick = lastClickRef.current;
-                                                const isSamePoint =
-                                                    traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex;
-                                                const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-                                                lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
-                                                if (!isDoubleTap) return;
-                                            }
-
-                                            setSelectedPoints((prev) => {
-                                                if (prev === null) {
-                                                    const next = [[], []];
-                                                    next[traceIndex].push(pointIndex);
-                                                    return next;
-                                                }
-                                                const isSelected = prev[traceIndex]?.includes(pointIndex);
-                                                if (isSelected) {
-                                                    const next = prev.map((tracePoints, idx) =>
-                                                        idx === traceIndex
-                                                            ? tracePoints.filter((p) => p !== pointIndex)
-                                                            : [...tracePoints],
-                                                    );
-                                                    return next.every((arr) => arr.length === 0) ? null : next;
-                                                }
-                                                return prev.map((tracePoints, idx) =>
-                                                    idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints],
-                                                );
-                                            });
-                                        }}
+                                        onClick={handleChartClick}
                                     />
                                 </div>
                             </figure>
@@ -740,87 +450,39 @@ const CanadianCrudeReserves = () => {
                     </div>
 
                     <div className="canadian-crude-reserves-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {getText('petroleum_reserves_table_summary', lang)}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={topScrollRef} className="canadian-crude-reserves-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div
-                                ref={tableScrollRef}
-                                className="canadian-crude-reserves-table-responsive"
-                                role="region"
-                                aria-label={getText('petroleum_reserves_table_summary', lang)}
-                                tabIndex="0"
-                            >
-                                <table className="table table-bordered table-striped table-hover">
-                                    <caption className="wb-inv">{substitute(getText('petroleum_reserves_table_caption', lang), textVars)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                {getText('petroleum_employment_table_col_year', lang)}
-                                            </th>
-                                            <th scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                {getText('petroleum_reserves_table_col_count', lang)}
-                                            </th>
-                                            <th scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                {getText('petroleum_reserves_table_col_depth', lang)}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {chartTableRows.map((d) => (
-                                            <tr key={d.year}>
-                                                <td style={{ textAlign: 'center' }}>{d.year}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatInt(d.wellsCompleted)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatInt(d.avgDepthM)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div ref={bottomScrollRef} className="canadian-crude-reserves-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div className="canadian-crude-reserves-download-buttons">
-                                <button type="button" onClick={downloadTableAsCSV}>{getText('petroleum_reserves_download_csv', lang)}</button>
-                                <button type="button" onClick={downloadTableAsDocx}>{getText('petroleum_reserves_download_docx', lang)}</button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            label={getText('petroleum_reserves_table_summary', lang)}
+                            columns={tableColumns}
+                            rows={chartData}
+                            csvFilename={`${fileSlugBase}.csv`}
+                            docx={{
+                                filename: `${fileSlugBase}.docx`,
+                                title: exportTitleWithRange,
+                                titleAlign: 'center',
+                                columnWidths: [2000, 3200, 3200],
+                                fontSize: 22,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={getText('petroleum_reserves_table_summary', lang)}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatInt(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
-                <aside className="wb-fnote canadian-crude-reserves-footnotes" role="note">
-                    <h2 id="fn-canadian-crude-reserves">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</dt>
-                        <dd id="fn-asterisk-canadian-crude-reserves">
-                            <a
-                                href="#fn-asterisk-rf-canadian-crude-reserves"
-                                onClick={scrollToElement('fn-asterisk-rf-canadian-crude-reserves')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('petroleum_reserves_footnote_asterisk', lang)}
-                        </dd>
-                        <dd id="fn-dagger-canadian-crude-reserves">
-                            <a
-                                href="#fn-dagger-rf-canadian-crude-reserves-infographic"
-                                onClick={scrollToElement('fn-dagger-rf-canadian-crude-reserves-infographic')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote ** referrer' : 'Retour à la référence de la note de bas de page **'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>**
-                            </a>
-                            {' '}{getText('petroleum_reserves_footnote_dagger', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn-canadian-crude-reserves"
+                    className="canadian-crude-reserves-footnotes"
+                    items={[
+                        { id: 'fn-asterisk-canadian-crude-reserves', marker: '*', text: getText('petroleum_reserves_footnote_asterisk', lang), returnHref: '#fn-asterisk-rf-canadian-crude-reserves' },
+                        { id: 'fn-dagger-canadian-crude-reserves', marker: '**', text: getText('petroleum_reserves_footnote_dagger', lang), returnHref: '#fn-dagger-rf-canadian-crude-reserves-infographic' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

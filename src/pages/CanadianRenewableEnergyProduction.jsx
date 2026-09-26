@@ -1,10 +1,22 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+
 import canadianRenewableEnergyProductionBg from '../assets/canadian_renewable_energy_production_bg.svg';
+import { formatLocalePct } from '../utils/formatLocale';
 
 const VALUE_BAR = '#2B5C3F';
 const TRACK_BAR = '#e8e8e8';
@@ -14,12 +26,6 @@ const HOVER_LABEL = {
     bordercolor: '#000000',
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
-
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
 
 const getPlotTooltipPosition = (event, bgRef, chartRef) => {
     const bgEl = bgRef.current;
@@ -76,8 +82,6 @@ const SHARE_ROWS = [
 ];
 const SHARE_VALUES = SHARE_ROWS.map((row) => row.value);
 const TRACK_VALUES = SHARE_ROWS.map(() => 100);
-
-const DOC_COLUMN_WIDTHS = [5200, 2000];
 
 const OVERLAY = { x: 0.52, y: 0.98, sizex: 0.48, sizey: 0.95 };
 const BARS_Y_DOMAIN = [0.02, 0.98];
@@ -174,43 +178,36 @@ const computePageZoomScale = (baseline) => {
     return { pageCssZoom, baseline: nextBaseline };
 };
 
-const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
 
 const CanadianRenewableEnergyProduction = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
     const [hoverTip, setHoverTip] = useState(null);
 
     const chartRef = useRef(null);
     const chartBgRef = useRef(null);
     const chartWidthRef = useRef(null);
     const zoomBaselineRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, pointIndex: null });
     const clickHandlerRef = useRef(null);
     const hoverHandlerRef = useRef(null);
     const hoverClearRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
     const [chartWidth, setChartWidth] = useState(800);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const bgImage = canadianRenewableEnergyProductionBg;
 
-    const formatPct = useCallback((value, digits = 1) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
-        const formatted = Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-        return lang === 'en' ? `${formatted}%` : `${formatted} %`;
-    }, [lang, locale]);
+    const formatPct = useCallback((value, digits = 1) => formatLocalePct(value, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    }), [lang]);
 
     const formatWhole = (value) => Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
     const formatMtoe = (value) => Number(value).toLocaleString(locale, {
@@ -228,13 +225,28 @@ const CanadianRenewableEnergyProduction = () => {
     const chartTitlePrefix = getText('canadian_renewable_energy_production_chart_title_prefix', lang);
     const chartTitleSuffix = substitute(getText('canadian_renewable_energy_production_chart_title_suffix', lang), textVars);
     const chartTitlePlain = `${chartTitlePrefix}*${chartTitleSuffix}`;
+    const exportChartTitle = stripHtml(chartTitlePlain);
     const chartDownloadSlug = getText('canadian_renewable_energy_production_download_title', lang).replace(/\s+/g, '_');
+    const tableCaption = getText('canadian_renewable_energy_production_table_caption', lang);
 
     const shareLabels = useMemo(
         () => SHARE_ROWS.map((row) => getText(`canadian_renewable_energy_production_cat_${row.key}`, lang)),
         [lang],
     );
     const shareValues = SHARE_VALUES;
+
+    const tableColumns = useMemo(() => [
+        { key: 'category', header: getText('canadian_renewable_energy_production_table_col_category', lang), align: 'left' },
+        { key: 'share', header: getText('canadian_renewable_energy_production_table_col_share', lang), align: 'num' },
+    ], [lang]);
+
+    const tableRows = useMemo(
+        () => SHARE_ROWS.map((row, index) => ({
+            category: shareLabels[index],
+            share: row.value,
+        })),
+        [shareLabels],
+    );
 
     const tickFontSize = tickFontSizeForWidth(windowWidth);
     const compactCategoryLabels = pageCssZoom >= 2.5 || chartWidth < 420;
@@ -327,31 +339,9 @@ const CanadianRenewableEnergyProduction = () => {
         if (!event?.points?.length) return;
         const point = event.points[0];
         if (point.curveNumber !== 1) return;
-        const pointIndex = getPointIndex(point);
-        if (pointIndex === undefined) return;
-
-        const isCoarsePointer = typeof window !== 'undefined'
-            && window.matchMedia('(pointer: coarse)').matches;
-
-        if (isCoarsePointer) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const isDoubleTap = pointIndex === last.pointIndex && now - last.time < 300;
-            lastClickRef.current = { time: now, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
         setHoverTip(null);
-
-        setSelectedPoints((prev) => {
-            if (prev === null) return [pointIndex];
-            if (prev.includes(pointIndex)) {
-                const next = prev.filter((i) => i !== pointIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, pointIndex];
-        });
-    }, []);
+        onPlotClick(event);
+    }, [onPlotClick]);
 
     useEffect(() => {
         hoverHandlerRef.current = handleChartHover;
@@ -386,26 +376,14 @@ const CanadianRenewableEnergyProduction = () => {
         [bindPlotHandlers],
     );
 
-    const clearSelection = () => {
-        lastClickRef.current = { time: 0, pointIndex: null };
-        setSelectedPoints(null);
-    };
-
     const handleChartWrapperLeave = useCallback(() => setHoverTip(null), []);
 
-    const scrollToFootnote = (event) => {
-        event.preventDefault();
-        document.getElementById('fn-asterisk-canadian-renewable-energy-production')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-canadian-renewable-energy-production');
 
-    const scrollToRef = (event) => {
-        event.preventDefault();
-        document.getElementById('fn-asterisk-rf-canadian-renewable-energy-production')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-canadian-renewable-energy-production');
 
     useEffect(() => {
         const onResize = () => {
-            setWindowWidth(window.innerWidth);
             const { pageCssZoom: nextZoom, baseline } = computePageZoomScale(zoomBaselineRef.current);
             zoomBaselineRef.current = baseline;
             setPageCssZoom(nextZoom);
@@ -432,164 +410,18 @@ const CanadianRenewableEnergyProduction = () => {
         return () => ro.disconnect();
     }, []);
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
 
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return undefined;
 
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
 
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const downloadChartWithTitle = useCallback(async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: Math.max(520, plotHeight + 40),
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = imgData;
-            });
-            const titleHeight = 90;
-            canvas.width = img.width;
-            canvas.height = img.height + titleHeight;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#333333';
-            ctx.font = 'bold 28px Arial';
-            ctx.textAlign = 'center';
-            const words = chartTitlePlain.split(' ');
-            const lines = [];
-            let line = '';
-            words.forEach((word) => {
-                const test = line ? `${line} ${word}` : word;
-                if (ctx.measureText(test).width > canvas.width - 80 && line) {
-                    lines.push(line);
-                    line = word;
-                } else {
-                    line = test;
-                }
-            });
-            if (line) lines.push(line);
-            lines.forEach((textLine, index) => {
-                ctx.fillText(textLine, canvas.width / 2, 36 + index * 30);
-            });
-            ctx.drawImage(img, 0, titleHeight);
-            canvas.toBlob((blob) => {
-                if (blob) saveAs(blob, `${chartDownloadSlug}.png`);
-            });
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    }, [chartTitlePlain, chartDownloadSlug, plotHeight]);
-
-    const downloadCsv = () => {
-        const sections = [
-            csvEscape(chartTitlePlain),
-            [
-                csvEscape(getText('canadian_renewable_energy_production_table_col_category', lang)),
-                csvEscape(getText('canadian_renewable_energy_production_table_col_share', lang)),
-            ].join(','),
-            ...SHARE_ROWS.map((row, index) => [
-                csvEscape(shareLabels[index]),
-                csvEscape(formatPct(row.value, 1)),
-            ].join(',')),
-        ];
-        saveAs(new Blob([sections.join('\n')], { type: 'text/csv;charset=utf-8;' }), `${chartDownloadSlug}.csv`);
-    };
-
-    const downloadDocx = async () => {
-        const shareHeader = new TableRow({
-            children: [
-                getText('canadian_renewable_energy_production_table_col_category', lang),
-                getText('canadian_renewable_energy_production_table_col_share', lang),
-            ].map((cell) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: cell, bold: true, size: 18 })],
-                    alignment: AlignmentType.CENTER,
-                })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const shareDocRows = SHARE_ROWS.map((row, index) => new TableRow({
-            children: [shareLabels[index], formatPct(row.value, 1)].map((val, colIndex) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: String(val), size: 18 })],
-                    alignment: colIndex === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                })],
-            })),
-        }));
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: pageTitle, bold: true, size: 28 })],
-                        spacing: { after: 200 },
-                    }),
-                    new Paragraph({
-                        children: [new TextRun({ text: chartTitlePlain, bold: true, size: 22 })],
-                        spacing: { after: 160 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: DOC_COLUMN_WIDTHS,
-                        rows: [shareHeader, ...shareDocRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${chartDownloadSlug}.docx`);
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: Math.max(520, plotHeight + 40),
+    }),
+        [chartDownloadSlug, exportChartTitle, plotHeight],
+    );
 
     const barLabelFont = useMemo(() => ({
         size: BAR_VALUE_FONT_SIZE,
@@ -689,63 +521,49 @@ const CanadianRenewableEnergyProduction = () => {
         bargap: BAR_GAP,
     }), [plotHeight, plotMargin, chartImages, shareLabels, boldTickText, tickFont]);
 
-    const chartConfig = useMemo(() => ({
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('canadian_renewable_energy_production_download_png', lang),
-            icon: {
-                width: 24,
-                height: 24,
-                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-            },
-            click: (gd) => downloadChartWithTitle(gd),
-        }],
-    }), [lang, downloadChartWithTitle]);
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('canadian_renewable_energy_production_download_png', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const plotKey = `canadian-renewable-energy-production-${lang}-${tickFontSize}-${leftMargin}-${plotHeight}`;
 
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: shareLabels,
+            series: [{
+                name: lang === 'en' ? 'Share' : 'Part',
+                values: shareValues,
+                format: (v) => formatPct(v, 1),
+            }],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? 'Bar chart of renewable energy production shares'
+                : 'Graphique à barres des parts de production d\'énergie renouvelable',
+            body,
+            lang,
+        });
+    };
+    const chartRegionLabel = `${exportChartTitle}. ${getChartSummary()}`;
+
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content canadian-renewable-energy-production"
+            className="page-content canadian-renewable-energy-production page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="canadian-renewable-energy-production-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .canadian-renewable-energy-production {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .canadian-renewable-energy-production-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .canadian-renewable-energy-production-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin-top: 0;
-    margin-bottom: 25px;
     line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
-}
-.canadian-renewable-energy-production-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .canadian-renewable-energy-production-chart-title {
     font-family: 'Lato', sans-serif;
@@ -760,30 +578,8 @@ const CanadianRenewableEnergyProduction = () => {
     color: inherit;
     text-decoration: none;
 }
-.canadian-renewable-energy-production-clear-selection {
-    padding: 6px 12px;
-    margin-bottom: 8px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    color: #ffffff;
-}
-.canadian-renewable-energy-production-clear-selection:hover,
-.canadian-renewable-energy-production-download-buttons button:hover,
-.canadian-renewable-energy-production-table-wrapper details > summary:hover {
-    background-color: #404040 !important;
-}
 .canadian-renewable-energy-production-chart-frame {
     position: relative;
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .canadian-renewable-energy-production-chart-bg-wrapper {
     position: relative;
@@ -840,54 +636,6 @@ const CanadianRenewableEnergyProduction = () => {
     top: 2px !important;
 }
 .canadian-renewable-energy-production-chart .hoverlayer { display: none !important; }
-.canadian-renewable-energy-production-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.canadian-renewable-energy-production-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.canadian-renewable-energy-production-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.canadian-renewable-energy-production-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.canadian-renewable-energy-production-table-scrollbar > div { height: 20px; }
-.canadian-renewable-energy-production-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    padding: 15px;
-    box-sizing: border-box;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.canadian-renewable-energy-production-table-responsive::-webkit-scrollbar { display: none; }
-.canadian-renewable-energy-production-table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-.canadian-renewable-energy-production-table-responsive th,
-.canadian-renewable-energy-production-table-responsive td {
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    white-space: nowrap;
-}
-.canadian-renewable-energy-production-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.canadian-renewable-energy-production-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    color: #ffffff;
-}
 .canadian-renewable-energy-production-footnotes {
     font-family: var(--font-body);
     font-size: 1rem;
@@ -925,13 +673,10 @@ const CanadianRenewableEnergyProduction = () => {
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
 }
-@media (max-width: 768px) {
-    .canadian-renewable-energy-production-title { font-size: 37px; }
-}
             `}</style>
 
             <div className="canadian-renewable-energy-production-inner">
-                <h1 id="canadian-renewable-energy-production-title" className="canadian-renewable-energy-production-title">
+                <h1 id="canadian-renewable-energy-production-title" className="canadian-renewable-energy-production-title page-chrome-title">
                     {pageTitle}
                 </h1>
 
@@ -946,11 +691,9 @@ const CanadianRenewableEnergyProduction = () => {
                     {chartTitleSuffix}
                 </h2>
 
-                <div className="canadian-renewable-energy-production-chart-frame">
+                <div className="canadian-renewable-energy-production-chart-frame page-chrome-chart-frame">
                     {selectedPoints !== null && (
-                        <button type="button" className="canadian-renewable-energy-production-clear-selection" onClick={clearSelection}>
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
+                        <ClearSelectionButton lang={lang} onClick={clearSelection} />
                     )}
 
                     <div
@@ -968,14 +711,14 @@ const CanadianRenewableEnergyProduction = () => {
                                 className="canadian-renewable-energy-production-chart"
                                 style={{ height: plotHeight, margin: 0 }}
                                 role="region"
-                                aria-label={chartTitlePlain}
+                                aria-label={chartRegionLabel}
                                 tabIndex={0}
                             >
                                 <CanadianRenewableEnergyProductionPlot
                                     plotKey={plotKey}
                                     plotData={plotData}
                                     plotLayout={plotLayout}
-                                    chartConfig={chartConfig}
+                                    chartConfig={plotConfig}
                                     onPlotReady={onPlotReady}
                                 />
                             </figure>
@@ -996,66 +739,36 @@ const CanadianRenewableEnergyProduction = () => {
 
                 </div>
 
-                <div className="canadian-renewable-energy-production-table-wrapper">
-                    <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            <span className="wb-inv">
-                                {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                            </span>
-                        </summary>
-                        <div ref={topScrollRef} className="canadian-renewable-energy-production-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div ref={tableScrollRef} className="canadian-renewable-energy-production-table-responsive" role="region" tabIndex={0}>
-                            <table className="table table-striped table-hover">
-                                <caption className="wb-inv">{getText('canadian_renewable_energy_production_table_caption', lang)}</caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">{getText('canadian_renewable_energy_production_table_col_category', lang)}</th>
-                                        <th scope="col">{getText('canadian_renewable_energy_production_table_col_share', lang)}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {SHARE_ROWS.map((row, index) => (
-                                        <tr key={row.key}>
-                                            <th scope="row">{shareLabels[index]}</th>
-                                            <td style={{ textAlign: 'right' }}>{formatPct(row.value, 1)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <div className="canadian-renewable-energy-production-download-buttons">
-                                <button type="button" onClick={downloadCsv}>
-                                    {getText('canadian_renewable_energy_production_download_csv', lang)}
-                                </button>
-                                <button type="button" onClick={downloadDocx}>
-                                    {getText('canadian_renewable_energy_production_download_docx', lang)}
-                                </button>
-                            </div>
-                        </div>
-                        <div ref={bottomScrollRef} className="canadian-renewable-energy-production-table-scrollbar" aria-hidden="true"><div /></div>
-                    </details>
+                <div className="canadian-renewable-energy-production-table-wrapper" style={{ marginTop: 20 }}>
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={tableRows}
+                        csvFilename={`${chartDownloadSlug}.csv`}
+                        docx={{
+                            filename: `${chartDownloadSlug}.docx`,
+                            title: exportChartTitle,
+                            titleAlign: 'center',
+                            columnWidths: [5200, 2000],
+                            fontSize: 18,
+                        }}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        renderCell={(raw, { colIndex }) => (
+                            colIndex === 0 ? String(raw ?? '') : formatPct(raw, 1)
+                        )}
+                    />
                 </div>
 
-                <aside className="wb-fnote canadian-renewable-energy-production-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd id="fn-asterisk-canadian-renewable-energy-production">
-                            <a
-                                href="#fn-asterisk-rf-canadian-renewable-energy-production"
-                                onClick={scrollToRef}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('canadian_renewable_energy_production_footnote', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    className="canadian-renewable-energy-production-footnotes"
+                    items={[
+                        { id: 'fn-asterisk-canadian-renewable-energy-production', marker: '*', text: getText('canadian_renewable_energy_production_footnote', lang), returnHref: '#fn-asterisk-rf-canadian-renewable-energy-production' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

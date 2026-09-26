@@ -1,28 +1,23 @@
 import React from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import SafeHtml from '../components/SafeHtml';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 
 const CanadianEnergyProduction = () => {
     const { lang, layoutPadding } = useOutletContext();
 
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
     return (
-        <main id="main-content" tabIndex="-1" className="canadian-energy-production-main" role="main">
+        <PageShell tabIndex="-1" className="canadian-energy-production-main page-chrome page-chrome--bleed" style={{ ...layoutBleedCssVars(layoutPadding) }}>
             <style>{`
                 .canadian-energy-production-main {
-                    width: calc(100% + ${layoutPadding?.left || 55}px + ${layoutPadding?.right || 15}px);
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
                     padding: 0;
                     background-color: var(--gc-background);
-                    min-height: calc(100vh - 100px);
                     overflow-x: hidden;
                 }
 
                 .canadian-energy-production-container {
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                     padding-top: 40px;
                     width: 100%;
                     box-sizing: border-box;
@@ -79,16 +74,16 @@ const CanadianEnergyProduction = () => {
                     <h1 className="canadian-energy-production-title">{getText('canadian_energy_production_title', lang)}</h1>
                 </header>
 
-                <article>
-                    <p className="canadian-energy-production-paragraph" role="region" aria-label={stripHtml(getText('canadian_energy_production_para1', lang))}>
-                        <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: getText('canadian_energy_production_para1', lang) }} />
+                <div className="canadian-energy-production-body">
+                    <p className="canadian-energy-production-paragraph">
+                        <SafeHtml html={getText('canadian_energy_production_para1', lang)} />
                     </p>
-                    <p className="canadian-energy-production-paragraph" role="region" aria-label={stripHtml(getText('canadian_energy_production_para2', lang))}>
-                        <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: getText('canadian_energy_production_para2', lang) }} />
+                    <p className="canadian-energy-production-paragraph">
+                        <SafeHtml html={getText('canadian_energy_production_para2', lang)} />
                     </p>
-                </article>
+                </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

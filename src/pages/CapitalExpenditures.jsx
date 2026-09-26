@@ -1,11 +1,26 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import FootnoteMarker from '../components/FootnoteMarker';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import usePlotlySelection from '../hooks/usePlotlySelection';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import PageStatus from '../components/PageStatus';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCapitalExpendituresData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType, BorderStyle } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import HtmlLegend from '../components/HtmlLegend';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+
+const COLORS = { oil_gas: '#48A36C', electricity: '#E3540D', other: '#857550' };
+
+const toBillions = (row, key) => row[`${key}_billions`] ?? (row[key] / 1000);
+
 const CapitalExpenditures = () => {
     const { lang } = useOutletContext();
     const [pageData, setPageData] = useState([]);
@@ -15,81 +30,19 @@ const CapitalExpenditures = () => {
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
 
-    const [hiddenSeries] = useState([]); 
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const [hiddenSeries] = useState([]);
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick: handleChartClick,
+    } = usePlotlySelection({ mode: 'points', traceCount: 3, windowWidth });
 
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-capital-expenditure')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-capital-expenditure');
 
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-capital-expenditure')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-capital-expenditure');
 
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-
-        if (!topScroll || !tableScroll) return;
-
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-
-            const topSpacer = topScroll.firstElementChild;
-            if (topSpacer) {
-                topSpacer.style.width = `${scrollWidth}px`;
-            }
-
-            if (scrollWidth > containerWidth) {
-                topScroll.style.display = 'block';
-                topScroll.style.opacity = '1';
-            } else {
-                topScroll.style.display = 'none';
-            }
-        };
-
-        const handleTopScroll = () => {
-            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
-                tableScroll.scrollLeft = topScroll.scrollLeft;
-            }
-        };
-
-        const handleTableScroll = () => {
-            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
-                topScroll.scrollLeft = tableScroll.scrollLeft;
-            }
-        };
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-
-        const observer = new ResizeObserver(() => {
-            window.requestAnimationFrame(syncScrollbars);
-        });
-
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-
-        syncScrollbars();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth]);
+    const tableWrapperRef = useRef(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -124,58 +77,17 @@ const CapitalExpenditures = () => {
     }, []);
 
     useEffect(() => {
-        if (!chartRef.current) return;
-        
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
+        const root = tableWrapperRef.current;
+        if (!root) return undefined;
+        const details = root.querySelector('details');
+        if (!details) return undefined;
+        const onToggle = () => setIsTableOpen(details.open);
+        details.addEventListener('toggle', onToggle);
+        setIsTableOpen(details.open);
+        return () => details.removeEventListener('toggle', onToggle);
+    }, [pageData, loading]);
 
-            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
-            svgElements.forEach(svg => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-
-            // Find the download button using data-title attribute
-            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
-            
-            if (downloadBtn) {
-                // Make it tabbable
-                downloadBtn.setAttribute('tabindex', '0');
-                downloadBtn.setAttribute('role', 'button');
-                
-                // Ensure it has a label
-                const title = downloadBtn.getAttribute('data-title');
-                if (title) downloadBtn.setAttribute('aria-label', title);
-
-                // Add keyboard click support (crucial for screen readers)
-                downloadBtn.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        downloadBtn.click();
-                    }
-                };
-            }
-
-            // Hide other modebar buttons from screen readers
-            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
-            otherButtons.forEach(btn => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-
-        // Watch for changes (Plotly deletes/re-creates the modebar often)
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-
-        // Run once immediately
-        setupChartAccessibility();
-
-        return () => observer.disconnect();
-    }, [pageData, lang]);
+    
 
     const { latestRow, peakRow, row2020 } = useMemo(() => {
         if (pageData.length === 0) return { latestRow: null, peakRow: null, row2020: null };
@@ -185,18 +97,66 @@ const CapitalExpenditures = () => {
         return { latestRow: latest, peakRow: peak, row2020: r2020 };
     }, [pageData]);
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
+    const oilGasLabel = stripHtml(getText('capital_expenditures_legend_oil_gas', lang));
+    const electricityLabel = stripHtml(getText('capital_expenditures_legend_electricity', lang));
+    const otherLabel = stripHtml(getText('capital_expenditures_legend_other', lang));
+    const totalLabel = getText('capital_expenditures_hover_total', lang);
+    const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: lang === 'en' ? 'Year' : 'Année', align: 'left' },
+        { key: 'oil_gas', header: `${oilGasLabel} ${unitHeader}`, align: 'num' },
+        { key: 'electricity', header: `${electricityLabel} ${unitHeader}`, align: 'num' },
+        { key: 'other', header: `${otherLabel} ${unitHeader}`, align: 'num' },
+        { key: 'total', header: `${totalLabel} ${unitHeader}`, align: 'num' },
+    ], [lang, oilGasLabel, electricityLabel, otherLabel, totalLabel, unitHeader]);
+
+    const tableRows = useMemo(() => pageData.map((row) => ({
+        year: row.year,
+        oil_gas: toBillions(row, 'oil_gas'),
+        electricity: toBillions(row, 'electricity'),
+        other: toBillions(row, 'other'),
+        total: toBillions(row, 'total'),
+    })), [pageData]);
+
+    const tableCaption = lang === 'en'
+        ? 'Capital expenditures in the energy sector (billions of dollars)'
+        : "Dépenses en immobilisations dans le secteur de l'énergie (milliards de dollars)";
+    const csvFilename = lang === 'en' ? 'capital_expenditures_energy_data.csv' : 'depenses_en_capital_energie_donnees.csv';
+    const docxFilename = lang === 'en' ? 'capital_expenditures_energy_table.docx' : 'depenses_en_capital_energie_tableau.docx';
+    const chartPngFilename = lang === 'en' ? 'capital_expenditures_energy_chart.png' : 'depenses_en_capital_energie_graphique.png';
+
+    const years = pageData.map(d => d.year);
+    const minYear = years.length > 0 ? Math.min(...years) : 2007;
+    const maxYear = years.length > 0 ? Math.max(...years) : 2024;
+    const chartTitle = `${getText('capital_expenditures_chart_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
+    const exportChartTitle = stripHtml(chartTitle);
+
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+            filename: chartPngFilename,
+            title: exportChartTitle,
+            height: 600,
+            legendItems: [
+                { label: oilGasLabel, color: COLORS.oil_gas },
+                { label: electricityLabel, color: COLORS.electricity },
+                { label: otherLabel, color: COLORS.other },
+            ],
+        }),
+        [COLORS, chartPngFilename, electricityLabel, exportChartTitle, oilGasLabel, otherLabel],
+    );
+
+    if (loading || error) return <PageStatus lang={lang} loading={loading} error={error} />;
     if (!latestRow) return <div>No data available.</div>;
 
-    // Use pre-calculated billions from database where available
-    const totalLatestBillion = latestRow.total_billions ?? (latestRow.total / 1000);
-    const peakTotalBillion = peakRow.total_billions ?? (peakRow.total / 1000);
-    const low2020Billion = row2020.total_billions ?? (row2020.total / 1000);
+    const totalLatestBillion = toBillions(latestRow, 'total');
+    const peakTotalBillion = toBillions(peakRow, 'total');
+    const low2020Billion = toBillions(row2020, 'total');
     const declineFromPeakPct = ((peakTotalBillion - totalLatestBillion) / peakTotalBillion) * 100;
     const reboundFrom2020Pct = ((totalLatestBillion - low2020Billion) / low2020Billion) * 100;
-    const oilGasBillion = latestRow.oil_gas_billions ?? (latestRow.oil_gas / 1000);
-    const electricityBillion = latestRow.electricity_billions ?? (latestRow.electricity / 1000);
+    const oilGasBillion = toBillions(latestRow, 'oil_gas');
+    const electricityBillion = toBillions(latestRow, 'electricity');
 
     const formatBillion = (val) => {
         const text = getText('billion', lang);
@@ -208,22 +168,15 @@ const CapitalExpenditures = () => {
         return `${val.toFixed(1)} ${text} ${lang === 'en' ? 'dollars' : 'dollars'}`;
     };
 
-    const years = pageData.map(d => d.year);
-    const minYear = years.length > 0 ? Math.min(...years) : 2007;
-    const maxYear = years.length > 0 ? Math.max(...years) : 2024;
-    const chartTitle = `${getText('capital_expenditures_chart_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
     const tickVals = [];
     for (let y = minYear + 1; y <= maxYear + 1; y += 2) {
         tickVals.push(y);
     }
 
-    // Use pre-calculated billions from database where available
-    const oilGasValues = pageData.map(d => d.oil_gas_billions ?? (d.oil_gas / 1000));
-    const electricValues = pageData.map(d => d.electricity_billions ?? (d.electricity / 1000));
-    const otherValues = pageData.map(d => d.other_billions ?? (d.other / 1000));
-    const totalValues = pageData.map(d => d.total_billions ?? (d.total / 1000));
-
-    const colors = { 'oil_gas': '#48A36C', 'electricity': '#E3540D', 'other': '#857550' };
+    const oilGasValues = pageData.map(d => toBillions(d, 'oil_gas'));
+    const electricValues = pageData.map(d => toBillions(d, 'electricity'));
+    const otherValues = pageData.map(d => toBillions(d, 'other'));
+    const totalValues = pageData.map(d => toBillions(d, 'total'));
 
     const hoverTemplate = (name, vals) => {
         return vals.map((v, i) => {
@@ -234,11 +187,11 @@ const CapitalExpenditures = () => {
     };
 
     const formatNumberTable = (val) => {
-        return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        if (val == null || Number.isNaN(Number(val))) return '—';
+        return Number(val).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     };
 
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-    const stripForSR = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\*/g, '').replace(/\s+/g, ' ').trim() : '';
+    const stripForSR = (text) => stripHtml(text).replace(/\*/g, '').replace(/\s+/g, ' ').trim();
 
     const renderTextWithFootnoteLink = (text, showFootnote = true) => {
         if (!text) return null;
@@ -255,327 +208,26 @@ const CapitalExpenditures = () => {
             </React.Fragment>
         ));
     };
-    
+
     const getChartSummary = () => {
         if (!pageData || pageData.length === 0) return '';
         const latestYear = pageData[pageData.length - 1]?.year || 2025;
         const firstYear = pageData[0]?.year || 2007;
         if (lang === 'en') {
             return `Stacked bar chart showing capital expenditures in Canada's energy industry from ${firstYear} to ${latestYear}. The chart displays oil and gas extraction, electricity, and other energy expenditures in billions of dollars. Expand the data table below for detailed values.`;
-        } else {
-            return `Graphique à barres empilées montrant les dépenses en immobilisations dans l'industrie énergétique canadienne de ${firstYear} à ${latestYear}. Le graphique affiche l'extraction de pétrole et de gaz, l'électricité et les autres dépenses énergétiques en milliards de dollars. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
         }
+        return `Graphique à barres empilées montrant les dépenses en immobilisations dans l'industrie énergétique canadienne de ${firstYear} à ${latestYear}. Le graphique affiche l'extraction de pétrole et de gaz, l'électricité et les autres dépenses énergétiques en milliards de dollars. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
     };
 
-    const getAccessibleDataTable = () => {
-        if (!pageData || pageData.length === 0) return null;
-
-        const oilGasLabel = stripHtml(getText('capital_expenditures_legend_oil_gas', lang));
-        const electricityLabel = stripHtml(getText('capital_expenditures_legend_electricity', lang));
-        const otherLabel = stripHtml(getText('capital_expenditures_legend_other', lang));
-        const totalLabel = getText('capital_expenditures_hover_total', lang);
-
-        const cellUnitText = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
-        const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
-        const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
-        const captionId = 'capital-expenditure-table-caption';
-
-        return (
-            <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)} className="capital-expenditure-data-table">
-                <summary role="button" aria-expanded={isTableOpen}>
-                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                </summary>
-                <div 
-                    ref={topScrollRef}
-                    style={{ 
-                        width: '100%', 
-                        overflowX: 'auto', 
-                        overflowY: 'hidden',
-                        marginBottom: '0px',
-                        display: windowWidth <= 768 ? 'none' : 'block' 
-                    }}
-                    aria-hidden="true"
-                >
-                    <div style={{ height: '20px' }}></div>
-                </div>
-                <div 
-                    ref={tableScrollRef}
-                    className="table-responsive"
-                    tabIndex="0"
-                >
-                    <table className="table table-striped table-hover">
-                        <caption id={captionId} className="wb-inv">
-                            {lang === 'en' 
-                                ? 'Capital expenditures in the energy sector (billions of dollars)' 
-                                : 'Dépenses en immobilisations dans le secteur de l\'énergie (milliards de dollars)'}
-                        </caption>
-                        <thead>
-                            <tr>
-<th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                    {lang === 'en' ? 'Year' : 'Année'}
-                                                </th>
-<th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                    {oilGasLabel}<br/>
-                                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                                    <span className="wb-inv">{headerUnitSR}</span>
-                                                </th>
-                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                    {electricityLabel}<br/>
-                                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                                    <span className="wb-inv">{headerUnitSR}</span>
-                                                </th>
-                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                    {otherLabel}<br/>
-                                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                                    <span className="wb-inv">{headerUnitSR}</span>
-                                                </th>
-                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                    {totalLabel}<br/>
-                                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                                    <span className="wb-inv">{headerUnitSR}</span>
-                                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pageData.map(yearData => (
-                                <tr key={yearData.year}>
-<th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                        {yearData.year}
-                                                    </th>
-                                                    <td 
-                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${oilGasLabel}: ${formatNumberTable(yearData.oil_gas_billions ?? (yearData.oil_gas / 1000))}${cellUnitText}`}
-                                                    >
-                                                        {formatNumberTable(yearData.oil_gas_billions ?? (yearData.oil_gas / 1000))}
-                                                    </td>
-                                                    <td 
-                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${electricityLabel}: ${formatNumberTable(yearData.electricity_billions ?? (yearData.electricity / 1000))}${cellUnitText}`}
-                                                    >
-                                                        {formatNumberTable(yearData.electricity_billions ?? (yearData.electricity / 1000))}
-                                                    </td>
-                                                    <td 
-                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${otherLabel}: ${formatNumberTable(yearData.other_billions ?? (yearData.other / 1000))}${cellUnitText}`}
-                                                    >
-                                                        {formatNumberTable(yearData.other_billions ?? (yearData.other / 1000))}
-                                                    </td>
-                                                    <td 
-                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${getText('capital_expenditures_hover_total', lang)}: ${formatNumberTable(yearData.total_billions ?? (yearData.total / 1000))}${cellUnitText}`}
-                                                    >
-                                                        {formatNumberTable(yearData.total_billions ?? (yearData.total / 1000))}
-                                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                    <button
-                        onClick={() => downloadTableAsCSV()}
-                        style={{
-                            padding: '8px 16px',
-backgroundColor: '#8C8C8C',
-                                        border: '1px solid #404040',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontWeight: 'bold',
-                                        color: '#ffffff'
-                        }}
-                    >
-                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                    </button>
-                    <button
-                        onClick={() => downloadTableAsDocx()}
-                        style={{
-                            padding: '8px 16px',
-backgroundColor: '#8C8C8C',
-                                        border: '1px solid #404040',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontWeight: 'bold',
-                                        color: '#ffffff'
-                        }}
-                    >
-                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                    </button>
-                </div>
-            </details>
-        );
-    };
-    const downloadTableAsCSV = () => {
-        if (!pageData || pageData.length === 0) return;
-
-        const oilGasLabel = stripHtml(getText('capital_expenditures_legend_oil_gas', lang));
-        const electricityLabel = stripHtml(getText('capital_expenditures_legend_electricity', lang));
-        const otherLabel = stripHtml(getText('capital_expenditures_legend_other', lang));
-        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
-        const headers = [
-            lang === 'en' ? 'Year' : 'Année',
-            `${oilGasLabel} ${unitHeader}`,
-            `${electricityLabel} ${unitHeader}`,
-            `${otherLabel} ${unitHeader}`,
-            `Total ${unitHeader}`
-        ];
-        const rows = pageData.map(yearData => [
-            yearData.year,
-            (yearData.oil_gas_billions ?? (yearData.oil_gas / 1000)).toFixed(2),
-            (yearData.electricity_billions ?? (yearData.electricity / 1000)).toFixed(2),
-            (yearData.other_billions ?? (yearData.other / 1000)).toFixed(2),
-            (yearData.total_billions ?? (yearData.total / 1000)).toFixed(2)
-        ]);
-        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'capital_expenditures_energy_data.csv' : 'depenses_en_capital_energie_donnees.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-    const downloadTableAsDocx = async () => {
-        if (!pageData || pageData.length === 0) return;
-
-        const oilGasLabel = stripHtml(getText('capital_expenditures_legend_oil_gas', lang));
-        const electricityLabel = stripHtml(getText('capital_expenditures_legend_electricity', lang));
-        const otherLabel = stripHtml(getText('capital_expenditures_legend_other', lang));
-        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
-        const title = stripHtml(getText('capital_expenditures_title', lang));
-
-        const headers = [
-            lang === 'en' ? 'Year' : 'Année',
-            `${oilGasLabel} ${unitHeader}`,
-            `${electricityLabel} ${unitHeader}`,
-            `${otherLabel} ${unitHeader}`,
-            `Total ${unitHeader}`
-        ];
-        const headerRow = new TableRow({
-            children: headers.map(header => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: header, bold: true, size: 22 })],
-                    alignment: AlignmentType.CENTER
-                })],
-                shading: { fill: 'E6E6E6' }
-            }))
-        });
-        const dataRows = pageData.map(yearData => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.oil_gas_billions ?? (yearData.oil_gas / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.electricity_billions ?? (yearData.electricity / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.other_billions ?? (yearData.other / 1000)).toFixed(2), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: (yearData.total_billions ?? (yearData.total / 1000)).toFixed(2), bold: true, size: 22 })], alignment: AlignmentType.RIGHT })] })
-            ]
-        }));
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: title, bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 }
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1200, 2000, 2000, 2000, 1800],
-                        rows: [headerRow, ...dataRows]
-                    })
-                ]
-            }]
-        });
-
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'capital_expenditures_energy_table.docx' : 'depenses_en_capital_energie_tableau.docx');
-    };
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || document.querySelector('.capital-expenditure-chart.js-plotly-plot') || document.querySelector('.capital-expenditure-chart-wrapper .js-plotly-plot');
-        if (!plotElement) {
-            console.error('Plot element not found');
-            alert('Could not find chart element. Please try again.');
-            return;
-        }
-
-        const title = stripHtml(chartTitle);
-        const oilGasLabel = stripHtml(getText('capital_expenditures_legend_oil_gas', lang));
-        const electricityLabel = stripHtml(getText('capital_expenditures_legend_electricity', lang));
-        const otherLabel = stripHtml(getText('capital_expenditures_legend_other', lang));
-
-        try {
-            if (!window.Plotly) {
-                console.error('Plotly not available on window');
-                alert('Plotly library not loaded. Please refresh the page and try again.');
-                return;
-            }
-
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 600,
-                scale: 2
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                const titleHeight = 80;
-                const legendHeight = 60;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 50);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 30;
-                const legendItemsData = [
-                    { label: oilGasLabel, color: colors.oil_gas },
-                    { label: electricityLabel, color: colors.electricity },
-                    { label: otherLabel, color: colors.other }
-                ];
-
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'left';
-                let xPos = (canvas.width - 800) / 2;
-
-                legendItemsData.forEach(item => {
-                    ctx.fillStyle = item.color;
-                    ctx.fillRect(xPos, legendY - 18, 24, 24);
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, xPos + 32, legendY);
-                    xPos += ctx.measureText(item.label).width + 80;
-                });
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? 'capital_expenditures_energy_chart.png' : 'depenses_en_capital_energie_graphique.png';
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-
-            img.onerror = () => {
-                console.error('Failed to load chart image');
-                alert('Failed to generate chart image. Please try again.');
-            };
-
-            img.src = imgData;
-        } catch (error) {
-            console.error('Error downloading chart:', error);
-            alert('Error downloading chart: ' + error.message);
-        }
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const legendItems = [
-        { id: 'oil_gas', label: getText('capital_expenditures_legend_oil_gas', lang), color: colors.oil_gas },
-        { id: 'electricity', label: getText('capital_expenditures_legend_electricity', lang), color: colors.electricity },
-        { id: 'other', label: getText('capital_expenditures_legend_other', lang), color: colors.other }
+        { id: 'oil_gas', label: getText('capital_expenditures_legend_oil_gas', lang), color: COLORS.oil_gas },
+        { id: 'electricity', label: getText('capital_expenditures_legend_electricity', lang), color: COLORS.electricity },
+        { id: 'other', label: getText('capital_expenditures_legend_other', lang), color: COLORS.other },
     ];
     const isColumnFormat = windowWidth <= 1400;
     const chartMarginLeft = 50;
@@ -678,8 +330,6 @@ backgroundColor: '#8C8C8C',
                 }
 
                 .capital-expenditure-legend {
-                    display: flex;
-                    flex-wrap: wrap;
                     gap: 15px;
                     margin-top: 15px;
                     cursor: default;
@@ -729,16 +379,14 @@ backgroundColor: '#8C8C8C',
                 }
 
                 .capital-expenditure-legend-item {
-                    display: flex;
-                    align-items: center;
                     font-family: 'Noto Sans', sans-serif;
                     font-size: 20px;
                     color: var(--gc-text);
-                    cursor: pointer;
+                    cursor: default;
                     user-select: none;
                     min-width: 0;
                 }
-                .capital-expenditure-legend-item .capital-expenditure-legend-color { width: 15px; height: 15px; margin-right: 8px; flex-shrink: 0; display: inline-block; vertical-align: middle; }
+                .capital-expenditure-legend-item .capital-expenditure-legend-color { width: 15px; height: 15px; }
                 .capital-expenditure-legend-item > span:last-child { text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
 
                 .capital-expenditure-bullet {
@@ -843,63 +491,6 @@ backgroundColor: '#8C8C8C',
                     width: 100%;
                     margin: 0;
                 }
-
-                .capital-expenditure-data-table {
-                    width: 100%;
-                    margin-top: 20px;
-                    margin-bottom: 0;
-                    position: relative;
-                    z-index: 100;
-                }
-
-                .capital-expenditure-data-table > summary {
-                    display: block;
-                    width: 100%;
-                    padding: 12px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    color: #ffffff;
-                    box-sizing: border-box;
-                    list-style: none;
-                }
-
-                .capital-expenditure-data-table > summary:hover {
-                    background-color: #404040 !important;
-                }
-
-                .capital-expenditure-data-table button[type="button"]:hover,
-                .capital-expenditure-data-table button:hover,
-                .capital-expenditure-table-wrapper button[type="button"]:hover,
-                .capital-expenditure-table-wrapper button:hover,
-                .capital-expenditure-chart-frame button[type="button"]:hover,
-                .capital-expenditure-chart-frame button:hover,
-                .capital-expenditure-chart-wrapper button[type="button"]:hover,
-                .capital-expenditure-chart-wrapper button:hover {
-                    background-color: #404040 !important;
-                }
-
-                .capital-expenditure-data-table > summary::-webkit-details-marker {
-                    display: none;
-                }
-
-                /* Table horizontal scroll */
-                .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                }
-
-                .table-responsive table {
-                    width: max-content !important;
-                    min-width: 100%;
-                    border-collapse: collapse;
-                }
             `}</style>
 
             <div className="capital-expenditure-container">
@@ -919,18 +510,18 @@ backgroundColor: '#8C8C8C',
                             tabIndex="0"
                         >
                             <span aria-hidden="true">{renderTextWithFootnoteLink(chartTitle, false)}</span>
-                            <span id="fn-asterisk-rf-capital-expenditure" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
-                                <a className="fn-lnk" href="#fn-asterisk-capital-expenditure" onClick={scrollToFootnote}>
-                                    <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
-                                </a>
-                            </span>
+                            <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-capital-expenditure"
+                            id="fn-asterisk-rf-capital-expenditure"
+                            marker="*"
+                            onClick={scrollToFootnote}
+                        />
                         </h2>
 
                         <div role="region" aria-label={getChartSummary()} tabIndex="0">
                             {selectedPoints !== null && (
-                                    <div style={{ marginBottom: 8 }}>
-                                        <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
-                                    </div>
+                                    <ClearSelectionButton lang={lang} onClick={clearSelection} />
                                 )}
                                 <figure ref={chartRef} className="capital-expenditure-chart-wrapper">
                             <Plot
@@ -939,7 +530,7 @@ backgroundColor: '#8C8C8C',
                                         name: getText('capital_expenditures_legend_oil_gas', lang), 
                                         x: years, y: oilGasValues, type: 'bar', 
                                         marker: { 
-                                            color: colors.oil_gas,
+                                            color: COLORS.oil_gas,
                                             opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[0]?.includes(i) ? 1 : 0.3)
                                         }, 
                                         hovertext: hoverTemplate('capital_expenditures_hover_oil_gas', oilGasValues), hoverinfo: 'text',
@@ -949,7 +540,7 @@ backgroundColor: '#8C8C8C',
                                         name: getText('capital_expenditures_legend_electricity', lang), 
                                         x: years, y: electricValues, type: 'bar', 
                                         marker: { 
-                                            color: colors.electricity,
+                                            color: COLORS.electricity,
                                             opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[1]?.includes(i) ? 1 : 0.3)
                                         }, 
                                         hovertext: hoverTemplate('capital_expenditures_hover_electricity', electricValues), hoverinfo: 'text',
@@ -959,7 +550,7 @@ backgroundColor: '#8C8C8C',
                                         name: getText('capital_expenditures_legend_other', lang), 
                                         x: years, y: otherValues, type: 'bar', 
                                         marker: { 
-                                            color: colors.other,
+                                            color: COLORS.other,
                                             opacity: selectedPoints === null ? 1 : years.map((_, i) => selectedPoints[2]?.includes(i) ? 1 : 0.3)
                                         }, 
                                         hovertext: hoverTemplate('capital_expenditures_hover_other', otherValues), hoverinfo: 'text',
@@ -971,7 +562,7 @@ backgroundColor: '#8C8C8C',
                                     hoverlabel: { bgcolor: '#ffffff' }, 
                                     showlegend: false,
                                     clickmode: 'event',
-                                    dragmode: windowWidth <= 768 ? false : 'zoom',
+                                    dragmode: false,
                                     xaxis: { 
                                         tickvals: tickVals, 
                                         automargin: true,
@@ -989,83 +580,42 @@ backgroundColor: '#8C8C8C',
                                 }}
                                 className="capital-expenditure-chart" 
                                 useResizeHandler={true} 
-                                onClick={(data) => {
-                                    if (!data.points || data.points.length === 0) return;
-                                    const clickedPoint = data.points[0];
-                                    const traceIndex = clickedPoint.curveNumber;
-                                    const pointIndex = clickedPoint.pointIndex;
-
-                                    if (windowWidth <= 768) {
-                                        const currentTime = new Date().getTime();
-                                        const lastClick = lastClickRef.current;
-                                        const isSamePoint = (traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex);
-                                        const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
-                                        
-                                        lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
-                                        
-                                        if (!isDoubleTap) {
-                                            return; // Single tap: show hover label only
-                                        }
-                                    }
-
-                                    setSelectedPoints(prev => {
-                                        if (prev === null) {
-                                            const newSelection = [[], [], []];
-                                            newSelection[traceIndex].push(pointIndex);
-                                            return newSelection;
-                                        }
-                                        const isSelected = prev[traceIndex]?.includes(pointIndex);
-
-                                        if (isSelected) {
-                                            const newSelection = prev.map((tracePoints, idx) => 
-                                                idx === traceIndex ? tracePoints.filter(p => p !== pointIndex) : [...tracePoints]
-                                            );
-                                            if (newSelection.every(arr => arr.length === 0)) {
-                                                return null;
-                                            }
-                                            return newSelection;
-                                        } else {
-                                            const newSelection = prev.map((tracePoints, idx) => 
-                                                idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
-                                            );
-                                            return newSelection;
-                                        }
-                                    });
-                                }}
-                                config={{ 
-                                    displayModeBar: true, 
-                                    displaylogo: false,
-                                    responsive: true,
-                                    modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
-                                    modeBarButtonsToAdd: [{
-                                        name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                        icon: {
-                                            width: 24,
-                                            height: 24,
-                                            path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                        },
-                                        click: (gd) => downloadChartWithTitle(gd)
-                                    }]
-                                }}
+                                onClick={handleChartClick}
+                                config={plotConfig}
                             />
                         </figure>
                         </div>
 
-                        <div className="capital-expenditure-legend" aria-hidden="true">
-                            {legendItems.map((item) => (
-                                <div 
-                                    key={item.id} 
-                                    className="capital-expenditure-legend-item"
-                                    style={{ cursor: 'default' }}
-                                >
-                                    <span className="capital-expenditure-legend-color" style={{ backgroundColor: item.color }}></span>
-                                    <span>{item.label}</span>
-                                </div>
-                            ))}
-                        </div>
+                        <HtmlLegend
+                            className="capital-expenditure-legend"
+                            variant="swatch"
+                            itemClassName="capital-expenditure-legend-item"
+                            markerClassName="capital-expenditure-legend-color"
+                            items={legendItems.map((item) => ({
+                                label: item.label,
+                                color: item.color,
+                            }))}
+                        />
 
-                        <div className="capital-expenditure-table-wrapper">
-                            {getAccessibleDataTable()}
+                        <div className="capital-expenditure-table-wrapper" ref={tableWrapperRef}>
+                            <ChartDataTable
+                                lang={lang}
+                                columns={tableColumns}
+                                rows={tableRows}
+                                csvFilename={csvFilename}
+                                docx={{
+                                    filename: docxFilename,
+                                    title: stripHtml(getText('capital_expenditures_title', lang)),
+                                    titleAlign: 'center',
+                                    columnWidths: [1200, 2000, 2000, 2000, 1800],
+                                    fontSize: 22,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                                renderCell={(raw, { colIndex }) => (
+                                    colIndex === 0 ? String(raw ?? '') : formatNumberTable(raw)
+                                )}
+                            />
                         </div>
                         </div> {/* End chart-frame */}
                     </div>
@@ -1114,20 +664,13 @@ backgroundColor: '#8C8C8C',
                     </aside>
                 </div>
 
-                <aside className="wb-fnote" role="note">
-                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-capital-expenditure">
-                            <a href="#fn-asterisk-rf-capital-expenditure" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            <p>
-                                {getText('capital_expenditures_footnote', lang)}
-                            </p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn"
+                    items={[
+                        { id: 'fn-asterisk-capital-expenditure', marker: '*', text: getText('capital_expenditures_footnote', lang), returnHref: '#fn-asterisk-rf-capital-expenditure' },
+                    ]}
+                />
             </div>
         </main>
     );

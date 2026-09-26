@@ -1,9 +1,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { getText } from '../utils/translations';
 
+function resolveActiveSection(pathname) {
+    const match = pathname.match(/^\/section-(\d)/);
+    if (match) return Number(match[1]);
+    if (pathname === '/' || pathname === '') return 1;
+    return null;
+}
+
 const Sidebar = ({ lang }) => {
+    const location = useLocation();
     const [section1Expanded, setSection1Expanded] = useState(false);
     const [section2Expanded, setSection2Expanded] = useState(false);
     const [section3Expanded, setSection3Expanded] = useState(false);
@@ -27,18 +35,11 @@ const Sidebar = ({ lang }) => {
 
     // Close sidebar when keyboard focus leaves it
     const handleFocusOut = (event) => {
-        // Check if the new focus target is outside the sidebar
-        if (sidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.relatedTarget)) {
-            setSidebarOpen(false);
-        }
-    };
-
-    // Close sidebar when mouse leaves
-    // At tablet/mobile (1366px and below), don't close on mouse leave - user must click button
-    // At desktop (above 1366px), CSS hover handles everything, JS state not used
-    const handleMouseLeave = () => {
-        // Don't close on mouse leave - at desktop CSS handles it, at tablet user clicks button
-        // This function is kept for potential future use but currently does nothing
+        if (!sidebarOpen) return;
+        const related = event.relatedTarget;
+        if (sidebarRef.current?.contains(related)) return;
+        if (toggleButtonRef.current?.contains(related)) return;
+        setSidebarOpen(false);
     };
 
     const toggleSection1 = () => {
@@ -107,13 +108,33 @@ const Sidebar = ({ lang }) => {
         }
     };
 
+    // Auto-expand the section that matches the current route (keyboard-first TOC).
+    useEffect(() => {
+        const active = resolveActiveSection(location.pathname);
+        setSection1Expanded(active === 1);
+        setSection2Expanded(active === 2);
+        setSection3Expanded(active === 3);
+        setSection4Expanded(active === 4);
+        setSection5Expanded(active === 5);
+        setSection6Expanded(active === 6);
+    }, [location.pathname]);
+
+    const handleToggleFocus = () => {
+        setSidebarOpen(true);
+    };
+
     // Close sidebar when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             const sidebar = sidebarRef.current;
-            
-            // Don't close if clicking inside sidebar (button is now inside)
-            if (sidebarOpen && sidebar && !sidebar.contains(event.target)) {
+            const toggle = toggleButtonRef.current;
+
+            if (
+                sidebarOpen
+                && sidebar
+                && !sidebar.contains(event.target)
+                && !toggle?.contains(event.target)
+            ) {
                 setSidebarOpen(false);
             }
         };
@@ -141,21 +162,18 @@ const Sidebar = ({ lang }) => {
             <div 
                 id="sidebar-nav"
                 ref={sidebarRef}
-                className={`sidebar ${sidebarOpen ? 'sidebar-mobile-open' : ''}`} 
+                className={`sidebar ${sidebarOpen ? 'sidebar-mobile-open sidebar-open' : ''}`} 
                 role="navigation" 
                 aria-label={getText('main_navigation', lang)}
                 onBlur={handleFocusOut}
-                onMouseLeave={handleMouseLeave}
             >
-            {/* Visual indicator - hidden from screen readers */}
-            <span className="sidebar-indicator" aria-hidden="true">☰</span>
-            
-            {/* Toggle button - INSIDE navigation so landmark is announced first */}
             <button
                 ref={toggleButtonRef}
+                type="button"
                 className={`sidebar-toggle-btn ${sidebarOpen ? 'sidebar-toggle-open' : 'sidebar-toggle-closed'}`}
                 onClick={handleToggle}
-                aria-label={sidebarOpen 
+                onFocus={handleToggleFocus}
+                aria-label={sidebarOpen
                     ? (lang === 'en' ? 'Close navigation menu' : 'Fermer le menu de navigation')
                     : (lang === 'en' ? 'Open navigation menu' : 'Ouvrir le menu de navigation')
                 }
@@ -507,6 +525,12 @@ const Sidebar = ({ lang }) => {
                                 className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
                             >
                                 {getText('nav_section6_natural_gas', lang)}
+                            </NavLink>
+                            <NavLink
+                                to="/section-6#hgl-supply-demand"
+                                className={({ isActive }) => `nav-link nav-sublink ${isActive ? 'active' : ''}`}
+                            >
+                                {getText('nav_section6_hgl', lang)}
                             </NavLink>
                             <NavLink
                                 to="/section-6#coal-international"

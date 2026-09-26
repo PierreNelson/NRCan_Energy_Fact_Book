@@ -1,59 +1,47 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import SkillsDiversityCommunityOverview from '../pages/SkillsDiversityCommunityOverview';
-import EnergySectorDemographics from '../pages/EnergySectorDemographics';
-import EnergySectorWages from '../pages/EnergySectorWages';
-import DemographicRepresentation from '../pages/DemographicRepresentation';
-import EnergyAffordability from '../pages/EnergyAffordability';
-import HouseholdEnergyExpenditures from '../pages/HouseholdEnergyExpenditures';
-import HouseholdEnergyPricesComparison from '../pages/HouseholdEnergyPricesComparison';
-import EnergyReliantCommunities from '../pages/EnergyReliantCommunities';
+import React from 'react';
+import { lazyWithPreload } from '../utils/lazyWithPreload';
+import { useOutletContext } from 'react-router-dom';
+import ActivePageSection from './ActivePageSection';
+
+const SkillsDiversityCommunityOverview = lazyWithPreload(() => import('../pages/SkillsDiversityCommunityOverview'));
+const EnergySectorDemographics = lazyWithPreload(() => import('../pages/EnergySectorDemographics'));
+const EnergySectorWages = lazyWithPreload(() => import('../pages/EnergySectorWages'));
+const DemographicRepresentation = lazyWithPreload(() => import('../pages/DemographicRepresentation'));
+const EnergyAffordability = lazyWithPreload(() => import('../pages/EnergyAffordability'));
+const HouseholdEnergyExpenditures = lazyWithPreload(() => import('../pages/HouseholdEnergyExpenditures'));
+const HouseholdEnergyPricesComparison = lazyWithPreload(() => import('../pages/HouseholdEnergyPricesComparison'));
+const EnergyReliantCommunities = lazyWithPreload(() => import('../pages/EnergyReliantCommunities'));
+
+const PAGES = [
+  { id: 'skills-diversity-community-overview', Component: SkillsDiversityCommunityOverview },
+  { id: 'energy-sector-demographics', Component: EnergySectorDemographics,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'energy-sector-wages', Component: EnergySectorWages },
+  { id: 'demographic-representation', Component: DemographicRepresentation },
+  { id: 'energy-affordability', Component: EnergyAffordability,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'household-energy-expenditures', Component: HouseholdEnergyExpenditures },
+  { id: 'household-energy-prices-comparison', Component: HouseholdEnergyPricesComparison },
+  { id: 'energy-reliant-communities', Component: EnergyReliantCommunities,
+    pageClassName: 'page-with-title-divider' }
+];
+
+const TOPIC_ANCHORS = [
+  'energy-sector-demographics',
+  'energy-affordability',
+  'energy-reliant-communities',
+];
 
 const SectionThree = () => {
-    const location = useLocation();
-
-    useEffect(() => {
-        if (location.hash) {
-            const id = location.hash.replace('#', '');
-            const element = document.getElementById(id);
-            if (element) {
-                setTimeout(() => {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-            }
-        } else {
-            window.scrollTo(0, 0);
-        }
-    }, [location]);
-
-    return (
-        <div className="section-three-container stacked-section-container">
-            <div id="skills-diversity-community-overview" className="stacked-page-wrapper">
-                <SkillsDiversityCommunityOverview />
-            </div>
-            <div id="energy-sector-demographics" className="stacked-page-wrapper page-with-title-divider">
-                <EnergySectorDemographics />
-            </div>
-            <div id="energy-sector-wages" className="stacked-page-wrapper">
-                <EnergySectorWages />
-            </div>
-            <div id="demographic-representation" className="stacked-page-wrapper">
-                <DemographicRepresentation />
-            </div>
-            <div id="energy-affordability" className="stacked-page-wrapper page-with-title-divider">
-                <EnergyAffordability />
-            </div>
-            <div id="household-energy-expenditures" className="stacked-page-wrapper">
-                <HouseholdEnergyExpenditures />
-            </div>
-            <div id="household-energy-prices-comparison" className="stacked-page-wrapper">
-                <HouseholdEnergyPricesComparison />
-            </div>
-            <div id="energy-reliant-communities" className="stacked-page-wrapper page-with-title-divider">
-                <EnergyReliantCommunities />
-            </div>
-        </div>
-    );
+  const { lang = 'en' } = useOutletContext() || {};
+  return (
+    <ActivePageSection
+      sectionPath="/section-3"
+      pages={PAGES}
+      topicAnchors={TOPIC_ANCHORS}
+      lang={lang}
+    />
+  );
 };
 
 export default SectionThree;

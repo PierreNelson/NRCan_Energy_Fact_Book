@@ -1,9 +1,7 @@
-import React, { Suspense } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import React, { Suspense, useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import Layout from './components/Layout';
 
-// Lazy load section wrappers for code splitting
-// These files are NOT downloaded initially - only when user navigates to them
 const SectionOne = React.lazy(() => import('./components/SectionOne'));
 const SectionTwo = React.lazy(() => import('./components/SectionTwo'));
 const SectionThree = React.lazy(() => import('./components/SectionThree'));
@@ -12,19 +10,20 @@ const SectionFive = React.lazy(() => import('./components/SectionFive'));
 const SectionSix = React.lazy(() => import('./components/SectionSix'));
 const Glossary = React.lazy(() => import('./components/Glossary'));
 
-// Loading component for Suspense fallback
-const LoadingSpinner = () => (
+const routerBasename = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/';
+
+const LoadingSpinner = ({ lang = 'en' }) => (
   <div style={{
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     height: '100vh',
-    backgroundColor: 'white'
+    backgroundColor: 'white',
   }}>
     <div style={{
       textAlign: 'center',
       color: '#857550',
-      fontFamily: "'Noto Sans', sans-serif"
+      fontFamily: "'Noto Sans', sans-serif",
     }}>
       <div style={{
         width: '50px',
@@ -33,9 +32,9 @@ const LoadingSpinner = () => (
         borderTop: '4px solid #857550',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
-        margin: '0 auto 20px'
+        margin: '0 auto 20px',
       }} />
-      <p>Loading...</p>
+      <p>{lang === 'fr' ? 'Chargement…' : 'Loading…'}</p>
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -46,68 +45,74 @@ const LoadingSpinner = () => (
   </div>
 );
 
-function App() {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          {/* Section 1: Energy Factbook Introduction */}
-          <Route index element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <SectionOne />
-            </Suspense>
-          } />
-          <Route path="section-1" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <SectionOne />
-            </Suspense>
-          } />
-          
-          {/* Section 2: Energy & Infrastructure */}
-          <Route path="section-2" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <SectionTwo />
-            </Suspense>
-          } />
-          
-          {/* Section 3: Skills, Diversity and Community  */}
-          <Route path="section-3" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <SectionThree />
-            </Suspense>
-          } />
-          
-          {/* Section 4: Energy Efficiency  */}
-          <Route path="section-4" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <SectionFour />
-            </Suspense>
-          } />
-          
-          {/* Section 5: Clean Power and Low Carbon Fuels  */}
-          <Route path="section-5" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <SectionFive />
-            </Suspense>
-          } />
-          
-          {/* Section 6: Oil, Natural Gas and Coal  */}
-          <Route path="section-6" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <SectionSix />
-            </Suspense>
-          } />
-          
-          {/* Glossary Page */}
-          <Route path="Glossary" element={
-            <Suspense fallback={<LoadingSpinner />}>
-              <Glossary />
-            </Suspense>
-          } />
+function AppRoutes() {
+  const [searchParams] = useSearchParams();
+  const embed = searchParams.get('embed') === '1';
+  const [lang] = useState(() => {
+    try {
+      return localStorage.getItem('efb-lang') === 'fr' ? 'fr' : 'en';
+    } catch {
+      return 'en';
+    }
+  });
 
-        </Route>
-      </Routes>
-    </HashRouter>
+  return (
+    <Routes>
+      <Route path="/" element={<Layout embed={embed} />}>
+        <Route index element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <SectionOne />
+          </Suspense>
+        } />
+        <Route path="section-1" element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <SectionOne />
+          </Suspense>
+        } />
+        <Route path="section-2" element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <SectionTwo />
+          </Suspense>
+        } />
+        <Route path="section-3" element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <SectionThree />
+          </Suspense>
+        } />
+        <Route path="section-4" element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <SectionFour />
+          </Suspense>
+        } />
+        <Route path="section-5" element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <SectionFive />
+          </Suspense>
+        } />
+        <Route path="section-6" element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <SectionSix />
+          </Suspense>
+        } />
+        <Route path="Glossary" element={
+          <Suspense fallback={<LoadingSpinner lang={lang} />}>
+            <Glossary />
+          </Suspense>
+        } />
+      </Route>
+    </Routes>
+  );
+}
+
+function App() {
+  useEffect(() => {
+    document.title = "Energy Fact Book | Livre de faits sur l'énergie";
+  }, []);
+
+  return (
+    <BrowserRouter basename={routerBasename}>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 

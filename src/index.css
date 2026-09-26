@@ -1,5 +1,4 @@
-/* GC Design System Fonts - Lato for headings, Noto Sans for body */
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans:wght@400;700&family=Noto+Sans+Canadian+Aboriginal&display=swap');
+/* GC Design System Fonts — self-hosted via @fontsource (see main.jsx) */
 
 :root {
   /* Canada.ca Design System - Mandatory Colours */
@@ -328,22 +327,24 @@ html {
   pointer-events: auto !important;
 }
 
-/* Closed state - FIXED position at left edge */
+/* Closed state — sits inside the collapsed strip (no separate tab) */
 .sidebar-toggle-closed {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 0;
-  transform: translateY(-50%);
-  width: 36px;
+  width: 100%;
   height: 50px;
-  background-color: var(--primary-color);
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sidebar-toggle-closed:hover {
-  background-color: #1a4a5f;
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 /* Open state - FIXED position at header location */
@@ -367,103 +368,99 @@ html {
 }
 
 /* Sidebar Styles */
+/* Desktop: collapsed by default; expand only via .sidebar-open (button / keyboard) */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
   width: var(--sidebar-width-collapsed);
-  background-color: var(--primary-color);
   padding: 20px 10px;
+  background-color: var(--primary-color);
   transition: width var(--transition-speed) ease-in-out, background-color var(--transition-speed), border-radius var(--transition-speed);
   z-index: 1000;
   overflow: hidden;
   white-space: nowrap;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
-  /* Rounded corners on right side when collapsed - looks like a button */
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
 
-/* Desktop: Three-line indicator styles (element added in JSX with aria-hidden) */
+/* Desktop: collapsed strip — toggle button is the only menu control (no duplicate indicator) */
 .sidebar-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.4rem;
-  color: white;
-  opacity: 1;
-  transition: opacity var(--transition-speed);
-  z-index: 1;
-  pointer-events: none;
+  display: none;
 }
 
-/* Hide indicator when sidebar is expanded */
-.sidebar:hover .sidebar-indicator,
-.sidebar.sidebar-mobile-open .sidebar-indicator {
-  opacity: 0;
-}
-
-/* Desktop: CSS hover expansion (no button needed) */
-.sidebar:hover {
+.sidebar.sidebar-open,
+.sidebar.sidebar-mobile-open {
   width: var(--sidebar-width);
+  padding: 20px 10px;
   white-space: normal;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25);
   overflow-y: auto;
   border-radius: 0;
 }
 
-.sidebar:hover .sidebar-header,
-.sidebar:hover .nav-links {
+.sidebar.sidebar-open .sidebar-header,
+.sidebar.sidebar-open .nav-links,
+.sidebar.sidebar-mobile-open .sidebar-header,
+.sidebar.sidebar-mobile-open .nav-links {
   opacity: 1;
   visibility: visible;
+  display: block;
 }
 
-/* Tablet/Mobile (1366px and below): Show button, disable CSS hover */
-/* This captures all tablets including iPad Pro 12.9" landscape (1366px) */
-@media (max-width: 1366px) {
-  /* Show toggle button - always visible at tablet/mobile */
-  .sidebar-toggle-btn {
+/* Desktop collapsed: single control — strip + integrated hamburger */
+@media (min-width: 1367px) {
+  .sidebar-toggle-closed {
     opacity: 1 !important;
     pointer-events: auto !important;
   }
-  
-  /* Hide the three-line indicator (button replaces it) */
+}
+
+/* Tablet/Mobile (1366px and below) */
+@media (max-width: 1366px) {
   .sidebar::before {
     display: none !important;
   }
-  
-  /* Collapse sidebar by default */
+
   .sidebar {
     width: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
+    box-shadow: none !important;
   }
-  
-  /* Disable CSS hover expansion - but NOT when opened via button */
-  .sidebar:not(.sidebar-mobile-open):hover {
-    width: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    border-radius: 0 !important;
-  }
-  
-  .sidebar:not(.sidebar-mobile-open):hover .sidebar-header,
-  .sidebar:not(.sidebar-mobile-open):hover .nav-links {
-    opacity: 0 !important;
-    visibility: hidden !important;
-  }
-  
-  /* Hide the visual indicator at tablet/mobile (button replaces it) */
+
   .sidebar-indicator {
     display: none !important;
   }
+
+  /* No strip at narrow widths — show standalone toggle tab */
+  .sidebar-toggle-closed {
+    position: fixed !important;
+    top: 50% !important;
+    left: 0 !important;
+    width: 36px !important;
+    height: 50px !important;
+    transform: translateY(-50%) !important;
+    background-color: var(--primary-color) !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .sidebar-toggle-closed:hover {
+    background-color: #1a4a5f !important;
+  }
 }
 
-/* Mobile opened state via JavaScript */
-.sidebar.sidebar-mobile-open {
+/* Opened state via JavaScript (all breakpoints) */
+.sidebar.sidebar-mobile-open,
+.sidebar.sidebar-open {
   width: var(--sidebar-width) !important;
+  padding: 20px 10px !important;
   white-space: normal !important;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25) !important;
   overflow-y: auto !important;
@@ -471,9 +468,12 @@ html {
 }
 
 .sidebar.sidebar-mobile-open .sidebar-header,
-.sidebar.sidebar-mobile-open .nav-links {
+.sidebar.sidebar-mobile-open .nav-links,
+.sidebar.sidebar-open .sidebar-header,
+.sidebar.sidebar-open .nav-links {
   opacity: 1 !important;
   display: block !important;
+  visibility: visible !important;
 }
 
 .sidebar-header {
@@ -653,6 +653,13 @@ html {
   background-color: #ccc;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Accessible inline SVG infographics */
+.accessible-infographic-svg svg {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 /* Page Specifics */
@@ -975,6 +982,22 @@ details .table-responsive {
   gap: 0.75rem;
   margin-left: 0;
   margin-bottom: 1rem;
+  border-radius: 2px;
+}
+
+.wb-fnote dd[tabindex]:focus,
+.wb-fnote dd[tabindex]:focus-visible {
+  outline: 3px solid #ffbf47;
+  outline-offset: 4px;
+}
+
+.wb-fnote dd > .fn-num {
+  margin-top: 0.15rem;
+}
+
+.wb-fnote dd > p {
+  flex: 1;
+  min-width: 0;
 }
 
 .wb-fnote dd:last-child {
@@ -1047,21 +1070,37 @@ details .table-responsive {
   border-color: var(--gc-text);
 }
 
-/* Return to footnote referrer link */
+/* Return to footnote referrer — prefer .fn-num badge; keep .fn-rtn as legacy fallback only */
 .fn-rtn {
-  margin-top: 0.25rem;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .fn-rtn a {
-  color: var(--gc-link);
-  text-decoration: underline;
-  font-size: 0.875rem;
+  /* Legacy pages: restyle return arrow as GC badge, not underlined text */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.25rem;
   font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--gc-text);
+  background-color: #fff;
+  border: 1px solid #6f6f6f;
+  border-radius: 2px;
+  text-decoration: none !important;
+  flex-shrink: 0;
 }
 
 .fn-rtn a:hover,
 .fn-rtn a:focus {
-  color: var(--gc-link-hover);
+  background-color: #f5f5f5;
+  border-color: var(--gc-text);
+  color: var(--gc-text);
+  text-decoration: none !important;
 }
 
 /* Screen reader only (sr-only) - alternative class */
@@ -1084,29 +1123,120 @@ details .table-responsive {
    Minimal overrides to preserve page alignment.
    =============================================== */
 
+/* Chart data table disclosure — single custom arrow (hide native marker) */
+.data-table-wrapper summary {
+  list-style: none;
+  list-style-type: none;
+}
+
+.data-table-wrapper summary::-webkit-details-marker {
+  display: none;
+}
+
+.data-table-wrapper summary::marker {
+  content: none;
+  display: none;
+  font-size: 0;
+}
+
+/* CSS chevron replaces ▶/▼ text (which SRs announce as "disclosure triangle") */
+.chart-summary-chevron {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 8px;
+  vertical-align: middle;
+  border-style: solid;
+  border-color: transparent;
+  /* closed: point right */
+  border-width: 5px 0 5px 7px;
+  border-left-color: currentColor;
+  flex-shrink: 0;
+}
+
+details[open] > summary .chart-summary-chevron {
+  /* open: point down */
+  border-width: 7px 5px 0 5px;
+  border-color: currentColor transparent transparent transparent;
+}
+
+/*
+ * Column-header SR stop: visually cover the thead so focus ring appears on
+ * the header row (sentinel stays in tab order before the table).
+ */
+.table-responsive,
+.static-rankings-scroll-container {
+  position: relative;
+}
+
+.chart-table-colheaders {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  /* Approximate header row; JS parent is usually .table-responsive */
+  height: 3rem;
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.chart-table-colheaders:focus,
+.chart-table-colheaders:focus-visible {
+  outline: none !important;
+}
+
+.chart-table-colheaders:focus-visible + table > thead,
+.chart-table-colheaders:focus + table > thead {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 2px !important;
+  /* Outline only — do not change header fill (keeps white text readable) */
+}
+
+.chart-table-title-focused,
+h2.chart-table-title-focused,
+h3.chart-table-title-focused,
+h4.chart-table-title-focused {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 4px !important;
+}
+
+/* Page titles / intro prose Tab stops (pageProseKeyboardNav) */
+[data-prose-tab="1"]:focus {
+  outline: 3px solid #ffbf47 !important;
+  outline-offset: 2px !important;
+}
+
 .stacked-section-container {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--page-gap); /* Single source of spacing between pages */
+  gap: 0;
+  background-color: var(--gc-background, #fff);
 }
 
-/* Section One wraps pages in an inner div - apply same gap there */
+/* Inter-page spacing: single flex gap on the page stack only */
 .stacked-section-inner {
   display: flex;
   flex-direction: column;
   gap: var(--page-gap);
   width: 100%;
+  background-color: var(--gc-background, #fff);
 }
 
-/* Target the <main> element inside page components */
-.stacked-page-wrapper main,
+/* Target page root (PageShell <article> or legacy <main>) inside stacked wrappers */
+.stacked-page-wrapper > :is(main, article),
+.stacked-page-wrapper :is(main, article),
 .stacked-page-wrapper section.page-content,
-.section-four-page main {
+.section-four-page > :is(main, article),
+.section-four-page :is(main, article) {
   /* Allow content to flow naturally - remove internal scroll */
   overflow-y: visible !important;
   
-  /* Allow height to grow with content */
+  /* Allow height to grow with content; never force viewport fill when stacked */
   height: auto !important;
   min-height: auto !important;
   
@@ -1116,84 +1246,99 @@ details .table-responsive {
 }
 
 /* Prevent last block inside page from adding extra gap – only the flex gap between wrappers creates space. */
-.stacked-page-wrapper main > *:last-child,
-.section-four-page main > *:last-child {
+.stacked-page-wrapper :is(main, article) > *:last-child,
+.section-four-page :is(main, article) > *:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
 /* Zero bottom padding on the top-level page container so gap is only from wrapper */
-.stacked-page-wrapper main > *:first-child,
-.section-four-page main > *:first-child {
+.stacked-page-wrapper :is(main, article) > *:first-child,
+.section-four-page :is(main, article) > *:first-child {
   padding-bottom: 0 !important;
 }
 
 /* All page-level *-container elements: no bottom spacing (wrapper provides the gap) */
-.stacked-page-wrapper main [class$="-container"],
-.section-four-page main [class$="-container"] {
+.stacked-page-wrapper :is(main, article) [class$="-container"],
+.section-four-page :is(main, article) [class$="-container"] {
   padding-bottom: 0 !important;
   margin-bottom: 0 !important;
 }
 
 /* Last direct child of a page container must not add gap */
-.stacked-page-wrapper main [class$="-container"] > *:last-child,
-.section-four-page main [class$="-container"] > *:last-child {
+.stacked-page-wrapper :is(main, article) [class$="-container"] > *:last-child,
+.section-four-page :is(main, article) [class$="-container"] > *:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
 /* Zero every common page bottom-spacer so ONLY the flex gap between wrappers creates space.
    Override all page-level margin/padding (including !important) so spacing is consistent. */
-.stacked-page-wrapper main .environmental-protection-chart-area,
-.stacked-page-wrapper main .environmental-protection-chart-column,
-.stacked-page-wrapper main .major-projectsh-container,
-.stacked-page-wrapper main .capital-expenditureh-container,
-.stacked-page-wrapper main .government-revenues-chart-column,
-.stacked-page-wrapper main .ghg-emissions-chart-column,
-.stacked-page-wrapper main .capital-expenditure-chart-column,
-.stacked-page-wrapper main .infrastructure-stock-chart-column,
-.stacked-page-wrapper main .canadian-energy-assets-chart-column,
-.section-four-page main .environmental-protection-chart-area,
-.section-four-page main .environmental-protection-chart-column,
-.stacked-page-wrapper main [class*="-chart-column"],
-.stacked-page-wrapper main [class*="-chart-area"],
-.stacked-page-wrapper main [class*="-chart-frame"],
-.stacked-page-wrapper main [class*="-table-wrapper"],
-.stacked-page-wrapper main [class*="-content-row"],
-.section-four-page main [class*="-chart-column"],
-.section-four-page main [class*="-chart-area"],
-.section-four-page main [class*="-chart-frame"],
-.section-four-page main [class*="-table-wrapper"],
-.section-four-page main [class*="-content-row"],
-.stacked-page-wrapper main [class*="-data-table-section"],
-.stacked-page-wrapper main [class*="-footer"],
-.stacked-page-wrapper main [class*="-filter-region"],
-.section-four-page main [class*="-data-table-section"],
-.section-four-page main [class*="-footer"] {
+.stacked-page-wrapper :is(main, article) .environmental-protection-chart-area,
+.stacked-page-wrapper :is(main, article) .environmental-protection-chart-column,
+.stacked-page-wrapper :is(main, article) .major-projectsh-container,
+.stacked-page-wrapper :is(main, article) .capital-expenditureh-container,
+.stacked-page-wrapper :is(main, article) .government-revenues-chart-column,
+.stacked-page-wrapper :is(main, article) .ghg-emissions-chart-column,
+.stacked-page-wrapper :is(main, article) .capital-expenditure-chart-column,
+.stacked-page-wrapper :is(main, article) .infrastructure-stock-chart-column,
+.stacked-page-wrapper :is(main, article) .canadian-energy-assets-chart-column,
+.section-four-page :is(main, article) .environmental-protection-chart-area,
+.section-four-page :is(main, article) .environmental-protection-chart-column,
+.stacked-page-wrapper :is(main, article) [class*="-chart-column"],
+.stacked-page-wrapper :is(main, article) [class*="-chart-area"],
+.stacked-page-wrapper :is(main, article) [class*="-chart-frame"],
+.stacked-page-wrapper :is(main, article) [class*="-table-wrapper"],
+.stacked-page-wrapper :is(main, article) [class*="-content-row"],
+.section-four-page :is(main, article) [class*="-chart-column"],
+.section-four-page :is(main, article) [class*="-chart-area"],
+.section-four-page :is(main, article) [class*="-chart-frame"],
+.section-four-page :is(main, article) [class*="-table-wrapper"],
+.section-four-page :is(main, article) [class*="-content-row"],
+.stacked-page-wrapper :is(main, article) [class*="-data-table-section"],
+.stacked-page-wrapper :is(main, article) [class*="-footer"],
+.stacked-page-wrapper :is(main, article) [class*="-filter-region"],
+.section-four-page :is(main, article) [class*="-data-table-section"],
+.section-four-page :is(main, article) [class*="-footer"] {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
 /* Nested last children: zero bottom space at 2nd and 3rd level so no structure adds gap */
-.stacked-page-wrapper main > *:last-child > *:last-child,
-.section-four-page main > *:last-child > *:last-child {
+.stacked-page-wrapper :is(main, article) > *:last-child > *:last-child,
+.section-four-page :is(main, article) > *:last-child > *:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
-.stacked-page-wrapper main > *:last-child > *:last-child > *:last-child,
-.section-four-page main > *:last-child > *:last-child > *:last-child {
+.stacked-page-wrapper :is(main, article) > *:last-child > *:last-child > *:last-child,
+.section-four-page :is(main, article) > *:last-child > *:last-child > *:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
-/* Individual page wrappers - no margin; gap comes from container */
+/* Individual page wrappers - no margin; gap comes from container flex gap only */
 .stacked-page-wrapper {
   width: 100%;
-  margin-bottom: 0;
-  padding-bottom: 0;
+  margin: 0;
+  padding: 0;
 }
 
-/* Subsection pages: grey border at top of wrapper. Same 40px gap above as non-subsection pages. */
+/* Topic nav sits below the page stack; white background, same as section nav */
+.stacked-section-container > .section-page-nav {
+  margin-top: var(--page-gap);
+  padding: 1rem;
+  background-color: var(--gc-background, #fff);
+}
+
+.stacked-page-wrapper :is(main, article) [class*="-footnotes"],
+.stacked-page-wrapper :is(main, article) .wb-fnote,
+.section-four-page :is(main, article) [class*="-footnotes"],
+.section-four-page :is(main, article) .wb-fnote {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Subsection pages: grey border at top of wrapper. Inter-page spacing is only --page-gap. */
 .stacked-page-wrapper.page-with-title-divider,
 .section-four-page.page-with-title-divider {
   border-top: 3px solid #e0e0e0;
@@ -1213,6 +1358,26 @@ details .table-responsive {
   width: 100%;
   margin-bottom: 0;
   padding-bottom: 0;
+}
+
+/* ==============================================
+   PLOTLY CHART INTERACTIVITY
+   Ensure SVG layers remain clickable (a11y overlays must not block clicks).
+   =============================================== */
+
+.lazy-plot-host .js-plotly-plot,
+.lazy-plot-host .plot-container,
+.lazy-plot-host .svg-container,
+.js-plotly-plot .plot-container,
+.js-plotly-plot .svg-container {
+  pointer-events: auto !important;
+}
+
+/* Fill sized chart frames; do not invent a 400px min-height when height is explicit. */
+.lazy-plot-host,
+.lazy-plot-inner {
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 /* ==============================================

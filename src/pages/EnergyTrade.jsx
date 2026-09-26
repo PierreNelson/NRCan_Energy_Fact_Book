@@ -1,17 +1,37 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
+import useWindowWidth from '../hooks/useWindowWidth';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from '../utils/exportTableToDocx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import energyTradeBgEn from '../assets/energy_trade_bg.svg';
-import energyTradeBgFr from '../assets/energy_trade_bg_fr.svg';
+import { svgElementToCanvas } from '../utils/downloadInfographicPng';
+import { prepareInlineSvgMarkup } from '../utils/prefixSvgIds';
+import energyTradeBgEn from '../assets/energy_trade_bg.svg?raw';
+import energyTradeBgFr from '../assets/energy_trade_bg_fr.svg?raw';
 
 const REFERENCE_YEAR = 2025;
 const TABLE_MIN_WIDTH_PX = 560;
 const SCROLLBAR_PX = 20;
+const SVG_WIDTH = 893;
 
 const COMMODITY_KEYS = ['crude_oil', 'natural_gas', 'electricity', 'coal'];
 const METRIC_KEYS = ['exportsDestined', 'productionExported', 'usImports', 'usConsumption'];
+
+/**
+ * Top callout focus bands (SVG viewBox coords → %). Visual focus outlines
+ * cover each highlight group; spoken text comes from translation templates.
+ */
+const CALLOUT_GROUPS = [
+    { key: 'energy_exports', labelKey: 'energy_trade_group_energy_exports', x: 0, y: 0, w: 300, h: 220 },
+    { key: 'oil_gas', labelKey: 'energy_trade_group_oil_gas', x: 300, y: 0, w: 250, h: 220 },
+    { key: 'countries', labelKey: 'energy_trade_group_countries', x: 550, y: 0, w: 175, h: 220 },
+    { key: 'us_accounts', labelKey: 'energy_trade_group_us_accounts', x: 725, y: 0, w: 168, h: 220 },
+];
+
+/** "Exports to the U.S." heading hotspot (map title area). */
+const EXPORTS_HEADING_BOUNDS = { x: 0, y: 235, w: 210, h: 85 };
 
 /* SVG viewBox 893×545. Equal-height rows centered on measured icon midlines. */
 const SVG_HEIGHT = 545;
@@ -71,16 +91,6 @@ const substitute = (text, vars) =>
 
 const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
-
 const formatCell = (value, lang) => {
     if (value == null) return '–';
     if (typeof value === 'string') return value;
@@ -99,15 +109,31 @@ const formatPercentDownload = (value, lang) => {
     return `${formatted}%`;
 };
 
+const formatPercentSpoken = (value, lang) => {
+    if (value == null) return '–';
+    const raw = String(value);
+    if (raw.startsWith('>')) {
+        const num = formatCell(raw.slice(1), lang);
+        return substitute(getText('energy_trade_percent_gt_spoken', lang), { value: num });
+    }
+    return substitute(getText('energy_trade_percent_spoken', lang), {
+        value: formatCell(value, lang),
+    });
+};
+
+const boundsToStyle = ({ x, y, w, h }) => ({
+    left: `${((x / SVG_WIDTH) * 100).toFixed(3)}%`,
+    top: `${((y / SVG_HEIGHT) * 100).toFixed(3)}%`,
+    width: `${((w / SVG_WIDTH) * 100).toFixed(3)}%`,
+    height: `${((h / SVG_HEIGHT) * 100).toFixed(3)}%`,
+});
+
 const EnergyTrade = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [selectedYear] = useState(REFERENCE_YEAR);
-    const [windowWidth, setWindowWidth] = useState(
-        typeof window !== 'undefined' ? window.innerWidth : 1200,
-    );
+    const windowWidth = useWindowWidth();
 
     const figureRef = useRef(null);
-    const infographicImgRef = useRef(null);
     const tableTopRef = useRef(null);
     const tableScrollRef = useRef(null);
     const tableBottomRef = useRef(null);
@@ -127,12 +153,6 @@ const EnergyTrade = () => {
         const shouldShow = contentWidth > tableScroll.clientWidth + 1;
         topScroll.style.display = shouldShow ? 'block' : 'none';
         bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
     }, []);
 
     useEffect(() => {
@@ -171,26 +191,40 @@ const EnergyTrade = () => {
         observer?.observe(tableScroll);
         scheduleSync();
 
-        const imgEl = infographicImgRef.current;
-        const onImgLoad = () => scheduleSync();
-        imgEl?.addEventListener('load', onImgLoad);
-        if (imgEl?.complete) scheduleSync();
-
         return () => {
             topScroll.removeEventListener('scroll', handleTopScroll);
             tableScroll.removeEventListener('scroll', handleTableScroll);
             bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            imgEl?.removeEventListener('load', onImgLoad);
             observer?.disconnect();
         };
     }, [lang, selectedYear, windowWidth, syncTableScroll]);
 
     const textVars = { year: selectedYear };
     const yearData = DATA_BY_YEAR[selectedYear] ?? DATA_BY_YEAR[REFERENCE_YEAR];
-    const bgImage = lang === 'en' ? energyTradeBgEn : energyTradeBgFr;
+    const bgMarkup = prepareInlineSvgMarkup(
+        lang === 'en' ? energyTradeBgEn : energyTradeBgFr,
+        `energy-trade-${lang}`,
+    );
     const pageTitle = substitute(getText('energy_trade_title', lang), textVars);
     const fileTitle = substitute(getText('energy_trade_download_title', lang), textVars);
     const tableCaption = substitute(getText('energy_trade_table_caption', lang), textVars);
+    const exportsHeading = getText('energy_trade_exports_heading', lang);
+
+    const info = yearData.infographic;
+    const spokenInfoVars = {
+        energyExportsBillion: formatCell(info.energyExportsBillion, lang),
+        goodsExportsShare: formatCell(info.goodsExportsShare, lang),
+        oilGasExportsBillion: formatCell(info.oilGasExportsBillion, lang),
+        oilGasToUsShare: formatCell(info.oilGasToUsShare, lang),
+        destinationCountries: formatCell(info.destinationCountries, lang),
+        usEnergyExportShare: formatCell(info.usEnergyExportShare, lang),
+        usEnergyExportBillion: formatCell(info.usEnergyExportBillion, lang),
+    };
+    const calloutGroups = CALLOUT_GROUPS.map((group) => ({
+        ...group,
+        label: substitute(getText(group.labelKey, lang), spokenInfoVars),
+        style: boundsToStyle(group),
+    }));
 
     const metricHeaders = METRIC_KEYS.map((key) => getText(`energy_trade_col_${key}`, lang));
     const tableRows = COMMODITY_KEYS.map((key) => ({
@@ -206,24 +240,19 @@ const EnergyTrade = () => {
     }));
 
     const downloadInfographicPng = async () => {
-        const imgEl = infographicImgRef.current;
-        const figureEl = figureRef.current;
-        if (!imgEl || !figureEl) return;
+        const graphic = figureRef.current?.querySelector?.('svg');
+        if (!graphic) return;
         try {
-            const loaded = await waitForImage(imgEl);
             const scale = 2;
-            const canvas = document.createElement('canvas');
-            canvas.width = loaded.naturalWidth * scale;
-            canvas.height = loaded.naturalHeight * scale;
+            const canvas = await svgElementToCanvas(graphic, { scale });
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            ctx.scale(scale, scale);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, loaded.naturalWidth, loaded.naturalHeight);
-            ctx.drawImage(loaded, 0, 0, loaded.naturalWidth, loaded.naturalHeight);
+            const naturalWidth = canvas.width / scale;
+            const naturalHeight = canvas.height / scale;
 
-            const ox = loaded.naturalWidth * (OVERLAY_LEFT_PCT / 100);
-            const ow = loaded.naturalWidth * (OVERLAY_WIDTH_PCT / 100);
-            const yScale = loaded.naturalHeight / SVG_HEIGHT;
+            const ox = naturalWidth * (OVERLAY_LEFT_PCT / 100);
+            const ow = naturalWidth * (OVERLAY_WIDTH_PCT / 100);
+            const yScale = naturalHeight / SVG_HEIGHT;
             const headers = metricHeaders;
             const colW = ow / headers.length;
 
@@ -406,26 +435,17 @@ const EnergyTrade = () => {
                 ],
             }],
         });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileTitle}.docx`);
+        await saveDocxBlob(`${fileTitle}.docx`, doc);
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content energy-trade"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content energy-trade page-chrome page-chrome--bleed"
             aria-labelledby="energy-trade-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .energy-trade {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .energy-trade-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-trade.page-content h1.energy-trade-title {
@@ -456,10 +476,32 @@ const EnergyTrade = () => {
     overflow: visible;
     padding: 0;
 }
-.energy-trade-bg-image {
+.energy-trade-bg-image,
+.energy-trade-bg-image svg {
     width: 100%;
     height: auto;
     display: block;
+}
+.energy-trade-callout {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    border-radius: 2px;
+}
+.energy-trade-callout:focus,
+.energy-trade-callout:focus-visible,
+.energy-trade-exports-heading:focus,
+.energy-trade-exports-heading:focus-visible,
+.energy-trade-overlay-row > [role="gridcell"]:focus,
+.energy-trade-overlay-row > [role="gridcell"]:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 2px;
+}
+.energy-trade-exports-heading {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    border-radius: 2px;
 }
 .energy-trade-table-shell {
     position: absolute;
@@ -612,18 +654,32 @@ const EnergyTrade = () => {
             <div className="energy-trade-inner">
                 <h1 id="energy-trade-title" className="energy-trade-title">{pageTitle}</h1>
 
-                <figure
-                    ref={figureRef}
-                    className="energy-trade-figure"
-                    aria-label={getText('energy_trade_infographic_aria', lang)}
-                >
-                    <img
-                        ref={infographicImgRef}
+                <figure ref={figureRef} className="energy-trade-figure">
+                    <div
                         className="energy-trade-bg-image"
-                        src={bgImage}
-                        alt={getText('energy_trade_infographic_aria', lang)}
+                        aria-hidden="true"
+                        dangerouslySetInnerHTML={{ __html: bgMarkup }}
                     />
-                    <div className="wb-inv">{tableCaption}</div>
+
+                    {calloutGroups.map((group) => (
+                        <div
+                            key={group.key}
+                            className="energy-trade-callout"
+                            style={group.style}
+                            role="region"
+                            tabIndex={0}
+                            aria-label={group.label}
+                        />
+                    ))}
+
+                    <div
+                        className="energy-trade-exports-heading"
+                        style={boundsToStyle(EXPORTS_HEADING_BOUNDS)}
+                        role="region"
+                        tabIndex={0}
+                        aria-label={exportsHeading}
+                    />
+
                     <div className="energy-trade-table-shell">
                         <div
                             ref={tableTopRef}
@@ -635,12 +691,14 @@ const EnergyTrade = () => {
                         <div
                             ref={tableScrollRef}
                             className="energy-trade-table-scroll"
-                            role="region"
-                            aria-label={tableCaption}
-                            tabIndex={0}
                         >
-                            <div ref={tableInnerRef} className="energy-trade-table-inner">
-                                <div className="energy-trade-overlay-header" role="row">
+                            <div
+                                ref={tableInnerRef}
+                                className="energy-trade-table-inner"
+                                role="grid"
+                                aria-label={tableCaption}
+                            >
+                                <div className="energy-trade-overlay-header" role="row" aria-hidden="true">
                                     {metricHeaders.map((header) => (
                                         <span key={header} role="columnheader">{header}</span>
                                     ))}
@@ -650,17 +708,25 @@ const EnergyTrade = () => {
                                         key={row.key}
                                         className="energy-trade-overlay-row"
                                         role="row"
-                                        aria-label={row.label}
                                     >
-                                        {row.values.map((value, colIndex) => (
-                                            <span
-                                                key={`${row.key}-${colIndex}`}
-                                                role="cell"
-                                                className={colIndex % 2 === 0 ? 'energy-trade-overlay-col-accent' : 'energy-trade-overlay-col-base'}
-                                            >
-                                                {formatCell(value, lang)}
-                                            </span>
-                                        ))}
+                                        {row.values.map((value, colIndex) => {
+                                            const spoken = substitute(getText('energy_trade_cell_spoken', lang), {
+                                                commodity: row.label,
+                                                metric: metricHeaders[colIndex],
+                                                value: formatPercentSpoken(value, lang),
+                                            });
+                                            return (
+                                                <span
+                                                    key={`${row.key}-${colIndex}`}
+                                                    role="gridcell"
+                                                    tabIndex={0}
+                                                    aria-label={spoken}
+                                                    className={colIndex % 2 === 0 ? 'energy-trade-overlay-col-accent' : 'energy-trade-overlay-col-base'}
+                                                >
+                                                    <span aria-hidden="true">{formatCell(value, lang)}</span>
+                                                </span>
+                                            );
+                                        })}
                                     </div>
                                 ))}
                             </div>
@@ -687,7 +753,7 @@ const EnergyTrade = () => {
                     </button>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -1,10 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import { getCrudeOilPricesData } from '../utils/dataLoader';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import hexToRgba from '../utils/hexToRgba';
 
 const COLORS = {
     differential: '#949494',
@@ -24,28 +33,15 @@ const formatMonthRef = (refDate, lang) => {
     return date.toLocaleDateString(lang === 'en' ? 'en-CA' : 'fr-CA', { month: 'short', year: 'numeric' });
 };
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
 const CrudeOilPrices = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [result, setResult] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedTraceIds, setSelectedTraceIds] = useState(null);
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, traceIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     const formatPrice = (num) => {
         if (num === undefined || num === null || Number.isNaN(num)) return '\u2014';
@@ -83,88 +79,7 @@ const CrudeOilPrices = () => {
         };
     }, []);
 
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedTraceIds, result]);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-        let isSyncingTop = false;
-        let isSyncingTable = false;
-        const syncTopToTable = () => {
-            if (isSyncingTable) return;
-            isSyncingTop = true;
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTop = false;
-            });
-        };
-        const syncTableToTop = () => {
-            if (isSyncingTop) return;
-            isSyncingTable = true;
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTable = false;
-            });
-        };
-        const updateTopScrollWidth = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-        topScroll.addEventListener('scroll', syncTopToTable);
-        tableScroll.addEventListener('scroll', syncTableToTop);
-        updateTopScrollWidth();
-        const resizeObserver = new ResizeObserver(updateTopScrollWidth);
-        const table = tableScroll.querySelector('table');
-        if (table) resizeObserver.observe(table);
-        return () => {
-            topScroll.removeEventListener('scroll', syncTopToTable);
-            tableScroll.removeEventListener('scroll', syncTableToTop);
-            resizeObserver.disconnect();
-        };
-    }, [isTableOpen, result]);
+    
 
     const chartRows = useMemo(() => result?.chartData?.filter((row) => row.refDate >= CHART_START) || [], [result]);
     const chartTableRows = useMemo(
@@ -184,12 +99,36 @@ const CrudeOilPrices = () => {
     const wcsLabel = getText('crude_prices_legend_wcs', lang);
     const yAxisTitle = getText('crude_prices_yaxis_label', lang);
     const chartTitle = getText('crude_prices_chart_title', lang);
+    const exportChartTitle = `${stripHtml(chartTitle)} (${chartStartYear}-${chartEndYear})`;
     const textVars = { startYear: chartStartYear, endYear: chartEndYear };
+    const tableCaption = substitute(getText('crude_prices_table_caption', lang), textVars);
 
     const fileSlugBase =
         lang === 'en'
             ? `wti_and_wcs_prices_${chartStartYear}-${chartEndYear}`
             : `prix_du_wti_et_wcs_${chartStartYear}-${chartEndYear}`;
+
+    const tableColumns = useMemo(() => [
+        { key: 'date', header: getText('crude_prices_table_col_date', lang), align: 'left' },
+        { key: 'wti', header: getText('crude_prices_table_col_wti', lang), align: 'num' },
+        { key: 'wcsCad', header: getText('crude_prices_table_col_wcs_cad', lang), align: 'num' },
+        { key: 'usdCad', header: getText('crude_prices_table_col_usd_cad', lang), align: 'num' },
+        { key: 'wcsUsd', header: getText('crude_prices_table_col_wcs_usd', lang), align: 'num' },
+        { key: 'differential', header: getText('crude_prices_table_col_differential', lang), align: 'num' },
+    ], [lang]);
+
+    const tableRows = useMemo(
+        () =>
+            chartTableRows.map((row) => ({
+                date: formatMonthRef(row.refDate, lang),
+                wti: row.wti,
+                wcsCad: row.wcsCad,
+                usdCad: row.usdCad,
+                wcsUsd: row.wcsUsd,
+                differential: row.differential,
+            })),
+        [chartTableRows, lang],
+    );
 
     const yearTicks = useMemo(() => {
         const ticks = [];
@@ -218,201 +157,91 @@ const CrudeOilPrices = () => {
     const wtiFocused = selectedTraceIds === null || selectedTraceIds.includes(2);
     const wcsFocused = selectedTraceIds === null || selectedTraceIds.includes(1);
 
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) return;
-        const title = `${stripHtml(chartTitle)} (${chartStartYear}-${chartEndYear})`;
-        try {
-            if (!window.Plotly) return;
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 700,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = [
-                    { color: COLORS.differential, label: diffLabel, type: 'box' },
-                    { color: COLORS.wti, label: wtiLabel, type: 'line' },
-                    { color: COLORS.wcs, label: wcsLabel, type: 'line' },
-                ];
-                const totalWidth = legendItems.length * 220;
-                let x = (canvas.width - totalWidth) / 2 + 20;
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'left';
-                legendItems.forEach((item) => {
-                    if (item.type === 'box') {
-                        ctx.fillStyle = item.color;
-                        ctx.fillRect(x, legendY - 14, 24, 24);
-                    } else {
-                        ctx.strokeStyle = item.color;
-                        ctx.lineWidth = 4;
-                        ctx.beginPath();
-                        ctx.moveTo(x, legendY);
-                        ctx.lineTo(x + 28, legendY);
-                        ctx.stroke();
-                    }
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 36, legendY + 6);
-                    x += 220;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileSlugBase}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${fileSlugBase}.png`,
+        title: exportChartTitle,
+        height: 700,
+        legendItems: [
+            { label: diffLabel, color: COLORS.differential },
+            { label: wtiLabel, color: COLORS.wti },
+            { label: wcsLabel, color: COLORS.wcs },
+        ],
+    }),
+        [COLORS, diffLabel, exportChartTitle, fileSlugBase, wcsLabel, wtiLabel],
+    );
 
-    const downloadCsv = () => {
-        const headers = [
-            getText('crude_prices_table_col_date', lang),
-            getText('crude_prices_table_col_wti', lang),
-            getText('crude_prices_table_col_wcs_cad', lang),
-            getText('crude_prices_table_col_usd_cad', lang),
-            getText('crude_prices_table_col_wcs_usd', lang),
-            getText('crude_prices_table_col_differential', lang),
-        ];
-        const rows = chartTableRows.map((row) => [
-            formatMonthRef(row.refDate, lang),
-            row.wti,
-            row.wcsCad ?? '',
-            row.usdCad ?? '',
-            row.wcsUsd,
-            row.differential,
-        ]);
-        const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${fileSlugBase}.csv`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('crude_prices_download_chart', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
-    const downloadDocx = async () => {
-        const unitText = getText('crude_prices_yaxis_label', lang);
-        const headerRow = new TableRow({
-            children: [
-                new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: getText('crude_prices_table_col_date', lang), bold: true, size: 18 })] })],
-                    shading: { fill: 'E6E6E6' },
-                }),
-                new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: `${getText('crude_prices_table_col_wti', lang)} (${unitText})`, bold: true, size: 18 })],
-                            alignment: AlignmentType.CENTER,
-                        }),
-                    ],
-                    shading: { fill: 'E6E6E6' },
-                }),
-                new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: getText('crude_prices_table_col_wcs_cad', lang), bold: true, size: 18 })],
-                            alignment: AlignmentType.CENTER,
-                        }),
-                    ],
-                    shading: { fill: 'E6E6E6' },
-                }),
-                new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: getText('crude_prices_table_col_usd_cad', lang), bold: true, size: 18 })],
-                            alignment: AlignmentType.CENTER,
-                        }),
-                    ],
-                    shading: { fill: 'E6E6E6' },
-                }),
-                new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: `${getText('crude_prices_table_col_wcs_usd', lang)} (${unitText})`, bold: true, size: 18 })],
-                            alignment: AlignmentType.CENTER,
-                        }),
-                    ],
-                    shading: { fill: 'E6E6E6' },
-                }),
-                new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: `${getText('crude_prices_table_col_differential', lang)} (${unitText})`, bold: true, size: 18 })],
-                            alignment: AlignmentType.CENTER,
-                        }),
-                    ],
-                    shading: { fill: 'E6E6E6' },
-                }),
-            ],
+    const getChartSummary = () => {
+        if (!chartRows.length) return '';
+        // Monthly series is long; summarize last observation per year for SR.
+        const lastByYear = new Map();
+        chartRows.forEach((row) => {
+            lastByYear.set(Math.floor(row.refDate / 100), row);
         });
-        const dataRows = chartTableRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMonthRef(row.refDate, lang), size: 18 })] })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.wti), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.wcsCad), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatFx(row.usdCad), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.wcsUsd), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.differential), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                    ],
-                }),
+        const years = [...lastByYear.keys()].sort((a, b) => a - b);
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: diffLabel, values: years.map((y) => lastByYear.get(y).differential), format: formatPrice },
+                { name: wcsLabel, values: years.map((y) => lastByYear.get(y).wcsUsd), format: formatPrice },
+                { name: wtiLabel, values: years.map((y) => lastByYear.get(y).wti), format: formatPrice },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Line chart of WTI and WCS crude oil prices and the differential from ${chartStartYear} to ${chartEndYear}`
+                : `Graphique linéaire des prix du pétrole brut WTI et WCS et de l'écart de ${chartStartYear} à ${chartEndYear}`,
+            unitNote: lang === 'en'
+                ? `Values in ${yAxisTitle}. Year-end values summarized`
+                : `Valeurs en ${yAxisTitle}. Valeurs de fin d'année résumées`,
+            body,
+        });
+    };
+
+    const chartRegionLabel = `${exportChartTitle}. ${getChartSummary()}`;
+
+    if (loading || error) {
+        return (
+            <PageShell
+                tabIndex="-1"
+                className="page-content page-117 crude-oil-prices-crude-prices page-chrome page-chrome--bleed"
+                aria-labelledby="crude-oil-prices-title"
+                style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
+            >
+                <PageStatus lang={lang} loading={loading} error={error} />
+            </PageShell>
         );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: `${stripHtml(chartTitle)} (${chartStartYear}-${chartEndYear})`, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [1800, 1400, 1400, 1400, 1400, 1400],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
-    };
-
-    if (loading) return <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>;
-    if (error) return <p>{error}</p>;
-    if (!chartRows.length) return <p>{getText('crude_prices_no_data', lang)}</p>;
+    }
+    if (!chartRows.length) {
+        return (
+            <PageShell
+                tabIndex="-1"
+                className="page-content page-117 crude-oil-prices-crude-prices page-chrome page-chrome--bleed"
+                aria-labelledby="crude-oil-prices-title"
+                style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
+            >
+                <p>{getText('crude_prices_no_data', lang)}</p>
+            </PageShell>
+        );
+    }
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-117 crude-oil-prices-crude-prices"
-            role="main"
+            className="page-content page-117 crude-oil-prices-crude-prices page-chrome page-chrome--bleed"
             aria-labelledby="crude-oil-prices-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-117.crude-oil-prices-crude-prices {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .crude-oil-prices-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .crude-oil-prices-title {
@@ -495,58 +324,6 @@ const CrudeOilPrices = () => {
 .crude-oil-prices-legend-box { width: 18px; height: 18px; display: inline-block; border-radius: 2px; }
 .crude-oil-prices-legend-line { width: 28px; height: 0; border-top: 3px solid; display: inline-block; }
 .crude-oil-prices-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.crude-oil-prices-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    cursor: pointer;
-    list-style: none;
-}
-.crude-oil-prices-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.crude-oil-prices-table-wrapper details > summary::marker { display: none; content: ''; }
-.crude-oil-prices-table-wrapper details > summary:hover { background-color: #404040 !important; }
-.crude-oil-prices-table-wrapper .table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-    border: 1px solid #ddd;
-    background: #fff;
-}
-.crude-oil-prices-table-wrapper .table-responsive table {
-    width: max-content !important;
-    min-width: 100%;
-    border-collapse: collapse;
-}
-.crude-oil-prices-table-wrapper .table-responsive table th,
-.crude-oil-prices-table-wrapper .table-responsive table td {
-    white-space: nowrap;
-    padding: 8px 12px;
-    font-family: var(--font-body);
-    color: var(--gc-text);
-}
-.crude-oil-prices-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.crude-oil-prices-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
-.crude-oil-prices-download-buttons button:hover,
-.crude-oil-prices-table-wrapper details > summary:hover,
-.crude-oil-prices-chart-frame button[type="button"]:hover {
-    background: #404040 !important;
-}
 @media (max-width: 768px) {
     .crude-oil-prices-title { font-size: 37px; }
     .page-117 p.crude-oil-prices-subtitle { font-size: 28px; }
@@ -583,27 +360,11 @@ const CrudeOilPrices = () => {
                     <h2 id="crude-oil-prices-chart-title" className="crude-oil-prices-chart-title">{chartTitle}</h2>
 
                     {selectedTraceIds !== null && (
-                        <button
-                            type="button"
-                            onClick={() => setSelectedTraceIds(null)}
-                            style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#8C8C8C',
-                                border: '1px solid #404040',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontFamily: 'Arial, sans-serif',
-                                fontSize: 14,
-                                color: '#fff',
-                                marginBottom: 8,
-                            }}
-                        >
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
+                        <ClearSelectionButton lang={lang} onClick={() => setSelectedTraceIds(null)} />
                     )}
 
                     <figure ref={chartRef} style={{ margin: 0 }}>
-                        <div aria-hidden="true">
+                        <div role="region" aria-label={chartRegionLabel} tabIndex="0">
                             <Plot
                                 key={`crude-oil-prices-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}`}
                                 data={[
@@ -676,34 +437,7 @@ const CrudeOilPrices = () => {
                                     plot_bgcolor: 'rgba(0,0,0,0)',
                                     height: chartHeight,
                                 }}
-                                config={{
-                                    displayModeBar: true,
-                                    displaylogo: false,
-                                    responsive: true,
-                                    scrollZoom: false,
-                                    modeBarButtonsToRemove: [
-                                        'pan2d',
-                                        'select2d',
-                                        'lasso2d',
-                                        'zoom2d',
-                                        'zoomIn2d',
-                                        'zoomOut2d',
-                                        'autoScale2d',
-                                        'resetScale2d',
-                                        'toImage',
-                                    ],
-                                    modeBarButtonsToAdd: [
-                                        {
-                                            name: getText('crude_prices_download_chart', lang),
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                            },
-                                            click: (gd) => downloadChartWithTitle(gd),
-                                        },
-                                    ],
-                                }}
+                                config={plotConfig}
                                 className="crude-oil-prices-chart"
                                 useResizeHandler
                                 onClick={(data) => {
@@ -747,83 +481,31 @@ const CrudeOilPrices = () => {
                     </div>
 
                     <div className="crude-oil-prices-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '\u25BC' : '\u25B6'}</span>
-                                {getText('crude_prices_table_summary', lang)}
-                                <span className="wb-inv">{getText('crude_prices_table_toggle_sr', lang)}</span>
-                            </summary>
-
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginBottom: '0px',
-                                    display: windowWidth <= 768 ? 'none' : 'block',
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                tabIndex="0"
-                                aria-label={getText('crude_prices_table_aria', lang)}
-                            >
-                                <table className="table table-striped table-hover" style={{ marginTop: '15px' }}>
-                                    <caption className="wb-inv">
-                                        {substitute(getText('crude_prices_table_caption', lang), textVars)}
-                                    </caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0' }}>
-                                                {getText('crude_prices_table_col_date', lang)}
-                                            </th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>
-                                                {getText('crude_prices_table_col_wti', lang)}
-                                            </th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>
-                                                {getText('crude_prices_table_col_wcs_cad', lang)}
-                                            </th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>
-                                                {getText('crude_prices_table_col_usd_cad', lang)}
-                                            </th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>
-                                                {getText('crude_prices_table_col_wcs_usd', lang)}
-                                            </th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>
-                                                {getText('crude_prices_table_col_differential', lang)}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {chartTableRows.map((row) => (
-                                            <tr key={row.refDate}>
-                                                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{formatMonthRef(row.refDate, lang)}</td>
-                                                <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>{formatPrice(row.wti)}</td>
-                                                <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>{formatPrice(row.wcsCad)}</td>
-                                                <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>{formatFx(row.usdCad)}</td>
-                                                <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>{formatPrice(row.wcsUsd)}</td>
-                                                <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>{formatPrice(row.differential)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="crude-oil-prices-download-buttons">
-                                <button type="button" onClick={downloadCsv}>{getText('crude_prices_download_csv', lang)}</button>
-                                <button type="button" onClick={downloadDocx}>{getText('crude_prices_download_docx', lang)}</button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            label={getText('crude_prices_table_summary', lang)}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${fileSlugBase}.csv`}
+                            docx={{
+                                filename: `${fileSlugBase}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1800, 1400, 1400, 1400, 1400, 1400],
+                                fontSize: 18,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={getText('crude_prices_table_aria', lang)}
+                            renderCell={(raw, { colIndex }) => {
+                                if (colIndex === 0) return String(raw ?? '');
+                                if (colIndex === 3) return formatFx(raw);
+                                return formatPrice(raw);
+                            }}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -52,6 +52,16 @@ All commands used in this repository. Run **npm** commands from the **repository
 | `npm run build` | Production build to `dist/` — must pass before PR |
 | `npm run lint` | ESLint on `src/` |
 | `npm run preview` | Serve the production build locally (after `npm run build`) |
+| `npm test` | Vitest unit and component tests |
+| `npm run test:a11y-routes` | axe checks on sample routes |
+| `npm run audit:charts` | Chart spoken / table alternative coverage |
+| `npm run audit:sr-content` | Fail if primary prose is hidden behind `aria-hidden` |
+| `npm run audit:chart-summaries` | Spoken chart summary completeness |
+| `npm run audit:page-chrome` | Fail if pages reintroduce hand-rolled DOCX/table chrome |
+| `npm run audit:ci` | `npm audit` at high severity |
+| `npm run check:bundle` | Soft JS / Plotly chunk size budget (after build) |
+| `npm run lighthouse:ci` | Lighthouse a11y + weight budgets |
+| `npm run compress:assets` | Lossless recompress of large PNGs under `src/assets/` |
 
 The dev server uses committed CSVs in `public/data/`. No Python or SQL Server required for frontend-only work.
 

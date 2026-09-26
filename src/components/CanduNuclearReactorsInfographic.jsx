@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import {
     canduNuclearReactorsBg,
     NATIVE_SIZE,
@@ -19,9 +20,18 @@ const CanduNuclearReactorsInfographic = ({
     const fonts = CALLOUT_FONT_SIZES;
 
     return (
-        <figure className="candu-nuclear-reactors-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            as="figure"
+            mode="image"
+            className="candu-nuclear-reactors-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={canduNuclearReactorsBg}
+            imgClassName="candu-nuclear-reactors-bg-image"
+        >
             <style>{`
 .candu-nuclear-reactors-infographic-figure {
+    position: relative;
     width: 100%;
     margin: 0 0 28px 0;
 }
@@ -77,7 +87,6 @@ const CanduNuclearReactorsInfographic = ({
             `}</style>
 
             <div className="candu-nuclear-reactors-infographic-wrapper">
-                <img src={canduNuclearReactorsBg} alt="" className="candu-nuclear-reactors-bg-image" draggable={false} />
                 <div
                     className="candu-nuclear-reactors-callout"
                     style={{
@@ -86,7 +95,6 @@ const CanduNuclearReactorsInfographic = ({
                         width: `${slot.width}%`,
                     }}
                 >
-                    <span className="wb-inv">{ariaLabel}</span>
                     <div className="candu-nuclear-reactors-callout-line" aria-hidden="true">
                         <span className="candu-nuclear-reactors-stat">{abroadCount}</span>
                         <span className="candu-nuclear-reactors-callout-heading">{heading}</span>
@@ -96,7 +104,7 @@ const CanduNuclearReactorsInfographic = ({
                     </p>
                 </div>
             </div>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

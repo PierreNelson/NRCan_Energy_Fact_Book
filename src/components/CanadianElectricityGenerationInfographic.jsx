@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import canadianElectricityGenerationBgEn from '../assets/canadian_electricity_generation_bg.png';
 import canadianElectricityGenerationBgFr from '../assets/canadian_electricity_generation_bg_fr.png';
 import {
@@ -40,9 +41,19 @@ const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ar
     const sources = data?.sources || {};
 
     return (
-        <figure ref={figureRef} className="canadian-electricity-generation-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="canadian-electricity-generation-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={bgImage}
+            imgClassName="canadian-electricity-generation-bg-image"
+        >
             <style>{`
 .canadian-electricity-generation-infographic-figure {
+    position: relative;
     display: block;
     width: 100%;
     max-width: none;
@@ -94,8 +105,6 @@ const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ar
             `}</style>
 
             <div className="canadian-electricity-generation-infographic-wrapper">
-                <img src={bgImage} alt="" className="canadian-electricity-generation-bg-image" draggable={false} aria-hidden="true" />
-
                 <div className="canadian-electricity-generation-overlay-layer" aria-hidden="true">
                     {columns.map((column) => {
                         const block = sources[column.key];
@@ -144,8 +153,7 @@ const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ar
                     })}
                 </div>
             </div>
-            <figcaption className="wb-inv">{ariaLabel}</figcaption>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

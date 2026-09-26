@@ -1,15 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { waitForImage, resolveAccessibleInfographicGraphic } from '../utils/downloadInfographicPng';
+import { stripHtml } from '../utils/stripHtml';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import hydroelectricityBg from '../assets/hydroelectricity_bg.svg';
 
 const YEAR = 2023;
 const WORLD_TOTAL_TWH = 4252;
 const CANADA_ELECTRICITY_SHARE = 55;
 const CANADA_CAPSULE = '#819476';
-const DOC_COLUMN_WIDTHS = [1200, 4200, 1800];
 
 const TOP5 = [
     { rank: 1, key: 'china', pct: 29 },
@@ -34,8 +38,6 @@ const substitute = (text, vars) =>
         text || '',
     );
 
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
 const drawRoundedRect = (ctx, x, y, w, h, r) => {
     const radius = Math.min(r, w / 2, h / 2);
     ctx.beginPath();
@@ -50,16 +52,6 @@ const drawRoundedRect = (ctx, x, y, w, h, r) => {
     ctx.quadraticCurveTo(x, y, x + radius, y);
     ctx.closePath();
 };
-
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
 
 const BODY_FONT = '20px "Noto Sans", sans-serif';
 const SHARE_FONT = 'bold 48px "Noto Sans", sans-serif';
@@ -251,21 +243,9 @@ const exportCapsuleInfographicPng = ({ title, rows, filename }) => {
 
 const Hydroelectricity = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-    const leftImgRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
+    const leftInfographicRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
 
     const formatSharePct = useCallback((value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
@@ -294,60 +274,14 @@ const Hydroelectricity = () => {
     const downloadSlug = getText('hydroelectricity_download_title', lang).replace(/\s+/g, '_');
     const leftDownloadSlug = getText('hydroelectricity_left_download_title', lang).replace(/\s+/g, '_');
 
-    const tableHeaders = [
-        getText('hydroelectricity_table_col_rank', lang),
-        getText('hydroelectricity_table_col_country', lang),
-        getText('hydroelectricity_table_col_share', lang),
-    ];
+    const tableCaption = getText('hydroelectricity_table_caption', lang);
+    const exportTableTitle = stripHtml(tableCaption);
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        if (!isTableOpen) return undefined;
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncTableScroll));
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        syncTableScroll();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
+    const tableColumns = useMemo(() => [
+        { key: 'rank', header: getText('hydroelectricity_table_col_rank', lang), align: 'num' },
+        { key: 'name', header: getText('hydroelectricity_table_col_country', lang), align: 'left' },
+        { key: 'shareLabel', header: getText('hydroelectricity_table_col_share', lang), align: 'num' },
+    ], [lang]);
 
     const downloadBtnStyle = {
         padding: '8px 16px',
@@ -360,78 +294,8 @@ const Hydroelectricity = () => {
         color: '#ffffff',
     };
 
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = rankingRows.map((row) =>
-            [row.rank, csvEscape(row.name), csvEscape(formatSharePct(row.pct))].join(','),
-        );
-        saveAs(
-            new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            `${downloadSlug}.csv`,
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = rankingRows.map(
-            (row) =>
-                new TableRow({
-                    children: [String(row.rank), row.name, formatSharePct(row.pct)].map(
-                        (value, index) =>
-                            new TableCell({
-                                children: [
-                                    new Paragraph({
-                                        children: [new TextRun({ text: String(value ?? ''), size: 22 })],
-                                        alignment: index === 1 ? AlignmentType.LEFT : AlignmentType.CENTER,
-                                    }),
-                                ],
-                            }),
-                    ),
-                }),
-        );
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: stripHtml(getText('hydroelectricity_table_caption', lang)),
-                                bold: true,
-                                size: 28,
-                            }),
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: DOC_COLUMN_WIDTHS,
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${downloadSlug}.docx`);
-    };
-
     const downloadLeftInfographicPng = () => {
-        exportLeftInfographicPng(leftImgRef.current, {
+        exportLeftInfographicPng(resolveAccessibleInfographicGraphic(leftInfographicRef.current), {
             title: getText('hydroelectricity_title', lang),
             bodyTemplate: getText('hydroelectricity_body', lang),
             shareLabel: formatSharePct(CANADA_ELECTRICITY_SHARE),
@@ -487,21 +351,15 @@ const Hydroelectricity = () => {
     });
 
     return (
-        <main
-            tabIndex="-1"
-            className="page-content hydroelectricity"
+        <PageShell tabIndex="-1"
+            className="page-content hydroelectricity page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="hydroelectricity-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .hydroelectricity.page-content { max-width: none !important; overflow-x: visible !important; }
 .hydroelectricity {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .hydroelectricity-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .hydroelectricity-title {
@@ -629,17 +487,6 @@ const Hydroelectricity = () => {
 .hydroelectricity-capsule-pill-text { font-size: 15px; }
 .hydroelectricity-capsule-row-canada .hydroelectricity-capsule-pill { border-width: 2px; border-color: ${CANADA_CAPSULE}; }
 .hydroelectricity-capsule-pill-text-canada { font-size: 22px; font-weight: bold; }
-.hydroelectricity-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.hydroelectricity-table-responsive::-webkit-scrollbar { display: none; }
-.hydroelectricity-table-responsive table { width: max-content !important; min-width: 100%; }
 .hydroelectricity-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 .hydroelectricity-chart-section .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
 .hydroelectricity .data-table-wrapper summary {
@@ -659,8 +506,6 @@ const Hydroelectricity = () => {
 .hydroelectricity .data-table-wrapper summary::-webkit-details-marker { display: none; }
 .hydroelectricity .data-table-wrapper summary:hover,
 .hydroelectricity .data-table-wrapper button:hover { background-color: #404040 !important; }
-.hydroelectricity-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.hydroelectricity-table-scrollbar > div { height: 20px; }
 @media (max-width: 880px) {
     .hydroelectricity-split { grid-template-columns: 1fr; }
     .hydroelectricity-title { font-size: 37px; }
@@ -676,12 +521,14 @@ const Hydroelectricity = () => {
 
                 <div className="hydroelectricity-split">
                     <div className="hydroelectricity-left">
-                        <img
-                            ref={leftImgRef}
+                        <AccessibleInfographic
+                            ref={leftInfographicRef}
+                            mode="image"
+                            decorative
+                            as="div"
+                            className="hydroelectricity-left-image-wrap"
                             src={hydroelectricityBg}
-                            alt=""
-                            className="hydroelectricity-left-image"
-                            draggable={false}
+                            imgClassName="hydroelectricity-left-image"
                         />
                         <p
                             className="hydroelectricity-body"
@@ -701,7 +548,7 @@ const Hydroelectricity = () => {
 
                         <section className="hydroelectricity-chart-section" aria-label={rankingAria}>
                             <h3 className="hydroelectricity-graphic-title">{graphicTitle}</h3>
-                            <div className="hydroelectricity-capsule-graphic" role="img" aria-label={rankingAria}>
+                            <div className="hydroelectricity-capsule-graphic" role="img" aria-label={rankingAria} tabIndex={0}>
                                 {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                             </div>
 
@@ -711,59 +558,26 @@ const Hydroelectricity = () => {
                                 </button>
                             </div>
 
-                            <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                                <summary role="button" aria-expanded={isTableOpen}>
-                                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                    {getText('hydroelectricity_table_summary', lang)}
-                                    <span className="wb-inv">
-                                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                    </span>
-                                </summary>
-                                <div ref={topScrollRef} className="hydroelectricity-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div ref={tableScrollRef} className="hydroelectricity-table-responsive table-responsive" role="region" tabIndex={0}>
-                                    <table className="table table-bordered table-striped table-hover">
-                                        <caption className="wb-inv">
-                                            {getText('hydroelectricity_table_caption', lang)}
-                                        </caption>
-                                        <thead>
-                                            <tr>
-                                                {tableHeaders.map((header) => (
-                                                    <th
-                                                        key={header}
-                                                        scope="col"
-                                                        style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
-                                                    >
-                                                        {header}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {rankingRows.map((row) => (
-                                                <tr key={row.key}>
-                                                    <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{row.rank}</th>
-                                                    <td style={{ textAlign: 'left' }}>{row.name}</td>
-                                                    <td style={{ textAlign: 'center' }}>{formatSharePct(row.pct)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div ref={bottomScrollRef} className="hydroelectricity-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div className="hydroelectricity-download-buttons">
-                                    <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                                        {getText('hydroelectricity_download_csv', lang)}
-                                    </button>
-                                    <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                                        {getText('hydroelectricity_download_docx', lang)}
-                                    </button>
-                                </div>
-                            </details>
+                            <ChartDataTable
+                                lang={lang}
+                                columns={tableColumns}
+                                rows={rankingRows}
+                                csvFilename={`${downloadSlug}.csv`}
+                                docx={{
+                                    filename: `${downloadSlug}.docx`,
+                                    title: exportTableTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: [1200, 4200, 1800],
+                                    fontSize: 22,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                            />
                         </section>
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

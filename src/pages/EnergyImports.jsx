@@ -1,17 +1,36 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
+import useWindowWidth from '../hooks/useWindowWidth';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from '../utils/exportTableToDocx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import energyImportsBgEn from '../assets/energy_imports_bg.svg';
-import energyImportsBgFr from '../assets/energy_imports_bg_fr.svg';
+import { svgElementToCanvas } from '../utils/downloadInfographicPng';
+import { prepareInlineSvgMarkup } from '../utils/prefixSvgIds';
+import energyImportsBgEn from '../assets/energy_imports_bg.svg?raw';
+import energyImportsBgFr from '../assets/energy_imports_bg_fr.svg?raw';
 
 const REFERENCE_YEAR = 2025;
 const TABLE_MIN_WIDTH_PX = 480;
 const SCROLLBAR_PX = 20;
+const SVG_WIDTH = 882;
 
 const COMMODITY_KEYS = ['crude_oil', 'natural_gas', 'electricity', 'coal'];
 const METRIC_KEYS = ['caImportsFromUs', 'usExportsToCa', 'caConsumptionFromUs'];
+
+/**
+ * Top callout focus bands (SVG viewBox coords → %). Visual focus outlines
+ * cover each highlight group; spoken text comes from translation templates.
+ */
+const CALLOUT_GROUPS = [
+    { key: 'energy_imports', labelKey: 'energy_imports_group_energy_imports', x: 0, y: 0, w: 450, h: 240 },
+    { key: 'countries', labelKey: 'energy_imports_group_countries', x: 450, y: 0, w: 230, h: 240 },
+    { key: 'us_accounts', labelKey: 'energy_imports_group_us_accounts', x: 680, y: 0, w: 202, h: 240 },
+];
+
+/** "Imports from the U.S." heading hotspot (map title area). */
+const IMPORTS_HEADING_BOUNDS = { x: 10, y: 250, w: 280, h: 120 };
 
 /* SVG viewBox 882×581. Equal-height rows centered on measured icon midlines. */
 const SVG_HEIGHT = 581;
@@ -67,16 +86,6 @@ const substitute = (text, vars) =>
 
 const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
-
 const formatCell = (value, lang) => {
     if (value == null) return '–';
     if (typeof value === 'string') return value;
@@ -95,15 +104,31 @@ const formatPercentDownload = (value, lang) => {
     return `${formatted}%`;
 };
 
+const formatPercentSpoken = (value, lang) => {
+    if (value == null) return '–';
+    const raw = String(value);
+    if (raw.startsWith('>')) {
+        const num = formatCell(raw.slice(1), lang);
+        return substitute(getText('energy_imports_percent_gt_spoken', lang), { value: num });
+    }
+    return substitute(getText('energy_imports_percent_spoken', lang), {
+        value: formatCell(value, lang),
+    });
+};
+
+const boundsToStyle = ({ x, y, w, h }) => ({
+    left: `${((x / SVG_WIDTH) * 100).toFixed(3)}%`,
+    top: `${((y / SVG_HEIGHT) * 100).toFixed(3)}%`,
+    width: `${((w / SVG_WIDTH) * 100).toFixed(3)}%`,
+    height: `${((h / SVG_HEIGHT) * 100).toFixed(3)}%`,
+});
+
 const EnergyImports = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [selectedYear] = useState(REFERENCE_YEAR);
-    const [windowWidth, setWindowWidth] = useState(
-        typeof window !== 'undefined' ? window.innerWidth : 1200,
-    );
+    const windowWidth = useWindowWidth();
 
     const figureRef = useRef(null);
-    const infographicImgRef = useRef(null);
     const tableTopRef = useRef(null);
     const tableScrollRef = useRef(null);
     const tableBottomRef = useRef(null);
@@ -123,12 +148,6 @@ const EnergyImports = () => {
         const shouldShow = contentWidth > tableScroll.clientWidth + 1;
         topScroll.style.display = shouldShow ? 'block' : 'none';
         bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
     }, []);
 
     useEffect(() => {
@@ -167,26 +186,38 @@ const EnergyImports = () => {
         observer?.observe(tableScroll);
         scheduleSync();
 
-        const imgEl = infographicImgRef.current;
-        const onImgLoad = () => scheduleSync();
-        imgEl?.addEventListener('load', onImgLoad);
-        if (imgEl?.complete) scheduleSync();
-
         return () => {
             topScroll.removeEventListener('scroll', handleTopScroll);
             tableScroll.removeEventListener('scroll', handleTableScroll);
             bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            imgEl?.removeEventListener('load', onImgLoad);
             observer?.disconnect();
         };
     }, [lang, selectedYear, windowWidth, syncTableScroll]);
 
     const textVars = { year: selectedYear };
     const yearData = DATA_BY_YEAR[selectedYear] ?? DATA_BY_YEAR[REFERENCE_YEAR];
-    const bgImage = lang === 'en' ? energyImportsBgEn : energyImportsBgFr;
+    const bgMarkup = prepareInlineSvgMarkup(
+        lang === 'en' ? energyImportsBgEn : energyImportsBgFr,
+        `energy-imports-${lang}`,
+    );
     const pageTitle = substitute(getText('energy_imports_title', lang), textVars);
     const fileTitle = substitute(getText('energy_imports_download_title', lang), textVars);
     const tableCaption = substitute(getText('energy_imports_table_caption', lang), textVars);
+    const importsHeading = getText('energy_imports_imports_heading', lang);
+
+    const info = yearData.infographic;
+    const spokenInfoVars = {
+        energyImportsBillion: formatCell(info.energyImportsBillion, lang),
+        goodsImportsShare: formatCell(info.goodsImportsShare, lang),
+        sourceCountries: formatCell(info.sourceCountries, lang),
+        usEnergyImportShare: formatCell(info.usEnergyImportShare, lang),
+        usEnergyImportBillion: formatCell(info.usEnergyImportBillion, lang),
+    };
+    const calloutGroups = CALLOUT_GROUPS.map((group) => ({
+        ...group,
+        label: substitute(getText(group.labelKey, lang), spokenInfoVars),
+        style: boundsToStyle(group),
+    }));
 
     const metricHeaders = METRIC_KEYS.map((key) => getText(`energy_imports_col_${key}`, lang));
     const tableRows = COMMODITY_KEYS.map((key) => ({
@@ -202,24 +233,19 @@ const EnergyImports = () => {
     }));
 
     const downloadInfographicPng = async () => {
-        const imgEl = infographicImgRef.current;
-        const figureEl = figureRef.current;
-        if (!imgEl || !figureEl) return;
+        const graphic = figureRef.current?.querySelector?.('svg');
+        if (!graphic) return;
         try {
-            const loaded = await waitForImage(imgEl);
             const scale = 2;
-            const canvas = document.createElement('canvas');
-            canvas.width = loaded.naturalWidth * scale;
-            canvas.height = loaded.naturalHeight * scale;
+            const canvas = await svgElementToCanvas(graphic, { scale });
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            ctx.scale(scale, scale);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, loaded.naturalWidth, loaded.naturalHeight);
-            ctx.drawImage(loaded, 0, 0, loaded.naturalWidth, loaded.naturalHeight);
+            const naturalWidth = canvas.width / scale;
+            const naturalHeight = canvas.height / scale;
 
-            const ox = loaded.naturalWidth * (OVERLAY_LEFT_PCT / 100);
-            const ow = loaded.naturalWidth * (OVERLAY_WIDTH_PCT / 100);
-            const yScale = loaded.naturalHeight / SVG_HEIGHT;
+            const ox = naturalWidth * (OVERLAY_LEFT_PCT / 100);
+            const ow = naturalWidth * (OVERLAY_WIDTH_PCT / 100);
+            const yScale = naturalHeight / SVG_HEIGHT;
             const headers = metricHeaders;
             const colW = ow / headers.length;
 
@@ -402,26 +428,17 @@ const EnergyImports = () => {
                 ],
             }],
         });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileTitle}.docx`);
+        await saveDocxBlob(`${fileTitle}.docx`, doc);
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content energy-imports"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content energy-imports page-chrome page-chrome--bleed"
             aria-labelledby="energy-imports-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .energy-imports {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .energy-imports-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-imports.page-content h1.energy-imports-title {
@@ -452,10 +469,32 @@ const EnergyImports = () => {
     overflow: visible;
     padding: 0;
 }
-.energy-imports-bg-image {
+.energy-imports-bg-image,
+.energy-imports-bg-image svg {
     width: 100%;
     height: auto;
     display: block;
+}
+.energy-imports-callout {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    border-radius: 2px;
+}
+.energy-imports-callout:focus,
+.energy-imports-callout:focus-visible,
+.energy-imports-imports-heading:focus,
+.energy-imports-imports-heading:focus-visible,
+.energy-imports-overlay-row > [role="gridcell"]:focus,
+.energy-imports-overlay-row > [role="gridcell"]:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 2px;
+}
+.energy-imports-imports-heading {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    border-radius: 2px;
 }
 .energy-imports-table-shell {
     position: absolute;
@@ -605,18 +644,32 @@ const EnergyImports = () => {
             <div className="energy-imports-inner">
                 <h1 id="energy-imports-title" className="energy-imports-title">{pageTitle}</h1>
 
-                <figure
-                    ref={figureRef}
-                    className="energy-imports-figure"
-                    aria-label={getText('energy_imports_infographic_aria', lang)}
-                >
-                    <img
-                        ref={infographicImgRef}
+                <figure ref={figureRef} className="energy-imports-figure">
+                    <div
                         className="energy-imports-bg-image"
-                        src={bgImage}
-                        alt={getText('energy_imports_infographic_aria', lang)}
+                        aria-hidden="true"
+                        dangerouslySetInnerHTML={{ __html: bgMarkup }}
                     />
-                    <div className="wb-inv">{tableCaption}</div>
+
+                    {calloutGroups.map((group) => (
+                        <div
+                            key={group.key}
+                            className="energy-imports-callout"
+                            style={group.style}
+                            role="region"
+                            tabIndex={0}
+                            aria-label={group.label}
+                        />
+                    ))}
+
+                    <div
+                        className="energy-imports-imports-heading"
+                        style={boundsToStyle(IMPORTS_HEADING_BOUNDS)}
+                        role="region"
+                        tabIndex={0}
+                        aria-label={importsHeading}
+                    />
+
                     <div className="energy-imports-table-shell">
                         <div
                             ref={tableTopRef}
@@ -628,12 +681,14 @@ const EnergyImports = () => {
                         <div
                             ref={tableScrollRef}
                             className="energy-imports-table-scroll"
-                            role="region"
-                            aria-label={tableCaption}
-                            tabIndex={0}
                         >
-                            <div ref={tableInnerRef} className="energy-imports-table-inner">
-                                <div className="energy-imports-overlay-header" role="row">
+                            <div
+                                ref={tableInnerRef}
+                                className="energy-imports-table-inner"
+                                role="grid"
+                                aria-label={tableCaption}
+                            >
+                                <div className="energy-imports-overlay-header" role="row" aria-hidden="true">
                                     {metricHeaders.map((header) => (
                                         <span key={header} role="columnheader">{header}</span>
                                     ))}
@@ -643,17 +698,25 @@ const EnergyImports = () => {
                                         key={row.key}
                                         className="energy-imports-overlay-row"
                                         role="row"
-                                        aria-label={row.label}
                                     >
-                                        {row.values.map((value, colIndex) => (
-                                            <span
-                                                key={`${row.key}-${colIndex}`}
-                                                role="cell"
-                                                className={colIndex % 2 === 0 ? 'energy-imports-overlay-col-accent' : 'energy-imports-overlay-col-base'}
-                                            >
-                                                {formatCell(value, lang)}
-                                            </span>
-                                        ))}
+                                        {row.values.map((value, colIndex) => {
+                                            const spoken = substitute(getText('energy_imports_cell_spoken', lang), {
+                                                commodity: row.label,
+                                                metric: metricHeaders[colIndex],
+                                                value: formatPercentSpoken(value, lang),
+                                            });
+                                            return (
+                                                <span
+                                                    key={`${row.key}-${colIndex}`}
+                                                    role="gridcell"
+                                                    tabIndex={0}
+                                                    aria-label={spoken}
+                                                    className={colIndex % 2 === 0 ? 'energy-imports-overlay-col-accent' : 'energy-imports-overlay-col-base'}
+                                                >
+                                                    <span aria-hidden="true">{formatCell(value, lang)}</span>
+                                                </span>
+                                            );
+                                        })}
                                     </div>
                                 ))}
                             </div>
@@ -680,7 +743,7 @@ const EnergyImports = () => {
                     </button>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

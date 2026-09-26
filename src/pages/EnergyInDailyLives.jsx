@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import YearSelect from '../components/YearSelect';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
 import { getResidentialSectorOverviewData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 import energyInDailyLivesBg1 from '../assets/energy_in_daily_lives_bg1.png';
 import energyInDailyLivesBg2 from '../assets/energy_in_daily_lives_bg2.png';
 import energyInDailyLivesBg3 from '../assets/energy_in_daily_lives_bg3.png';
@@ -11,6 +14,8 @@ import energyInDailyLivesBg4 from '../assets/energy_in_daily_lives_bg4.png';
 
 /** Earliest year shown in the selector and data table; extend range upward automatically when export includes newer years. */
 const energy_in_daily_lives_MIN_DISPLAY_YEAR = 2022;
+
+const PCT_KEYS = new Set(['swte_pct', 'terPct', 'euxPct', 'ee_improvement_pct']);
 
 const substitute = (str, vars) => {
     if (!str || typeof str !== 'string') return str;
@@ -35,17 +40,12 @@ const boldNumbersInBullet = (str) => {
 };
 
 const EnergyInDailyLives = () => {
-    const outlet = useOutletContext();
-    const lang = outlet?.lang ?? 'en';
+    const { lang = 'en', layoutPadding } = useOutletContext() ?? {};
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [imgScale, setImgScale] = useState(1);
     const [pickedYear, setPickedYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
 
     useEffect(() => {
         getResidentialSectorOverviewData()
@@ -56,15 +56,6 @@ const EnergyInDailyLives = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(e.target)) setIsYearDropdownOpen(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const pad = { left: 0, right: 0 };
     const hasData = result && (result.data?.length > 0 || result.terPct != null || result.euxPct != null || result.swtePct != null || result.eeImprovementPct != null || result.eeSavingsPj != null || result.eeSavingsBillion != null);
 
     const allYears = useMemo(() => (result?.data ? [...new Set(result.data.map((r) => r.year))].sort((a, b) => a - b) : []), [result]);
@@ -76,6 +67,7 @@ const EnergyInDailyLives = () => {
             return r && r.ter != null;
         });
     }, [result, allYears]);
+    const yearsDesc = useMemo(() => [...years].sort((a, b) => b - a), [years]);
 
     const selectedYear = pickedYear != null && years.includes(pickedYear) ? pickedYear : (years.length > 0 ? years[years.length - 1] : null);
 
@@ -136,7 +128,7 @@ const EnergyInDailyLives = () => {
                 water_heating_pj: r.water_heating_pj,
                 swte_pct: swte,
                 terPct: terPctRow,
-                euxPct: euxPctRow,
+                euxPct: euxPctRow != null ? Math.abs(euxPctRow) : null,
                 ee_improvement_pct: r.ee_improvement_pct,
                 ee_savings_pj: r.ee_savings_pj,
                 ee_savings_billion: r.ee_savings_billion
@@ -150,110 +142,58 @@ const EnergyInDailyLives = () => {
         return years.map((y) => tableRows.find((r) => r.year === y)).filter(Boolean);
     }, [tableRows, years]);
 
-    const downloadTableAsCSV = () => {
-        const rowsToExport = tableRowsForTable;
-        if (!rowsToExport.length) return;
-        const en = lang === 'en';
-        const headers = [
-            en ? 'Year' : 'Année',
-            en ? 'Total residential energy (PJ)' : 'Consommation résidentielle totale (PJ)',
-            en ? 'Energy efficiency effect (PJ)' : 'Effet d\'efficacité énergétique (PJ)',
-            en ? 'Space heating (PJ)' : 'Chauffage des locaux (PJ)',
-            en ? 'Water heating (PJ)' : 'Chauffage de l\'eau (PJ)',
-            en ? 'Space and water % of total (%)' : 'Espace et eau % du total (%)',
-            en ? 'Change in use since 2000 (%)' : 'Variation depuis 2000 (%)',
-            en ? 'Change without EE since 2000 (%)' : 'Variation sans EE depuis 2000 (%)',
-            en ? 'EE improvement (%)' : 'Amélioration EE (%)',
-            en ? 'EE savings (PJ)' : 'Économies EE (PJ)',
-            en ? 'EE savings ($B)' : 'Économies EE (G $)'
-        ];
-        const rows = rowsToExport.map((r) => [
-            r.year,
-            r.ter != null ? r.ter : '',
-            r.eee != null ? r.eee : '',
-            r.space_heating_pj != null ? r.space_heating_pj : '',
-            r.water_heating_pj != null ? r.water_heating_pj : '',
-            r.swte_pct != null ? r.swte_pct : '',
-            r.terPct != null ? r.terPct : '',
-            r.euxPct != null ? Math.abs(r.euxPct) : '',
-            r.ee_improvement_pct != null ? r.ee_improvement_pct : '',
-            r.ee_savings_pj != null ? r.ee_savings_pj : '',
-            r.ee_savings_billion != null ? r.ee_savings_billion : ''
-        ]);
-        const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'energy_in_daily_lives_residential_metrics.csv' : 'energy_in_daily_lives_metriques_residentielles.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
+    const pageTitle = getText('energy_in_daily_lives_title', lang);
+    const exportTableTitle = stripHtml(pageTitle);
+    const tableCaption = lang === 'en'
+        ? 'Residential energy metrics by year with units.'
+        : 'Métriques énergétiques résidentielles par année avec unités.';
+    const chartDownloadSlug = lang === 'en'
+        ? 'energy_in_daily_lives_residential_metrics'
+        : 'energy_in_daily_lives_metriques_residentielles';
+    const docxFilename = lang === 'en'
+        ? 'energy_in_daily_lives_table.docx'
+        : 'energie_vies_quotidiennes_tableau.docx';
 
-    const downloadTableAsDocx = async () => {
-        const rowsToExport = tableRowsForTable;
-        if (!rowsToExport.length) return;
-        const en = lang === 'en';
-        const headers = [
-            en ? 'Year' : 'Année',
-            en ? 'Total residential energy (PJ)' : 'Consommation résidentielle totale (PJ)',
-            en ? 'Energy efficiency effect (PJ)' : 'Effet d\'efficacité énergétique (PJ)',
-            en ? 'Space heating (PJ)' : 'Chauffage des locaux (PJ)',
-            en ? 'Water heating (PJ)' : 'Chauffage de l\'eau (PJ)',
-            en ? 'Space and water % (%)' : 'Espace et eau % (%)',
-            en ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)',
-            en ? 'Change without EE (%)' : 'Variation sans EE (%)',
-            en ? 'EE improvement (%)' : 'Amélioration EE (%)',
-            en ? 'EE savings (PJ)' : 'Économies EE (PJ)',
-            en ? 'EE savings ($B)' : 'Économies EE (G $)'
-        ];
-        const columnWidths = [1200, 2800, 2800, 2200, 2200, 1800, 2200, 2200, 1800, 1800, 1800];
-        const headerRow = new TableRow({
-            children: headers.map((h) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' }
-            }))
-        });
-        const dataRows = rowsToExport.map((r) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(r.year), size: 20 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ter != null ? String(r.ter) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.eee != null ? String(r.eee) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.space_heating_pj != null ? String(r.space_heating_pj) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.water_heating_pj != null ? String(r.water_heating_pj) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.swte_pct != null ? String(r.swte_pct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.terPct != null ? String(r.terPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.euxPct != null ? String(Math.abs(r.euxPct)) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_improvement_pct != null ? String(r.ee_improvement_pct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_pj != null ? String(r.ee_savings_pj) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_billion != null ? String(r.ee_savings_billion) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] })
-            ]
-        }));
-        const title = getText('energy_in_daily_lives_title', lang);
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths, rows: [headerRow, ...dataRows] })
-                ]
-            }]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'energy_in_daily_lives_table.docx' : 'energie_vies_quotidiennes_tableau.docx');
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: lang === 'en' ? 'Year' : 'Année', align: 'left' },
+        { key: 'ter', header: lang === 'en' ? 'Total residential energy (PJ)' : 'Consommation résidentielle totale (PJ)', align: 'num' },
+        { key: 'eee', header: lang === 'en' ? 'Energy efficiency effect (PJ)' : 'Effet d\'efficacité énergétique (PJ)', align: 'num' },
+        { key: 'space_heating_pj', header: lang === 'en' ? 'Space heating (PJ)' : 'Chauffage des locaux (PJ)', align: 'num' },
+        { key: 'water_heating_pj', header: lang === 'en' ? 'Water heating (PJ)' : 'Chauffage de l\'eau (PJ)', align: 'num' },
+        { key: 'swte_pct', header: lang === 'en' ? 'Space and water (%)' : 'Espace et eau % (%)', align: 'num' },
+        { key: 'terPct', header: lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)', align: 'num' },
+        { key: 'euxPct', header: lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)', align: 'num' },
+        { key: 'ee_improvement_pct', header: lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)', align: 'num' },
+        { key: 'ee_savings_pj', header: lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)', align: 'num' },
+        { key: 'ee_savings_billion', header: lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)', align: 'num' },
+    ], [lang]);
+
+    const formatCell = (raw, { column }) => {
+        if (raw == null || raw === '') return '–';
+        const key = typeof column === 'string' ? null : column?.key;
+        if (key === 'year') return String(raw);
+        if (key && PCT_KEYS.has(key)) return `${raw}%`;
+        return String(raw);
     };
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-50 energy-in-daily-lives-main"
-            role="main"
-            style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', ['--energy-in-daily-lives-img-scale']: imgScale }}
+            className="page-content page-50 energy-in-daily-lives-main page-chrome page-chrome--bleed"
+            aria-labelledby="energy-in-daily-lives-title"
+            style={{
+                flex: '1 1 auto',
+                display: 'flex',
+                flexDirection: 'column',
+                ['--energy-in-daily-lives-img-scale']: imgScale,
+                ...layoutBleedCssVars(layoutPadding),
+            }}
         >
             <style>{`
 .energy-in-daily-lives-main { width: 100%; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; }
 .energy-in-daily-lives-stack {
     width: 100%;
-    padding: 0 ${pad.right}px 2rem ${pad.left}px;
+    padding: 0 0 2rem 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -324,56 +264,11 @@ const EnergyInDailyLives = () => {
 }
 .energy-in-daily-lives-visual-text .energy-in-daily-lives-visual-lead { font-weight: bold; color: var(--gc-text); }
 .energy-in-daily-lives-visual-pct { font-size: 2.5rem; font-weight: bold; color: #c8782a; }
-.energy-in-daily-lives-year-dropdown { position: relative; margin-bottom: 20px; width: 200px; }
-.energy-in-daily-lives-year-dropdown label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-.energy-in-daily-lives-year-dropdown button[aria-expanded] {
-    width: 100%;
-    padding: 10px 15px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    text-align: left;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 16px;
-}
-.energy-in-daily-lives-year-dropdown [role="listbox"] {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    max-height: 300px;
-    overflow-y: auto;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    z-index: 100;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-.energy-in-daily-lives-year-dropdown [role="option"] {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    text-align: left;
-    padding: 10px 15px;
-    cursor: pointer;
-    border: none;
-    border-bottom: 1px solid #eee;
-    background-color: var(--option-bg, #fff);
-    font-family: Arial, sans-serif;
-}
-.energy-in-daily-lives-data-table-wrapper { margin-top: 50px; }
-.energy-in-daily-lives-data-table { margin-top: 0; margin-bottom: 24px; }
-.energy-in-daily-lives-data-table-wrapper details > summary:hover { background-color: #404040 !important; }
-.energy-in-daily-lives-data-table-wrapper button[type="button"]:hover,
-.energy-in-daily-lives-data-table-wrapper button:hover { background-color: #404040 !important; }
+.energy-in-daily-lives-table-wrapper { margin-top: 50px; width: 100%; }
             `}</style>
 
             <div className="energy-in-daily-lives-stack">
-                <h1 className="energy-in-daily-lives-title">{getText('energy_in_daily_lives_title', lang)}</h1>
+                <h1 id="energy-in-daily-lives-title" className="energy-in-daily-lives-title">{pageTitle}</h1>
                 <ul className="energy-in-daily-lives-bullets">
                     <li>{getText('energy_in_daily_lives_bullet1', lang)}</li>
                     <li>{boldNumbersInBullet(substitute(getText('energy_in_daily_lives_bullet2', lang), vars))}</li>
@@ -381,54 +276,20 @@ const EnergyInDailyLives = () => {
                 </ul>
 
                 {hasData && years.length > 0 && (
-                    <div ref={yearDropdownRef} className="energy-in-daily-lives-year-dropdown">
-                        <label htmlFor="energy-in-daily-lives-year-button">
-                            {getText('year_slider_label', lang)}
-                        </label>
-                        <button
-                            ref={yearButtonRef}
+                    <>
+                        <YearSelect
+                            lang={lang}
                             id="energy-in-daily-lives-year-button"
-                            type="button"
-                            onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                            aria-expanded={isYearDropdownOpen}
-                            aria-haspopup="listbox"
-                            aria-label={selectedYear != null ? String(selectedYear) : ''}
-                        >
-                            <span>{selectedYear}</span>
-                            <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                        </button>
-                        {isYearDropdownOpen && (
-                            <div role="listbox" aria-label={lang === 'en' ? 'Year' : 'Année'}>
-                                {[...years].sort((a, b) => b - a).map((y) => {
-                                    const isSelected = y === selectedYear;
-                                    return (
-                                        <button
-                                            key={y}
-                                            role="option"
-                                            aria-selected={isSelected}
-                                            type="button"
-                                            onClick={() => {
-                                                setPickedYear(y);
-                                                setIsYearDropdownOpen(false);
-                                                setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                            }}
-                                            style={{ backgroundColor: isSelected ? '#f0f9ff' : '#fff' }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#f5f5f5'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'; }}
-                                        >
-                                            <span aria-hidden="true" style={{ height: '18px', width: '18px', borderRadius: '50%', border: '1px solid #ccc', marginRight: '10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
-                                                {isSelected && <span style={{ height: '10px', width: '10px', borderRadius: '50%', backgroundColor: '#000' }} />}
-                                            </span>
-                                            <span style={{ fontSize: '16px', color: '#333' }}>{y}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                            className="energy-in-daily-lives-year-dropdown"
+                            label={getText('year_slider_label', lang)}
+                            years={yearsDesc}
+                            value={selectedYear}
+                            onChange={setPickedYear}
+                        />
                         <div role="status" className="wb-inv" aria-live="polite">
                             {selectedYear != null ? (lang === 'en' ? `Showing data for ${selectedYear}` : `Données affichées pour ${selectedYear}`) : ''}
                         </div>
-                    </div>
+                    </>
                 )}
 
                 <div className="energy-in-daily-lives-metrics">
@@ -459,84 +320,27 @@ const EnergyInDailyLives = () => {
                 </div>
 
                 {hasData && tableRowsForTable.length > 0 && (
-                    <div className="energy-in-daily-lives-data-table-wrapper" style={{ width: '100%' }}>
-                    <details
-                        className="energy-in-daily-lives-data-table"
-                        open={isTableOpen}
-                        onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                        style={{ width: '100%' }}
-                    >
-                        <summary
-                            role="button"
-                            aria-expanded={isTableOpen}
-                            style={{
-                                cursor: 'pointer',
-                                color: '#ffffff',
-                                fontWeight: 'bold',
-                                padding: '10px',
-                                border: '1px solid #404040',
-                                backgroundColor: '#8C8C8C',
-                                borderRadius: '4px',
-                                listStyle: 'none'
+                    <div className="energy-in-daily-lives-table-wrapper">
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRowsForTable}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: docxFilename,
+                                title: exportTableTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1200, 2800, 2800, 2200, 2200, 1800, 2200, 2200, 1800, 1800, 1800],
+                                fontSize: 20,
                             }}
-                        >
-                            {isTableOpen ? '▼' : '▶'}
-                            {' '}
-                            {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                        </summary>
-                        <div className="table-responsive" role="region" tabIndex={0} style={{ marginTop: 12 }}>
-                            <table className="table table-striped table-hover">
-                                <caption className="wb-inv">
-                                    {lang === 'en' ? 'Residential energy metrics by year with units.' : 'Métriques énergétiques résidentielles par année avec unités.'}
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Total residential energy (PJ)' : 'Consommation résidentielle totale (PJ)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Energy efficiency effect (PJ)' : 'Effet d\'efficacité énergétique (PJ)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Space heating (PJ)' : 'Chauffage des locaux (PJ)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Water heating (PJ)' : 'Chauffage de l\'eau (PJ)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Space and water (%)' : 'Espace et eau % (%)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)'}</th>
-                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)'}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tableRowsForTable.map((r) => (
-                                        <tr key={r.year}>
-                                            <th scope="row" style={{ border: '1px solid #ddd' }}>{r.year}</th>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.ter != null ? r.ter : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.eee != null ? r.eee : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.space_heating_pj != null ? r.space_heating_pj : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.water_heating_pj != null ? r.water_heating_pj : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.swte_pct != null ? `${r.swte_pct}%` : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.terPct != null ? `${r.terPct}%` : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.euxPct != null ? `${Math.abs(r.euxPct)}%` : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.ee_improvement_pct != null ? `${r.ee_improvement_pct}%` : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.ee_savings_pj != null ? r.ee_savings_pj : '–'}</td>
-                                            <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{r.ee_savings_billion != null ? r.ee_savings_billion : '–'}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                            <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                            </button>
-                            <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                            </button>
-                        </div>
-                    </details>
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={formatCell}
+                        />
                     </div>
                 )}
             </div>
-        </main>
+        </PageShell>
     );
 };
 

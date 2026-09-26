@@ -1,9 +1,18 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import HtmlLegend from '../components/HtmlLegend';
 
 const START_YEAR = 2000;
 const END_YEAR = 2024;
@@ -26,11 +35,6 @@ const COLORS = {
     other: '#DF790C',
 };
 
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
 
 const HOVER_LABEL = {
     bgcolor: '#ffffff',
@@ -76,6 +80,7 @@ const buildTransportationGhgChartData = () => {
             freightTrucks,
             freightAviation,
             other,
+            total: passengerCars + passengerLightTrucks + passengerAviation + freightTrucks + freightAviation + other,
         });
     }
     return rows;
@@ -89,46 +94,22 @@ const substitute = (text, vars) =>
         text || '',
     );
 
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
-const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-const markerOpacityFor = (selectedPoints, length, traceIndex) => {
-    if (selectedPoints === null) return 1;
-    return Array.from({ length }, (_, i) => (selectedPoints[traceIndex]?.includes(i) ? 1 : 0.3));
-};
-
-const rowTotal = (row) => TRACE_KEYS.reduce((sum, key) => sum + (row[key] ?? 0), 0);
-
-const TransportationGhgSpotlightPlot = memo(function TransportationGhgSpotlightPlot({
-    plotData, plotLayout, chartConfig, plotHeight, onPlotReady,
-}) {
-    return (
-        <Plot
-            key={`transportation-ghg-spotlight-${plotHeight}`}
-            data={plotData}
-            layout={plotLayout}
-            config={chartConfig}
-            style={{ width: '100%', height: '100%' }}
-            useResizeHandler
-            onInitialized={onPlotReady}
-            onUpdate={onPlotReady}
-        />
-    );
-});
-
 const TransportationGhgSpotlight = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedPoints,
+        clear,
+        onPlotClick: handleChartClick,
+        opacityFor,
+    } = usePlotlySelection({ mode: 'points', traceCount: TRACE_KEYS.length, windowWidth });
 
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const clickHandlerRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
+
+    const markerOpacityFor = (length, traceIndex) => {
+        if (selectedPoints === null) return 1;
+        return Array.from({ length }, (_, i) => opacityFor(traceIndex, i));
+    };
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const textVars = { startYear: START_YEAR, endYear: END_YEAR };
@@ -143,21 +124,32 @@ const TransportationGhgSpotlight = () => {
     const tableRows = ghg_transportation_spotlight_CHART_DATA;
     const years = useMemo(() => tableRows.map((row) => row.year), [tableRows]);
     const yearTicks = useMemo(() => years.filter((y) => y % 2 === 0), [years]);
-    const tableRowsDesc = useMemo(() => [...tableRows].reverse(), [tableRows]);
 
     const chartTitle = substitute(getText('ghg_transportation_spotlight_chart_title', lang), textVars);
+    const exportChartTitle = stripHtml(chartTitle);
     const yAxisTitle = getText('ghg_transportation_spotlight_yaxis', lang);
-    const fileTitle = `${getText('ghg_transportation_spotlight_download_title', lang)}_${START_YEAR}-${END_YEAR}`;
+    const chartDownloadSlug = `${getText('ghg_transportation_spotlight_download_title', lang)}_${START_YEAR}-${END_YEAR}`.replace(/\s+/g, '_');
     const tableCaption = substitute(getText('ghg_transportation_spotlight_table_caption', lang), textVars);
     const tableUnitSuffix = getText('ghg_transportation_spotlight_table_unit', lang);
 
-    const legendLabel = useCallback((key) => getText(`ghg_transportation_spotlight_legend_${key}`, lang), [lang]);
+    const legendLabels = useMemo(
+        () => Object.fromEntries(TRACE_KEYS.map((key) => [key, getText(`ghg_transportation_spotlight_legend_${key}`, lang)])),
+        [lang],
+    );
 
-    const tableHeaders = [
-        getText('ghg_transportation_spotlight_table_col_year', lang),
-        ...TRACE_KEYS.map((key) => `${legendLabel(key)} ${tableUnitSuffix}`),
-        `${getText('ghg_transportation_spotlight_table_col_total', lang)} ${tableUnitSuffix}`,
-    ];
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('ghg_transportation_spotlight_table_col_year', lang), align: 'left' },
+        ...TRACE_KEYS.map((key) => ({
+            key,
+            header: `${legendLabels[key]} ${tableUnitSuffix}`,
+            align: 'num',
+        })),
+        {
+            key: 'total',
+            header: `${getText('ghg_transportation_spotlight_table_col_total', lang)} ${tableUnitSuffix}`,
+            align: 'num',
+        },
+    ], [lang, legendLabels, tableUnitSuffix]);
 
     const plotHeight = windowWidth <= 480 ? 340 : windowWidth <= 768 ? 380 : 420;
     const plotTopMargin = windowWidth <= 480 ? 24 : 20;
@@ -165,267 +157,24 @@ const TransportationGhgSpotlight = () => {
     const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
     const axisTitleFont = { size: windowWidth <= 768 ? 16 : 18, family: 'Arial, sans-serif', color: '#58585a' };
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
+    
 
-    useEffect(() => {
-        if (!chartRef.current) return undefined;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints]);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const handleChartClick = useCallback(
-        (data) => {
-            if (!data?.points?.length) return;
-            const traceIndex = data.points[0].curveNumber;
-            const pointIndex = data.points[0].pointIndex;
-            if (traceIndex == null || traceIndex < 0 || traceIndex >= TRACE_KEYS.length) return;
-            if (pointIndex == null || pointIndex < 0) return;
-
-            if (windowWidth <= 768) {
-                const currentTime = Date.now();
-                const lastClick = lastClickRef.current;
-                const isSamePoint =
-                    traceIndex === lastClick.traceIndex
-                    && pointIndex === lastClick.pointIndex
-                    && lastClick.traceIndex != null;
-                const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-                lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
-                if (!isDoubleTap) return;
-            }
-
-            setSelectedPoints((prev) => {
-                if (prev === null) {
-                    const newSelection = TRACE_KEYS.map(() => []);
-                    newSelection[traceIndex].push(pointIndex);
-                    return newSelection;
-                }
-                const isSelected = prev[traceIndex]?.includes(pointIndex);
-                if (isSelected) {
-                    const newSelection = prev.map((tracePoints, idx) =>
-                        idx === traceIndex ? tracePoints.filter((p) => p !== pointIndex) : [...tracePoints],
-                    );
-                    return newSelection.every((arr) => arr.length === 0) ? null : newSelection;
-                }
-                return prev.map((tracePoints, idx) =>
-                    idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints],
-                );
-            });
-        },
-        [windowWidth],
-    );
-
-    useEffect(() => {
-        clickHandlerRef.current = handleChartClick;
-    }, [handleChartClick]);
-
-    const bindPlotHandlers = useCallback((graphDiv) => {
-        if (!graphDiv?.on) return;
-        if (graphDiv._transportationGhgSpotlightClick) {
-            graphDiv.removeListener('plotly_click', graphDiv._transportationGhgSpotlightClick);
-        }
-        const clickHandler = (event) => clickHandlerRef.current?.(event);
-        graphDiv._transportationGhgSpotlightClick = clickHandler;
-        graphDiv.on('plotly_click', clickHandler);
-    }, []);
-
-    const onPlotReady = useCallback(
-        (_figure, graphDiv) => bindPlotHandlers(graphDiv),
-        [bindPlotHandlers],
-    );
-
-    const downloadChartPng = useCallback(async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        const title = stripHtml(chartTitle);
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 700,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 110;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendItems = TRACE_KEYS.map((key) => ({
-                    color: COLORS[key],
-                    label: legendLabel(key),
-                }));
-                const colCount = 3;
-                const colWidth = canvas.width / colCount;
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'left';
-                legendItems.forEach((item, index) => {
-                    const col = index % colCount;
-                    const row = Math.floor(index / colCount);
-                    const x = col * colWidth + 40;
-                    const y = titleHeight + img.height + 36 + row * 36;
-                    ctx.fillStyle = item.color;
-                    ctx.fillRect(x, y - 12, 24, 16);
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 32, y);
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileTitle}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    }, [chartTitle, fileTitle, legendLabel]);
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = tableRowsDesc.map((row) => {
-            const cells = [row.year, ...TRACE_KEYS.map((key) => row[key]), rowTotal(row)];
-            return cells.map(csvEscape).join(',');
-        });
-        saveAs(new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }), `${fileTitle}.csv`);
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) => new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                    shading: { fill: 'E6E6E6' },
-                }),
-            ),
-        });
-        const dataRows = tableRowsDesc.map((row) => new TableRow({
-            children: [row.year, ...TRACE_KEYS.map((key) => row[key]), rowTotal(row)].map((value, index) =>
-                new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: String(value), size: 22 })],
-                            alignment: index === 0 ? AlignmentType.CENTER : AlignmentType.RIGHT,
-                        }),
-                    ],
-                }),
-            ),
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(chartTitle), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 1500, 1800, 2200, 1500, 2000, 1100, 1200],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${fileTitle}.docx`);
-    };
-
-    const downloadBtnStyle = {
-        padding: '8px 16px',
-        backgroundColor: '#8C8C8C',
-        border: '1px solid #404040',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        color: '#ffffff',
-    };
+        const downloadChartWithTitle = useChartPngDownloader(
+            chartRef,
+            () => ({
+            filename: `${chartDownloadSlug}.png`,
+            title: exportChartTitle,
+            height: 700,
+            legendItems: TRACE_KEYS.map((key) => ({
+                label: legendLabels[key],
+                color: COLORS[key],
+            })),
+        }),
+            [COLORS, TRACE_KEYS, chartDownloadSlug, exportChartTitle, legendLabels],
+        );
 
     const plotData = TRACE_KEYS.map((key, traceIndex) => {
-        const label = legendLabel(key);
+        const label = legendLabels[key];
         const values = tableRows.map((row) => row[key]);
         return {
             x: years,
@@ -434,7 +183,7 @@ const TransportationGhgSpotlight = () => {
             type: 'bar',
             marker: {
                 color: COLORS[key],
-                opacity: markerOpacityFor(selectedPoints, values.length, traceIndex),
+                opacity: markerOpacityFor(values.length, traceIndex),
                 line: { width: 0 },
             },
             hovertemplate: values.map(
@@ -444,105 +193,53 @@ const TransportationGhgSpotlight = () => {
         };
     });
 
-    const chartConfig = useMemo(() => ({
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('ghg_transportation_spotlight_download_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: (gd) => downloadChartPng(gd),
-        }],
-    }), [lang, downloadChartPng]);
-
-    const plotLayout = {
-        barmode: 'stack',
-        showlegend: false,
-        hoverlabel: HOVER_LABEL,
-        hovermode: 'closest',
-        clickmode: 'event',
-        dragmode: false,
-        margin: { t: plotTopMargin, b: plotBottomMargin, l: 72, r: 20 },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        autosize: true,
-        bargap: 0.15,
-        xaxis: {
-            type: 'category',
-            tickmode: 'array',
-            tickvals: yearTicks,
-            ticktext: yearTicks.map(String),
-            tickfont: tickFont,
-            automargin: true,
-            fixedrange: true,
-        },
-        yaxis: {
-            title: { text: yAxisTitle, font: axisTitleFont, standoff: 12 },
-            range: [0, 200],
-            dtick: 50,
-            tickfont: tickFont,
-            automargin: true,
-            fixedrange: true,
-        },
+    const getChartSummary = () => {
+        if (!years.length) return '';
+        const body = summarizeByCategory({
+            categories: years,
+            series: TRACE_KEYS.map((key) => ({
+                name: legendLabels[key],
+                values: tableRows.map((row) => row[key]),
+                format: formatMt,
+            })),
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Stacked bar chart of transportation GHG emissions from ${START_YEAR} to ${END_YEAR}`
+                : `Graphique à barres empilées des émissions de GES des transports de ${START_YEAR} à ${END_YEAR}`,
+            unitNote: lang === 'en' ? 'Values in Mt' : 'Valeurs en Mt',
+            body,
+            lang,
+        });
     };
 
+
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+        name: getText('ghg_transportation_spotlight_download_png', lang),
+    });
+
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-97"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-97 page-chrome page-chrome--bleed"
             aria-labelledby="transportation-ghg-spotlight-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
-.page-97.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-97 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .transportation-ghg-spotlight-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .transportation-ghg-spotlight-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin-top: 0;
-    margin-bottom: 25px;
     line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
 }
-.transportation-ghg-spotlight-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
-}
 .transportation-ghg-spotlight-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    margin-top: 0;
     margin-bottom: 0;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .transportation-ghg-spotlight-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 12px 0;
     text-transform: none;
 }
@@ -553,12 +250,11 @@ const TransportationGhgSpotlight = () => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px 28px;
     margin: 12px auto 8px;
-    font-family: Arial, sans-serif;
     font-size: 14px;
     color: var(--gc-text);
 }
-.transportation-ghg-spotlight-legend-item { display: inline-flex; align-items: flex-start; gap: 8px; line-height: 1.3; }
-.transportation-ghg-spotlight-legend-swatch { width: 22px; height: 14px; flex-shrink: 0; margin-top: 2px; display: inline-block; border: 1px solid rgba(0, 0, 0, 0.12); }
+.transportation-ghg-spotlight-legend-item { align-items: flex-start; line-height: 1.3; }
+.transportation-ghg-spotlight-legend-swatch { width: 22px; height: 14px; margin-top: 2px; border: 1px solid rgba(0, 0, 0, 0.12); }
 .transportation-ghg-spotlight-bullet {
     font-family: 'Noto Sans', sans-serif;
     font-size: 20px;
@@ -568,161 +264,96 @@ const TransportationGhgSpotlight = () => {
     line-height: 1.45;
 }
 .transportation-ghg-spotlight-bullet li { margin: 0; }
-.transportation-ghg-spotlight-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-.transportation-ghg-spotlight-download-buttons button:hover,
-.page-97 .data-table-wrapper summary:hover,
-.page-97 .data-table-wrapper button:hover { background-color: #404040 !important; }
-.page-97 .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-.page-97 .data-table-wrapper summary {
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    padding: 10px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    list-style: none;
-    box-sizing: border-box;
-    width: 100%;
-    color: #ffffff;
-}
-.page-97 .data-table-wrapper summary::-webkit-details-marker { display: none; }
-.transportation-ghg-spotlight-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.transportation-ghg-spotlight-table-scrollbar > div { height: 20px; }
+.transportation-ghg-spotlight-table-wrapper { display: block; width: 100%; margin-top: 20px; }
 @media (max-width: 768px) {
-    .transportation-ghg-spotlight-title { font-size: 37px; }
-    .transportation-ghg-spotlight-chart-title { font-size: 26px; }
     .transportation-ghg-spotlight-bullet { font-size: 18px; }
     .transportation-ghg-spotlight-legend { grid-template-columns: 1fr; max-width: 100%; }
 }
             `}</style>
 
             <div className="transportation-ghg-spotlight-inner">
-                <h1 id="transportation-ghg-spotlight-title" className="transportation-ghg-spotlight-title">{getText('ghg_transportation_spotlight_title', lang)}</h1>
+                <h1 id="transportation-ghg-spotlight-title" className="transportation-ghg-spotlight-title page-chrome-title">{getText('ghg_transportation_spotlight_title', lang)}</h1>
 
-                <div className="transportation-ghg-spotlight-chart-frame">
-                    <h2 id="transportation-ghg-spotlight-chart-title" className="transportation-ghg-spotlight-chart-title">{chartTitle}</h2>
+                <div className="transportation-ghg-spotlight-chart-frame page-chrome-chart-frame">
+                    <h2 id="transportation-ghg-spotlight-chart-title" className="transportation-ghg-spotlight-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
-                    {selectedPoints !== null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedPoints(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
+                    {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
+
+                    <figure ref={chartRef} style={{ margin: 0 }}>
+                        <div role="region" aria-label={`${exportChartTitle}. ${getChartSummary()}`} tabIndex="0">
+                            <Plot
+                                key={`transportation-ghg-spotlight-${selectedPoints ? selectedPoints.map((t) => t.join('-')).join('_') : 'all'}-${plotHeight}`}
+                                data={plotData}
+                                layout={{
+                                    barmode: 'stack',
+                                    showlegend: false,
+                                    hoverlabel: HOVER_LABEL,
+                                    hovermode: 'closest',
+                                    clickmode: 'event',
+                                    dragmode: false,
+                                    margin: { t: plotTopMargin, b: plotBottomMargin, l: 72, r: 20 },
+                                    paper_bgcolor: 'rgba(0,0,0,0)',
+                                    plot_bgcolor: 'rgba(0,0,0,0)',
+                                    autosize: true,
+                                    height: plotHeight,
+                                    bargap: 0.15,
+                                    xaxis: {
+                                        type: 'category',
+                                        tickmode: 'array',
+                                        tickvals: yearTicks,
+                                        ticktext: yearTicks.map(String),
+                                        tickfont: tickFont,
+                                        automargin: true,
+                                        fixedrange: true,
+                                    },
+                                    yaxis: {
+                                        title: { text: yAxisTitle, font: axisTitleFont, standoff: 12 },
+                                        range: [0, 200],
+                                        dtick: 50,
+                                        tickfont: tickFont,
+                                        automargin: true,
+                                        fixedrange: true,
+                                    },
                                 }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
+                                config={plotConfig}
+                                className="transportation-ghg-spotlight-chart"
+                                useResizeHandler
+                                onClick={handleChartClick}
+                            />
                         </div>
-                    )}
-
-                    <figure ref={chartRef} className="transportation-ghg-spotlight-chart" role="region" aria-label={getText('ghg_transportation_spotlight_chart_aria', lang)} tabIndex={0} style={{ margin: 0 }}>
-                        <TransportationGhgSpotlightPlot
-                            plotData={plotData}
-                            plotLayout={plotLayout}
-                            chartConfig={chartConfig}
-                            plotHeight={plotHeight}
-                            onPlotReady={onPlotReady}
-                        />
                     </figure>
 
-                    <div className="transportation-ghg-spotlight-legend" aria-hidden="true">
-                        {TRACE_KEYS.map((key) => (
-                            <span key={key} className="transportation-ghg-spotlight-legend-item">
-                                <span className="transportation-ghg-spotlight-legend-swatch" style={{ backgroundColor: COLORS[key] }} />
-                                {legendLabel(key)}
-                            </span>
-                        ))}
-                    </div>
+                    <HtmlLegend
+                        className="transportation-ghg-spotlight-legend"
+                        variant="swatch"
+                        itemClassName="transportation-ghg-spotlight-legend-item"
+                        markerClassName="transportation-ghg-spotlight-legend-swatch"
+                        items={TRACE_KEYS.map((key) => ({
+                            label: legendLabels[key],
+                            color: COLORS[key],
+                        }))}
+                    />
 
-                    <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            <span className="wb-inv">
-                                {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                            </span>
-                        </summary>
-                        <div ref={topScrollRef} className="transportation-ghg-spotlight-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={tableScrollRef}
-                            className="table-responsive"
-                            role="region"
-                            aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            tabIndex={0}
-                        >
-                            <table className="table table-bordered table-striped table-hover">
-                                <caption className="wb-inv">{tableCaption}</caption>
-                                <thead>
-                                    <tr>
-                                        {tableHeaders.map((header, index) => (
-                                            <th
-                                                key={header}
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    whiteSpace: 'nowrap',
-                                                    verticalAlign: 'bottom',
-                                                    ...(index === 0
-                                                        ? {
-                                                            position: 'sticky',
-                                                            left: 0,
-                                                            backgroundColor: '#f8f9fa',
-                                                            zIndex: 2,
-                                                            borderRight: '2px solid #dee2e6',
-                                                        }
-                                                        : {}),
-                                                }}
-                                            >
-                                                {header}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tableRowsDesc.map((row) => (
-                                        <tr key={row.year}>
-                                            <th
-                                                scope="row"
-                                                style={{
-                                                    position: 'sticky',
-                                                    left: 0,
-                                                    zIndex: 1,
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    borderRight: '2px solid #dee2e6',
-                                                }}
-                                            >
-                                                {row.year}
-                                            </th>
-                                            {TRACE_KEYS.map((key) => (
-                                                <td key={key} style={{ textAlign: 'right' }}>{formatMt(row[key])}</td>
-                                            ))}
-                                            <td style={{ textAlign: 'right' }}>{formatMt(rowTotal(row))}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={bottomScrollRef} className="transportation-ghg-spotlight-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="transportation-ghg-spotlight-download-buttons">
-                            <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                                {getText('ghg_transportation_spotlight_download_csv', lang)}
-                            </button>
-                            <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                                {getText('ghg_transportation_spotlight_download_docx', lang)}
-                            </button>
-                        </div>
-                    </details>
+                    <div className="transportation-ghg-spotlight-table-wrapper">
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [900, 1500, 1800, 2200, 1500, 2000, 1100, 1200],
+                                fontSize: 20,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatMt(raw)
+                            )}
+                        />
+                    </div>
                 </div>
 
                 <ul className="transportation-ghg-spotlight-bullet" aria-label={getText('ghg_transportation_spotlight_bullet_aria', lang)}>
@@ -734,7 +365,7 @@ const TransportationGhgSpotlight = () => {
                     </li>
                 </ul>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

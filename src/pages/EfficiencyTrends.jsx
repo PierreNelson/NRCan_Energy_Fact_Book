@@ -1,9 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import HtmlLegend from '../components/HtmlLegend';
+import hexToRgba from '../utils/hexToRgba';
 
 const START_YEAR = 2000;
 const END_YEAR = 2022;
@@ -28,29 +38,20 @@ const efficiency_trends_DATA = Array.from({ length: END_YEAR - START_YEAR + 1 },
     };
 });
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
 const EfficiencyTrends = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedPoints,
+        clear,
+        onPlotClick: handleChartClick,
+        opacityFor,
+    } = usePlotlySelection({ mode: 'points', traceCount: 2, windowWidth });
     const chartRef = useRef(null);
     const chartMainRef = useRef(null);
     const calloutRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     const formatPj = (num) => {
         if (num == null || Number.isNaN(Number(num))) return '—';
@@ -60,7 +61,14 @@ const EfficiencyTrends = () => {
     const years = useMemo(() => efficiency_trends_DATA.map((r) => r.year), []);
     const includingValues = useMemo(() => efficiency_trends_DATA.map((r) => r.including), []);
     const excludingValues = useMemo(() => efficiency_trends_DATA.map((r) => r.excluding), []);
-    const tableRowsDesc = useMemo(() => [...efficiency_trends_DATA].reverse(), []);
+
+    const tableRows = useMemo(
+        () => efficiency_trends_DATA.map((r) => ({
+            ...r,
+            savings: r.excluding - r.including,
+        })),
+        [],
+    );
 
     const yTickvals = [6000, 7000, 8000, 9000, 10000, 11000];
     const yTicktext = yTickvals.map((v) => Math.round(v).toLocaleString(locale));
@@ -73,12 +81,32 @@ const EfficiencyTrends = () => {
     const chartDownloadSlug = getText('efficiency_trends_download_title', lang).replace(/\s+/g, '_');
 
     const yAxisTitle = getText('efficiency_trends_yaxis', lang);
-    const tableHeaders = [
-        getText('petroleum_employment_table_col_year', lang),
-        `${legendIncluding} (PJ)`,
-        `${legendExcluding} (PJ)`,
-        getText('efficiency_trends_table_col_savings', lang),
-    ];
+    const savingsColHeader = getText('efficiency_trends_table_col_savings', lang);
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
+        { key: 'including', header: `${legendIncluding} (PJ)`, align: 'num' },
+        { key: 'excluding', header: `${legendExcluding} (PJ)`, align: 'num' },
+        { key: 'savings', header: savingsColHeader, align: 'num' },
+    ], [lang, legendIncluding, legendExcluding, savingsColHeader]);
+
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: legendIncluding, values: includingValues, format: (v) => `${formatPj(v)} PJ` },
+                { name: legendExcluding, values: excludingValues, format: (v) => `${formatPj(v)} PJ` },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Line chart of energy use with and without efficiency improvements from ${START_YEAR} to ${END_YEAR}`
+                : `Graphique linéaire de la consommation d'énergie avec et sans gains d'efficacité de ${START_YEAR} à ${END_YEAR}`,
+            unitNote: lang === 'en' ? 'Values in PJ' : 'Valeurs en PJ',
+            body,
+        });
+    };
 
     const xTickvals = years.filter((y) => y % 2 === 0);
 
@@ -90,10 +118,7 @@ const EfficiencyTrends = () => {
 
     const traceHasSelection = (traceIndex) => selectedPoints?.[traceIndex]?.length > 0;
 
-    const markerOpacityFor = (traceIndex, pointIndex) => {
-        if (selectedPoints === null) return 1;
-        return selectedPoints[traceIndex]?.includes(pointIndex) ? 1 : 0.3;
-    };
+    const markerOpacityFor = (traceIndex, pointIndex) => opacityFor(traceIndex, pointIndex);
 
     const lineColorFor = (traceIndex, baseColor) => {
         if (selectedPoints === null) return baseColor;
@@ -127,7 +152,6 @@ const EfficiencyTrends = () => {
 
     useEffect(() => {
         const onResize = () => {
-            setWindowWidth(window.innerWidth);
             window.requestAnimationFrame(updateCalloutLayout);
         };
         window.addEventListener('resize', onResize);
@@ -148,244 +172,24 @@ const EfficiencyTrends = () => {
         return () => observer.disconnect();
     }, [updateCalloutLayout]);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints]);
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: 640,
+        legendItems: [
+            { label: legendExcluding, color: COLORS.excluding },
+            { label: legendIncluding, color: COLORS.including },
+        ],
+    }),
+        [COLORS, chartDownloadSlug, exportChartTitle, legendExcluding, legendIncluding],
+    );
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 640,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(exportChartTitle, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = [
-                    { color: COLORS.excluding, label: legendExcluding, type: 'line' },
-                    { color: COLORS.including, label: legendIncluding, type: 'line' },
-                ];
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'left';
-                const totalLegendWidth =
-                    legendItems.reduce((acc, item) => acc + ctx.measureText(item.label).width + 56, 0) + 40;
-                let x = (canvas.width - totalLegendWidth) / 2;
-                legendItems.forEach((item) => {
-                    ctx.strokeStyle = item.color;
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.moveTo(x, legendY);
-                    ctx.lineTo(x + 28, legendY);
-                    ctx.stroke();
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 36, legendY + 6);
-                    x += 36 + ctx.measureText(item.label).width + 40;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${chartDownloadSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const lines = [tableHeaders.map((h) => `"${h.replace(/"/g, '""')}"`).join(',')];
-        tableRowsDesc.forEach((row) => {
-            lines.push(
-                [row.year, row.including, row.excluding, row.excluding - row.including]
-                    .map((v) => (typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v))
-                    .join(','),
-            );
-        });
-        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${chartDownloadSlug}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (cell) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: cell, bold: true, size: 20 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = tableRowsDesc.map(
-            (row) =>
-                new TableRow({
-                    children: [row.year, formatPj(row.including), formatPj(row.excluding), formatPj(row.excluding - row.including)].map(
-                        (val, index) =>
-                            new TableCell({
-                                children: [
-                                    new Paragraph({
-                                        children: [new TextRun({ text: String(val), size: 20 })],
-                                        alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                                    }),
-                                ],
-                            }),
-                    ),
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: exportChartTitle, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 2800, 2800, 1600],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${chartDownloadSlug}.docx`);
-    };
-
-    const handleChartClick = (event) => {
-        if (!event.points?.length) return;
-        const traceIndex = event.points[0].curveNumber;
-        const pointIndex = event.points[0].pointIndex;
-        if (traceIndex === undefined || traceIndex < 0 || traceIndex > 1) return;
-
-        if (windowWidth <= 768) {
-            const currentTime = Date.now();
-            const lastClick = lastClickRef.current;
-            const isSamePoint = traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex;
-            const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-            lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedPoints((prev) => {
-            if (prev === null) {
-                const next = [[], []];
-                next[traceIndex].push(pointIndex);
-                return next;
-            }
-            const isSelected = prev[traceIndex]?.includes(pointIndex);
-            if (isSelected) {
-                const next = prev.map((tracePoints, idx) =>
-                    idx === traceIndex ? tracePoints.filter((p) => p !== pointIndex) : [...tracePoints],
-                );
-                return next.every((arr) => arr.length === 0) ? null : next;
-            }
-            return prev.map((tracePoints, idx) => (idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]));
-        });
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const excludingHover = years.map(
         (y, i) => `<b>${legendExcluding}</b><br>${y}: ${formatPj(excludingValues[i])} PJ<extra></extra>`,
@@ -397,43 +201,23 @@ const EfficiencyTrends = () => {
     const savingsLabel = getText('efficiency_trends_savings_label', lang);
     const savingsValue = formatPj(SAVINGS_PJ);
 
+    
+
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-54 efficiency-trends-efficiency-trends"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-54 efficiency-trends-efficiency-trends page-chrome page-chrome--bleed"
             aria-labelledby="efficiency-trends-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-54.efficiency-trends-efficiency-trends {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .efficiency-trends-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .efficiency-trends-title {
-    font-family: 'Lato', sans-serif;
     font-size: 50px;
-    font-weight: bold;
     color: #C58516;
     margin: 0 0 10px 0;
-    line-height: 1.2;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
-}
-.efficiency-trends-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .page-54.page-content p.efficiency-trends-subtitle {
     font-family: 'Lato', sans-serif;
@@ -455,19 +239,10 @@ const EfficiencyTrends = () => {
 }
 .efficiency-trends-bullets li { margin-bottom: 0.65rem; }
 .efficiency-trends-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-top: 8px;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .efficiency-trends-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 12px 0;
     text-transform: none;
 }
@@ -530,73 +305,15 @@ const EfficiencyTrends = () => {
     margin: 0;
 }
 .efficiency-trends-legend {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
     gap: 18px 28px;
     margin-top: 12px;
-    font-family: Arial, sans-serif;
     font-size: 14px;
     color: var(--gc-text);
 }
-.efficiency-trends-legend-item { display: inline-flex; align-items: center; gap: 8px; }
-.efficiency-trends-legend-line { width: 28px; height: 0; border-top: 3px solid; display: inline-block; }
 .efficiency-trends-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.efficiency-trends-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.efficiency-trends-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.efficiency-trends-table-wrapper details > summary:hover,
-.efficiency-trends-chart-frame button[type="button"]:hover { background-color: #404040 !important; }
-.efficiency-trends-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.efficiency-trends-table-scrollbar > div { height: 20px; }
-.efficiency-trends-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    padding: 15px;
-    box-sizing: border-box;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.efficiency-trends-table-responsive::-webkit-scrollbar { display: none; }
-.efficiency-trends-table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-.efficiency-trends-table-responsive th,
-.efficiency-trends-table-responsive td {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    font-family: Arial, sans-serif;
-    color: var(--gc-text);
-    white-space: nowrap;
-}
-.efficiency-trends-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.efficiency-trends-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
-.efficiency-trends-download-buttons button:hover { background: #404040 !important; }
 @media (max-width: 768px) {
     .page-54.page-content p.efficiency-trends-subtitle { font-size: 37px; }
     .efficiency-trends-bullets { font-size: 18px; }
-    .efficiency-trends-chart-title { font-size: 26px; }
     .efficiency-trends-savings-callout { max-width: 130px; }
     .efficiency-trends-savings-label { font-size: 13px; }
     .efficiency-trends-savings-value { font-size: 16px; }
@@ -610,7 +327,7 @@ const EfficiencyTrends = () => {
 
             <div className="efficiency-trends-inner">
                 <header>
-                    <h1 id="efficiency-trends-title" className="efficiency-trends-title">{getText('efficiency_trends_title', lang)}</h1>
+                    <h1 id="efficiency-trends-title" className="efficiency-trends-title page-chrome-title">{getText('efficiency_trends_title', lang)}</h1>
                 </header>
 
                 <p className="efficiency-trends-subtitle">{getText('efficiency_trends_subtitle', lang)}</p>
@@ -650,36 +367,17 @@ const EfficiencyTrends = () => {
                     </li>
                 </ul>
 
-                <div className="efficiency-trends-chart-frame">
-                    <h2 className="efficiency-trends-chart-title">{chartTitle}</h2>
+                <div className="efficiency-trends-chart-frame page-chrome-chart-frame">
+                    <h2 className="efficiency-trends-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
-                    {selectedPoints !== null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedPoints(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
-                    )}
+                    {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
 
                     <div className="efficiency-trends-chart-row">
                         <div className="efficiency-trends-chart-main" ref={chartMainRef}>
                             <figure ref={chartRef} style={{ margin: 0 }}>
                                 <div
                                     role="region"
-                                    aria-label={getText('efficiency_trends_chart_aria', lang)}
+                                    aria-label={`${exportChartTitle}. ${getChartSummary()}`}
                                     tabIndex="0"
                                 >
                                     <Plot
@@ -764,34 +462,7 @@ const EfficiencyTrends = () => {
                                                 separatethousands: true,
                                             },
                                         }}
-                                        config={{
-                                            displayModeBar: true,
-                                            displaylogo: false,
-                                            responsive: true,
-                                            scrollZoom: false,
-                                            modeBarButtonsToRemove: [
-                                                'pan2d',
-                                                'select2d',
-                                                'lasso2d',
-                                                'zoom2d',
-                                                'zoomIn2d',
-                                                'zoomOut2d',
-                                                'autoScale2d',
-                                                'resetScale2d',
-                                                'toImage',
-                                            ],
-                                            modeBarButtonsToAdd: [
-                                                {
-                                                    name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                                    icon: {
-                                                        width: 24,
-                                                        height: 24,
-                                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                                    },
-                                                    click: (gd) => downloadChartWithTitle(gd),
-                                                },
-                                            ],
-                                        }}
+                                        config={plotConfig}
                                         className="efficiency-trends-chart"
                                         useResizeHandler
                                         onClick={handleChartClick}
@@ -816,71 +487,40 @@ const EfficiencyTrends = () => {
                         </div>
                     </div>
 
-                    <div className="efficiency-trends-legend" aria-hidden="true">
-                        <div className="efficiency-trends-legend-item">
-                            <span className="efficiency-trends-legend-line" style={{ borderColor: COLORS.excluding }} />
-                            <span>{legendExcluding}</span>
-                        </div>
-                        <div className="efficiency-trends-legend-item">
-                            <span className="efficiency-trends-legend-line" style={{ borderColor: COLORS.including }} />
-                            <span>{legendIncluding}</span>
-                        </div>
-                    </div>
+                    <HtmlLegend
+                        className="efficiency-trends-legend"
+                        variant="line"
+                        itemClassName="efficiency-trends-legend-item"
+                        markerClassName="efficiency-trends-legend-line"
+                        items={[
+                            { label: legendExcluding, color: COLORS.excluding },
+                            { label: legendIncluding, color: COLORS.including },
+                        ]}
+                    />
 
                     <div className="efficiency-trends-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={topScrollRef} className="efficiency-trends-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                            <div ref={tableScrollRef} className="efficiency-trends-table-responsive" role="region" tabIndex="0">
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{getText('efficiency_trends_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            {tableHeaders.map((hdr) => (
-                                                <th key={hdr} scope="col" style={{ fontWeight: 'bold', textAlign: hdr === tableHeaders[0] ? 'left' : 'center' }}>
-                                                    {hdr}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tableRowsDesc.map((row) => (
-                                            <tr key={row.year}>
-                                                <th scope="row" style={{ fontWeight: 'bold' }}>{row.year}</th>
-                                                <td style={{ textAlign: 'center' }}>{formatPj(row.including)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatPj(row.excluding)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatPj(row.excluding - row.including)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <div className="efficiency-trends-download-buttons">
-                                    <button type="button" onClick={downloadTableAsCSV}>
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button type="button" onClick={downloadTableAsDocx}>
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                            <div ref={bottomScrollRef} className="efficiency-trends-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [900, 2800, 2800, 1600],
+                                fontSize: 20,
+                            }}
+                            caption={getText('efficiency_trends_table_caption', lang)}
+                            tableAriaLabel={getText('efficiency_trends_table_caption', lang)}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatPj(raw)
+                            )}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

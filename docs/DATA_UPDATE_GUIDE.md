@@ -4,7 +4,37 @@ Operator runbook for refreshing Energy Factbook data: fetching sources into SQL 
 
 **All commands in one place:** root [`README.md`](../README.md#command-reference-master-list). This guide adds workflows, prerequisites, and troubleshooting.
 
-For **architecture and adding sources**, see [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md). For **regenerating the glossary** (`public/glossary/`), see [GLOSSARY_UPDATE_GUIDE.md](GLOSSARY_UPDATE_GUIDE.md). For **CLI layout and folder structure**, see [`scripts/README.md`](../scripts/README.md).
+For **architecture and adding sources**, see [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md). For **regenerating the glossary** (`public/glossary/`), see [GLOSSARY_UPDATE_GUIDE.md](GLOSSARY_UPDATE_GUIDE.md). For **CLI layout and folder structure**, see [`scripts/README.md`](../scripts/README.md). Hosting headers and SPA deploy: [DEPLOYMENT.md](DEPLOYMENT.md).
+
+---
+
+## Receiving an NRCan data or website package
+
+NRCan may provide updated **data files** and/or an **updated website** for publication. This section describes how those packages apply to this app. It does **not** define who runs the SQL pipeline or cluster load logistics.
+
+| Package | What changes | App rebuild? |
+|---------|----------------|--------------|
+| **CSV / data drop** | Files under [`public/data/`](../public/data/) (and optionally [`public/glossary/`](../public/glossary/)) | **No** — replace static files and redeploy the static host (or mount updated files). |
+| **Website drop** | Full built site or source changes (UI, translations, hard-coded figures, new pages) | **Yes** — build and redeploy the SPA artifact. |
+
+Roughly half of Fact Book pages read exported CSVs via the front-end data loader; others embed figures in React (hard-coded). A **CSV-only drop** updates pipeline-wired charts only. Hard-coded pages stay unchanged until a **website** update (or a code change) supplies new values.
+
+Use the page inventory to see what is wired: [`page_inventory.md`](page_inventory.md) / [`page_inventory.csv`](page_inventory.csv) / [`page_registry.yaml`](page_registry.yaml).
+
+### Applying a CSV drop
+
+1. Receive the package from NRCan (zip of `data/*.csv` or equivalent).
+2. Replace the corresponding files under `public/data/` (keep filenames the app expects).
+3. Redeploy static assets (or copy into the published `data/` folder on the host).
+4. Smoke-check a few CSV-backed pages in EN and FR.
+
+No `npm run build` is required if only CSVs changed and the host serves `public/data` (or `dist/data`) as static files. See also [DEPLOYMENT.md](DEPLOYMENT.md) data-only updates.
+
+### Applying a website drop
+
+1. Receive a full site zip / git update / build artifact from NRCan.
+2. Deploy the new artifact (or merge source, run `npm ci` → `npm run build` → deploy `dist/`).
+3. Confirm titles, language toggle, and a sample of hard-coded and CSV-backed pages.
 
 ---
 

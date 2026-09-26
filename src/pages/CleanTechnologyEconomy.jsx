@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { waitForImage } from '../utils/downloadInfographicPng';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import cleanTechnologyEconomyBgEn from '../assets/clean_technology_economy_bg.png';
 import cleanTechnologyEconomyBgFr from '../assets/clean_technology_economy_bg_fr.png';
 
@@ -14,16 +16,6 @@ const exportCleantechInfographicPng = async (exportRoot, { title, scale = 2 }) =
     const bulletsEl = exportRoot.querySelector('.clean-technology-economy-bullets');
     const imgEl = exportRoot.querySelector('.clean-technology-economy-bg-image');
     if (!titleEl || !bulletsEl || !imgEl) return null;
-
-    const waitForImage = (img) =>
-        new Promise((resolve, reject) => {
-            if (img.complete && img.naturalWidth > 0) {
-                resolve(img);
-                return;
-            }
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-        });
 
     const loaded = await waitForImage(imgEl);
     const rootRect = exportRoot.getBoundingClientRect();
@@ -211,16 +203,15 @@ const CleanTechnologyEconomy = () => {
                 </ul>
 
                 <div className="clean-technology-economy-infographic-section">
-                    <figure className="clean-technology-economy-infographic-figure" aria-label={getText('clean_technology_economy_infographic_aria', lang)}>
-                        <img
-                            src={bgImage}
-                            alt=""
-                            className="clean-technology-economy-bg-image"
-                            draggable={false}
-                            aria-hidden="true"
-                        />
-                        <figcaption className="wb-inv">{getText('clean_technology_economy_infographic_aria', lang)}</figcaption>
-                    </figure>
+                    <AccessibleInfographic
+                        as="figure"
+                        mode="image"
+                        className="clean-technology-economy-infographic-figure"
+                        title={getText('clean_technology_economy_infographic_aria', lang)}
+                        overview={getText('clean_technology_economy_infographic_aria', lang)}
+                        src={bgImage}
+                        imgClassName="clean-technology-economy-bg-image"
+                    />
 
                     <div className="clean-technology-economy-download-buttons">
                         <button type="button" className="clean-technology-economy-download-btn" onClick={downloadPng}>

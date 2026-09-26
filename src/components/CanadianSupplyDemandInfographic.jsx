@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import canadianSupplyDemandBgEn from '../assets/canadian_supply_demand_bg.png';
 import canadianSupplyDemandBgFr from '../assets/canadian_supply_demand_bg_fr.png';
 import {
@@ -48,11 +49,22 @@ const CanadianSupplyDemandInfographic = ({
     const bgImage = overlayLang === 'fr' ? canadianSupplyDemandBgFr : canadianSupplyDemandBgEn;
     const native = NATIVE_SIZE[overlayLang];
     const slots = OVERLAY_SLOTS[overlayLang];
+    const figcaption = getText('canadian_supply_demand_bg_alt', lang);
 
     return (
-        <figure ref={figureRef} className="canadian-supply-demand-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="canadian-supply-demand-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel || figcaption}
+            src={bgImage}
+            imgClassName="canadian-supply-demand-bg-image"
+        >
             <style>{`
 .canadian-supply-demand-infographic-figure {
+    position: relative;
     width: 100%;
     max-width: none;
     margin: 0 0 28px 0;
@@ -88,12 +100,6 @@ const CanadianSupplyDemandInfographic = ({
             `}</style>
 
             <div className="canadian-supply-demand-infographic-wrapper">
-                <img
-                    src={bgImage}
-                    alt=""
-                    className="canadian-supply-demand-bg-image"
-                    draggable={false}
-                />
                 {INFOGRAPHIC_KEYS.map((key) => (
                     <OverlayNumber
                         key={key}
@@ -106,8 +112,7 @@ const CanadianSupplyDemandInfographic = ({
                     />
                 ))}
             </div>
-            <figcaption className="wb-inv">{getText('canadian_supply_demand_bg_alt', lang)}</figcaption>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

@@ -1,10 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getSolidBiofuelsProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import hexToRgba from '../utils/hexToRgba';
 
 const BAR_KEYS = ['pulping', 'swr', 'firewood', 'pellets'];
 const PIE_KEYS = ['industrial', 'electricity', 'residential'];
@@ -31,11 +40,6 @@ const BAR_LEGEND_KEYS = {
     pellets: 'solid_biofuels_legend_pellets',
 };
 
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
 
 const HOVER_LABEL = {
     bgcolor: '#ffffff',
@@ -43,21 +47,11 @@ const HOVER_LABEL = {
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
         (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
         text || '',
     );
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
 /** ~400% browser zoom — same DPR band as retail prices chart. */
 const solid_biofuels_VERTICAL_TICK_ZOOM_MIN = 3.55;
@@ -92,19 +86,11 @@ const SolidBiofuelsProduction = () => {
     const [error, setError] = useState(null);
     const [selectedBarPoints, setSelectedBarPoints] = useState(null);
     const [selectedPieSlices, setSelectedPieSlices] = useState(null);
-    const [isBarTableOpen, setIsBarTableOpen] = useState(false);
-    const [isPieTableOpen, setIsPieTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [useVerticalBarTicks, setUseVerticalBarTicks] = useState(false);
 
     const barChartRef = useRef(null);
     const pieChartRef = useRef(null);
-    const barTableTopRef = useRef(null);
-    const barTableScrollRef = useRef(null);
-    const barTableBottomRef = useRef(null);
-    const pieTableTopRef = useRef(null);
-    const pieTableScrollRef = useRef(null);
-    const pieTableBottomRef = useRef(null);
     const barLastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
     const pieLastClickRef = useRef({ time: 0, index: null });
 
@@ -117,7 +103,10 @@ const SolidBiofuelsProduction = () => {
         return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
     };
 
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const formatPct = (value) => {
+        if (value == null || Number.isNaN(Number(value))) return '—';
+        return String(value);
+    };
 
     useEffect(() => {
         getSolidBiofuelsProductionData()
@@ -128,7 +117,6 @@ const SolidBiofuelsProduction = () => {
 
     useEffect(() => {
         const syncViewport = () => {
-            setWindowWidth(window.innerWidth);
             const s = window.visualViewport?.scale ?? 1;
             const pinchVertical = isPinchScaleInSolidBiofuelsProductionVerticalBand(s);
             setUseVerticalBarTicks(pinchVertical || isBrowserZoomInSolidBiofuelsProductionVerticalRange());
@@ -156,142 +144,57 @@ const SolidBiofuelsProduction = () => {
 
     const barChartTitle = substitute(getText('solid_biofuels_bar_chart_title', lang), { year: endYear ?? '' });
     const pieChartTitle = substitute(getText('solid_biofuels_pie_chart_title', lang), { year: pieYear ?? '' });
+    const exportBarChartTitle = stripHtml(barChartTitle);
+    const exportPieChartTitle = stripHtml(pieChartTitle);
     const barFileTitle = `${getText('solid_biofuels_download_bar_title', lang)}_${startYear}-${endYear}`;
     const pieFileTitle = `${getText('solid_biofuels_download_pie_title', lang)}_${pieYear ?? ''}`;
+    const barCaption = substitute(getText('solid_biofuels_table_caption_bar', lang), { startYear, endYear });
+    const pieCaption = substitute(getText('solid_biofuels_table_caption_pie', lang), { startYear, endYear });
+
+    const barTableColumns = useMemo(() => [
+        { key: 'year', header: getText('solid_biofuels_table_col_year', lang), align: 'left' },
+        ...BAR_KEYS.map((key) => ({
+            key,
+            header: `${getText(BAR_LEGEND_KEYS[key], lang)} (PJ)`,
+            align: 'num',
+        })),
+        { key: 'barTotal', header: getText('solid_biofuels_table_col_total', lang), align: 'num' },
+    ], [lang]);
+
+    const pieTableColumns = useMemo(() => [
+        { key: 'year', header: getText('solid_biofuels_table_col_year', lang), align: 'left' },
+        { key: 'total', header: getText('solid_biofuels_table_col_total', lang), align: 'num' },
+        ...PIE_KEYS.map((key) => ({
+            key,
+            header: `${getText(PIE_LABEL_KEYS[key], lang)} (PJ)`,
+            align: 'num',
+        })),
+        ...PIE_KEYS.map((key) => ({
+            key: `${key}_pct`,
+            header: `${getText(PIE_LABEL_KEYS[key], lang)} (%)`,
+            align: 'num',
+        })),
+    ], [lang]);
+
+    const pieTableRows = useMemo(() => tableRows.map((row) => {
+        const next = {
+            year: row.year,
+            total: row.total,
+            industrial: row.industrial,
+            electricity: row.electricity,
+            residential: row.residential,
+        };
+        PIE_KEYS.forEach((key) => {
+            const slice = row.pieSlices?.find((item) => item.key === key);
+            next[`${key}_pct`] = slice?.pct ?? null;
+        });
+        return next;
+    }), [tableRows]);
 
     const barPlotHeight = windowWidth <= 480 ? 340 : windowWidth <= 768 ? 380 : 420;
     const piePlotHeight = windowWidth <= 480 ? 430 : 520;
     const zoomLegendMode = windowWidth <= 800;
     const pieTextSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 17;
-
-    const setupChartAccessibility = useCallback((chartRef) => {
-        if (!chartRef?.current) return;
-        const plotContainer = chartRef.current;
-        plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-            svg.setAttribute('aria-hidden', 'true');
-        });
-        plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-            const dataTitle = btn.getAttribute('data-title');
-            if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                btn.setAttribute('aria-label', dataTitle);
-                btn.setAttribute('role', 'button');
-                btn.setAttribute('tabindex', '0');
-                btn.removeAttribute('aria-hidden');
-            } else {
-                btn.setAttribute('aria-hidden', 'true');
-                btn.setAttribute('tabindex', '-1');
-            }
-        });
-    }, []);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setupChartAccessibility(barChartRef);
-            setupChartAccessibility(pieChartRef);
-        }, 500);
-        const observers = [barChartRef, pieChartRef].map((ref) => {
-            if (!ref.current) return null;
-            const observer = new MutationObserver(() => setupChartAccessibility(ref));
-            observer.observe(ref.current, { childList: true, subtree: true });
-            return observer;
-        });
-        return () => {
-            clearTimeout(timer);
-            observers.forEach((observer) => observer?.disconnect());
-        };
-    }, [lang, loading, error, result, setupChartAccessibility]);
-
-    const syncTableScroll = useCallback((topRef, tableRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = tableRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    const syncBarTableScroll = useCallback(
-        () => syncTableScroll(barTableTopRef, barTableScrollRef, barTableBottomRef),
-        [syncTableScroll],
-    );
-    const syncPieTableScroll = useCallback(
-        () => syncTableScroll(pieTableTopRef, pieTableScrollRef, pieTableBottomRef),
-        [syncTableScroll],
-    );
-
-    useEffect(() => {
-        const topScroll = barTableTopRef.current;
-        const tableScroll = barTableScrollRef.current;
-        const bottomScroll = barTableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isBarTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncBarTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isBarTableOpen, windowWidth, syncBarTableScroll]);
-
-    useEffect(() => {
-        const topScroll = pieTableTopRef.current;
-        const tableScroll = pieTableScrollRef.current;
-        const bottomScroll = pieTableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isPieTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncPieTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isPieTableOpen, windowWidth, syncPieTableScroll]);
 
     const toggleBarSelection = useCallback((traceIndex, pointIndex) => {
         if (windowWidth <= 768) {
@@ -526,289 +429,114 @@ const SolidBiofuelsProduction = () => {
         }] : [],
     };
 
-    const downloadChartPng = async (plotRef, title, filename) => {
-        const plotEl = plotRef.current?.querySelector('.js-plotly-plot');
-        if (!plotEl || !window.Plotly) return;
-        try {
-            await window.Plotly.relayout(plotEl, { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff' });
-            const imgData = await window.Plotly.toImage(plotEl, { format: 'png', width: 1200, height: 800, scale: 2 });
-            await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 70;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#26374a';
-                ctx.font = 'bold 24px "Noto Sans", Arial, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(stripHtml(title), canvas.width / 2, 44);
-                ctx.drawImage(img, 0, titleHeight);
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = `${filename}.png`;
-                link.click();
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.warn('Unable to download chart image.', err);
-        }
-    };
-
-    const barTableHeaders = [
-        getText('solid_biofuels_table_col_year', lang),
-        ...BAR_KEYS.map((key) => `${getText(BAR_LEGEND_KEYS[key], lang)} (PJ)`),
-        getText('solid_biofuels_table_col_total', lang),
-    ];
-
-    const pieTableHeaders = [
-        getText('solid_biofuels_table_col_year', lang),
-        getText('solid_biofuels_table_col_total', lang),
-        ...PIE_KEYS.map((key) => `${getText(PIE_LABEL_KEYS[key], lang)} (PJ)`),
-        ...PIE_KEYS.map((key) => `${getText(PIE_LABEL_KEYS[key], lang)} (%)`),
-    ];
-
-    const barTableCells = (row) => [
-        row.year,
-        ...BAR_KEYS.map((key) => formatPj(row[key])),
-        formatPj(row.barTotal),
-    ];
-
-    const pieTableCells = (row) => [
-        row.year,
-        formatPj(row.total),
-        ...PIE_KEYS.map((key) => formatPj(row[key])),
-        ...PIE_KEYS.map((key) => {
-            const slice = row.pieSlices?.find((item) => item.key === key);
-            return slice?.pct != null ? `${slice.pct}` : '—';
+        const downloadBarChartWithTitle = useChartPngDownloader(
+            barChartRef,
+            () => ({
+            filename: `${barFileTitle}.png`,
+            title: exportBarChartTitle,
+            height: 800,
+            legendItems: BAR_KEYS.map((key) => ({
+                label: getText(BAR_LEGEND_KEYS[key], lang),
+                color: BAR_COLORS[key],
+            })),
         }),
-    ];
+            [BAR_COLORS, BAR_KEYS, BAR_LEGEND_KEYS, barFileTitle, exportBarChartTitle, getText, lang],
+        );
 
-    const downloadBarCsv = () => {
-        const rows = tableRows.map((row) => barTableCells(row));
-        const csv = [barTableHeaders.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join('\n');
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${barFileTitle}.csv`);
-    };
-
-    const downloadPieCsv = () => {
-        const rows = tableRows.map((row) => pieTableCells(row));
-        const csv = [pieTableHeaders.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join('\n');
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${pieFileTitle}.csv`);
-    };
-
-    const downloadBarDocx = async () => {
-        const headerRow = new TableRow({
-            children: barTableHeaders.map((header) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' },
+        const downloadPieChartWithTitle = useChartPngDownloader(
+            pieChartRef,
+            () => ({
+            filename: `${pieFileTitle}.png`,
+            title: exportPieChartTitle,
+            height: 800,
+            legendItems: PIE_KEYS.map((key) => ({
+                label: getText(PIE_LABEL_KEYS[key], lang),
+                color: PIE_COLORS[key],
             })),
-        });
-        const dataRows = tableRows.map((row) => new TableRow({
-            children: barTableCells(row).map((cell, index) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: String(cell), size: 22 })],
-                    alignment: index === 0 ? AlignmentType.CENTER : AlignmentType.RIGHT,
-                })],
-            })),
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: substitute(getText('solid_biofuels_table_caption_bar', lang), { startYear, endYear }), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1200, 1800, 2000, 1800, 1800, 1600],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${barFileTitle}.docx`);
-    };
+        }),
+            [PIE_COLORS, PIE_KEYS, PIE_LABEL_KEYS, exportPieChartTitle, getText, lang, pieFileTitle],
+        );
 
-    const downloadPieDocx = async () => {
-        const headerRow = new TableRow({
-            children: pieTableHeaders.map((header) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const dataRows = tableRows.map((row) => new TableRow({
-            children: pieTableCells(row).map((cell, index) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: String(cell), size: 22 })],
-                    alignment: index === 0 ? AlignmentType.CENTER : AlignmentType.RIGHT,
-                })],
-            })),
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: substitute(getText('solid_biofuels_table_caption_pie', lang), { startYear, endYear }), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1000, 1200, 1500, 1500, 1500, 1100, 1100, 1100],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${pieFileTitle}.docx`);
-    };
-
-    const barChartConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
+        const barChartConfig = buildPngOnlyPlotConfig({
+            lang,
+            click: (gd) => downloadBarChartWithTitle(gd),
             name: getText('solid_biofuels_download_bar_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: () => downloadChartPng(barChartRef, barChartTitle, barFileTitle),
-        }],
-    };
+        });
 
-    const pieChartConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
+        const pieChartConfig = buildPngOnlyPlotConfig({
+            lang,
+            click: (gd) => downloadPieChartWithTitle(gd),
             name: getText('solid_biofuels_download_pie_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: () => downloadChartPng(pieChartRef, pieChartTitle, pieFileTitle),
-        }],
-    };
-
-    const renderDataTable = ({
-        captionId,
-        caption,
-        isOpen,
-        setIsOpen,
-        topRef,
-        tableRef,
-        bottomRef,
-        headers,
-        rows,
-        onCsv,
-        onDocx,
-    }) => (
-        <div className="solid-biofuels-table-wrapper">
-            <details className="solid-biofuels-data-table" open={isOpen} onToggle={(e) => setIsOpen(e.currentTarget.open)}>
-                <summary role="button" aria-expanded={isOpen}>
-                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                    <span className="wb-inv">
-                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                    </span>
-                </summary>
-                <p id={captionId} className="wb-inv">{caption}</p>
-                <div ref={topRef} className="solid-biofuels-table-scrollbar" aria-hidden="true"><div /></div>
-                <div ref={tableRef} className="solid-biofuels-table-responsive" role="region" aria-labelledby={captionId}>
-                    <table className="table table-bordered table-striped table-hover">
-                        <thead>
-                            <tr>
-                                {headers.map((header) => <th key={header} scope="col">{header}</th>)}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row) => (
-                                <tr key={row.year}>
-                                    {row.cells.map((cell, index) => (
-                                        <td key={`${row.year}-${index}`}>{cell}</td>
-                                    ))}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <div ref={bottomRef} className="solid-biofuels-table-scrollbar" aria-hidden="true"><div /></div>
-                <div className="solid-biofuels-download-buttons">
-                    <button type="button" onClick={onCsv}>{getText('solid_biofuels_download_csv', lang)}</button>
-                    <button type="button" onClick={onDocx}>{getText('solid_biofuels_download_docx', lang)}</button>
-                </div>
-            </details>
-        </div>
-    );
+        });
 
     if (loading) {
-        return <p className="solid-biofuels-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>;
+        return (
+            <PageStatus
+                lang={lang}
+                loading
+                loadingMessage={lang === 'en' ? 'Loading data…' : 'Chargement des données…'}
+                className="solid-biofuels-loading"
+            />
+        );
     }
     if (error) {
-        return <p className="solid-biofuels-error" role="alert">{error}</p>;
+        return <PageStatus lang={lang} error={error} className="solid-biofuels-error" />;
     }
     if (!tableRows.length || !pieRow) {
         return <p className="solid-biofuels-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>;
     }
 
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: years,
+            series: BAR_KEYS.map((key) => ({
+                name: getText(BAR_LEGEND_KEYS[key], lang),
+                values: tableRows.map((row) => row[key]),
+                format: formatPj,
+            })),
+            lang,
+        });
+        const pieBody = summarizeByCategory({
+            categories: pieCategories.map((slice) => getText(PIE_LABEL_KEYS[slice.key], lang)),
+            series: [{
+                name: lang === 'en' ? 'Share' : 'Part',
+                values: pieCategories.map((slice) => slice.pj),
+                format: formatPj,
+            }],
+            lang,
+        });
+        return {
+            bar: joinChartSummary({ intro: exportBarChartTitle, body, lang }),
+            pie: joinChartSummary({ intro: exportPieChartTitle, body: pieBody, lang }),
+        };
+    };
+    const summaries = getChartSummary();
+    const barRegionLabel = summaries.bar;
+    const pieRegionLabel = summaries.pie;
+
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content page-78"
+            className="page-content page-78 page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="solid-biofuels-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-78.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-78 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .solid-biofuels-container { width: 100%; padding: 15px 0 0 0; box-sizing: border-box; }
 .solid-biofuels-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin-top: 0;
-    margin-bottom: 25px;
     line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
 }
-.solid-biofuels-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
-}
 .solid-biofuels-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-bottom: 0;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .solid-biofuels-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
-    margin: 0 0 12px 0;
+    margin-bottom: 12px;
     text-transform: none;
 }
 .solid-biofuels-chart-scroll { width: 100%; overflow: visible; position: relative; }
@@ -817,17 +545,6 @@ const SolidBiofuelsProduction = () => {
 .solid-biofuels-chart .js-plotly-plot,
 .solid-biofuels-chart .plot-container,
 .solid-biofuels-chart .svg-container { overflow: visible !important; pointer-events: auto !important; }
-.solid-biofuels-clear-selection {
-    padding: 6px 12px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 8px;
-}
 .solid-biofuels-legend {
     display: flex;
     flex-wrap: wrap;
@@ -841,71 +558,23 @@ const SolidBiofuelsProduction = () => {
 .solid-biofuels-legend-item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .solid-biofuels-legend-swatch { width: 22px; height: 14px; display: inline-block; border: 1px solid rgba(0, 0, 0, 0.12); }
 .solid-biofuels-table-wrapper { display: block; width: 100%; margin-top: 20px; margin-bottom: 0; }
-.solid-biofuels-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.solid-biofuels-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.solid-biofuels-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.solid-biofuels-table-scrollbar > div { height: 20px; }
-.solid-biofuels-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.solid-biofuels-table-responsive::-webkit-scrollbar { display: none; }
-.solid-biofuels-table-responsive table { width: max-content !important; min-width: 100%; }
-.solid-biofuels-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.solid-biofuels-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
-.solid-biofuels-chart-frame button:hover,
-.solid-biofuels-table-wrapper summary:hover,
-.solid-biofuels-download-buttons button:hover { background-color: #404040 !important; }
+.solid-biofuels-chart-frame button:hover { background-color: #404040 !important; }
 .solid-biofuels-loading, .solid-biofuels-error {
     font-family: 'Noto Sans', sans-serif;
     font-size: 18px;
     color: var(--gc-text);
     margin: 24px 0;
 }
-@media (max-width: 768px) {
-    .solid-biofuels-title { font-size: 37px; }
-    .solid-biofuels-chart-title { font-size: 26px; }
-}
             `}</style>
 
             <div className="solid-biofuels-container">
-                <h1 id="solid-biofuels-title" className="solid-biofuels-title">{getText('solid_biofuels_title', lang)}</h1>
+                <h1 id="solid-biofuels-title" className="solid-biofuels-title page-chrome-title">{getText('solid_biofuels_title', lang)}</h1>
 
-                <div className="solid-biofuels-chart-frame" style={{ marginBottom: 24 }}>
-                    <h2 id="solid-biofuels-bar-chart-title" className="solid-biofuels-chart-title">{barChartTitle}</h2>
-                    {selectedBarPoints && (
-                        <button type="button" className="solid-biofuels-clear-selection" onClick={() => setSelectedBarPoints(null)}>
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
-                    )}
+                <div className="solid-biofuels-chart-frame page-chrome-chart-frame" style={{ marginBottom: 24 }}>
+                    <h2 id="solid-biofuels-bar-chart-title" className="solid-biofuels-chart-title page-chrome-chart-title">{barChartTitle}</h2>
+                    {selectedBarPoints && <ClearSelectionButton lang={lang} onClick={() => setSelectedBarPoints(null)} />}
                     <div className="solid-biofuels-chart-scroll">
-                        <div ref={barChartRef} className="solid-biofuels-chart" role="img" aria-label={barChartTitle}>
+                        <div ref={barChartRef} className="solid-biofuels-chart" role="img" aria-label={barRegionLabel} tabIndex={0}>
                             <Plot
                                 key={`solid-biofuels-bar-${useVerticalBarTicks ? 'v' : 'h'}-${barPlotHeight}`}
                                 data={barTraces}
@@ -926,30 +595,33 @@ const SolidBiofuelsProduction = () => {
                             </span>
                         ))}
                     </div>
-                    {renderDataTable({
-                        captionId: 'solid-biofuels-bar-table-caption',
-                        caption: substitute(getText('solid_biofuels_table_caption_bar', lang), { startYear, endYear }),
-                        isOpen: isBarTableOpen,
-                        setIsOpen: setIsBarTableOpen,
-                        topRef: barTableTopRef,
-                        tableRef: barTableScrollRef,
-                        bottomRef: barTableBottomRef,
-                        headers: barTableHeaders,
-                        rows: tableRows.map((row) => ({ year: row.year, cells: barTableCells(row) })),
-                        onCsv: downloadBarCsv,
-                        onDocx: downloadBarDocx,
-                    })}
+                    <div className="solid-biofuels-table-wrapper">
+                        <ChartDataTable
+                            lang={lang}
+                            columns={barTableColumns}
+                            rows={tableRows}
+                            csvFilename={`${barFileTitle}.csv`}
+                            docx={{
+                                filename: `${barFileTitle}.docx`,
+                                title: barCaption,
+                                titleAlign: 'center',
+                                columnWidths: [1200, 1800, 2000, 1800, 1800, 1600],
+                                fontSize: 22,
+                            }}
+                            caption={barCaption}
+                            tableAriaLabel={barCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatPj(raw)
+                            )}
+                        />
+                    </div>
                 </div>
 
-                <div className="solid-biofuels-chart-frame">
-                    <h2 id="solid-biofuels-pie-chart-title" className="solid-biofuels-chart-title">{pieChartTitle}</h2>
-                    {selectedPieSlices && (
-                        <button type="button" className="solid-biofuels-clear-selection" onClick={() => setSelectedPieSlices(null)}>
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
-                    )}
+                <div className="solid-biofuels-chart-frame page-chrome-chart-frame">
+                    <h2 id="solid-biofuels-pie-chart-title" className="solid-biofuels-chart-title page-chrome-chart-title">{pieChartTitle}</h2>
+                    {selectedPieSlices && <ClearSelectionButton lang={lang} onClick={() => setSelectedPieSlices(null)} />}
                     <div className="solid-biofuels-chart-scroll">
-                        <div ref={pieChartRef} className="solid-biofuels-chart" role="img" aria-label={pieChartTitle}>
+                        <div ref={pieChartRef} className="solid-biofuels-chart" role="img" aria-label={pieRegionLabel} tabIndex={0}>
                             {pieTrace && (
                                 <Plot
                                     key={`solid-biofuels-pie-${pieYear}-${zoomLegendMode ? 'compact' : 'wide'}-${effectivePieSlices ? effectivePieSlices.join('-') : 'none'}`}
@@ -974,22 +646,31 @@ const SolidBiofuelsProduction = () => {
                             ))}
                         </div>
                     )}
-                    {renderDataTable({
-                        captionId: 'solid-biofuels-pie-table-caption',
-                        caption: substitute(getText('solid_biofuels_table_caption_pie', lang), { startYear, endYear }),
-                        isOpen: isPieTableOpen,
-                        setIsOpen: setIsPieTableOpen,
-                        topRef: pieTableTopRef,
-                        tableRef: pieTableScrollRef,
-                        bottomRef: pieTableBottomRef,
-                        headers: pieTableHeaders,
-                        rows: tableRows.map((row) => ({ year: row.year, cells: pieTableCells(row) })),
-                        onCsv: downloadPieCsv,
-                        onDocx: downloadPieDocx,
-                    })}
+                    <div className="solid-biofuels-table-wrapper">
+                        <ChartDataTable
+                            lang={lang}
+                            columns={pieTableColumns}
+                            rows={pieTableRows}
+                            csvFilename={`${pieFileTitle}.csv`}
+                            docx={{
+                                filename: `${pieFileTitle}.docx`,
+                                title: pieCaption,
+                                titleAlign: 'center',
+                                columnWidths: [1000, 1200, 1500, 1500, 1500, 1100, 1100, 1100],
+                                fontSize: 22,
+                            }}
+                            caption={pieCaption}
+                            tableAriaLabel={pieCaption}
+                            renderCell={(raw, { column, colIndex }) => {
+                                if (colIndex === 0) return String(raw ?? '');
+                                if (String(column?.key || '').endsWith('_pct')) return formatPct(raw);
+                                return formatPj(raw);
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

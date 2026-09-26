@@ -1,13 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import PageFootnotes from '../components/PageFootnotes';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const CANADA_CAPSULE = '#819476';
 const TOP_RANKS = [1, 2, 3, 4, 5];
 const DATA_YEAR = 2023;
 const WORLD_TOTAL_PJ = 4791;
+const DOC_COLUMN_WIDTHS = [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100];
 
 const TOP5_DATA = [
     { rank: 1, key: 'usa', sharePct: 41 },
@@ -33,8 +40,6 @@ const substitute = (text, vars) =>
         (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
         text || '',
     );
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
 const formatSharePct = (value, locale) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -151,31 +156,14 @@ const exportCapsuleInfographicPng = ({ title, rows, filename }) => {
 
 const BiofuelsTransportation = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
     const infographicRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
+    const fileSlugVars = useMemo(() => ({ year: DATA_YEAR }), []);
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-biofuels-transportation');
 
-    const scrollToFootnote = (event) => {
-        event.preventDefault();
-        document.getElementById('fn-asterisk-biofuels-transportation')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const scrollToRef = (event) => {
-        event.preventDefault();
-        document.getElementById('fn-asterisk-rf-biofuels-transportation')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-biofuels-transportation');
 
     const rankingRows = useMemo(
         () =>
@@ -204,83 +192,45 @@ const BiofuelsTransportation = () => {
         year: DATA_YEAR,
     });
 
-    const tableHeaders = [
-        getText('biofuels_transportation_table_col_year', lang),
-        getText('biofuels_transportation_table_col_total', lang),
-        ...TOP_RANKS.map((rank) => getText(`biofuels_transportation_table_col_rank${rank}`, lang)),
-        getText('biofuels_transportation_table_col_canada', lang),
-        getText('biofuels_transportation_table_col_canada_rank', lang),
-    ];
+    const tableCaption = substitute(getText('biofuels_transportation_table_caption', lang), { year: DATA_YEAR });
+    const exportTableTitle = stripHtml(tableCaption);
+    const csvFilename = substitute(getText('biofuels_transportation_csv_slug', lang), fileSlugVars);
+    const docxFilename = substitute(getText('biofuels_transportation_docx_slug', lang), fileSlugVars);
 
-    const formatTopCountryCell = useCallback(
-        (entry) => {
+    const tableColumns = useMemo(
+        () => [
+            { key: 'year', header: getText('biofuels_transportation_table_col_year', lang), align: 'left' },
+            { key: 'totalPj', header: getText('biofuels_transportation_table_col_total', lang), align: 'num' },
+            ...TOP_RANKS.map((rank) => ({
+                key: `rank${rank}`,
+                header: getText(`biofuels_transportation_table_col_rank${rank}`, lang),
+                align: 'num',
+            })),
+            { key: 'canadaPct', header: getText('biofuels_transportation_table_col_canada', lang), align: 'num' },
+            { key: 'canadaRank', header: getText('biofuels_transportation_table_col_canada_rank', lang), align: 'num' },
+        ],
+        [lang],
+    );
+
+    const tableRows = useMemo(() => {
+        const formatTopCountryCell = (entry) => {
             if (!entry) return '—';
             return `${nuclearGenerationCountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
-        },
-        [lang, locale],
-    );
-
-    const tableRow = useMemo(
-        () => ({
+        };
+        const topCells = Object.fromEntries(
+            TOP_RANKS.map((rank) => [
+                `rank${rank}`,
+                formatTopCountryCell(TOP5_DATA.find((item) => item.rank === rank)),
+            ]),
+        );
+        return [{
             year: DATA_YEAR,
             totalPj: formatPj(WORLD_TOTAL_PJ, locale),
-            topCountryCells: TOP_RANKS.map((rank) =>
-                formatTopCountryCell(TOP5_DATA.find((item) => item.rank === rank)),
-            ),
+            ...topCells,
             canadaPct: formatSharePct(CANADA_DATA.sharePct, locale),
             canadaRank: CANADA_DATA.rank,
-        }),
-        [formatTopCountryCell, locale],
-    );
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        if (!isTableOpen) return undefined;
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncTableScroll));
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        syncTableScroll();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
+        }];
+    }, [lang, locale]);
 
     const downloadBtnStyle = {
         padding: '8px 16px',
@@ -291,87 +241,6 @@ const BiofuelsTransportation = () => {
         fontFamily: 'Arial, sans-serif',
         fontWeight: 'bold',
         color: '#ffffff',
-    };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const fileSlugVars = useMemo(() => ({ year: DATA_YEAR }), []);
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const row = [
-            tableRow.year,
-            tableRow.totalPj,
-            ...tableRow.topCountryCells,
-            tableRow.canadaPct,
-            tableRow.canadaRank,
-        ]
-            .map(csvEscape)
-            .join(',');
-        saveAs(
-            new Blob([[header, row].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            substitute(getText('biofuels_transportation_csv_slug', lang), fileSlugVars),
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = new TableRow({
-            children: [
-                tableRow.year,
-                tableRow.totalPj,
-                ...tableRow.topCountryCells,
-                tableRow.canadaPct,
-                tableRow.canadaRank,
-            ].map(
-                (value) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(value ?? ''), size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                    }),
-            ),
-        });
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: stripHtml(substitute(getText('biofuels_transportation_table_caption', lang), { year: DATA_YEAR })),
-                                bold: true,
-                                size: 28,
-                            }),
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100],
-                        rows: [headerRow, dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), substitute(getText('biofuels_transportation_docx_slug', lang), fileSlugVars));
     };
 
     const downloadInfographicPng = () => {
@@ -424,22 +293,14 @@ const BiofuelsTransportation = () => {
     }, [rankingRows, canadaRow, lang]);
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-91"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-91 page-chrome page-chrome--bleed"
             aria-labelledby="biofuels-transportation-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-91.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-91 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .biofuels-transportation-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .biofuels-transportation-title {
@@ -564,38 +425,8 @@ const BiofuelsTransportation = () => {
 .biofuels-transportation-capsule-row-canada .biofuels-transportation-capsule-pill { border-width: 2px; border-color: ${CANADA_CAPSULE}; }
 .biofuels-transportation-capsule-pill-text-canada { font-size: 22px; font-weight: bold; }
 .biofuels-transportation-capsule-ellipsis { min-height: 28px; padding-left: 4%; color: #333; font-size: 18px; font-weight: bold; }
-.biofuels-transportation-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.biofuels-transportation-table-responsive::-webkit-scrollbar { display: none; }
-.biofuels-transportation-table-responsive table { width: max-content !important; min-width: 100%; }
 .biofuels-transportation-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 .biofuels-transportation-chart-section .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-.page-91 .data-table-wrapper summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-    box-sizing: border-box;
-}
-.page-91 .data-table-wrapper summary::-webkit-details-marker { display: none; }
-.page-91 .data-table-wrapper summary:hover,
-.page-91 .data-table-wrapper button:hover { background-color: #404040 !important; }
-.biofuels-transportation-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.biofuels-transportation-table-scrollbar > div { height: 20px; }
 .biofuels-transportation-footnotes {
     font-family: var(--font-body);
     font-size: 1rem;
@@ -636,21 +467,18 @@ const BiofuelsTransportation = () => {
                         <ul className="biofuels-transportation-bullets">
                             <li>{getText('biofuels_transportation_bullet1', lang)}</li>
                             <li>
-                                <span className="wb-inv">{getText('biofuels_transportation_bullet2_full', lang)}</span>
-                                <span aria-hidden="true">
-                                    {getText('biofuels_transportation_bullet2_prefix', lang)}
-                                    <em>{getText('biofuels_transportation_bullet2_regulations', lang)}</em>
-                                    {getText('biofuels_transportation_bullet2_mid1', lang)}
-                                    <span className="visual-bold">{getText('biofuels_transportation_bullet2_gas', lang)}</span>
-                                    {getText('biofuels_transportation_bullet2_mid2', lang)}
-                                    <span className="visual-bold">{getText('biofuels_transportation_bullet2_diesel', lang)}</span>
-                                    {getText('biofuels_transportation_bullet2_suffix', lang)}
-                                    <span id="fn-asterisk-rf-biofuels-transportation" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0', marginLeft: '0.05em' }}>
-                                        <a className="fn-lnk" href="#fn-asterisk-biofuels-transportation" onClick={scrollToFootnote}>
-                                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                                            <span aria-hidden="true">*</span>
-                                        </a>
-                                    </span>
+                                {getText('biofuels_transportation_bullet2_prefix', lang)}
+                                <em>{getText('biofuels_transportation_bullet2_regulations', lang)}</em>
+                                {getText('biofuels_transportation_bullet2_mid1', lang)}
+                                <span className="visual-bold">{getText('biofuels_transportation_bullet2_gas', lang)}</span>
+                                {getText('biofuels_transportation_bullet2_mid2', lang)}
+                                <span className="visual-bold">{getText('biofuels_transportation_bullet2_diesel', lang)}</span>
+                                {getText('biofuels_transportation_bullet2_suffix', lang)}
+                                <span id="fn-asterisk-rf-biofuels-transportation" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0', marginLeft: '0.05em' }}>
+                                    <a className="fn-lnk" href="#fn-asterisk-biofuels-transportation" onClick={scrollToFootnote}>
+                                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
+                                        <span aria-hidden="true">*</span>
+                                    </a>
                                 </span>
                             </li>
                         </ul>
@@ -661,7 +489,7 @@ const BiofuelsTransportation = () => {
 
                         <section className="biofuels-transportation-chart-section" aria-label={rankingAria}>
                             <h3 className="biofuels-transportation-graphic-title">{graphicTitle}</h3>
-                            <div className="biofuels-transportation-capsule-graphic" role="img" aria-label={rankingAria}>
+                            <div className="biofuels-transportation-capsule-graphic" role="img" tabIndex={0} aria-label={rankingAria}>
                                 {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                                 <div className="biofuels-transportation-capsule-row biofuels-transportation-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
                                 {renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}
@@ -673,70 +501,35 @@ const BiofuelsTransportation = () => {
                                 </button>
                             </div>
 
-                            <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                                <summary role="button" aria-expanded={isTableOpen}>
-                                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                    {getText('biofuels_transportation_table_summary', lang)}
-                                    <span className="wb-inv">
-                                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                    </span>
-                                </summary>
-                                <div ref={topScrollRef} className="biofuels-transportation-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div ref={tableScrollRef} className="biofuels-transportation-table-responsive table-responsive" role="region" tabIndex={0}>
-                                    <table className="table table-bordered table-striped table-hover">
-                                        <caption className="wb-inv">
-                                            {substitute(getText('biofuels_transportation_table_caption', lang), { year: DATA_YEAR })}
-                                        </caption>
-                                        <thead>
-                                            <tr>
-                                                {tableHeaders.map((header) => (
-                                                    <th
-                                                        key={header}
-                                                        scope="col"
-                                                        style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
-                                                    >
-                                                        {header}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{tableRow.year}</th>
-                                                <td style={{ textAlign: 'center' }}>{tableRow.totalPj}</td>
-                                                {tableRow.topCountryCells.map((cell, index) => (
-                                                    <td key={`${tableRow.year}-rank-${index + 1}`} style={{ textAlign: 'center' }}>{cell}</td>
-                                                ))}
-                                                <td style={{ textAlign: 'center' }}>{tableRow.canadaPct}</td>
-                                                <td style={{ textAlign: 'center' }}>{tableRow.canadaRank}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div ref={bottomScrollRef} className="biofuels-transportation-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div className="biofuels-transportation-download-buttons">
-                                    <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>{getText('biofuels_transportation_download_csv', lang)}</button>
-                                    <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>{getText('biofuels_transportation_download_docx', lang)}</button>
-                                </div>
-                            </details>
+                            <ChartDataTable
+                                lang={lang}
+                                label={getText('biofuels_transportation_table_summary', lang)}
+                                columns={tableColumns}
+                                rows={tableRows}
+                                csvFilename={csvFilename}
+                                docx={{
+                                    filename: docxFilename,
+                                    title: exportTableTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: DOC_COLUMN_WIDTHS,
+                                    fontSize: 22,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                            />
                         </section>
                     </div>
                 </div>
 
-                <aside className="wb-fnote biofuels-transportation-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd id="fn-asterisk-biofuels-transportation">
-                            <a href="#fn-asterisk-rf-biofuels-transportation" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('biofuels_transportation_footnote', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    className="biofuels-transportation-footnotes"
+                    items={[
+                        { id: 'fn-asterisk-biofuels-transportation', marker: '*', text: getText('biofuels_transportation_footnote', lang), returnHref: '#fn-asterisk-rf-biofuels-transportation' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

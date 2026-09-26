@@ -1,256 +1,326 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { Outlet, useLocation, Link } from 'react-router-dom';
+import { Outlet, useLocation, Link, useSearchParams } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import GCHeader from './GCHeader';
 import GCFooter from './GCFooter';
+import { focusRouteContent } from '../utils/focusRouteContent';
 
-const Layout = () => {
-    const [lang, setLang] = useState('en');
-    const [layoutPadding, setLayoutPadding] = useState({ left: 55, right: 15 }); // Defaults
-    const location = useLocation();
-    const isFirstRender = useRef(true);
+const LANG_STORAGE_KEY = 'efb-lang';
 
-    const toggleLanguage = () => {
-        setLang(prev => prev === 'en' ? 'fr' : 'en');
+const readStoredLang = () => {
+  try {
+    return localStorage.getItem(LANG_STORAGE_KEY) === 'fr' ? 'fr' : 'en';
+  } catch {
+    return 'en';
+  }
+};
+
+const Layout = ({ embed: embedProp = false }) => {
+  const [searchParams] = useSearchParams();
+  const embedFromQuery = searchParams.get('embed') === '1'
+    || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('embed') === '1');
+  const embed = embedProp || embedFromQuery;
+
+  const [lang, setLang] = useState(readStoredLang);
+  const [alignedPadding, setAlignedPadding] = useState({ left: 55, right: 15 });
+  const location = useLocation();
+  const isFirstRender = useRef(true);
+  const layoutPadding = embed ? { left: 24, right: 24 } : alignedPadding;
+
+  const toggleLanguage = () => {
+    setLang((prev) => {
+      const next = prev === 'en' ? 'fr' : 'en';
+      try {
+        localStorage.setItem(LANG_STORAGE_KEY, next);
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    document.documentElement.lang = lang === 'fr' ? 'fr' : 'en';
+    document.title = lang === 'fr'
+      ? "Livre de faits sur l'énergie"
+      : 'Energy Fact Book';
+  }, [lang]);
+
+  useLayoutEffect(() => {
+    if (embed) {
+      return undefined;
+    }
+
+    const updateAlignment = () => {
+      const leftAnchor = document.getElementById('alignment-anchor-left');
+      const rightAnchor = document.getElementById('alignment-anchor-right');
+      const mainContainer = document.getElementById('main-content-container');
+
+      if (leftAnchor && rightAnchor && mainContainer) {
+        const leftRect = leftAnchor.getBoundingClientRect();
+        const rightRect = rightAnchor.getBoundingClientRect();
+        const containerRect = mainContainer.getBoundingClientRect();
+        const newLeft = Math.max(0, leftRect.left - containerRect.left);
+        const newRight = Math.max(0, containerRect.right - rightRect.right);
+        setAlignedPadding({ left: newLeft, right: newRight });
+      }
     };
 
-    // --- ALIGNMENT AUTOMATION ENGINE ---
-    // This calculates alignment perfectly at ANY zoom level by measuring
-    // the actual positions of the header anchors
-    useLayoutEffect(() => {
-        const updateAlignment = () => {
-            const leftAnchor = document.getElementById('alignment-anchor-left');
-            const rightAnchor = document.getElementById('alignment-anchor-right');
-            const mainContainer = document.getElementById('main-content-container');
+    window.addEventListener('resize', updateAlignment);
+    updateAlignment();
+    const delayedUpdate = setTimeout(updateAlignment, 100);
 
-            if (leftAnchor && rightAnchor && mainContainer) {
-                // Get positions relative to viewport
-                const leftRect = leftAnchor.getBoundingClientRect();
-                const rightRect = rightAnchor.getBoundingClientRect();
-                const containerRect = mainContainer.getBoundingClientRect();
+    return () => {
+      window.removeEventListener('resize', updateAlignment);
+      clearTimeout(delayedUpdate);
+    };
+  }, [location.pathname, embed]);
 
-                // Calculate the exact padding needed to match header elements
-                // "How far is the flag from the container left edge?"
-                const newLeft = Math.max(0, leftRect.left - containerRect.left);
-                
-                // "How far is the container right edge from the lang button right edge?"
-                const newRight = Math.max(0, containerRect.right - rightRect.right);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return undefined;
+    }
 
-                setLayoutPadding({ left: newLeft, right: newRight });
-            }
-        };
+    let cancelFocus = () => {};
+    const focusTimer = setTimeout(() => {
+      window.scrollTo(0, 0);
+      // Section changes: focus the first page heading in the new section.
+      // Topic hash changes are handled in ActivePageSection.
+      cancelFocus = focusRouteContent();
+    }, 100);
 
-        // Run on load, resize, and zoom
-        window.addEventListener('resize', updateAlignment);
-        updateAlignment(); // Initial run
-        
-        // Slight delay to catch layout shifts (common with custom fonts/images)
-        const delayedUpdate = setTimeout(updateAlignment, 100);
+    return () => {
+      clearTimeout(focusTimer);
+      cancelFocus();
+    };
+  }, [location.pathname]);
 
-        return () => {
-            window.removeEventListener('resize', updateAlignment);
-            clearTimeout(delayedUpdate);
-        };
-    }, [location.pathname]); // Re-check when changing pages
+  const pages = [
+    { path: '/section-1' },
+    { path: '/section-2' },
+    { path: '/section-3' },
+    { path: '/section-4' },
+    { path: '/section-5' },
+    { path: '/section-6' },
+  ];
 
-    // Focus Management
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
+  const normalizedPath = location.pathname === '/' ? '/section-1' : location.pathname;
+  const currentIndex = pages.findIndex((p) => p.path === normalizedPath);
+  const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
+  const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
+
+  return (
+    <>
+      <style>{`
+        * { box-sizing: border-box; }
+
+        .layout-wrapper {
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
         }
-        
-        const focusTimer = setTimeout(() => {
-            const mainContent = document.getElementById('main-content');
-            if (mainContent) {
-                window.scrollTo(0, 0);
-                mainContent.focus({ preventScroll: true });
-            }
-        }, 100);
-        
-        return () => clearTimeout(focusTimer);
-    }, [location.pathname]);
 
-    const pages = [
-        { path: '/section-1' },
-        { path: '/section-2' },
-        { path: '/section-3' },
-        { path: '/section-4' },
-        { path: '/section-5' },
-        { path: '/section-6' }
-    ];
+        .layout-viewport {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          overflow: visible;
+        }
 
-    const normalizedPath = location.pathname === '/' ? '/section-1' : location.pathname;
-    const currentIndex = pages.findIndex(p => p.path === normalizedPath);
-    const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
-    const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
+        .gc-header { flex-shrink: 0; }
 
-    return (
-        <>
-            <style>{`
-                /* Reset box sizing */
-                * { box-sizing: border-box; }
-                
-                /* Layout Wrapper */
-                .layout-wrapper {
-                    display: flex;
-                    flex-direction: column;
-                    min-height: 100vh;
-                }
-                
-                .layout-viewport {
-                    min-height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    overflow: visible;
-                }
-                
-                .gc-header { flex-shrink: 0; }
-                
-                /* Main Content Area */
-                .layout-main-area {
-                    flex: 1 1 auto;
-                    display: flex;
-                    flex-direction: column;
-                    min-height: 0;
-                    overflow: visible;
-                    position: relative;
-                }
-                
-                .layout-content-wrapper {
-                    flex: 1 1 auto;
-                    display: flex;
-                    flex-direction: column;
-                    min-height: 0;
-                    overflow: visible;
-                    position: relative;
-                }
-                
-                .layout-page-content {
-                    overflow: visible;
-                    position: relative;
-                }
-                
-                /* Strict Alignment Container - 1140px max width with dynamic padding */
-                .layout-content-container {
-                    width: 100%;
-                    max-width: 1140px;
-                    margin: 0 auto;
-                    text-align: left;
-                    position: relative;
-                    overflow: visible;
-                    box-sizing: border-box;
-                }
-                
-                
-                h1, h2, h3, h4, h5, h6 { 
-                    text-align: left; 
-                }
-                
-                /* Allow chart titles to be centered */
-                .employment-chart-chart-title,
-                .gdp-chart-chart-title,
-                .capital-expenditure-chart-title,
-                .capital-expenditureh-chart-title,
-                .environmental-protectionh-chart-title {
-                    text-align: center !important;
-                }
+        .layout-main-area {
+          flex: 1 1 auto;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+          overflow: visible;
+          position: relative;
+        }
 
-                /* ===============================================
-                   GHOST NAVIGATION STYLES
-                   Hides links visually but keeps them in DOM for 
-                   screen readers. Appears when focused via Tab.
-                   =============================================== */
-                .sr-only-focusable {
-                    position: absolute;
-                    width: 1px;
-                    height: 1px;
-                    padding: 0;
-                    margin: -1px;
-                    overflow: hidden;
-                    clip: rect(0, 0, 0, 0);
-                    white-space: nowrap;
-                    border: 0;
-                }
+        .layout-content-wrapper {
+          flex: 1 1 auto;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+          overflow: visible;
+          position: relative;
+        }
 
-                .sr-only-focusable:focus {
-                    position: static;
-                    width: auto;
-                    height: auto;
-                    clip: auto;
-                    white-space: normal;
-                    overflow: visible;
-                    display: inline-block;
-                    margin-top: 20px;
-                    margin-right: 15px;
-                    padding: 10px 20px;
-                    background-color: var(--gc-link);
-                    color: var(--gc-background);
-                    font-weight: bold;
-                    text-decoration: none;
-                    border-radius: 4px;
-                    outline: 3px solid #ffcc00;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                    z-index: 9999;
-                }
-            `}</style>
-            
-            <div className="layout-wrapper">
-                <div className="layout-viewport">
-                    <GCHeader lang={lang} onToggleLanguage={toggleLanguage} />
+        .layout-page-content {
+          overflow: visible;
+          position: relative;
+        }
 
-                    <div className="layout-main-area">
-                        <Sidebar lang={lang} />
-                        <div className="content layout-content-wrapper">
-                            <div className="layout-page-content">
-                                <div 
-                                    id="main-content-container"
-                                    className="layout-content-container"
-                                    style={{
-                                        paddingLeft: `${layoutPadding.left}px`,
-                                        paddingRight: `${layoutPadding.right}px`,
-                                        paddingTop: '20px',
-                                        paddingBottom: '20px'
-                                    }}
-                                >
-                                <Outlet context={{ lang, layoutPadding }} />
+        .layout-content-container {
+          width: 100%;
+          max-width: 1140px;
+          margin: 0 auto;
+          text-align: left;
+          position: relative;
+          overflow: visible;
+          box-sizing: border-box;
+        }
 
-{/* --- START GHOST NAVIGATION --- 
-    These links are invisible to mouse users.
-    They only appear when a keyboard/screen reader user tabs past the content.
-*/}
-<div className="text-center" style={{ textAlign: 'center' }}>
-    {prevPage && (
-        <Link 
-            to={prevPage.path} 
-            className="sr-only-focusable"
-        >
-            {/* Screen Reader hears: "Previous section" */}
-            {lang === 'en' ? 'Previous section' : 'Section précédente'}
-        </Link>
-    )}
+        .layout-main {
+          outline: none;
+        }
 
-    {nextPage && (
-        <Link 
-            to={nextPage.path} 
-            className="sr-only-focusable"
-        >
-            {/* Screen Reader hears: "Next section" */}
-            {lang === 'en' ? 'Next section' : 'Section suivante'}
-        </Link>
-    )}
-</div>
-{/* --- END GHOST NAVIGATION --- */}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        h1, h2, h3, h4, h5, h6 {
+          text-align: left;
+        }
+
+        .employment-chart-chart-title,
+        .gdp-chart-chart-title,
+        .capital-expenditure-chart-title,
+        .capital-expenditureh-chart-title,
+        .environmental-protectionh-chart-title {
+          text-align: center !important;
+        }
+
+        .section-nav {
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-top: 2rem;
+          padding-top: 1rem;
+          border-top: 1px solid #ccc;
+          flex-wrap: wrap;
+        }
+
+        .section-nav-link {
+          display: inline-block;
+          padding: 10px 20px;
+          background-color: var(--gc-link);
+          color: var(--gc-background);
+          font-weight: bold;
+          text-decoration: none;
+          border-radius: 4px;
+        }
+
+        .section-nav-link:visited {
+          color: var(--gc-background);
+        }
+
+        .section-nav-link:hover,
+        .section-nav-link:focus-visible {
+          background-color: var(--gc-link-hover);
+          outline: 3px solid #ffcc00;
+          outline-offset: 2px;
+        }
+
+        .section-page-nav {
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          margin: 1.5rem 0 0;
+          padding: 1rem 0;
+          border-top: 1px solid #e0e0e0;
+          flex-wrap: wrap;
+          background-color: var(--gc-background, #fff);
+        }
+
+        .section-page-nav-link {
+          display: inline-block;
+          padding: 10px 20px;
+          background-color: var(--gc-link);
+          color: var(--gc-background);
+          font-weight: bold;
+          text-decoration: none;
+          border-radius: 4px;
+        }
+
+        .section-page-nav-link:visited {
+          color: var(--gc-background);
+        }
+
+        .section-page-nav-link:hover,
+        .section-page-nav-link:focus-visible {
+          background-color: var(--gc-link-hover);
+          outline: 3px solid #ffcc00;
+          outline-offset: 2px;
+        }
+
+        .layout-embed .sidebar {
+          display: none !important;
+        }
+
+        .skip-link {
+          position: absolute;
+          left: -9999px;
+          top: 0;
+          z-index: 10000;
+          padding: 0.75rem 1rem;
+          background: #000;
+          color: #fff;
+        }
+
+        .skip-link:focus {
+          left: 1rem;
+          top: 1rem;
+        }
+      `}</style>
+
+      <a className="skip-link" href="#main-content">
+        {lang === 'fr' ? 'Passer au contenu principal' : 'Skip to main content'}
+      </a>
+
+      <div className={`layout-wrapper${embed ? ' layout-embed' : ''}`}>
+        <div className="layout-viewport">
+          {!embed && (
+            <GCHeader lang={lang} onToggleLanguage={toggleLanguage} slimMegaMenu />
+          )}
+
+          <div className="layout-main-area">
+            {!embed && <Sidebar lang={lang} />}
+            <div className="content layout-content-wrapper">
+              <div className="layout-page-content">
+                <div
+                  id="main-content-container"
+                  className="layout-content-container"
+                  style={{
+                    paddingLeft: `${layoutPadding.left}px`,
+                    paddingRight: `${layoutPadding.right}px`,
+                    paddingTop: '20px',
+                    paddingBottom: '20px',
+                  }}
+                >
+                  <main id="main-content" className="layout-main" tabIndex={-1}>
+                    <Outlet context={{ lang, layoutPadding, embed }} />
+                  </main>
+
+                  {!embed && (
+                    <nav
+                      className="section-nav"
+                      aria-label={lang === 'fr' ? 'Navigation entre sections' : 'Section navigation'}
+                    >
+                      {prevPage ? (
+                        <Link to={prevPage.path} className="section-nav-link">
+                          {lang === 'en' ? 'Previous section' : 'Section précédente'}
+                        </Link>
+                      ) : (
+                        <span />
+                      )}
+                      {nextPage ? (
+                        <Link to={nextPage.path} className="section-nav-link">
+                          {lang === 'en' ? 'Next section' : 'Section suivante'}
+                        </Link>
+                      ) : (
+                        <span />
+                      )}
+                    </nav>
+                  )}
                 </div>
-
-                <GCFooter lang={lang} />
+              </div>
             </div>
-        </>
-    );
+          </div>
+        </div>
+
+        {!embed && <GCFooter lang={lang} />}
+      </div>
+    </>
+  );
 };
 
 export default Layout;

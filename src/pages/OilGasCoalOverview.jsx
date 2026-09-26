@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import PageShell from '../components/PageShell';
 import { NavLink, useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import oilGasCoalOverviewImage from '../assets/oil_gas_coal_overview_bg.jpg';
@@ -9,12 +10,13 @@ const OilGasCoalOverview = () => {
     useEffect(() => {
     }, []);
 
+    useEffect(() => {
+    }, []);
+
     return (
-        <main 
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-103 oil-gas-coal-overview-main cover-page" 
-            role="main"
+            className="page-content page-103 oil-gas-coal-overview-main cover-page"
             style={{
                 backgroundColor: '#58504a',
                 flex: '1 1 auto',
@@ -169,7 +171,9 @@ const OilGasCoalOverview = () => {
                         <li className="oil-gas-coal-overview-list-item">
                             <NavLink to="/section-6#natural-gas-international">{getText('oil_gas_coal_overview_item2', lang)}</NavLink>
                         </li>
-                        <li className="oil-gas-coal-overview-list-item">{getText('oil_gas_coal_overview_item3', lang)}</li>
+                        <li className="oil-gas-coal-overview-list-item">
+                            <NavLink to="/section-6#hgl-supply-demand">{getText('oil_gas_coal_overview_item3', lang)}</NavLink>
+                        </li>
                         <li className="oil-gas-coal-overview-list-item">
                             <NavLink to="/section-6#refined-petroleum-products">{getText('oil_gas_coal_overview_item4', lang)}</NavLink>
                         </li>
@@ -180,7 +184,7 @@ const OilGasCoalOverview = () => {
                     </ul>
                 </nav>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

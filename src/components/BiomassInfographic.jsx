@@ -1,6 +1,7 @@
 import React from 'react';
-import biomassBg from '../assets/biomass_bg.svg';
-import biomassBgFr from '../assets/biomass_bg_fr.svg';
+import AccessibleInfographic from './AccessibleInfographic';
+import biomassBg from '../assets/biomass_bg.svg?raw';
+import biomassBgFr from '../assets/biomass_bg_fr.svg?raw';
 
 const FN_PREFIX = 'biomass';
 const fnRefId = (n) => `fn${n}-rf-${FN_PREFIX}`;
@@ -35,43 +36,43 @@ const FootnoteMark = ({ number, lang, scrollToElement, style }) => (
 const BiomassInfographic = ({
     lang,
     scrollToElement,
-    ariaLabel,
+    title,
 }) => {
     const isEn = lang === 'en';
     const fnPos = isEn ? EN_FN : FR_FN;
 
     return (
-        <figure className="biomass-infographic-figure" aria-label={ariaLabel}>
-            <div className={`biomass-infographic biomass-infographic-${lang}`}>
-                <img
-                    src={isEn ? biomassBg : biomassBgFr}
-                    alt=""
-                    className="biomass-infographic-bg"
-                    draggable={false}
-                />
-                <FootnoteMark
-                    number="1"
-                    lang={lang}
-                    scrollToElement={scrollToElement}
-                    style={{
-                        position: 'absolute',
-                        left: `${fnPos[1].left}%`,
-                        top: `${fnPos[1].top}%`,
-                    }}
-                />
-                <FootnoteMark
-                    number="2"
-                    lang={lang}
-                    scrollToElement={scrollToElement}
-                    style={{
-                        position: 'absolute',
-                        left: `${fnPos[2].left}%`,
-                        top: `${fnPos[2].top}%`,
-                    }}
-                />
-            </div>
-            <figcaption className="wb-inv">{ariaLabel}</figcaption>
-        </figure>
+        <AccessibleInfographic
+            mode="text"
+            as="figure"
+            className={`biomass-infographic-figure biomass-infographic biomass-infographic-${lang}`}
+            title={title || 'Biomass'}
+            svgMarkup={isEn ? biomassBg : biomassBgFr}
+            imgClassName="biomass-infographic-bg"
+            imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
+            idPrefix={isEn ? 'biomass-en' : 'biomass-fr'}
+        >
+            <FootnoteMark
+                number="1"
+                lang={lang}
+                scrollToElement={scrollToElement}
+                style={{
+                    position: 'absolute',
+                    left: `${fnPos[1].left}%`,
+                    top: `${fnPos[1].top}%`,
+                }}
+            />
+            <FootnoteMark
+                number="2"
+                lang={lang}
+                scrollToElement={scrollToElement}
+                style={{
+                    position: 'absolute',
+                    left: `${fnPos[2].left}%`,
+                    top: `${fnPos[2].top}%`,
+                }}
+            />
+        </AccessibleInfographic>
     );
 };
 

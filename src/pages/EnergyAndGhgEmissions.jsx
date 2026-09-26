@@ -1,33 +1,27 @@
 import React, { useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import AccessibleInfographic from '../components/AccessibleInfographic';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType } from '../utils/exportTableToDocx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import energyAndGhgEmissionsBgEn from '../assets/energy_and_ghg_emissions_bg.svg';
-import energyAndGhgEmissionsBgFr from '../assets/energy_and_ghg_emissions_bg_fr.svg';
+import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
+import energyAndGhgEmissionsBgEn from '../assets/energy_and_ghg_emissions_bg.svg?raw';
+import energyAndGhgEmissionsBgFr from '../assets/energy_and_ghg_emissions_bg_fr.svg?raw';
 
 const INFO_COLUMN_WIDTHS = [5200, 3600];
 
 const HIGHLIGHT_KEYS = ['global_share', 'canada_share'];
 
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
-
 const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
 const EnergyAndGhgEmissions = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const infographicImgRef = useRef(null);
+    const infographicRef = useRef(null);
 
     const pageTitle = getText('energy_and_ghg_emissions_title', lang);
-    const bgImage = lang === 'en' ? energyAndGhgEmissionsBgEn : energyAndGhgEmissionsBgFr;
+    const svgMarkup = lang === 'en' ? energyAndGhgEmissionsBgEn : energyAndGhgEmissionsBgFr;
     const fileTitle = getText('energy_and_ghg_emissions_download_title', lang);
 
     const tableRows = HIGHLIGHT_KEYS.map((key) => ({
@@ -37,22 +31,11 @@ const EnergyAndGhgEmissions = () => {
     }));
 
     const downloadInfographicPng = async () => {
-        const imgEl = infographicImgRef.current;
-        if (!imgEl) return;
         try {
-            const loaded = await waitForImage(imgEl);
-            const scale = 2;
-            const canvas = document.createElement('canvas');
-            canvas.width = loaded.naturalWidth * scale;
-            canvas.height = loaded.naturalHeight * scale;
-            const ctx = canvas.getContext('2d');
-            ctx.scale(scale, scale);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, loaded.naturalWidth, loaded.naturalHeight);
-            ctx.drawImage(loaded, 0, 0, loaded.naturalWidth, loaded.naturalHeight);
-            canvas.toBlob((blob) => {
-                if (blob) saveAs(blob, `${fileTitle}.png`);
-            });
+            await downloadInfographicImagePng(
+                infographicRef.current?.getGraphicElement?.() ?? infographicRef.current,
+                { filename: `${fileTitle}.png`, scale: 2 },
+            );
         } catch (err) {
             console.warn('Unable to download infographic image.', err);
         }
@@ -107,26 +90,17 @@ const EnergyAndGhgEmissions = () => {
                 ],
             }],
         });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileTitle}.docx`);
+        await saveDocxBlob(`${fileTitle}.docx`, doc);
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content energy-and-ghg-emissions"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content energy-and-ghg-emissions page-chrome page-chrome--bleed"
             aria-labelledby="energy-and-ghg-emissions-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .energy-and-ghg-emissions {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .energy-and-ghg-emissions-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-and-ghg-emissions.page-content h1.energy-and-ghg-emissions-title {
@@ -213,18 +187,17 @@ const EnergyAndGhgEmissions = () => {
                     {pageTitle}
                 </h1>
 
-                <figure
+                <AccessibleInfographic
+                    ref={infographicRef}
+                    mode="text"
+                    as="figure"
                     className="energy-and-ghg-emissions-figure"
-                    aria-label={getText('energy_and_ghg_emissions_infographic_aria', lang)}
-                >
-                    <img
-                        ref={infographicImgRef}
-                        className="energy-and-ghg-emissions-bg-image"
-                        src={bgImage}
-                        alt={getText('energy_and_ghg_emissions_infographic_aria', lang)}
-                        draggable={false}
-                    />
-                </figure>
+                    title={pageTitle}
+                    svgMarkup={svgMarkup}
+                    imgClassName="energy-and-ghg-emissions-bg-image"
+                    imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
+                    idPrefix={`energy-and-ghg-${lang}`}
+                />
 
                 <div className="energy-and-ghg-emissions-actions">
                     <button type="button" onClick={downloadInfographicPng}>
@@ -238,7 +211,7 @@ const EnergyAndGhgEmissions = () => {
                     </button>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

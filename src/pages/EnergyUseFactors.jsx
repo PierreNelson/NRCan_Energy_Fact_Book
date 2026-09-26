@@ -1,9 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import hexToRgba from '../utils/hexToRgba';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const BAR_KEYS = [
     'total',
@@ -88,28 +100,20 @@ function isBrowserZoomInVerticalTickRange() {
     });
 };
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
 const EnergyUseFactors = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [viewportZoom, setViewportZoom] = useState(createInitialViewportZoom);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedBars, setSelectedBars] = useState(null);
+    const {
+        selected: selectedBars,
+        clear,
+        onPlotClick: handleChartClick,
+        opacityFor,
+        isSelected,
+    } = usePlotlySelection({ mode: 'points', traceCount: 1, windowWidth });
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     const formatPj = (num) => {
         if (num == null || Number.isNaN(Number(num))) return '—';
@@ -132,6 +136,35 @@ const EnergyUseFactors = () => {
     const exportChartTitle = stripHtml(chartTitle);
     const chartDownloadSlug = getText('energy_use_factors_download_title', lang).replace(/\s+/g, '_');
     const yAxisTitle = getText('energy_use_factors_yaxis', lang);
+
+    const tableColumns = useMemo(() => [
+        { key: 'factor', header: getText('energy_use_factors_table_col_factor', lang), align: 'left' },
+        { key: 'value', header: `${yAxisTitle} (PJ)`, align: 'num' },
+    ], [lang, yAxisTitle]);
+
+    const tableRows = useMemo(
+        () => BAR_KEYS.map((key, i) => ({
+            factor: categoryLabels[i],
+            value: values[i],
+        })),
+        [categoryLabels, values],
+    );
+
+    const getChartSummary = () => {
+        if (!categoryLabels.length) return '';
+        const body = summarizeByCategory({
+            categories: categoryLabels,
+            series: [{ name: yAxisTitle, values, format: (v) => `${formatPj(v)} PJ` }],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? 'Bar chart of factors contributing to the change in energy use'
+                : "Diagramme à barres des facteurs contribuant à la variation de la consommation d'énergie",
+            unitNote: lang === 'en' ? 'Values in PJ' : 'Valeurs en PJ',
+            body,
+        });
+    };
 
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const wrappedCategoryLabels = useMemo(
@@ -209,22 +242,14 @@ const EnergyUseFactors = () => {
     const axisTitleFont = { size: windowWidth <= 768 ? 16 : 18, family: 'Arial, sans-serif', color: '#58585a' };
     const yTickFont = { size: windowWidth <= 480 ? 11 : windowWidth <= 768 ? 12 : 13, family: 'Arial, sans-serif' };
 
-    const tableHeaders = [
-        getText('energy_use_factors_table_col_factor', lang),
-        `${yAxisTitle} (PJ)`,
-    ];
-
     const yTickvals = [-1500, -1000, -500, 0, 500, 1000, 1500, 2000, 2500, 3000, 3500];
     const yTicktext = yTickvals.map((v) => formatPj(v));
 
-    const barOpacityFor = (pointIndex) => {
-        if (selectedBars === null) return 1;
-        return selectedBars.includes(pointIndex) ? 1 : 0.3;
-    };
+    const barOpacityFor = (pointIndex) => opacityFor(0, pointIndex);
 
     const barColorFor = (pointIndex, baseColor) => {
         if (selectedBars === null) return baseColor;
-        return selectedBars.includes(pointIndex) ? baseColor : hexToRgba(baseColor, 0.3);
+        return isSelected(0, pointIndex) ? baseColor : hexToRgba(baseColor, 0.3);
     };
 
     const operatorAnnotations = useMemo(
@@ -247,19 +272,34 @@ const EnergyUseFactors = () => {
         [operatorFontSize],
     );
 
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-energy-use-factors')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-energy-use-factors');
 
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-energy-use-factors')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-energy-use-factors');
+
+
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: 680,
+    }),
+        [chartDownloadSlug, exportChartTitle],
+    );
+
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
+
+    const hoverTemplates = categoryLabels.map(
+        (label, i) => `<b>${label}</b><br>${formatPj(values[i])} PJ<extra></extra>`,
+    );
+
+    const bulletKeys = ['activity', 'structure', 'service_level', 'energy_efficiency'];
 
     useEffect(() => {
         const syncViewportZoom = () => {
-            setWindowWidth(window.innerWidth);
             setViewportZoom(createInitialViewportZoom());
         };
         syncViewportZoom();
@@ -273,231 +313,16 @@ const EnergyUseFactors = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedBars]);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 680,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(exportChartTitle, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${chartDownloadSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const lines = [tableHeaders.map((h) => `"${h.replace(/"/g, '""')}"`).join(',')];
-        BAR_KEYS.forEach((key, i) => {
-            lines.push([`"${categoryLabels[i].replace(/"/g, '""')}"`, values[i]].join(','));
-        });
-        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${chartDownloadSlug}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (cell) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: cell, bold: true, size: 20 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = BAR_KEYS.map((key, i) =>
-            new TableRow({
-                children: [categoryLabels[i], formatPj(values[i])].map((val, index) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(val), size: 20 })],
-                                alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                            }),
-                        ],
-                    }),
-                ),
-            }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: exportChartTitle, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [5200, 2200],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${chartDownloadSlug}.docx`);
-    };
-
-    const handleChartClick = (event) => {
-        if (!event.points?.length) return;
-        const pointIndex = event.points[0].pointIndex;
-        if (pointIndex === undefined) return;
-
-        if (windowWidth <= 768) {
-            const currentTime = Date.now();
-            const lastClick = lastClickRef.current;
-            const isSamePoint = pointIndex === lastClick.pointIndex;
-            const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-            lastClickRef.current = { time: currentTime, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedBars((prev) => {
-            if (prev === null) return [pointIndex];
-            if (prev.includes(pointIndex)) {
-                const next = prev.filter((p) => p !== pointIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, pointIndex];
-        });
-    };
-
-    const hoverTemplates = categoryLabels.map(
-        (label, i) => `<b>${label}</b><br>${formatPj(values[i])} PJ<extra></extra>`,
-    );
-
-    const bulletKeys = ['activity', 'structure', 'service_level', 'energy_efficiency'];
+    
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-56 energy-use-factors-energy-factors"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-56 energy-use-factors-energy-factors page-chrome page-chrome--bleed"
             aria-labelledby="energy-use-factors-chart-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-56.energy-use-factors-energy-factors {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .energy-use-factors-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-use-factors-bullets {
@@ -511,19 +336,11 @@ const EnergyUseFactors = () => {
 }
 .energy-use-factors-bullets li { margin-bottom: 0.65rem; }
 .energy-use-factors-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-top: 0;
-    box-sizing: border-box;
-    overflow: visible;
+    margin-bottom: 0;
 }
 .energy-use-factors-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 12px 0;
     text-transform: none;
 }
@@ -540,56 +357,6 @@ const EnergyUseFactors = () => {
     stroke-width: 0 !important;
 }
 .energy-use-factors-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.energy-use-factors-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.energy-use-factors-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.energy-use-factors-table-wrapper details > summary:hover,
-.energy-use-factors-chart-frame button[type="button"]:hover { background-color: #404040 !important; }
-.energy-use-factors-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.energy-use-factors-table-scrollbar > div { height: 20px; }
-.energy-use-factors-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    padding: 15px;
-    box-sizing: border-box;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.energy-use-factors-table-responsive::-webkit-scrollbar { display: none; }
-.energy-use-factors-table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-.energy-use-factors-table-responsive th,
-.energy-use-factors-table-responsive td {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    font-family: Arial, sans-serif;
-    color: var(--gc-text);
-    white-space: nowrap;
-}
-.energy-use-factors-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.energy-use-factors-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
 .energy-use-factors-footnotes {
     font-family: var(--font-body);
     font-size: 1rem;
@@ -619,7 +386,6 @@ const EnergyUseFactors = () => {
 }
 @media (max-width: 768px) {
     .energy-use-factors-bullets { font-size: 18px; }
-    .energy-use-factors-chart-title { font-size: 26px; }
     .energy-use-factors-footnotes { font-size: 0.9rem; }
     .energy-use-factors-footnotes h2 { font-size: 1.2rem; margin-bottom: 0.75rem; }
 }
@@ -635,8 +401,8 @@ const EnergyUseFactors = () => {
                     ))}
                 </ul>
 
-                <div className="energy-use-factors-chart-frame">
-                    <h2 id="energy-use-factors-chart-title" className="energy-use-factors-chart-title">
+                <div className="energy-use-factors-chart-frame page-chrome-chart-frame">
+                    <h2 id="energy-use-factors-chart-title" className="energy-use-factors-chart-title page-chrome-chart-title">
                         {chartTitle}
                         <sup id="fn-asterisk-rf-energy-use-factors">
                             <a className="fn-lnk" href="#fn-asterisk-energy-use-factors" onClick={scrollToFootnote}>
@@ -646,31 +412,12 @@ const EnergyUseFactors = () => {
                         </sup>
                     </h2>
 
-                    {selectedBars !== null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedBars(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
-                    )}
+                    {selectedBars !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
 
                     <figure ref={chartRef} style={{ margin: 0 }}>
-                        <div role="region" aria-label={getText('energy_use_factors_chart_aria', lang)} tabIndex="0">
+                        <div role="region" aria-label={`${exportChartTitle}. ${getChartSummary()}`} tabIndex="0">
                             <Plot
-                                key={`energy-use-factors-${selectedBars ? selectedBars.join('-') : 'all'}-${useVerticalXLabels ? 'v' : 'h'}-${plotHeight}-${barGap.toFixed(2)}-${operatorFontSize}`}
+                                key={`energy-use-factors-${selectedBars ? selectedBars.map((t) => t.join('-')).join('_') : 'all'}-${useVerticalXLabels ? 'v' : 'h'}-${plotHeight}-${barGap.toFixed(2)}-${operatorFontSize}`}
                                 data={[
                                     {
                                         x: BAR_KEYS,
@@ -742,34 +489,7 @@ const EnergyUseFactors = () => {
                                         automargin: true,
                                     },
                                 }}
-                                config={{
-                                    displayModeBar: true,
-                                    displaylogo: false,
-                                    responsive: true,
-                                    scrollZoom: false,
-                                    modeBarButtonsToRemove: [
-                                        'pan2d',
-                                        'select2d',
-                                        'lasso2d',
-                                        'zoom2d',
-                                        'zoomIn2d',
-                                        'zoomOut2d',
-                                        'autoScale2d',
-                                        'resetScale2d',
-                                        'toImage',
-                                    ],
-                                    modeBarButtonsToAdd: [
-                                        {
-                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                            },
-                                            click: (gd) => downloadChartWithTitle(gd),
-                                        },
-                                    ],
-                                }}
+                                config={plotConfig}
                                 className="energy-use-factors-chart"
                                 useResizeHandler
                                 onClick={handleChartClick}
@@ -778,85 +498,36 @@ const EnergyUseFactors = () => {
                     </figure>
 
                     <div className="energy-use-factors-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={topScrollRef} className="energy-use-factors-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                            <div ref={tableScrollRef} className="energy-use-factors-table-responsive" role="region" tabIndex="0">
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{getText('energy_use_factors_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            {tableHeaders.map((hdr) => (
-                                                <th
-                                                    key={hdr}
-                                                    scope="col"
-                                                    style={{
-                                                        fontWeight: 'bold',
-                                                        textAlign: hdr === tableHeaders[0] ? 'left' : 'center',
-                                                    }}
-                                                >
-                                                    {hdr}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {BAR_KEYS.map((key, i) => (
-                                            <tr key={key}>
-                                                <th scope="row" style={{ fontWeight: 'bold' }}>{categoryLabels[i]}</th>
-                                                <td style={{ textAlign: 'center' }}>{formatPj(values[i])}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <div className="energy-use-factors-download-buttons">
-                                    <button type="button" onClick={downloadTableAsCSV}>
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button type="button" onClick={downloadTableAsDocx}>
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                            <div ref={bottomScrollRef} className="energy-use-factors-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [5200, 2200],
+                                fontSize: 20,
+                            }}
+                            caption={getText('energy_use_factors_table_caption', lang)}
+                            tableAriaLabel={getText('energy_use_factors_table_caption', lang)}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatPj(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
-                <aside className="wb-fnote energy-use-factors-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt id="fn-asterisk-energy-use-factors" className="wb-inv">
-                            {lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}
-                        </dt>
-                        <dd>
-                            <a
-                                href="#fn-asterisk-rf-energy-use-factors"
-                                onClick={scrollToRef}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}
-                            {getText('energy_use_factors_footnote', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    className="energy-use-factors-footnotes"
+                    items={[
+                        { id: 'fn-asterisk-energy-use-factors', marker: '*', text: getText('energy_use_factors_footnote', lang), returnHref: '#fn-asterisk-rf-energy-use-factors' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

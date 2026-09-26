@@ -68,14 +68,129 @@ On a server where you deployed the **default** website zip (flat `data/` and `gl
 
 **Translations:** UI strings are **compiled into the JavaScript bundle**. Changing only `translations.js` requires a **new build** and a new website zip from the publisher. The data zip alone cannot update bundled English/French copy on a static host.
 
+## Deep links (BrowserRouter / SPA fallback)
+
+The app uses **BrowserRouter** with `basename` from Vite `import.meta.env.BASE_URL` (see [`App.jsx`](../src/App.jsx)). Paths are clean (`/section-1`) instead of hash-based (`/#/section-1`). [`vite.config.js`](../vite.config.js) sets `base: '/NRCan_Energy_Fact_Book/'` for GitHub Pages.
+
+Deep links require the host to serve `index.html` for unknown paths:
+
+- [`public/404.html`](../public/404.html) — GitHub Pages custom 404: stores the requested path in `sessionStorage` and redirects to the app base.
+- [`index.html`](../index.html) — on load, restores the stored path via `history.replaceState`.
+- [`public/spa-redirect.html`](../public/spa-redirect.html) — optional helper for hosts that support custom error pages.
+
+When deploying with full rewrite rules (Azure Static Web Apps, nginx `try_files`, etc.), configure all routes to `index.html` and the 404 shim is not required.
+
+Chrome-less nesting for a host page: see [EMBED_MODE.md](EMBED_MODE.md) (`?embed=1`).
+
 ## Security and caching
 
-- Serve over **HTTPS** in production.
-- Use normal static caching headers for hashed files under `assets/`; avoid caching `index.html` aggressively if you roll out updates often.
+The Fact Book ships as a **static SPA**. Security headers and framing policy are enforced by the **host** (CDN, Kubernetes ingress, reverse proxy)—not by the React app itself.
 
-## Large images
+**Required**
 
-Some background images under `assets/` can be large (for example hero images). Consider compressing or resizing source assets before the next `npm run build` if page load is a concern.
+- Serve over **HTTPS** only.
+- **Deny framing by default** (`X-Frame-Options: DENY` or CSP `frame-ancestors 'none'`).
+- Allow framing only with an explicit allowlist if chrome-less embed mode is approved (see [EMBED_MODE.md](EMBED_MODE.md)).
+
+**Caching**
+
+- Long-cache hashed assets under `/assets/` (immutable filenames from Vite).
+- Enable **gzip** and/or **Brotli** at the edge.
+- Do not long-cache `index.html` (short TTL or `no-cache`) so clients pick up new entry chunks.
+
+**Data files:** charts read same-origin files under `public/data/` (or deployed `data/`). Restrict who can write those files in deploy; prefer checksummed release artifacts.
+
+**Secrets:** pipeline SQL/cloud credentials must **never** ship in the website artifact.
+
+### Recommended Content-Security-Policy (sketch)
+
+Tighten further for production after measuring needed origins:
+
+```http
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob:;
+  connect-src 'self';
+  frame-ancestors 'none';
+  base-uri 'self';
+  form-action 'self'
+```
+
+Fonts are self-hosted in the app bundle. Prefer not allowing `fonts.googleapis.com` / `fonts.gstatic.com`.
+
+### nginx: compression + cache headers
+
+```nginx
+# Brotli/gzip (requires ngx_brotli or gzip module)
+gzip on;
+gzip_types text/css application/javascript application/json image/svg+xml;
+gzip_min_length 256;
+
+location /NRCan_Energy_Fact_Book/assets/ {
+    alias /var/www/factbook/assets/;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+location = /NRCan_Energy_Fact_Book/index.html {
+    alias /var/www/factbook/index.html;
+    add_header Cache-Control "no-cache";
+}
+```
+
+### Azure Static Web Apps
+
+Configure `staticwebapp.config.json` at the site root for SPA fallback and optional global headers (HTTPS is automatic). Example:
+
+```json
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/data/*", "/glossary/*"]
+  },
+  "globalHeaders": {
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  }
+}
+```
+
+### Kubernetes ingress (headers sketch)
+
+```yaml
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "DENY" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+```
+
+Allow `frame-ancestors` only for approved embed origins if chrome-less iframe hosting is required.
+
+## Asset size and build budgets
+
+Prefer compressed modern formats for new page assets:
+
+- Raster heroes: WebP (or AVIF) under ~300 KB where quality allows; avoid multi‑MB PNG in `src/assets/`.
+- SVG: do not embed large base64 bitmaps when a linked image works.
+- Proof / reference PNGs at the repo root should not be committed.
+
+After `npm run build`, run:
+
+```bash
+npm run check:bundle      # soft JS / Plotly chunk budget
+npm run compress:assets   # lossless recompress of large PNGs (rewrites when savings exist)
+npm run lighthouse:ci     # accessibility + total-byte-weight budgets (needs a built site)
+```
+
+CI also runs these gates where configured in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 
 ## Build the zip yourself (publishers)
 

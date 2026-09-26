@@ -1,4 +1,6 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
+import SafeHtml from './SafeHtml';
 import energyIntensityIndexBg from '../assets/energy_intensity_index_bg.png';
 
 const NATIVE_SIZE = { width: 1052, height: 151 };
@@ -44,9 +46,19 @@ const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }
     const slots = TEXT_SLOTS[overlayLang];
 
     return (
-        <figure ref={figureRef} className="energy-intensity-index-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="energy-intensity-index-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={energyIntensityIndexBg}
+            imgClassName="energy-intensity-index-bg-image"
+        >
             <style>{`
 .energy-intensity-index-infographic-figure {
+    position: relative;
     display: block;
     width: 100%;
     max-width: none;
@@ -105,8 +117,6 @@ const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }
             `}</style>
 
             <div className="energy-intensity-index-infographic-wrapper">
-                <img src={energyIntensityIndexBg} alt="" className="energy-intensity-index-bg-image" draggable={false} aria-hidden="true" />
-
                 <OverlayBlock slot={slots.leftLead} className="energy-intensity-index-overlay--left-lead">
                     <p className="energy-intensity-index-overlay-body">{getText('energy_intensity_index_info_left_lead', lang)}</p>
                 </OverlayBlock>
@@ -116,10 +126,9 @@ const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }
                 </OverlayBlock>
 
                 <OverlayBlock slot={slots.leftSuffix} className="energy-intensity-index-overlay--left-suffix">
-                    <p
-                        className={`energy-intensity-index-overlay-body${lang === 'fr' ? ' energy-intensity-index-overlay-body--bold' : ''}`}
-                        dangerouslySetInnerHTML={{ __html: getText('energy_intensity_index_info_left_suffix', lang) }}
-                    />
+                    <SafeHtml as="p"
+                        className={`energy-intensity-index-overlay-body${lang === 'fr' ? ' energy-intensity-index-overlay-body--bold' : ''}`} html={getText('energy_intensity_index_info_left_suffix', lang)}
+                     />
                 </OverlayBlock>
 
                 <OverlayBlock slot={slots.rightLead} className="energy-intensity-index-overlay--right-lead">
@@ -133,14 +142,12 @@ const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }
                 </OverlayBlock>
 
                 <OverlayBlock slot={slots.rightSuffix} className="energy-intensity-index-overlay--right-suffix">
-                    <p
-                        className={`energy-intensity-index-overlay-body${lang === 'fr' ? ' energy-intensity-index-overlay-body--bold' : ''}`}
-                        dangerouslySetInnerHTML={{ __html: getText('energy_intensity_index_info_right_suffix', lang) }}
-                    />
+                    <SafeHtml as="p"
+                        className={`energy-intensity-index-overlay-body${lang === 'fr' ? ' energy-intensity-index-overlay-body--bold' : ''}`} html={getText('energy_intensity_index_info_right_suffix', lang)}
+                     />
                 </OverlayBlock>
             </div>
-            <figcaption className="wb-inv">{ariaLabel}</figcaption>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

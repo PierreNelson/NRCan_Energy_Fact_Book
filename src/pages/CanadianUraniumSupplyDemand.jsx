@@ -1,8 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import SafeHtml from '../components/SafeHtml';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 import canadianUraniumSupplyDemandBg from '../assets/canadian_uranium_supply_demand_bg.png';
 
 const STAT_GREEN = '#809276';
@@ -20,25 +23,11 @@ const canadian_uranium_supply_demand_DATA = {
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
 
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
 const CanadianUraniumSupplyDemand = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const pctSuffix = lang === 'fr' ? '\u00a0%' : '%';
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
 
     const formatProduction = (value) =>
         Number(value).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -52,189 +41,50 @@ const CanadianUraniumSupplyDemand = () => {
     const domesticPctDisplay = `${canadian_uranium_supply_demand_DATA.domesticPct}${pctSuffix}`;
 
     const textVars = { year: DATA_YEAR };
+    const tableCaption = substitute(getText('canadian_uranium_supply_demand_table_caption', lang), textVars);
+    const exportTableTitle = stripHtml(tableCaption);
+    const csvFilename = getText('canadian_uranium_supply_demand_csv_slug', lang);
+    const docxFilename = getText('canadian_uranium_supply_demand_docx_slug', lang);
 
-    const tableHeaders = [
-        getText('canadian_uranium_supply_demand_table_col_year', lang),
-        getText('canadian_uranium_supply_demand_table_col_production', lang),
-        getText('canadian_uranium_supply_demand_table_col_value', lang),
-        getText('canadian_uranium_supply_demand_table_col_export', lang),
-        getText('canadian_uranium_supply_demand_table_col_us_share', lang),
-        getText('canadian_uranium_supply_demand_table_col_domestic', lang),
-    ];
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('canadian_uranium_supply_demand_table_col_year', lang) },
+        { key: 'production', header: getText('canadian_uranium_supply_demand_table_col_production', lang) },
+        { key: 'value', header: getText('canadian_uranium_supply_demand_table_col_value', lang) },
+        { key: 'export', header: getText('canadian_uranium_supply_demand_table_col_export', lang) },
+        { key: 'usShare', header: getText('canadian_uranium_supply_demand_table_col_us_share', lang) },
+        { key: 'domestic', header: getText('canadian_uranium_supply_demand_table_col_domestic', lang) },
+    ], [lang]);
 
-    const tableRow = useMemo(
-        () => ({
+    const tableRows = useMemo(
+        () => [{
             year: DATA_YEAR,
             production: productionDisplay,
             value: valueDisplay,
             export: exportPctDisplay,
             usShare: `${canadian_uranium_supply_demand_DATA.usPurchasesPct}${pctSuffix}`,
             domestic: domesticPctDisplay,
-        }),
+        }],
         [productionDisplay, valueDisplay, exportPctDisplay, domesticPctDisplay, pctSuffix],
     );
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        if (!isTableOpen) return undefined;
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTop = () => syncFrom(topScroll);
-        const handleTable = () => syncFrom(tableScroll);
-        const handleBottom = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTop);
-        tableScroll.addEventListener('scroll', handleTable);
-        bottomScroll.addEventListener('scroll', handleBottom);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTop);
-            tableScroll.removeEventListener('scroll', handleTable);
-            bottomScroll.removeEventListener('scroll', handleBottom);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const downloadBtnStyle = {
-        padding: '8px 16px',
-        backgroundColor: '#8C8C8C',
-        border: '1px solid #404040',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        color: '#ffffff',
-    };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const row = [
-            tableRow.year,
-            tableRow.production,
-            tableRow.value,
-            tableRow.export,
-            tableRow.usShare,
-            tableRow.domestic,
-        ]
-            .map(csvEscape)
-            .join(',');
-        saveAs(
-            new Blob([[header, row].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            getText('canadian_uranium_supply_demand_csv_slug', lang),
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = new TableRow({
-            children: [
-                tableRow.year,
-                tableRow.production,
-                tableRow.value,
-                tableRow.export,
-                tableRow.usShare,
-                tableRow.domestic,
-            ].map(
-                (value) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(value ?? ''), size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                    }),
-            ),
-        });
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: stripHtml(substitute(getText('canadian_uranium_supply_demand_table_caption', lang), textVars)),
-                                bold: true,
-                                size: 28,
-                            }),
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 1400, 1600, 1500, 2200, 1400],
-                        rows: [headerRow, dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), getText('canadian_uranium_supply_demand_docx_slug', lang));
-    };
-
-    const infographicAria = getText('canadian_uranium_supply_demand_infographic_aria', lang);
+    const infographicAria = [
+        getText('canadian_uranium_supply_demand_infographic_aria', lang),
+        `${getText('canadian_uranium_supply_demand_production_label', lang)} ${productionDisplay}`,
+        `${getText('canadian_uranium_supply_demand_value_heading', lang)} ${getText('canadian_uranium_supply_demand_value_about', lang)} ${valueDisplay}`,
+        `${getText('canadian_uranium_supply_demand_export_prefix', lang)} ${exportPctDisplay} ${getText('canadian_uranium_supply_demand_export_of_production', lang)}. ${getText('canadian_uranium_supply_demand_export_suffix', lang)}`,
+        stripHtml(substitute(getText('canadian_uranium_supply_demand_us_paragraph', lang), { pct: canadian_uranium_supply_demand_DATA.usPurchasesPct })),
+        `${getText('canadian_uranium_supply_demand_domestic_heading', lang)} ${getText('canadian_uranium_supply_demand_domestic_prefix', lang)} ${domesticPctDisplay} ${getText('canadian_uranium_supply_demand_domestic_of_production', lang)}`,
+    ].join('. ');
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-87"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-87 page-chrome page-chrome--bleed"
             aria-labelledby="canadian-uranium-supply-demand-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-87.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-87 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .canadian-uranium-supply-demand-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .canadian-uranium-supply-demand-title {
@@ -339,37 +189,6 @@ const CanadianUraniumSupplyDemand = () => {
 .canadian-uranium-supply-demand-paragraph { font-size: clamp(16px, 1.8vw, 18px); margin: 0 0 28px 0; }
 .canadian-uranium-supply-demand-paragraph strong { font-weight: bold; }
 .canadian-uranium-supply-demand-table-wrapper { display: block; width: 100%; margin-top: 0; margin-bottom: 0; }
-.canadian-uranium-supply-demand-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    cursor: pointer;
-    list-style: none;
-    box-sizing: border-box;
-}
-.canadian-uranium-supply-demand-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.canadian-uranium-supply-demand-table-wrapper details > summary:hover,
-.canadian-uranium-supply-demand-table-wrapper button:hover { background-color: #404040 !important; }
-.canadian-uranium-supply-demand-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.canadian-uranium-supply-demand-table-scrollbar > div { height: 20px; }
-.canadian-uranium-supply-demand-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.canadian-uranium-supply-demand-table-responsive::-webkit-scrollbar { display: none; }
-.canadian-uranium-supply-demand-table-responsive table { width: max-content !important; min-width: 100%; }
-.canadian-uranium-supply-demand-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 @media (max-width: 1100px) {
     .canadian-uranium-supply-demand-split { grid-template-columns: 1fr; gap: 28px; }
 }
@@ -388,18 +207,18 @@ const CanadianUraniumSupplyDemand = () => {
                     </h1>
                 </header>
 
-                <div className="canadian-uranium-supply-demand-split" role="region" aria-label={infographicAria}>
-                    <div className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-left">
+                <div
+                    className="canadian-uranium-supply-demand-split"
+                    role="img"
+                    tabIndex="0"
+                    aria-label={infographicAria}
+                >
+                    <div className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-left" aria-hidden="true">
                         <h2 className="canadian-uranium-supply-demand-subtitle">{getText('canadian_uranium_supply_demand_subtitle', lang)}</h2>
 
                         <p className="canadian-uranium-supply-demand-production-line">
-                            <span className="wb-inv">
-                                {getText('canadian_uranium_supply_demand_production_label', lang)} {productionDisplay}
-                            </span>
-                            <span aria-hidden="true">
-                                <span className="canadian-uranium-supply-demand-production-label">{getText('canadian_uranium_supply_demand_production_label', lang)}</span>
-                                <span className="canadian-uranium-supply-demand-stat-mid">{productionDisplay}</span>
-                            </span>
+                            <span className="canadian-uranium-supply-demand-production-label">{getText('canadian_uranium_supply_demand_production_label', lang)}</span>
+                            <span className="canadian-uranium-supply-demand-stat-mid">{productionDisplay}</span>
                         </p>
                         <p className="canadian-uranium-supply-demand-note">{getText('canadian_uranium_supply_demand_saskatchewan_note', lang)}</p>
 
@@ -411,23 +230,22 @@ const CanadianUraniumSupplyDemand = () => {
                             <span className="canadian-uranium-supply-demand-stat-value">{valueDisplay}</span>
                         </p>
 
-                        <div className="canadian-uranium-supply-demand-truck-wrap" aria-hidden="true">
-                            <img src={canadianUraniumSupplyDemandBg} alt="" className="canadian-uranium-supply-demand-truck-image" draggable={false} />
+                        <div className="canadian-uranium-supply-demand-truck-wrap">
+                            <img src={canadianUraniumSupplyDemandBg} alt="" className="canadian-uranium-supply-demand-truck-image" draggable={false} aria-hidden="true" />
                         </div>
                     </div>
 
-                    <div className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-right">
+                    <div className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-right" aria-hidden="true">
                         <p className="canadian-uranium-supply-demand-export-line">
                             <span className="canadian-uranium-supply-demand-inline-prefix">{getText('canadian_uranium_supply_demand_export_prefix', lang)}</span>
                             <span className="canadian-uranium-supply-demand-stat-mid">{exportPctDisplay}</span>
                             <span className="canadian-uranium-supply-demand-inline-suffix">{getText('canadian_uranium_supply_demand_export_of_production', lang)}</span>
                         </p>
                         <p className="canadian-uranium-supply-demand-export-suffix-line">{getText('canadian_uranium_supply_demand_export_suffix', lang)}</p>
-                        <p
+                        <SafeHtml
+                            as="p"
                             className="canadian-uranium-supply-demand-paragraph"
-                            dangerouslySetInnerHTML={{
-                                __html: substitute(getText('canadian_uranium_supply_demand_us_paragraph', lang), { pct: canadian_uranium_supply_demand_DATA.usPurchasesPct }),
-                            }}
+                            html={substitute(getText('canadian_uranium_supply_demand_us_paragraph', lang), { pct: canadian_uranium_supply_demand_DATA.usPurchasesPct })}
                         />
 
                         <h3 className="canadian-uranium-supply-demand-section-heading">{getText('canadian_uranium_supply_demand_domestic_heading', lang)}</h3>
@@ -441,64 +259,24 @@ const CanadianUraniumSupplyDemand = () => {
                 </div>
 
                 <div className="canadian-uranium-supply-demand-table-wrapper">
-                    <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {getText('canadian_uranium_supply_demand_table_summary', lang)}
-                            <span className="wb-inv">
-                                {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                            </span>
-                        </summary>
-                        <div ref={topScrollRef} className="canadian-uranium-supply-demand-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={tableScrollRef}
-                            className="canadian-uranium-supply-demand-table-responsive table-responsive"
-                            role="region"
-                            aria-label={getText('canadian_uranium_supply_demand_table_summary', lang)}
-                            tabIndex={0}
-                        >
-                            <table className="table table-bordered table-striped table-hover">
-                                <caption className="wb-inv">
-                                    {substitute(getText('canadian_uranium_supply_demand_table_caption', lang), textVars)}
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        {tableHeaders.map((header) => (
-                                            <th
-                                                key={header}
-                                                scope="col"
-                                                style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
-                                            >
-                                                {header}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{tableRow.year}</th>
-                                        <td style={{ textAlign: 'center' }}>{tableRow.production}</td>
-                                        <td style={{ textAlign: 'center' }}>{tableRow.value}</td>
-                                        <td style={{ textAlign: 'center' }}>{tableRow.export}</td>
-                                        <td style={{ textAlign: 'center' }}>{tableRow.usShare}</td>
-                                        <td style={{ textAlign: 'center' }}>{tableRow.domestic}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={bottomScrollRef} className="canadian-uranium-supply-demand-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="canadian-uranium-supply-demand-download-buttons">
-                            <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                                {getText('canadian_uranium_supply_demand_download_csv', lang)}
-                            </button>
-                            <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                                {getText('canadian_uranium_supply_demand_download_docx', lang)}
-                            </button>
-                        </div>
-                    </details>
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={tableRows}
+                        csvFilename={csvFilename}
+                        docx={{
+                            filename: docxFilename,
+                            title: exportTableTitle,
+                            titleAlign: 'center',
+                            columnWidths: [900, 1400, 1600, 1500, 2200, 1400],
+                            fontSize: 22,
+                        }}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                    />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

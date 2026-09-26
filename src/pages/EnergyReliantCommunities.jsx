@@ -1,10 +1,17 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
 
 const BAR_COLOR = '#9f346d';
 
@@ -45,7 +52,6 @@ const provinceCodes = ['bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl
 const filterProvinceKeys = ['ab', 'sk', 'nl', 'bc', 'qc', 'on', 'nb', 'mb', 'ns', 'pe', 'yt', 'nt', 'nu'];
 const locationKeys = ['remote', 'rural', 'urban'];
 const relianceKeys = ['high', 'significant', 'moderate'];
-const RELIANCE_ORDER = { high: 0, significant: 1, moderate: 2 };
 
 const DEMO_COMMUNITIES = [
     { id: 1, nameEn: 'Fort McMurray', nameFr: 'Fort McMurray', province: 'ab', lat: 56.73, lon: -111.38, location: 'remote', reliance: 'high' },
@@ -102,6 +108,27 @@ const toggleFilterValue = (value, setter) => {
     setter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
 };
 
+function getTabbables() {
+    return [...document.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )].filter((el) => {
+        if (el.getAttribute('aria-hidden') === 'true') return false;
+        if (el.closest('[aria-hidden="true"]')) return false;
+        const style = window.getComputedStyle(el);
+        if (style.visibility === 'hidden' || style.display === 'none') return false;
+        return el.getClientRects().length > 0;
+    });
+}
+
+function focusAdjacentTo(el, direction) {
+    if (!el) return;
+    const tabbables = getTabbables();
+    const index = tabbables.indexOf(el);
+    if (index < 0) return;
+    const next = tabbables[index + direction];
+    next?.focus();
+}
+
 const FILTER_DROPDOWN_WRAP = {
     position: 'relative',
     minWidth: '180px',
@@ -123,8 +150,31 @@ const FILTER_BUTTON = {
 };
 
 const EnergyReliantCommunitiesFilterDropdown = ({ label, filterValues, options, isOpen, setOpen, setFilter, closeOthers, lang }) => {
+    const reactId = useId().replace(/:/g, '');
+    const buttonId = `erc-filter-btn-${reactId}`;
+    const panelId = `erc-filter-panel-${reactId}`;
     const buttonRef = useRef(null);
+    const panelRef = useRef(null);
     const [panelStyle, setPanelStyle] = useState(null);
+    const [statusMessage, setStatusMessage] = useState('');
+
+    const allLabel = lang === 'en' ? 'All' : 'Tous';
+    const valueText = filterValues.length === 0
+        ? allLabel
+        : `${filterValues.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`;
+
+    const buttonAriaLabel = lang === 'en'
+        ? `${label} dropdown, ${valueText}`
+        : `Liste déroulante ${label}, ${valueText}`;
+
+    const announceCheckboxChange = useCallback((itemLabel, nextChecked) => {
+        const message = lang === 'en'
+            ? `${itemLabel} checkbox ${nextChecked ? 'checked' : 'unchecked'}`
+            : `${itemLabel} case à cocher ${nextChecked ? 'cochée' : 'décochée'}`;
+        // Retrigger live region even when the same option is toggled twice.
+        setStatusMessage('');
+        window.requestAnimationFrame(() => setStatusMessage(message));
+    }, [lang]);
 
     const updatePanelPosition = useCallback(() => {
         if (!buttonRef.current) return;
@@ -147,12 +197,22 @@ const EnergyReliantCommunitiesFilterDropdown = ({ label, filterValues, options, 
             border: '1px solid #ccc',
             borderRadius: '4px',
             zIndex: 10000,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
         });
     }, []);
 
+    const closePanel = useCallback((options = {}) => {
+        const { restoreFocus = true } = options;
+        setPanelStyle(null);
+        setOpen(false);
+        setStatusMessage('');
+        if (restoreFocus) {
+            requestAnimationFrame(() => buttonRef.current?.focus());
+        }
+    }, [setOpen]);
+
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) return undefined;
         updatePanelPosition();
         window.addEventListener('scroll', updatePanelPosition, true);
         window.addEventListener('resize', updatePanelPosition);
@@ -162,27 +222,122 @@ const EnergyReliantCommunitiesFilterDropdown = ({ label, filterValues, options, 
         };
     }, [isOpen, updatePanelPosition, options.length]);
 
+    // Panel is portaled to document.body — move focus into it and trap Tab/Escape.
+    useEffect(() => {
+        if (!isOpen || !panelStyle) return undefined;
+
+        const focusFirst = () => {
+            const first = panelRef.current?.querySelector('input[type="checkbox"]');
+            first?.focus();
+        };
+        const focusTimer = window.setTimeout(focusFirst, 0);
+
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                closePanel();
+                return;
+            }
+
+            // Native checkboxes toggle with Space; Enter is expected here for SR users.
+            if (event.key === 'Enter') {
+                const active = document.activeElement;
+                if (
+                    active instanceof HTMLInputElement
+                    && active.type === 'checkbox'
+                    && panelRef.current?.contains(active)
+                ) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    active.click();
+                }
+                return;
+            }
+
+            // Tab should leave the dropdown (unlike a modal dialog focus trap).
+            if (event.key === 'Tab' && panelRef.current) {
+                const focusables = [...panelRef.current.querySelectorAll('input[type="checkbox"]')];
+                if (!focusables.length) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                const onFirst = document.activeElement === first;
+                const onLast = document.activeElement === last;
+                if (!event.shiftKey && onLast) {
+                    event.preventDefault();
+                    closePanel({ restoreFocus: false });
+                    requestAnimationFrame(() => focusAdjacentTo(buttonRef.current, 1));
+                } else if (event.shiftKey && onFirst) {
+                    event.preventDefault();
+                    closePanel({ restoreFocus: true });
+                }
+            }
+        };
+
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => {
+            window.clearTimeout(focusTimer);
+            document.removeEventListener('keydown', onKeyDown, true);
+        };
+    }, [isOpen, panelStyle, closePanel]);
+
     const handleToggleOpen = () => {
         if (isOpen) {
-            setPanelStyle(null);
-            setOpen(false);
+            closePanel();
         } else {
             closeOthers();
             setOpen(true);
         }
     };
 
+    const handleButtonKeyDown = (event) => {
+        if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+            if (!isOpen && (event.key === 'ArrowDown')) {
+                event.preventDefault();
+                closeOthers();
+                setOpen(true);
+            }
+        }
+    };
+
+    const handleAllChange = () => {
+        setFilter([]);
+        announceCheckboxChange(allLabel, true);
+    };
+
+    const handleOptionChange = (opt) => {
+        const nextChecked = !filterValues.includes(opt.value);
+        toggleFilterValue(opt.value, setFilter);
+        announceCheckboxChange(opt.label, nextChecked);
+    };
+
     const panel = isOpen && panelStyle && typeof document !== 'undefined' ? createPortal(
-        <div className="energy-reliant-communities-filter-panel" style={panelStyle} role="listbox" aria-label={label}>
+        <div
+            ref={panelRef}
+            id={panelId}
+            className="energy-reliant-communities-filter-panel"
+            style={panelStyle}
+            role="group"
+            aria-label={label}
+        >
+            <div className="wb-inv" aria-live="assertive" aria-atomic="true">
+                {statusMessage}
+            </div>
             <label
                 style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', borderBottom: '2px solid #ddd', backgroundColor: '#f9f9f9' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0f0f0'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f9f9f9'; }}
             >
-                <input type="checkbox" checked={filterValues.length === 0} onChange={() => setFilter([])} style={{ marginRight: '8px' }} />
-                <span>{lang === 'en' ? 'All' : 'Tous'}</span>
+                <input
+                    type="checkbox"
+                    checked={filterValues.length === 0}
+                    onChange={handleAllChange}
+                    aria-label={allLabel}
+                    style={{ marginRight: '8px' }}
+                />
+                <span aria-hidden="true">{allLabel}</span>
             </label>
-            {options.map(opt => (
+            {options.map((opt) => (
                 <label
                     key={opt.value}
                     style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', fontSize: '11px', borderBottom: '1px solid #eee' }}
@@ -192,84 +347,47 @@ const EnergyReliantCommunitiesFilterDropdown = ({ label, filterValues, options, 
                     <input
                         type="checkbox"
                         checked={filterValues.includes(opt.value)}
-                        onChange={() => toggleFilterValue(opt.value, setFilter)}
+                        onChange={() => handleOptionChange(opt)}
+                        aria-label={opt.label}
                         style={{ marginRight: '8px' }}
                     />
-                    <span>{opt.label}</span>
+                    <span aria-hidden="true">{opt.label}</span>
                 </label>
             ))}
         </div>,
-        document.body
+        document.body,
     ) : null;
 
     return (
         <div className="energy-reliant-communities-filter-dropdown" style={FILTER_DROPDOWN_WRAP}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>{label}</label>
+            <label htmlFor={buttonId} style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                {label}
+            </label>
             <button
                 type="button"
+                id={buttonId}
                 ref={buttonRef}
+                aria-label={buttonAriaLabel}
                 aria-expanded={isOpen}
-                aria-haspopup="listbox"
+                aria-haspopup="dialog"
+                aria-controls={isOpen ? panelId : undefined}
                 onClick={handleToggleOpen}
+                onKeyDown={handleButtonKeyDown}
                 style={FILTER_BUTTON}
             >
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {filterValues.length === 0
-                        ? (lang === 'en' ? 'All' : 'Tous')
-                        : `${filterValues.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                <span aria-hidden="true" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {valueText}
                 </span>
-                <span style={{ marginLeft: '4px' }}>{isOpen ? '▲' : '▼'}</span>
+                <span aria-hidden="true" style={{ marginLeft: '4px' }}>{isOpen ? '▲' : '▼'}</span>
             </button>
             {panel}
         </div>
     );
 };
 
-const useTableScrollSync = (isOpen, windowWidth, topScrollRef, tableScrollRef) => {
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-            const topSpacer = topScroll.firstElementChild;
-            if (topSpacer) topSpacer.style.width = `${scrollWidth}px`;
-            topScroll.style.display = scrollWidth > containerWidth ? 'block' : 'none';
-            topScroll.style.opacity = scrollWidth > containerWidth ? '1' : '0';
-        };
-
-        const handleTopScroll = () => {
-            if (tableScroll.scrollLeft !== topScroll.scrollLeft) tableScroll.scrollLeft = topScroll.scrollLeft;
-        };
-        const handleTableScroll = () => {
-            if (topScroll.scrollLeft !== tableScroll.scrollLeft) topScroll.scrollLeft = tableScroll.scrollLeft;
-        };
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncScrollbars));
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        syncScrollbars();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isOpen, windowWidth, topScrollRef, tableScrollRef]);
-};
-
 const EnergyReliantCommunities = () => {
-    const { lang } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isBarTableOpen, setIsBarTableOpen] = useState(false);
-    const [isMapTableOpen, setIsMapTableOpen] = useState(false);
+    const { lang, layoutPadding } = useOutletContext();
+    const windowWidth = useWindowWidth();
     const [selectedBarPoints, setSelectedBarPoints] = useState(null);
     const [selectedMapIds, setSelectedMapIds] = useState(null);
 
@@ -281,31 +399,11 @@ const EnergyReliantCommunities = () => {
     const [communityDropdownOpen, setCommunityDropdownOpen] = useState(false);
     const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
     const [relianceDropdownOpen, setRelianceDropdownOpen] = useState(false);
-    const [mapSortColumn, setMapSortColumn] = useState('community');
-    const [mapSortDirection, setMapSortDirection] = useState('asc');
 
     const barChartRef = useRef(null);
     const mapChartRef = useRef(null);
-    const barTopScrollRef = useRef(null);
-    const barTableScrollRef = useRef(null);
-    const mapTopScrollRef = useRef(null);
-    const mapTableScrollRef = useRef(null);
     const barLastClickRef = useRef({ time: 0, pointIndex: null });
     const mapLastClickRef = useRef({ time: 0, pointIndex: null });
-
-    const MODEBAR_REMOVE_ALL = [
-        'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d',
-        'autoScale2d', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian',
-        'toggleSpikelines', 'toImage', 'resetGeo', 'hoverClosestGeo'
-    ];
-
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        return hex;
-    };
-
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     const getProvinceName = useCallback((key) => {
         const info = provinceInfo[key];
@@ -317,11 +415,12 @@ const EnergyReliantCommunities = () => {
     const getLocationLabel = useCallback((key) => getText(`energy_reliant_communities_location_${key}`, lang), [lang]);
     const getRelianceLabel = useCallback((key) => getText(`energy_reliant_communities_reliance_${key}`, lang), [lang]);
 
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    const barChartTitle = getText('energy_reliant_communities_bar_chart_title', lang);
+    const mapChartTitle = getText('energy_reliant_communities_map_title', lang);
+    const exportBarTitle = stripHtml(barChartTitle);
+    const exportMapTitle = stripHtml(mapChartTitle);
+    const barDownloadSlug = getText('energy_reliant_communities_bar_download_title', lang).replace(/\s+/g, '_');
+    const mapDownloadSlug = getText('energy_reliant_communities_map_download_title', lang).replace(/\s+/g, '_');
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -334,9 +433,6 @@ const EnergyReliantCommunities = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    useTableScrollSync(isBarTableOpen, windowWidth, barTopScrollRef, barTableScrollRef);
-    useTableScrollSync(isMapTableOpen, windowWidth, mapTopScrollRef, mapTableScrollRef);
 
     const filteredCommunities = useMemo(() => {
         return DEMO_COMMUNITIES.filter(c => {
@@ -355,88 +451,46 @@ const EnergyReliantCommunities = () => {
         return next.length === 0 ? null : next;
     }, [filteredCommunities, selectedMapIds]);
 
-    useEffect(() => {
-        [barChartRef, mapChartRef].forEach(ref => {
-            if (!ref?.current) return;
-            const plotContainer = ref.current;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach(svg => svg.setAttribute('aria-hidden', 'true'));
-            plotContainer.querySelectorAll('.modebar-btn').forEach(btn => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        });
-    }, [lang, selectedBarPoints, effectiveSelectedMapIds, provinceFilter, communityFilter, locationFilter, relianceFilter]);
-
-    const sortedMapTableData = useMemo(() => {
-        const sorted = [...filteredCommunities];
-        sorted.sort((a, b) => {
-            let valA;
-            let valB;
-
-            if (mapSortColumn === 'community') {
-                valA = getCommunityName(a).toLowerCase();
-                valB = getCommunityName(b).toLowerCase();
-            } else if (mapSortColumn === 'province') {
-                valA = getProvinceName(a.province).toLowerCase();
-                valB = getProvinceName(b.province).toLowerCase();
-            } else if (mapSortColumn === 'location') {
-                valA = getLocationLabel(a.location).toLowerCase();
-                valB = getLocationLabel(b.location).toLowerCase();
-            } else {
-                valA = RELIANCE_ORDER[a.reliance] ?? 99;
-                valB = RELIANCE_ORDER[b.reliance] ?? 99;
-            }
-
-            if (mapSortColumn === 'reliance') {
-                return mapSortDirection === 'asc' ? valA - valB : valB - valA;
-            }
-
-            const comparison = valA.localeCompare(valB);
-            return mapSortDirection === 'asc' ? comparison : -comparison;
-        });
-        return sorted;
-    }, [filteredCommunities, mapSortColumn, mapSortDirection, getCommunityName, getProvinceName, getLocationLabel]);
-
-    const handleMapTableSort = (column) => {
-        if (mapSortColumn === column) {
-            setMapSortDirection(mapSortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setMapSortColumn(column);
-            setMapSortDirection('asc');
-        }
-    };
-
-    const mapTableHeaderStyle = {
-        padding: '8px',
-        textAlign: 'left',
-        fontWeight: 'bold',
-        borderBottom: '2px solid #ccc',
-        border: '1px solid #ddd',
-        cursor: 'pointer',
-        userSelect: 'none'
-    };
-
-    const renderMapSortIndicator = (column) => (
-        <span style={{ marginLeft: '4px', opacity: mapSortColumn === column ? 1 : 0.3 }}>
-            {mapSortColumn === column ? (mapSortDirection === 'asc' ? '▲' : '▼') : '▲'}
-        </span>
-    );
+    
 
     const barLabels = useMemo(() => energy_reliant_communities_BAR_PROVINCES.map(p => getProvinceName(p.key)), [getProvinceName]);
     const barValues = useMemo(() => energy_reliant_communities_BAR_PROVINCES.map(p => p.count), []);
 
+    const barTableColumns = useMemo(() => [
+        { key: 'province', header: getText('energy_reliant_communities_table_province', lang), align: 'left' },
+        { key: 'count', header: getText('energy_reliant_communities_table_count', lang), align: 'num' },
+    ], [lang]);
+
+    const barTableRows = useMemo(() => (
+        energy_reliant_communities_BAR_PROVINCES.map((p) => ({
+            province: getProvinceName(p.key),
+            count: p.count,
+        }))
+    ), [getProvinceName]);
+
+    const mapTableColumns = useMemo(() => [
+        { key: 'community', header: getText('energy_reliant_communities_table_community', lang), align: 'left' },
+        { key: 'province', header: getText('energy_reliant_communities_table_province', lang), align: 'left' },
+        { key: 'location', header: getText('energy_reliant_communities_filter_location', lang), align: 'left' },
+        { key: 'reliance', header: getText('energy_reliant_communities_filter_reliance', lang), align: 'left' },
+    ], [lang]);
+
+    const mapTableRows = useMemo(() => {
+        const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
+        return [...filteredCommunities]
+            .sort((a, b) => getCommunityName(a).localeCompare(getCommunityName(b), locale))
+            .map((c) => ({
+                community: getCommunityName(c),
+                province: getProvinceName(c.province),
+                location: getLocationLabel(c.location),
+                reliance: getRelianceLabel(c.reliance),
+            }));
+    }, [filteredCommunities, getCommunityName, getProvinceName, getLocationLabel, getRelianceLabel, lang]);
+
     const barTrace = useMemo(() => {
         const hovertext = energy_reliant_communities_BAR_PROVINCES.map((p, i) => {
             const name = getProvinceName(p.key);
-            return `<b>${name}</b><br>${stripHtml(getText('energy_reliant_communities_bar_chart_title', lang))}: ${barValues[i]}`;
+            return `<b>${name}</b><br>${exportBarTitle}: ${barValues[i]}`;
         });
         const markerColor = selectedBarPoints === null
             ? BAR_COLOR
@@ -454,7 +508,7 @@ const EnergyReliantCommunities = () => {
             textposition: 'outside',
             textfont: { size: windowWidth <= 480 ? 16 : 20, color: '#666666', family: 'Arial, sans-serif' }
         };
-    }, [lang, barLabels, barValues, windowWidth, selectedBarPoints, getProvinceName]);
+    }, [exportBarTitle, barLabels, barValues, windowWidth, selectedBarPoints, getProvinceName]);
 
     const barPlotLayout = useMemo(() => ({
         barmode: 'overlay',
@@ -582,225 +636,45 @@ const EnergyReliantCommunities = () => {
         });
     };
 
-    const downloadChartWithTitle = async (chartRef, titleKey, filenameEn, filenameFr, height = 520) => {
-        const plotElement = chartRef?.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const title = stripHtml(getText(titleKey, lang));
-            const imgData = await window.Plotly.toImage(plotElement, { format: 'png', width: 1000, height, scale: 2 });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 50;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 35);
-                ctx.drawImage(img, 0, titleHeight);
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? filenameEn : filenameFr;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            };
-            img.src = imgData;
-        } catch (e) {
-            console.error(e);
-        }
-    };
+    const downloadBarChartWithTitle = useChartPngDownloader(
+        barChartRef,
+        () => ({
+        filename: `${barDownloadSlug}.png`,
+        title: exportBarTitle,
+        height: 520,
+    }),
+        [barDownloadSlug, exportBarTitle],
+    );
 
-    const downloadMapWithTitleAndLegend = async () => {
-        const plotElement = mapChartRef?.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const title = stripHtml(getText('energy_reliant_communities_map_title', lang));
-            const imgData = await window.Plotly.toImage(plotElement, { format: 'png', width: 1000, height: mapHeight, scale: 2 });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 50;
-                const legendHeight = 50;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 35);
-                ctx.drawImage(img, 0, titleHeight);
+    const downloadMapWithTitleAndLegend = useChartPngDownloader(
+        mapChartRef,
+        () => ({
+        filename: `${mapDownloadSlug}.png`,
+        title: exportMapTitle,
+        height: mapHeight,
+        legendItems: relianceKeys.map((key) => ({
+            label: getRelianceLabel(key),
+            color: RELIANCE_COLORS[key],
+        })),
+    }),
+        [RELIANCE_COLORS, exportMapTitle, getRelianceLabel, mapDownloadSlug, mapHeight, relianceKeys],
+    );
 
-                const legendItems = relianceKeys.map(key => ({
-                    color: RELIANCE_COLORS[key],
-                    label: getRelianceLabel(key)
-                }));
-                const legendY = titleHeight + img.height + 32;
-                ctx.font = '16px Arial';
-                const totalLegendWidth = legendItems.reduce((sum, item) => sum + ctx.measureText(item.label).width + 36, 0);
-                let legendX = (canvas.width - totalLegendWidth) / 2;
-                legendItems.forEach(item => {
-                    ctx.beginPath();
-                    ctx.arc(legendX + 7, legendY, 7, 0, Math.PI * 2);
-                    ctx.fillStyle = item.color;
-                    ctx.fill();
-                    ctx.fillStyle = '#333333';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(item.label, legendX + 20, legendY + 5);
-                    legendX += ctx.measureText(item.label).width + 36;
-                });
+    const barConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadBarChartWithTitle(gd),
+    });
 
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? 'energy_reliant_communities_map.png' : 'carte_communautes_dependantes_energie.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            };
-            img.src = imgData;
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const barConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        doubleClick: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE_ALL,
-        modeBarButtonsToAdd: [{
-            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: () => downloadChartWithTitle(barChartRef, 'energy_reliant_communities_bar_chart_title', 'energy_reliant_communities_by_province.png', 'communautes_dependantes_energie_par_province.png')
-        }]
-    };
-
-    const mapConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        doubleClick: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE_ALL,
-        modeBarButtonsToAdd: [{
-            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: () => downloadMapWithTitleAndLegend()
-        }]
-    };
-
-    const downloadBarCSV = () => {
-        const headers = [getText('energy_reliant_communities_table_province', lang), getText('energy_reliant_communities_table_count', lang)];
-        const rows = energy_reliant_communities_BAR_PROVINCES.map(p => [getProvinceName(p.key), p.count]);
-        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'energy_reliant_communities_by_province.csv' : 'communautes_dependantes_energie_par_province.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-
-    const downloadBarDocx = async () => {
-        const title = stripHtml(getText('energy_reliant_communities_title', lang));
-        const headerCells = [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('energy_reliant_communities_table_province', lang), bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' } }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('energy_reliant_communities_table_count', lang), bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' } })
-        ];
-        const dataRows = energy_reliant_communities_BAR_PROVINCES.map(p => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getProvinceName(p.key), size: 22 })], alignment: AlignmentType.LEFT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(p.count), size: 22 })], alignment: AlignmentType.CENTER })] })
-            ]
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [4500, 2500], rows: [new TableRow({ children: headerCells }), ...dataRows] })
-                ]
-            }]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'energy_reliant_communities_by_province.docx' : 'communautes_dependantes_energie_par_province.docx');
-    };
-
-    const downloadMapCSV = () => {
-        const headers = [
-            getText('energy_reliant_communities_table_community', lang),
-            getText('energy_reliant_communities_table_province', lang),
-            getText('energy_reliant_communities_filter_location', lang),
-            getText('energy_reliant_communities_filter_reliance', lang)
-        ];
-        const rows = sortedMapTableData.map(c => [
-            getCommunityName(c),
-            getProvinceName(c.province),
-            getLocationLabel(c.location),
-            getRelianceLabel(c.reliance)
-        ]);
-        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'energy_reliant_communities_map.csv' : 'carte_communautes_dependantes_energie.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-
-    const downloadMapDocx = async () => {
-        const title = stripHtml(getText('energy_reliant_communities_map_title', lang));
-        const headers = [
-            getText('energy_reliant_communities_table_community', lang),
-            getText('energy_reliant_communities_table_province', lang),
-            getText('energy_reliant_communities_filter_location', lang),
-            getText('energy_reliant_communities_filter_reliance', lang)
-        ];
-        const headerRow = new TableRow({
-            children: headers.map(h => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 20 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' }
-            }))
-        });
-        const dataRows = sortedMapTableData.map(c => new TableRow({
-            children: [
-                getCommunityName(c),
-                getProvinceName(c.province),
-                getLocationLabel(c.location),
-                getRelianceLabel(c.reliance)
-            ].map((text, i) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text, size: 18 })],
-                    alignment: i === 0 ? AlignmentType.LEFT : AlignmentType.CENTER
-                })]
-            }))
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [2800, 2200, 2000, 2200],
-                        rows: [headerRow, ...dataRows]
-                    })
-                ]
-            }]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'energy_reliant_communities_map.docx' : 'carte_communautes_dependantes_energie.docx');
-    };
+    const mapConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadMapWithTitleAndLegend(gd),
+    });
 
     const clearAllFilters = () => {
         setProvinceFilter([]);
         setCommunityFilter([]);
         setLocationFilter([]);
         setRelianceFilter([]);
-        setMapSortColumn('community');
-        setMapSortDirection('asc');
         setSelectedMapIds(null);
         setProvinceDropdownOpen(false);
         setCommunityDropdownOpen(false);
@@ -809,12 +683,15 @@ const EnergyReliantCommunities = () => {
     };
 
     const getBarChartSummary = () => {
-        const parts = energy_reliant_communities_BAR_PROVINCES.map((p, i) => `${getProvinceName(p.key)}: ${barValues[i]}`).join(', ');
-        return `${stripHtml(getText('energy_reliant_communities_bar_chart_title', lang))}. ${parts}.`;
+        const unit = lang === 'fr' ? 'pour cent' : 'percent';
+        const parts = energy_reliant_communities_BAR_PROVINCES.map(
+            (p, i) => `${getProvinceName(p.key)}: ${barValues[i]} ${unit}`,
+        ).join(', ');
+        return `${exportBarTitle}. ${parts}.`;
     };
 
     const getMapChartSummary = () => {
-        return `${stripHtml(getText('energy_reliant_communities_map_title', lang))}. ${filteredCommunities.length} ${lang === 'en' ? 'communities shown.' : 'communautés affichées.'}`;
+        return `${exportMapTitle}. ${filteredCommunities.length} ${lang === 'en' ? 'communities shown.' : 'communautés affichées.'}`;
     };
 
     const closeOtherFilterDropdowns = (except) => {
@@ -834,37 +711,25 @@ const EnergyReliantCommunities = () => {
     const locationOptions = useMemo(() => locationKeys.map(key => ({ value: key, label: getLocationLabel(key) })), [getLocationLabel]);
     const relianceOptions = useMemo(() => relianceKeys.map(key => ({ value: key, label: getRelianceLabel(key) })), [getRelianceLabel]);
 
+    const mapTableCaption = lang === 'en'
+        ? 'Energy reliant communities including community name, province, location type, and energy reliance level.'
+        : "Communautés dépendantes de l'énergie incluant le nom de la communauté, la province, le type d'emplacement et le niveau de dépendance à l'énergie.";
+
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-46"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-46 energy-reliant-communities page-chrome page-chrome--bleed"
             aria-labelledby="energy-reliant-communities-title"
-            style={{ backgroundColor: '#ffffff', overflow: 'visible' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
-.page-46 { width: 100%; overflow: visible !important; }
+.page-46.energy-reliant-communities {
+}
 .energy-reliant-communities-container { width: 100%; padding: 15px 0 40px 0; display: flex; flex-direction: column; box-sizing: border-box; overflow: visible; }
 .energy-reliant-communities-title {
-    font-family: 'Lato', sans-serif;
     font-size: 50px;
-    font-weight: bold;
     color: #a0346e;
     margin: 0 0 24px 0;
-    line-height: 1.2;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
-}
-.energy-reliant-communities-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .energy-reliant-communities-intro {
     font-family: 'Noto Sans', sans-serif;
@@ -874,29 +739,13 @@ const EnergyReliantCommunities = () => {
     margin-top: 0;
     margin-bottom: 20px;
 }
-.energy-reliant-communities-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-sizing: border-box;
-    overflow: visible;
-}
 .energy-reliant-communities-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
     margin: 0 0 15px 0;
-    text-align: center;
 }
 .energy-reliant-communities-map-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
     margin: 0 0 15px 0;
-    text-align: center;
 }
 .energy-reliant-communities-bar-chart { width: 100%; height: 420px; }
 .energy-reliant-communities-map-chart { width: 100%; overflow: hidden; position: relative; }
@@ -924,29 +773,10 @@ const EnergyReliantCommunities = () => {
     border-radius: 50%;
     flex-shrink: 0;
 }
-.energy-reliant-communities-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }
-.energy-reliant-communities-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.energy-reliant-communities-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.energy-reliant-communities-table-wrapper details > summary:hover,
-.energy-reliant-communities-table-wrapper button[type="button"]:hover,
+.energy-reliant-communities-table-wrapper { display: block; width: 100%; margin-top: 20px; }
 .energy-reliant-communities-chart-frame button[type="button"]:hover { background-color: #404040 !important; }
-.energy-reliant-communities-table-wrapper .table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; }
-.energy-reliant-communities-table-wrapper .table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
 @media (max-width: 768px) {
     .energy-reliant-communities-title { font-size: 37px; }
-    .energy-reliant-communities-chart-title, .energy-reliant-communities-map-title { font-size: 26px; }
     .energy-reliant-communities-intro { font-size: 18px; }
     .energy-reliant-communities-bar-chart { height: 380px; }
 }
@@ -954,7 +784,7 @@ const EnergyReliantCommunities = () => {
 
             <div className="energy-reliant-communities-container">
                 <header role="region" aria-label={getText('energy_reliant_communities_title', lang)}>
-                    <h1 id="energy-reliant-communities-title" className="energy-reliant-communities-title">{getText('energy_reliant_communities_title', lang)}</h1>
+                    <h1 id="energy-reliant-communities-title" className="energy-reliant-communities-title page-chrome-title">{getText('energy_reliant_communities_title', lang)}</h1>
                 </header>
 
                 <p className="energy-reliant-communities-intro" role="region" aria-label={stripHtml(getText('energy_reliant_communities_para1', lang))}>
@@ -964,21 +794,11 @@ const EnergyReliantCommunities = () => {
                     {getText('energy_reliant_communities_para2_part1', lang)}<strong>{getText('energy_reliant_communities_para2_bold1', lang)}</strong>{getText('energy_reliant_communities_para2_part2', lang)}<strong>{getText('energy_reliant_communities_para2_bold2', lang)}</strong>
                 </p>
 
-                <div className="energy-reliant-communities-chart-frame">
-                    <h2 className="energy-reliant-communities-chart-title">{getText('energy_reliant_communities_bar_chart_title', lang)}</h2>
+                <div className="energy-reliant-communities-chart-frame page-chrome-chart-frame">
+                    <h2 className="energy-reliant-communities-chart-title page-chrome-chart-title">{barChartTitle}</h2>
                     <div role="region" aria-label={getBarChartSummary()} tabIndex="0">
                         <figure ref={barChartRef} className="energy-reliant-communities-bar-chart" style={{ margin: 0, position: 'relative' }}>
-                            {selectedBarPoints !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedBarPoints(null)}
-                                        style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
-                                    >
-                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                    </button>
-                                </div>
-                            )}
+                            {selectedBarPoints !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedBarPoints(null)} />}
                             <Plot
                                 data={[barTrace]}
                                 layout={barPlotLayout}
@@ -990,61 +810,29 @@ const EnergyReliantCommunities = () => {
                         </figure>
                     </div>
                     <div className="energy-reliant-communities-table-wrapper">
-                        <details onToggle={(e) => setIsBarTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isBarTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isBarTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
-                            <div ref={barTopScrollRef} style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden', marginBottom: 0, display: windowWidth <= 768 ? 'none' : 'block' }} aria-hidden="true">
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div ref={barTableScrollRef} className="table-responsive" role="region" style={{ borderTop: 'none', padding: '15px' }} tabIndex="0">
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{getText('energy_reliant_communities_bar_chart_title', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd' }}>{getText('energy_reliant_communities_table_province', lang)}</th>
-                                            <th scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{getText('energy_reliant_communities_table_count', lang)}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {energy_reliant_communities_BAR_PROVINCES.map(p => (
-                                            <tr key={p.key}>
-                                                <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{getProvinceName(p.key)}</th>
-                                                <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{p.count}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                    <button type="button" onClick={downloadBarCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button type="button" onClick={downloadBarDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={barTableColumns}
+                            rows={barTableRows}
+                            csvFilename={`${barDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${barDownloadSlug}.docx`,
+                                title: exportBarTitle,
+                                titleAlign: 'center',
+                                columnWidths: [4500, 2500],
+                                fontSize: 22,
+                            }}
+                            caption={exportBarTitle}
+                            tableAriaLabel={exportBarTitle}
+                        />
                     </div>
                 </div>
 
-                <div className="energy-reliant-communities-chart-frame">
-                    <h2 className="energy-reliant-communities-map-title">{getText('energy_reliant_communities_map_title', lang)}</h2>
+                <div className="energy-reliant-communities-chart-frame page-chrome-chart-frame">
+                    <h2 className="energy-reliant-communities-map-title page-chrome-chart-title">{mapChartTitle}</h2>
                     <div role="region" aria-label={getMapChartSummary()} tabIndex="0">
                         <figure ref={mapChartRef} className="energy-reliant-communities-map-chart" style={{ margin: 0, position: 'relative', height: mapHeight, overflow: 'hidden' }}>
-                            {effectiveSelectedMapIds !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedMapIds(null)}
-                                        style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
-                                    >
-                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                    </button>
-                                </div>
-                            )}
+                            {effectiveSelectedMapIds !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedMapIds(null)} />}
                             <Plot
                                 data={plotlyMapData}
                                 layout={{
@@ -1151,86 +939,24 @@ const EnergyReliantCommunities = () => {
                 </div>
 
                 <div className="energy-reliant-communities-table-wrapper">
-                    <details onToggle={(e) => setIsMapTableOpen(e.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isMapTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isMapTableOpen ? '▼' : '▶'}</span>
-                            {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                        </summary>
-                        <div ref={mapTopScrollRef} style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden', marginBottom: 0, display: windowWidth <= 768 ? 'none' : 'block' }} aria-hidden="true">
-                            <div style={{ height: '20px' }} />
-                        </div>
-                        <div ref={mapTableScrollRef} className="table-responsive" role="region" style={{ borderTop: 'none', padding: '15px' }} tabIndex="0">
-                            <table className="table table-striped table-hover" style={{ fontSize: '11px' }}>
-                                <caption className="wb-inv">
-                                    {lang === 'en'
-                                        ? 'Energy reliant communities including community name, province, location type, and energy reliance level. Click column headers to sort.'
-                                        : "Communautés dépendantes de l'énergie incluant le nom de la communauté, la province, le type d'emplacement et le niveau de dépendance à l'énergie. Cliquez sur les en-têtes de colonne pour trier."}
-                                </caption>
-                                <thead>
-                                    <tr style={{ backgroundColor: '#e6e6e6' }}>
-                                        <th
-                                            scope="col"
-                                            style={mapTableHeaderStyle}
-                                            onClick={() => handleMapTableSort('community')}
-                                            aria-sort={mapSortColumn === 'community' ? (mapSortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                        >
-                                            {getText('energy_reliant_communities_table_community', lang)}
-                                            {renderMapSortIndicator('community')}
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            style={mapTableHeaderStyle}
-                                            onClick={() => handleMapTableSort('province')}
-                                            aria-sort={mapSortColumn === 'province' ? (mapSortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                        >
-                                            {getText('energy_reliant_communities_table_province', lang)}
-                                            {renderMapSortIndicator('province')}
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            style={mapTableHeaderStyle}
-                                            onClick={() => handleMapTableSort('location')}
-                                            aria-sort={mapSortColumn === 'location' ? (mapSortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                        >
-                                            {getText('energy_reliant_communities_filter_location', lang)}
-                                            {renderMapSortIndicator('location')}
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            style={mapTableHeaderStyle}
-                                            onClick={() => handleMapTableSort('reliance')}
-                                            aria-sort={mapSortColumn === 'reliance' ? (mapSortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                                        >
-                                            {getText('energy_reliant_communities_filter_reliance', lang)}
-                                            {renderMapSortIndicator('reliance')}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sortedMapTableData.map(c => (
-                                        <tr key={c.id}>
-                                            <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{getCommunityName(c)}</th>
-                                            <td style={{ padding: '8px', border: '1px solid #ddd' }}>{getProvinceName(c.province)}</td>
-                                            <td style={{ padding: '8px', border: '1px solid #ddd' }}>{getLocationLabel(c.location)}</td>
-                                            <td style={{ padding: '8px', border: '1px solid #ddd' }}>{getRelianceLabel(c.reliance)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                <button type="button" onClick={downloadMapCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                    {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                </button>
-                                <button type="button" onClick={downloadMapDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                    {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                </button>
-                            </div>
-                        </div>
-                    </details>
+                    <ChartDataTable
+                        lang={lang}
+                        columns={mapTableColumns}
+                        rows={mapTableRows}
+                        csvFilename={`${mapDownloadSlug}.csv`}
+                        docx={{
+                            filename: `${mapDownloadSlug}.docx`,
+                            title: exportMapTitle,
+                            titleAlign: 'center',
+                            columnWidths: [2800, 2200, 2000, 2200],
+                            fontSize: 18,
+                        }}
+                        caption={mapTableCaption}
+                        tableAriaLabel={mapTableCaption}
+                    />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

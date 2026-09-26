@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import provincialElectricityGenerationBgEn from '../assets/provincial_electricity_generation_bg.png';
 import provincialElectricityGenerationBgFr from '../assets/provincial_electricity_generation_bg_fr.png';
 import {
@@ -39,9 +40,19 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
     const sources = data?.sources || {};
 
     return (
-        <figure ref={figureRef} className="provincial-electricity-generation-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="provincial-electricity-generation-infographic-figure"
+            title={title || ariaLabel}
+            overview={ariaLabel}
+            src={bgImage}
+            imgClassName="provincial-electricity-generation-bg-image"
+        >
             <style>{`
 .provincial-electricity-generation-infographic-figure {
+    position: relative;
     display: block;
     width: 100%;
     max-width: none;
@@ -111,7 +122,6 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
             `}</style>
 
             <div className="provincial-electricity-generation-infographic-wrapper">
-                <img src={bgImage} alt="" className="provincial-electricity-generation-bg-image" draggable={false} aria-hidden="true" />
                 {title && (
                     <h1 id={titleId} className="provincial-electricity-generation-infographic-title-overlay">
                         {title}
@@ -163,8 +173,7 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
                     })}
                 </div>
             </div>
-            <figcaption className="wb-inv">{ariaLabel}</figcaption>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

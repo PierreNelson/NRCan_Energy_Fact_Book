@@ -1,9 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import HtmlLegend from '../components/HtmlLegend';
+import hexToRgba from '../utils/hexToRgba';
 import EnergyIntensityIndexInfographic from '../components/EnergyIntensityIndexInfographic';
 
 const energy_intensity_index_DATA = [
@@ -37,28 +47,19 @@ const COLORS = {
     perGdp: '#4b4c4d',
 };
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
 const EnergyIntensityIndex = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedPoints,
+        clear,
+        onPlotClick: handleChartClick,
+        opacityFor,
+    } = usePlotlySelection({ mode: 'points', traceCount: 2, windowWidth });
     const chartRef = useRef(null);
     const infographicRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     const formatIndex = (num) => {
         if (num == null || Number.isNaN(Number(num))) return '—';
@@ -68,7 +69,7 @@ const EnergyIntensityIndex = () => {
     const years = useMemo(() => energy_intensity_index_DATA.map((r) => r.year), []);
     const perCapitaValues = useMemo(() => energy_intensity_index_DATA.map((r) => r.perCapita), []);
     const perGdpValues = useMemo(() => energy_intensity_index_DATA.map((r) => r.perGdp), []);
-    const tableRowsDesc = useMemo(() => [...energy_intensity_index_DATA].reverse(), []);
+    const tableRows = useMemo(() => [...energy_intensity_index_DATA].reverse(), []);
 
     const legendPerCapita = getText('energy_intensity_index_legend_per_capita', lang);
     const legendPerGdp = getText('energy_intensity_index_legend_per_gdp', lang);
@@ -78,11 +79,30 @@ const EnergyIntensityIndex = () => {
     const chartDownloadSlug = getText('energy_intensity_index_download_title', lang).replace(/\s+/g, '_');
 
     const yAxisTitle = getText('energy_intensity_index_yaxis', lang);
-    const tableHeaders = [
-        getText('petroleum_employment_table_col_year', lang),
-        `${legendPerCapita} (${yAxisTitle})`,
-        `${legendPerGdp} (${yAxisTitle})`,
-    ];
+    const tableCaption = getText('energy_intensity_index_table_caption', lang);
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
+        { key: 'perCapita', header: `${legendPerCapita} (${yAxisTitle})`, align: 'num' },
+        { key: 'perGdp', header: `${legendPerGdp} (${yAxisTitle})`, align: 'num' },
+    ], [lang, legendPerCapita, legendPerGdp, yAxisTitle]);
+
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: legendPerCapita, values: perCapitaValues, format: formatIndex },
+                { name: legendPerGdp, values: perGdpValues, format: formatIndex },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: getText('energy_intensity_index_chart_aria', lang),
+            unitNote: lang === 'en' ? 'Values as index (2000=100)' : 'Valeurs en indice (2000=100)',
+            body,
+            lang,
+        });
+    };
 
     const xTickvals = years.filter((y) => y % 2 === 0);
     const yTickvals = [70, 80, 90, 100, 110];
@@ -96,255 +116,31 @@ const EnergyIntensityIndex = () => {
 
     const traceHasSelection = (traceIndex) => selectedPoints?.[traceIndex]?.length > 0;
 
-    const markerOpacityFor = (traceIndex, pointIndex) => {
-        if (selectedPoints === null) return 1;
-        return selectedPoints[traceIndex]?.includes(pointIndex) ? 1 : 0.3;
-    };
+    const markerOpacityFor = (traceIndex, pointIndex) => opacityFor(traceIndex, pointIndex);
 
     const lineColorFor = (traceIndex, baseColor) => {
         if (selectedPoints === null) return baseColor;
         return traceHasSelection(traceIndex) ? baseColor : hexToRgba(baseColor, 0.3);
     };
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints]);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 640,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(exportChartTitle, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = [
-                    { color: COLORS.perCapita, label: legendPerCapita },
-                    { color: COLORS.perGdp, label: legendPerGdp },
-                ];
-                ctx.font = '20px Arial';
-                ctx.textAlign = 'left';
-                const totalLegendWidth =
-                    legendItems.reduce((acc, item) => acc + ctx.measureText(item.label).width + 56, 0) + 40;
-                let x = (canvas.width - totalLegendWidth) / 2;
-                legendItems.forEach((item) => {
-                    ctx.strokeStyle = item.color;
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.moveTo(x, legendY);
-                    ctx.lineTo(x + 28, legendY);
-                    ctx.stroke();
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 36, legendY + 6);
-                    x += 36 + ctx.measureText(item.label).width + 40;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${chartDownloadSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const lines = [tableHeaders.map((h) => `"${h.replace(/"/g, '""')}"`).join(',')];
-        tableRowsDesc.forEach((row) => {
-            lines.push([row.year, row.perCapita, row.perGdp].join(','));
-        });
-        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${chartDownloadSlug}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (cell) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: cell, bold: true, size: 20 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = tableRowsDesc.map(
-            (row) =>
-                new TableRow({
-                    children: [row.year, formatIndex(row.perCapita), formatIndex(row.perGdp)].map((val, index) =>
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(val), size: 20 })],
-                                    alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                    ),
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: exportChartTitle, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 3600, 3600],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+            filename: `${chartDownloadSlug}.png`,
+            title: exportChartTitle,
+            height: 640,
+            legendItems: [
+                { label: legendPerCapita, color: COLORS.perCapita },
+                { label: legendPerGdp, color: COLORS.perGdp },
             ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${chartDownloadSlug}.docx`);
-    };
+        }),
+        [COLORS, chartDownloadSlug, exportChartTitle, legendPerCapita, legendPerGdp],
+    );
 
-    const handleChartClick = (event) => {
-        if (!event.points?.length) return;
-        const traceIndex = event.points[0].curveNumber;
-        const pointIndex = event.points[0].pointIndex;
-        if (traceIndex === undefined || traceIndex < 0 || traceIndex > 1) return;
-
-        if (windowWidth <= 768) {
-            const currentTime = Date.now();
-            const lastClick = lastClickRef.current;
-            const isSamePoint = traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex;
-            const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-            lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedPoints((prev) => {
-            if (prev === null) {
-                const next = [[], []];
-                next[traceIndex].push(pointIndex);
-                return next;
-            }
-            const isSelected = prev[traceIndex]?.includes(pointIndex);
-            if (isSelected) {
-                const next = prev.map((tracePoints, idx) =>
-                    idx === traceIndex ? tracePoints.filter((p) => p !== pointIndex) : [...tracePoints],
-                );
-                return next.every((arr) => arr.length === 0) ? null : next;
-            }
-            return prev.map((tracePoints, idx) => (idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]));
-        });
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const perCapitaHover = years.map(
         (y, i) => `<b>${legendPerCapita}</b><br>${y}: ${formatIndex(perCapitaValues[i])}<extra></extra>`,
@@ -354,21 +150,14 @@ const EnergyIntensityIndex = () => {
     );
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-55 energy-intensity-index-intensity-index"
-            role="main"
+            className="page-content page-55 energy-intensity-index-intensity-index page-chrome page-chrome--bleed"
             aria-labelledby="energy-intensity-index-chart-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-55.energy-intensity-index-intensity-index {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .energy-intensity-index-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-intensity-index-infographic-section {
@@ -378,19 +167,10 @@ const EnergyIntensityIndex = () => {
     padding: 0;
 }
 .energy-intensity-index-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-top: 8px;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .energy-intensity-index-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 12px 0;
     text-transform: none;
 }
@@ -402,104 +182,34 @@ const EnergyIntensityIndex = () => {
 }
 .energy-intensity-index-chart > div { width: 100%; height: 100%; }
 .energy-intensity-index-legend {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
     gap: 18px 28px;
     margin-top: 12px;
-    font-family: Arial, sans-serif;
     font-size: 14px;
     color: var(--gc-text);
 }
-.energy-intensity-index-legend-item { display: inline-flex; align-items: center; gap: 8px; }
-.energy-intensity-index-legend-line { width: 28px; height: 0; border-top: 3px solid; display: inline-block; }
 .energy-intensity-index-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.energy-intensity-index-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.energy-intensity-index-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.energy-intensity-index-table-wrapper details > summary:hover,
-.energy-intensity-index-chart-frame button[type="button"]:hover { background-color: #404040 !important; }
-.energy-intensity-index-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.energy-intensity-index-table-scrollbar > div { height: 20px; }
-.energy-intensity-index-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    padding: 15px;
-    box-sizing: border-box;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.energy-intensity-index-table-responsive::-webkit-scrollbar { display: none; }
-.energy-intensity-index-table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-.energy-intensity-index-table-responsive th,
-.energy-intensity-index-table-responsive td {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    font-family: Arial, sans-serif;
-    color: var(--gc-text);
-    white-space: nowrap;
-}
-.energy-intensity-index-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.energy-intensity-index-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
-.energy-intensity-index-download-buttons button:hover { background: #404040 !important; }
-@media (max-width: 768px) {
-    .energy-intensity-index-chart-title { font-size: 26px; }
-}
 @media (max-width: 480px) {
     .energy-intensity-index-chart { height: 320px; }
 }
             `}</style>
 
             <div className="energy-intensity-index-inner">
-                <div className="energy-intensity-index-chart-frame">
-                    <h2 id="energy-intensity-index-chart-title" className="energy-intensity-index-chart-title">{chartTitle}</h2>
+                <div className="energy-intensity-index-chart-frame page-chrome-chart-frame">
+                    <h2
+                        id="energy-intensity-index-chart-title"
+                        className="energy-intensity-index-chart-title page-chrome-chart-title"
+                    >
+                        {chartTitle}
+                    </h2>
 
-                    {selectedPoints !== null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedPoints(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
-                    )}
+                    {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
 
                     <figure ref={chartRef} style={{ margin: 0 }}>
-                        <div role="region" aria-label={getText('energy_intensity_index_chart_aria', lang)} tabIndex="0">
+                        <div
+                            role="region"
+                            aria-label={`${exportChartTitle}. ${getChartSummary()}`}
+                            tabIndex="0"
+                        >
                             <Plot
                                 key={`energy-intensity-index-${selectedPoints ? `${selectedPoints[0].join('-')}_${selectedPoints[1].join('-')}` : 'all'}-${plotHeight}`}
                                 data={[
@@ -575,34 +285,7 @@ const EnergyIntensityIndex = () => {
                                         automargin: true,
                                     },
                                 }}
-                                config={{
-                                    displayModeBar: true,
-                                    displaylogo: false,
-                                    responsive: true,
-                                    scrollZoom: false,
-                                    modeBarButtonsToRemove: [
-                                        'pan2d',
-                                        'select2d',
-                                        'lasso2d',
-                                        'zoom2d',
-                                        'zoomIn2d',
-                                        'zoomOut2d',
-                                        'autoScale2d',
-                                        'resetScale2d',
-                                        'toImage',
-                                    ],
-                                    modeBarButtonsToAdd: [
-                                        {
-                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                            },
-                                            click: (gd) => downloadChartWithTitle(gd),
-                                        },
-                                    ],
-                                }}
+                                config={plotConfig}
                                 className="energy-intensity-index-chart"
                                 useResizeHandler
                                 onClick={handleChartClick}
@@ -610,73 +293,36 @@ const EnergyIntensityIndex = () => {
                         </div>
                     </figure>
 
-                    <div className="energy-intensity-index-legend" aria-hidden="true">
-                        <div className="energy-intensity-index-legend-item">
-                            <span className="energy-intensity-index-legend-line" style={{ borderColor: COLORS.perCapita }} />
-                            <span>{legendPerCapita}</span>
-                        </div>
-                        <div className="energy-intensity-index-legend-item">
-                            <span className="energy-intensity-index-legend-line" style={{ borderColor: COLORS.perGdp }} />
-                            <span>{legendPerGdp}</span>
-                        </div>
-                    </div>
+                    <HtmlLegend
+                        className="energy-intensity-index-legend"
+                        variant="line"
+                        itemClassName="energy-intensity-index-legend-item"
+                        markerClassName="energy-intensity-index-legend-line"
+                        items={[
+                            { label: legendPerCapita, color: COLORS.perCapita },
+                            { label: legendPerGdp, color: COLORS.perGdp },
+                        ]}
+                    />
 
                     <div className="energy-intensity-index-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={topScrollRef} className="energy-intensity-index-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                            <div ref={tableScrollRef} className="energy-intensity-index-table-responsive" role="region" tabIndex="0">
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{getText('energy_intensity_index_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            {tableHeaders.map((hdr) => (
-                                                <th
-                                                    key={hdr}
-                                                    scope="col"
-                                                    style={{
-                                                        fontWeight: 'bold',
-                                                        textAlign: hdr === tableHeaders[0] ? 'left' : 'center',
-                                                    }}
-                                                >
-                                                    {hdr}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tableRowsDesc.map((row) => (
-                                            <tr key={row.year}>
-                                                <th scope="row" style={{ fontWeight: 'bold' }}>{row.year}</th>
-                                                <td style={{ textAlign: 'center' }}>{formatIndex(row.perCapita)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatIndex(row.perGdp)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <div className="energy-intensity-index-download-buttons">
-                                    <button type="button" onClick={downloadTableAsCSV}>
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button type="button" onClick={downloadTableAsDocx}>
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                            <div ref={bottomScrollRef} className="energy-intensity-index-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [900, 3600, 3600],
+                                fontSize: 20,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatIndex(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
@@ -689,7 +335,7 @@ const EnergyIntensityIndex = () => {
                     />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

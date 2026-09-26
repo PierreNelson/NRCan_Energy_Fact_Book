@@ -1,217 +1,123 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import CleanPowerLowCarbonOverview from '../pages/CleanPowerLowCarbonOverview';
-import CleanTechnologyEconomy from '../pages/CleanTechnologyEconomy';
-import EnvironmentalCleanTech from '../pages/EnvironmentalCleanTech';
-import CleantechCompaniesByRegion from '../pages/CleantechCompaniesByRegion';
-import CleantechCompaniesByIndustry from '../pages/CleantechCompaniesByIndustry';
-import ElectricityInternationalContext from '../pages/ElectricityInternationalContext';
-import ElectricityTrade from '../pages/ElectricityTrade';
-import CanadianElectricityGeneration from '../pages/CanadianElectricityGeneration';
-import ProvincialElectricityGeneration from '../pages/ProvincialElectricityGeneration';
-import ElectricalEnergyUse from '../pages/ElectricalEnergyUse';
-import ElectricityPricesMap from '../pages/ElectricityPricesMap';
-import WindSolarElectricityGrowth from '../pages/WindSolarElectricityGrowth';
-import ElectricityGhgSpotlight from '../pages/ElectricityGhgSpotlight';
-import RenewableEnergyInternational from '../pages/RenewableEnergyInternational';
-import CanadianRenewableEnergyProduction from '../pages/CanadianRenewableEnergyProduction';
-import RenewableElectricityCapacity from '../pages/RenewableElectricityCapacity';
-import Hydroelectricity from '../pages/Hydroelectricity';
-import HydroelectricCapacity from '../pages/HydroelectricCapacity';
-import Biomass from '../pages/Biomass';
-import SolidBiofuelsProduction from '../pages/SolidBiofuelsProduction';
-import WorldWindPower from '../pages/WorldWindPower';
-import CanadianWindPower from '../pages/CanadianWindPower';
-import WindProjectsMap from '../pages/WindProjectsMap';
-import WorldSolarPower from '../pages/WorldSolarPower';
-import SolarPvInCanada from '../pages/SolarPvInCanada';
-import LargestSolarProjects from '../pages/LargestSolarProjects';
-import UraniumInternational from '../pages/UraniumInternational';
-import NuclearPower from '../pages/NuclearPower';
-import CanadianUraniumSupplyDemand from '../pages/CanadianUraniumSupplyDemand';
-import NuclearFuelCycle from '../pages/NuclearFuelCycle';
-import CanduNuclearReactors from '../pages/CanduNuclearReactors';
-import NuclearPowerPlantsUraniumPrices from '../pages/NuclearPowerPlantsUraniumPrices';
-import BiofuelsTransportation from '../pages/BiofuelsTransportation';
-import WorldBiofuelsProduction from '../pages/WorldBiofuelsProduction';
-import CanadianBiofuelProduction from '../pages/CanadianBiofuelProduction';
-import BiofuelProductionCapacity from '../pages/BiofuelProductionCapacity';
-import TransportationFuelMix from '../pages/TransportationFuelMix';
-import EvSalesRegistrations from '../pages/EvSalesRegistrations';
-import TransportationGhgSpotlight from '../pages/TransportationGhgSpotlight';
-import ElectricVehicleCharging from '../pages/ElectricVehicleCharging';
-import PublicEvChargingStations from '../pages/PublicEvChargingStations';
-import Hydrogen from '../pages/Hydrogen';
-import GlobalHydrogenProductionDemand from '../pages/GlobalHydrogenProductionDemand';
-import HydrogenIndustry from '../pages/HydrogenIndustry';
+import React from 'react';
+import { lazyWithPreload } from '../utils/lazyWithPreload';
+import { useOutletContext } from 'react-router-dom';
+import ActivePageSection from './ActivePageSection';
+
+const CleanPowerLowCarbonOverview = lazyWithPreload(() => import('../pages/CleanPowerLowCarbonOverview'));
+const CleanTechnologyEconomy = lazyWithPreload(() => import('../pages/CleanTechnologyEconomy'));
+const EnvironmentalCleanTech = lazyWithPreload(() => import('../pages/EnvironmentalCleanTech'));
+const CleantechCompaniesByRegion = lazyWithPreload(() => import('../pages/CleantechCompaniesByRegion'));
+const CleantechCompaniesByIndustry = lazyWithPreload(() => import('../pages/CleantechCompaniesByIndustry'));
+const ElectricityInternationalContext = lazyWithPreload(() => import('../pages/ElectricityInternationalContext'));
+const ElectricityTrade = lazyWithPreload(() => import('../pages/ElectricityTrade'));
+const CanadianElectricityGeneration = lazyWithPreload(() => import('../pages/CanadianElectricityGeneration'));
+const ProvincialElectricityGeneration = lazyWithPreload(() => import('../pages/ProvincialElectricityGeneration'));
+const ElectricalEnergyUse = lazyWithPreload(() => import('../pages/ElectricalEnergyUse'));
+const ElectricityPricesMap = lazyWithPreload(() => import('../pages/ElectricityPricesMap'));
+const WindSolarElectricityGrowth = lazyWithPreload(() => import('../pages/WindSolarElectricityGrowth'));
+const ElectricityGhgSpotlight = lazyWithPreload(() => import('../pages/ElectricityGhgSpotlight'));
+const RenewableEnergyInternational = lazyWithPreload(() => import('../pages/RenewableEnergyInternational'));
+const CanadianRenewableEnergyProduction = lazyWithPreload(() => import('../pages/CanadianRenewableEnergyProduction'));
+const RenewableElectricityCapacity = lazyWithPreload(() => import('../pages/RenewableElectricityCapacity'));
+const Hydroelectricity = lazyWithPreload(() => import('../pages/Hydroelectricity'));
+const HydroelectricCapacity = lazyWithPreload(() => import('../pages/HydroelectricCapacity'));
+const Biomass = lazyWithPreload(() => import('../pages/Biomass'));
+const SolidBiofuelsProduction = lazyWithPreload(() => import('../pages/SolidBiofuelsProduction'));
+const WorldWindPower = lazyWithPreload(() => import('../pages/WorldWindPower'));
+const CanadianWindPower = lazyWithPreload(() => import('../pages/CanadianWindPower'));
+const WindProjectsMap = lazyWithPreload(() => import('../pages/WindProjectsMap'));
+const WorldSolarPower = lazyWithPreload(() => import('../pages/WorldSolarPower'));
+const SolarPvInCanada = lazyWithPreload(() => import('../pages/SolarPvInCanada'));
+const LargestSolarProjects = lazyWithPreload(() => import('../pages/LargestSolarProjects'));
+const UraniumInternational = lazyWithPreload(() => import('../pages/UraniumInternational'));
+const NuclearPower = lazyWithPreload(() => import('../pages/NuclearPower'));
+const CanadianUraniumSupplyDemand = lazyWithPreload(() => import('../pages/CanadianUraniumSupplyDemand'));
+const NuclearFuelCycle = lazyWithPreload(() => import('../pages/NuclearFuelCycle'));
+const CanduNuclearReactors = lazyWithPreload(() => import('../pages/CanduNuclearReactors'));
+const NuclearPowerPlantsUraniumPrices = lazyWithPreload(() => import('../pages/NuclearPowerPlantsUraniumPrices'));
+const BiofuelsTransportation = lazyWithPreload(() => import('../pages/BiofuelsTransportation'));
+const WorldBiofuelsProduction = lazyWithPreload(() => import('../pages/WorldBiofuelsProduction'));
+const CanadianBiofuelProduction = lazyWithPreload(() => import('../pages/CanadianBiofuelProduction'));
+const BiofuelProductionCapacity = lazyWithPreload(() => import('../pages/BiofuelProductionCapacity'));
+const TransportationFuelMix = lazyWithPreload(() => import('../pages/TransportationFuelMix'));
+const EvSalesRegistrations = lazyWithPreload(() => import('../pages/EvSalesRegistrations'));
+const TransportationGhgSpotlight = lazyWithPreload(() => import('../pages/TransportationGhgSpotlight'));
+const ElectricVehicleCharging = lazyWithPreload(() => import('../pages/ElectricVehicleCharging'));
+const PublicEvChargingStations = lazyWithPreload(() => import('../pages/PublicEvChargingStations'));
+const Hydrogen = lazyWithPreload(() => import('../pages/Hydrogen'));
+const GlobalHydrogenProductionDemand = lazyWithPreload(() => import('../pages/GlobalHydrogenProductionDemand'));
+const HydrogenIndustry = lazyWithPreload(() => import('../pages/HydrogenIndustry'));
+
+const PAGES = [
+  { id: 'clean-power-low-carbon-overview', Component: CleanPowerLowCarbonOverview },
+  { id: 'clean-technology-economy', Component: CleanTechnologyEconomy },
+  { id: 'environmental-clean-technology', Component: EnvironmentalCleanTech },
+  { id: 'cleantech-companies', Component: CleantechCompaniesByRegion },
+  { id: 'cleantech-companies-industry', Component: CleantechCompaniesByIndustry },
+  { id: 'electricity-international-context', Component: ElectricityInternationalContext },
+  { id: 'electricity-trade-us', Component: ElectricityTrade },
+  { id: 'canadian-electricity-generation', Component: CanadianElectricityGeneration },
+  { id: 'provincial-electricity-generation', Component: ProvincialElectricityGeneration },
+  { id: 'electricity-energy-use', Component: ElectricalEnergyUse },
+  { id: 'electricity-prices', Component: ElectricityPricesMap,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'wind-solar-electricity-growth', Component: WindSolarElectricityGrowth },
+  { id: 'electricity-ghg-spotlight', Component: ElectricityGhgSpotlight },
+  { id: 'renewable-energy-international', Component: RenewableEnergyInternational,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'canadian-renewable-energy-production', Component: CanadianRenewableEnergyProduction,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'renewable-electricity-capacity', Component: RenewableElectricityCapacity,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'hydroelectricity', Component: Hydroelectricity,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'major-hydro-facilities', Component: HydroelectricCapacity,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'biomass', Component: Biomass },
+  { id: 'solid-biofuels', Component: SolidBiofuelsProduction },
+  { id: 'world-wind-power', Component: WorldWindPower },
+  { id: 'wind-power-canada', Component: CanadianWindPower },
+  { id: 'wind-capacity', Component: WindProjectsMap },
+  { id: 'world-solar-pv', Component: WorldSolarPower },
+  { id: 'solar-pv-canada', Component: SolarPvInCanada },
+  { id: 'largest-solar-projects', Component: LargestSolarProjects },
+  { id: 'uranium-international', Component: UraniumInternational },
+  { id: 'nuclear-power', Component: NuclearPower },
+  { id: 'canadian-uranium-supply-demand', Component: CanadianUraniumSupplyDemand },
+  { id: 'nuclear-fuel-cycle', Component: NuclearFuelCycle },
+  { id: 'candu-nuclear-reactors', Component: CanduNuclearReactors },
+  { id: 'nuclear-power-plants-uranium-prices', Component: NuclearPowerPlantsUraniumPrices },
+  { id: 'biofuels-transportation', Component: BiofuelsTransportation,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'world-biofuels-production', Component: WorldBiofuelsProduction },
+  { id: 'canadian-biofuel-production', Component: CanadianBiofuelProduction },
+  { id: 'biofuel-production-capacity', Component: BiofuelProductionCapacity },
+  { id: 'transportation-fuel-mix', Component: TransportationFuelMix },
+  { id: 'ev-sales', Component: EvSalesRegistrations },
+  { id: 'transportation-ghg-spotlight', Component: TransportationGhgSpotlight },
+  { id: 'electric-vehicle-charging', Component: ElectricVehicleCharging },
+  { id: 'public-ev-charging-stations', Component: PublicEvChargingStations },
+  { id: 'hydrogen', Component: Hydrogen },
+  { id: 'global-hydrogen-production-demand', Component: GlobalHydrogenProductionDemand },
+  { id: 'hydrogen-industry', Component: HydrogenIndustry }
+];
+
+const TOPIC_ANCHORS = [
+  'clean-technology-economy',
+  'renewable-energy-international',
+  'biofuels-transportation',
+];
 
 const SectionFive = () => {
-    const location = useLocation();
-
-    useEffect(() => {
-        if (!location.hash) {
-            window.scrollTo(0, 0);
-            return undefined;
-        }
-
-        const id = location.hash.replace('#', '');
-        let attempts = 0;
-        let timerId = null;
-
-        const scrollToTarget = () => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                return;
-            }
-            if (attempts < 30) {
-                attempts += 1;
-                timerId = window.setTimeout(scrollToTarget, 150);
-            }
-        };
-
-        timerId = window.setTimeout(scrollToTarget, 100);
-        return () => {
-            if (timerId) window.clearTimeout(timerId);
-        };
-    }, [location.pathname, location.hash]);
-
-    return (
-        <div className="section-five-container stacked-section-container">
-            <div id="clean-power-low-carbon-overview" className="stacked-page-wrapper">
-                <CleanPowerLowCarbonOverview />
-            </div>
-            <div id="clean-technology-economy" className="stacked-page-wrapper">
-                <CleanTechnologyEconomy />
-            </div>
-            <div id="environmental-clean-technology" className="stacked-page-wrapper">
-                <EnvironmentalCleanTech />
-            </div>
-            <div id="cleantech-companies" className="stacked-page-wrapper">
-                <CleantechCompaniesByRegion />
-            </div>
-            <div id="cleantech-companies-industry" className="stacked-page-wrapper">
-                <CleantechCompaniesByIndustry />
-            </div>
-            <div id="electricity-international-context" className="stacked-page-wrapper">
-                <ElectricityInternationalContext />
-            </div>
-            <div id="electricity-trade-us" className="stacked-page-wrapper">
-                <ElectricityTrade />
-            </div>
-            <div id="canadian-electricity-generation" className="stacked-page-wrapper">
-                <CanadianElectricityGeneration />
-            </div>
-            <div id="provincial-electricity-generation" className="stacked-page-wrapper">
-                <ProvincialElectricityGeneration />
-            </div>
-            <div id="electricity-energy-use" className="stacked-page-wrapper">
-                <ElectricalEnergyUse />
-            </div>
-            <div id="electricity-prices" className="stacked-page-wrapper page-with-title-divider">
-                <ElectricityPricesMap />
-            </div>
-            <div id="wind-solar-electricity-growth" className="stacked-page-wrapper">
-                <WindSolarElectricityGrowth />
-            </div>
-            <div id="electricity-ghg-spotlight" className="stacked-page-wrapper">
-                <ElectricityGhgSpotlight />
-            </div>
-            <div id="renewable-energy-international" className="stacked-page-wrapper page-with-title-divider">
-                <RenewableEnergyInternational />
-            </div>
-            <div id="canadian-renewable-energy-production" className="stacked-page-wrapper page-with-title-divider">
-                <CanadianRenewableEnergyProduction />
-            </div>
-            <div id="renewable-electricity-capacity" className="stacked-page-wrapper page-with-title-divider">
-                <RenewableElectricityCapacity />
-            </div>
-            <div id="hydroelectricity" className="stacked-page-wrapper page-with-title-divider">
-                <Hydroelectricity />
-            </div>
-            <div id="major-hydro-facilities" className="stacked-page-wrapper page-with-title-divider">
-                <HydroelectricCapacity />
-            </div>
-            <div id="biomass" className="stacked-page-wrapper">
-                <Biomass />
-            </div>
-            <div id="solid-biofuels" className="stacked-page-wrapper">
-                <SolidBiofuelsProduction />
-            </div>
-            <div id="world-wind-power" className="stacked-page-wrapper">
-                <WorldWindPower />
-            </div>
-            <div id="wind-power-canada" className="stacked-page-wrapper">
-                <CanadianWindPower />
-            </div>
-            <div id="wind-capacity" className="stacked-page-wrapper">
-                <WindProjectsMap />
-            </div>
-            <div id="world-solar-pv" className="stacked-page-wrapper">
-                <WorldSolarPower />
-            </div>
-            <div id="solar-pv-canada" className="stacked-page-wrapper">
-                <SolarPvInCanada />
-            </div>
-            <div id="largest-solar-projects" className="stacked-page-wrapper">
-                <LargestSolarProjects />
-            </div>
-            <div id="uranium-international" className="stacked-page-wrapper">
-                <UraniumInternational />
-            </div>
-            <div id="nuclear-power" className="stacked-page-wrapper">
-                <NuclearPower />
-            </div>
-            <div id="canadian-uranium-supply-demand" className="stacked-page-wrapper">
-                <CanadianUraniumSupplyDemand />
-            </div>
-            <div id="nuclear-fuel-cycle" className="stacked-page-wrapper">
-                <NuclearFuelCycle />
-            </div>
-            <div id="candu-nuclear-reactors" className="stacked-page-wrapper">
-                <CanduNuclearReactors />
-            </div>
-            <div id="nuclear-power-plants-uranium-prices" className="stacked-page-wrapper">
-                <NuclearPowerPlantsUraniumPrices />
-            </div>
-            <div id="biofuels-transportation" className="stacked-page-wrapper page-with-title-divider">
-                <BiofuelsTransportation />
-            </div>
-            <div id="world-biofuels-production" className="stacked-page-wrapper">
-                <WorldBiofuelsProduction />
-            </div>
-            <div id="canadian-biofuel-production" className="stacked-page-wrapper">
-                <CanadianBiofuelProduction />
-            </div>
-            <div id="biofuel-production-capacity" className="stacked-page-wrapper">
-                <BiofuelProductionCapacity />
-            </div>
-            <div id="transportation-fuel-mix" className="stacked-page-wrapper">
-                <TransportationFuelMix />
-            </div>
-            <div id="ev-sales" className="stacked-page-wrapper">
-                <EvSalesRegistrations />
-            </div>
-            <div id="transportation-ghg-spotlight" className="stacked-page-wrapper">
-                <TransportationGhgSpotlight />
-            </div>
-            <div id="electric-vehicle-charging" className="stacked-page-wrapper">
-                <ElectricVehicleCharging />
-            </div>
-            <div id="public-ev-charging-stations" className="stacked-page-wrapper">
-                <PublicEvChargingStations />
-            </div>
-            <div id="hydrogen" className="stacked-page-wrapper">
-                <Hydrogen />
-            </div>
-            <div id="global-hydrogen-production-demand" className="stacked-page-wrapper">
-                <GlobalHydrogenProductionDemand />
-            </div>
-            <div id="hydrogen-industry" className="stacked-page-wrapper">
-                <HydrogenIndustry />
-            </div>
-        </div>
-    );
+  const { lang = 'en' } = useOutletContext() || {};
+  return (
+    <ActivePageSection
+      sectionPath="/section-5"
+      pages={PAGES}
+      topicAnchors={TOPIC_ANCHORS}
+      lang={lang}
+    />
+  );
 };
 
 export default SectionFive;

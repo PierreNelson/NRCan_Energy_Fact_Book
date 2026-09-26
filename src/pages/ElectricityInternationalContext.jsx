@@ -1,8 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import YearSelect from '../components/YearSelect';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 
 const CANADA_CAPSULE = '#819476';
 
@@ -138,8 +142,6 @@ const pctForCountry = (items, key) => {
 
 const pctForProductionCanada = (bundle) => Math.round(bundle.canada.pct);
 
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
 const drawRoundedRect = (ctx, x, y, w, h, r) => {
     const radius = Math.min(r, w / 2, h / 2);
     ctx.beginPath();
@@ -244,21 +246,6 @@ const exportCapsuleInfographicPng = ({ title, rows, filename }) => {
 const ElectricityInternationalContext = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(YEARS_DESC[0]);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpenProd, setIsTableOpenProd] = useState(false);
-    const [isTableOpenExp, setIsTableOpenExp] = useState(false);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
-    const prodDetailsRef = useRef(null);
-    const expDetailsRef = useRef(null);
-    const prodTopScrollRef = useRef(null);
-    const prodTableScrollRef = useRef(null);
-    const prodBottomScrollRef = useRef(null);
-    const expTopScrollRef = useRef(null);
-    const expTableScrollRef = useRef(null);
-    const expBottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const yearBundle = DATA_BY_YEAR[year] || DATA_BY_YEAR[YEARS_DESC[0]];
@@ -302,6 +289,11 @@ const ElectricityInternationalContext = () => {
     const productionGraphicTitle = `${stripHtml(getText('electricity_international_context_production_label', lang))} \u2013 ${formatTwh(production.total)} ${getText('electricity_international_context_unit', lang)} (${year})`;
     const exportsGraphicTitle = `${stripHtml(getText('electricity_international_context_exports_label', lang))} \u2013 ${formatTwh(exportsBlock.total)} ${getText('electricity_international_context_unit', lang)} (${year})`;
 
+    const productionTableTitle = `${stripHtml(getText('electricity_international_context_production_label', lang))} (${yearSpanLabel})`;
+    const exportsTableTitle = `${stripHtml(getText('electricity_international_context_exports_label', lang))} (${yearSpanLabel})`;
+    const productionCaption = getText('electricity_international_context_table_caption_production', lang);
+    const exportsCaption = getText('electricity_international_context_table_caption_exports', lang);
+
     const productionAria =
         lang === 'en'
             ? `World electricity production ranking for ${year}: ${productionRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}. Rank ${production.canada.rank}, ${electricityInternationalContextCountryLabel('canada', lang)}, ${Math.round(production.canada.pct)} percent.`
@@ -312,99 +304,52 @@ const ElectricityInternationalContext = () => {
             ? `World electricity exports ranking for ${year}: ${exportRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}.`
             : `Classement des exportations mondiales d'électricité pour ${year}: ${exportRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}.`;
 
-    const productionHistoricalRows = useMemo(
+    const productionTableColumns = useMemo(() => [
+        { key: 'year', header: getText('electricity_international_context_table_col_year', lang), align: 'left' },
+        { key: 'total', header: getText('electricity_international_context_table_col_total', lang), align: 'num' },
+        ...PRODUCTION_COLUMN_KEYS.map((k) => ({
+            key: k,
+            header: `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`,
+            align: 'num',
+        })),
+    ], [lang]);
+
+    const exportTableColumns = useMemo(() => [
+        { key: 'year', header: getText('electricity_international_context_table_col_year', lang), align: 'left' },
+        { key: 'total', header: getText('electricity_international_context_table_col_total', lang), align: 'num' },
+        ...EXPORT_COLUMN_KEYS.map((k) => ({
+            key: k,
+            header: `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`,
+            align: 'num',
+        })),
+    ], [lang]);
+
+    const productionTableRows = useMemo(
         () =>
-            YEARS_DESC.map((y) => {
+            YEARS_ASC.map((y) => {
                 const b = DATA_BY_YEAR[y].production;
-                return {
-                    year: y,
-                    total: b.total,
-                    pcts: [
-                        ...PRODUCTION_COLUMN_KEYS.slice(0, -1).map((k) => pctForCountry(b.items, k)),
-                        pctForProductionCanada(b),
-                    ],
-                };
+                const row = { year: y, total: b.total };
+                PRODUCTION_COLUMN_KEYS.slice(0, -1).forEach((k) => {
+                    row[k] = pctForCountry(b.items, k);
+                });
+                row.canada = pctForProductionCanada(b);
+                return row;
             }),
         [],
     );
 
-    const exportHistoricalRows = useMemo(
+    const exportTableRows = useMemo(
         () =>
-            YEARS_DESC.map((y) => {
+            YEARS_ASC.map((y) => {
                 const b = DATA_BY_YEAR[y].exports;
-                return {
-                    year: y,
-                    total: b.total,
-                    pcts: EXPORT_COLUMN_KEYS.map((k) => pctForCountry(b.items, k)),
-                };
+                const row = { year: y, total: b.total };
+                EXPORT_COLUMN_KEYS.forEach((k) => {
+                    row[k] = pctForCountry(b.items, k);
+                });
+                return row;
             }),
         [],
     );
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    const syncTableScroll = (topRef, tableRef, bottomRef, isOpen) => {
-        const topScroll = topRef.current;
-        const tableScroll = tableRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isOpen) return;
-
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-            [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-                if (spacer) spacer.style.width = `${scrollWidth}px`;
-            });
-            const shouldShow = scrollWidth > containerWidth;
-            topScroll.style.display = shouldShow ? 'block' : 'none';
-            bottomScroll.style.display = shouldShow ? 'block' : 'none';
-        };
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncScrollbars));
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        syncScrollbars();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    };
-
-    useEffect(() => syncTableScroll(prodTopScrollRef, prodTableScrollRef, prodBottomScrollRef, isTableOpenProd), [isTableOpenProd, windowWidth]);
-    useEffect(() => syncTableScroll(expTopScrollRef, expTableScrollRef, expBottomScrollRef, isTableOpenExp), [isTableOpenExp, windowWidth]);
 
     const downloadBtnStyle = {
         padding: '8px 16px',
@@ -415,128 +360,6 @@ const ElectricityInternationalContext = () => {
         fontFamily: 'Arial, sans-serif',
         fontWeight: 'bold',
         color: '#ffffff',
-    };
-
-    const downloadProductionCSV = () => {
-        const headers = [
-            getText('electricity_international_context_table_col_year', lang),
-            getText('electricity_international_context_table_col_total', lang),
-            ...PRODUCTION_COLUMN_KEYS.map((k) => `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`),
-        ];
-        const rows = productionHistoricalRows.map((row) => [
-            row.year,
-            formatTwh(row.total),
-            ...row.pcts.map((p) => (p === '' ? '' : String(p))),
-        ]);
-        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        saveAs(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }), downloadFilename('electricity_international_context_production_csv_slug'));
-    };
-
-    const downloadProductionDocx = async () => {
-        const title = stripHtml(getText('electricity_international_context_production_label', lang));
-        const headers = [
-            getText('electricity_international_context_table_col_year', lang),
-            getText('electricity_international_context_table_col_total', lang),
-            ...PRODUCTION_COLUMN_KEYS.map((k) => `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`),
-        ];
-        const headerRow = new TableRow({
-            children: headers.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = productionHistoricalRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatTwh(row.total), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                        ...row.pcts.map(
-                            (p) =>
-                                new TableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: p === '' ? '\u2014' : String(p), size: 22 })], alignment: AlignmentType.CENTER })],
-                                }),
-                        ),
-                    ],
-                }),
-        );
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: `${title} (${yearSpanLabel})`, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1200, 1800, ...PRODUCTION_COLUMN_KEYS.map(() => 1200)],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), downloadFilename('electricity_international_context_production_docx_slug'));
-    };
-
-    const downloadExportsCSV = () => {
-        const headers = [
-            getText('electricity_international_context_table_col_year', lang),
-            getText('electricity_international_context_table_col_total', lang),
-            ...EXPORT_COLUMN_KEYS.map((k) => `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`),
-        ];
-        const rows = exportHistoricalRows.map((row) => [
-            row.year,
-            formatTwh(row.total),
-            ...row.pcts.map((p) => (p === '' ? '' : String(p))),
-        ]);
-        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        saveAs(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }), downloadFilename('electricity_international_context_exports_csv_slug'));
-    };
-
-    const downloadExportsDocx = async () => {
-        const title = stripHtml(getText('electricity_international_context_exports_label', lang));
-        const headers = [
-            getText('electricity_international_context_table_col_year', lang),
-            getText('electricity_international_context_table_col_total', lang),
-            ...EXPORT_COLUMN_KEYS.map((k) => `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`),
-        ];
-        const headerRow = new TableRow({
-            children: headers.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = exportHistoricalRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatTwh(row.total), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                        ...row.pcts.map(
-                            (p) =>
-                                new TableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: p === '' ? '\u2014' : String(p), size: 22 })], alignment: AlignmentType.CENTER })],
-                                }),
-                        ),
-                    ],
-                }),
-        );
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: `${title} (${yearSpanLabel})`, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1200, 1800, ...EXPORT_COLUMN_KEYS.map(() => 1280)],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), downloadFilename('electricity_international_context_exports_docx_slug'));
     };
 
     const downloadProductionPng = () => {
@@ -610,75 +433,18 @@ const ElectricityInternationalContext = () => {
         return exportRows.map((row) => renderCapsuleRow(row, maxPct));
     };
 
-    const renderDataTable = ({
-        isOpen,
-        setIsOpen,
-        detailsRef,
-        topRef,
-        tableRef,
-        bottomRef,
-        captionKey,
-        columnKeys,
-        historicalRows,
-        onCsv,
-        onDocx,
-    }) => (
-        <details ref={detailsRef} className="data-table-wrapper" onToggle={(e) => setIsOpen(e.currentTarget.open)}>
-            <summary role="button" aria-expanded={isOpen}>
-                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isOpen ? '▼' : '▶'}</span>
-                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-            </summary>
-            <div ref={topRef} className="electricity-international-context-table-scrollbar" aria-hidden="true"><div /></div>
-            <div ref={tableRef} className="table-responsive" role="region" aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'} tabIndex={0}>
-                <table className="table table-bordered table-striped table-hover">
-                    <caption className="wb-inv">{getText(captionKey, lang)}</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col" style={{ position: 'sticky', left: 0, backgroundColor: '#f8f9fa', zIndex: 2, fontWeight: 'bold', textAlign: 'center', minWidth: '80px', borderRight: '2px solid #dee2e6' }}>
-                                {getText('electricity_international_context_table_col_year', lang)}
-                            </th>
-                            <th scope="col" style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
-                                {getText('electricity_international_context_table_col_total', lang)}
-                            </th>
-                            {columnKeys.map((k) => (
-                                <th key={k} scope="col" style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
-                                    {electricityInternationalContextCountryLabel(k, lang)} (%)
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {historicalRows.map((row) => (
-                            <tr key={row.year}>
-                                <th scope="row" style={{ position: 'sticky', left: 0, zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #dee2e6' }}>{row.year}</th>
-                                <td style={{ textAlign: 'center' }}>{formatTwh(row.total)}</td>
-                                {row.pcts.map((p, idx) => (
-                                    <td key={columnKeys[idx]} style={{ textAlign: 'center' }}>{p === '' ? '\u2014' : p}</td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div ref={bottomRef} className="electricity-international-context-table-scrollbar" aria-hidden="true"><div /></div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                <button type="button" onClick={onCsv} style={downloadBtnStyle}>{lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}</button>
-                <button type="button" onClick={onDocx} style={downloadBtnStyle}>{lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}</button>
-            </div>
-        </details>
-    );
+    const renderPctCell = (raw) => (raw === '' || raw == null ? '\u2014' : String(raw));
 
     return (
-        <main id="main-content" tabIndex="-1" className="page-content page-64" role="main" aria-labelledby="electricity-international-context-main-title" style={{ backgroundColor: '#ffffff' }}>
+        <PageShell
+            tabIndex="-1"
+            className="page-content page-64 electricity-international-context page-chrome page-chrome--bleed"
+            aria-labelledby="electricity-international-context-main-title"
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
+        >
             <style>{`
 .page-64.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-64 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .electricity-international-context-container { width: 100%; padding: 15px 0 40px 0; display: flex; flex-direction: column; box-sizing: border-box; }
 .electricity-international-context-title { font-family: 'Lato', sans-serif; font-size: 41px; font-weight: bold; color: var(--gc-text); margin-top: 0; margin-bottom: 25px; position: relative; padding-bottom: 0.5em; text-transform: none; }
@@ -700,12 +466,6 @@ const ElectricityInternationalContext = () => {
 .electricity-international-context-capsule-row-canada .electricity-international-context-capsule-pill { border-width: 2px; border-color: ${CANADA_CAPSULE}; font-weight: bold; font-size: 16px; }
 .electricity-international-context-capsule-ellipsis { min-height: 28px; padding-left: 4%; color: #333; font-size: 18px; font-weight: bold; }
 .electricity-international-context-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-.electricity-international-context-chart-section .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-.page-64 .data-table-wrapper summary { cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; padding: 10px; background-color: #8C8C8C; border: 1px solid #404040; border-radius: 4px; list-style: none; box-sizing: border-box; width: 100%; color: #ffffff; }
-.page-64 .data-table-wrapper summary::-webkit-details-marker { display: none; }
-.page-64 .data-table-wrapper summary:hover, .page-64 .data-table-wrapper button:hover { background-color: #404040 !important; }
-.electricity-international-context-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.electricity-international-context-table-scrollbar > div { height: 20px; }
 @media (max-width: 768px) {
     .electricity-international-context-title { font-size: 37px; }
     .page-64 p.electricity-international-context-subtitle { font-size: 35px; }
@@ -719,128 +479,18 @@ const ElectricityInternationalContext = () => {
                     <p className="electricity-international-context-subtitle">{getText('electricity_international_context_subtitle', lang)}</p>
                 </header>
 
-                <div
-                    ref={yearDropdownRef}
-                    style={{
-                        position: 'relative',
-                        marginBottom: '20px',
-                        width: '200px',
-                    }}
-                >
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    <button
-                        ref={yearButtonRef}
-                        type="button"
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px',
-                        }}
-                    >
-                        <span>{year}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>
-                            {isYearDropdownOpen ? '▲' : '▼'}
-                        </span>
-                    </button>
-                    {isYearDropdownOpen && (
-                        <div
-                            style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                width: '100%',
-                                maxHeight: '300px',
-                                overflowY: 'auto',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                zIndex: 100,
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            }}
-                        >
-                            {YEARS_DESC.map((y) => {
-                                const isSelected = year === y;
-                                return (
-                                    <button
-                                        key={y}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        aria-label={String(y)}
-                                        onClick={() => {
-                                            setYear(y);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                        }}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px',
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = '#f5f5f5';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff';
-                                        }}
-                                    >
-                                        <span
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff',
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span
-                                                    style={{
-                                                        height: '10px',
-                                                        width: '10px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#000',
-                                                    }}
-                                                />
-                                            )}
-                                        </span>
-                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
-                                            {y}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                    <div role="status" className="wb-inv" aria-live="polite">
-                        {year
-                            ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}`
-                            : ''}
-                    </div>
+                <YearSelect
+                    lang={lang}
+                    id="electricity-international-context-year"
+                    label={getText('year_slider_label', lang)}
+                    years={YEARS_DESC}
+                    value={year}
+                    onChange={setYear}
+                />
+                <div role="status" className="wb-inv" aria-live="polite">
+                    {year
+                        ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}`
+                        : ''}
                 </div>
 
                 <div className="electricity-international-context-content-wrapper layout-stacked">
@@ -852,19 +502,26 @@ const ElectricityInternationalContext = () => {
                         <div className="electricity-international-context-download-buttons">
                             <button type="button" onClick={downloadProductionPng} style={downloadBtnStyle}>{getText('electricity_international_context_download_png', lang)}</button>
                         </div>
-                        {renderDataTable({
-                            isOpen: isTableOpenProd,
-                            setIsOpen: setIsTableOpenProd,
-                            detailsRef: prodDetailsRef,
-                            topRef: prodTopScrollRef,
-                            tableRef: prodTableScrollRef,
-                            bottomRef: prodBottomScrollRef,
-                            captionKey: 'electricity_international_context_table_caption_production',
-                            columnKeys: PRODUCTION_COLUMN_KEYS,
-                            historicalRows: productionHistoricalRows,
-                            onCsv: downloadProductionCSV,
-                            onDocx: downloadProductionDocx,
-                        })}
+                        <ChartDataTable
+                            lang={lang}
+                            columns={productionTableColumns}
+                            rows={productionTableRows}
+                            csvFilename={downloadFilename('electricity_international_context_production_csv_slug')}
+                            docx={{
+                                filename: downloadFilename('electricity_international_context_production_docx_slug'),
+                                title: productionTableTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1200, 1800, ...PRODUCTION_COLUMN_KEYS.map(() => 1200)],
+                                fontSize: 22,
+                            }}
+                            caption={productionCaption}
+                            tableAriaLabel={productionCaption}
+                            renderCell={(raw, { column }) => (
+                                column?.key === 'year' ? String(raw ?? '')
+                                    : column?.key === 'total' ? formatTwh(raw)
+                                        : renderPctCell(raw)
+                            )}
+                        />
                     </div>
 
                     <div className="electricity-international-context-chart-section">
@@ -875,23 +532,30 @@ const ElectricityInternationalContext = () => {
                         <div className="electricity-international-context-download-buttons">
                             <button type="button" onClick={downloadExportsPng} style={downloadBtnStyle}>{getText('electricity_international_context_download_png', lang)}</button>
                         </div>
-                        {renderDataTable({
-                            isOpen: isTableOpenExp,
-                            setIsOpen: setIsTableOpenExp,
-                            detailsRef: expDetailsRef,
-                            topRef: expTopScrollRef,
-                            tableRef: expTableScrollRef,
-                            bottomRef: expBottomScrollRef,
-                            captionKey: 'electricity_international_context_table_caption_exports',
-                            columnKeys: EXPORT_COLUMN_KEYS,
-                            historicalRows: exportHistoricalRows,
-                            onCsv: downloadExportsCSV,
-                            onDocx: downloadExportsDocx,
-                        })}
+                        <ChartDataTable
+                            lang={lang}
+                            columns={exportTableColumns}
+                            rows={exportTableRows}
+                            csvFilename={downloadFilename('electricity_international_context_exports_csv_slug')}
+                            docx={{
+                                filename: downloadFilename('electricity_international_context_exports_docx_slug'),
+                                title: exportsTableTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1200, 1800, ...EXPORT_COLUMN_KEYS.map(() => 1280)],
+                                fontSize: 22,
+                            }}
+                            caption={exportsCaption}
+                            tableAriaLabel={exportsCaption}
+                            renderCell={(raw, { column }) => (
+                                column?.key === 'year' ? String(raw ?? '')
+                                    : column?.key === 'total' ? formatTwh(raw)
+                                        : renderPctCell(raw)
+                            )}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

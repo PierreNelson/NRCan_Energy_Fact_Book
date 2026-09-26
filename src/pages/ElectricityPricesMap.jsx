@@ -1,7 +1,14 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import FootnoteMarker from '../components/FootnoteMarker';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
+import PageFootnotes from '../components/PageFootnotes';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { ElectricityPricesMapCityLabels, ElectricityPricesMapHoverTooltip, ElectricityPricesMapIconLayer, ElectricityPricesMapLeaderLines, ElectricityPricesMapMapLayer } from '../components/ElectricityPricesMapInfographic';
 import {
@@ -14,7 +21,12 @@ import {
     MAP_CITY_SLOTS,
 } from '../components/ElectricityPricesMapInfographic.constants';
 import { getElectricityPricesMapData } from '../utils/dataLoader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const TRACE_KEYS = ['industrial', 'residential'];
 
@@ -23,14 +35,6 @@ const HOVER_LABEL = {
     bordercolor: '#000000',
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
-
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
 const getPlotTooltipPosition = (event, bgRef, chartRef) => {
     const bgEl = bgRef.current;
@@ -53,14 +57,6 @@ const getPlotTooltipPosition = (event, bgRef, chartRef) => {
         };
     }
     return null;
-};
-
-const hexToRgba = (hex, opacity = 1) => {
-    const normalized = hex.replace('#', '');
-    const r = parseInt(normalized.slice(0, 2), 16);
-    const g = parseInt(normalized.slice(2, 4), 16);
-    const b = parseInt(normalized.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 };
 
 const substitute = (text, vars) =>
@@ -106,17 +102,13 @@ const ElectricityPricesMap = () => {
     const [error, setError] = useState(null);
     const [selectedPoints, setSelectedPoints] = useState(null);
     const [hoverTip, setHoverTip] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
 
     const chartRef = useRef(null);
     const chartBgRef = useRef(null);
     const hoverHandlerRef = useRef(null);
     const clickHandlerRef = useRef(null);
     const hoverClearRef = useRef(null);
-    const tableTopRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const tableBottomRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
@@ -130,17 +122,7 @@ const ElectricityPricesMap = () => {
         return Number(value).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }, [locale]);
 
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-electricity-prices')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-electricity-prices')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-electricity-prices');
 
     useEffect(() => {
         getElectricityPricesMapData()
@@ -148,61 +130,6 @@ const ElectricityPricesMap = () => {
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
     }, []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
 
     const cities = useMemo(() => {
         const rows = result?.cities ?? [];
@@ -221,6 +148,21 @@ const ElectricityPricesMap = () => {
     const chartTitleFull = `${stripHtml(chartTitleMain)}${stripHtml(chartTitleSuffix)}`;
     const tableCaption = substitute(getText('electricity_prices_table_caption', lang), textVars);
     const fileTitle = getText('electricity_prices_download_title', lang);
+
+    const tableColumns = useMemo(() => [
+        { key: 'city', header: getText('electricity_prices_table_col_city', lang), align: 'left' },
+        { key: 'industrial', header: getText('electricity_prices_table_col_industrial', lang), align: 'num' },
+        { key: 'residential', header: getText('electricity_prices_table_col_residential', lang), align: 'num' },
+    ], [lang]);
+
+    const tableRows = useMemo(
+        () => cities.map((row) => ({
+            city: getCityLabel(row.key),
+            industrial: row.industrial,
+            residential: row.residential,
+        })),
+        [cities, getCityLabel],
+    );
 
     const plotHeight = useMemo(() => {
         const widthBased = windowWidth > 0 ? windowWidth / MAP_ASPECT_RATIO : 520;
@@ -431,6 +373,7 @@ const ElectricityPricesMap = () => {
         setSelectedPoints(null);
     };
 
+    // Map composite PNG (Plotly bars + map layers) — not replaceable by downloadChartPng alone.
     const downloadChartWithLegend = async () => {
         const wrapper = chartBgRef.current;
         const plotElement = chartRef.current?.querySelector('.js-plotly-plot');
@@ -490,123 +433,64 @@ const ElectricityPricesMap = () => {
         }
     };
 
-    const downloadCsv = () => {
-        const headers = [
-            getText('electricity_prices_table_col_city', lang),
-            getText('electricity_prices_table_col_industrial', lang),
-            getText('electricity_prices_table_col_residential', lang),
-        ];
-        const rows = cities.map((row) => [getCityLabel(row.key), row.industrial, row.residential]);
-        const csv = [headers.map(csvEscape).join(','), ...rows.map((r) => r.map(csvEscape).join(','))].join('\n');
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${fileTitle}.csv`);
-    };
+    const chartConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('electricity_prices_download_png', lang),
+        click: () => { downloadChartWithLegend(); },
+    });
 
-    const downloadDocx = async () => {
-        const headerCells = [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('electricity_prices_table_col_city', lang), bold: true, size: 22 })], alignment: AlignmentType.LEFT })], shading: { fill: 'E6E6E6' } }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('electricity_prices_table_col_industrial', lang), bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' } }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('electricity_prices_table_col_residential', lang), bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' } }),
-        ];
-        const dataRows = cities.map((row) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getCityLabel(row.key), size: 22 })] })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.industrial), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.residential), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-            ],
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: chartTitleFull, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [4800, 2600, 2600], rows: [new TableRow({ children: headerCells }), ...dataRows] }),
-                ],
-            }],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileTitle}.docx`);
-    };
-
-    const chartConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('electricity_prices_download_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: () => { downloadChartWithLegend(); },
-        }],
-    };
-
-    if (loading) {
-        return <p className="electricity-prices-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>;
-    }
-    if (error) {
-        return <p className="electricity-prices-error" role="alert">{error}</p>;
+    if (loading || error) {
+        return (
+            <PageShell
+                className="page-content page-69 page-chrome page-chrome--bleed"
+                aria-labelledby="electricity-prices-title"
+                style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
+            >
+                <PageStatus
+                    lang={lang}
+                    loading={loading}
+                    error={error}
+                    loadingMessage={lang === 'en' ? 'Loading data…' : 'Chargement des données…'}
+                    className={loading ? 'electricity-prices-loading' : 'electricity-prices-error'}
+                />
+            </PageShell>
+        );
     }
     if (!cities.length) {
-        return <p className="electricity-prices-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>;
+        return (
+            <PageShell
+                className="page-content page-69 page-chrome page-chrome--bleed"
+                aria-labelledby="electricity-prices-title"
+                style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
+            >
+                <p className="electricity-prices-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>
+            </PageShell>
+        );
     }
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-69"
-            role="main"
+        <PageShell
+            className="page-content page-69 page-chrome page-chrome--bleed"
             aria-labelledby="electricity-prices-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-69.page-content { max-width: none !important; overflow-x: visible !important; }
-.page-69 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
-}
 .electricity-prices-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .electricity-prices-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin-top: 0;
-    margin-bottom: 25px;
     line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
 }
-.electricity-prices-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
-}
 .electricity-prices-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    box-sizing: border-box;
-    overflow: visible;
+    margin-bottom: 0;
 }
 .electricity-prices-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 6px 0;
     text-transform: none;
     line-height: 1.3;
 }
-.electricity-prices-chart-title .fn-lnk { color: #26374a; text-decoration: underline; }
+.electricity-prices-chart-title .fn-lnk { color: #26374a; }
 .electricity-prices-unit {
     font-family: Arial, sans-serif;
     font-size: 16px;
@@ -630,17 +514,6 @@ const ElectricityPricesMap = () => {
 .electricity-prices-chart .svg-container { overflow: visible !important; pointer-events: auto !important; }
 .electricity-prices-chart .js-plotly-plot .plotly .modebar { right: 4px !important; top: 2px !important; }
 .electricity-prices-chart .hoverlayer { display: none !important; }
-.electricity-prices-clear-selection {
-    padding: 6px 12px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 8px;
-}
 .electricity-prices-legend {
     display: flex;
     flex-wrap: wrap;
@@ -654,103 +527,33 @@ const ElectricityPricesMap = () => {
 .electricity-prices-legend-item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .electricity-prices-legend-swatch { width: 22px; height: 14px; display: inline-block; border: 1px solid rgba(0, 0, 0, 0.12); }
 .electricity-prices-table-wrapper { display: block; width: 100%; margin-top: 20px; margin-bottom: 0; }
-.electricity-prices-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.electricity-prices-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.electricity-prices-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.electricity-prices-table-scrollbar > div { height: 20px; }
-.electricity-prices-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.electricity-prices-table-responsive::-webkit-scrollbar { display: none; }
-.electricity-prices-table-responsive table { width: max-content !important; min-width: 100%; }
-.electricity-prices-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.electricity-prices-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
-.electricity-prices-chart-frame button:hover,
-.electricity-prices-table-wrapper summary:hover,
-.electricity-prices-download-buttons button:hover { background-color: #404040 !important; }
-.electricity-prices-footnotes {
-    font-family: var(--font-body);
-    font-size: 1rem;
-    color: var(--gc-text);
-    margin-top: 24px;
-    margin-bottom: 0;
-    padding-top: 12px;
-    border-top: 1px solid #e0e0e0;
-    line-height: 1.65;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-.electricity-prices-footnotes h2 {
-    font-family: var(--font-heading);
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--gc-text);
-    margin-top: 0;
-    margin-bottom: 1rem;
-}
-.electricity-prices-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
+.electricity-prices-chart-frame button:hover { background-color: #404040 !important; }
 .electricity-prices-loading, .electricity-prices-error {
     font-family: 'Noto Sans', sans-serif;
     font-size: 18px;
     color: var(--gc-text);
     margin: 24px 0;
 }
-@media (max-width: 768px) {
-    .electricity-prices-title { font-size: 37px; }
-    .electricity-prices-chart-title { font-size: 26px; }
-    .electricity-prices-footnotes { font-size: 0.9rem; }
-    .electricity-prices-footnotes h2 { font-size: 1.2rem; margin-bottom: 0.75rem; }
-}
             `}</style>
 
             <div className="electricity-prices-inner">
-                <h1 id="electricity-prices-title" className="electricity-prices-title">{getText('electricity_prices_title', lang)}</h1>
+                <h1 id="electricity-prices-title" className="electricity-prices-title page-chrome-title">{getText('electricity_prices_title', lang)}</h1>
 
-                <div className="electricity-prices-chart-frame">
-                    <h2 id="electricity-prices-chart-title" className="electricity-prices-chart-title">
+                <div className="electricity-prices-chart-frame page-chrome-chart-frame">
+                    <h2 id="electricity-prices-chart-title" className="electricity-prices-chart-title page-chrome-chart-title">
                         {chartTitleMain}
-                        <span id="fn-asterisk-rf-electricity-prices" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
-                            <a className="fn-lnk" href="#fn-asterisk-electricity-prices" onClick={scrollToFootnote}>
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                                <span aria-hidden="true">*</span>
-                            </a>
-                        </span>
+                        <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-electricity-prices"
+                            id="fn-asterisk-rf-electricity-prices"
+                            marker="*"
+                            onClick={scrollToFootnote}
+                        />
                         {chartTitleSuffix}
                     </h2>
                     <p className="electricity-prices-unit">{getText('electricity_prices_unit', lang)}</p>
 
-                    {selectedPoints !== null && (
-                        <button type="button" className="electricity-prices-clear-selection" onClick={clearSelection}>
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
-                    )}
+                    {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clearSelection} />}
 
                     <div
                         className="electricity-prices-chart-bg-wrapper"
@@ -794,63 +597,39 @@ const ElectricityPricesMap = () => {
                     </div>
 
                     <div className="electricity-prices-table-wrapper">
-                        <details className="electricity-prices-data-table" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
-                            <div ref={tableTopRef} className="electricity-prices-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div
-                                ref={tableScrollRef}
-                                className="electricity-prices-table-responsive"
-                                role="region"
-                                aria-labelledby="electricity-prices-table-caption"
-                                tabIndex={0}
-                            >
-                                <table className="table table-bordered table-striped table-hover">
-                                    <caption id="electricity-prices-table-caption" className="wb-inv">{tableCaption}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">{getText('electricity_prices_table_col_city', lang)}</th>
-                                            <th scope="col">{getText('electricity_prices_table_col_industrial', lang)}</th>
-                                            <th scope="col">{getText('electricity_prices_table_col_residential', lang)}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {cities.map((row) => (
-                                            <tr key={row.key}>
-                                                <th scope="row">{getCityLabel(row.key)}</th>
-                                                <td style={{ textAlign: 'right' }}>{formatPrice(row.industrial)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatPrice(row.residential)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div ref={tableBottomRef} className="electricity-prices-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div className="electricity-prices-download-buttons">
-                                <button type="button" onClick={downloadCsv}>{getText('electricity_prices_download_csv', lang)}</button>
-                                <button type="button" onClick={downloadDocx}>{getText('electricity_prices_download_docx', lang)}</button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${fileTitle}.csv`}
+                            docx={{
+                                filename: `${fileTitle}.docx`,
+                                title: chartTitleFull,
+                                titleAlign: 'center',
+                                columnWidths: [4800, 2600, 2600],
+                                fontSize: 22,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatPrice(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
-                <aside className="wb-fnote electricity-prices-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd id="fn-asterisk-electricity-prices">
-                            <a href="#fn-asterisk-rf-electricity-prices" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('electricity_prices_footnote', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn-electricity-prices"
+                    items={[{
+                        id: 'fn-asterisk-electricity-prices',
+                        marker: '*',
+                        text: getText('electricity_prices_footnote', lang),
+                        returnHref: '#fn-asterisk-rf-electricity-prices',
+                    }]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -1,10 +1,20 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getRenewableElectricityCapacityData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import HtmlLegend from '../components/HtmlLegend';
+import hexToRgba from '../utils/hexToRgba';
 
 const TRACE_KEYS = ['hydro', 'wind', 'solarTidal', 'biomass'];
 const LEGEND_KEYS = [...TRACE_KEYS].reverse();
@@ -75,14 +85,6 @@ const traceIndexFromCurveNumber = (curveNumber) => {
 const traceOpacityFor = (selectedTraceIds, traceIndex) => {
     if (selectedTraceIds === null || selectedTraceIds.includes(traceIndex)) return 1;
     return 0.3;
-};
-
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
 };
 
 const substitute = (text, vars) =>
@@ -199,21 +201,18 @@ const RenewableElectricityCapacity = () => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedTraceIds, setSelectedTraceIds] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedTraceIds,
+        clear: clearSelection,
+        toggleSlice,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
     const chartRef = useRef(null);
     const graphDivRef = useRef(null);
     const clickHandlerRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null });
     const hoverDataRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     const formatMw = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
@@ -240,17 +239,18 @@ const RenewableElectricityCapacity = () => {
     const startYear = result?.startYear;
     const endYear = result?.endYear;
     const yearTicks = years.filter((y) => y % 2 === 1);
-    const tableRowsDesc = useMemo(() => [...tableRows].reverse(), [tableRows]);
 
     const hydroLabel = getText('renewable_electricity_capacity_legend_hydro', lang);
     const windLabel = getText('renewable_electricity_capacity_legend_wind', lang);
     const solarTidalLabel = getText('renewable_electricity_capacity_legend_solarTidal', lang);
     const biomassLabel = getText('renewable_electricity_capacity_legend_biomass', lang);
+    const totalLabel = getText('renewable_electricity_capacity_table_col_total', lang);
     const traceLabels = [hydroLabel, windLabel, solarTidalLabel, biomassLabel];
     const chartTitle = substitute(getText('renewable_electricity_capacity_chart_title', lang), {
         startYear: startYear ?? '',
         endYear: endYear ?? '',
     });
+    const exportChartTitle = stripHtml(chartTitle);
     const yAxisTitle = getText('renewable_electricity_capacity_yaxis', lang);
     const fileTitle = `${getText('renewable_electricity_capacity_download_title', lang)}_${startYear ?? ''}-${endYear ?? ''}`;
     const tableCaption = substitute(getText('renewable_electricity_capacity_table_caption', lang), {
@@ -258,14 +258,26 @@ const RenewableElectricityCapacity = () => {
         endYear: endYear ?? '',
     });
 
-    const tableHeaders = [
-        getText('renewable_electricity_capacity_table_col_year', lang),
-        `${hydroLabel} ${tableUnitSuffix}`,
-        `${windLabel} ${tableUnitSuffix}`,
-        `${solarTidalLabel} ${tableUnitSuffix}`,
-        `${biomassLabel} ${tableUnitSuffix}`,
-        `${getText('renewable_electricity_capacity_table_col_total', lang)} ${tableUnitSuffix}`,
-    ];
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('renewable_electricity_capacity_table_col_year', lang), align: 'left' },
+        { key: 'hydro', header: `${hydroLabel} ${tableUnitSuffix}`, align: 'num' },
+        { key: 'wind', header: `${windLabel} ${tableUnitSuffix}`, align: 'num' },
+        { key: 'solarTidal', header: `${solarTidalLabel} ${tableUnitSuffix}`, align: 'num' },
+        { key: 'biomass', header: `${biomassLabel} ${tableUnitSuffix}`, align: 'num' },
+        { key: 'total', header: `${totalLabel} ${tableUnitSuffix}`, align: 'num' },
+    ], [lang, hydroLabel, windLabel, solarTidalLabel, biomassLabel, totalLabel, tableUnitSuffix]);
+
+    const dataTableRows = useMemo(
+        () => tableRows.map((row) => ({
+            year: row.year,
+            hydro: row.hydro,
+            wind: row.wind,
+            solarTidal: row.solarTidal,
+            biomass: row.biomass,
+            total: row.hydro + row.wind + row.solarTidal + row.biomass,
+        })),
+        [tableRows],
+    );
 
     const plotHeight = windowWidth <= 480 ? 340 : windowWidth <= 768 ? 380 : 420;
     const plotTopMargin = windowWidth <= 480 ? 24 : 20;
@@ -293,123 +305,18 @@ const RenewableElectricityCapacity = () => {
         (_, i) => hydroValues[i] + windValues[i] + solarTidalValues[i] + biomassValues[i],
     );
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, loading, error, result, selectedTraceIds]);
+    
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
 
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
 
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const toggleTraceSelection = useCallback((traceIndex) => {
-        setSelectedTraceIds((prev) => {
-            if (prev === null) return [traceIndex];
-            if (prev.includes(traceIndex)) {
-                const next = prev.filter((t) => t !== traceIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, traceIndex];
-        });
-    }, []);
 
     const applyTraceSelection = useCallback(
         (traceIndex) => {
             if (traceIndex == null || traceIndex < 0 || traceIndex >= TRACE_COUNT) return;
-
-            if (windowWidth <= 768) {
-                const currentTime = Date.now();
-                const lastClick = lastClickRef.current;
-                const isDoubleTap = traceIndex === lastClick.traceIndex && currentTime - lastClick.time < 300;
-                lastClickRef.current = { time: currentTime, traceIndex };
-                if (!isDoubleTap) return;
-            }
-
-            toggleTraceSelection(traceIndex);
+            toggleSlice(traceIndex);
         },
-        [windowWidth, toggleTraceSelection],
+        [toggleSlice],
     );
 
     const handleChartClick = useCallback(
@@ -455,123 +362,25 @@ const RenewableElectricityCapacity = () => {
         [bindPlotHandlers],
     );
 
-    const downloadChartPng = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        const title = stripHtml(chartTitle);
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 700,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = LEGEND_KEYS.map((key) => ({
-                    color: COLORS[key],
-                    label: getText(`renewable_electricity_capacity_legend_${key}`, lang),
-                }));
-                const totalWidth = legendItems.length * 260;
-                let x = (canvas.width - totalWidth) / 2 + 20;
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'left';
-                legendItems.forEach((item) => {
-                    ctx.fillStyle = item.color;
-                    ctx.fillRect(x, legendY - 10, 24, 24);
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 32, legendY + 6);
-                    x += 260;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileTitle}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${fileTitle}.png`,
+        title: exportChartTitle,
+        height: 700,
+        legendItems: LEGEND_KEYS.map((key) => ({
+            color: COLORS[key],
+            label: getText(`renewable_electricity_capacity_legend_${key}`, lang),
+        })),
+    }),
+        [COLORS, LEGEND_KEYS, exportChartTitle, fileTitle, getText, lang],
+    );
 
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = tableRowsDesc.map((row) => {
-            const total = row.hydro + row.wind + row.solarTidal + row.biomass;
-            return [row.year, row.hydro, row.wind, row.solarTidal, row.biomass, total].map(csvEscape).join(',');
-        });
-        saveAs(new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }), `${fileTitle}.csv`);
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = tableRowsDesc.map((row) => {
-            const total = row.hydro + row.wind + row.solarTidal + row.biomass;
-            return new TableRow({
-                children: [row.year, row.hydro, row.wind, row.solarTidal, row.biomass, total].map((value, index) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(value), size: 22 })],
-                                alignment: index === 0 ? AlignmentType.CENTER : AlignmentType.RIGHT,
-                            }),
-                        ],
-                    }),
-                ),
-            });
-        });
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: stripHtml(chartTitle), bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [1200, 1700, 1700, 2200, 1500, 1500],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        saveAs(await Packer.toBlob(doc), `${fileTitle}.docx`);
-    };
-
-    const downloadBtnStyle = {
-        padding: '8px 16px',
-        backgroundColor: '#8C8C8C',
-        border: '1px solid #404040',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        color: '#ffffff',
-    };
+    const chartConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+        name: getText('renewable_electricity_capacity_download_png', lang),
+    });
 
     const zeroBases = years.map(() => 0);
     const hydroDense = densifyBandSeries(years, hydroValues, zeroBases, hydroLabel, hydroValues, formatHoverMw);
@@ -637,67 +446,62 @@ const RenewableElectricityCapacity = () => {
 
     const hasChartData = !loading && !error && tableRows.length > 0;
 
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: hydroLabel, values: hydroValues, format: (v) => String(v) },
+                { name: windLabel, values: windValues, format: (v) => String(v) },
+                { name: solarTidalLabel, values: solarTidalValues, format: (v) => String(v) },
+                { name: biomassLabel, values: biomassValues, format: (v) => String(v) },
+            ].filter((ser) => Array.isArray(ser.values) && ser.values.length),
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Area chart of renewable electricity capacity from ${startYear} to ${endYear}`
+                : `Graphique en aires de la capacité d'électricité renouvelable de ${startYear} à ${endYear}`,
+            body,
+            lang,
+        });
+    };
+    const chartRegionLabel = `${chartTitle}. ${getChartSummary()}`;
+
     return (
-        <main
-            tabIndex="-1"
-            className="page-content page-74"
+        <PageShell tabIndex="-1"
+            className="page-content page-74 page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="renewable-electricity-capacity-chart-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-74.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-74 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .renewable-electricity-capacity-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .renewable-electricity-capacity-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-top: 0;
     margin-bottom: 0;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .renewable-electricity-capacity-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
-    margin: 0 0 12px 0;
+    margin-bottom: 12px;
     text-transform: none;
 }
 .renewable-electricity-capacity-chart { width: 100%; min-width: 0; height: ${plotHeight}px; position: relative; }
 .renewable-electricity-capacity-chart > div { width: 100%; height: 100%; }
 .renewable-electricity-capacity-legend {
-    display: flex;
-    justify-content: center;
     align-items: center;
     gap: 18px 28px;
-    flex-wrap: wrap;
     margin-top: 12px;
     margin-bottom: 8px;
-    font-family: Arial, sans-serif;
     font-size: 14px;
     color: var(--gc-text);
 }
 .renewable-electricity-capacity-legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
     white-space: nowrap;
 }
-.renewable-electricity-capacity-legend-swatch { width: 22px; height: 14px; display: inline-block; border: 1px solid rgba(0, 0, 0, 0.12); }
-.renewable-electricity-capacity-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-.renewable-electricity-capacity-download-buttons button:hover,
-.page-74 .data-table-wrapper summary:hover,
-.page-74 .data-table-wrapper button:hover { background-color: #404040 !important; }
+.renewable-electricity-capacity-legend-swatch { width: 22px; height: 14px; border: 1px solid rgba(0, 0, 0, 0.12); }
 .page-74 .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
 .page-74 .data-table-wrapper summary {
     cursor: pointer;
@@ -713,11 +517,8 @@ const RenewableElectricityCapacity = () => {
     color: #ffffff;
 }
 .page-74 .data-table-wrapper summary::-webkit-details-marker { display: none; }
-.renewable-electricity-capacity-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.renewable-electricity-capacity-table-scrollbar > div { height: 20px; }
-@media (max-width: 768px) {
-    .renewable-electricity-capacity-chart-title { font-size: 26px; }
-}
+.page-74 .data-table-wrapper summary:hover,
+.page-74 .data-table-wrapper button:hover { background-color: #404040 !important; }
 .renewable-electricity-capacity-loading, .renewable-electricity-capacity-error {
     font-family: Arial, sans-serif;
     font-size: 16px;
@@ -737,35 +538,16 @@ const RenewableElectricityCapacity = () => {
                 )}
 
                 {hasChartData && (
-                <div className="renewable-electricity-capacity-chart-frame">
-                    <h2 id="renewable-electricity-capacity-chart-title" className="renewable-electricity-capacity-chart-title">{chartTitle}</h2>
+                <div className="renewable-electricity-capacity-chart-frame page-chrome-chart-frame">
+                    <h2 id="renewable-electricity-capacity-chart-title" className="renewable-electricity-capacity-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
-                    {selectedTraceIds !== null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedTraceIds(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
-                    )}
+                    {selectedTraceIds !== null && <ClearSelectionButton lang={lang} onClick={clearSelection} />}
 
                     <figure
                         ref={chartRef}
                         className="renewable-electricity-capacity-chart"
                         role="region"
-                        aria-label={chartTitle}
+                        aria-label={chartRegionLabel}
                         tabIndex={0}
                         style={{ margin: 0 }}
                     >
@@ -812,134 +594,45 @@ const RenewableElectricityCapacity = () => {
                                     fixedrange: true,
                                 },
                             }}
-                            chartConfig={{
-                                displayModeBar: true,
-                                displaylogo: false,
-                                responsive: true,
-                                scrollZoom: false,
-                                modeBarButtonsToRemove: [
-                                    'pan2d',
-                                    'select2d',
-                                    'lasso2d',
-                                    'zoom2d',
-                                    'zoomIn2d',
-                                    'zoomOut2d',
-                                    'autoScale2d',
-                                    'resetScale2d',
-                                    'toImage',
-                                ],
-                                modeBarButtonsToAdd: [{
-                                    name: getText('renewable_electricity_capacity_download_png', lang),
-                                    icon: {
-                                        width: 24,
-                                        height: 24,
-                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                    },
-                                    click: (gd) => downloadChartPng(gd),
-                                }],
-                            }}
+                            chartConfig={chartConfig}
                             plotHeight={plotHeight}
                             onPlotReady={onPlotReady}
                         />
                     </figure>
 
-                    <div className="renewable-electricity-capacity-legend" aria-hidden="true">
-                        {LEGEND_KEYS.map((key) => (
-                            <span key={key} className="renewable-electricity-capacity-legend-item">
-                                <span className="renewable-electricity-capacity-legend-swatch" style={{ backgroundColor: COLORS[key] }} />
-                                {getText(`renewable_electricity_capacity_legend_${key}`, lang)}
-                            </span>
-                        ))}
-                    </div>
+                    <HtmlLegend
+                        className="renewable-electricity-capacity-legend"
+                        variant="swatch"
+                        itemClassName="renewable-electricity-capacity-legend-item"
+                        markerClassName="renewable-electricity-capacity-legend-swatch"
+                        items={LEGEND_KEYS.map((key) => ({
+                            label: getText(`renewable_electricity_capacity_legend_${key}`, lang),
+                            color: COLORS[key],
+                        }))}
+                    />
 
-                    <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            <span className="wb-inv">
-                                {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                            </span>
-                        </summary>
-                        <div ref={topScrollRef} className="renewable-electricity-capacity-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={tableScrollRef}
-                            className="table-responsive"
-                            role="region"
-                            aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            tabIndex={0}
-                        >
-                            <table className="table table-bordered table-striped table-hover">
-                                <caption className="wb-inv">{tableCaption}</caption>
-                                <thead>
-                                    <tr>
-                                        {tableHeaders.map((header, index) => (
-                                            <th
-                                                key={header}
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    whiteSpace: 'nowrap',
-                                                    verticalAlign: 'bottom',
-                                                    ...(index === 0
-                                                        ? {
-                                                              position: 'sticky',
-                                                              left: 0,
-                                                              backgroundColor: '#f8f9fa',
-                                                              zIndex: 2,
-                                                              borderRight: '2px solid #dee2e6',
-                                                          }
-                                                        : {}),
-                                                }}
-                                            >
-                                                {header}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tableRowsDesc.map((row) => {
-                                        const total = row.hydro + row.wind + row.solarTidal + row.biomass;
-                                        return (
-                                            <tr key={row.year}>
-                                                <th
-                                                    scope="row"
-                                                    style={{
-                                                        position: 'sticky',
-                                                        left: 0,
-                                                        zIndex: 1,
-                                                        fontWeight: 'bold',
-                                                        textAlign: 'center',
-                                                        borderRight: '2px solid #dee2e6',
-                                                    }}
-                                                >
-                                                    {row.year}
-                                                </th>
-                                                <td style={{ textAlign: 'right' }}>{formatMw(row.hydro)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMw(row.wind)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMw(row.solarTidal)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMw(row.biomass)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMw(total)}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={bottomScrollRef} className="renewable-electricity-capacity-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="renewable-electricity-capacity-download-buttons">
-                            <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                                {getText('renewable_electricity_capacity_download_csv', lang)}
-                            </button>
-                            <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                                {getText('renewable_electricity_capacity_download_docx', lang)}
-                            </button>
-                        </div>
-                    </details>
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={dataTableRows}
+                        csvFilename={`${fileTitle}.csv`}
+                        docx={{
+                            filename: `${fileTitle}.docx`,
+                            title: exportChartTitle,
+                            titleAlign: 'center',
+                            columnWidths: [1200, 1700, 1700, 2200, 1500, 1500],
+                            fontSize: 22,
+                        }}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        renderCell={(raw, { colIndex }) => (
+                            colIndex === 0 ? String(raw ?? '') : formatMw(raw)
+                        )}
+                    />
                 </div>
                 )}
             </div>
-        </main>
+        </PageShell>
     );
 };
 

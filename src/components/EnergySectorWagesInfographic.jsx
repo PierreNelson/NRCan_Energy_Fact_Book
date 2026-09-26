@@ -1,27 +1,60 @@
 import React from 'react';
+import SafeHtml from './SafeHtml';
 import energySectorWagesBg from '../assets/energy_sector_wages_bg.svg';
 import { BG_SIZE, LEFT_BULLET_KEYS, RIGHT_BULLET_KEYS } from './EnergySectorWagesInfographic.constants';
 
+/**
+ * Page 41 SR pattern (same as page 21 EnergyInformationLandscape):
+ * - Each bullet is its own focusable role="region" with aria-label
+ * - Illustration is decorative (aria-hidden)
+ * - Do not wrap copy in AccessibleInfographic mode="image" (one role="img" for the whole block)
+ */
 const BulletItem = ({ html, ariaLabel }) => (
-    <li className="energy-sector-wages-bullet-item" role="listitem" aria-label={ariaLabel}>
-        <span className="energy-sector-wages-bullet-text" dangerouslySetInnerHTML={{ __html: html }} />
-    </li>
+    <div
+        className="energy-sector-wages-bullet-item"
+        role="region"
+        tabIndex={0}
+        aria-label={ariaLabel}
+        data-prose-tab="1"
+    >
+        <SafeHtml
+            as="span"
+            className="energy-sector-wages-bullet-text"
+            html={html}
+            aria-hidden="true"
+        />
+    </div>
 );
 
-const EnergySectorWagesInfographic = ({ figureRef, ariaLabel, bulletHtml, bulletAria }) => (
-    <figure ref={figureRef} className="energy-sector-wages-infographic-figure" aria-label={ariaLabel}>
+const EnergySectorWagesInfographic = ({ figureRef, bulletHtml, bulletAria }) => (
+    <figure ref={figureRef} className="energy-sector-wages-infographic-figure">
         <style>{`
 .energy-sector-wages-infographic-figure {
-    display: block;
+    position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 100%;
     margin: 0;
 }
 .energy-sector-wages-infographic-layout {
+    order: 1;
     width: 100%;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+}
+.energy-sector-wages-bg {
+    order: 2;
+    display: block;
+    width: 100%;
+    aspect-ratio: ${BG_SIZE.width} / ${BG_SIZE.height};
+    height: auto;
+    object-fit: fill;
+    object-position: center bottom;
+    user-select: none;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 .energy-sector-wages-text-columns {
     display: grid;
@@ -33,7 +66,6 @@ const EnergySectorWagesInfographic = ({ figureRef, ariaLabel, bulletHtml, bullet
     box-sizing: border-box;
 }
 .energy-sector-wages-bullet-list {
-    list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
@@ -45,6 +77,13 @@ const EnergySectorWagesInfographic = ({ figureRef, ariaLabel, bulletHtml, bullet
     position: relative;
     padding-left: 1.25rem;
     margin: 0;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+.energy-sector-wages-bullet-item:focus,
+.energy-sector-wages-bullet-item:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 4px;
 }
 .energy-sector-wages-bullet-item::before {
     content: '';
@@ -70,20 +109,6 @@ const EnergySectorWagesInfographic = ({ figureRef, ariaLabel, bulletHtml, bullet
 .energy-sector-wages-bullet-text strong {
     font-weight: bold;
 }
-.energy-sector-wages-bg-wrapper {
-    width: 100%;
-    aspect-ratio: ${BG_SIZE.width} / ${BG_SIZE.height};
-    flex-shrink: 0;
-}
-.energy-sector-wages-bg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: fill;
-    object-position: center bottom;
-    user-select: none;
-    pointer-events: none;
-}
 @media (max-width: 768px) {
     .energy-sector-wages-text-columns {
         grid-template-columns: 1fr;
@@ -94,22 +119,25 @@ const EnergySectorWagesInfographic = ({ figureRef, ariaLabel, bulletHtml, bullet
         `}</style>
         <div className="energy-sector-wages-infographic-layout">
             <div className="energy-sector-wages-text-columns">
-                <ul className="energy-sector-wages-bullet-list" role="list">
+                <div className="energy-sector-wages-bullet-list">
                     {LEFT_BULLET_KEYS.map((key) => (
                         <BulletItem key={key} html={bulletHtml[key]} ariaLabel={bulletAria[key]} />
                     ))}
-                </ul>
-                <ul className="energy-sector-wages-bullet-list" role="list">
+                </div>
+                <div className="energy-sector-wages-bullet-list">
                     {RIGHT_BULLET_KEYS.map((key) => (
                         <BulletItem key={key} html={bulletHtml[key]} ariaLabel={bulletAria[key]} />
                     ))}
-                </ul>
-            </div>
-            <div className="energy-sector-wages-bg-wrapper" aria-hidden="true">
-                <img src={energySectorWagesBg} alt="" className="energy-sector-wages-bg" draggable={false} />
+                </div>
             </div>
         </div>
-        <figcaption className="wb-inv">{ariaLabel}</figcaption>
+        <img
+            src={energySectorWagesBg}
+            alt=""
+            className="energy-sector-wages-bg"
+            draggable={false}
+            aria-hidden="true"
+        />
     </figure>
 );
 

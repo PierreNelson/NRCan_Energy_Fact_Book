@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import rppSupplyDemandBgEn from '../assets/rpp_supply_demand_bg.png';
 import rppSupplyDemandBgFr from '../assets/rpp_supply_demand_bg_fr.png';
 
@@ -110,11 +111,21 @@ const RppSupplyDemandInfographic = ({
     const bgImage = overlayLang === 'fr' ? rppSupplyDemandBgFr : rppSupplyDemandBgEn;
     const native = NATIVE_SIZE[overlayLang];
     const slots = OVERLAY_SLOTS[overlayLang];
+    const overview = ariaLabel || getText('rpp_refinery_input_bg_alt', lang);
 
     return (
-        <figure className="rpp-supply-demand-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            as="figure"
+            mode="image"
+            className="rpp-supply-demand-infographic-figure"
+            title={ariaLabel || getText('rpp_refinery_input_bg_alt', lang)}
+            overview={overview}
+            src={bgImage}
+            imgClassName="rpp-supply-demand-bg-image"
+        >
             <style>{`
 .rpp-supply-demand-infographic-figure {
+    position: relative;
     width: 100%;
     max-width: none;
     margin: 0 0 28px 0;
@@ -158,12 +169,6 @@ const RppSupplyDemandInfographic = ({
             `}</style>
 
             <div className="rpp-supply-demand-infographic-wrapper">
-                <img
-                    src={bgImage}
-                    alt=""
-                    className="rpp-supply-demand-bg-image"
-                    draggable={false}
-                />
                 {SUPPLY_KEYS.flatMap((key) => {
                     const data = supply?.[key];
                     const slot = slots[key];
@@ -191,8 +196,7 @@ const RppSupplyDemandInfographic = ({
                     ];
                 })}
             </div>
-            <figcaption className="wb-inv">{getText('rpp_refinery_input_bg_alt', lang)}</figcaption>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

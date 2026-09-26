@@ -1,10 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import YearSelect from '../components/YearSelect';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import { getRetailGasolinePricesData } from '../utils/dataLoader';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
 
 const TRACE_COUNT = 4;
 const COLORS = ['#3E2B26', '#6296B1', '#F48C36', '#2F414B'];
@@ -36,32 +45,18 @@ function isPinchScaleInVerticalTickBands(s) {
 
 const RetailGasolinePrices = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [gasolineData, setGasolineData] = useState({ years: [], dataByYear: {} });
     const [loading, setLoading] = useState(true);
     const [selectedYear, setSelectedYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const {
+        selected: selectedPoints,
+        clear,
+        onPlotClick,
+        opacityFor,
+    } = usePlotlySelection({ mode: 'points', traceCount: TRACE_COUNT, windowWidth });
     const [xAxisVerticalForPageZoom, setXAxisVerticalForPageZoom] = useState(false);
     const chartRef = useRef(null);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-
-    useEffect(() => {
-        getRetailGasolinePricesData()
-            .then((payload) => {
-                setGasolineData(payload);
-                if (payload.years?.length) {
-                    setSelectedYear(payload.years[0]);
-                }
-            })
-            .catch((err) => console.error('RetailGasolinePrices data load failed:', err))
-            .finally(() => setLoading(false));
-    }, []);
 
     const yearsDesc = useMemo(() => gasolineData.years || [], [gasolineData.years]);
     const yearsAsc = useMemo(() => [...yearsDesc].sort((a, b) => a - b), [yearsDesc]);
@@ -70,8 +65,6 @@ const RetailGasolinePrices = () => {
         ? `${yearsAsc[0]}\u2013${yearsAsc[yearsAsc.length - 1]}`
         : '';
 
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
     const slugifyExport = (s) =>
         stripHtml(s)
             .normalize('NFD')
@@ -79,11 +72,6 @@ const RetailGasolinePrices = () => {
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '') || 'retail-gasoline-prices';
-
-    const formatCpl = (n) => {
-        if (n === undefined || n === null || Number.isNaN(Number(n))) return '\u2014';
-        return Math.round(Number(n));
-    };
 
     const formatCplLocale = (n) => {
         if (n === undefined || n === null || Number.isNaN(Number(n))) return '\u2014';
@@ -103,15 +91,15 @@ const RetailGasolinePrices = () => {
     const docHeading = stripHtml(getText('kal_gas_prices_doc_heading', lang).replace('{span}', yearSpanLabel));
 
     const cplSuffix = getText('kal_gas_prices_table_hdr_cpl_suffix', lang);
-    const tableHeaders = [
-        getText('petroleum_employment_table_col_year', lang),
-        getText('kal_gas_prices_table_col_location', lang),
-        `${legendCrude}${cplSuffix}`,
-        `${legendRefining}${cplSuffix}`,
-        `${legendMarketing}${cplSuffix}`,
-        `${legendTaxes}${cplSuffix}`,
-        `${getText('kal_gas_prices_table_col_total', lang)}${cplSuffix}`
-    ];
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
+        { key: 'locationLabel', header: getText('kal_gas_prices_table_col_location', lang), align: 'left' },
+        { key: 'crude', header: `${legendCrude}${cplSuffix}`, align: 'num' },
+        { key: 'refining', header: `${legendRefining}${cplSuffix}`, align: 'num' },
+        { key: 'marketing', header: `${legendMarketing}${cplSuffix}`, align: 'num' },
+        { key: 'taxes', header: `${legendTaxes}${cplSuffix}`, align: 'num' },
+        { key: 'total', header: `${getText('kal_gas_prices_table_col_total', lang)}${cplSuffix}`, align: 'num' },
+    ], [lang, legendCrude, legendRefining, legendMarketing, legendTaxes, cplSuffix]);
 
     const tableFileSlug = `${slugifyExport(getText('kal_gas_prices_export_slug_table', lang))}${yearsAsc.length ? `-${yearsAsc[0]}-${yearsAsc[yearsAsc.length - 1]}` : ''}`;
     const pngFileSlug = `${slugifyExport(getText('kal_gas_prices_export_slug_chart', lang))}-${selectedYear ?? 'year'}`;
@@ -156,252 +144,52 @@ const RetailGasolinePrices = () => {
         color: '#58585a'
     };
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        const syncViewport = () => {
-            setWindowWidth(window.innerWidth);
-            const s = window.visualViewport?.scale ?? 1;
-            const pinchVertical = isPinchScaleInVerticalTickBands(s);
-            setXAxisVerticalForPageZoom(pinchVertical || isBrowserZoomInVerticalTickRange());
-        };
-        syncViewport();
-        window.addEventListener('resize', syncViewport);
-        const vv = window.visualViewport;
-        vv?.addEventListener('resize', syncViewport);
-        vv?.addEventListener('scroll', syncViewport);
-        return () => {
-            window.removeEventListener('resize', syncViewport);
-            vv?.removeEventListener('resize', syncViewport);
-            vv?.removeEventListener('scroll', syncViewport);
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints, selectedYear]);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-        let isSyncingTop = false;
-        let isSyncingTable = false;
-        const syncTopToTable = () => {
-            if (isSyncingTable) return;
-            isSyncingTop = true;
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTop = false;
-            });
-        };
-        const syncTableToTop = () => {
-            if (isSyncingTop) return;
-            isSyncingTable = true;
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTable = false;
-            });
-        };
-        const updateTopScrollWidth = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-        topScroll.addEventListener('scroll', syncTopToTable);
-        tableScroll.addEventListener('scroll', syncTableToTop);
-        updateTopScrollWidth();
-        const resizeObserver = new ResizeObserver(updateTopScrollWidth);
-        const table = tableScroll.querySelector('table');
-        if (table) resizeObserver.observe(table);
-        return () => {
-            topScroll.removeEventListener('scroll', syncTopToTable);
-            tableScroll.removeEventListener('scroll', syncTableToTop);
-            resizeObserver.disconnect();
-        };
-    }, [isTableOpen, flatTableRows.length, lang]);
-
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        const title = exportChartTitle;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 640,
-                scale: 2
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 96;
-                const legendHeight = 64;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 28;
-                const items = legendLabels.map((label, idx) => ({ label, color: COLORS[idx] }));
-                const gap = 28;
-                let totalW = 0;
-                items.forEach((it) => {
-                    ctx.font = '18px Arial';
-                    totalW += 28 + gap + ctx.measureText(it.label).width + gap;
-                });
-                let xPos = (canvas.width - totalW) / 2;
-                items.forEach((it) => {
-                    ctx.fillStyle = it.color;
-                    ctx.fillRect(xPos, legendY - 10, 22, 14);
-                    ctx.fillStyle = '#333333';
-                    ctx.font = '18px Arial';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(it.label, xPos + 28, legendY + 4);
-                    xPos += 28 + gap + ctx.measureText(it.label).width + gap;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${pngFileSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const lines = [tableHeaders.join(',')];
-        flatTableRows.forEach((r) => {
-            lines.push(
-                [
-                    r.year,
-                    `"${r.locationLabel.replace(/"/g, '""')}"`,
-                    formatCpl(r.crude),
-                    formatCpl(r.refining),
-                    formatCpl(r.marketing),
-                    formatCpl(r.taxes),
-                    formatCpl(r.total)
-                ].join(',')
-            );
-        });
-        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${tableFileSlug}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (cell) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: cell, bold: true, size: 20 })],
-                                alignment: AlignmentType.CENTER
-                            })
-                        ],
-                        shading: { fill: 'E6E6E6' }
-                    })
-            )
-        });
-        const dataRows = flatTableRows.map(
-            (r) =>
-                new TableRow({
-                    children: [
-                        String(r.year),
-                        r.locationLabel,
-                        String(formatCpl(r.crude)),
-                        String(formatCpl(r.refining)),
-                        String(formatCpl(r.marketing)),
-                        String(formatCpl(r.taxes)),
-                        String(formatCpl(r.total))
-                    ].map(
-                        (val) =>
-                            new TableCell({
-                                children: [
-                                    new Paragraph({
-                                        children: [new TextRun({ text: val, size: 20 })],
-                                        alignment: AlignmentType.CENTER
-                                    })
-                                ]
-                            })
-                    )
-                })
+        const downloadChartWithTitle = useChartPngDownloader(
+            chartRef,
+            () => ({
+            filename: `${pngFileSlug}.png`,
+            title: exportChartTitle,
+            height: 640,
+            legendItems: legendLabels.map((label, idx) => ({ label, color: COLORS[idx] })),
+        }),
+            [COLORS, exportChartTitle, legendLabels, pngFileSlug],
         );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: docHeading, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 }
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [700, 1200, 900, 900, 900, 900, 900],
-                            rows: [headerRow, ...dataRows]
-                        })
-                    ]
-                }
-            ]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${tableFileSlug}.docx`);
-    };
 
     const barOpacityFor = (traceIdx) => {
         if (selectedPoints === null) return 1;
-        return locationLabels.map((_, i) => (selectedPoints[traceIdx]?.includes(i) ? 1 : 0.3));
+        return locationLabels.map((_, i) => opacityFor(traceIdx, i));
     };
 
-    const chartAria = getText('kal_gas_prices_chart_aria', lang).replace('{year}', String(selectedYear));
+    const chartAria = (() => {
+        if (!yearBundle) {
+            return getText('kal_gas_prices_chart_aria', lang).replace('{year}', String(selectedYear));
+        }
+        const totalLabel = getText('kal_gas_prices_table_col_total', lang);
+        const totals = LOCATION_KEYS.map((k) => {
+            const d = yearBundle[k];
+            if (!d) return null;
+            return d.crude + d.refining + d.marketing + d.taxes;
+        });
+        const body = summarizeByCategory({
+            categories: locationLabels,
+            series: [
+                { name: legendCrude, values: crudeY, format: formatCplLocale },
+                { name: legendRefining, values: refiningY, format: formatCplLocale },
+                { name: legendMarketing, values: marketingY, format: formatCplLocale },
+                { name: legendTaxes, values: taxesY, format: formatCplLocale },
+                { name: totalLabel, values: totals, format: formatCplLocale },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Stacked bar chart of average regular gasoline price by city for ${selectedYear}`
+                : `Graphique à barres empilées du prix moyen de l'essence ordinaire par ville pour ${selectedYear}`,
+            unitNote: lang === 'en' ? 'Values in cents per litre' : 'Valeurs en cents le litre',
+            body,
+        });
+    })();
+    const chartRegionLabel = `${stripHtml(chartTitleText)}. ${chartAria}`;
 
     const plotData = [
         {
@@ -446,14 +234,49 @@ const RetailGasolinePrices = () => {
         }
     ];
 
+    useEffect(() => {
+        getRetailGasolinePricesData()
+            .then((payload) => {
+                setGasolineData(payload);
+                if (payload.years?.length) {
+                    setSelectedYear(payload.years[0]);
+                }
+            })
+            .catch((err) => console.error('RetailGasolinePrices data load failed:', err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    useEffect(() => {
+        const syncViewport = () => {
+            const s = window.visualViewport?.scale ?? 1;
+            const pinchVertical = isPinchScaleInVerticalTickBands(s);
+            setXAxisVerticalForPageZoom(pinchVertical || isBrowserZoomInVerticalTickRange());
+        };
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        const vv = window.visualViewport;
+        vv?.addEventListener('resize', syncViewport);
+        vv?.addEventListener('scroll', syncViewport);
+        return () => {
+            window.removeEventListener('resize', syncViewport);
+            vv?.removeEventListener('resize', syncViewport);
+            vv?.removeEventListener('scroll', syncViewport);
+        };
+    }, []);
+
+    
+
+
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd), name: lang === 'en',
+    });
+
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-138"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-138 page-chrome page-chrome--bleed"
             aria-labelledby="retail-gasoline-prices-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             {loading && (
                 <p style={{ padding: '24px', fontFamily: 'Arial, sans-serif' }}>
@@ -468,11 +291,6 @@ const RetailGasolinePrices = () => {
                     overflow-x: visible !important;
                 }
                 .page-138 {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                 }
                 .retail-gasoline-prices-container {
                     width: 100%;
@@ -480,39 +298,10 @@ const RetailGasolinePrices = () => {
                     box-sizing: border-box;
                 }
                 .page-138.page-content h1.retail-gasoline-prices-title {
-                    font-family: 'Lato', sans-serif;
                     font-size: 41px !important;
-                    font-weight: bold;
-                    color: var(--gc-text);
-                    margin-top: 0;
-                    margin-bottom: 25px;
-                    position: relative;
-                    padding-bottom: 0.5em;
-                    line-height: 1.2;
-                }
-                .page-138.page-content h1.retail-gasoline-prices-title::after {
-                    content: '';
-                    position: absolute;
-                    left: 0;
-                    bottom: 0.2em;
-                    width: 72px;
-                    height: 6px;
-                    background-color: var(--gc-red);
-                }
-                .retail-gasoline-prices-chart-frame {
-                    background-color: #f5f5f5;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                    box-sizing: border-box;
-                    overflow: visible;
                 }
                 .retail-gasoline-prices-chart-title {
-                    font-family: 'Lato', sans-serif;
-                    font-size: 29px;
-                    font-weight: bold;
                     color: var(--gc-text);
-                    text-align: center;
                     margin: 16px 0 12px 0;
                 }
                 .retail-gasoline-prices-chart-block {
@@ -561,68 +350,10 @@ const RetailGasolinePrices = () => {
                     margin-top: 20px;
                     margin-bottom: 0;
                 }
-                .retail-gasoline-prices-table-wrapper details > summary {
-                    display: block;
-                    width: 100%;
-                    padding: 12px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                    list-style: none;
-                }
-                .retail-gasoline-prices-table-wrapper details > summary::-webkit-details-marker {
-                    display: none;
-                }
-                .retail-gasoline-prices-table-wrapper details > summary:hover {
-                    background-color: #404040 !important;
-                }
-                button.retail-gasoline-prices-clear-selection:hover {
-                    background-color: #404040 !important;
-                }
-                .retail-gasoline-prices-table-wrapper .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                    margin-top: 10px;
-                }
-                .retail-gasoline-prices-table-wrapper .table-responsive table th,
-                .retail-gasoline-prices-table-wrapper .table-responsive table td {
-                    white-space: nowrap;
-                    padding: 8px 12px;
-                    font-family: var(--font-body);
-                    color: var(--gc-text);
-                }
-                .retail-gasoline-prices-download-buttons {
-                    display: flex;
-                    gap: 10px;
-                    margin-top: 15px;
-                    flex-wrap: wrap;
-                }
-                .retail-gasoline-prices-download-buttons button {
-                    padding: 8px 16px;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    background: #8C8C8C;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                }
-                .retail-gasoline-prices-download-buttons button:hover {
-                    background: #404040 !important;
-                }
                 @media (max-width: 768px) {
                     .page-138.page-content h1.retail-gasoline-prices-title {
                         font-size: 37px !important;
                     }
-                    .retail-gasoline-prices-chart-title { font-size: 26px; }
                     .retail-gasoline-prices-legend-label { font-size: 16px; }
                 }
                 @media (max-width: 480px) {
@@ -631,159 +362,33 @@ const RetailGasolinePrices = () => {
             `}</style>
 
             <div className="retail-gasoline-prices-container">
-                <h1 id="retail-gasoline-prices-main-title" className="retail-gasoline-prices-title">
+                <h1 id="retail-gasoline-prices-main-title" className="retail-gasoline-prices-title page-chrome-title">
                     {getText('kal_gas_prices_title', lang)}
                 </h1>
 
-                <div className="retail-gasoline-prices-chart-frame">
-                    <div
-                        ref={yearDropdownRef}
-                        className="retail-gasoline-prices-year-dropdown"
-                        style={{ position: 'relative', marginBottom: '20px', width: '200px' }}
-                    >
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                            {getText('year_slider_label', lang)}
-                        </label>
-                        <button
-                            ref={yearButtonRef}
-                            type="button"
-                            onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                            aria-expanded={isYearDropdownOpen}
-                            style={{
-                                width: '100%',
-                                padding: '10px 15px',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                textAlign: 'left',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                fontSize: '16px',
-                                fontFamily: 'Arial, sans-serif'
-                            }}
-                        >
-                            <span>{selectedYear}</span>
-                            <span aria-hidden="true" style={{ fontSize: '12px' }}>
-                                {isYearDropdownOpen ? '▲' : '▼'}
-                            </span>
-                        </button>
-                        {isYearDropdownOpen && (
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    left: 0,
-                                    width: '100%',
-                                    maxHeight: '300px',
-                                    overflowY: 'auto',
-                                    backgroundColor: '#fff',
-                                    border: '1px solid #ccc',
-                                    borderRadius: '4px',
-                                    zIndex: 100,
-                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                                }}
-                            >
-                                {yearsDesc.map((y) => {
-                                    const isSelected = selectedYear === y;
-                                    return (
-                                        <button
-                                            key={y}
-                                            type="button"
-                                            aria-pressed={isSelected}
-                                            aria-label={String(y)}
-                                            onClick={() => {
-                                                setSelectedYear(y);
-                                                setSelectedPoints(null);
-                                                setIsYearDropdownOpen(false);
-                                                setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                            }}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                width: '100%',
-                                                textAlign: 'left',
-                                                padding: '10px 15px',
-                                                cursor: 'pointer',
-                                                border: 'none',
-                                                borderBottom: '1px solid #eee',
-                                                backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                                fontFamily: 'Arial, sans-serif'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = '#f5f5f5';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff';
-                                            }}
-                                        >
-                                            <span
-                                                aria-hidden="true"
-                                                style={{
-                                                    height: '18px',
-                                                    width: '18px',
-                                                    borderRadius: '50%',
-                                                    border: '1px solid #ccc',
-                                                    marginRight: '10px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    backgroundColor: '#fff'
-                                                }}
-                                            >
-                                                {isSelected && (
-                                                    <span
-                                                        style={{
-                                                            height: '10px',
-                                                            width: '10px',
-                                                            borderRadius: '50%',
-                                                            backgroundColor: '#000'
-                                                        }}
-                                                    />
-                                                )}
-                                            </span>
-                                            <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
-                                                {y}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                <div className="retail-gasoline-prices-chart-frame page-chrome-chart-frame">
+                    <YearSelect
+                        lang={lang}
+                        id="retail-gasoline-prices-year-select"
+                        label={getText('year_slider_label', lang)}
+                        years={yearsDesc}
+                        value={selectedYear}
+                        onChange={(y) => {
+                            setSelectedYear(y);
+                            clear();
+                        }}
+                    />
                         <div role="status" className="wb-inv" aria-live="polite">
                             {lang === 'en' ? 'Showing data for' : 'Données affichées pour'} {selectedYear}
                         </div>
-                    </div>
 
-                    <h2 id="retail-gasoline-prices-chart-title" className="retail-gasoline-prices-chart-title">
+                    <h2 id="retail-gasoline-prices-chart-title" className="retail-gasoline-prices-chart-title page-chrome-chart-title">
                         {chartTitleText}
                     </h2>
 
                     <div className="retail-gasoline-prices-chart-block">
-                        <div role="region" aria-label={chartAria} tabIndex="0">
-                            {selectedPoints !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button
-                                        type="button"
-                                        className="retail-gasoline-prices-clear-selection"
-                                        onClick={() => setSelectedPoints(null)}
-                                        style={{
-                                            padding: '6px 12px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontSize: 14,
-                                            color: '#fff'
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                    </button>
-                                </div>
-                            )}
+                        <div role="region" aria-label={chartRegionLabel} tabIndex="0">
+                            {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
                             <figure ref={chartRef} className="retail-gasoline-prices-chart" style={{ margin: 0 }}>
                                 <div aria-hidden="true">
                                     <Plot
@@ -833,81 +438,10 @@ const RetailGasolinePrices = () => {
                                             paper_bgcolor: 'rgba(0,0,0,0)',
                                             plot_bgcolor: 'rgba(0,0,0,0)'
                                         }}
-                                        config={{
-                                            displayModeBar: true,
-                                            displaylogo: false,
-                                            responsive: true,
-                                            scrollZoom: false,
-                                            modeBarButtonsToRemove: [
-                                                'pan2d',
-                                                'select2d',
-                                                'lasso2d',
-                                                'zoom2d',
-                                                'zoomIn2d',
-                                                'zoomOut2d',
-                                                'autoScale2d',
-                                                'resetScale2d',
-                                                'toImage'
-                                            ],
-                                            modeBarButtonsToAdd: [
-                                                {
-                                                    name:
-                                                        lang === 'en'
-                                                            ? 'Download chart as PNG'
-                                                            : 'Télécharger le graphique en PNG',
-                                                    icon: {
-                                                        width: 24,
-                                                        height: 24,
-                                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                                    },
-                                                    click: (gd) => downloadChartWithTitle(gd)
-                                                }
-                                            ]
-                                        }}
+                                        config={plotConfig}
                                         style={{ width: '100%', height: `${chartHeight}px` }}
                                         useResizeHandler={true}
-                                        onClick={(data) => {
-                                            if (!data.points || data.points.length === 0) return;
-                                            const clickedPoint = data.points[0];
-                                            const traceIndex = clickedPoint.curveNumber;
-                                            const pointIndex = clickedPoint.pointIndex;
-                                            if (traceIndex === undefined || pointIndex === undefined) return;
-
-                                            if (windowWidth <= 768) {
-                                                const currentTime = Date.now();
-                                                const lastClick = lastClickRef.current;
-                                                const isSamePoint =
-                                                    traceIndex === lastClick.traceIndex &&
-                                                    pointIndex === lastClick.pointIndex;
-                                                const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-                                                lastClickRef.current = {
-                                                    time: currentTime,
-                                                    traceIndex,
-                                                    pointIndex
-                                                };
-                                                if (!isDoubleTap) return;
-                                            }
-
-                                            setSelectedPoints((prev) => {
-                                                if (prev === null) {
-                                                    const next = Array.from({ length: TRACE_COUNT }, () => []);
-                                                    next[traceIndex].push(pointIndex);
-                                                    return next;
-                                                }
-                                                const isSelected = prev[traceIndex]?.includes(pointIndex);
-                                                if (isSelected) {
-                                                    const next = prev.map((tracePoints, idx) =>
-                                                        idx === traceIndex
-                                                            ? tracePoints.filter((p) => p !== pointIndex)
-                                                            : [...tracePoints]
-                                                    );
-                                                    return next.every((arr) => arr.length === 0) ? null : next;
-                                                }
-                                                return prev.map((tracePoints, idx) =>
-                                                    idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
-                                                );
-                                            });
-                                        }}
+                                        onClick={onPlotClick}
                                     />
                                 </div>
                             </figure>
@@ -929,82 +463,32 @@ const RetailGasolinePrices = () => {
                     </div>
 
                     <div className="retail-gasoline-prices-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en'
-                                        ? ' Press Enter to open or close.'
-                                        : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginTop: '10px',
-                                    display: windowWidth <= 768 ? 'none' : 'block'
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                tabIndex="0"
-                            >
-                                <table className="table table-bordered table-striped table-hover">
-                                    <caption className="wb-inv">{getText('kal_gas_prices_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            {tableHeaders.map((hdr) => (
-                                                <th key={hdr} scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                    {hdr}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {flatTableRows.map((r) => (
-                                            <tr key={`${r.year}-${r.locKey}`}>
-                                                <td style={{ textAlign: 'center' }}>{r.year}</td>
-                                                <td style={{ textAlign: 'center' }}>{r.locationLabel}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatCplLocale(r.crude)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatCplLocale(r.refining)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatCplLocale(r.marketing)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatCplLocale(r.taxes)}</td>
-                                                <td style={{ textAlign: 'center' }}>{formatCplLocale(r.total)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="retail-gasoline-prices-download-buttons">
-                                <button type="button" onClick={downloadTableAsCSV}>
-                                    {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                </button>
-                                <button type="button" onClick={() => downloadTableAsDocx()}>
-                                    {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                </button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={flatTableRows}
+                            csvFilename={`${tableFileSlug}.csv`}
+                            docx={{
+                                filename: `${tableFileSlug}.docx`,
+                                title: docHeading,
+                                titleAlign: 'center',
+                                columnWidths: [700, 1200, 900, 900, 900, 900, 900],
+                                fontSize: 20,
+                            }}
+                            caption={getText('kal_gas_prices_table_caption', lang)}
+                            tableAriaLabel={getText('kal_gas_prices_table_caption', lang)}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 || colIndex === 1
+                                    ? String(raw ?? '')
+                                    : formatCplLocale(raw)
+                            )}
+                        />
                     </div>
                 </div>
             </div>
             </>
             )}
-        </main>
+        </PageShell>
     );
 };
 

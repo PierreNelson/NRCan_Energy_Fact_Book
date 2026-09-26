@@ -1,11 +1,21 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import renewableEnergyInternationalBgEn from '../assets/renewable_energy_international_bg.svg';
 import renewableEnergyInternationalBgFr from '../assets/renewable_energy_international_bg_fr.svg';
+import { formatLocalePct } from '../utils/formatLocale';
 
 const CANADA_CAPSULE = '#819476';
 const GREY_BAR = '#7a7a7a';
@@ -17,11 +27,6 @@ const HOVER_LABEL = {
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
 
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
 
 /** Position custom tooltip relative to the chart bg wrapper (same as page 76). */
 const getPlotTooltipPosition = (event, bgRef, chartRef) => {
@@ -87,9 +92,6 @@ const SHARE_ROWS = [
 ];
 const SHARE_VALUES = SHARE_ROWS.map((row) => row.value);
 const SHARE_COLORS = SHARE_ROWS.map((row) => row.color);
-
-const DOC_SHARE_COLUMN_WIDTHS = [4200, 2200];
-const DOC_RANK_COLUMN_WIDTHS = [1200, 4200, 1800];
 
 /**
  * Illustration is a Plotly layout.image in fixed paper coordinates.
@@ -185,8 +187,6 @@ const computePageZoomScale = (baseline) => {
     return { pageCssZoom, baseline: nextBaseline };
 };
 
-const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
 
@@ -207,36 +207,31 @@ const drawRoundedRect = (ctx, x, y, w, h, r) => {
 
 const RenewableEnergyInternational = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
     const [hoverTip, setHoverTip] = useState(null);
 
     const chartRef = useRef(null);
     const chartBgRef = useRef(null);
     const chartWidthRef = useRef(null);
     const zoomBaselineRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, pointIndex: null });
     const clickHandlerRef = useRef(null);
     const hoverHandlerRef = useRef(null);
     const hoverClearRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
     const [chartWidth, setChartWidth] = useState(800);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const bgImage = lang === 'en' ? renewableEnergyInternationalBgEn : renewableEnergyInternationalBgFr;
 
-    const formatPct = useCallback((value, digits = 1) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
-        const formatted = Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-        return lang === 'en' ? `${formatted}%` : `${formatted} %`;
-    }, [lang, locale]);
+    const formatPct = useCallback((value, digits = 1) => formatLocalePct(value, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    }), [lang]);
 
     const formatWhole = (value) => Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
 
@@ -250,8 +245,10 @@ const RenewableEnergyInternational = () => {
     const subtitle = getText('renewable_energy_international_subtitle', lang);
     const productionTitle = substitute(getText('renewable_energy_international_production_title', lang), textVars);
     const chartTitle = substitute(getText('renewable_energy_international_chart_title', lang), textVars);
+    const exportChartTitle = stripHtml(chartTitle);
     const chartDownloadSlug = getText('renewable_energy_international_download_title', lang).replace(/\s+/g, '_');
     const rankingDownloadSlug = getText('renewable_energy_international_ranking_download_title', lang).replace(/\s+/g, '_');
+    const tableCaption = getText('renewable_energy_international_table_caption', lang);
 
     const rankingRows = useMemo(
         () => PRODUCTION_RANKING.map((row) => ({
@@ -267,6 +264,19 @@ const RenewableEnergyInternational = () => {
     );
     const shareValues = SHARE_VALUES;
     const shareColors = SHARE_COLORS;
+
+    const tableColumns = useMemo(() => [
+        { key: 'category', header: getText('renewable_energy_international_table_col_category', lang), align: 'left' },
+        { key: 'share', header: getText('renewable_energy_international_table_col_share', lang), align: 'num' },
+    ], [lang]);
+
+    const dataTableRows = useMemo(
+        () => SHARE_ROWS.map((row, index) => ({
+            category: shareLabels[index],
+            share: row.value,
+        })),
+        [shareLabels],
+    );
 
     // Match page 76 label sizes at low zoom; compact labels + margin cap protect the plot at high zoom.
     const tickFontSize = tickFontSizeForWidth(windowWidth);
@@ -362,31 +372,9 @@ const RenewableEnergyInternational = () => {
 
     const handleChartClick = useCallback((event) => {
         if (!event?.points?.length) return;
-        const pointIndex = getPointIndex(event.points[0]);
-        if (pointIndex === undefined) return;
-
-        const isCoarsePointer = typeof window !== 'undefined'
-            && window.matchMedia('(pointer: coarse)').matches;
-
-        if (isCoarsePointer) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const isDoubleTap = pointIndex === last.pointIndex && now - last.time < 300;
-            lastClickRef.current = { time: now, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
         setHoverTip(null);
-
-        setSelectedPoints((prev) => {
-            if (prev === null) return [pointIndex];
-            if (prev.includes(pointIndex)) {
-                const next = prev.filter((i) => i !== pointIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, pointIndex];
-        });
-    }, []);
+        onPlotClick(event);
+    }, [onPlotClick]);
 
     useEffect(() => {
         hoverHandlerRef.current = handleChartHover;
@@ -421,16 +409,10 @@ const RenewableEnergyInternational = () => {
         [bindPlotHandlers],
     );
 
-    const clearSelection = () => {
-        lastClickRef.current = { time: 0, pointIndex: null };
-        setSelectedPoints(null);
-    };
-
     const handleChartWrapperLeave = useCallback(() => setHoverTip(null), []);
 
     useEffect(() => {
         const onResize = () => {
-            setWindowWidth(window.innerWidth);
             const { pageCssZoom: nextZoom, baseline } = computePageZoomScale(zoomBaselineRef.current);
             zoomBaselineRef.current = baseline;
             setPageCssZoom(nextZoom);
@@ -457,54 +439,8 @@ const RenewableEnergyInternational = () => {
         return () => ro.disconnect();
     }, []);
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
 
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return undefined;
 
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
 
     const downloadRankingPng = () => {
         const scale = 2;
@@ -573,159 +509,15 @@ const RenewableEnergyInternational = () => {
         });
     };
 
-    const downloadChartWithTitle = useCallback(async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 520,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = imgData;
-            });
-            const titleHeight = 90;
-            canvas.width = img.width;
-            canvas.height = img.height + titleHeight;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#333333';
-            ctx.font = 'bold 28px Arial';
-            ctx.textAlign = 'center';
-            const words = chartTitle.split(' ');
-            const lines = [];
-            let line = '';
-            words.forEach((word) => {
-                const test = line ? `${line} ${word}` : word;
-                if (ctx.measureText(test).width > canvas.width - 80 && line) {
-                    lines.push(line);
-                    line = word;
-                } else {
-                    line = test;
-                }
-            });
-            if (line) lines.push(line);
-            lines.forEach((textLine, index) => {
-                ctx.fillText(textLine, canvas.width / 2, 36 + index * 30);
-            });
-            ctx.drawImage(img, 0, titleHeight);
-            // Illustration is already in the Plotly PNG via layout.images — do not draw it twice.
-            canvas.toBlob((blob) => {
-                if (blob) saveAs(blob, `${chartDownloadSlug}.png`);
-            });
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    }, [chartTitle, chartDownloadSlug]);
-
-    const downloadCsv = () => {
-        const sections = [
-            csvEscape(productionTitle),
-            [
-                csvEscape(getText('renewable_energy_international_table_col_rank', lang)),
-                csvEscape(getText('renewable_energy_international_table_col_country', lang)),
-                csvEscape(getText('renewable_energy_international_table_col_share', lang)),
-            ].join(','),
-            ...rankingRows.map((row) => [
-                row.rank,
-                csvEscape(row.name),
-                csvEscape(formatPct(row.pct, 0)),
-            ].join(',')),
-            '',
-            csvEscape(chartTitle),
-            [
-                csvEscape(getText('renewable_energy_international_table_col_category', lang)),
-                csvEscape(getText('renewable_energy_international_table_col_share', lang)),
-            ].join(','),
-            ...SHARE_ROWS.map((row, index) => [
-                csvEscape(shareLabels[index]),
-                csvEscape(formatPct(row.value, 1)),
-            ].join(',')),
-        ];
-        saveAs(new Blob([sections.join('\n')], { type: 'text/csv;charset=utf-8;' }), `${chartDownloadSlug}.csv`);
-    };
-
-    const downloadDocx = async () => {
-        const rankHeader = new TableRow({
-            children: [
-                getText('renewable_energy_international_table_col_rank', lang),
-                getText('renewable_energy_international_table_col_country', lang),
-                getText('renewable_energy_international_table_col_share', lang),
-            ].map((cell) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: cell, bold: true, size: 18 })],
-                    alignment: AlignmentType.CENTER,
-                })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const rankRows = rankingRows.map((row) => new TableRow({
-            children: [String(row.rank), row.name, formatPct(row.pct, 0)].map((val, index) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: String(val), size: 18 })],
-                    alignment: index === 1 ? AlignmentType.LEFT : AlignmentType.CENTER,
-                })],
-            })),
-        }));
-
-        const shareHeader = new TableRow({
-            children: [
-                getText('renewable_energy_international_table_col_category', lang),
-                getText('renewable_energy_international_table_col_share', lang),
-            ].map((cell) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: cell, bold: true, size: 18 })],
-                    alignment: AlignmentType.CENTER,
-                })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const shareDocRows = SHARE_ROWS.map((row, index) => new TableRow({
-            children: [shareLabels[index], formatPct(row.value, 1)].map((val, colIndex) => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: String(val), size: 18 })],
-                    alignment: colIndex === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                })],
-            })),
-        }));
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: pageTitle, bold: true, size: 28 })],
-                        spacing: { after: 200 },
-                    }),
-                    new Paragraph({
-                        children: [new TextRun({ text: productionTitle, bold: true, size: 22 })],
-                        spacing: { after: 160 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: DOC_RANK_COLUMN_WIDTHS,
-                        rows: [rankHeader, ...rankRows],
-                    }),
-                    new Paragraph({
-                        children: [new TextRun({ text: chartTitle, bold: true, size: 22 })],
-                        spacing: { before: 300, after: 160 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: DOC_SHARE_COLUMN_WIDTHS,
-                        rows: [shareHeader, ...shareDocRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${chartDownloadSlug}.docx`);
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: 520,
+    }),
+        [chartDownloadSlug, exportChartTitle],
+    );
 
     const barLabelFont = useMemo(() => ({
         size: BAR_VALUE_FONT_SIZE,
@@ -794,62 +586,48 @@ const RenewableEnergyInternational = () => {
         bargap: BAR_GAP,
     }), [plotHeight, plotMargin, chartImages, shareLabels, boldTickText, tickFont]);
 
-    const chartConfig = useMemo(() => ({
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-            icon: {
-                width: 24,
-                height: 24,
-                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-            },
-            click: (gd) => downloadChartWithTitle(gd),
-        }],
-    }), [lang, downloadChartWithTitle]);
+    const chartConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const plotKey = `renewable-energy-international-${lang}-${tickFontSize}-${leftMargin}-${plotHeight}`;
 
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: shareLabels,
+            series: [{
+                name: lang === 'en' ? 'Share' : 'Part',
+                values: shareValues,
+                format: (v) => formatPct(v, 1),
+            }],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? 'Bar chart of international renewable energy shares'
+                : "Graphique à barres des parts d'énergie renouvelable à l'échelle internationale",
+            body,
+            lang,
+        });
+    };
+    const chartRegionLabel = `${chartTitle}. ${getChartSummary()}`;
+
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content renewable-energy-international"
+            className="page-content renewable-energy-international page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="renewable-energy-international-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
-.renewable-energy-international {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
-}
 .renewable-energy-international-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .renewable-energy-international.page-content h1.renewable-energy-international-title {
-    font-family: 'Lato', sans-serif;
     font-size: 50px !important;
-    font-weight: bold;
     color: #819476;
     margin: 0 0 12px 0;
-    line-height: 1.2;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
-}
-.renewable-energy-international.page-content h1.renewable-energy-international-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .renewable-energy-international-subtitle {
     font-family: 'Lato', sans-serif;
@@ -929,9 +707,7 @@ const RenewableEnergyInternational = () => {
     flex-wrap: wrap;
     margin: 0 0 28px 0;
 }
-.renewable-energy-international-ranking-actions button,
-.renewable-energy-international-download-buttons button,
-.renewable-energy-international-clear-selection {
+.renewable-energy-international-ranking-actions button {
     padding: 8px 16px;
     border: 1px solid #404040;
     border-radius: 4px;
@@ -942,18 +718,9 @@ const RenewableEnergyInternational = () => {
     font-weight: bold;
     color: #ffffff;
 }
-.renewable-energy-international-clear-selection { margin-bottom: 8px; padding: 6px 12px; }
-.renewable-energy-international-ranking-actions button:hover,
-.renewable-energy-international-download-buttons button:hover,
-.renewable-energy-international-clear-selection:hover,
-.renewable-energy-international-table-wrapper details > summary:hover { background-color: #404040 !important; }
+.renewable-energy-international-ranking-actions button:hover { background-color: #404040 !important; }
 .renewable-energy-international-chart-frame {
     position: relative;
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    box-sizing: border-box;
-    overflow: visible;
 }
 .renewable-energy-international-chart-bg-wrapper {
     position: relative;
@@ -1033,59 +800,13 @@ const RenewableEnergyInternational = () => {
 }
 .renewable-energy-international-chart .hoverlayer { display: none !important; }
 .renewable-energy-international-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.renewable-energy-international-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.renewable-energy-international-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.renewable-energy-international-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.renewable-energy-international-table-scrollbar > div { height: 20px; }
-.renewable-energy-international-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    padding: 15px;
-    box-sizing: border-box;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.renewable-energy-international-table-responsive::-webkit-scrollbar { display: none; }
-.renewable-energy-international-table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-.renewable-energy-international-table-responsive th,
-.renewable-energy-international-table-responsive td {
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    white-space: nowrap;
-}
-.renewable-energy-international-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.wb-inv {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    border: 0;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-}
 @media (max-width: 768px) {
     .renewable-energy-international.page-content h1.renewable-energy-international-title { font-size: 37px !important; }
 }
             `}</style>
 
             <div className="renewable-energy-international-inner">
-                <h1 id="renewable-energy-international-title" className="renewable-energy-international-title">{pageTitle}</h1>
+                <h1 id="renewable-energy-international-title" className="renewable-energy-international-title page-chrome-title">{pageTitle}</h1>
                 <h2 className="renewable-energy-international-subtitle">{subtitle}</h2>
 
                 <h3 className="renewable-energy-international-production-title">{productionTitle}</h3>
@@ -1118,16 +839,12 @@ const RenewableEnergyInternational = () => {
                     </button>
                 </div>
 
-                <div className="renewable-energy-international-chart-frame">
+                <div className="renewable-energy-international-chart-frame page-chrome-chart-frame">
                     <h2 className="renewable-energy-international-chart-title">
                         {chartTitle}
                     </h2>
 
-                    {selectedPoints !== null && (
-                        <button type="button" className="renewable-energy-international-clear-selection" onClick={clearSelection}>
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
-                    )}
+                    {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clearSelection} />}
 
                     <div
                         ref={(node) => {
@@ -1144,7 +861,7 @@ const RenewableEnergyInternational = () => {
                                 className="renewable-energy-international-chart"
                                 style={{ height: plotHeight, margin: 0 }}
                                 role="region"
-                                aria-label={chartTitle}
+                                aria-label={chartRegionLabel}
                                 tabIndex={0}
                             >
                                 <RenewableEnergyInternationalPlot
@@ -1171,48 +888,28 @@ const RenewableEnergyInternational = () => {
                     </div>
 
                     <div className="renewable-energy-international-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={topScrollRef} className="renewable-energy-international-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div ref={tableScrollRef} className="renewable-energy-international-table-responsive" role="region" tabIndex={0}>
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{getText('renewable_energy_international_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">{getText('renewable_energy_international_table_col_category', lang)}</th>
-                                            <th scope="col">{getText('renewable_energy_international_table_col_share', lang)}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {SHARE_ROWS.map((row, index) => (
-                                            <tr key={row.key}>
-                                                <th scope="row">{shareLabels[index]}</th>
-                                                <td style={{ textAlign: 'right' }}>{formatPct(row.value, 1)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <div className="renewable-energy-international-download-buttons">
-                                    <button type="button" onClick={downloadCsv}>
-                                        {getText('renewable_energy_international_download_csv', lang)}
-                                    </button>
-                                    <button type="button" onClick={downloadDocx}>
-                                        {getText('renewable_energy_international_download_docx', lang)}
-                                    </button>
-                                </div>
-                            </div>
-                            <div ref={bottomScrollRef} className="renewable-energy-international-table-scrollbar" aria-hidden="true"><div /></div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={dataTableRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [4200, 2200],
+                                fontSize: 18,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatPct(raw, 1)
+                            )}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

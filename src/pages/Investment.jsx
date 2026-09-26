@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import PageShell from '../components/PageShell';
 import { useOutletContext, Link } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import { getCapitalExpendituresData, getInfrastructureData, getEconomicContributionsData } from '../utils/dataLoader';
@@ -13,12 +14,16 @@ const Investment = () => {
         getEconomicContributionsData();
     }, []);
 
+    useEffect(() => {
+        getCapitalExpendituresData();
+        getInfrastructureData();
+        getEconomicContributionsData();
+    }, []);
+
     return (
-        <main 
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-23 investment-overview-main cover-page" 
-            role="main"
+            className="page-content page-23 investment-overview-main cover-page"
             style={{
                 backgroundColor: '#8a7d5a',
                 flex: '1 1 auto',
@@ -215,7 +220,7 @@ const Investment = () => {
                     </ul>
                 </nav>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

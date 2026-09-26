@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import canadianCrudeProductionBgSvg from '../assets/canadian_crude_production_bg.svg';
 import {
     BARREL_CLIP_PATH_D,
@@ -29,9 +30,19 @@ export default function CanadianCrudeProductionInfographic({
     );
 
     return (
-        <div ref={figureRef} className="canadian-crude-production-infographic-figure" aria-label={ariaLabel} role="img">
+        <AccessibleInfographic
+            ref={figureRef}
+            as="div"
+            mode="image"
+            className="canadian-crude-production-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={canadianCrudeProductionBgSvg}
+            imgClassName="wb-inv"
+        >
             <style>{`
 .canadian-crude-production-infographic-figure {
+    position: relative;
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
@@ -195,6 +206,6 @@ export default function CanadianCrudeProductionInfographic({
                     </div>
                 </div>
             </div>
-        </div>
+        </AccessibleInfographic>
     );
 }

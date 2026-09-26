@@ -1,34 +1,14 @@
 import React, { useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { downloadInfographicImagePng, resolveAccessibleInfographicGraphic } from '../utils/downloadInfographicPng';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import hydrogenBgEn from '../assets/hydrogen_bg.svg';
 import hydrogenBgFr from '../assets/hydrogen_bg_fr.svg';
 
 const INTRO_KEYS = ['intro_1', 'intro_2', 'intro_3'];
-
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
-
-const exportHydrogenInfographicPng = async (imgEl, { scale = 2 }) => {
-    if (!imgEl) return null;
-
-    const loaded = await waitForImage(imgEl);
-    const canvas = document.createElement('canvas');
-    canvas.width = loaded.naturalWidth * scale;
-    canvas.height = loaded.naturalHeight * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(loaded, 0, 0, loaded.naturalWidth, loaded.naturalHeight);
-    return canvas;
-};
 
 const Hydrogen = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -39,29 +19,20 @@ const Hydrogen = () => {
     const fileSlugBase = getText('hydrogen_download_title', lang).replace(/\s+/g, '_');
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportHydrogenInfographicPng(infographicImgRef.current, { scale: 2 });
-        if (!canvas) return;
-        canvas.toBlob((blob) => {
-            if (blob) saveAs(blob, `${fileSlugBase}.png`);
+        await downloadInfographicImagePng(resolveAccessibleInfographicGraphic(infographicImgRef.current), {
+            filename: `${fileSlugBase}.png`,
+            scale: 2,
         });
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content hydrogen"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content hydrogen page-chrome page-chrome--bleed"
             aria-labelledby="hydrogen-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .hydrogen {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .hydrogen-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .hydrogen.page-content .hydrogen-title {
@@ -138,17 +109,16 @@ const Hydrogen = () => {
                 </div>
 
                 <div className="hydrogen-infographic-section">
-                    <figure className="hydrogen-infographic-figure" aria-label={getText('hydrogen_infographic_aria', lang)}>
-                        <img
-                            ref={infographicImgRef}
-                            src={bgImage}
-                            alt=""
-                            className="hydrogen-bg-image"
-                            draggable={false}
-                            aria-hidden="true"
-                        />
-                        <figcaption className="wb-inv">{getText('hydrogen_infographic_aria', lang)}</figcaption>
-                    </figure>
+                    <AccessibleInfographic
+                        ref={infographicImgRef}
+                        as="figure"
+                        mode="image"
+                        className="hydrogen-infographic-figure"
+                        title={pageTitle}
+                        overview={`${pageTitle}. ${getText('hydrogen_infographic_aria', lang)}`}
+                        src={bgImage}
+                        imgClassName="hydrogen-bg-image"
+                    />
 
                     <div className="hydrogen-download-buttons">
                         <button type="button" onClick={downloadInfographicPng}>
@@ -157,7 +127,7 @@ const Hydrogen = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

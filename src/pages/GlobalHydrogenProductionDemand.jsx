@@ -1,9 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import {
     REFERENCE_YEAR,
     PRODUCTION_KEYS,
@@ -13,15 +21,12 @@ import {
     DATA_BY_YEAR,
     DOC_COLUMN_WIDTHS,
 } from './GlobalHydrogenProductionDemand.constants';
+import hexToRgba from '../utils/hexToRgba';
+import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
 
 const STACKED_LAYOUT_BROWSER_ZOOM = 1.1;
 const STACKED_LAYOUT_DETECTED_ZOOM = 1.0 + (STACKED_LAYOUT_BROWSER_ZOOM - 1.0) * 0.25;
 
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
 
 const HOVER_LABEL = {
     bgcolor: '#ffffff',
@@ -29,26 +34,8 @@ const HOVER_LABEL = {
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
 
-const DOWNLOAD_ICON = {
-    width: 24,
-    height: 24,
-    path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-};
-
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
-
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
-const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, '');
 
 const digitCount = (value) => {
     const n = Number(value);
@@ -93,27 +80,23 @@ const computePageZoomScale = (baseline) => {
 const GlobalHydrogenProductionDemand = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [selectedYear] = useState(REFERENCE_YEAR);
-    const [selectedProductionSlices, setSelectedProductionSlices] = useState(null);
-    const [selectedDemandSlices, setSelectedDemandSlices] = useState(null);
-    const [isProductionTableOpen, setIsProductionTableOpen] = useState(false);
-    const [isDemandTableOpen, setIsDemandTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedProductionSlices,
+        clear: clearProductionSelection,
+        onPlotClick: handleProductionClick,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
+    const {
+        selected: selectedDemandSlices,
+        clear: clearDemandSelection,
+        onPlotClick: handleDemandClick,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
     const zoomBaselineRef = useRef(null);
 
     const productionChartRef = useRef(null);
     const demandChartRef = useRef(null);
-    const lastProductionClickRef = useRef({ time: 0, index: null });
-    const lastDemandClickRef = useRef({ time: 0, index: null });
 
-    const productionTableTopRef = useRef(null);
-    const productionTableScrollRef = useRef(null);
-    const productionTableBottomRef = useRef(null);
-    const demandTableTopRef = useRef(null);
-    const demandTableScrollRef = useRef(null);
-    const demandTableBottomRef = useRef(null);
-
-    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const useStackedLayout = pageCssZoom >= STACKED_LAYOUT_DETECTED_ZOOM;
     // Inside labels + HTML legend: narrow viewports or when charts stack at 110%+ zoom.
     const zoomLegendMode = windowWidth <= 768 || useStackedLayout;
@@ -124,25 +107,23 @@ const GlobalHydrogenProductionDemand = () => {
     const formatMt = useCallback((value, digits) => {
         if (value == null || Number.isNaN(Number(value))) return '–';
         const resolvedDigits = digits == null ? digitCount(value) : digits;
-        return Number(value).toLocaleString(locale, {
+        return formatLocaleNumber(value, lang, {
             minimumFractionDigits: resolvedDigits,
             maximumFractionDigits: resolvedDigits,
         });
-    }, [locale]);
+    }, [lang]);
 
     const formatPct = useCallback((value, digits) => {
         if (value == null || Number.isNaN(Number(value))) return '–';
         const resolvedDigits = digits == null ? digitCount(value) : digits;
-        const formatted = Number(value).toLocaleString(locale, {
+        return formatLocalePct(value, lang, {
             minimumFractionDigits: resolvedDigits,
             maximumFractionDigits: resolvedDigits,
         });
-        return lang === 'fr' ? `${formatted} %` : `${formatted}%`;
-    }, [lang, locale]);
+    }, [lang]);
 
     useEffect(() => {
         const syncLayout = () => {
-            setWindowWidth(window.innerWidth);
             const { pageCssZoom: nextPageCssZoom, baseline } = computePageZoomScale(zoomBaselineRef.current);
             zoomBaselineRef.current = baseline;
             setPageCssZoom(nextPageCssZoom);
@@ -157,71 +138,6 @@ const GlobalHydrogenProductionDemand = () => {
             window.visualViewport?.removeEventListener('scroll', syncLayout);
         };
     }, []);
-
-    const syncTableScroll = useCallback((topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    const bindTableScrollSync = useCallback((isOpen, topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isOpen) return undefined;
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(() => syncTableScroll(topRef, scrollRef, bottomRef));
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [syncTableScroll]);
-
-    useEffect(
-        () => bindTableScrollSync(
-            isProductionTableOpen,
-            productionTableTopRef,
-            productionTableScrollRef,
-            productionTableBottomRef,
-        ),
-        [isProductionTableOpen, windowWidth, bindTableScrollSync, lang],
-    );
-
-    useEffect(
-        () => bindTableScrollSync(
-            isDemandTableOpen,
-            demandTableTopRef,
-            demandTableScrollRef,
-            demandTableBottomRef,
-        ),
-        [isDemandTableOpen, windowWidth, bindTableScrollSync, lang],
-    );
 
     const productionSlices = useMemo(() => {
         if (!yearData) return [];
@@ -260,10 +176,11 @@ const GlobalHydrogenProductionDemand = () => {
     const productionFileSlug = productionDownloadTitle.replace(/\s+/g, '_').replace(/–/g, '-');
     const demandFileSlug = demandDownloadTitle.replace(/\s+/g, '_').replace(/–/g, '-');
 
-    const tableHeaders = useMemo(() => [
-        getText('global_hydrogen_production_demand_col_category', lang),
-        getText('global_hydrogen_production_demand_col_share', lang),
-        getText('global_hydrogen_production_demand_col_mt', lang),
+    // Shared column helper for both production and demand ChartDataTables (data-mode).
+    const tableColumns = useMemo(() => [
+        { key: 'label', header: getText('global_hydrogen_production_demand_col_category', lang), align: 'left' },
+        { key: 'pct', header: getText('global_hydrogen_production_demand_col_share', lang), align: 'num' },
+        { key: 'mt', header: getText('global_hydrogen_production_demand_col_mt', lang), align: 'num' },
     ], [lang]);
 
     const productionTableRows = useMemo(
@@ -285,6 +202,12 @@ const GlobalHydrogenProductionDemand = () => {
         })),
         [demandSlices, lang],
     );
+
+    const renderTableCell = useCallback((raw, { colIndex }) => {
+        if (colIndex === 0) return String(raw ?? '');
+        if (colIndex === 1) return formatPct(raw);
+        return formatMt(raw);
+    }, [formatPct, formatMt]);
 
     // Keep pie % labels at least 14px (WCAG-friendly / GC secondary text floor).
     const textSize = windowWidth <= 480 ? 14 : windowWidth <= 768 ? 14 : 16;
@@ -402,156 +325,37 @@ const GlobalHydrogenProductionDemand = () => {
         uirevision: `global-hydrogen-${selectedYear}`,
     }), [pieTopMargin, pieBottomMargin, pieSideMargin, plotHeight, centerAnnotation, selectedYear]);
 
-    const toggleSliceSelection = useCallback((setSelected, lastClickRef, sliceIndex) => {
-        if (windowWidth <= 768) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const isSameSlice = sliceIndex === last.index && last.index != null;
-            const isDoubleTap = isSameSlice && now - last.time < 300;
-            lastClickRef.current = { time: now, index: sliceIndex };
-            if (!isDoubleTap) return;
-        }
-        setSelected((prev) => {
-            if (prev === null) return [sliceIndex];
-            if (prev.includes(sliceIndex)) {
-                const next = prev.filter((index) => index !== sliceIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, sliceIndex];
-        });
-    }, [windowWidth]);
+    const downloadProductionPng = useChartPngDownloader(
+        productionChartRef,
+        () => ({
+        filename: `${productionFileSlug}.png`,
+        title: stripHtml(productionChartTitle),
+        height: 800,
+    }),
+        [productionChartTitle, productionFileSlug, stripHtml],
+    );
 
-    const handleProductionClick = useCallback((event) => {
-        const point = event?.points?.[0];
-        if (!point) return;
-        const index = point.pointNumber ?? point.pointIndex;
-        if (index == null || index < 0) return;
-        toggleSliceSelection(setSelectedProductionSlices, lastProductionClickRef, index);
-    }, [toggleSliceSelection]);
+    const downloadDemandPng = useChartPngDownloader(
+        demandChartRef,
+        () => ({
+        filename: `${demandFileSlug}.png`,
+        title: stripHtml(demandChartTitle),
+        height: 800,
+    }),
+        [demandChartTitle, demandFileSlug, stripHtml],
+    );
 
-    const handleDemandClick = useCallback((event) => {
-        const point = event?.points?.[0];
-        if (!point) return;
-        const index = point.pointNumber ?? point.pointIndex;
-        if (index == null || index < 0) return;
-        toggleSliceSelection(setSelectedDemandSlices, lastDemandClickRef, index);
-    }, [toggleSliceSelection]);
+    const productionChartConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadProductionPng(gd),
+        name: getText('global_hydrogen_production_demand_download_png', lang),
+    });
 
-    const downloadChartPng = useCallback(async (chartRef, title, fileSlug, plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        const exportTitle = stripHtml(title);
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 800,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 80;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(exportTitle, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    }, []);
-
-    const downloadChartCsv = useCallback((rows, fileSlug) => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const body = rows.map((row) =>
-            [row.label, formatPct(row.pct), formatMt(row.mt)].map(csvEscape).join(','),
-        );
-        saveAs(new Blob([[header, ...body].join('\n')], { type: 'text/csv;charset=utf-8;' }), `${fileSlug}.csv`);
-    }, [tableHeaders, formatPct, formatMt]);
-
-    const downloadChartDocx = useCallback(async (rows, title, fileSlug) => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map((header) =>
-                new TableCell({
-                    children: [new Paragraph({
-                        children: [new TextRun({ text: header, bold: true, size: 18 })],
-                        alignment: AlignmentType.CENTER,
-                    })],
-                    shading: { fill: 'E6E6E6' },
-                }),
-            ),
-        });
-        const dataRows = rows.map((row) =>
-            new TableRow({
-                children: [row.label, formatPct(row.pct), formatMt(row.mt)].map((value, index) =>
-                    new TableCell({
-                        children: [new Paragraph({
-                            children: [new TextRun({ text: String(value), size: 18 })],
-                            alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                        })],
-                    }),
-                ),
-            }),
-        );
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(title), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: DOC_COLUMN_WIDTHS,
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${fileSlug}.docx`);
-    }, [tableHeaders, formatPct, formatMt]);
-
-    const productionChartConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('global_hydrogen_production_demand_download_png', lang),
-            icon: DOWNLOAD_ICON,
-            click: (gd) => {
-                downloadChartPng(productionChartRef, productionChartTitle, productionFileSlug, gd);
-            },
-        }],
-    };
-
-    const demandChartConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('global_hydrogen_production_demand_download_png', lang),
-            icon: DOWNLOAD_ICON,
-            click: (gd) => {
-                downloadChartPng(demandChartRef, demandChartTitle, demandFileSlug, gd);
-            },
-        }],
-    };
+    const demandChartConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadDemandPng(gd),
+        name: getText('global_hydrogen_production_demand_download_png', lang),
+    });
 
     useEffect(() => {
         const setupAccessibility = (chartRef) => {
@@ -590,19 +394,6 @@ const GlobalHydrogenProductionDemand = () => {
         };
     }, [lang, selectedYear, selectedProductionSlices, selectedDemandSlices, zoomLegendMode]);
 
-    const downloadBtnStyle = {
-        padding: '8px 16px',
-        border: '1px solid #404040',
-        borderRadius: '4px',
-        background: '#8C8C8C',
-        cursor: 'pointer',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: '#ffffff',
-        whiteSpace: 'nowrap',
-    };
-
     const renderZoomLegendItem = (slice, colorsMap) => (
         <span key={slice.key} className="global-hydrogen-production-demand-custom-legend-item">
             <span
@@ -625,17 +416,14 @@ const GlobalHydrogenProductionDemand = () => {
         onPieClick,
         selectedSlices,
         onClearSelection,
-        isTableOpen,
-        setIsTableOpen,
-        tableTopRef,
-        tableScrollRef,
-        tableBottomRef,
         tableCaptionKey,
         tableRows,
         fileSlug,
         downloadTitle,
         colorsMap,
-    }) => (
+    }) => {
+        const tableCaption = substitute(getText(tableCaptionKey, lang), textVars);
+        return (
         <section
             className={`global-hydrogen-production-demand-chart-column${useStackedLayout ? '' : ' global-hydrogen-production-demand-chart-column-side'}`}
             aria-labelledby={`global-hydrogen-production-demand-${kind}-chart-title`}
@@ -646,19 +434,13 @@ const GlobalHydrogenProductionDemand = () => {
             >
                 <h2
                     id={`global-hydrogen-production-demand-${kind}-chart-title`}
-                    className="global-hydrogen-production-demand-chart-title"
+                    className="global-hydrogen-production-demand-chart-title page-chrome-chart-title"
                 >
                     {chartTitle}
                 </h2>
 
                 {selectedSlices != null ? (
-                    <button
-                        type="button"
-                        className="global-hydrogen-production-demand-clear-selection"
-                        onClick={onClearSelection}
-                    >
-                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                    </button>
+                    <ClearSelectionButton lang={lang} onClick={onClearSelection} />
                 ) : (
                     <div className="global-hydrogen-production-demand-clear-selection-spacer" aria-hidden="true" />
                 )}
@@ -667,7 +449,7 @@ const GlobalHydrogenProductionDemand = () => {
                     ref={chartRef}
                     className="global-hydrogen-production-demand-chart"
                     role="region"
-                    aria-label={chartTitle}
+                    aria-label={chartRegionLabel}
                     tabIndex={0}
                     style={{ margin: 0, height: `${plotHeight}px` }}
                 >
@@ -694,83 +476,57 @@ const GlobalHydrogenProductionDemand = () => {
                 )}
 
                 <div className="global-hydrogen-production-demand-table-wrapper">
-                    <details onToggle={(event) => setIsTableOpen(event.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {getText('global_hydrogen_production_demand_table_summary', lang)}
-                            <span className="wb-inv">
-                                {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                            </span>
-                        </summary>
-                        <div ref={tableTopRef} className="global-hydrogen-production-demand-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={tableScrollRef}
-                            className="global-hydrogen-production-demand-table-responsive"
-                            role="region"
-                            aria-label={substitute(getText(tableCaptionKey, lang), textVars)}
-                            tabIndex={0}
-                        >
-                            <table className="table table-bordered table-striped table-hover global-hydrogen-production-demand-data-table">
-                                <caption className="wb-inv">
-                                    {substitute(getText(tableCaptionKey, lang), textVars)}
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        {tableHeaders.map((header) => (
-                                            <th key={header} scope="col">{header}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tableRows.map((row) => (
-                                        <tr key={row.key}>
-                                            <th scope="row">{row.label}</th>
-                                            <td style={{ textAlign: 'right' }}>{formatPct(row.pct)}</td>
-                                            <td style={{ textAlign: 'right' }}>{formatMt(row.mt)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={tableBottomRef} className="global-hydrogen-production-demand-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="global-hydrogen-production-demand-download-buttons">
-                            <button
-                                type="button"
-                                style={downloadBtnStyle}
-                                onClick={() => downloadChartCsv(tableRows, fileSlug)}
-                            >
-                                {getText('global_hydrogen_production_demand_download_csv', lang)}
-                            </button>
-                            <button
-                                type="button"
-                                style={downloadBtnStyle}
-                                onClick={() => downloadChartDocx(tableRows, downloadTitle, fileSlug)}
-                            >
-                                {getText('global_hydrogen_production_demand_download_docx', lang)}
-                            </button>
-                        </div>
-                    </details>
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={tableRows}
+                        csvFilename={`${fileSlug}.csv`}
+                        docx={{
+                            filename: `${fileSlug}.docx`,
+                            title: stripHtml(downloadTitle),
+                            titleAlign: 'center',
+                            columnWidths: DOC_COLUMN_WIDTHS,
+                            fontSize: 20,
+                        }}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        renderCell={renderTableCell}
+                    />
                 </div>
             </div>
         </section>
-    );
+        );
+    };
+
+    const getChartSummary = () => {
+        const prodBody = summarizeByCategory({
+            categories: (productionSlices || []).map((slice) => slice.label || slice.name || slice.key),
+            series: [{ name: lang === 'en' ? 'Production' : 'Production', values: (productionSlices || []).map((slice) => slice.value ?? slice.pct), format: (v) => String(v ?? '—') }],
+            lang,
+        });
+        const demandBody = summarizeByCategory({
+            categories: (demandSlices || []).map((slice) => slice.label || slice.name || slice.key),
+            series: [{ name: lang === 'en' ? 'Demand' : 'Demande', values: (demandSlices || []).map((slice) => slice.value ?? slice.pct), format: (v) => String(v ?? '—') }],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en' ? 'Pie charts of global hydrogen production and demand' : "Graphiques circulaires de la production et de la demande mondiales d'hydrogène",
+            body: [prodBody, demandBody].filter(Boolean).join('. '),
+            lang,
+        });
+    };
+    const chartRegionLabel = `${productionChartTitle}. ${demandChartTitle}. ${getChartSummary()}`;
 
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content global-hydrogen-production-demand"
+            className="page-content global-hydrogen-production-demand page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="global-hydrogen-production-demand-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .global-hydrogen-production-demand {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .global-hydrogen-production-demand-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .global-hydrogen-production-demand-bullets {
@@ -817,30 +573,11 @@ const GlobalHydrogenProductionDemand = () => {
     overflow: visible;
 }
 .global-hydrogen-production-demand-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 12px 0;
     line-height: 1.2;
     text-transform: none;
     min-height: 2.4em;
-}
-.global-hydrogen-production-demand-clear-selection {
-    padding: 6px 12px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 8px;
-    width: fit-content;
-    align-self: flex-start;
-    min-height: 32px;
-    box-sizing: border-box;
 }
 .global-hydrogen-production-demand-clear-selection-spacer {
     min-height: 32px;
@@ -892,43 +629,6 @@ const GlobalHydrogenProductionDemand = () => {
     border: 1px solid rgba(0, 0, 0, 0.15);
 }
 .global-hydrogen-production-demand-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.global-hydrogen-production-demand-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    cursor: pointer;
-    list-style: none;
-    box-sizing: border-box;
-}
-.global-hydrogen-production-demand-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.global-hydrogen-production-demand-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.global-hydrogen-production-demand-table-scrollbar > div { height: 20px; }
-.global-hydrogen-production-demand-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.global-hydrogen-production-demand-table-responsive::-webkit-scrollbar { display: none; }
-.global-hydrogen-production-demand-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.global-hydrogen-production-demand-data-table {
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: #000000;
-}
-.global-hydrogen-production-demand-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.global-hydrogen-production-demand-download-buttons button:hover,
-.global-hydrogen-production-demand-clear-selection:hover,
-.global-hydrogen-production-demand-table-wrapper summary:hover { background-color: #404040 !important; }
 .layout-stacked.global-hydrogen-production-demand-content-row { flex-direction: column !important; }
 .layout-stacked .global-hydrogen-production-demand-chart-column {
     width: 100% !important;
@@ -953,7 +653,6 @@ const GlobalHydrogenProductionDemand = () => {
 }
 @media (max-width: 768px) {
     .global-hydrogen-production-demand-bullets { font-size: 18px; }
-    .global-hydrogen-production-demand-chart-title { font-size: 26px; }
 }
             `}</style>
 
@@ -992,12 +691,7 @@ const GlobalHydrogenProductionDemand = () => {
                         chartConfig: productionChartConfig,
                         onPieClick: handleProductionClick,
                         selectedSlices: selectedProductionSlices,
-                        onClearSelection: () => setSelectedProductionSlices(null),
-                        isTableOpen: isProductionTableOpen,
-                        setIsTableOpen: setIsProductionTableOpen,
-                        tableTopRef: productionTableTopRef,
-                        tableScrollRef: productionTableScrollRef,
-                        tableBottomRef: productionTableBottomRef,
+                        onClearSelection: clearProductionSelection,
                         tableCaptionKey: 'global_hydrogen_production_demand_production_table_caption',
                         tableRows: productionTableRows,
                         fileSlug: productionFileSlug,
@@ -1012,12 +706,7 @@ const GlobalHydrogenProductionDemand = () => {
                         chartConfig: demandChartConfig,
                         onPieClick: handleDemandClick,
                         selectedSlices: selectedDemandSlices,
-                        onClearSelection: () => setSelectedDemandSlices(null),
-                        isTableOpen: isDemandTableOpen,
-                        setIsTableOpen: setIsDemandTableOpen,
-                        tableTopRef: demandTableTopRef,
-                        tableScrollRef: demandTableScrollRef,
-                        tableBottomRef: demandTableBottomRef,
+                        onClearSelection: clearDemandSelection,
                         tableCaptionKey: 'global_hydrogen_production_demand_demand_table_caption',
                         tableRows: demandTableRows,
                         fileSlug: demandFileSlug,
@@ -1026,7 +715,7 @@ const GlobalHydrogenProductionDemand = () => {
                     })}
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

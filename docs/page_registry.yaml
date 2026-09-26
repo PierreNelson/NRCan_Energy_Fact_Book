@@ -1402,6 +1402,39 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 130
+  legacy_component: Page130
+  component_name: CerRegulatedGasPipelines
+  file_name: CerRegulatedGasPipelines.jsx
+  translation_prefix: cer_regulated_gas_pipelines
+  css_prefix: cer-regulated-gas-pipelines
+  section_anchor_id: cer-regulated-gas-pipelines
+  title: Transportation — CER regulated gas pipelines
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 131
+  legacy_component: Page131
+  component_name: NaturalGasEnergyUse
+  file_name: NaturalGasEnergyUse.jsx
+  translation_prefix: natural_gas_energy_use
+  css_prefix: natural-gas-energy-use
+  section_anchor_id: natural-gas-energy-use
+  title: Natural gas energy use
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 133
+  legacy_component: Page133
+  component_name: HglSupplyDemand
+  file_name: HglSupplyDemand.jsx
+  translation_prefix: hgl_supply_demand
+  css_prefix: hgl-supply-demand
+  section_anchor_id: hgl-supply-demand
+  title: Hydrocarbon gas liquids (HGLs)
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 132
   legacy_component: Page132
   component_name: OilGasGhgSpotlight
@@ -1415,28 +1448,6 @@ pages:
   data_getters:
   - getOilGasGhgSpotlightData
   data_status: pipeline_partial
-- legacy_page_num: 131
-  legacy_component: Page131
-  component_name: NaturalGasEnergyUse
-  file_name: NaturalGasEnergyUse.jsx
-  translation_prefix: natural_gas_energy_use
-  css_prefix: natural-gas-energy-use
-  section_anchor_id: natural-gas-energy-use
-  title: Natural gas energy use
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
-- legacy_page_num: 134
-  legacy_component: Page134
-  component_name: NaturalGasLiquidsEnergyUse
-  file_name: NaturalGasLiquidsEnergyUse.jsx
-  translation_prefix: natural_gas_liquids_energy_use
-  css_prefix: natural-gas-liquids-energy-use
-  section_anchor_id: natural-gas-liquids-energy-use
-  title: Natural gas liquids energy use
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
 - legacy_page_num: 135
   legacy_component: Page135
   component_name: RefinedPetroleumProducts
@@ -1448,6 +1459,17 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: no_data
+- legacy_page_num: 134
+  legacy_component: Page134
+  component_name: NaturalGasLiquidsEnergyUse
+  file_name: NaturalGasLiquidsEnergyUse.jsx
+  translation_prefix: natural_gas_liquids_energy_use
+  css_prefix: natural-gas-liquids-energy-use
+  section_anchor_id: natural-gas-liquids-energy-use
+  title: Natural gas liquids energy use
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 136
   legacy_component: Page136
   component_name: RppSupplyDemand

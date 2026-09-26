@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import { windSolarElectricityGrowthBg, NATIVE_SIZE, OVERLAY_LAYOUT, BG_IMAGE_SCALE } from './WindSolarElectricityGrowthInfographic.constants';
 
 const slotStyle = (slot) => ({
@@ -62,29 +63,31 @@ const WindSolarElectricityGrowthInfographic = ({ wind, solar, ariaLabel }) => {
     const fonts = OVERLAY_LAYOUT.fonts;
 
     return (
-        <figure className="wind-solar-electricity-growth-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            as="figure"
+            mode="image"
+            className="wind-solar-electricity-growth-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={windSolarElectricityGrowthBg}
+            imgClassName="wind-solar-electricity-growth-bg-image"
+            imgStyle={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: `${BG_IMAGE_SCALE * 100}%`,
+                height: 'auto',
+            }}
+        >
             <div
                 className="wind-solar-electricity-growth-infographic-wrapper"
                 style={{ aspectRatio: `${NATIVE_SIZE.width} / ${NATIVE_SIZE.height}` }}
             >
-                <img
-                    src={windSolarElectricityGrowthBg}
-                    alt=""
-                    className="wind-solar-electricity-growth-bg-image"
-                    style={{
-                        position: 'absolute',
-                        left: '50%',
-                        top: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: `${BG_IMAGE_SCALE * 100}%`,
-                        height: 'auto',
-                    }}
-                    draggable={false}
-                />
                 <MetricOverlays metricKey="wind" fonts={fonts} {...wind} />
                 <MetricOverlays metricKey="solar" fonts={fonts} {...solar} />
             </div>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

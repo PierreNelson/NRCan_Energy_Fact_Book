@@ -1,15 +1,21 @@
 import React, { useMemo, useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import PageFootnotes from '../components/PageFootnotes';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from '../utils/exportTableToDocx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+
 import EnergyRddByTechnologyInfographic from '../components/EnergyRddByTechnologyInfographic';
 import {
     COLUMN_KEYS,
     ROW_KEYS,
     INFOGRAPHIC_DATA,
+    FN_PREFIX,
     exportRddInfographicPng,
 } from '../components/EnergyRddByTechnologyInfographic.constants';
+import { resolveAccessibleInfographicRoot } from '../utils/downloadInfographicPng';
 
 const EnergyRddByTechnology = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -19,11 +25,6 @@ const EnergyRddByTechnology = () => {
 
     const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
-    const scrollToElement = (id) => (event) => {
-        event?.preventDefault();
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
     const formatMillions = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '–';
         return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
@@ -32,7 +33,13 @@ const EnergyRddByTechnology = () => {
     const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     const pageTitle = getText('energy_rdd_by_technology_title', lang);
-    const ariaLabel = getText('energy_rdd_by_technology_infographic_aria', lang);
+    const pageTitleSpoken = lang === 'fr'
+        ? pageTitle
+            .replace(/\(\$\s*millions\)/gi, 'en millions de dollars')
+            .replace(/\(millions\s*de\s*\$\)/gi, 'en millions de dollars')
+            .replace(/\$\s*millions/gi, 'millions de dollars')
+        : pageTitle.replace(/\(\$\s*millions\)/gi, 'in millions of dollars')
+            .replace(/\$\s*millions/gi, 'millions of dollars');
 
     const columnLabels = useMemo(
         () => Object.fromEntries(COLUMN_KEYS.map((key) => [key, getText(`energy_rdd_by_technology_col_${key}`, lang)])),
@@ -161,12 +168,11 @@ const EnergyRddByTechnology = () => {
             ],
         });
 
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
+        await saveDocxBlob(`${fileSlugBase}.docx`, doc);
     };
 
     const downloadPng = async () => {
-        const canvas = await exportRddInfographicPng(figureRef.current, {
+        const canvas = await exportRddInfographicPng(resolveAccessibleInfographicRoot(figureRef.current), {
             title: stripHtml(pageTitle),
             scale: 2,
         });
@@ -177,21 +183,13 @@ const EnergyRddByTechnology = () => {
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-36 energy-rdd-by-technology-rdd-tech"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-36 energy-rdd-by-technology-rdd-tech page-chrome page-chrome--bleed"
             aria-labelledby="energy-rdd-by-technology-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-36.energy-rdd-by-technology-rdd-tech {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .energy-rdd-by-technology-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-rdd-by-technology-title {
@@ -203,17 +201,34 @@ const EnergyRddByTechnology = () => {
     margin: 0 0 24px 0;
     text-transform: none;
     line-height: 1.25;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+.energy-rdd-by-technology-title:focus,
+.energy-rdd-by-technology-title:focus-visible,
+.energy-rdd-by-technology-data-row:focus,
+.energy-rdd-by-technology-data-row:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 4px;
 }
 .energy-rdd-by-technology-infographic-wrapper { width: 100%; margin-bottom: 28px; }
 .energy-rdd-by-technology-infographic-figure { margin: 0; width: 100%; }
 .energy-rdd-by-technology-infographic-grid {
-    display: grid;
-    grid-template-columns: minmax(56px, 76px) minmax(200px, 1.35fr) repeat(3, minmax(100px, 1fr));
-    grid-template-rows: auto auto repeat(3, minmax(72px, auto)) minmax(56px, auto);
-    gap: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     width: 100%;
     max-width: 1040px;
     margin: 0 auto;
+    box-sizing: border-box;
+}
+.energy-rdd-by-technology-header-band,
+.energy-rdd-by-technology-colhead-band,
+.energy-rdd-by-technology-data-row {
+    display: grid;
+    grid-template-columns: minmax(56px, 76px) minmax(200px, 1.35fr) repeat(3, minmax(100px, 1fr));
+    column-gap: 14px;
+    width: 100%;
     box-sizing: border-box;
 }
 .energy-rdd-by-technology-corner { min-height: 4px; }
@@ -229,18 +244,43 @@ const EnergyRddByTechnology = () => {
     max-width: 550px;
     height: auto;
 }
+.energy-rdd-by-technology-tech-rows {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
 .energy-rdd-by-technology-bg2-cell {
-    grid-row: 3 / 6;
-    grid-column: 1;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: clamp(56px, 7.5vw, 76px);
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
+    z-index: 0;
 }
 .energy-rdd-by-technology-bg2-img {
     display: block;
     width: 100%;
     height: auto;
+    max-height: 100%;
     object-fit: contain;
+}
+.energy-rdd-by-technology-data-row {
+    position: relative;
+    z-index: 1;
+    align-items: center;
+    min-height: 72px;
+    border-radius: 2px;
+}
+.energy-rdd-by-technology-data-row--total {
+    min-height: 56px;
+}
+.energy-rdd-by-technology-row-icon {
+    min-height: 1px;
 }
 .energy-rdd-by-technology-col-label {
     font-family: 'Lato', sans-serif;
@@ -258,13 +298,17 @@ const EnergyRddByTechnology = () => {
     color: #332f30;
     line-height: 1.25;
     text-transform: none;
-    align-self: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.25rem;
+    box-sizing: border-box;
+    min-width: 0;
 }
 .energy-rdd-by-technology-row-label .fn-lnk {
     white-space: nowrap;
 }
 .energy-rdd-by-technology-row-label--total {
-    grid-column: 2;
     font-size: clamp(24px, 2.8vw, 30px);
 }
 .energy-rdd-by-technology-cell-value {
@@ -299,36 +343,29 @@ const EnergyRddByTechnology = () => {
     color: #ffffff;
 }
 .energy-rdd-by-technology-download-btn:hover { background-color: #404040 !important; }
-.energy-rdd-by-technology-footnotes {
-    font-family: var(--font-body);
-    font-size: 1rem;
-    color: var(--gc-text);
-    margin-top: 24px;
-    padding-top: 12px;
-    border-top: 1px solid #e0e0e0;
-    line-height: 1.65;
-}
-.energy-rdd-by-technology-footnotes h2 {
-    font-family: var(--font-heading);
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin: 0 0 1rem 0;
-}
-.energy-rdd-by-technology-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
-.energy-rdd-by-technology-footnotes dd p { margin: 0; }
 @media (max-width: 768px) {
     .energy-rdd-by-technology-title { font-size: 26px; }
     .energy-rdd-by-technology-col-label, .energy-rdd-by-technology-row-label { font-size: 16px; }
     .energy-rdd-by-technology-row-label--total { font-size: 20px; }
-    .energy-rdd-by-technology-infographic-grid {
+    .energy-rdd-by-technology-header-band,
+    .energy-rdd-by-technology-colhead-band,
+    .energy-rdd-by-technology-data-row {
         grid-template-columns: minmax(44px, 56px) minmax(160px, 1.2fr) repeat(3, minmax(72px, 1fr));
-        gap: 8px 10px;
+        column-gap: 10px;
+    }
+    .energy-rdd-by-technology-bg2-cell {
+        width: clamp(44px, 8vw, 56px);
     }
 }
             `}</style>
 
             <div className="energy-rdd-by-technology-inner">
-                <h2 id="energy-rdd-by-technology-title" className="energy-rdd-by-technology-title">
+                <h2
+                    id="energy-rdd-by-technology-title"
+                    className="energy-rdd-by-technology-title"
+                    tabIndex={0}
+                    aria-label={pageTitleSpoken}
+                >
                     {pageTitle}
                 </h2>
 
@@ -340,8 +377,6 @@ const EnergyRddByTechnology = () => {
                         rowLabels={rowLabels}
                         totalLabel={totalLabel}
                         formatMillions={formatMillions}
-                        scrollToElement={scrollToElement}
-                        ariaLabel={ariaLabel}
                     />
 
                     <div className="energy-rdd-by-technology-download-buttons">
@@ -357,75 +392,40 @@ const EnergyRddByTechnology = () => {
                     </div>
                 </div>
 
-                <aside className="wb-fnote energy-rdd-by-technology-footnotes" role="note">
-                    <h2 id="fn-energy-rdd-by-technology">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</dt>
-                        <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-energy-rdd-by-technology">
-                            <a
-                                href="#fn1-rf-energy-rdd-by-technology"
-                                onClick={scrollToElement('fn1-rf-energy-rdd-by-technology')}
-                                className="fn-num"
-                                title={
-                                    lang === 'en'
-                                        ? 'Return to footnote 1 referrer'
-                                        : 'Retour à la référence de la note de bas de page 1'
-                                }
-                            >
-                                <span className="wb-inv">
-                                    {lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}
-                                </span>
-                                1
-                            </a>
-                            <p>{getText('energy_rdd_by_technology_footnote1', lang)}</p>
-                        </dd>
-                        <dt>{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
-                        <dd id="fn2-energy-rdd-by-technology">
-                            <a
-                                href="#fn2-rf-energy-rdd-by-technology"
-                                onClick={scrollToElement('fn2-rf-energy-rdd-by-technology')}
-                                className="fn-num"
-                                title={
-                                    lang === 'en'
-                                        ? 'Return to footnote 2 referrer'
-                                        : 'Retour à la référence de la note de bas de page 2'
-                                }
-                            >
-                                <span className="wb-inv">
-                                    {lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}
-                                </span>
-                                2
-                            </a>
-                            <p>{getText('energy_rdd_by_technology_footnote2', lang)}</p>
-                        </dd>
-                        <dt>{lang === 'en' ? 'Footnote 3' : 'Note de bas de page 3'}</dt>
-                        <dd id="fn3-energy-rdd-by-technology">
-                            <a
-                                href="#fn3-rf-energy-rdd-by-technology"
-                                onClick={scrollToElement('fn3-rf-energy-rdd-by-technology')}
-                                className="fn-num"
-                                title={
-                                    lang === 'en'
-                                        ? 'Return to footnote 3 referrer'
-                                        : 'Retour à la référence de la note de bas de page 3'
-                                }
-                            >
-                                <span className="wb-inv">
-                                    {lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}
-                                </span>
-                                3
-                            </a>
-                            <p>{getText('energy_rdd_by_technology_footnote3', lang)}</p>
-                        </dd>
-                        <dt className="wb-inv">{lang === 'en' ? 'Note' : 'Remarque'}</dt>
-                        <dd id="fn-note-energy-rdd-by-technology">
-                            <p>{getText('energy_rdd_by_technology_footnote_note', lang)}</p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId={`fn-${FN_PREFIX}`}
+                    className="energy-rdd-by-technology-footnotes"
+                    items={[
+                        {
+                            id: `fn1-${FN_PREFIX}`,
+                            marker: '1',
+                            text: getText('energy_rdd_by_technology_footnote1', lang),
+                            returnHref: `#fn1-rf-${FN_PREFIX}`,
+                        },
+                        {
+                            id: `fn2-${FN_PREFIX}`,
+                            marker: '2',
+                            text: getText('energy_rdd_by_technology_footnote2', lang),
+                            returnHref: `#fn2-rf-${FN_PREFIX}`,
+                        },
+                        {
+                            id: `fn3-${FN_PREFIX}`,
+                            marker: '3',
+                            text: getText('energy_rdd_by_technology_footnote3', lang),
+                            returnHref: `#fn3-rf-${FN_PREFIX}`,
+                        },
+                        {
+                            id: `fn-note-${FN_PREFIX}`,
+                            hideMarker: true,
+                            hideReturn: true,
+                            focusable: true,
+                            text: getText('energy_rdd_by_technology_footnote_note', lang),
+                        },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -1,8 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import YearSelect from '../components/YearSelect';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
 import worldNaturalGasProvedReservesBgUrl from '../assets/world_natural_gas_proved_reserves_bg.png';
 
 const CANADA_CAPSULE = '#423330';
@@ -110,17 +113,6 @@ const tablePctCell = (v, lang) => {
 const WorldProvedGasReserves = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [year, setYear] = useState(world_gas_reserves_DEFAULT_YEAR);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
-    const detailsRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     const countryLabel = (key) =>
         key === 'turkmenistan'
@@ -130,18 +122,38 @@ const WorldProvedGasReserves = () => {
     const bundle = DATA_BY_YEAR[year] || DATA_BY_YEAR[world_gas_reserves_DEFAULT_YEAR];
     const yearSpanLabel = `${YEARS_ASC[0]}\u2013${YEARS_ASC[YEARS_ASC.length - 1]}`;
 
-    const historicalRows = useMemo(
+    const tableCaption = getText('world_gas_reserves_table_caption', lang);
+    const exportTableTitle = `${stripHtml(getText('world_gas_reserves_doc_title', lang))} (${yearSpanLabel})`;
+    const fileSlugBase = lang === 'en'
+        ? 'world_natural_gas_proved_reserves'
+        : 'reserves_prouvees_gaz_naturel';
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('crude_oil_international_table_col_year', lang), align: 'left' },
+        { key: 'totalTcf', header: getText('world_gas_reserves_table_col_total_tcf', lang), align: 'num' },
+        { key: 'totalTcm', header: getText('world_gas_reserves_table_col_total_tcm', lang), align: 'num' },
+        ...RESERVE_COLUMN_KEYS.map((k) => ({
+            key: k,
+            header: `${countryLabel(k)} (%)`,
+            align: 'num',
+        })),
+    ], [lang]);
+
+    const tableRows = useMemo(
         () =>
             YEARS_ASC.map((y) => {
                 const b = DATA_BY_YEAR[y];
-                return {
+                const row = {
                     year: y,
                     totalTcf: b.totalTcf,
                     totalTcm: b.totalTcm,
-                    pcts: RESERVE_COLUMN_KEYS.map((k) => pctFromBundle(b, k))
                 };
+                RESERVE_COLUMN_KEYS.forEach((k) => {
+                    row[k] = pctFromBundle(b, k);
+                });
+                return row;
             }),
-        []
+        [],
     );
 
     const capsuleAriaParts = [
@@ -162,66 +174,6 @@ const WorldProvedGasReserves = () => {
             : `Réserves mondiales prouvées de gaz naturel pour ${year} : `) +
         capsuleAriaParts.join('. ') +
         '.';
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    useEffect(() => {
-        if (isTableOpen && detailsRef.current) {
-            setTimeout(() => detailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        }
-    }, [isTableOpen]);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return undefined;
-
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-            const topSpacer = topScroll.firstElementChild;
-            if (topSpacer) topSpacer.style.width = `${scrollWidth}px`;
-            topScroll.style.display = scrollWidth > containerWidth ? 'block' : 'none';
-            if (scrollWidth > containerWidth) topScroll.style.opacity = '1';
-        };
-
-        const handleTopScroll = () => {
-            if (tableScroll.scrollLeft !== topScroll.scrollLeft) tableScroll.scrollLeft = topScroll.scrollLeft;
-        };
-        const handleTableScroll = () => {
-            if (topScroll.scrollLeft !== tableScroll.scrollLeft) topScroll.scrollLeft = tableScroll.scrollLeft;
-        };
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncScrollbars));
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        syncScrollbars();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth]);
 
     const renderCapsuleRow = (rank, key, pct, maxPct, isCanada) => {
         const rawRatio = maxPct > 0 ? pct / maxPct : 1;
@@ -261,130 +213,11 @@ const WorldProvedGasReserves = () => {
         return els;
     };
 
-    const downloadCsv = () => {
-        const yCol = stripHtml(getText('crude_oil_international_table_col_year', lang));
-        const tcfCol = stripHtml(getText('world_gas_reserves_table_col_total_tcf', lang));
-        const tcmCol = stripHtml(getText('world_gas_reserves_table_col_total_tcm', lang));
-        const headers = [
-            yCol,
-            tcfCol,
-            tcmCol,
-            ...RESERVE_COLUMN_KEYS.map((k) => `${stripHtml(countryLabel(k))} (%)`)
-        ];
-        const rows = historicalRows.map((row) => [
-            row.year,
-            formatReserveTotal(row.totalTcf, lang),
-            formatReserveTotal(row.totalTcm, lang),
-            ...row.pcts.map((p) => (p === '' ? '' : formatCapsulePct(p, lang)))
-        ]);
-        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, lang === 'en' ? 'world_natural_gas_proved_reserves.csv' : 'reserves_prouvees_gaz_naturel.csv');
-    };
-
-    const downloadDocx = async () => {
-        const title = stripHtml(getText('world_gas_reserves_doc_title', lang));
-        const yCol = getText('crude_oil_international_table_col_year', lang);
-        const tcfCol = getText('world_gas_reserves_table_col_total_tcf', lang);
-        const tcmCol = getText('world_gas_reserves_table_col_total_tcm', lang);
-        const countryHeaders = RESERVE_COLUMN_KEYS.map((k) => `${stripHtml(countryLabel(k))} (%)`);
-
-        const headerRow = new TableRow({
-            children: [yCol, tcfCol, tcmCol, ...countryHeaders].map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER
-                            })
-                        ],
-                        shading: { fill: 'E6E6E6' }
-                    })
-            )
-        });
-
-        const dataRows = historicalRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(row.year), size: 22 })],
-                                    alignment: AlignmentType.CENTER
-                                })
-                            ]
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: formatReserveTotal(row.totalTcf, lang), size: 22 })],
-                                    alignment: AlignmentType.CENTER
-                                })
-                            ]
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: formatReserveTotal(row.totalTcm, lang), size: 22 })],
-                                    alignment: AlignmentType.CENTER
-                                })
-                            ]
-                        }),
-                        ...row.pcts.map(
-                            (p) =>
-                                new TableCell({
-                                    children: [
-                                        new Paragraph({
-                                            children: [
-                                                new TextRun({
-                                                    text: p === '' ? '\u2014' : formatCapsulePct(p, lang),
-                                                    size: 22
-                                                })
-                                            ],
-                                            alignment: AlignmentType.CENTER
-                                        })
-                                    ]
-                                })
-                        )
-                    ]
-                })
-        );
-
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: `${title} (${yearSpanLabel})`, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 }
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [1200, 1400, 1400, ...RESERVE_COLUMN_KEYS.map(() => 1280)],
-                            rows: [headerRow, ...dataRows]
-                        })
-                    ]
-                }
-            ]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(
-            blob,
-            lang === 'en' ? 'world_natural_gas_proved_reserves.docx' : 'reserves_prouvees_gaz_naturel.docx'
-        );
-    };
-
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-108 page-123 world-natural-gas-proved-reserves-natural-gas-reserves"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-108 page-123 world-natural-gas-proved-reserves-natural-gas-reserves page-chrome page-chrome--bleed"
             aria-labelledby="world-natural-gas-proved-reserves-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
                 .page-123.page-content {
@@ -392,11 +225,6 @@ const WorldProvedGasReserves = () => {
                     overflow-x: visible !important;
                 }
                 .page-123.world-natural-gas-proved-reserves-natural-gas-reserves {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                 }
                 .page-123.page-content h1.world-natural-gas-proved-reserves-title {
                     font-family: 'Lato', sans-serif;
@@ -509,135 +337,24 @@ const WorldProvedGasReserves = () => {
                     </h1>
                 </header>
 
-                <div
-                    ref={yearDropdownRef}
-                    style={{
-                        position: 'relative',
-                        marginBottom: '20px',
-                        width: '200px'
-                    }}
-                >
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    <button
-                        ref={yearButtonRef}
-                        type="button"
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px'
-                        }}
-                    >
-                        <span>{year}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>
-                            {isYearDropdownOpen ? '▲' : '▼'}
-                        </span>
-                    </button>
-                    {isYearDropdownOpen && (
-                        <div
-                            style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                width: '100%',
-                                maxHeight: '300px',
-                                overflowY: 'auto',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                zIndex: 100,
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                            }}
-                        >
-                            {YEARS_DESC.map((y) => {
-                                const isSelected = year === y;
-                                return (
-                                    <button
-                                        key={y}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        aria-label={String(y)}
-                                        onClick={() => {
-                                            setYear(y);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                        }}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px',
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = '#f5f5f5';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff';
-                                        }}
-                                    >
-                                        <span
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff'
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span
-                                                    style={{
-                                                        height: '10px',
-                                                        width: '10px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#000'
-                                                    }}
-                                                />
-                                            )}
-                                        </span>
-                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
-                                            {y}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
+                <YearSelect
+                    lang={lang}
+                    id="world-proved-gas-reserves-year-select"
+                    label={getText('year_slider_label', lang)}
+                    years={YEARS_DESC}
+                    value={year}
+                    onChange={setYear}
+                />
                     <div role="status" className="wb-inv" aria-live="polite">
                         {year
                             ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}`
                             : ''}
                     </div>
-                </div>
 
                 <div className="crude-oil-international-content-wrapper layout-stacked world-natural-gas-proved-reserves-chart-block">
                     <div className="world-natural-gas-proved-reserves-hero-stack">
                         <div className="world-natural-gas-proved-reserves-rankings-layer crude-oil-international-chart-section">
-                            <h3 className="crude-oil-international-graphic-title">
-                                <span aria-hidden="true">
+                            <h3 className="crude-oil-international-graphic-title" tabIndex="0">
                                     {getText('coal_international_reserves_kicker', lang)}
                                     {' \u2013 '}
                                     <strong>
@@ -647,7 +364,6 @@ const WorldProvedGasReserves = () => {
                                     ({formatReserveTotal(bundle.totalTcm, lang)} {getText('world_gas_reserves_unit_tcm', lang)})
                                     {' '}
                                     ({year})
-                                </span>
                             </h3>
 
                             <div className="crude-oil-international-chart-container" role="region" aria-label={capsuleAria} tabIndex="0">
@@ -668,174 +384,30 @@ const WorldProvedGasReserves = () => {
                         </div>
                     </div>
 
-                    <details
-                        ref={detailsRef}
-                        className="data-table-wrapper"
-                        onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                        style={{ marginTop: '20px' }}
-                    >
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en'
-                                        ? ' Press Enter to open or close.'
-                                        : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginBottom: '0px',
-                                    marginTop: '10px',
-                                    display: windowWidth <= 768 ? 'none' : 'block'
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                tabIndex="0"
-                            >
-                                <table className="table table-bordered table-striped table-hover">
-                                    <caption className="wb-inv">{getText('world_gas_reserves_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    position: 'sticky',
-                                                    left: 0,
-                                                    backgroundColor: '#f8f9fa',
-                                                    zIndex: 2,
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    minWidth: '80px',
-                                                    borderRight: '2px solid #dee2e6'
-                                                }}
-                                            >
-                                                {getText('crude_oil_international_table_col_year', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    whiteSpace: 'nowrap',
-                                                    verticalAlign: 'bottom'
-                                                }}
-                                            >
-                                                {getText('world_gas_reserves_table_col_total_tcf', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    whiteSpace: 'nowrap',
-                                                    verticalAlign: 'bottom'
-                                                }}
-                                            >
-                                                {getText('world_gas_reserves_table_col_total_tcm', lang)}
-                                            </th>
-                                            {RESERVE_COLUMN_KEYS.map((k) => (
-                                                <th
-                                                    key={k}
-                                                    scope="col"
-                                                    style={{
-                                                        fontWeight: 'bold',
-                                                        textAlign: 'center',
-                                                        whiteSpace: 'nowrap',
-                                                        verticalAlign: 'bottom'
-                                                    }}
-                                                >
-                                                    {countryLabel(k)} (%)
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {historicalRows.map((row) => (
-                                            <tr key={row.year}>
-                                                <th
-                                                    scope="row"
-                                                    style={{
-                                                        position: 'sticky',
-                                                        left: 0,
-                                                        zIndex: 1,
-                                                        fontWeight: 'bold',
-                                                        textAlign: 'center',
-                                                        borderRight: '2px solid #dee2e6'
-                                                    }}
-                                                >
-                                                    {row.year}
-                                                </th>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    {formatReserveTotal(row.totalTcf, lang)}
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    {formatReserveTotal(row.totalTcm, lang)}
-                                                </td>
-                                                {row.pcts.map((p, idx) => (
-                                                    <td key={RESERVE_COLUMN_KEYS[idx]} style={{ textAlign: 'center' }}>
-                                                        {tablePctCell(p, lang)}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                <button
-                                    type="button"
-                                    onClick={downloadCsv}
-                                    style={{
-                                        padding: '8px 16px',
-                                        backgroundColor: '#8C8C8C',
-                                        border: '1px solid #404040',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontWeight: 'bold',
-                                        color: '#ffffff'
-                                    }}
-                                >
-                                    {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => downloadDocx()}
-                                    style={{
-                                        padding: '8px 16px',
-                                        backgroundColor: '#8C8C8C',
-                                        border: '1px solid #404040',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontWeight: 'bold',
-                                        color: '#ffffff'
-                                    }}
-                                >
-                                    {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                </button>
-                            </div>
-                        </details>
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={tableRows}
+                        csvFilename={`${fileSlugBase}.csv`}
+                        docx={{
+                            filename: `${fileSlugBase}.docx`,
+                            title: exportTableTitle,
+                            titleAlign: 'center',
+                            columnWidths: [1200, 1400, 1400, ...RESERVE_COLUMN_KEYS.map(() => 1280)],
+                            fontSize: 22,
+                        }}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        renderCell={(raw, { column }) => {
+                            const key = column?.key;
+                            if (key === 'year') return String(raw ?? '');
+                            if (key === 'totalTcf' || key === 'totalTcm') return formatReserveTotal(Number(raw), lang);
+                            return tablePctCell(raw, lang);
+                        }}
+                    />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

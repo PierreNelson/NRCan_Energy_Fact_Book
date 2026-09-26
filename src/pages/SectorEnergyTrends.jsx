@@ -1,9 +1,13 @@
 import React, { useMemo, useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from '../utils/exportTableToDocx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { resolveAccessibleInfographicRoot, waitForImage } from '../utils/downloadInfographicPng';
 import SectorEnergyTrendsInfographic from '../components/SectorEnergyTrendsInfographic';
+import { formatLocalePct } from '../utils/formatLocale';
 
 const SECTOR_KEYS = [
     'residential',
@@ -26,7 +30,8 @@ const SECTOR_DATA = {
 const formatPct = (value, lang) => {
     const sign = value > 0 ? '+' : value < 0 ? '-' : '';
     const abs = Math.abs(value);
-    return lang === 'fr' ? `${sign}${abs} %` : `${sign}${abs}%`;
+    const formatted = formatLocalePct(abs, lang, { maximumFractionDigits: 20 });
+    return sign ? `${sign}${formatted}` : formatted;
 };
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
@@ -60,20 +65,6 @@ const exportSectorTrendsInfographicPng = async (figureEl, { scale = 2 }) => {
             h: box.height,
         };
     };
-
-    const waitForImage = (img) =>
-        new Promise((resolve, reject) => {
-            if (!img) {
-                resolve(null);
-                return;
-            }
-            if (img.complete && img.naturalWidth > 0) {
-                resolve(img);
-                return;
-            }
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-        });
 
     const drawTitle = () => {
         if (!titleEl) return;
@@ -113,7 +104,8 @@ const exportSectorTrendsInfographicPng = async (figureEl, { scale = 2 }) => {
         }
     };
 
-    const bgLoaded = await waitForImage(wrapper.querySelector('.sector-energy-trends-bg-image'));
+    const bgImg = figureEl.querySelector('.sector-energy-trends-bg-image');
+    const bgLoaded = bgImg ? await waitForImage(bgImg) : null;
     if (bgLoaded) {
         const box = rel(bgLoaded);
         ctx.drawImage(bgLoaded, box.x, box.y, box.w, box.h);
@@ -217,12 +209,14 @@ const SectorEnergyTrends = () => {
             ],
         });
 
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
+        await saveDocxBlob(`${fileSlugBase}.docx`, doc);
     };
 
     const downloadPng = async () => {
-        const canvas = await exportSectorTrendsInfographicPng(figureRef.current, { scale: 2 });
+        const canvas = await exportSectorTrendsInfographicPng(
+            resolveAccessibleInfographicRoot(figureRef.current),
+            { scale: 2 },
+        );
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}.png`);
@@ -230,21 +224,13 @@ const SectorEnergyTrends = () => {
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-57 sector-energy-trends-sector-trends"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-57 sector-energy-trends-sector-trends page-chrome page-chrome--bleed"
             aria-labelledby="sector-energy-trends-chart-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-57.sector-energy-trends-sector-trends {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .sector-energy-trends-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .sector-energy-trends-infographic-section { width: 100%; margin-bottom: 28px; }
@@ -291,7 +277,7 @@ const SectorEnergyTrends = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -175,7 +175,7 @@ export const exportWagesInfographicPng = async (figureEl, { scale = 2 } = {}) =>
         });
     };
 
-    const bgLoaded = await waitForImage(layout.querySelector('.energy-sector-wages-bg'));
+    const bgLoaded = await waitForImage(figureEl.querySelector('.energy-sector-wages-bg'));
     if (bgLoaded) {
         const box = rel(bgLoaded);
         ctx.drawImage(bgLoaded, box.x, box.y, box.w, box.h);

@@ -8,7 +8,7 @@ Guidance for coding agents (OpenAI Codex, Cursor, etc.) working in this reposito
 - **Charts:** Plotly (`react-plotly.js`, `plotly.js-dist-min`)
 - **Styling:** Component-local `<style>` blocks and [`src/index.css`](src/index.css) (Canada.ca-aligned tokens: `--gc-text`, `--gc-accent`, etc.)
 - **Data:** Static assets under `public/`; Python scripts under `scripts/` for data retrieval (separate from the Vite app)
-- **Pipeline docs:** [docs/DATA_UPDATE_GUIDE.md](docs/DATA_UPDATE_GUIDE.md), [docs/DATA_PIPELINE_GUIDE.md](docs/DATA_PIPELINE_GUIDE.md), [docs/EFB_MODERNIZATION_REVIEW.md](docs/EFB_MODERNIZATION_REVIEW.md) (client Q&A handoff)
+- **Pipeline docs:** [docs/DATA_UPDATE_GUIDE.md](docs/DATA_UPDATE_GUIDE.md), [docs/DATA_PIPELINE_GUIDE.md](docs/DATA_PIPELINE_GUIDE.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## Commands
 

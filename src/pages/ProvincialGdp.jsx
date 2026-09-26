@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import YearSelect from '../components/YearSelect';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import PageStatus from '../components/PageStatus';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getProvincialGdpData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const provincial_gdp_PROVINCE_INFO = {
     'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', abbrevEn: 'N.L.', abbrevFr: 'T.-N.-L.', geoJsonName: 'Newfoundland and Labrador' },
@@ -52,105 +61,14 @@ const ProvincialGdp = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false);
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
     const [selectedProvinces, setSelectedProvinces] = useState(null);
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, index: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    
-    // Year dropdown state
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
 
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-provincial-gdp')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-provincial-gdp');
 
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-provincial-gdp')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-
-        if (!topScroll || !tableScroll) return;
-
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-
-            const topSpacer = topScroll.firstElementChild;
-            if (topSpacer) {
-                topSpacer.style.width = `${scrollWidth}px`;
-            }
-
-            if (scrollWidth > containerWidth) {
-                topScroll.style.display = 'block';
-                topScroll.style.opacity = '1';
-            } else {
-                topScroll.style.display = 'none';
-            }
-        };
-
-        const handleTopScroll = () => {
-            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
-                tableScroll.scrollLeft = topScroll.scrollLeft;
-            }
-        };
-
-        const handleTableScroll = () => {
-            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
-                topScroll.scrollLeft = tableScroll.scrollLeft;
-            }
-        };
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-
-        const observer = new ResizeObserver(() => {
-            window.requestAnimationFrame(syncScrollbars);
-        });
-
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-
-        syncScrollbars();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth]);
-
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-provincial-gdp');
 
     useEffect(() => {
         const handleResize = () => {
@@ -174,70 +92,18 @@ const ProvincialGdp = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isChartInteractive, windowWidth]);
 
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || document.querySelector('.provincial-gdp-map-container .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) {
-            console.error('Plot element not found');
-            alert('Could not find chart element. Please try again.');
-            return;
-        }
+    const exportChartTitle = `${stripHtml(getText('provincial_gdp_subtitle', lang)).replace(/\s+/g, ' ')} (${year})`;
 
-        const title = lang === 'en' 
-            ? `Energy sector direct nominal GDP* ($ millions) (${year})`
-            : `PIB nominal direct du secteur de l'énergie* (en millions de dollars) (${year})`;
-
-        try {
-            if (!window.Plotly) {
-                console.error('Plotly not available on window');
-                alert('Plotly library not loaded. Please refresh the page and try again.');
-                return;
-            }
-
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 800,
-                scale: 2
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                const titleHeight = 80;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 50);
-
-                ctx.drawImage(img, 0, titleHeight);
-
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? `provincial_gdp_map_${year}.png` : `carte_pib_provincial_${year}.png`;
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-
-            img.onerror = () => {
-                console.error('Failed to load chart image');
-                alert('Failed to generate chart image. Please try again.');
-            };
-
-            img.src = imgData;
-        } catch (error) {
-            console.error('Error downloading chart:', error);
-            alert('Error downloading chart: ' + error.message);
-        }
-    };
+        const downloadChartWithTitle = useChartPngDownloader(
+            chartRef,
+            () => ({
+            filename: lang === 'en' ? `provincial_gdp_map_${year}.png` : `carte_pib_provincial_${year}.png`,
+            title: exportChartTitle,
+            width: 1200,
+            height: 800,
+        }),
+            [exportChartTitle, lang, year],
+        );
     useEffect(() => {
         getProvincialGdpData()
             .then(data => {
@@ -254,152 +120,73 @@ const ProvincialGdp = () => {
             });
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-
-            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
-            svgElements.forEach(svg => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-
-            // Find the download button using data-title attribute
-            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
-            
-            if (downloadBtn) {
-                // Make it tabbable
-                downloadBtn.setAttribute('tabindex', '0');
-                downloadBtn.setAttribute('role', 'button');
-                
-                // Ensure it has a label
-                const title = downloadBtn.getAttribute('data-title');
-                if (title) downloadBtn.setAttribute('aria-label', title);
-
-                // Add keyboard click support (crucial for screen readers)
-                downloadBtn.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        downloadBtn.click();
-                    }
-                };
-            }
-
-            // Hide other modebar buttons from screen readers
-            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
-            otherButtons.forEach(btn => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-
-        // Watch for changes (Plotly deletes/re-creates the modebar often)
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-
-        // Run once immediately
-        setupChartAccessibility();
-
-        return () => observer.disconnect();
-    }, [allData, lang]);
+    
 
     const minYear = useMemo(() => allData.length > 0 ? allData[0].year : 2019, [allData]);
     const maxYear = useMemo(() => allData.length > 0 ? allData[allData.length - 1].year : 2024, [allData]);
+    const yearsDescending = useMemo(
+        () => [...allData].sort((a, b) => b.year - a.year).map((d) => d.year),
+        [allData]
+    );
     const currentYearData = useMemo(() => {
         if (!year || allData.length === 0) return null;
         return allData.find(d => d.year === year) || allData[allData.length - 1];
     }, [year, allData]);
 
-    const downloadTableAsCSV = () => {
-        if (!allData || allData.length === 0) return;
+    const unitHeader = lang === 'en' ? '($ millions)' : '(millions $)';
+    const tableCaption = lang === 'en'
+        ? `Energy sector direct nominal GDP by province/territory, ${minYear}-${maxYear} (millions of dollars)`
+        : `PIB nominal direct du secteur de l'énergie par province/territoire, ${minYear}-${maxYear} (millions de dollars)`;
+    const tableFilenameBase = lang === 'en' ? 'provincial_gdp_data' : 'pib_provincial_donnees';
+    const docxFilenameBase = lang === 'en' ? 'provincial_gdp_table' : 'pib_provincial_tableau';
 
-        const unitHeader = lang === 'en' ? '($ millions)' : '(millions $)';
-        const headers = [
-            lang === 'en' ? 'Province/Territory' : 'Province/Territoire',
-            ...allData.map(yearData => `${yearData.year} ${unitHeader}`)
-        ];
-        const rows = provincial_gdp_PROVINCE_CODES.map(code => {
+    const chartTitleRaw = getText('provincial_gdp_subtitle', lang);
+    const chartTitleSpoken = chartTitleRaw
+        .replace(/\*/g, '')
+        .replace(/\(\$\s*millions\)/gi, 'millions of dollars')
+        .replace(/\(millions\s*de\s*\$\)/gi, 'millions de dollars')
+        .replace(/\(millions\s*\$\)/gi, 'millions de dollars')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const tableColumns = useMemo(() => [
+        {
+            key: 'province',
+            header: lang === 'en' ? 'Province/Territory' : 'Province/Territoire',
+            align: 'left',
+        },
+        ...allData.map((yearData) => ({
+            key: String(yearData.year),
+            header: `${yearData.year} ${unitHeader}`,
+            align: 'num',
+        })),
+    ], [lang, allData, unitHeader]);
+
+    const tableRows = useMemo(() => {
+        const provinceRows = provincial_gdp_PROVINCE_CODES.map((code) => {
             const info = provincial_gdp_PROVINCE_INFO[code];
-            const name = lang === 'en' ? info.nameEn : info.nameFr;
-            return [name, ...allData.map(yearData => yearData[code] || 0)];
-        });
-        rows.push([
-            lang === 'en' ? 'Canada Total' : 'Total Canada',
-            ...allData.map(yearData => yearData.national_total || 0)
-        ]);
-        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'provincial_gdp_data.csv' : 'pib_provincial_donnees.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-    const downloadTableAsDocx = async () => {
-        if (!allData || allData.length === 0) return;
-
-        const unitHeader = lang === 'en' ? '($ millions)' : '(millions $)';
-        const title = getText('provincial_gdp_title', lang);
-        const headers = [
-            lang === 'en' ? 'Province/Territory' : 'Province/Territoire',
-            ...allData.map(yearData => `${yearData.year} ${unitHeader}`)
-        ];
-
-        const headerRow = new TableRow({
-            children: headers.map(header => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: header, bold: true, size: 20 })],
-                    alignment: AlignmentType.CENTER
-                })],
-                shading: { fill: 'E6E6E6' }
-            }))
-        });
-        const dataRows = provincial_gdp_PROVINCE_CODES.map(code => {
-            const info = provincial_gdp_PROVINCE_INFO[code];
-            const name = lang === 'en' ? info.nameEn : info.nameFr;
-            return new TableRow({
-                children: [
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: name, size: 20 })], alignment: AlignmentType.LEFT })] }),
-                    ...allData.map(yearData => new TableCell({ 
-                        children: [new Paragraph({ children: [new TextRun({ text: formatProvincialGdpNumber(yearData[code] || 0, lang), size: 20 })], alignment: AlignmentType.RIGHT })] 
-                    }))
-                ]
+            const row = {
+                province: lang === 'en' ? info.nameEn : info.nameFr,
+            };
+            allData.forEach((yearData) => {
+                row[String(yearData.year)] = yearData[code] || 0;
             });
+            return row;
         });
-        const totalRow = new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Canada Total' : 'Total Canada', bold: true, size: 20 })], alignment: AlignmentType.LEFT })] }),
-                ...allData.map(yearData => new TableCell({ 
-                    children: [new Paragraph({ children: [new TextRun({ text: formatProvincialGdpNumber(yearData.national_total || 0, lang), bold: true, size: 20 })], alignment: AlignmentType.RIGHT })] 
-                }))
-            ]
+        const totalRow = {
+            province: lang === 'en' ? 'Canada Total' : 'Total Canada',
+        };
+        allData.forEach((yearData) => {
+            totalRow[String(yearData.year)] = yearData.national_total || 0;
         });
+        return [...provinceRows, totalRow];
+    }, [lang, allData]);
 
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: title, bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 }
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [2500, ...allData.map(() => 1100)],
-                        rows: [headerRow, ...dataRows, totalRow]
-                    })
-                ]
-            }]
-        });
+    const docxColumnWidths = useMemo(
+        () => [2500, ...allData.map(() => 1100)],
+        [allData],
+    );
 
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'provincial_gdp_table.docx' : 'pib_provincial_tableau.docx');
-    };
     const getSRSummary = () => {
         if (!currentYearData) return '';
         const total = currentYearData.national_total || 0;
@@ -467,25 +254,24 @@ const ProvincialGdp = () => {
         };
     }, [windowWidth]);
 
-    if (loading) {
+    if (loading || error) {
         return (
             <main className="page-content page-8" role="main">
-                <div style={{ padding: '40px', textAlign: 'center' }}>
-                    {lang === 'en' ? 'Loading...' : 'Chargement...'}
-                </div>
+                <PageStatus
+                    lang={lang}
+                    loading={loading}
+                    error={error}
+                    style={{ padding: '40px', textAlign: 'center' }}
+                />
             </main>
         );
     }
 
-    if (error) {
-        return (
-            <main className="page-content page-8" role="main">
-                <div style={{ padding: '40px', color: 'red' }}>
-                    Error: {error}
-                </div>
-            </main>
-        );
-    }
+
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd), name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+    });
 
     return (
         <main 
@@ -720,68 +506,6 @@ const ProvincialGdp = () => {
                     background-color: #404040 !important;
                 }
 
-                .provincial-gdp-data-table {
-                    width: 100%;
-                    margin-bottom: 0;
-                    position: relative;
-                    z-index: 10;
-                }
-
-                .provincial-gdp-data-table summary {
-                    cursor: pointer;
-                    padding: 10px 15px;
-                    background-color: #8C8C8C;
-                    color: #ffffff;
-                    font-weight: bold;
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    list-style: none;
-                    position: relative;
-                    z-index: 100;
-                }
-
-                .provincial-gdp-data-table summary:hover {
-                    background-color: #404040 !important;
-                }
-
-                .provincial-gdp-data-table summary:focus {
-                    outline: none;
-                }
-
-                .provincial-gdp-data-table[open] summary {
-                    border-radius: 4px 4px 0 0;
-                    border-bottom: none;
-                }
-
-                .provincial-gdp-data-table table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 0;
-                    border: 1px solid #ccc;
-                    font-family: var(--font-body);
-                }
-
-                .provincial-gdp-data-table th,
-                .provincial-gdp-data-table td {
-                    padding: 10px;
-                    text-align: left;
-                    border: 1px solid #ddd;
-                }
-
-                .provincial-gdp-data-table th {
-                    background-color: #f5f5f5;
-                    font-weight: bold;
-                }
-
-                .provincial-gdp-data-table td:last-child {
-                    text-align: right;
-                }
-
                 @media (max-width: 1100px) {
                     .provincial-gdp-map-container {
                         width: 100%;
@@ -811,13 +535,6 @@ const ProvincialGdp = () => {
                     }
                     .dropdown-button {
                         font-size: 18px;
-                    }
-                    .provincial-gdp-data-table summary {
-                        font-size: 18px;
-                    }
-
-                    .provincial-gdp-data-table {
-                        margin-top: 100px;
                     }
                 }
                 
@@ -853,26 +570,6 @@ const ProvincialGdp = () => {
                         margin-left: -20% !important;
                         height: 400px;
                     }
-                    .provincial-gdp-table-wrapper {
-                        margin-top: 120px;
-                    }
-                }
-
-                @media (max-width: 384px) {
-                    .provincial-gdp-table-wrapper {
-                        margin-top: 150px;
-                    }
-                }
-
-                @media (max-width: 320px) {
-                    .provincial-gdp-table-wrapper {
-                        margin-top: 180px;
-                    }
-                }
-
-                details summary::-webkit-details-marker,
-                details summary::marker {
-                    display: none;
                 }
 
                 .sr-only { 
@@ -890,75 +587,7 @@ const ProvincialGdp = () => {
                 .provincial-gdp-table-wrapper {
                     display: block;
                     width: 100%;
-                    margin: 0;
                     margin-top: 20px;
-                    position: relative;
-                    z-index: 10;
-                }
-
-                .provincial-gdp-table-wrapper details > summary {
-                    display: block;
-                    width: 100%;
-                    padding: 12px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    color: #ffffff;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    box-sizing: border-box;
-                    list-style: none;
-                }
-
-                .provincial-gdp-table-wrapper details > summary::-webkit-details-marker {
-                    display: none;
-                }
-
-                .provincial-gdp-table-wrapper details > summary::marker {
-                    display: none;
-                    content: '';
-                }
-
-                .provincial-gdp-table-wrapper details > summary:hover {
-                    background-color: #404040 !important;
-                }
-
-                .provincial-gdp-table-wrapper button[type="button"]:hover,
-                .provincial-gdp-table-wrapper button:hover {
-                    background-color: #404040 !important;
-                }
-
-                /* Table horizontal scroll */
-                .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                }
-
-                .table-responsive table {
-                    width: max-content !important;
-                    min-width: 100%;
-                    border-collapse: collapse;
-                }
-
-                .table-responsive table th,
-                .table-responsive table td {
-                    white-space: nowrap;
-                    padding: 8px 12px;
-                }
-
-                .provincial-gdp-table-wrapper .table-responsive table.table {
-                    font-family: var(--font-body);
-                    color: var(--gc-text);
-                }
-
-                .provincial-gdp-table-wrapper .table-responsive table th,
-                .provincial-gdp-table-wrapper .table-responsive table td {
-                    font-family: var(--font-body);
-                    color: var(--gc-text);
                 }
             `}</style>
             <div className="provincial-gdp-container">
@@ -974,153 +603,35 @@ const ProvincialGdp = () => {
                 </header>
                 {/* Chart frame: chart title inside (centered), then year selector and chart */}
                 <div className="provincial-gdp-chart-frame">
-                    <p className="provincial-gdp-chart-title" aria-hidden="true">
-                        {getText('provincial_gdp_subtitle', lang).split('*')[0]}
-                        {'\n'}
-                        {getText('provincial_gdp_subtitle', lang).split('*').slice(1).join('*')}
+                    <h2 className="provincial-gdp-chart-title" aria-label={chartTitleSpoken}>
+                        {chartTitleRaw.split('*')[0]}
+                        {chartTitleRaw.includes('*') ? '\n' : ''}
+                        {chartTitleRaw.split('*').slice(1).join('*')}
                         <span id="fn-asterisk-rf-provincial-gdp" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0', marginLeft: '0.15em' }}>
                             <a href="#fn-asterisk-provincial-gdp" onClick={scrollToFootnote} className="fn-lnk">
                                 <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span><span aria-hidden="true">*</span>
                             </a>
                         </span>
-                    </p>
-                {/* SINGLE-SELECT RADIO DROPDOWN */}
-                <div 
-                    ref={yearDropdownRef} 
-                    style={{ 
-                        position: 'relative', 
-                        marginBottom: '20px', 
-                        width: '200px' 
-                    }}
-                >
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    
-                    {/* TOGGLE BUTTON */}
-                    <button
-                        ref={yearButtonRef}
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px'
-                        }}
-                    >
-                        <span>{year || maxYear}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                    </button>
-
-                    {/* DROPDOWN LIST */}
-                    {isYearDropdownOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            width: '100%',
-                            maxHeight: '300px',
-                            overflowY: 'auto',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            zIndex: 100,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                        }}>
-                            {/* Sort Descending (Newest First) - Using buttons styled as radio */}
-                            {[...allData].sort((a, b) => b.year - a.year).map((yearData) => {
-                                const isSelected = year === yearData.year;
-                                return (
-                                    <button
-                                        key={yearData.year}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        aria-label={yearData.year.toString()}
-                                        onClick={() => {
-                                            setYear(yearData.year);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => {
-                                                yearButtonRef.current?.focus();
-                                            }, 0);
-                                        }}
-                                        style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px', 
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
-                                    >
-                                        {/* Fake radio circle */}
-                                        <span 
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff'
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span style={{
-                                                    height: '10px',
-                                                    width: '10px',
-                                                    borderRadius: '50%',
-                                                    backgroundColor: '#000'
-                                                }} />
-                                            )}
-                                        </span>
-                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
-                                            {yearData.year}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
+                    </h2>
+                <YearSelect
+                    lang={lang}
+                    id="provincial-gdp-year-select"
+                    label={getText('year_slider_label', lang)}
+                    years={yearsDescending}
+                    value={year}
+                    onChange={setYear}
+                />
                     
                     <div role="status" className="wb-inv" aria-live="polite">
                         {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                     </div>
-                </div>
                 <div 
                     role="region" 
                     aria-label={getSRSummary()}
                     tabIndex="0"
                 >
                     <figure ref={chartRef} className="provincial-gdp-map-container" style={{ margin: 0, position: 'relative' }}>
-                    {selectedProvinces !== null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedProvinces(null)}
-                                style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
-                    )}
+                    {selectedProvinces !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedProvinces(null)} />}
                     {chartData && (
                         <Plot
                             key={`map-${selectedProvinces ? selectedProvinces.join('-') : 'none'}`}
@@ -1221,7 +732,7 @@ const ProvincialGdp = () => {
                                 margin: { l: 0, r: 0, t: 0, b: 0 },
                                 height: 650,
                                 clickmode: 'event',
-                                dragmode: windowWidth <= 768 ? false : 'zoom',
+                                dragmode: false,
                                 paper_bgcolor: 'rgba(0,0,0,0)',
                                 plot_bgcolor: 'rgba(0,0,0,0)'
                             }}
@@ -1262,23 +773,7 @@ const ProvincialGdp = () => {
                                     }
                                 });
                             }}
-                            config={{
-                                displayModeBar: true,
-                                displaylogo: false,
-                                responsive: true,
-                                scrollZoom: false,
-                                staticPlot: false,
-                                modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d', 'zoom2d', 'pan2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
-                                modeBarButtonsToAdd: [{
-                                    name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                    icon: {
-                                        width: 24,
-                                        height: 24,
-                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                    },
-                                    click: (gd) => downloadChartWithTitle(gd)
-                                }]
-                            }}
+                            config={plotConfig}
                             style={{ width: '100%', height: '100%' }}
                         />
                     )}
@@ -1286,149 +781,38 @@ const ProvincialGdp = () => {
                 </div>
 
                 <div className="provincial-gdp-table-wrapper">
-                <details 
-                    className="provincial-gdp-data-table"
-                    onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                >
-                    <summary role="button" aria-expanded={isTableOpen}>
-                        <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                        {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                        <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                    </summary>
-                    <div 
-                        ref={topScrollRef}
-                        style={{ 
-                            width: '100%', 
-                            overflowX: 'auto', 
-                            overflowY: 'hidden',
-                            marginBottom: '0px',
-                            display: windowWidth <= 768 ? 'none' : 'block' 
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={tableRows}
+                        csvFilename={`${tableFilenameBase}.csv`}
+                        docx={{
+                            filename: `${docxFilenameBase}.docx`,
+                            title: getText('provincial_gdp_title', lang),
+                            titleAlign: 'center',
+                            columnWidths: docxColumnWidths,
+                            fontSize: 20,
                         }}
-                        aria-hidden="true"
-                    >
-                        <div style={{ height: '20px' }}></div>
-                    </div>
-                    <div 
-                        ref={tableScrollRef}
-                        className="table-responsive" 
-                        role="region"
-                        tabIndex="0"
-                    >
-                        <table className="table table-striped table-hover">
-                            <caption className="wb-inv">
-                                {lang === 'en' 
-                                    ? `Energy sector direct nominal GDP by province/territory, ${minYear}-${maxYear} (millions of dollars)`
-                                    : `PIB nominal direct du secteur de l'énergie par province/territoire, ${minYear}-${maxYear} (millions de dollars)`
-                                }
-                            </caption>
-                            <thead>
-                                <tr>
-                                    <td style={{ borderBottom: 'none' }} aria-hidden="true"></td>
-                                    <th scope="colgroup" colSpan={allData.length} style={{ textAlign: 'center', borderBottom: 'none' }}>
-                                        <span aria-hidden="true">{lang === 'en' ? '($ millions)' : '(millions $)'}</span>
-                                        <span className="wb-inv">{lang === 'en' ? '(millions of dollars)' : '(millions de dollars)'}</span>
-                                    </th>
-                                </tr>
-                                <tr>
-                                    <th scope="col" style={{ fontWeight: 'bold', borderTop: 'none' }}>
-                                        {lang === 'en' ? 'Province/Territory' : 'Province/Territoire'}
-                                    </th>
-                                    {allData.map(yearData => (
-                                        <th key={yearData.year} scope="col" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                            {yearData.year}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {provincial_gdp_PROVINCE_CODES.map((code) => {
-                                    const info = provincial_gdp_PROVINCE_INFO[code];
-                                    const name = lang === 'en' ? info.nameEn : info.nameFr;
-                                    const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
-                                    return (
-                                        <tr key={code}>
-                                            <th scope="row" style={{ fontWeight: 'bold' }}>{name}</th>
-                                            {allData.map(yearData => (
-                                                <td 
-                                                    key={yearData.year} 
-                                                    style={{ textAlign: 'right' }}
-                                                    aria-label={`${name}, ${yearData.year}: ${formatProvincialGdpNumber(yearData[code], lang)}${cellUnitSR}`}
-                                                >
-                                                    {formatProvincialGdpNumber(yearData[code], lang)}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    );
-                                })}
-                                <tr style={{ fontWeight: 'bold' }}>
-                                    <th scope="row">{lang === 'en' ? 'Canada Total' : 'Total Canada'}</th>
-                                    {allData.map(yearData => {
-                                        const totalLabel = lang === 'en' ? 'Canada Total' : 'Total Canada';
-                                        const cellUnitSR = lang === 'en' ? ' million dollars' : ' millions de dollars';
-                                        return (
-                                            <td 
-                                                key={yearData.year} 
-                                                style={{ textAlign: 'right' }}
-                                                aria-label={`${totalLabel}, ${yearData.year}: ${formatProvincialGdpNumber(yearData.national_total, lang)}${cellUnitSR}`}
-                                            >
-                                                {formatProvincialGdpNumber(yearData.national_total, lang)}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                        <button
-                            onClick={() => downloadTableAsCSV()}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#8C8C8C',
-                                border: '1px solid #404040',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontFamily: 'Arial, sans-serif',
-                                fontWeight: 'bold',
-                                color: '#ffffff'
-                            }}
-                        >
-                            {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                        </button>
-                        <button
-                            onClick={() => downloadTableAsDocx()}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#8C8C8C',
-                                border: '1px solid #404040',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontFamily: 'Arial, sans-serif',
-                                fontWeight: 'bold',
-                                color: '#ffffff'
-                            }}
-                        >
-                            {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                        </button>
-                    </div>
-                </details>
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        renderCell={(raw, { colIndex }) => (
+                            colIndex === 0 ? String(raw ?? '') : formatProvincialGdpNumber(raw, lang)
+                        )}
+                    />
                 </div>
                 </div> {/* End chart-frame */}
-                <aside className="wb-fnote" role="note">
-                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-provincial-gdp">
-                            <a href="#fn-asterisk-rf-provincial-gdp" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            <p>
-                                {getText('provincial_gdp_footnote', lang)}
-                                {year === 2024 && getText('provincial_gdp_footnote_2024', lang)}
-                            </p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn"
+                    items={[
+                        {
+                            id: 'fn-asterisk-provincial-gdp',
+                            marker: '*',
+                            text: getText('provincial_gdp_footnote', lang) + (year === 2024 ? getText('provincial_gdp_footnote_2024', lang) : ''),
+                            returnHref: '#fn-asterisk-rf-provincial-gdp',
+                        },
+                    ]}
+                />
             </div>
         </main>
     );

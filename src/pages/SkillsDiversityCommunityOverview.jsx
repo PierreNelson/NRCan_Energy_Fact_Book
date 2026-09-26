@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import PageShell from '../components/PageShell';
 import { useOutletContext, Link } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import skillsDiversityCommunityOverviewImage from '../assets/skills_diversity_community_overview_bg.jpg';
@@ -9,12 +10,13 @@ const SkillsDiversityCommunityOverview = () => {
     useEffect(() => {
     }, []);
 
+    useEffect(() => {
+    }, []);
+
     return (
-        <main 
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-39 skills-diversity-community-overview-main cover-page" 
-            role="main"
+            className="page-content page-39 skills-diversity-community-overview-main cover-page"
             style={{
                 backgroundColor: '#a8678f',
                 flex: '1 1 auto',
@@ -172,7 +174,7 @@ const SkillsDiversityCommunityOverview = () => {
                     </ul>
                 </nav>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

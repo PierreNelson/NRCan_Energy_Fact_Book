@@ -1,9 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import FootnoteMarker from '../components/FootnoteMarker';
+import PageFootnotes from '../components/PageFootnotes';
+import YearSelect from '../components/YearSelect';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 /** Full names for hover (EN / FR) — matches common factbook usage */
 const US_STATE_NAME_EN = {
@@ -307,9 +320,6 @@ const canadian_energy_exports_us_states_YEAR_LIST = Object.keys(canadian_energy_
 
 const MAP_BG = '#f5f5f5';
 
-const stripHtml = (text) =>
-    text ? String(text).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
 const toFileSlug = (text) => {
     const s = stripHtml(text)
         .normalize('NFD')
@@ -321,8 +331,8 @@ const toFileSlug = (text) => {
 };
 
 const CanadianEnergyExportsUsStates = () => {
-    const { lang } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const { lang, layoutPadding } = useOutletContext();
+    const windowWidth = useWindowWidth();
     const [devicePixelRatio, setDevicePixelRatio] = useState(
         () => (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1)
     );
@@ -331,15 +341,15 @@ const CanadianEnergyExportsUsStates = () => {
         typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
     );
     const [selectedYear, setSelectedYear] = useState(canadian_energy_exports_us_states_YEAR_LIST[0] ?? 2024);
-    const [selectedPoints, setSelectedPoints] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const lastClickRef = useRef({ time: 0, pointIndex: null });
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
+    const chartRef = useRef(null);
 
     useEffect(() => {
         const onResize = () => {
-            setWindowWidth(window.innerWidth);
             setDevicePixelRatio(window.devicePixelRatio || 1);
         };
         onResize();
@@ -347,50 +357,49 @@ const CanadianEnergyExportsUsStates = () => {
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(e.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-canadian-energy-exports-us-states')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-canadian-energy-exports-us-states')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const chartRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-canadian-energy-exports-us-states');
 
     const canadianEnergyExportsUsStatesYearRange = useMemo(() => {
         if (!canadian_energy_exports_us_states_YEAR_LIST.length) return { min: 2024, max: 2024 };
         return { min: Math.min(...canadian_energy_exports_us_states_YEAR_LIST), max: Math.max(...canadian_energy_exports_us_states_YEAR_LIST) };
     }, []);
 
+    const chartTitle = getText('canadian_energy_exports_us_states_title', lang).replace(/\{\{year\}\}/g, String(selectedYear));
+    const chartSubtitle = getText('canadian_energy_exports_us_states_subtitle', lang);
+    const exportChartTitle = stripHtml(chartTitle);
+    const exportChartSubtitle = stripHtml(chartSubtitle);
+    /** Visible subtitle is "($ millions)"; title focus speaks full unit phrase. */
+    const titleUnitSpoken = lang === 'en' ? 'millions of dollars' : 'millions de dollars';
+    /** Overview / map values are CAD — avoid "C$ millions" → "c dollar millions". */
+    const cadUnitSpoken = lang === 'en'
+        ? 'millions of Canadian dollars'
+        : 'millions de dollars canadiens';
+    const chartTitleSpoken = `${exportChartTitle}, ${titleUnitSpoken}`;
+    const chartDownloadSlug = toFileSlug(exportChartTitle);
+
+    const yearInTableHeading =
+        canadianEnergyExportsUsStatesYearRange.min === canadianEnergyExportsUsStatesYearRange.max
+            ? String(canadianEnergyExportsUsStatesYearRange.min)
+            : `${canadianEnergyExportsUsStatesYearRange.min}–${canadianEnergyExportsUsStatesYearRange.max}`;
+    const tableCaption = stripHtml(
+        getText('canadian_energy_exports_us_states_title', lang).replace(/\{\{year\}\}/g, yearInTableHeading),
+    );
     const tableExportStem = useMemo(() => {
         const base = stripHtml(getText('canadian_energy_exports_us_states_title', lang).replace(/\(\{\{year\}\}\)/g, '').trim());
         return `${toFileSlug(base)}-${canadianEnergyExportsUsStatesYearRange.min}-${canadianEnergyExportsUsStatesYearRange.max}`;
     }, [lang, canadianEnergyExportsUsStatesYearRange.min, canadianEnergyExportsUsStatesYearRange.max]);
 
-    const formatExports = useCallback(
-        (n) => (lang === 'fr' ? n.toLocaleString('fr-CA').replace(/\u00a0/g, ' ') : n.toLocaleString('en-CA')),
-        [lang]
-    );
+    const formatExports = (n) =>
+        (lang === 'fr' ? Number(n).toLocaleString('fr-CA').replace(/\u00a0/g, ' ') : Number(n).toLocaleString('en-CA'));
 
-    const formatPctTable = useCallback(
-        (p) => (lang === 'fr' ? String(p).replace('.', ',') : String(p)),
-        [lang]
-    );
+    const formatPctTable = (p) => (lang === 'fr' ? String(p).replace('.', ',') : String(p));
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('canadian_energy_exports_us_states_table_year', lang), align: 'left' },
+        { key: 'state', header: getText('canadian_energy_exports_us_states_table_state', lang), align: 'left' },
+        { key: 'exportMil', header: getText('canadian_energy_exports_us_states_table_exports_mil', lang), align: 'num' },
+        { key: 'pctGdp', header: getText('canadian_energy_exports_us_states_table_pct_gdp', lang), align: 'num' },
+    ], [lang]);
 
     const tableRowsForExport = useMemo(() => {
         const nameMap = lang === 'fr' ? US_STATE_NAME_FR : US_STATE_NAME_EN;
@@ -410,227 +419,22 @@ const CanadianEnergyExportsUsStates = () => {
         return out;
     }, [lang]);
 
-    const downloadChartWithTitle = useCallback(async () => {
-        const plotElement = chartRef?.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const title = stripHtml(getText('canadian_energy_exports_us_states_title', lang).replace(/\{\{year\}\}/g, String(selectedYear)));
-            const subtitle = stripHtml(getText('canadian_energy_exports_us_states_subtitle', lang));
-            const imgData = await window.Plotly.toImage(plotElement, { format: 'png', width: 1200, height: 720, scale: 2 });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 88;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#000000';
-                ctx.font = 'bold 22px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 38);
-                ctx.font = '18px Arial';
-                ctx.fillText(subtitle, canvas.width / 2, 68);
-                ctx.drawImage(img, 0, titleHeight);
-                const slug = toFileSlug(title);
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${slug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (e) {
-            console.error(e);
-        }
-    }, [lang, selectedYear]);
-
-    const downloadTableAsCSV = useCallback(() => {
-        const headers = [
-            getText('canadian_energy_exports_us_states_table_year', lang),
-            getText('canadian_energy_exports_us_states_table_state', lang),
-            getText('canadian_energy_exports_us_states_table_exports_mil', lang),
-            getText('canadian_energy_exports_us_states_table_pct_gdp', lang),
-        ];
-        const lines = [
-            headers.join(','),
-            ...tableRowsForExport.map((row) =>
-                [
-                    row.year,
-                    `"${String(row.state).replace(/"/g, '""')}"`,
-                    formatExports(row.exportMil),
-                    `${formatPctTable(row.pctGdp)}%`,
-                ].join(',')
-            ),
-        ];
-        const csv = lines.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${tableExportStem}.csv`;
-        link.click();
-        URL.revokeObjectURL(link.href);
-    }, [lang, tableExportStem, tableRowsForExport, formatExports, formatPctTable]);
-
-    const downloadTableAsDocx = useCallback(async () => {
-        const yearInHeading =
-            canadianEnergyExportsUsStatesYearRange.min === canadianEnergyExportsUsStatesYearRange.max
-                ? String(canadianEnergyExportsUsStatesYearRange.min)
-                : `${canadianEnergyExportsUsStatesYearRange.min}–${canadianEnergyExportsUsStatesYearRange.max}`;
-        const heading = stripHtml(getText('canadian_energy_exports_us_states_title', lang).replace(/\{\{year\}\}/g, yearInHeading));
-        const yLabel = getText('canadian_energy_exports_us_states_table_year', lang);
-        const sLabel = getText('canadian_energy_exports_us_states_table_state', lang);
-        const eLabel = getText('canadian_energy_exports_us_states_table_exports_mil', lang);
-        const pLabel = getText('canadian_energy_exports_us_states_table_pct_gdp', lang);
-        const headerShade = { fill: 'E6E6E6' };
-        const headerCells = [
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: yLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: sLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: eLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: pLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-        ];
-        const dataRows = tableRowsForExport.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(row.year), size: 22 })],
-                                    alignment: AlignmentType.CENTER,
-                                }),
-                            ],
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: row.state, size: 22 })],
-                                    alignment: AlignmentType.LEFT,
-                                }),
-                            ],
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: formatExports(row.exportMil), size: 22 })],
-                                    alignment: AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [
-                                        new TextRun({
-                                            text:
-                                                lang === 'fr'
-                                                    ? `${formatPctTable(row.pctGdp)} %`
-                                                    : `${formatPctTable(row.pctGdp)}%`,
-                                            size: 22,
-                                        }),
-                                    ],
-                                    alignment: AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                    ],
-                })
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: heading, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 5200, 2200, 2200],
-                            rows: [new TableRow({ children: headerCells }), ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${tableExportStem}.docx`);
-    }, [
-        lang,
-        tableExportStem,
-        tableRowsForExport,
-        formatExports,
-        formatPctTable,
-        canadianEnergyExportsUsStatesYearRange.min,
-        canadianEnergyExportsUsStatesYearRange.max,
-    ]);
-
-    const plotConfig = useMemo(
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
         () => ({
-            displayModeBar: true,
-            displaylogo: false,
-            responsive: true,
-            scrollZoom: false,
-            doubleClick: false,
-            modeBarButtonsToRemove: [
-                'pan2d',
-                'select2d',
-                'lasso2d',
-                'zoom2d',
-                'zoomIn2d',
-                'zoomOut2d',
-                'autoScale2d',
-                'resetScale2d',
-                'toImage',
-            ],
-            modeBarButtonsToAdd: [
-                {
-                    name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                    icon: {
-                        width: 24,
-                        height: 24,
-                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                    },
-                    click: () => {
-                        downloadChartWithTitle();
-                    },
-                },
-            ],
-        }),
-        [lang, downloadChartWithTitle]
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        subtitle: exportChartSubtitle,
+        width: 1200,
+        height: 720,
+    }),
+        [chartDownloadSlug, exportChartSubtitle, exportChartTitle],
     );
+
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const canadianEnergyExportsUsStatesColorbarHorizontal = useMemo(
         () => canadianEnergyExportsUsStatesUseHorizontalColorbar(windowWidth, devicePixelRatio, sessionDevicePixelRatio),
@@ -897,6 +701,12 @@ const CanadianEnergyExportsUsStates = () => {
                     btn.setAttribute('role', 'button');
                     btn.setAttribute('tabindex', '0');
                     btn.removeAttribute('aria-hidden');
+                    btn.onkeydown = (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            btn.click();
+                        }
+                    };
                 } else {
                     btn.setAttribute('aria-hidden', 'true');
                     btn.setAttribute('tabindex', '-1');
@@ -912,300 +722,158 @@ const CanadianEnergyExportsUsStates = () => {
         };
     }, [lang, selectedYear]);
 
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll || !isTableOpen) return;
-        const syncTopToTable = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-        const handleTop = () => {
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-        };
-        const handleTable = () => {
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-        };
-        topScroll.addEventListener('scroll', handleTop);
-        tableScroll.addEventListener('scroll', handleTable);
-        syncTopToTable();
-        const ro = new ResizeObserver(() => window.requestAnimationFrame(syncTopToTable));
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) ro.observe(tableEl);
-        ro.observe(tableScroll);
-        return () => {
-            topScroll.removeEventListener('scroll', handleTop);
-            tableScroll.removeEventListener('scroll', handleTable);
-            ro.disconnect();
-        };
-    }, [isTableOpen, windowWidth, tableRowsForExport.length]);
-
     const handleChartClick = (data) => {
         if (!data.points?.length) return;
-        const pt = data.points[0];
-        if (pt.curveNumber !== 0) return;
-        const pointIndex = pt.pointIndex;
-        if (pointIndex == null) return;
-
-        if (windowWidth <= 768) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const samePoint = pointIndex === last.pointIndex;
-            const doubleTap = samePoint && now - last.time < 300;
-            lastClickRef.current = { time: now, pointIndex };
-            if (!doubleTap) return;
-        }
-
-        setSelectedPoints((prev) => {
-            if (prev === null) return [pointIndex];
-            const isSelected = prev.includes(pointIndex);
-            if (isSelected) {
-                const next = prev.filter((i) => i !== pointIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, pointIndex];
-        });
+        if (data.points[0].curveNumber !== 0) return;
+        onPlotClick(data);
     };
 
+    const getChartSummary = () => {
+        const rows = canadian_energy_exports_us_states_DATA_BY_YEAR[selectedYear] || [];
+        const nameMap = lang === 'fr' ? US_STATE_NAME_FR : US_STATE_NAME_EN;
+        const exportsLabel = lang === 'en' ? 'Exports' : 'Exportations';
+        const pctLabel = getText('canadian_energy_exports_us_states_table_pct_gdp', lang);
+        const body = summarizeByCategory({
+            categories: rows.map((r) => nameMap[r.code] || r.code),
+            series: [
+                {
+                    name: exportsLabel,
+                    values: rows.map((r) => r.exportMil),
+                    format: (v) => `${formatExports(v)} ${cadUnitSpoken}`,
+                },
+                {
+                    name: pctLabel,
+                    values: rows.map((r) => r.pctGdp),
+                    format: (p) => (lang === 'fr' ? `${formatPctTable(p)} %` : `${formatPctTable(p)}%`),
+                },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Map of Canadian energy exports to U.S. states for ${selectedYear}`
+                : `Carte des exportations énergétiques canadiennes vers les États américains pour ${selectedYear}`,
+            body,
+            lang,
+        });
+    };
+    const mapRegionLabel = `${getText('canadian_energy_exports_us_states_map_aria', lang)}. ${getChartSummary()}`;
+
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-14"
-            role="main"
+            className="page-content page-14 page-chrome page-chrome--bleed"
             aria-labelledby="canadian-energy-exports-us-states-chart-heading"
-            style={{
-                backgroundColor: 'white',
-                flex: '1 1 auto',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'visible',
-                boxSizing: 'border-box',
-            }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-14 { width: 100%; }
-.canadian-energy-exports-us-states-container { width: 100%; padding: 15px 0 0 0; box-sizing: border-box; }
-.canadian-energy-exports-us-states-year-selector label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; font-family: 'Noto Sans', sans-serif; }
-.canadian-energy-exports-us-states-year-selector .canadian-energy-exports-us-states-year-button:hover { border-color: #007bff; }
-.canadian-energy-exports-us-states-year-selector .canadian-energy-exports-us-states-year-button:focus { outline: 2px solid #005fcc; outline-offset: 2px; border-color: #007bff; }
-.canadian-energy-exports-us-states-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-sizing: border-box;
+.canadian-energy-exports-us-states-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
+.canadian-energy-exports-us-states-heading {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: center;
+    align-items: start;
+    column-gap: 0.2em;
+    margin: 0 0 15px 0;
+    padding-left: 15px;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 .canadian-energy-exports-us-states-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
+    grid-column: 1;
+    grid-row: 1 / span 2;
     color: var(--gc-text);
-    text-align: center;
-    margin: 0 0 5px 0;
-    padding-left: 15px;
+    margin: 0;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+}
+.canadian-energy-exports-us-states-fn-slot {
+    grid-column: 2;
+    grid-row: 1;
+    line-height: 1;
+    padding-top: 0.2em;
 }
 .canadian-energy-exports-us-states-chart-subtitle {
-    font-family: 'Noto Sans', sans-serif;
-    font-size: 20px;
+    display: block;
+    font-family: 'Noto Sans', sans-serif !important;
+    font-size: 20px !important;
+    font-weight: 400 !important;
     color: var(--gc-text);
     text-align: center;
-    margin: 0 0 15px 90px;
+    margin: 5px 0 0 0 !important;
     padding-left: 0;
 }
 .canadian-energy-exports-us-states-map-wrap { width: 100%; position: relative; min-height: 480px; }
 .canadian-energy-exports-us-states-map-wrap .js-plotly-plot .plotly .modebar { right: 20px !important; }
 .canadian-energy-exports-us-states-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }
-.canadian-energy-exports-us-states-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.canadian-energy-exports-us-states-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.canadian-energy-exports-us-states-table-wrapper details > summary:hover { background-color: #404040 !important; }
-.canadian-energy-exports-us-states-table-wrapper button[type="button"]:hover,
-.canadian-energy-exports-us-states-table-wrapper button:hover,
 .canadian-energy-exports-us-states-chart-frame button[type="button"]:hover,
 .canadian-energy-exports-us-states-chart-frame button:hover { background-color: #404040 !important; }
-.canadian-energy-exports-us-states-table-wrapper .table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; }
-.canadian-energy-exports-us-states-table-wrapper .table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-@media (max-width: 1097px) {
-    .canadian-energy-exports-us-states-chart-subtitle { margin-left: 60px; }
-}
-@media (max-width: 960px) {
-    .canadian-energy-exports-us-states-chart-subtitle { margin-left: 20px; }
-}
 @media (max-width: 768px) {
-    .canadian-energy-exports-us-states-chart-title { font-size: 26px; }
-    .canadian-energy-exports-us-states-chart-subtitle { font-size: 18px; }
+    .canadian-energy-exports-us-states-chart-subtitle { font-size: 18px !important; }
 }
             `}</style>
             <div className="canadian-energy-exports-us-states-container">
-                <div ref={yearDropdownRef} className="canadian-energy-exports-us-states-year-selector" style={{ position: 'relative', marginBottom: '20px', width: '200px' }}>
-                    <label htmlFor="canadian-energy-exports-us-states-year-button">{getText('year_slider_label', lang)}</label>
-                    <button
-                        id="canadian-energy-exports-us-states-year-button"
-                        ref={yearButtonRef}
-                        type="button"
-                        className="canadian-energy-exports-us-states-year-button"
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        aria-haspopup="listbox"
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px',
-                            fontFamily: "'Noto Sans', sans-serif",
-                        }}
-                    >
-                        <span>{selectedYear}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                    </button>
-                    {isYearDropdownOpen && (
-                        <div
-                            role="listbox"
-                            aria-label={getText('year_slider_label', lang)}
-                            style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                width: '100%',
-                                maxHeight: '300px',
-                                overflowY: 'auto',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                zIndex: 100,
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            }}
-                        >
-                            {[...canadian_energy_exports_us_states_YEAR_LIST].sort((a, b) => b - a).map((y) => {
-                                const isSelected = y === selectedYear;
-                                return (
-                                    <button
-                                        key={y}
-                                        type="button"
-                                        role="option"
-                                        aria-selected={isSelected}
-                                        onClick={() => {
-                                            setSelectedYear(y);
-                                            setSelectedPoints(null);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                        }}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px',
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#e0f2fe' : '#f5f5f5';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff';
-                                        }}
-                                    >
-                                        <span
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff',
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span
-                                                    style={{
-                                                        height: '10px',
-                                                        width: '10px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#000',
-                                                    }}
-                                                />
-                                            )}
-                                        </span>
-                                        <span style={{ fontSize: '16px', color: '#000000' }}>{y}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                    <div role="status" className="wb-inv" aria-live="polite">
-                        {selectedYear
-                            ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${selectedYear}`
-                            : ''}
-                    </div>
+                <YearSelect
+                    lang={lang}
+                    id="canadian-energy-exports-us-states-year-button"
+                    label={getText('year_slider_label', lang)}
+                    years={[...canadian_energy_exports_us_states_YEAR_LIST].sort((a, b) => b - a)}
+                    value={selectedYear}
+                    onChange={(y) => {
+                        setSelectedYear(y);
+                        clearSelection();
+                    }}
+                />
+                <div role="status" className="wb-inv" aria-live="polite">
+                    {selectedYear
+                        ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${selectedYear}`
+                        : ''}
                 </div>
-                <div className="canadian-energy-exports-us-states-chart-frame">
-                    <h2 id="canadian-energy-exports-us-states-chart-heading" className="canadian-energy-exports-us-states-chart-title">
-                        {getText('canadian_energy_exports_us_states_title', lang).replace(/\{\{year\}\}/g, String(selectedYear))}
-                        <sup
-                            id="fn-asterisk-rf-canadian-energy-exports-us-states"
-                            style={{ verticalAlign: 'super', fontSize: '0.6em', lineHeight: 0 }}
+                <div className="canadian-energy-exports-us-states-chart-frame page-chrome-chart-frame">
+                    <div className="canadian-energy-exports-us-states-heading">
+                        <h2
+                            id="canadian-energy-exports-us-states-chart-heading"
+                            className="canadian-energy-exports-us-states-chart-title page-chrome-chart-title"
+                            aria-labelledby="canadian-energy-exports-us-states-chart-heading-spoken"
                         >
-                            <a href="#fn-asterisk-canadian-energy-exports-us-states" onClick={scrollToFootnote} className="fn-lnk">
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                                <span aria-hidden="true">*</span>
-                            </a>
-                        </sup>
-                    </h2>
-                    <p className="canadian-energy-exports-us-states-chart-subtitle">{getText('canadian_energy_exports_us_states_subtitle', lang)}</p>
-                    {selectedPoints !== null && (
-                        <div style={{ marginBottom: 8, textAlign: 'center' }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedPoints(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
+                            <span
+                                id="canadian-energy-exports-us-states-chart-heading-spoken"
+                                className="wb-inv"
                             >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
+                                {chartTitleSpoken}
+                            </span>
+                            <span aria-hidden="true">{chartTitle}</span>
+                            <span
+                                className="canadian-energy-exports-us-states-chart-subtitle"
+                                aria-hidden="true"
+                            >
+                                {chartSubtitle}
+                            </span>
+                        </h2>
+                        <div className="canadian-energy-exports-us-states-fn-slot">
+                            <FootnoteMarker
+                                lang={lang}
+                                href="#fn-asterisk-canadian-energy-exports-us-states"
+                                id="fn-asterisk-rf-canadian-energy-exports-us-states"
+                                marker="*"
+                                onClick={scrollToFootnote}
+                            />
                         </div>
+                    </div>
+                    {selectedPoints !== null && (
+                        <ClearSelectionButton lang={lang} onClick={clearSelection} />
                     )}
                     <div
                         className="canadian-energy-exports-us-states-map-wrap"
                         role="region"
-                        aria-label={getText('canadian_energy_exports_us_states_map_aria', lang)}
+                        aria-label={mapRegionLabel}
                         tabIndex="0"
                     >
                         <figure ref={chartRef} style={{ margin: 0, position: 'relative', width: '100%' }}>
@@ -1221,160 +889,42 @@ const CanadianEnergyExportsUsStates = () => {
                         </figure>
                     </div>
                     <div className="canadian-energy-exports-us-states-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginBottom: 0,
-                                    display: windowWidth <= 768 ? 'none' : 'block',
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                style={{ borderTop: 'none', padding: '15px' }}
-                                tabIndex="0"
-                            >
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">
-                                        {stripHtml(
-                                            getText('canadian_energy_exports_us_states_title', lang).replace(
-                                                /\{\{year\}\}/g,
-                                                canadianEnergyExportsUsStatesYearRange.min === canadianEnergyExportsUsStatesYearRange.max
-                                                    ? String(canadianEnergyExportsUsStatesYearRange.min)
-                                                    : `${canadianEnergyExportsUsStatesYearRange.min}–${canadianEnergyExportsUsStatesYearRange.max}`
-                                            )
-                                        )}
-                                    </caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd' }}>
-                                                {getText('canadian_energy_exports_us_states_table_year', lang)}
-                                            </th>
-                                            <th scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd' }}>
-                                                {getText('canadian_energy_exports_us_states_table_state', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    padding: '10px',
-                                                    border: '1px solid #ddd',
-                                                    textAlign: 'right',
-                                                }}
-                                            >
-                                                {getText('canadian_energy_exports_us_states_table_exports_mil', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    padding: '10px',
-                                                    border: '1px solid #ddd',
-                                                    textAlign: 'right',
-                                                }}
-                                            >
-                                                {getText('canadian_energy_exports_us_states_table_pct_gdp', lang)}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tableRowsForExport.map((row, idx) => (
-                                            <tr key={`${row.year}-${row.state}-${idx}`}>
-                                                <td style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'center' }}>{row.year}</td>
-                                                <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>
-                                                    {row.state}
-                                                </th>
-                                                <td style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'right' }}>
-                                                    {formatExports(row.exportMil)}
-                                                </td>
-                                                <td style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'right' }}>
-                                                    {lang === 'fr'
-                                                        ? `${formatPctTable(row.pctGdp)} %`
-                                                        : `${formatPctTable(row.pctGdp)}%`}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={downloadTableAsCSV}
-                                        style={{
-                                            padding: '8px 16px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontWeight: 'bold',
-                                            color: '#ffffff',
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={downloadTableAsDocx}
-                                        style={{
-                                            padding: '8px 16px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontWeight: 'bold',
-                                            color: '#ffffff',
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRowsForExport}
+                            csvFilename={`${tableExportStem}.csv`}
+                            docx={{
+                                filename: `${tableExportStem}.docx`,
+                                title: tableCaption,
+                                titleAlign: 'center',
+                                columnWidths: [900, 5200, 2200, 2200],
+                                fontSize: 22,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex }) => {
+                                if (colIndex === 0 || colIndex === 1) return String(raw ?? '');
+                                if (colIndex === 2) return formatExports(raw);
+                                return lang === 'fr'
+                                    ? `${formatPctTable(raw)} %`
+                                    : `${formatPctTable(raw)}%`;
+                            }}
+                        />
                     </div>
                 </div>
-                <aside className="wb-fnote" role="note">
-                    <h2 id="canadian-energy-exports-us-states-fn-heading">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-canadian-energy-exports-us-states">
-                            <a
-                                href="#fn-asterisk-rf-canadian-energy-exports-us-states"
-                                onClick={scrollToRef}
-                                className="fn-num"
-                                title={
-                                    lang === 'en'
-                                        ? 'Return to footnote * referrer'
-                                        : 'Retour à la référence de la note de bas de page *'
-                                }
-                            >
-                                <span className="wb-inv">
-                                    {lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}
-                                </span>
-                                *
-                            </a>
-                            <p>{getText('canadian_energy_exports_us_states_footnote', lang)}</p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="canadian-energy-exports-us-states-fn-heading"
+                    items={[{
+                        id: 'fn-asterisk-canadian-energy-exports-us-states',
+                        marker: '*',
+                        text: getText('canadian_energy_exports_us_states_footnote', lang),
+                        returnHref: '#fn-asterisk-rf-canadian-energy-exports-us-states',
+                    }]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

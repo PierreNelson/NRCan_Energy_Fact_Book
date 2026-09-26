@@ -1,4 +1,6 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
+import SafeHtml from './SafeHtml';
 import sectorEnergyTrendsBg from '../assets/sector_energy_trends_bg.svg';
 
 const NATIVE_SIZE = { width: 718.37335, height: 531.50665 };
@@ -92,23 +94,20 @@ const SectorColumn = ({ sectorKey, lang, getText }) => {
                 width: `${bounds.width}%`,
             }}
         >
-            <p
+            <SafeHtml as="p"
                 className="sector-energy-trends-sector-title"
-                style={{ top: `${layout.titleTop}%` }}
-                dangerouslySetInnerHTML={{ __html: titleHtml }}
-            />
+                style={{ top: `${layout.titleTop}%` }} html={titleHtml}
+             />
             <div className="sector-energy-trends-metric-row" style={{ top: `${layout.useTop}%`, ...metricRowStyle }}>
-                <span
-                    className="sector-energy-trends-metric-label"
-                    dangerouslySetInnerHTML={{ __html: useLabelHtml }}
-                />
+                <SafeHtml as="span"
+                    className="sector-energy-trends-metric-label" html={useLabelHtml}
+                 />
                 <span className="sector-energy-trends-metric-value">{formatPct(data.energyUse, lang)}</span>
             </div>
             <div className="sector-energy-trends-metric-row" style={{ top: `${layout.intensityTop}%`, ...metricRowStyle }}>
-                <span
-                    className="sector-energy-trends-metric-label"
-                    dangerouslySetInnerHTML={{ __html: intensityLabelHtml }}
-                />
+                <SafeHtml as="span"
+                    className="sector-energy-trends-metric-label" html={intensityLabelHtml}
+                 />
                 <span className="sector-energy-trends-metric-value">{formatPct(data.energyIntensity, lang)}</span>
             </div>
         </div>
@@ -119,9 +118,19 @@ const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, ti
     const isFr = lang === 'fr';
 
     return (
-    <figure ref={figureRef} className="sector-energy-trends-infographic-figure" aria-label={ariaLabel}>
+    <AccessibleInfographic
+        ref={figureRef}
+        as="figure"
+        mode="image"
+        className="sector-energy-trends-infographic-figure"
+        title={title || ariaLabel}
+        overview={ariaLabel}
+        src={sectorEnergyTrendsBg}
+        imgClassName="sector-energy-trends-bg-image"
+    >
         <style>{`
 .sector-energy-trends-infographic-figure {
+    position: relative;
     display: block;
     width: 100%;
     max-width: none;
@@ -286,7 +295,6 @@ const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, ti
         `}</style>
 
         <div className={`sector-energy-trends-infographic-wrapper${isFr ? ' sector-energy-trends-infographic-wrapper--fr' : ''}`}>
-            <img src={sectorEnergyTrendsBg} alt="" className="sector-energy-trends-bg-image" draggable={false} aria-hidden="true" />
             {title && (
                 <h2 id={titleId} className="sector-energy-trends-infographic-title-overlay">
                     {title}
@@ -296,8 +304,7 @@ const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, ti
                 <SectorColumn key={key} sectorKey={key} lang={lang} getText={getText} />
             ))}
         </div>
-        <figcaption className="wb-inv">{ariaLabel}</figcaption>
-    </figure>
+    </AccessibleInfographic>
     );
 };
 

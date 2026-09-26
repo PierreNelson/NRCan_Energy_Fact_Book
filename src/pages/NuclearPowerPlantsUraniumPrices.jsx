@@ -1,9 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import FootnoteMarker from '../components/FootnoteMarker';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import hexToRgba from '../utils/hexToRgba';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const NUCLEAR_FACILITIES = [
     { key: 'darlington', facilityEn: 'Darlington', provinceKey: 'ontario', outputMw: 3736, units: 4 },
@@ -53,22 +66,6 @@ const HOVER_LABEL = {
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
 
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
-
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
         (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
@@ -77,15 +74,14 @@ const substitute = (text, vars) =>
 
 const NuclearPowerPlantsUraniumPrices = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [selectedTraceIds, setSelectedTraceIds] = useState(null);
-    const [isChartTableOpen, setIsChartTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedTraceIds,
+        clear: clearSelection,
+        toggleSlice,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
 
     const chartRef = useRef(null);
-    const chartTableTopRef = useRef(null);
-    const chartTableScrollRef = useRef(null);
-    const chartTableBottomRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null });
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
@@ -99,110 +95,17 @@ const NuclearPowerPlantsUraniumPrices = () => {
         return Number(value).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     };
 
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const scrollToElement = (id) => makeScrollToIdHandler(id);
 
-    const scrollToElement = (id) => (event) => {
-        event?.preventDefault();
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    const syncTableScroll = useCallback((topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    const syncChartTableScroll = useCallback(
-        () => syncTableScroll(chartTableTopRef, chartTableScrollRef, chartTableBottomRef),
-        [syncTableScroll],
-    );
-
-    useEffect(() => {
-        if (!isChartTableOpen) return undefined;
-        const topScroll = chartTableTopRef.current;
-        const tableScroll = chartTableScrollRef.current;
-        const bottomScroll = chartTableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTop = () => syncFrom(topScroll);
-        const handleTable = () => syncFrom(tableScroll);
-        const handleBottom = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncChartTableScroll);
-
-        topScroll.addEventListener('scroll', handleTop);
-        tableScroll.addEventListener('scroll', handleTable);
-        bottomScroll.addEventListener('scroll', handleBottom);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTop);
-            tableScroll.removeEventListener('scroll', handleTable);
-            bottomScroll.removeEventListener('scroll', handleBottom);
-            observer.disconnect();
-        };
-    }, [isChartTableOpen, windowWidth, syncChartTableScroll]);
-
-    useEffect(() => {
-        if (!chartRef.current) return undefined;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedTraceIds]);
+    
 
     const facilitiesRows = useMemo(
         () =>
             NUCLEAR_FACILITIES.map((row) => ({
-                ...row,
                 facility: row.facilityEn,
                 province: getText(`nuclear_power_plants_uranium_prices_province_${row.provinceKey}`, lang),
+                outputMw: row.outputMw,
+                units: row.units,
             })),
         [lang],
     );
@@ -217,30 +120,28 @@ const NuclearPowerPlantsUraniumPrices = () => {
     const spotLabel = getText('nuclear_power_plants_uranium_prices_legend_spot', lang);
     const foreignLabel = getText('nuclear_power_plants_uranium_prices_legend_foreign', lang);
     const chartTitle = getText('nuclear_power_plants_uranium_prices_chart_title', lang);
-    const chartTitlePlain = stripHtml(chartTitle);
-    const chartDocxTitle = `${substitute(getText('nuclear_power_plants_uranium_prices_chart_docx_title', lang), chartYearVars)}*`;
+    const exportChartTitle = stripHtml(chartTitle);
     const priceUnit = getText('nuclear_power_plants_uranium_prices_yaxis', lang);
     const facilitiesTitle = getText('nuclear_power_plants_uranium_prices_facilities_title', lang);
+    const facilitiesCaption = getText('nuclear_power_plants_uranium_prices_facilities_caption', lang);
     const facilitiesFileSlug = getText('nuclear_power_plants_uranium_prices_facilities_csv_slug', lang).replace(/\.csv$/i, '');
     const chartFileSlug = substitute(getText('nuclear_power_plants_uranium_prices_chart_file_slug', lang), chartYearVars);
+    const chartDocxTitle = `${substitute(getText('nuclear_power_plants_uranium_prices_chart_docx_title', lang), chartYearVars)}*`;
+    const chartTableCaption = getText('nuclear_power_plants_uranium_prices_chart_table_caption', lang);
+    const chartTableSummary = getText('nuclear_power_plants_uranium_prices_chart_table_summary', lang);
 
-    const facilitiesTableHeaders = [
-        getText('nuclear_power_plants_uranium_prices_facilities_col_facility', lang),
-        getText('nuclear_power_plants_uranium_prices_facilities_col_province', lang),
-        getText('nuclear_power_plants_uranium_prices_facilities_col_output', lang),
-        getText('nuclear_power_plants_uranium_prices_facilities_col_units', lang),
-    ];
+    const facilitiesColumns = useMemo(() => [
+        { key: 'facility', header: getText('nuclear_power_plants_uranium_prices_facilities_col_facility', lang), align: 'left' },
+        { key: 'province', header: getText('nuclear_power_plants_uranium_prices_facilities_col_province', lang), align: 'left' },
+        { key: 'outputMw', header: getText('nuclear_power_plants_uranium_prices_facilities_col_output', lang), align: 'num' },
+        { key: 'units', header: getText('nuclear_power_plants_uranium_prices_facilities_col_units', lang), align: 'num' },
+    ], [lang]);
 
-    const chartTableHeaders = [
-        getText('nuclear_power_plants_uranium_prices_chart_table_col_year', lang),
-        getText('nuclear_power_plants_uranium_prices_chart_table_col_spot', lang),
-        getText('nuclear_power_plants_uranium_prices_chart_table_col_foreign', lang),
-    ];
-
-    const chartTableRows = useMemo(
-        () => [...URANIUM_PRICE_DATA].sort((a, b) => b.year - a.year),
-        [],
-    );
+    const chartTableColumns = useMemo(() => [
+        { key: 'year', header: getText('nuclear_power_plants_uranium_prices_chart_table_col_year', lang), align: 'left' },
+        { key: 'spot', header: getText('nuclear_power_plants_uranium_prices_chart_table_col_spot', lang), align: 'num' },
+        { key: 'foreignPurchases', header: getText('nuclear_power_plants_uranium_prices_chart_table_col_foreign', lang), align: 'num' },
+    ], [lang]);
 
     const tickFont = { size: windowWidth <= 480 ? 12 : 14, family: 'Arial, sans-serif' };
     const axisTitleFont = { size: windowWidth <= 480 ? 13 : 15, family: 'Arial, sans-serif', color: '#333333' };
@@ -257,242 +158,32 @@ const NuclearPowerPlantsUraniumPrices = () => {
         (y, i) => `<b>${foreignLabel}</b><br>${y}: ${formatPrice(foreignValues[i])} ${priceUnit}<extra></extra>`,
     );
 
-    const handleChartClick = useCallback((event) => {
+    const handleChartClick = (event) => {
         if (!event?.points?.length) return;
         const traceIndex = event.points[0].curveNumber;
         if (traceIndex !== 0 && traceIndex !== 1) return;
-
-        if (windowWidth <= 768) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const isDoubleTap = traceIndex === last.traceIndex && now - last.time < 300;
-            lastClickRef.current = { time: now, traceIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedTraceIds((prev) => {
-            if (prev === null) return [traceIndex];
-            if (prev.includes(traceIndex)) {
-                const next = prev.filter((t) => t !== traceIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, traceIndex];
-        });
-    }, [windowWidth]);
-
-    const downloadChartPng = async () => {
-        const plotElement = chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 640,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 80;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${chartTitlePlain}*`, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = [
-                    { color: CHART_COLORS.spot, label: spotLabel, type: 'line' },
-                    { color: CHART_COLORS.foreign, label: foreignLabel, type: 'line' },
-                ];
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'left';
-                const totalLegendWidth = legendItems.reduce((sum, item) => sum + ctx.measureText(item.label).width + 56, 0) + 40;
-                let x = (canvas.width - totalLegendWidth) / 2;
-                legendItems.forEach((item) => {
-                    ctx.fillStyle = item.color;
-                    ctx.fillRect(x, legendY - 4, 28, 4);
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 36, legendY + 6);
-                    x += 36 + ctx.measureText(item.label).width + 40;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${chartFileSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.warn('Unable to download chart image.', err);
-        }
+        toggleSlice(traceIndex);
     };
 
-    const chartConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('nuclear_power_plants_uranium_prices_download_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: downloadChartPng,
-        }],
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartFileSlug}.png`,
+        title: `${exportChartTitle}*`,
+        height: 640,
+        legendItems: [
+            { label: spotLabel, color: CHART_COLORS.spot },
+            { label: foreignLabel, color: CHART_COLORS.foreign },
+        ],
+    }),
+        [CHART_COLORS, chartFileSlug, exportChartTitle, foreignLabel, spotLabel],
+    );
 
-    const downloadFacilitiesCsv = () => {
-        const rows = facilitiesRows.map((row) => [row.facility, row.province, row.outputMw, row.units]);
-        const csv = [facilitiesTableHeaders.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join('\n');
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${facilitiesFileSlug}.csv`);
-    };
-
-    const downloadFacilitiesDocx = async () => {
-        const headerRow = new TableRow({
-            children: facilitiesTableHeaders.map((header) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22, color: 'FFFFFF' })], alignment: AlignmentType.CENTER })],
-                shading: { fill: '48484A' },
-            })),
-        });
-        const dataDocRows = facilitiesRows.map((row, index) => {
-            const isOdd = index % 2 === 0;
-            const fill = isOdd ? 'B8BEAD' : 'fefefe';
-            return new TableRow({
-                children: [
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: row.facility, bold: true, size: 22 })], alignment: AlignmentType.LEFT })],
-                        shading: { fill },
-                    }),
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: row.province, size: 22 })], alignment: AlignmentType.LEFT })],
-                        shading: { fill },
-                    }),
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: formatMw(row.outputMw), size: 22 })], alignment: AlignmentType.RIGHT })],
-                        shading: { fill },
-                    }),
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: String(row.units), size: 22 })], alignment: AlignmentType.CENTER })],
-                        shading: { fill },
-                    }),
-                ],
-            });
-        });
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: facilitiesTitle, bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [3200, 2400, 3200, 1400],
-                        rows: [headerRow, ...dataDocRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${facilitiesFileSlug}.docx`);
-    };
-
-    const downloadFacilitiesPng = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const colWidths = [220, 180, 220, 100];
-        const rowHeight = 42;
-        const headerHeight = 48;
-        const titleHeight = 72;
-        const tableWidth = colWidths.reduce((sum, w) => sum + w, 0);
-        const tableHeight = headerHeight + facilitiesRows.length * rowHeight;
-        canvas.width = tableWidth + 40;
-        canvas.height = titleHeight + tableHeight + 40;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#26374a';
-        ctx.font = 'bold 18px Lato, Arial, sans-serif';
-        ctx.textAlign = 'center';
-        const titleLines = facilitiesTitle.match(/.{1,55}(\s|$)/g) || [facilitiesTitle];
-        titleLines.forEach((line, index) => {
-            ctx.fillText(line.trim(), canvas.width / 2, 28 + index * 24);
-        });
-        const startX = 20;
-        let y = titleHeight;
-        ctx.font = 'bold 15px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(startX, y, tableWidth, headerHeight);
-        ctx.fillStyle = '#48484A';
-        ctx.fillRect(startX, y, tableWidth, headerHeight);
-        facilitiesTableHeaders.forEach((header, index) => {
-            const x = startX + colWidths.slice(0, index).reduce((sum, w) => sum + w, 0) + colWidths[index] / 2;
-            ctx.fillText(header, x, y + 30);
-        });
-        y += headerHeight;
-        facilitiesRows.forEach((row, rowIndex) => {
-            const isOdd = rowIndex % 2 === 0;
-            const fill = isOdd ? '#B8BEAD' : '#fefefe';
-            ctx.fillStyle = fill;
-            ctx.fillRect(startX, y, tableWidth, rowHeight);
-            ctx.fillStyle = '#000000';
-            ctx.font = '15px Arial, sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText(row.facility, startX + 12, y + 27);
-            ctx.fillText(row.province, startX + colWidths[0] + 12, y + 27);
-            ctx.textAlign = 'right';
-            ctx.fillText(formatMw(row.outputMw), startX + colWidths[0] + colWidths[1] + colWidths[2] - 12, y + 27);
-            ctx.textAlign = 'center';
-            ctx.fillText(String(row.units), startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] / 2, y + 27);
-            y += rowHeight;
-        });
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = `${facilitiesFileSlug}.png`;
-        link.click();
-    };
-
-    const downloadChartCsv = () => {
-        const rows = chartTableRows.map((row) => [row.year, formatPrice(row.spot), formatPrice(row.foreignPurchases)]);
-        const csv = [chartTableHeaders.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join('\n');
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${chartFileSlug}.csv`);
-    };
-
-    const downloadChartDocx = async () => {
-        const headerRow = new TableRow({
-            children: chartTableHeaders.map((header) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const dataDocRows = chartTableRows.map((row) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.spot), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPrice(row.foreignPurchases), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-            ],
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: chartDocxTitle, bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1200, 3600, 3600],
-                        rows: [headerRow, ...dataDocRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${chartFileSlug}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('nuclear_power_plants_uranium_prices_download_png', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const plotData = [
         {
@@ -547,7 +238,7 @@ const NuclearPowerPlantsUraniumPrices = () => {
             automargin: true,
         },
         yaxis: {
-            title: { text: getText('nuclear_power_plants_uranium_prices_yaxis', lang), font: axisTitleFont, standoff: 12 },
+            title: { text: priceUnit, font: axisTitleFont, standoff: 12 },
             showgrid: false,
             zeroline: false,
             showline: true,
@@ -561,23 +252,36 @@ const NuclearPowerPlantsUraniumPrices = () => {
         autosize: true,
     };
 
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: spotLabel, values: spotValues, format: formatPrice },
+                { name: foreignLabel, values: foreignValues, format: formatPrice },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Line chart of uranium prices from ${chartYearStart} to ${chartYearEnd}`
+                : `Graphique linéaire des prix de l'uranium de ${chartYearStart} à ${chartYearEnd}`,
+            unitNote: lang === 'en' ? `Values in ${priceUnit}` : `Valeurs en ${priceUnit}`,
+            body,
+        });
+    };
+    const chartRegionLabel = `${exportChartTitle}. ${getChartSummary()}`;
+
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content page-90"
+            className="page-content page-90 page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="nuclear-power-plants-uranium-prices-facilities-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-90.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-90 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .nuclear-power-plants-uranium-prices-container { width: 100%; padding: 15px 0 0 0; box-sizing: border-box; }
 .nuclear-power-plants-uranium-prices-facilities-title {
@@ -590,72 +294,19 @@ const NuclearPowerPlantsUraniumPrices = () => {
     text-transform: none;
     text-align: center;
 }
-.nuclear-power-plants-uranium-prices-sector-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: Arial, sans-serif;
-    font-size: 0.95rem;
-}
-.nuclear-power-plants-uranium-prices-sector-table th,
-.nuclear-power-plants-uranium-prices-sector-table td {
-    border: 1px solid #ddd;
-    padding: 10px 12px;
-    text-align: center;
-}
-.nuclear-power-plants-uranium-prices-sector-table thead th {
-    background-color: #48484A;
-    color: #ffffff;
-    font-weight: bold;
-}
-.nuclear-power-plants-uranium-prices-sector-table tbody tr:nth-child(odd) { background-color: #B8BEAD; }
-.nuclear-power-plants-uranium-prices-sector-table tbody tr:nth-child(even) { background-color: #fefefe; }
-.nuclear-power-plants-uranium-prices-sector-table tbody tr th[scope="row"] {
-    text-align: left;
-    font-weight: bold;
-    color: inherit;
-    background-color: inherit;
-}
-.nuclear-power-plants-uranium-prices-sector-table tbody tr td:first-child { text-align: left; font-weight: bold; }
-.nuclear-power-plants-uranium-prices-sector-table tbody tr td:nth-child(3) { text-align: right; }
-.nuclear-power-plants-uranium-prices-sector-table tbody tr:hover {
-    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.2);
-    background-color: transparent;
-}
-.nuclear-power-plants-uranium-prices-sector-table tbody tr:hover th,
-.nuclear-power-plants-uranium-prices-sector-table tbody tr:hover td {
-    background-color: transparent;
-}
+.nuclear-power-plants-uranium-prices-table-wrapper { display: block; width: 100%; margin-top: 0; margin-bottom: 0; }
 .nuclear-power-plants-uranium-prices-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
     margin-top: 28px;
-    box-sizing: border-box;
-    overflow: visible;
+    margin-bottom: 0;
 }
 .nuclear-power-plants-uranium-prices-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
     margin: 0 0 12px 0;
     text-transform: none;
 }
-.nuclear-power-plants-uranium-prices-chart-title .fn-lnk { color: #26374a; text-decoration: underline; }
+.nuclear-power-plants-uranium-prices-chart-title .fn-lnk { color: #26374a; }
 .nuclear-power-plants-uranium-prices-chart { width: 100%; min-width: 0; position: relative; z-index: 1; overflow: visible; }
 .nuclear-power-plants-uranium-prices-chart > div { width: 100%; height: 100%; overflow: visible; }
-.nuclear-power-plants-uranium-prices-clear-selection {
-    padding: 6px 12px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 8px;
-}
 .nuclear-power-plants-uranium-prices-legend {
     display: flex;
     flex-wrap: wrap;
@@ -668,48 +319,7 @@ const NuclearPowerPlantsUraniumPrices = () => {
 }
 .nuclear-power-plants-uranium-prices-legend-item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .nuclear-power-plants-uranium-prices-legend-line { width: 28px; height: 4px; display: inline-block; }
-.nuclear-power-plants-uranium-prices-table-wrapper { display: block; width: 100%; margin-top: 20px; margin-bottom: 0; }
-.nuclear-power-plants-uranium-prices-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.nuclear-power-plants-uranium-prices-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.nuclear-power-plants-uranium-prices-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.nuclear-power-plants-uranium-prices-table-scrollbar > div { height: 20px; }
-.nuclear-power-plants-uranium-prices-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.nuclear-power-plants-uranium-prices-table-responsive::-webkit-scrollbar { display: none; }
-.nuclear-power-plants-uranium-prices-table-responsive table { width: max-content !important; min-width: 100%; }
-.nuclear-power-plants-uranium-prices-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.nuclear-power-plants-uranium-prices-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
-.nuclear-power-plants-uranium-prices-download-buttons button:hover,
-.nuclear-power-plants-uranium-prices-table-wrapper summary:hover,
-.nuclear-power-plants-uranium-prices-clear-selection:hover { background-color: #404040 !important; }
+.nuclear-power-plants-uranium-prices-chart-table-wrapper { display: block; width: 100%; margin-top: 20px; margin-bottom: 0; }
 .nuclear-power-plants-uranium-prices-footnotes {
     font-family: var(--font-body);
     font-size: 1rem;
@@ -732,63 +342,57 @@ const NuclearPowerPlantsUraniumPrices = () => {
 .nuclear-power-plants-uranium-prices-footnotes dd p { margin: 0; }
 @media (max-width: 768px) {
     .nuclear-power-plants-uranium-prices-facilities-title { font-size: 20px; }
-    .nuclear-power-plants-uranium-prices-chart-title { font-size: 26px; }
 }
             `}</style>
 
             <div className="nuclear-power-plants-uranium-prices-container">
                 <h2 id="nuclear-power-plants-uranium-prices-facilities-title" className="nuclear-power-plants-uranium-prices-facilities-title">{facilitiesTitle}</h2>
 
-                <table className="nuclear-power-plants-uranium-prices-sector-table">
-                    <caption className="wb-inv">{getText('nuclear_power_plants_uranium_prices_facilities_caption', lang)}</caption>
-                    <thead>
-                        <tr>
-                            {facilitiesTableHeaders.map((header) => (
-                                <th key={header} scope="col">{header}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {facilitiesRows.map((row) => (
-                            <tr key={row.key}>
-                                <th scope="row">{row.facility}</th>
-                                <td>{row.province}</td>
-                                <td>{formatMw(row.outputMw)}</td>
-                                <td>{row.units}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <div className="nuclear-power-plants-uranium-prices-download-buttons">
-                    <button type="button" onClick={downloadFacilitiesCsv}>{getText('nuclear_power_plants_uranium_prices_download_csv', lang)}</button>
-                    <button type="button" onClick={downloadFacilitiesDocx}>{getText('nuclear_power_plants_uranium_prices_download_docx', lang)}</button>
-                    <button type="button" onClick={downloadFacilitiesPng}>{getText('nuclear_power_plants_uranium_prices_download_table_png', lang)}</button>
+                <div className="nuclear-power-plants-uranium-prices-table-wrapper">
+                    <ChartDataTable
+                        lang={lang}
+                        defaultOpen
+                        label={facilitiesCaption}
+                        columns={facilitiesColumns}
+                        rows={facilitiesRows}
+                        csvFilename={`${facilitiesFileSlug}.csv`}
+                        docx={{
+                            filename: `${facilitiesFileSlug}.docx`,
+                            title: facilitiesTitle,
+                            titleAlign: 'center',
+                            columnWidths: [3200, 2400, 3200, 1400],
+                            fontSize: 22,
+                        }}
+                        caption={facilitiesCaption}
+                        tableAriaLabel={facilitiesCaption}
+                        renderCell={(raw, { colIndex }) => (
+                            colIndex === 2 ? formatMw(raw) : String(raw ?? '')
+                        )}
+                    />
                 </div>
 
-                <div className="nuclear-power-plants-uranium-prices-chart-frame">
-                    <h2 id="nuclear-power-plants-uranium-prices-chart-title" className="nuclear-power-plants-uranium-prices-chart-title">
+                <div className="nuclear-power-plants-uranium-prices-chart-frame page-chrome-chart-frame">
+                    <h2 id="nuclear-power-plants-uranium-prices-chart-title" className="nuclear-power-plants-uranium-prices-chart-title page-chrome-chart-title">
                         {chartTitle}
-                        <span id="fn-asterisk-rf-nuclear-power-plants-uranium-prices" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
-                            <a className="fn-lnk" href="#fn-asterisk-nuclear-power-plants-uranium-prices" onClick={scrollToElement('fn-asterisk-nuclear-power-plants-uranium-prices')}>
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                                <span aria-hidden="true">*</span>
-                            </a>
-                        </span>
+                        <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-nuclear-power-plants-uranium-prices"
+                            id="fn-asterisk-rf-nuclear-power-plants-uranium-prices"
+                            marker="*"
+                            onClick={scrollToElement('fn-asterisk-nuclear-power-plants-uranium-prices')}
+                        />
                     </h2>
 
                     {selectedTraceIds !== null && (
-                        <button type="button" className="nuclear-power-plants-uranium-prices-clear-selection" onClick={() => setSelectedTraceIds(null)}>
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
+                        <ClearSelectionButton lang={lang} onClick={clearSelection} />
                     )}
 
-                    <figure ref={chartRef} className="nuclear-power-plants-uranium-prices-chart" role="region" aria-label={chartTitlePlain} tabIndex={0} style={{ margin: 0 }}>
+                    <figure ref={chartRef} className="nuclear-power-plants-uranium-prices-chart" role="region" aria-label={chartRegionLabel} tabIndex={0} style={{ margin: 0 }}>
                         <Plot
                             key={`nuclear-power-plants-uranium-prices-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}-${plotHeight}`}
                             data={plotData}
                             layout={plotLayout}
-                            config={chartConfig}
+                            config={plotConfig}
                             style={{ width: '100%', height: '100%' }}
                             useResizeHandler
                             onClick={handleChartClick}
@@ -806,73 +410,38 @@ const NuclearPowerPlantsUraniumPrices = () => {
                         </span>
                     </div>
 
-                    <div className="nuclear-power-plants-uranium-prices-table-wrapper">
-                        <details onToggle={(e) => setIsChartTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isChartTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isChartTableOpen ? '▼' : '▶'}</span>
-                                {getText('nuclear_power_plants_uranium_prices_chart_table_summary', lang)}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={chartTableTopRef} className="nuclear-power-plants-uranium-prices-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div
-                                ref={chartTableScrollRef}
-                                className="nuclear-power-plants-uranium-prices-table-responsive"
-                                role="region"
-                                aria-labelledby="nuclear-power-plants-uranium-prices-chart-table-caption"
-                                tabIndex={0}
-                            >
-                                <table className="table table-bordered table-striped table-hover">
-                                    <caption id="nuclear-power-plants-uranium-prices-chart-table-caption" className="wb-inv">
-                                        {getText('nuclear_power_plants_uranium_prices_chart_table_caption', lang)}
-                                    </caption>
-                                    <thead>
-                                        <tr>
-                                            {chartTableHeaders.map((header) => (
-                                                <th key={header} scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>{header}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {chartTableRows.map((row) => (
-                                            <tr key={row.year}>
-                                                <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{row.year}</th>
-                                                <td style={{ textAlign: 'right' }}>{formatPrice(row.spot)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatPrice(row.foreignPurchases)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div ref={chartTableBottomRef} className="nuclear-power-plants-uranium-prices-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div className="nuclear-power-plants-uranium-prices-download-buttons">
-                                <button type="button" onClick={downloadChartCsv}>{getText('nuclear_power_plants_uranium_prices_download_csv', lang)}</button>
-                                <button type="button" onClick={downloadChartDocx}>{getText('nuclear_power_plants_uranium_prices_download_docx', lang)}</button>
-                            </div>
-                        </details>
+                    <div className="nuclear-power-plants-uranium-prices-chart-table-wrapper">
+                        <ChartDataTable
+                            lang={lang}
+                            label={chartTableSummary}
+                            columns={chartTableColumns}
+                            rows={URANIUM_PRICE_DATA}
+                            csvFilename={`${chartFileSlug}.csv`}
+                            docx={{
+                                filename: `${chartFileSlug}.docx`,
+                                title: chartDocxTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1200, 3600, 3600],
+                                fontSize: 22,
+                            }}
+                            caption={chartTableCaption}
+                            tableAriaLabel={chartTableCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatPrice(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
-                <aside className="wb-fnote nuclear-power-plants-uranium-prices-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd id="fn-asterisk-nuclear-power-plants-uranium-prices">
-                            <a
-                                href="#fn-asterisk-rf-nuclear-power-plants-uranium-prices"
-                                onClick={scrollToElement('fn-asterisk-rf-nuclear-power-plants-uranium-prices')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('nuclear_power_plants_uranium_prices_footnote', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    className="nuclear-power-plants-uranium-prices-footnotes"
+                    items={[
+                        { id: 'fn-asterisk-nuclear-power-plants-uranium-prices', marker: '*', text: getText('nuclear_power_plants_uranium_prices_footnote', lang), returnHref: '#fn-asterisk-rf-nuclear-power-plants-uranium-prices' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

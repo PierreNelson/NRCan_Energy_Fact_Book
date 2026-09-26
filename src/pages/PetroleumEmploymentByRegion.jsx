@@ -1,10 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getPetroleumEmploymentByRegionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
 
 const REGION_ORDER = ['bc', 'alta', 'sask', 'man', 'ont', 'que', 'maritimes', 'nl'];
 
@@ -62,17 +71,19 @@ const getPageZoomScale = () => {
 
 const PetroleumEmploymentByRegion = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const windowWidth = useWindowWidth();
     const [pageData, setPageData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [highBrowserZoom, setHighBrowserZoom] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick: handleChartClick,
+        isSelected,
+        hasSelection,
+    } = usePlotlySelection({ mode: 'points', traceCount: REGION_ORDER.length, windowWidth });
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const reportingYear = pageData?.reportingYear ?? null;
@@ -80,8 +91,6 @@ const PetroleumEmploymentByRegion = () => {
     const directTotal = pageData?.directTotal ?? null;
     const indirectTotal = pageData?.indirectTotal ?? null;
     const topIndirect = useMemo(() => pageData?.topIndirect ?? [], [pageData]);
-
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
     useEffect(() => {
         getPetroleumEmploymentByRegionData()
@@ -165,11 +174,16 @@ const PetroleumEmploymentByRegion = () => {
         return lang === 'en' ? `${s}%` : `${s}\u00a0%`;
     };
 
-    const formatJobsTableCell = (n) => n.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+    const formatJobsTableCell = (n) => {
+        if (n == null || Number.isNaN(n)) return '\u2014';
+        return n.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+    };
 
     const regionLabel = (key) => getText(`petroleum_sector_employment_region_${key}`, lang);
     const regionFullName = (key) => getText(`petroleum_sector_employment_region_${key}_full`, lang);
 
+    const chartHeading = substitute(getText('petroleum_sector_employment_chart_heading', lang), textVars);
+    const exportChartTitle = stripHtml(chartHeading);
     const fileSlugBase = `${stripHtml(getText('petroleum_sector_employment_export_slug', lang))
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
@@ -177,18 +191,35 @@ const PetroleumEmploymentByRegion = () => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '') || 'petroleum-employment-by-region'}-${reportingYear ?? 'latest'}`;
 
+    const tableColumns = useMemo(() => [
+        { key: 'region', header: getText('petroleum_sector_employment_table_col_region', lang), align: 'left' },
+        { key: 'direct', header: getText('petroleum_sector_employment_table_col_direct_pct', lang), align: 'num' },
+        { key: 'indirect', header: getText('petroleum_sector_employment_table_col_indirect_pct', lang), align: 'num' },
+    ], [lang]);
+
+    const tableRows = useMemo(() => {
+        if (!pageData) return [];
+        const rows = REGION_ORDER.map((k) => {
+            const r = regionPcts[k] ?? {};
+            return {
+                region: regionLabel(k),
+                direct: r.direct ?? null,
+                indirect: r.indirect ?? null,
+            };
+        });
+        rows.push({
+            region: getText('petroleum_sector_employment_table_total_jobs_row', lang),
+            direct: directTotal,
+            indirect: indirectTotal,
+            isTotal: true,
+        });
+        return rows;
+    }, [pageData, regionPcts, lang, directTotal, indirectTotal]);
+
     const barPctFontBase = windowWidth <= 480 ? 16 : 20;
     const barPctFontLarge = windowWidth <= 480 ? 22 : 26;
     /** Leader-line callout labels (direct + indirect rows) at 100% zoom. */
     const calloutFontSize = windowWidth <= 480 ? 14 : 16;
-
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
 
     const plotTraces = REGION_ORDER.map((key, traceIndex) => {
         const base = REGION_COLORS[key];
@@ -198,12 +229,9 @@ const PetroleumEmploymentByRegion = () => {
         const markerColor =
             selectedPoints === null
                 ? base
-                : [0, 1].map((pointIndex) => {
-                      const isSelected = selectedPoints.some(
-                          (p) => p.traceIndex === traceIndex && p.pointIndex === pointIndex
-                      );
-                      return isSelected ? base : hexToRgba(base, 0.28);
-                  });
+                : [0, 1].map((pointIndex) => (
+                    isSelected(traceIndex, pointIndex) ? base : hexToRgba(base, 0.28)
+                ));
         const textInside = (v) => (v >= CALLOUT_THRESHOLD ? formatPctCell(v).replace('\u00a0', ' ') : '');
         const full = regionFullName(key);
         const showBarPctLabels = !highBrowserZoom;
@@ -244,12 +272,6 @@ const PetroleumEmploymentByRegion = () => {
         '.';
 
     useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
         const tick = () => {
             setHighBrowserZoom(getPageZoomScale() >= petroleum_sector_employment_HIGH_ZOOM_MIN);
         };
@@ -269,306 +291,28 @@ const PetroleumEmploymentByRegion = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints, highBrowserZoom]);
+    
 
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-        let isSyncingTop = false;
-        let isSyncingTable = false;
-        const syncTopToTable = () => {
-            if (isSyncingTable) return;
-            isSyncingTop = true;
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTop = false;
-            });
-        };
-        const syncTableToTop = () => {
-            if (isSyncingTop) return;
-            isSyncingTable = true;
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTable = false;
-            });
-        };
-        const updateTopScrollWidth = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-        topScroll.addEventListener('scroll', syncTopToTable);
-        tableScroll.addEventListener('scroll', syncTableToTop);
-        updateTopScrollWidth();
-        const resizeObserver = new ResizeObserver(updateTopScrollWidth);
-        const table = tableScroll.querySelector('table');
-        if (table) resizeObserver.observe(table);
-        return () => {
-            topScroll.removeEventListener('scroll', syncTopToTable);
-            tableScroll.removeEventListener('scroll', syncTableToTop);
-            resizeObserver.disconnect();
-        };
-    }, [isTableOpen]);
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${fileSlugBase}.png`,
+        title: exportChartTitle,
+        width: 1100,
+        height: 520,
+        legendItems: REGION_ORDER.map((key) => ({
+            label: regionLabel(key),
+            color: REGION_COLORS[key],
+        })),
+    }),
+        [REGION_COLORS, REGION_ORDER, exportChartTitle, fileSlugBase, regionLabel],
+    );
 
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const title = stripHtml(substitute(getText('petroleum_sector_employment_chart_heading', lang), textVars));
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1100,
-                height: 520,
-                scale: 2
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 72;
-                const legendBlock = 88;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendBlock;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 46);
-                ctx.drawImage(img, 0, titleHeight);
-                ctx.font = '20px Arial';
-                let rowY = titleHeight + img.height + 22;
-                LEGEND_ROWS.forEach((row) => {
-                    let rowW = 0;
-                    row.forEach((key) => {
-                        const lab = regionLabel(key);
-                        rowW += 26 + ctx.measureText(lab).width + 28;
-                    });
-                    let lx = (canvas.width - rowW) / 2;
-                    row.forEach((key) => {
-                        const lab = regionLabel(key);
-                        ctx.fillStyle = REGION_COLORS[key];
-                        ctx.fillRect(lx, rowY - 12, 20, 12);
-                        ctx.fillStyle = '#333333';
-                        ctx.fillText(lab, lx + 26, rowY);
-                        lx += 26 + ctx.measureText(lab).width + 28;
-                    });
-                    rowY += 30;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileSlugBase}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const h1 = getText('petroleum_sector_employment_table_col_region', lang);
-        const h2 = getText('petroleum_sector_employment_table_col_direct_pct', lang);
-        const h3 = getText('petroleum_sector_employment_table_col_indirect_pct', lang);
-        const headers = [h1, h2, h3];
-        const rows = REGION_ORDER.map((k) => {
-            const r = regionPcts[k] ?? {};
-            return [regionLabel(k), r.direct ?? '', r.indirect ?? ''];
-        });
-        const totalRow = [
-            getText('petroleum_sector_employment_table_total_jobs_row', lang),
-            formatJobsTableCell(directTotal),
-            formatJobsTableCell(indirectTotal)
-        ];
-        const csvContent = [headers.join(','), ...rows.map((row) => row.join(',')), totalRow.join(',')].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${fileSlugBase}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: stripHtml(substitute(getText('petroleum_sector_employment_chart_heading', lang), textVars)),
-                                    bold: true,
-                                    size: 28
-                                })
-                            ]
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [3200, 2400, 2400],
-                            rows: [
-                                new TableRow({
-                                    children: [
-                                        new TableCell({
-                                            children: [
-                                                new Paragraph({
-                                                    children: [
-                                                        new TextRun({
-                                                            text: getText('petroleum_sector_employment_table_col_region', lang),
-                                                            bold: true
-                                                        })
-                                                    ]
-                                                })
-                                            ]
-                                        }),
-                                        new TableCell({
-                                            children: [
-                                                new Paragraph({
-                                                    alignment: AlignmentType.CENTER,
-                                                    children: [
-                                                        new TextRun({
-                                                            text: getText('petroleum_sector_employment_table_col_direct_pct', lang),
-                                                            bold: true
-                                                        })
-                                                    ]
-                                                })
-                                            ]
-                                        }),
-                                        new TableCell({
-                                            children: [
-                                                new Paragraph({
-                                                    alignment: AlignmentType.CENTER,
-                                                    children: [
-                                                        new TextRun({
-                                                            text: getText('petroleum_sector_employment_table_col_indirect_pct', lang),
-                                                            bold: true
-                                                        })
-                                                    ]
-                                                })
-                                            ]
-                                        })
-                                    ]
-                                }),
-                                ...REGION_ORDER.map(
-                                    (k) =>
-                                        new TableRow({
-                                            children: [
-                                                new TableCell({
-                                                    children: [
-                                                        new Paragraph({
-                                                            children: [new TextRun({ text: regionLabel(k) })]
-                                                        })
-                                                    ]
-                                                }),
-                                                new TableCell({
-                                                    children: [
-                                                        new Paragraph({
-                                                            alignment: AlignmentType.CENTER,
-                                                            children: [
-                                                                new TextRun({
-                                                                    text: String((regionPcts[k] ?? {}).direct ?? '')
-                                                                })
-                                                            ]
-                                                        })
-                                                    ]
-                                                }),
-                                                new TableCell({
-                                                    children: [
-                                                        new Paragraph({
-                                                            alignment: AlignmentType.CENTER,
-                                                            children: [
-                                                                new TextRun({
-                                                                    text: String((regionPcts[k] ?? {}).indirect ?? '')
-                                                                })
-                                                            ]
-                                                        })
-                                                    ]
-                                                })
-                                            ]
-                                        })
-                                ),
-                                new TableRow({
-                                    children: [
-                                        new TableCell({
-                                            children: [
-                                                new Paragraph({
-                                                    children: [
-                                                        new TextRun({
-                                                            text: getText('petroleum_sector_employment_table_total_jobs_row', lang),
-                                                            bold: true
-                                                        })
-                                                    ]
-                                                })
-                                            ]
-                                        }),
-                                        new TableCell({
-                                            children: [
-                                                new Paragraph({
-                                                    alignment: AlignmentType.CENTER,
-                                                    children: [
-                                                        new TextRun({
-                                                            text: formatJobsTableCell(directTotal),
-                                                            bold: true
-                                                        })
-                                                    ]
-                                                })
-                                            ]
-                                        }),
-                                        new TableCell({
-                                            children: [
-                                                new Paragraph({
-                                                    alignment: AlignmentType.CENTER,
-                                                    children: [
-                                                        new TextRun({
-                                                            text: formatJobsTableCell(indirectTotal),
-                                                            bold: true
-                                                        })
-                                                    ]
-                                                })
-                                            ]
-                                        })
-                                    ]
-                                })
-                            ]
-                        })
-                    ]
-                }
-            ]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('petroleum_sector_employment_download_chart', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const chartHeight = highBrowserZoom
         ? windowWidth <= 480
@@ -587,32 +331,6 @@ const PetroleumEmploymentByRegion = () => {
         lang === 'en'
             ? ['0%', '20%', '40%', '60%', '80%', '100%']
             : ['0\u00a0%', '20\u00a0%', '40\u00a0%', '60\u00a0%', '80\u00a0%', '100\u00a0%'];
-
-    const handleChartClick = (data) => {
-        if (!data.points || data.points.length === 0) return;
-        const pt = data.points[0];
-        const traceIndex = pt.curveNumber;
-        const pointIndex = pt.pointIndex;
-        if (traceIndex === undefined || pointIndex === undefined) return;
-        if (windowWidth <= 768) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const same = last.traceIndex === traceIndex && last.pointIndex === pointIndex;
-            const doubleTap = same && now - last.time < 300;
-            lastClickRef.current = { time: now, traceIndex, pointIndex };
-            if (!doubleTap) return;
-        }
-        setSelectedPoints((prev) => {
-            const key = { traceIndex, pointIndex };
-            if (prev === null) return [key];
-            const idx = prev.findIndex((p) => p.traceIndex === traceIndex && p.pointIndex === pointIndex);
-            if (idx >= 0) {
-                const next = prev.filter((_, i) => i !== idx);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, key];
-        });
-    };
 
     const plotTopMargin = highBrowserZoom ? 16 : 52;
     const plotLeftMargin = highBrowserZoom ? 58 : 158;
@@ -806,283 +524,210 @@ const PetroleumEmploymentByRegion = () => {
         v: (regionPcts[key] ?? {}).indirect ?? 0
     }));
 
+    const pageChromeProps = {
+        tabIndex: '-1',
+        className: 'page-content page-105 petroleum-employment-by-region page-chrome page-chrome--bleed',
+        'aria-labelledby': 'petroleum-employment-by-region-main-title',
+        style: { backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) },
+    };
+
     if (loading) {
         return (
-            <main id="main-content" className="page-content page-105" role="main" style={{ backgroundColor: '#ffffff' }}>
-                <p>{lang === 'en' ? 'Loading petroleum employment data…' : 'Chargement des données sur l\'emploi pétrolier…'}</p>
-            </main>
+            <PageShell {...pageChromeProps}>
+                <PageStatus
+                    lang={lang}
+                    loading
+                    loadingMessage={lang === 'en' ? 'Loading petroleum employment data…' : 'Chargement des données sur l\'emploi pétrolier…'}
+                />
+            </PageShell>
         );
     }
 
     if (error || !pageData) {
         return (
-            <main id="main-content" className="page-content page-105" role="main" style={{ backgroundColor: '#ffffff' }}>
-                <p role="alert">{error || (lang === 'en' ? 'Petroleum employment data is unavailable.' : 'Les données sur l\'emploi pétrolier ne sont pas disponibles.')}</p>
-            </main>
+            <PageShell {...pageChromeProps}>
+                <PageStatus
+                    lang={lang}
+                    error={error || (lang === 'en' ? 'Petroleum employment data is unavailable.' : 'Les données sur l\'emploi pétrolier ne sont pas disponibles.')}
+                />
+            </PageShell>
         );
     }
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-105"
-            role="main"
-            aria-labelledby="petroleum-employment-by-region-main-title"
-            style={{ backgroundColor: '#ffffff' }}
-        >
+        <PageShell {...pageChromeProps}>
             <style>{`
-                .page-105.page-content {
-                    max-width: none !important;
-                    overflow-x: visible !important;
-                }
-                .page-105 {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
-                }
-                .petroleum-employment-by-region-container {
-                    width: 100%;
-                    padding: 15px 0 40px 0;
-                    display: flex;
-                    flex-direction: column;
-                    box-sizing: border-box;
-                }
-                .page-105 p.petroleum-employment-by-region-intro {
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
-                    color: #332f30;
-                    line-height: 1.5;
-                    max-width: 80ch;
-                    margin: 0 0 16px 0;
-                }
-                .page-105 p.petroleum-employment-by-region-intro-emphasis {
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 30px;
-                    font-weight: bold;
-                    color: #423330;
-                    line-height: 1.45;
-                    max-width: 80ch;
-                    margin: 0 0 18px 0;
-                }
-                .page-105 .petroleum-employment-by-region-intro-direct,
-                .page-105 .petroleum-employment-by-region-intro-alberta {
-                    color: #000000;
-                    font-weight: bold;
-                }
-                .petroleum-employment-by-region-chart-frame {
-                    background-color: #f5f5f5;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-top: 20px;
-                    margin-bottom: 0;
-                    box-sizing: border-box;
-                    overflow: visible;
-                }
-                .petroleum-employment-by-region-chart-heading {
-                    font-family: 'Lato', sans-serif;
-                    font-size: 29px;
-                    font-weight: bold;
-                    color: var(--gc-text);
-                    text-align: center;
-                    margin: 0 0 16px 0;
-                }
-                .petroleum-employment-by-region-chart-block {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: stretch;
-                    width: 100%;
-                }
-                .petroleum-employment-by-region-chart {
-                    width: 100%;
-                    position: relative;
-                    margin-bottom: 0 !important;
-                }
-                .petroleum-employment-by-region-chart-totals {
-                    display: flex;
-                    flex-wrap: wrap;
-                    justify-content: center;
-                    gap: 8px 20px;
-                    margin-top: 10px;
-                    margin-bottom: 2px;
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 17px;
-                    line-height: 1.4;
-                    color: var(--gc-text);
-                }
-                .petroleum-employment-by-region-chart-totals span {
-                    font-variant-numeric: tabular-nums;
-                }
-                .petroleum-employment-by-region-segment-strips {
-                    margin-top: 12px;
-                    margin-bottom: 4px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 14px;
-                }
-                .petroleum-employment-by-region-segment-strip {
-                    font-family: 'Noto Sans', sans-serif;
-                    color: var(--gc-text);
-                }
-                .petroleum-employment-by-region-segment-strip-kicker {
-                    display: block;
-                    font-size: 15px;
-                    font-weight: bold;
-                    margin-bottom: 8px;
-                    line-height: 1.35;
-                }
-                .petroleum-employment-by-region-segment-strip-list {
-                    display: flex;
-                    flex-wrap: wrap;
-                    align-items: center;
-                    gap: 10px 20px;
-                    list-style: none;
-                    margin: 0;
-                    padding: 0;
-                }
-                .petroleum-employment-by-region-segment-strip-item {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    flex: 0 1 auto;
-                    min-width: 0;
-                    font-size: 15px;
-                    line-height: 1.35;
-                    white-space: nowrap;
-                }
-                .petroleum-employment-by-region-segment-strip-swatch {
-                    width: 14px;
-                    height: 14px;
-                    flex-shrink: 0;
-                    border: 1px solid rgba(0, 0, 0, 0.12);
-                }
-                .petroleum-employment-by-region-segment-strip-pct {
-                    font-variant-numeric: tabular-nums;
-                }
-                .petroleum-employment-by-region-legend-wrap {
-                    display: flex;
-                    justify-content: center;
-                    margin-top: 20px;
-                    margin-bottom: 20px;
-                    width: 100%;
-                }
-                .petroleum-employment-by-region-legend-grid {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 12px 0;
-                    font-family: 'Noto Sans', sans-serif;
-                }
-                .petroleum-employment-by-region-legend-row {
-                    display: flex;
-                    flex-wrap: wrap;
-                    justify-content: center;
-                    gap: 12px 28px;
-                }
-                .petroleum-employment-by-region-legend-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                .petroleum-employment-by-region-legend-swatch {
-                    width: 22px;
-                    height: 14px;
-                    flex-shrink: 0;
-                }
-                .petroleum-employment-by-region-legend-label {
-                    font-size: 18px;
-                    color: var(--gc-text);
-                }
-                .petroleum-employment-by-region-table-wrapper {
-                    display: block;
-                    width: 100%;
-                    margin-top: 20px;
-                    margin-bottom: 0;
-                }
-                .petroleum-employment-by-region-table-wrapper details > summary {
-                    display: block;
-                    width: 100%;
-                    padding: 12px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                    list-style: none;
-                }
-                .petroleum-employment-by-region-table-wrapper details > summary::-webkit-details-marker {
-                    display: none;
-                }
-                .petroleum-employment-by-region-table-wrapper details > summary::marker {
-                    display: none;
-                    content: '';
-                }
-                .petroleum-employment-by-region-table-wrapper details > summary:hover {
-                    background-color: #404040 !important;
-                }
-                .petroleum-employment-by-region-table-wrapper .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                }
-                .petroleum-employment-by-region-table-wrapper .table-responsive table {
-                    width: max-content !important;
-                    min-width: 100%;
-                    border-collapse: collapse;
-                }
-                .petroleum-employment-by-region-table-wrapper .table-responsive table th,
-                .petroleum-employment-by-region-table-wrapper .table-responsive table td {
-                    white-space: nowrap;
-                    padding: 8px 12px;
-                    font-family: var(--font-body);
-                    color: var(--gc-text);
-                }
-                .petroleum-employment-by-region-download-buttons {
-                    display: flex;
-                    gap: 10px;
-                    margin-top: 15px;
-                    flex-wrap: wrap;
-                }
-                .petroleum-employment-by-region-download-buttons button {
-                    padding: 8px 16px;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    background: #8C8C8C;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                }
-                .petroleum-employment-by-region-download-buttons button:hover {
-                    background: #404040 !important;
-                }
-                @media (max-width: 768px) {
-                    .page-105 p.petroleum-employment-by-region-intro { font-size: 18px; }
-                    .page-105 p.petroleum-employment-by-region-intro-emphasis { font-size: 24px; }
-                    .petroleum-employment-by-region-chart-heading { font-size: 26px; }
-                    .petroleum-employment-by-region-legend-label { font-size: 16px; }
-                    .petroleum-employment-by-region-chart-totals { font-size: 16px; }
-                    .petroleum-employment-by-region-segment-strip-kicker,
-                    .petroleum-employment-by-region-segment-strip-item {
-                        font-size: 14px;
-                    }
-                }
-                @media (max-width: 480px) {
-                    .petroleum-employment-by-region-legend-label { font-size: 14px; }
-                    .petroleum-employment-by-region-segment-strip-list {
-                        gap: 8px 14px;
-                    }
-                    .petroleum-employment-by-region-segment-strip-item {
-                        font-size: 13px;
-                    }
-                }
+.page-105.petroleum-employment-by-region {
+}
+.petroleum-employment-by-region-container {
+    width: 100%;
+    padding: 15px 0 40px 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+.page-105 p.petroleum-employment-by-region-intro {
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 20px;
+    color: #332f30;
+    line-height: 1.5;
+    max-width: 80ch;
+    margin: 0 0 16px 0;
+}
+.page-105 p.petroleum-employment-by-region-intro-emphasis {
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 30px;
+    font-weight: bold;
+    color: #423330;
+    line-height: 1.45;
+    max-width: 80ch;
+    margin: 0 0 18px 0;
+}
+.page-105 .petroleum-employment-by-region-intro-direct,
+.page-105 .petroleum-employment-by-region-intro-alberta {
+    color: #000000;
+    font-weight: bold;
+}
+.petroleum-employment-by-region-chart-frame {
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+.petroleum-employment-by-region-chart-heading {
+    color: var(--gc-text);
+    margin: 0 0 16px 0;
+}
+.petroleum-employment-by-region-chart-block {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+}
+.petroleum-employment-by-region-chart {
+    width: 100%;
+    position: relative;
+    margin-bottom: 0 !important;
+}
+.petroleum-employment-by-region-chart-totals {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 20px;
+    margin-top: 10px;
+    margin-bottom: 2px;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--gc-text);
+}
+.petroleum-employment-by-region-chart-totals span {
+    font-variant-numeric: tabular-nums;
+}
+.petroleum-employment-by-region-segment-strips {
+    margin-top: 12px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.petroleum-employment-by-region-segment-strip {
+    font-family: 'Noto Sans', sans-serif;
+    color: var(--gc-text);
+}
+.petroleum-employment-by-region-segment-strip-kicker {
+    display: block;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    line-height: 1.35;
+}
+.petroleum-employment-by-region-segment-strip-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 20px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.petroleum-employment-by-region-segment-strip-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: 15px;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+.petroleum-employment-by-region-segment-strip-swatch {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.petroleum-employment-by-region-segment-strip-pct {
+    font-variant-numeric: tabular-nums;
+}
+.petroleum-employment-by-region-legend-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+.petroleum-employment-by-region-legend-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px 0;
+    font-family: 'Noto Sans', sans-serif;
+}
+.petroleum-employment-by-region-legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 28px;
+}
+.petroleum-employment-by-region-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.petroleum-employment-by-region-legend-swatch {
+    width: 22px;
+    height: 14px;
+    flex-shrink: 0;
+}
+.petroleum-employment-by-region-legend-label {
+    font-size: 18px;
+    color: var(--gc-text);
+}
+.petroleum-employment-by-region-table-wrapper {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+@media (max-width: 768px) {
+    .page-105 p.petroleum-employment-by-region-intro { font-size: 18px; }
+    .page-105 p.petroleum-employment-by-region-intro-emphasis { font-size: 24px; }
+    .petroleum-employment-by-region-chart-heading { font-size: 26px; }
+    .petroleum-employment-by-region-legend-label { font-size: 16px; }
+    .petroleum-employment-by-region-chart-totals { font-size: 16px; }
+    .petroleum-employment-by-region-segment-strip-kicker,
+    .petroleum-employment-by-region-segment-strip-item {
+        font-size: 14px;
+    }
+}
+@media (max-width: 480px) {
+    .petroleum-employment-by-region-legend-label { font-size: 14px; }
+    .petroleum-employment-by-region-segment-strip-list {
+        gap: 8px 14px;
+    }
+    .petroleum-employment-by-region-segment-strip-item {
+        font-size: 13px;
+    }
+}
             `}</style>
 
             <div className="petroleum-employment-by-region-container">
@@ -1105,30 +750,11 @@ const PetroleumEmploymentByRegion = () => {
                     </p>
                 </header>
 
-                <div className="petroleum-employment-by-region-chart-frame">
-                    <h2 className="petroleum-employment-by-region-chart-heading">{substitute(getText('petroleum_sector_employment_chart_heading', lang), textVars)}</h2>
+                <div className="petroleum-employment-by-region-chart-frame page-chrome-chart-frame">
+                    <h2 className="petroleum-employment-by-region-chart-heading page-chrome-chart-title">{chartHeading}</h2>
                     <div className="petroleum-employment-by-region-chart-block">
                         <div role="region" aria-label={chartAria} tabIndex="0">
-                            {selectedPoints !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedPoints(null)}
-                                        style={{
-                                            padding: '6px 12px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontSize: 14,
-                                            color: '#fff'
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                    </button>
-                                </div>
-                            )}
+                            {hasSelection && <ClearSelectionButton lang={lang} onClick={clearSelection} />}
                             <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                                 <div aria-hidden="true">
                                     <Plot
@@ -1169,34 +795,7 @@ const PetroleumEmploymentByRegion = () => {
                                             plot_bgcolor: 'rgba(0,0,0,0)',
                                             annotations: [...pctCalloutAnnotations, ...jobTotalAnnotations]
                                         }}
-                                        config={{
-                                            displayModeBar: true,
-                                            displaylogo: false,
-                                            responsive: true,
-                                            scrollZoom: false,
-                                            modeBarButtonsToRemove: [
-                                                'pan2d',
-                                                'select2d',
-                                                'lasso2d',
-                                                'zoom2d',
-                                                'zoomIn2d',
-                                                'zoomOut2d',
-                                                'autoScale2d',
-                                                'resetScale2d',
-                                                'toImage'
-                                            ],
-                                            modeBarButtonsToAdd: [
-                                                {
-                                                    name: getText('petroleum_sector_employment_download_chart', lang),
-                                                    icon: {
-                                                        width: 24,
-                                                        height: 24,
-                                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                                    },
-                                                    click: (gd) => downloadChartWithTitle(gd)
-                                                }
-                                            ]
-                                        }}
+                                        config={plotConfig}
                                         className="petroleum-employment-by-region-chart"
                                         style={{ width: '100%', height: `${chartHeight}px` }}
                                         useResizeHandler={true}
@@ -1302,126 +901,37 @@ const PetroleumEmploymentByRegion = () => {
                     </div>
 
                     <div className="petroleum-employment-by-region-table-wrapper">
-                        <details className="petroleum-employment-by-region-data-table" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {getText('petroleum_sector_employment_table_summary', lang)}
-                                <span className="wb-inv">{getText('petroleum_sector_employment_table_toggle_sr', lang)}</span>
-                            </summary>
-
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginBottom: '0px',
-                                    display: windowWidth <= 768 ? 'none' : 'block'
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                tabIndex="0"
-                                aria-label={getText('petroleum_sector_employment_table_aria', lang)}
-                            >
-                                <table className="table table-bordered table-striped table-hover" style={{ marginTop: '15px' }}>
-                                    <caption className="wb-inv">{getText('petroleum_sector_employment_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    position: 'sticky',
-                                                    left: 0,
-                                                    backgroundColor: '#f8f9fa',
-                                                    zIndex: 2,
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    borderRight: '2px solid #dee2e6'
-                                                }}
-                                            >
-                                                {getText('petroleum_sector_employment_table_col_region', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{ fontWeight: 'bold', textAlign: 'center', verticalAlign: 'bottom' }}
-                                            >
-                                                {getText('petroleum_sector_employment_table_col_direct_pct', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{ fontWeight: 'bold', textAlign: 'center', verticalAlign: 'bottom' }}
-                                            >
-                                                {getText('petroleum_sector_employment_table_col_indirect_pct', lang)}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {REGION_ORDER.map((k) => (
-                                            <tr key={k}>
-                                                <th
-                                                    scope="row"
-                                                    style={{
-                                                        position: 'sticky',
-                                                        left: 0,
-                                                        zIndex: 1,
-                                                        fontWeight: 'bold',
-                                                        textAlign: 'center',
-                                                        borderRight: '2px solid #dee2e6',
-                                                        backgroundColor: '#fff'
-                                                    }}
-                                                >
-                                                    {regionLabel(k)}
-                                                </th>
-                                                <td style={{ textAlign: 'center' }}>{(regionPcts[k] ?? {}).direct ?? '\u2014'}</td>
-                                                <td style={{ textAlign: 'center' }}>{(regionPcts[k] ?? {}).indirect ?? '\u2014'}</td>
-                                            </tr>
-                                        ))}
-                                        <tr>
-                                            <th
-                                                scope="row"
-                                                style={{
-                                                    position: 'sticky',
-                                                    left: 0,
-                                                    fontWeight: 'bold',
-                                                    textAlign: 'center',
-                                                    borderRight: '2px solid #dee2e6',
-                                                    backgroundColor: '#f8f9fa'
-                                                }}
-                                            >
-                                                {getText('petroleum_sector_employment_table_total_jobs_row', lang)}
-                                            </th>
-                                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                                                {formatJobsTableCell(directTotal)}
-                                            </td>
-                                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                                                {formatJobsTableCell(indirectTotal)}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="petroleum-employment-by-region-download-buttons">
-                                <button type="button" onClick={downloadTableAsCSV}>
-                                    {getText('petroleum_sector_employment_download_csv', lang)}
-                                </button>
-                                <button type="button" onClick={() => downloadTableAsDocx()}>
-                                    {getText('petroleum_sector_employment_download_docx', lang)}
-                                </button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            label={getText('petroleum_sector_employment_table_summary', lang)}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${fileSlugBase}.csv`}
+                            docx={{
+                                filename: `${fileSlugBase}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [3200, 2400, 2400],
+                                fontSize: 20,
+                            }}
+                            caption={getText('petroleum_sector_employment_table_caption', lang)}
+                            tableAriaLabel={getText('petroleum_sector_employment_table_aria', lang)}
+                            renderCell={(raw, { row, colIndex }) => {
+                                if (row?.isTotal) {
+                                    const text = colIndex === 0
+                                        ? String(raw ?? '')
+                                        : formatJobsTableCell(raw);
+                                    return <strong>{text}</strong>;
+                                }
+                                if (colIndex === 0) return String(raw ?? '');
+                                if (raw == null || Number.isNaN(raw)) return '\u2014';
+                                return String(raw);
+                            }}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

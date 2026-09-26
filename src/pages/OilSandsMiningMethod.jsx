@@ -1,7 +1,12 @@
 import React, { useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import SafeHtml from '../components/SafeHtml';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { resolveAccessibleInfographicGraphic, waitForImage } from '../utils/downloadInfographicPng';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import oilSandsMiningBgEn from '../assets/oil_sands_mining_bg.svg';
 import oilSandsMiningBgFr from '../assets/oil_sands_mining_bg_fr.svg';
 
@@ -10,16 +15,6 @@ const SVG_CROP_TOP = 105;
 const SVG_DISPLAY_HEIGHT = SVG_NATURAL.height - SVG_CROP_TOP;
 const SVG_CROP_TOP_RATIO = SVG_CROP_TOP / SVG_NATURAL.height;
 const SVG_CROP_TOP_PERCENT = (SVG_CROP_TOP / SVG_DISPLAY_HEIGHT) * 100;
-
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
 
 const exportOilSandsMiningInfographicPng = async (imgEl, { scale = 2 }) => {
     if (!imgEl) return null;
@@ -49,7 +44,10 @@ const OilSandsMiningMethod = () => {
     const fileSlugBase = getText('oil_sands_mining_download_title', lang).replace(/\s+/g, '_');
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportOilSandsMiningInfographicPng(infographicImgRef.current, { scale: 2 });
+        const canvas = await exportOilSandsMiningInfographicPng(
+            resolveAccessibleInfographicGraphic(infographicImgRef.current),
+            { scale: 2 },
+        );
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}.png`);
@@ -57,21 +55,13 @@ const OilSandsMiningMethod = () => {
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content oil-sands-mining"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content oil-sands-mining page-chrome page-chrome--bleed"
             aria-labelledby="oil-sands-mining-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .oil-sands-mining {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .oil-sands-mining-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .oil-sands-mining.page-content .oil-sands-mining-title {
@@ -153,24 +143,20 @@ const OilSandsMiningMethod = () => {
 
                 <div className="oil-sands-mining-intro">
                     <p>{getText('oil_sands_mining_intro_1', lang)}</p>
-                    <p dangerouslySetInnerHTML={{ __html: getText('oil_sands_mining_intro_2', lang) }} />
+                    <SafeHtml as="p" html={getText('oil_sands_mining_intro_2', lang)} />
                 </div>
 
                 <div className="oil-sands-mining-infographic-section">
-                    <figure
+                    <AccessibleInfographic
+                        ref={infographicImgRef}
+                        as="figure"
+                        mode="image"
                         className="oil-sands-mining-infographic-figure"
-                        aria-label={getText('oil_sands_mining_infographic_aria', lang)}
-                    >
-                        <img
-                            ref={infographicImgRef}
-                            src={bgImage}
-                            alt=""
-                            className="oil-sands-mining-bg-image"
-                            draggable={false}
-                            aria-hidden="true"
-                        />
-                        <figcaption className="wb-inv">{getText('oil_sands_mining_infographic_aria', lang)}</figcaption>
-                    </figure>
+                        title={pageTitle}
+                        overview={`${pageTitle}. ${getText('oil_sands_mining_infographic_aria', lang)}`}
+                        src={bgImage}
+                        imgClassName="oil-sands-mining-bg-image"
+                    />
 
                     <div className="oil-sands-mining-download-buttons">
                         <button type="button" onClick={downloadInfographicPng}>
@@ -179,7 +165,7 @@ const OilSandsMiningMethod = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

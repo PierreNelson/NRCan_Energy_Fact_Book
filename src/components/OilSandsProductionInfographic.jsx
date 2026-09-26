@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import oilSandsBgEn from '../assets/oil_sands_bg.png';
 import oilSandsBgFr from '../assets/oil_sands_bg_fr.png';
 import { OVERLAY_COLORS, OVERLAY_SLOTS } from './OilSandsProductionInfographic.constants';
@@ -46,11 +47,22 @@ const OilSandsProductionInfographic = ({
     const slots = OVERLAY_SLOTS[overlayLang];
 
     const pctSuffix = lang === 'fr' ? ' %' : '%';
+    const overview = ariaLabel || getText('oil_sands_bg_alt', lang);
 
     return (
-        <figure ref={figureRef} className="oil-sands-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="oil-sands-infographic-figure"
+            title={ariaLabel || getText('oil_sands_bg_alt', lang)}
+            overview={overview}
+            src={bgImage}
+            imgClassName="oil-sands-bg-image"
+        >
             <style>{`
 .oil-sands-infographic-figure {
+    position: relative;
     width: 100%;
     max-width: none;
     margin: 0 0 28px 0;
@@ -91,12 +103,6 @@ const OilSandsProductionInfographic = ({
             `}</style>
 
             <div className="oil-sands-infographic-wrapper">
-                <img
-                    src={bgImage}
-                    alt=""
-                    className="oil-sands-bg-image"
-                    draggable={false}
-                />
                 <OverlayNumber
                     left={slots.reserves_pct.left}
                     top={slots.reserves_pct.top}
@@ -134,8 +140,7 @@ const OilSandsProductionInfographic = ({
                     align={slots.production_mmbd.align}
                 />
             </div>
-            <figcaption className="wb-inv">{getText('oil_sands_bg_alt', lang)}</figcaption>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

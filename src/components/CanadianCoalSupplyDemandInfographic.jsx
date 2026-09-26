@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import canadianCoalSupplyDemandBg from '../assets/canadian_coal_supply_demand_bg.png';
 import canadianCoalSupplyDemandBgStacked from '../assets/canadian_coal_supply_demand_bg_stacked.png';
 import {
@@ -75,9 +76,19 @@ const CanadianCoalSupplyDemandInfographic = ({
         : 'canadian-coal-supply-demand-infographic-figure';
 
     return (
-        <figure ref={figureRef} className={figureClass} aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className={figureClass}
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={bgImage}
+            imgClassName="canadian-coal-supply-demand-bg-image"
+        >
             <style>{`
 .canadian-coal-supply-demand-infographic-figure {
+    position: relative;
     width: 100%;
     max-width: 360px;
     margin: 0 auto;
@@ -131,12 +142,6 @@ const CanadianCoalSupplyDemandInfographic = ({
 }
             `}</style>
             <div className="canadian-coal-supply-demand-infographic-wrapper">
-                <img
-                    src={bgImage}
-                    alt=""
-                    className="canadian-coal-supply-demand-bg-image"
-                    draggable={false}
-                />
                 <OverlayTotal
                     left={slots.totalMt.left}
                     top={slots.totalMt.top}
@@ -162,7 +167,7 @@ const CanadianCoalSupplyDemandInfographic = ({
                     {metallurgicalLabel}
                 </OverlayCaption>
             </div>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

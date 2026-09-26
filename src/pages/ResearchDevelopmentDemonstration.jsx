@@ -1,19 +1,25 @@
 import React from 'react';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import energyInformationLandscapeBg1 from '../assets/energy_information_landscape_bg1.png';
 import energyInformationLandscapeBg2 from '../assets/energy_information_landscape_bg2.png';
 import energyInformationLandscapeBg3 from '../assets/energy_information_landscape_bg3.png';
 
+/**
+ * Factbook layout (PDF p.34):
+ * 1. Parliament — federal spending only (top-aligned)
+ * 2. Canada map — international / Mission Innovation copy (vertically centered)
+ * 3. Factory — P&T + industry (top-aligned)
+ * No Mission Innovation logo on the right.
+ */
 const ResearchDevelopmentDemonstration = () => {
     const { lang } = useOutletContext();
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-34"
-            role="main"
+            className="page-content page-34 research-development-demonstration-main page-chrome"
             aria-labelledby="research-development-demonstration-title"
             style={{
                 backgroundColor: 'white',
@@ -65,32 +71,39 @@ const ResearchDevelopmentDemonstration = () => {
     font-family: 'Noto Sans', sans-serif;
     font-size: 20px;
     color: #332f30;
-    margin: 0 0 28px 0;
+    margin: 0 0 36px 0;
     line-height: 1.5;
     max-width: 80ch;
 }
 .research-development-demonstration-row {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 20px;
-    margin-bottom: 28px;
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    column-gap: 28px;
+    align-items: start;
+    margin-bottom: 40px;
     width: 100%;
     box-sizing: border-box;
 }
+.research-development-demonstration-row--center {
+    align-items: center;
+}
 .research-development-demonstration-row-icon {
-    flex: 0 0 auto;
-    width: 96px;
-    min-width: 72px;
-    padding-top: 4px;
+    width: 110px;
+    max-width: 110px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.research-development-demonstration-row--center .research-development-demonstration-row-icon {
+    align-items: center;
 }
 .research-development-demonstration-row-icon img {
     width: 100%;
     height: auto;
     display: block;
+    object-fit: contain;
 }
 .research-development-demonstration-row-body {
-    flex: 1 1 auto;
     min-width: 0;
     font-family: 'Noto Sans', sans-serif;
     font-size: 20px;
@@ -108,8 +121,15 @@ const ResearchDevelopmentDemonstration = () => {
     .research-development-demonstration-subtitle,
     .research-development-demonstration-intro,
     .research-development-demonstration-row-body { font-size: 18px; }
-    .research-development-demonstration-row { flex-direction: column; gap: 12px; }
-    .research-development-demonstration-row-icon { width: 80px; }
+    .research-development-demonstration-row {
+        grid-template-columns: 1fr;
+        row-gap: 12px;
+        column-gap: 0;
+    }
+    .research-development-demonstration-row-icon {
+        width: 88px;
+        max-width: 88px;
+    }
 }
             `}</style>
             <div className="research-development-demonstration-container">
@@ -119,9 +139,14 @@ const ResearchDevelopmentDemonstration = () => {
                 <p className="research-development-demonstration-subtitle">{getText('research_development_demonstration_subtitle', lang)}</p>
                 <p className="research-development-demonstration-intro">{getText('research_development_demonstration_intro', lang)}</p>
 
-                <div className="research-development-demonstration-row" role="region" aria-label={getText('research_development_demonstration_row_federal_aria', lang)}>
+                {/* Row 1 — Parliament + federal spending (factbook: top-aligned) */}
+                <div
+                    className="research-development-demonstration-row"
+                    role="region"
+                    aria-label={getText('research_development_demonstration_row_federal_aria', lang)}
+                >
                     <div className="research-development-demonstration-row-icon" aria-hidden="true">
-                        <img src={energyInformationLandscapeBg1} alt="" width={120} height={120} />
+                        <img src={energyInformationLandscapeBg1} alt="" width={110} height={110} />
                     </div>
                     <div className="research-development-demonstration-row-body">
                         <p>
@@ -129,6 +154,19 @@ const ResearchDevelopmentDemonstration = () => {
                             <strong>{getText('research_development_demonstration_federal_p1_bold', lang)}</strong>
                             {getText('research_development_demonstration_federal_p1_post', lang)}
                         </p>
+                    </div>
+                </div>
+
+                {/* Row 2 — Canada map + international commitments (factbook: vertically centered) */}
+                <div
+                    className="research-development-demonstration-row research-development-demonstration-row--center"
+                    role="region"
+                    aria-label={getText('research_development_demonstration_row_international_aria', lang)}
+                >
+                    <div className="research-development-demonstration-row-icon" aria-hidden="true">
+                        <img src={energyInformationLandscapeBg2} alt="" width={110} height={110} />
+                    </div>
+                    <div className="research-development-demonstration-row-body">
                         <p>
                             {getText('research_development_demonstration_federal_p2_pre', lang)}
                             <strong>{getText('research_development_demonstration_federal_p2_bold_2b', lang)}</strong>
@@ -139,9 +177,14 @@ const ResearchDevelopmentDemonstration = () => {
                     </div>
                 </div>
 
-                <div className="research-development-demonstration-row" role="region" aria-label={getText('research_development_demonstration_row_pt_aria', lang)}>
+                {/* Row 3 — Factory + P&T then industry (factbook: top-aligned) */}
+                <div
+                    className="research-development-demonstration-row"
+                    role="region"
+                    aria-label={getText('research_development_demonstration_row_industry_aria', lang)}
+                >
                     <div className="research-development-demonstration-row-icon" aria-hidden="true">
-                        <img src={energyInformationLandscapeBg2} alt="" width={120} height={120} />
+                        <img src={energyInformationLandscapeBg3} alt="" width={110} height={110} />
                     </div>
                     <div className="research-development-demonstration-row-body">
                         <p>
@@ -155,14 +198,6 @@ const ResearchDevelopmentDemonstration = () => {
                             <strong>{getText('research_development_demonstration_pt_bold4', lang)}</strong>
                             {getText('research_development_demonstration_pt_post', lang)}
                         </p>
-                    </div>
-                </div>
-
-                <div className="research-development-demonstration-row" role="region" aria-label={getText('research_development_demonstration_row_industry_aria', lang)}>
-                    <div className="research-development-demonstration-row-icon" aria-hidden="true">
-                        <img src={energyInformationLandscapeBg3} alt="" width={120} height={120} />
-                    </div>
-                    <div className="research-development-demonstration-row-body">
                         <p>
                             {getText('research_development_demonstration_industry_pre', lang)}
                             <strong>{getText('research_development_demonstration_industry_bold1', lang)}</strong>
@@ -173,7 +208,7 @@ const ResearchDevelopmentDemonstration = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

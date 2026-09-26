@@ -1,172 +1,102 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import FootnoteMarker from '../components/FootnoteMarker';
+import PageFootnotes from '../components/PageFootnotes';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import HtmlLegend from '../components/HtmlLegend';
+import hexToRgba from '../utils/hexToRgba';
+import { formatLocaleNumber } from '../utils/formatLocale';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+
+const COLORS = {
+    direct: '#33bccb',
+    indirect: '#7a9a9e',
+    total: '#857650'
+};
+
+const gdpData = [
+    { year: 2018, direct: 163, indirect: 36, total: 199 },
+    { year: 2019, direct: 165, indirect: 36, total: 202 },
+    { year: 2020, direct: 121, indirect: 30, total: 150 },
+    { year: 2021, direct: 198, indirect: 43, total: 241 },
+    { year: 2022, direct: 277, indirect: 58, total: 335 },
+    { year: 2023, direct: 235, indirect: 51, total: 286 },
+    { year: 2024, direct: 232, indirect: 50, total: 282 }
+];
 
 const GdpChart = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedPoints,
+        clear,
+        onPlotClick,
+    } = usePlotlySelection({ mode: 'points', traceCount: 3, windowWidth });
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-
-    const COLORS = {
-        direct: '#33bccb',
-        indirect: '#7a9a9e',
-        total: '#857650'
-    };
-
-    const gdpData = [
-        { year: 2018, direct: 163, indirect: 36, total: 199 },
-        { year: 2019, direct: 165, indirect: 36, total: 202 },
-        { year: 2020, direct: 121, indirect: 30, total: 150 },
-        { year: 2021, direct: 198, indirect: 43, total: 241 },
-        { year: 2022, direct: 277, indirect: 58, total: 335 },
-        { year: 2023, direct: 235, indirect: 51, total: 286 },
-        { year: 2024, direct: 232, indirect: 50, total: 282 }
-    ];
-
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '—';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
 
     const formatCurrency = (num) => {
         if (num === undefined || num === null) return '—';
-        return lang === 'en' ? `$${formatNumber(num)}` : `${formatNumber(num)} $`;
+        const formatted = formatLocaleNumber(num, lang, { maximumFractionDigits: 0 });
+        return lang === 'en' ? `$${formatted}` : `${formatted} $`;
     };
 
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-gdp-chart')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const chartTitle = getText('gdp_chart_chart_title', lang);
+    const exportChartTitle = `${stripHtml(chartTitle)} (2018-2024)`;
+    const chartSubtitle = getText('gdp_chart_chart_subtitle', lang);
+    const chartDownloadSlug = lang === 'en' ? 'energy-sector-gdp-2018-2024' : 'pib-secteur-energie-2018-2024';
 
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-gdp-chart')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const directLabel = getText('gdp_chart_legend_direct', lang);
+    const indirectLabel = getText('gdp_chart_legend_indirect', lang);
+    const totalLabel = getText('gdp_chart_legend_total', lang);
 
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    const unitText = lang === 'en' ? 'billions of dollars' : 'milliards de dollars';
+    const chartTitleSpoken = `${stripHtml(chartTitle)}, ${unitText}`;
+    const tableCaption = lang === 'en'
+        ? 'Energy sector GDP data from 2018 to 2024'
+        : "Données du PIB du secteur de l'énergie de 2018 à 2024";
 
-    useEffect(() => {
-        if (!chartRef.current) return;
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: lang === 'en' ? 'Year' : 'Année', align: 'left' },
+        { key: 'direct', header: `${directLabel} (${unitText})`, align: 'num' },
+        { key: 'indirect', header: `${indirectLabel} (${unitText})`, align: 'num' },
+        { key: 'total', header: `${totalLabel} (${unitText})`, align: 'num' },
+    ], [lang, directLabel, indirectLabel, totalLabel, unitText]);
 
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-
-            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
-            svgElements.forEach(svg => svg.setAttribute('aria-hidden', 'true'));
-
-            const modebarButtons = plotContainer.querySelectorAll('.modebar-btn');
-            modebarButtons.forEach(btn => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        if (chartRef.current) observer.observe(chartRef.current, { childList: true, subtree: true });
-
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang]);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-
-        let isSyncingTop = false;
-        let isSyncingTable = false;
-
-        const syncTopToTable = () => {
-            if (isSyncingTable) return;
-            isSyncingTop = true;
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-            requestAnimationFrame(() => { isSyncingTop = false; });
-        };
-
-        const syncTableToTop = () => {
-            if (isSyncingTop) return;
-            isSyncingTable = true;
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-            requestAnimationFrame(() => { isSyncingTable = false; });
-        };
-
-        const updateTopScrollWidth = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-
-        topScroll.addEventListener('scroll', syncTopToTable);
-        tableScroll.addEventListener('scroll', syncTableToTop);
-
-        updateTopScrollWidth();
-        const resizeObserver = new ResizeObserver(updateTopScrollWidth);
-        const table = tableScroll.querySelector('table');
-        if (table) resizeObserver.observe(table);
-
-        return () => {
-            topScroll.removeEventListener('scroll', syncTopToTable);
-            tableScroll.removeEventListener('scroll', syncTableToTop);
-            resizeObserver.disconnect();
-        };
-    }, [isTableOpen]);
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-gdp-chart');
 
     const years = gdpData.map(d => d.year);
     const directValues = gdpData.map(d => d.direct);
     const indirectValues = gdpData.map(d => d.indirect);
     const totalValues = gdpData.map(d => d.total);
 
-    const directLabel = getText('gdp_chart_legend_direct', lang);
-    const indirectLabel = getText('gdp_chart_legend_indirect', lang);
-    const totalLabel = getText('gdp_chart_legend_total', lang);
-
     const getChartSummary = () => {
-        const latest = gdpData[gdpData.length - 1];
-        if (lang === 'en') {
-            return `Line chart showing energy sector GDP from 2018 to 2024. In ${latest.year}, direct GDP was $${latest.direct} billion, indirect GDP was $${latest.indirect} billion, and total GDP was $${latest.total} billion.`;
-        }
-        return `Graphique linéaire montrant le PIB du secteur de l'énergie de 2018 à 2024. En ${latest.year}, le PIB direct était de ${latest.direct} milliards de dollars, le PIB indirect était de ${latest.indirect} milliards de dollars et le PIB total était de ${latest.total} milliards de dollars.`;
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: directLabel, values: directValues, format: (v) => `${formatLocaleNumber(v, lang, { maximumFractionDigits: 0 })} ${unitText}` },
+                { name: indirectLabel, values: indirectValues, format: (v) => `${formatLocaleNumber(v, lang, { maximumFractionDigits: 0 })} ${unitText}` },
+                { name: totalLabel, values: totalValues, format: (v) => `${formatLocaleNumber(v, lang, { maximumFractionDigits: 0 })} ${unitText}` },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? 'Line chart showing energy sector GDP from 2018 to 2024'
+                : "Graphique linéaire montrant le PIB du secteur de l'énergie de 2018 à 2024",
+            body,
+        });
     };
 
     const getLineColors = (baseColor, traceIndex) => {
@@ -178,155 +108,41 @@ const GdpChart = () => {
     const hoverTemplate = (label, values) => {
         return values.map((val, i) => {
             const yearVal = years[i];
-            const formatted = lang === 'en' ? `$${formatNumber(val)}B` : `${formatNumber(val)} G$`;
+            const formatted = lang === 'en' ? `$${formatLocaleNumber(val, lang, { maximumFractionDigits: 0 })}B` : `${formatLocaleNumber(val, lang, { maximumFractionDigits: 0 })} G$`;
             return `<b>${label}</b><br>${yearVal}: ${formatted}<extra></extra>`;
         });
     };
 
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) return;
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        subtitle: stripHtml(chartSubtitle),
+        legendItems: [
+            { label: directLabel, color: COLORS.direct, dash: true },
+            { label: indirectLabel, color: COLORS.indirect, dash: true },
+            { label: totalLabel, color: COLORS.total, dash: false },
+        ],
+    }),
+        [COLORS, chartDownloadSlug, chartSubtitle, directLabel, exportChartTitle, indirectLabel, stripHtml, totalLabel],
+    );
 
-        const title = `${stripHtml(getText('gdp_chart_chart_title', lang))} (2018-2024)`;
-        const subtitle = stripHtml(getText('gdp_chart_chart_subtitle', lang));
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
-        try {
-            if (!window.Plotly) return;
-
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 600,
-                scale: 2
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                const titleHeight = 110;
-                const legendHeight = 60;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 45);
-                ctx.font = '24px Arial';
-                ctx.fillText(subtitle, canvas.width / 2, 80);
-                ctx.drawImage(img, 0, titleHeight);
-
-                const legendY = titleHeight + img.height + 30;
-                const legendItems = [
-                    { label: directLabel, color: COLORS.direct, dash: true },
-                    { label: indirectLabel, color: COLORS.indirect, dash: true },
-                    { label: totalLabel, color: COLORS.total, dash: false }
-                ];
-                const totalWidth = legendItems.reduce((acc, item) => acc + ctx.measureText(item.label).width + 60, 0);
-                let xPos = (canvas.width - totalWidth) / 2;
-
-                legendItems.forEach(item => {
-                    ctx.strokeStyle = item.color;
-                    ctx.lineWidth = 3;
-                    if (item.dash) {
-                        ctx.setLineDash([8, 4]);
-                    } else {
-                        ctx.setLineDash([]);
-                    }
-                    ctx.beginPath();
-                    ctx.moveTo(xPos, legendY);
-                    ctx.lineTo(xPos + 30, legendY);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                    ctx.fillStyle = '#333333';
-                    ctx.font = '24px Arial';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(item.label, xPos + 40, legendY + 8);
-                    xPos += ctx.measureText(item.label).width + 80;
-                });
-
-                canvas.toBlob(blob => {
-                    if (blob) saveAs(blob, `energy-sector-gdp-2018-2024.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const unitText = lang === 'en' ? 'billions' : 'milliards';
-        const headers = [
-            lang === 'en' ? 'Year' : 'Année',
-            `${directLabel} (${unitText})`,
-            `${indirectLabel} (${unitText})`,
-            `Total (${unitText})`
-        ];
-        const rows = gdpData.map(d => [d.year, d.direct, d.indirect, d.total]);
-        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, 'energy-sector-gdp.csv');
-    };
-
-    const downloadTableAsDocx = async () => {
-        const unitText = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(getText('gdp_chart_chart_title', lang)), bold: true, size: 28 })]
-                    }),
-                    new Table({
-                        columnWidths: [1500, 2500, 2500, 2500],
-                        rows: [
-                            new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', bold: true })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: unitText, bold: true })] })], columnSpan: 3 })
-                                ]
-                            }),
-                            new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Year' : 'Année', bold: true })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: directLabel, bold: true })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: indirectLabel, bold: true })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'Total', bold: true })] })] })
-                                ]
-                            }),
-                            ...gdpData.map(d => new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(d.year) })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(d.direct) })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(d.indirect) })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(d.total), bold: true })] })] })
-                                ]
-                            }))
-                        ]
-                    })
-                ]
-            }]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, 'energy-sector-gdp.docx');
-    };
+    
 
     return (
-        <main
-            id="main-content"
-            className="page-content page-11"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-11 page-chrome page-chrome--bleed"
             aria-labelledby="gdp-chart-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
                 .page-11 {
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    width: calc(100% + ${layoutPadding?.right || 15}px);
-                    padding-right: ${layoutPadding?.right || 15}px;
                 }
 
                 .gdp-chart-container {
@@ -338,30 +154,23 @@ const GdpChart = () => {
                 }
 
                 .gdp-chart-chart-frame {
-                    background-color: #f5f5f5;
-                    padding: 20px;
-                    border-radius: 8px;
                     margin-bottom: 0;
-                    box-sizing: border-box;
-                    overflow: visible;
                 }
 
                 .gdp-chart-chart-title {
-                    font-family: 'Lato', sans-serif;
-                    font-size: 29px;
-                    font-weight: bold;
                     color: var(--gc-text);
-                    text-align: center;
-                    margin: 0 0 5px 0;
+                    margin: 0 0 15px 0;
                     padding-left: 15px;
                 }
 
                 .gdp-chart-chart-subtitle {
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
+                    display: block;
+                    font-family: 'Noto Sans', sans-serif !important;
+                    font-size: 20px !important;
+                    font-weight: 400 !important;
                     color: var(--gc-text);
                     text-align: center;
-                    margin: 0 0 15px 90px;
+                    margin: 5px 0 0 0 !important;
                     padding-left: 0;
                 }
 
@@ -374,45 +183,11 @@ const GdpChart = () => {
                 }
 
                 .gdp-chart-legend {
-                    display: flex;
-                    justify-content: center;
+                    gap: 15px 40px;
                     margin-top: 20px;
                     margin-bottom: 20px;
                     font-family: 'Noto Sans', sans-serif;
                     padding: 10px 20px;
-                }
-
-                .gdp-chart-legend-inner {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 15px 40px;
-                    justify-content: center;
-                }
-
-                .gdp-chart-legend-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-
-                .gdp-chart-legend-line {
-                    width: 30px;
-                    height: 3px;
-                    flex-shrink: 0;
-                }
-
-                .gdp-chart-legend-line.dashed {
-                    background: repeating-linear-gradient(
-                        to right,
-                        currentColor,
-                        currentColor 6px,
-                        transparent 6px,
-                        transparent 10px
-                    );
-                }
-
-                .gdp-chart-legend-line.solid {
-                    background: currentColor;
                 }
 
                 .gdp-chart-legend-label {
@@ -427,88 +202,16 @@ const GdpChart = () => {
                     margin-bottom: 0;
                 }
 
-                .gdp-chart-table-wrapper details > summary {
-                    display: block;
-                    width: 100%;
-                    padding: 12px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                    list-style: none;
-                }
-
-                .gdp-chart-table-wrapper details > summary::-webkit-details-marker {
-                    display: none;
-                }
-
-                .gdp-chart-table-wrapper details > summary:hover {
-                    background-color: #404040 !important;
-                }
-
-                .gdp-chart-table-wrapper .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                }
-
-                .gdp-chart-table-wrapper .table-responsive table {
-                    width: max-content !important;
-                    min-width: 100%;
-                    border-collapse: collapse;
-                }
-
-                .gdp-chart-table-wrapper .table-responsive table th,
-                .gdp-chart-table-wrapper .table-responsive table td {
-                    white-space: nowrap;
-                    padding: 8px 12px;
-                }
-
-                .gdp-chart-download-buttons {
-                    display: flex;
-                    gap: 10px;
-                    margin-top: 15px;
-                    flex-wrap: wrap;
-                }
-
-                .gdp-chart-download-buttons button {
-                    padding: 8px 16px;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    background: #8C8C8C;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                }
-
-                .gdp-chart-download-buttons button:hover,
-                .gdp-chart-table-wrapper button:hover,
                 .gdp-chart-chart-frame button[type="button"]:hover,
                 .gdp-chart-chart-frame button:hover {
                     background: #404040 !important;
                     background-color: #404040 !important;
                 }
 
-                @media (max-width: 1097px) {
-                    .gdp-chart-chart-subtitle { margin-left: 60px; }
-                }
-
-                @media (max-width: 960px) { 
-                    .gdp-chart-chart-subtitle { margin-left: 20px; }
-                }
-
                 @media (max-width: 768px) {
                     .page-11 { border-right: none !important; }
-                    .gdp-chart-chart-title { font-size: 26px; }
-                    .gdp-chart-chart-subtitle { font-size: 18px; }
-                    .gdp-chart-legend { flex-wrap: wrap; gap: 20px; }
+                    .gdp-chart-chart-subtitle { font-size: 18px !important; }
+                    .gdp-chart-legend { gap: 20px; }
                     .gdp-chart-legend-label { font-size: 16px; }
                 }
 
@@ -519,29 +222,31 @@ const GdpChart = () => {
             `}</style>
 
             <div className="gdp-chart-container">
-                <div className="gdp-chart-chart-frame">
-                    <h2 className="gdp-chart-chart-title" aria-hidden="true">
-                        {getText('gdp_chart_chart_title', lang)}
-                        <sup id="fn-asterisk-rf-gdp-chart" style={{ verticalAlign: 'super', fontSize: '0.6em', lineHeight: 0 }}>
-                            <a className="fn-lnk" href="#fn-asterisk-gdp-chart" onClick={scrollToFootnote}>
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
-                            </a>
-                        </sup>
+                <div className="gdp-chart-chart-frame page-chrome-chart-frame">
+                    <h2
+                        id="gdp-chart-title"
+                        className="gdp-chart-chart-title page-chrome-chart-title"
+                        aria-label={chartTitleSpoken}
+                    >
+                        <span aria-hidden="true">{chartTitle}</span>
+                        <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-gdp-chart"
+                            id="fn-asterisk-rf-gdp-chart"
+                            marker="*"
+                            onClick={scrollToFootnote}
+                        />
+                        <span className="gdp-chart-chart-subtitle" aria-hidden="true">
+                            {chartSubtitle}
+                        </span>
                     </h2>
-                    <p className="gdp-chart-chart-subtitle" aria-hidden="true">
-                        {getText('gdp_chart_chart_subtitle', lang)}
-                    </p>
 
                     <div 
                         role="region" 
                         aria-label={getChartSummary()}
                         tabIndex="0"
                     >
-                        {selectedPoints !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
-                                </div>
-                            )}
+                        {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
                             <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                             <div aria-hidden="true">
                                 <Plot
@@ -581,7 +286,7 @@ const GdpChart = () => {
                                         hoverlabel: { bgcolor: '#ffffff' },
                                         hovermode: 'closest',
                                         clickmode: 'event',
-                                        dragmode: windowWidth <= 768 ? false : 'zoom',
+                                        dragmode: false,
                                         xaxis: {
                                             showgrid: false,
                                             zeroline: false,
@@ -622,50 +327,8 @@ const GdpChart = () => {
                                         paper_bgcolor: 'rgba(0,0,0,0)',
                                         plot_bgcolor: 'rgba(0,0,0,0)'
                                     }}
-                                    config={{
-                                        displayModeBar: true,
-                                        displaylogo: false,
-                                        responsive: true,
-                                        scrollZoom: false,
-                                        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
-                                        modeBarButtonsToAdd: [{
-                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                            },
-                                            click: (gd) => downloadChartWithTitle(gd)
-                                        }]
-                                    }}
-                                    onClick={(data) => {
-                                        if (!data.points || data.points.length === 0) return;
-                                        const clickedPoint = data.points[0];
-                                        const traceIndex = clickedPoint.curveNumber;
-                                        const pointIndex = clickedPoint.pointIndex;
-
-                                        if (windowWidth <= 768) {
-                                            const currentTime = new Date().getTime();
-                                            const lastClick = lastClickRef.current;
-                                            const isSamePoint = (traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex);
-                                            const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
-                                            
-                                            lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
-                                            
-                                            if (!isDoubleTap) return;
-                                        }
-
-                                        setSelectedPoints(prev => {
-                                            const newSelection = prev ? prev.map(arr => [...arr]) : [[], [], []];
-                                            const currentTraceSelection = newSelection[traceIndex] || [];
-                                            const isSelected = currentTraceSelection.includes(pointIndex);
-                                            newSelection[traceIndex] = isSelected
-                                                ? currentTraceSelection.filter(i => i !== pointIndex)
-                                                : [...currentTraceSelection, pointIndex];
-                                            const allEmpty = newSelection.every(arr => !arr || arr.length === 0);
-                                            return allEmpty ? null : newSelection;
-                                        });
-                                    }}
+                                    config={plotConfig}
+                                    onClick={onPlotClick}
                                     className="gdp-chart-chart"
                                     useResizeHandler={true}
                                 />
@@ -673,114 +336,54 @@ const GdpChart = () => {
                         </figure>
                     </div>
 
-                    <div className="gdp-chart-legend" aria-hidden="true">
-                        <div className="gdp-chart-legend-inner">
-                            <div className="gdp-chart-legend-item">
-                                <span className="gdp-chart-legend-line dashed" style={{ color: COLORS.direct }}></span>
-                                <span className="gdp-chart-legend-label">{directLabel}</span>
-                            </div>
-                            <div className="gdp-chart-legend-item">
-                                <span className="gdp-chart-legend-line dashed" style={{ color: COLORS.indirect }}></span>
-                                <span className="gdp-chart-legend-label">{indirectLabel}</span>
-                            </div>
-                            <div className="gdp-chart-legend-item">
-                                <span className="gdp-chart-legend-line solid" style={{ color: COLORS.total }}></span>
-                                <span className="gdp-chart-legend-label">{totalLabel}</span>
-                            </div>
-                        </div>
-                    </div>
+                    <HtmlLegend
+                        className="gdp-chart-legend"
+                        variant="line"
+                        itemClassName="gdp-chart-legend-item"
+                        markerClassName="gdp-chart-legend-line"
+                        labelClassName="gdp-chart-legend-label"
+                        items={[
+                            { label: directLabel, color: COLORS.direct, dash: true },
+                            { label: indirectLabel, color: COLORS.indirect, dash: true },
+                            { label: totalLabel, color: COLORS.total },
+                        ]}
+                    />
 
                     <div className="gdp-chart-table-wrapper">
-                        <details 
+                        <ChartDataTable
+                            lang={lang}
                             className="gdp-chart-data-table"
-                            onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                        >
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
-
-                            <div 
-                                ref={topScrollRef}
-                                style={{ 
-                                    width: '100%', 
-                                    overflowX: 'auto', 
-                                    overflowY: 'hidden',
-                                    marginBottom: '0px',
-                                    display: windowWidth <= 768 ? 'none' : 'block' 
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }}></div>
-                            </div>
-                            <div 
-                                ref={tableScrollRef}
-                                className="table-responsive" 
-                                role="region" 
-                                tabIndex="0" 
-                                aria-label={lang === 'en' ? 'Energy sector GDP data table' : 'Tableau de données du PIB du secteur de l\'énergie'}
-                            >
-                                <table className="table table-striped table-hover" style={{ marginTop: '15px' }}>
-                                    <caption className="wb-inv">
-                                        {lang === 'en' ? 'Energy sector GDP data from 2018 to 2024' : 'Données du PIB du secteur de l\'énergie de 2018 à 2024'}
-                                    </caption>
-                                    <thead>
-                                        <tr>
-                                            <td style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0' }} aria-hidden="true"></td>
-                                            <th scope="colgroup" colSpan={3} style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'center' }}>
-                                                <span aria-hidden="true">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
-                                                <span className="wb-inv">{lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)'}</span>
-                                            </th>
-                                        </tr>
-                                        <tr>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>{directLabel}</th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>{indirectLabel}</th>
-                                            <th scope="col" style={{ border: '1px solid #ddd', padding: '10px', backgroundColor: '#f0f0f0', textAlign: 'right' }}>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {gdpData.map(d => (
-                                            <tr key={d.year}>
-                                                <th scope="row" style={{ border: '1px solid #ddd', padding: '10px' }}>{d.year}</th>
-                                                <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'right' }}>{formatCurrency(d.direct)}</td>
-                                                <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'right' }}>{formatCurrency(d.indirect)}</td>
-                                                <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(d.total)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="gdp-chart-download-buttons">
-                                <button onClick={downloadTableAsCSV}>
-                                    {lang === 'en' ? 'Download as CSV' : 'Télécharger en CSV'}
-                                </button>
-                                <button onClick={downloadTableAsDocx}>
-                                    {lang === 'en' ? 'Download as DOCX' : 'Télécharger en DOCX'}
-                                </button>
-                            </div>
-                        </details>
+                            columns={tableColumns}
+                            rows={gdpData}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1500, 2500, 2500, 2500],
+                                fontSize: 20,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatCurrency(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
-                <aside className="wb-fnote" role="note" style={{ marginTop: '20px', marginBottom: 0 }}>
-                    <h2 id="fn-gdp-chart">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-gdp-chart" style={{ marginBottom: 0 }}>
-                            <a href="#fn-asterisk-rf-gdp-chart" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            <p>
-                                {getText('gdp_chart_footnote', lang)}
-                            </p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn-gdp-chart"
+                    items={[{
+                        id: 'fn-asterisk-gdp-chart',
+                        marker: '*',
+                        text: getText('gdp_chart_footnote', lang),
+                        returnHref: '#fn-asterisk-rf-gdp-chart',
+                    }]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -60,12 +60,55 @@ The `id` is used for sidebar navigation (hash links).
 ```jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Plot from 'react-plotly.js';
+import Plot from '../components/LazyPlot';
 import { getText } from '../utils/translations';
-// If the page has DOCX/CSV download:
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+// Shared page chrome (required — do not copy-paste DOCX/table/resize/bleed boilerplate):
+import { exportTableToDocx, exportTableToCsv, saveDocxBlob } from '../utils/exportTableToDocx';
+import { downloadChartPng } from '../utils/downloadChartPng';
+import ChartDataTable from '../components/ChartDataTable';
+import PageFootnotes from '../components/PageFootnotes';
+import YearSelect from '../components/YearSelect';
+import useWindowWidth from '../hooks/useWindowWidth';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import ChartPage from '../components/ChartPage'; // prefer for standard single-chart Plotly pages
 ```
+
+CI fails pages that reintroduce `Packer` / `from 'docx'` / hand-rolled `<details>` table chrome (`npm run audit:page-chrome`). Prefer the shared modules below instead of page-local copies.
+
+**Do not** import from `docx` directly. Complex tables use `saveDocxBlob` with Document builders imported from `exportTableToDocx`.
+
+### Shared page chrome (required modules)
+
+| Module | Purpose |
+|--------|---------|
+| `src/components/ChartDataTable.jsx` | `<details>` data table + CSV/DOCX download |
+| `src/components/YearSelect.jsx` | Bilingual year control |
+| `src/components/PageFootnotes.jsx` | Footnotes shell |
+| `src/components/ClearSelectionButton.jsx` | Clear Plotly selection |
+| `src/components/PageStatus.jsx` | Loading / error early return |
+| `src/components/FootnoteMarker.jsx` | Inline footnote marker |
+| `src/components/HtmlLegend.jsx` | Shared HTML legend (simple cases) |
+| `src/components/PageShell.jsx` / `ChartPage.jsx` | Article shell / standard chart page layout |
+| `src/styles/page-chrome.css` | Shared table, year, footnote, title chrome |
+| `src/hooks/useWindowWidth.js` | Viewport width |
+| `src/hooks/useLayoutBleedStyle.js` | Full-bleed layout vars |
+| `src/hooks/usePlotlySelection.js` | Selection state |
+| `src/hooks/useViewportZoom.js` | Simple visualViewport zoom |
+| `src/hooks/useChartPngDownloader.js` | Chart PNG download callback |
+| `src/utils/downloadChartPng.js` / `downloadInfographicPng.js` | PNG export helpers |
+| `src/utils/exportTableToDocx.js` | DOCX + CSV export |
+| `src/utils/formatLocale.js` / `hexToRgba.js` / `scrollToId.js` | Locale, colour, footnote scroll |
+| `src/utils/plotlyInteractiveDefaults.js` | Defaults + `buildPngOnlyPlotConfig` (PNG-only modebar) |
+
+### Topic mounting (one subsection at a time)
+
+Section components mount **one topic (subsection) at a time** via [`ActivePageSection`](../src/components/ActivePageSection.jsx). Topic boundaries match the section overview pages: the first page in each section is its own topic, and each hash linked from the overview starts the next topic. Pages within a topic render together in a stacked scroll.
+
+Topic grouping lives in [`topicGroups.js`](../src/utils/topicGroups.js); each `Section*.jsx` passes `topicAnchors` from its overview links. Sidebar deep links (`/section-1#provincial-gdp`) resolve to the topic that contains that page, mount the full topic stack, and scroll to the target hash.
+
+### New raster assets
+
+Prefer WebP (or AVIF) under ~300 KB for new heroes; avoid multi‑MB PNG in `src/assets/`. Before release: `npm run compress:assets`. Full host budgets: [DEPLOYMENT.md](DEPLOYMENT.md#asset-size-and-build-budgets).
 
 ### Context
 
@@ -251,8 +294,14 @@ Adjust `modeBarButtonsToRemove` if the chart type supports zoom/pan (e.g. maps m
 
 ### Disabling scroll and zoom in chart area
 
-- Set **`scrollZoom: false`** in `config` to prevent scroll-zoom inside the chart.
-- In **layout**, set **`dragmode: windowWidth <= 768 ? false : 'zoom'`** (or `false` for both) so that on mobile the chart does not capture drag for zoom. This avoids accidental scrolling/zooming inside the chart area.
+[`LazyPlot`](../src/components/LazyPlot.jsx) merges shared interaction defaults for every chart:
+
+- **Layout:** `dragmode: false`, `clickmode: 'event'` (click-to-select; no drag pan/zoom)
+- **Config:** `scrollZoom: false`, `doubleClick: false` (no scroll-wheel or double-click zoom)
+
+Do **not** re-enable desktop zoom with `dragmode: 'zoom'`. Pages may add chart-specific layout/config fields, but interactive selection charts should keep drag/zoom disabled on all breakpoints.
+
+Optional per-page `config` / `layout` overrides are merged on top of these defaults via [`plotlyInteractiveDefaults.js`](../src/utils/plotlyInteractiveDefaults.js).
 
 **Reference:** Page 8, Page 27, Page 31, `src/index.css` (modebar section).
 
@@ -567,20 +616,68 @@ useEffect(() => {
 
 ## 11. Data Table (Chart Data Table) and Screen Reader Navigation
 
+### Titles, body copy, and footnotes (do not hide from AT)
+
+Screen readers must be able to read page titles, chart titles, intro paragraphs, and footnote links as normal content.
+
+- **Page / chart titles:** Use a single visible `<h1>` or `<h2>` **without** `aria-hidden`. Do **not** pair a hidden visible heading with a `.wb-inv` twin heading, and do **not** wrap a hidden title in `header role="region" aria-label="…"` solely to re-announce it.
+- **Intro / body prose:** Put real text in the accessibility tree. Never mark `SafeHtml` or wrapping `<span>`s `aria-hidden` and rely on a parent `aria-label` / `role="region"` instead.
+- **Tab order:** Page `h1` titles, intro paragraphs, chart titles (`h2`/`h3` with `*-chart-title` / `*-graphic-title`), bullet items, and footnote bodies (`.wb-fnote h2` / `dd p`) are made keyboard-focusable at runtime by [`enablePageProseKeyboardNav`](../src/utils/pageProseKeyboardNav.js). Do not reintroduce `aria-hidden` children to “force” an `aria-label`.
+- **Footnotes:** Keep `fn-lnk` (and other links/buttons) **outside** any `aria-hidden` ancestor. Only the decorative `*` glyph may use `aria-hidden="true"`. Footnote section text is Tab-reachable via prose nav.
+- **Spoken chart description:** Wrap the Plot/infographic in `role="region"` or `role="img"` with `tabIndex={0}` and `aria-label={`${chartTitle}. ${getChartSummary()}`}` where `getChartSummary()` includes key figures (totals, percents). Do **not** put the summary on `.table-responsive`.
+- **Pie labels:** When slices have curated `%` values, put them in `customdata` and label with `%{customdata:.0f}%` — never `%{percent}` recomputed from rounded PJ (see [`IndustrialSectorEnergy.jsx`](../src/pages/IndustrialSectorEnergy.jsx), [`CanadaEnergySupply.jsx`](../src/pages/CanadaEnergySupply.jsx)).
+- **Infographics:** Use [`AccessibleInfographic`](../src/components/AccessibleInfographic.jsx):
+  - **Text-rich SVG** (asset contains real `<text>`): `import bg from '../assets/….svg?raw'` then `mode="text"` `svgMarkup={bg}` `title={shortTitle}`. The visual SVG is inlined for display; wording is extracted into an AT-only text block so screen readers reliably hear the SVG content (many AT engines do not walk raw SVG `<text>` nodes).
+  - **Informative PNG / art-only SVG:** URL import; `mode="image"` `src={url}` `overview={fullDescription}` when the graphic itself carries meaning not fully elsewhere.
+  - **Decorative illustration** (meaning already in nearby HTML): `mode="image"` `decorative` — silent to AT, not in tab order.
+  - PNG download: `downloadInfographicImagePng(ref.current?.getGraphicElement?.() ?? imgEl, { filename })`.
+
+
+CI: `npm run audit:sr-content`, `npm run audit:charts`, `npm run audit:chart-summaries`.
+
+```jsx
+<h2 className="page-chart-title">
+    {getText('page_chart_title', lang)}
+    <span id="fn-asterisk-rf-page" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: 0 }}>
+        <a className="fn-lnk" href="#fn-asterisk-page" onClick={scrollToFootnote}>
+            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
+            <span aria-hidden="true">*</span>
+        </a>
+    </span>
+</h2>
+```
+
+CI enforces these rules via `npm run audit:sr-content` ([`scripts/audit-sr-content-visibility.mjs`](../scripts/audit-sr-content-visibility.mjs)).
+
+**Chart vs table a11y:** The Plotly graphic may be marked decorative (`aria-hidden` on the SVG / optional `role="img"` on `.js-plotly-plot`) **because** the HTML chart data table is the accessible equivalent. Do **not** put `aria-hidden` on the table, its headers, or its rows. When the disclosure is open, screen readers must be able to read the caption, column headers, and every data cell.
+
+**Do not** put `tabIndex={0}` on the `<table>` or on whole `<tr>` rows (AT often announces only the table name or “row” and skips per-cell reading). **Do not** wrap `.table-responsive` in a focusable `role="region"` landmark for the same reason.
+
+App startup installs [`enableChartDataTableCellNavigation`](../src/utils/chartDataTableCellNav.js). After opening the disclosure, **Tab** order is: summary → **column headers stop** (table title once + all headers) → **each body cell** (column name, row header, value + unit such as “percent”) → following controls. Focus is **not** moved automatically into a data cell on open. The `<caption>` is hidden from AT while enhanced so the overview is not repeated on every cell.
+
+Capsule / ranking graphics should use `role="img"` + `tabIndex={0}` + a full `aria-label` summary on the container, with the visual marked `aria-hidden="true"`.
+
 ### Wrapper and toggle
+
+Use native `<summary>` (no `role="button"`). Overriding the summary role breaks disclosure semantics in some assistive technologies.
 
 ```jsx
 <div className="pageN-table-wrapper">
     <details
-        className="pageN-data-table"
+        className="data-table-wrapper"
         onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
     >
-        <summary role="button" aria-expanded={isTableOpen}>
+        <summary>
             <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
             {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
             <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
         </summary>
-        ...
+        <div className="table-responsive" ref={tableScrollRef}>
+            <table className="table table-striped table-hover">
+                <caption className="wb-inv">…</caption>
+                {/* thead / tbody with th scope="col|row" — cell focus/labels applied at runtime */}
+            </table>
+        </div>
     </details>
 </div>
 ```
@@ -757,12 +854,13 @@ Use it for the chart title: `{renderTextWithFootnoteLink(getText('pageN_chart_ti
 - [ ] Add page component to the correct Section (`src/components/SectionX.jsx`).
 - [ ] Add sidebar link and nav text (`Sidebar.jsx`, `translations.js`).
 - [ ] Add all translation keys (EN and FR) for title, subtitle, chart title, footnotes, table, buttons.
-- [ ] Implement main/chrome: `<main>`, title, subtitle, optional bullets.
+- [ ] Implement main/chrome: `<main>`, title, subtitle, optional bullets (titles/prose must stay in the a11y tree — see §11).
 - [ ] Add chart frame + `<Plot>` with correct ref and layout.
 - [ ] Implement download PNG (and filename convention).
 - [ ] Set modebar config and `setupChartAccessibility` + MutationObserver.
 - [ ] If table: details/summary, top-scroll sync, caption, aria-labels on cells.
-- [ ] If footnotes: footnote block, title link (renderTextWithFootnoteLink or manual), scrollToFootnote / scrollToRef.
+- [ ] If footnotes: footnote block, title link with `fn-lnk` outside any `aria-hidden`, scrollToFootnote / scrollToRef.
+- [ ] Pass `npm run audit:sr-content`, `npm run audit:charts`, and `npm run audit:chart-summaries`.
 - [ ] If year dropdown: state, refs, click-outside, trigger, list, wb-inv status.
 - [ ] If select/focus: selected state, onClick (with double-tap on mobile), Clear selection button.
 - [ ] Pie-specific: useCompactLayout and year-driven data so labels follow category.

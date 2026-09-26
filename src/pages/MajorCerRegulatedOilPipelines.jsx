@@ -1,67 +1,37 @@
 import React, { useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import AccessibleInfographic from '../components/AccessibleInfographic';
+import PageFootnotes from '../components/PageFootnotes';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
-import pipelinesBgEn from '../assets/major_cer_regulated_oil_pipelines_bg.svg';
-import pipelinesBgFr from '../assets/major_cer_regulated_oil_pipelines_bg_fr.svg';
-
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
-
-const exportInfographicPng = async (imgEl, { scale = 2 }) => {
-    if (!imgEl) return null;
-
-    const loaded = await waitForImage(imgEl);
-    const canvas = document.createElement('canvas');
-    canvas.width = loaded.naturalWidth * scale;
-    canvas.height = loaded.naturalHeight * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, loaded.naturalWidth, loaded.naturalHeight);
-    ctx.drawImage(loaded, 0, 0, loaded.naturalWidth, loaded.naturalHeight);
-    return canvas;
-};
+import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
+import pipelinesBgEn from '../assets/major_cer_regulated_oil_pipelines_bg.svg?raw';
+import pipelinesBgFr from '../assets/major_cer_regulated_oil_pipelines_bg_fr.svg?raw';
 
 const MajorCerRegulatedOilPipelines = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const infographicImgRef = useRef(null);
+    const infographicRef = useRef(null);
 
     const pageTitle = getText('major_cer_regulated_oil_pipelines_title', lang);
-    const bgImage = lang === 'en' ? pipelinesBgEn : pipelinesBgFr;
+    const svgMarkup = lang === 'en' ? pipelinesBgEn : pipelinesBgFr;
     const fileSlugBase = getText('major_cer_regulated_oil_pipelines_download_title', lang).replace(/\s+/g, '_');
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportInfographicPng(infographicImgRef.current, { scale: 2 });
-        if (!canvas) return;
-        canvas.toBlob((blob) => {
-            if (blob) saveAs(blob, `${fileSlugBase}.png`);
-        });
+        await downloadInfographicImagePng(
+            infographicRef.current?.getGraphicElement?.() ?? infographicRef.current,
+            { filename: `${fileSlugBase}.png`, scale: 2 },
+        );
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content major-cer-regulated-oil-pipelines"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content major-cer-regulated-oil-pipelines page-chrome page-chrome--bleed"
             aria-labelledby="major-cer-regulated-oil-pipelines-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .major-cer-regulated-oil-pipelines {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .major-cer-regulated-oil-pipelines-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .major-cer-regulated-oil-pipelines.page-content .major-cer-regulated-oil-pipelines-title {
@@ -125,22 +95,17 @@ const MajorCerRegulatedOilPipelines = () => {
                 </h1>
 
                 <div className="major-cer-regulated-oil-pipelines-infographic-section">
-                    <figure
+                    <AccessibleInfographic
+                        ref={infographicRef}
+                        mode="text"
+                        as="figure"
                         className="major-cer-regulated-oil-pipelines-infographic-figure"
-                        aria-label={getText('major_cer_regulated_oil_pipelines_infographic_aria', lang)}
-                    >
-                        <img
-                            ref={infographicImgRef}
-                            src={bgImage}
-                            alt=""
-                            className="major-cer-regulated-oil-pipelines-bg-image"
-                            draggable={false}
-                            aria-hidden="true"
-                        />
-                        <figcaption className="wb-inv">
-                            {getText('major_cer_regulated_oil_pipelines_infographic_aria', lang)}
-                        </figcaption>
-                    </figure>
+                        title={pageTitle}
+                        svgMarkup={svgMarkup}
+                        imgClassName="major-cer-regulated-oil-pipelines-bg-image"
+                        imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
+                        idPrefix={`cer-oil-pipelines-${lang}`}
+                    />
 
                     <div className="major-cer-regulated-oil-pipelines-download-buttons">
                         <button type="button" onClick={downloadInfographicPng}>
@@ -149,19 +114,18 @@ const MajorCerRegulatedOilPipelines = () => {
                     </div>
                 </div>
 
-                <aside className="wb-fnote" role="note">
-                    <h2 id="fn-major-cer-regulated-oil-pipelines">
-                        {lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}
-                    </h2>
-                    <dl>
-                        <dt>{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd>
-                            <p>{getText('major_cer_regulated_oil_pipelines_footnote', lang)}</p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn-major-cer-regulated-oil-pipelines"
+                    items={[{
+                        id: 'fn-asterisk-major-cer-regulated-oil-pipelines',
+                        marker: '*',
+                        text: getText('major_cer_regulated_oil_pipelines_footnote', lang),
+                        hideReturn: true,
+                    }]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

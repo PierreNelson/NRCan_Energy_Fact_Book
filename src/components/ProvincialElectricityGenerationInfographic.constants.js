@@ -321,7 +321,7 @@ export const exportProvincialGenerationInfographicPng = async (figureEl, { scale
         ctx.fillText(el.textContent?.trim() || '', box.x + box.w / 2, box.y);
     };
 
-    const bgImg = wrapper.querySelector('.provincial-electricity-generation-bg-image');
+    const bgImg = figureEl.querySelector('.provincial-electricity-generation-bg-image');
     const bgLoaded = await waitForImage(bgImg);
     if (bgLoaded) {
         const box = rel(wrapper);

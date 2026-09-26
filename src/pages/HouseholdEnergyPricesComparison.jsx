@@ -1,9 +1,17 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 
 const COUNTRY_KEYS = ['canada', 'france', 'germany', 'italy', 'uk', 'usa'];
 
@@ -59,28 +67,25 @@ function isBrowserZoomInVerticalTickRange() {
     });
 }
 
+/** Legend axis cues are visual only — omit from spoken chart summaries. */
+function stripAxisCue(label) {
+    return String(label || '')
+        .replace(/\s*\((?:left|right)\s+axis\)\s*$/i, '')
+        .replace(/\s*\(axe de (?:gauche|droite)\)\s*$/i, '')
+        .trim();
+}
+
 const HouseholdEnergyPricesComparison = () => {
     const { lang } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [viewportZoom, setViewportZoom] = useState(createInitialViewportZoom);
     const zoomBaselineRef = useRef(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick: handleChartClick,
+    } = usePlotlySelection({ mode: 'points', traceCount: 3, windowWidth });
     const chartRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
 
     const formatGasoline = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
@@ -100,6 +105,7 @@ const HouseholdEnergyPricesComparison = () => {
 
     const fileSlugBase = getText('household_energy_prices_comparison_download_title', lang).replace(/\s+/g, '_');
     const chartTitle = getText('household_energy_prices_comparison_chart_title', lang);
+    const exportChartTitle = stripHtml(chartTitle);
     const pageTitleLine1 = getText('household_energy_prices_comparison_title_line1', lang);
     const pageTitleLine2 = getText('household_energy_prices_comparison_title_line2', lang);
     const pageTitleFull = `${stripHtml(pageTitleLine1)} ${stripHtml(pageTitleLine2)}`;
@@ -118,6 +124,23 @@ const HouseholdEnergyPricesComparison = () => {
     const gasolineValues = useMemo(() => COUNTRY_KEYS.map((key) => household_energy_prices_comparison_DATA[key].gasoline), []);
     const electricityValues = useMemo(() => COUNTRY_KEYS.map((key) => household_energy_prices_comparison_DATA[key].electricity), []);
     const naturalGasValues = useMemo(() => COUNTRY_KEYS.map((key) => household_energy_prices_comparison_DATA[key].naturalGas), []);
+
+    const tableColumns = useMemo(() => [
+        { key: 'country', header: getText('household_energy_prices_comparison_table_country', lang), align: 'left' },
+        { key: 'gasoline', header: getText('household_energy_prices_comparison_table_gasoline', lang), align: 'num' },
+        { key: 'electricity', header: getText('household_energy_prices_comparison_table_electricity', lang), align: 'num' },
+        { key: 'naturalGas', header: getText('household_energy_prices_comparison_table_natural_gas', lang), align: 'num' },
+    ], [lang]);
+
+    const tableRows = useMemo(
+        () => COUNTRY_KEYS.map((key, i) => ({
+            country: countryLabels[i],
+            gasoline: household_energy_prices_comparison_DATA[key].gasoline,
+            electricity: household_energy_prices_comparison_DATA[key].electricity,
+            naturalGas: household_energy_prices_comparison_DATA[key].naturalGas,
+        })),
+        [countryLabels],
+    );
 
     const pageZoomForLayout = Math.max(
         viewportZoom.pinScale,
@@ -226,7 +249,7 @@ const HouseholdEnergyPricesComparison = () => {
             bargroupgap: 0.08,
             hovermode: 'closest',
             clickmode: 'event',
-            dragmode: windowWidth <= 768 ? false : 'zoom',
+            dragmode: false,
             showlegend: false,
             xaxis: {
                 type: 'category',
@@ -283,9 +306,64 @@ const HouseholdEnergyPricesComparison = () => {
         [countryLabels, xTickAngle, xTickFontSize, yTickFontSize, axisTitleFontSize, yLeftLabel, yRightLabel, chartHeight, plotBottomMargin, windowWidth],
     );
 
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${fileSlugBase}.png`,
+        title: exportChartTitle,
+        width: EXPORT_CHART_WIDTH,
+        height: chartHeight,
+        legendItems: [
+            { label: legendGasoline, color: COLORS.gasoline },
+            { label: legendElectricity, color: COLORS.electricity },
+            { label: legendNaturalGas, color: COLORS.naturalGas },
+        ],
+    }),
+        [COLORS, EXPORT_CHART_WIDTH, chartHeight, exportChartTitle, fileSlugBase, legendElectricity, legendGasoline, legendNaturalGas],
+    );
+
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: countryLabels,
+            series: [
+                {
+                    name: stripAxisCue(legendGasoline),
+                    values: gasolineValues,
+                    format: (v) => `${formatGasoline(v)} ${yLeftLabel}`,
+                },
+                {
+                    name: stripAxisCue(legendElectricity),
+                    values: electricityValues,
+                    format: (v) => `${formatMwh(v)} ${yRightLabel}`,
+                },
+                {
+                    name: stripAxisCue(legendNaturalGas),
+                    values: naturalGasValues,
+                    format: (v) => `${formatMwh(v)} ${yRightLabel}`,
+                },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? 'Grouped bar chart comparing household energy prices per unit across countries for 2024'
+                : "Graphique à barres groupées comparant les prix unitaires de l'énergie domestique entre pays pour 2024",
+            unitNote: lang === 'en'
+                ? `Gasoline in ${yLeftLabel}; electricity and natural gas in ${yRightLabel}`
+                : `Essence en ${yLeftLabel} ; électricité et gaz naturel en ${yRightLabel}`,
+            body,
+        });
+    };
+
+    const chartRegionLabel = `${exportChartTitle}. ${getChartSummary()}`;
+
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
+
     useEffect(() => {
         const syncViewport = () => {
-            setWindowWidth(window.innerWidth);
 
             const inner = window.innerWidth;
             const outer = window.outerWidth;
@@ -338,292 +416,12 @@ const HouseholdEnergyPricesComparison = () => {
         };
     }, []);
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    useEffect(() => {
-        if (!chartRef.current) return;
-
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang]);
-
-    const drawLegendOnCanvas = (ctx, startX, legendY, fontSize) => {
-        const items = [
-            { label: legendGasoline, color: COLORS.gasoline },
-            { label: legendElectricity, color: COLORS.electricity },
-            { label: legendNaturalGas, color: COLORS.naturalGas },
-        ];
-        let xPos = startX;
-        ctx.font = `${fontSize}px Arial`;
-        items.forEach((item, index) => {
-            ctx.fillStyle = item.color;
-            ctx.fillRect(xPos, legendY - 8, 22, 14);
-            ctx.fillStyle = '#333333';
-            ctx.textAlign = 'left';
-            ctx.fillText(item.label, xPos + 30, legendY + 4);
-            xPos += 30 + ctx.measureText(item.label).width + (index < items.length - 1 ? 36 : 0);
-        });
-    };
-
-    const downloadChartWithTitle = async () => {
-        const plotElement = chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-
-        try {
-            const title = stripHtml(chartTitle);
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: EXPORT_CHART_WIDTH,
-                height: chartHeight,
-                scale: 2,
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 60;
-                const legendHeight = 52;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 22px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 40);
-                ctx.drawImage(img, 0, titleHeight);
-                drawLegendOnCanvas(ctx, 64, titleHeight + img.height + 30, 18);
-                const link = document.createElement('a');
-                link.download = `${fileSlugBase}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            };
-            img.src = imgData;
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const headers = [
-            getText('household_energy_prices_comparison_table_country', lang),
-            getText('household_energy_prices_comparison_table_gasoline', lang),
-            getText('household_energy_prices_comparison_table_electricity', lang),
-            getText('household_energy_prices_comparison_table_natural_gas', lang),
-        ];
-        const rows = COUNTRY_KEYS.map((key, i) => [
-            countryLabels[i],
-            household_energy_prices_comparison_DATA[key].gasoline,
-            household_energy_prices_comparison_DATA[key].electricity,
-            household_energy_prices_comparison_DATA[key].naturalGas,
-        ]);
-        const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${fileSlugBase}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const title = stripHtml(chartTitle);
-        const headers = [
-            getText('household_energy_prices_comparison_table_country', lang),
-            getText('household_energy_prices_comparison_table_gasoline', lang),
-            getText('household_energy_prices_comparison_table_electricity', lang),
-            getText('household_energy_prices_comparison_table_natural_gas', lang),
-        ];
-        const headerRow = new TableRow({
-            children: headers.map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 18 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = COUNTRY_KEYS.map((key, i) =>
-            new TableRow({
-                children: [
-                    countryLabels[i],
-                    formatGasoline(household_energy_prices_comparison_DATA[key].gasoline),
-                    formatMwh(household_energy_prices_comparison_DATA[key].electricity),
-                    formatMwh(household_energy_prices_comparison_DATA[key].naturalGas),
-                ].map((text, colIndex) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(text), size: 18 })],
-                                alignment: colIndex === 0 ? AlignmentType.LEFT : AlignmentType.CENTER,
-                            }),
-                        ],
-                    }),
-                ),
-            }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: title, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [3200, 2400, 2400, 2400],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
-    };
-
-    const getChartSummary = () => {
-        const parts = COUNTRY_KEYS.map((key, i) => {
-            const data = household_energy_prices_comparison_DATA[key];
-            return `${countryLabels[i]}: ${legendGasoline} ${formatGasoline(data.gasoline)}, ${legendElectricity} ${formatMwh(data.electricity)}, ${legendNaturalGas} ${formatMwh(data.naturalGas)}`;
-        }).join('; ');
-        return `${stripHtml(chartTitle)}. ${parts}.`;
-    };
-
-    const handleChartClick = (data) => {
-        if (!data.points || data.points.length === 0) return;
-        const clickedPoint = data.points[0];
-        const traceIndex = clickedPoint.curveNumber;
-        const pointIndex = clickedPoint.pointIndex;
-
-        if (windowWidth <= 768) {
-            const currentTime = Date.now();
-            const lastClick = lastClickRef.current;
-            const isSamePoint = traceIndex === lastClick.traceIndex && pointIndex === lastClick.pointIndex;
-            const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-            lastClickRef.current = { time: currentTime, traceIndex, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedPoints((prev) => {
-            if (prev === null) {
-                const newSelection = [[], [], []];
-                newSelection[traceIndex].push(pointIndex);
-                return newSelection;
-            }
-            const isSelected = prev[traceIndex]?.includes(pointIndex);
-            if (isSelected) {
-                const newSelection = prev.map((tracePoints, idx) =>
-                    idx === traceIndex ? tracePoints.filter((p) => p !== pointIndex) : [...tracePoints],
-                );
-                return newSelection.every((arr) => arr.length === 0) ? null : newSelection;
-            }
-            return prev.map((tracePoints, idx) =>
-                idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints],
-            );
-        });
-    };
-
-    const config = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
-        modeBarButtonsToAdd: [
-            {
-                name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-                click: () => downloadChartWithTitle(),
-            },
-        ],
-    };
+    
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
             className="page-content page-45"
-            role="main"
             aria-labelledby="household-energy-prices-comparison-title"
             style={{ backgroundColor: '#ffffff' }}
         >
@@ -702,57 +500,7 @@ const HouseholdEnergyPricesComparison = () => {
     color: var(--gc-text);
 }
 .household-energy-prices-comparison-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }
-.household-energy-prices-comparison-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.household-energy-prices-comparison-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.household-energy-prices-comparison-table-wrapper details > summary:hover { background-color: #404040 !important; }
-.household-energy-prices-comparison-table-wrapper button[type="button"]:hover,
 .household-energy-prices-comparison-chart-frame button[type="button"]:hover { background-color: #404040 !important; }
-.household-energy-prices-comparison-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.household-energy-prices-comparison-table-scrollbar > div { height: 20px; }
-.household-energy-prices-comparison-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    padding: 15px;
-    box-sizing: border-box;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.household-energy-prices-comparison-table-responsive::-webkit-scrollbar { display: none; }
-.household-energy-prices-comparison-table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
-.household-energy-prices-comparison-table-responsive th,
-.household-energy-prices-comparison-table-responsive td {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    font-family: Arial, sans-serif;
-    color: var(--gc-text);
-    white-space: nowrap;
-}
-.household-energy-prices-comparison-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-.household-energy-prices-comparison-download-buttons button {
-    padding: 8px 16px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
 @media (max-width: 768px) {
     .household-energy-prices-comparison-title { font-size: 37px; margin-bottom: 16px; }
     .household-energy-prices-comparison-chart-title { font-size: 26px; }
@@ -771,33 +519,16 @@ const HouseholdEnergyPricesComparison = () => {
                 <div className="household-energy-prices-comparison-chart-frame">
                     <h2 className="household-energy-prices-comparison-chart-title">{chartTitle}</h2>
 
-                    <div role="region" aria-label={getChartSummary()} tabIndex="0">
+                    <div role="region" aria-label={chartRegionLabel} tabIndex="0">
                         {selectedPoints !== null && (
-                            <div style={{ marginBottom: 8 }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedPoints(null)}
-                                    style={{
-                                        padding: '6px 12px',
-                                        backgroundColor: '#8C8C8C',
-                                        border: '1px solid #404040',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontSize: 14,
-                                        color: '#fff',
-                                    }}
-                                >
-                                    {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                </button>
-                            </div>
+                            <ClearSelectionButton lang={lang} onClick={clearSelection} />
                         )}
                         <figure ref={chartRef} className="household-energy-prices-comparison-chart" style={{ margin: 0, height: chartHeight }}>
                             <Plot
                                 key={`household-energy-prices-comparison-${useVerticalXLabels ? 'v' : 'h'}-${chartHeight}-${lang}`}
                                 data={[gasolineTrace, electricityTrace, naturalGasTrace]}
                                 layout={plotLayout}
-                                config={config}
+                                config={plotConfig}
                                 style={{ width: '100%', height: '100%' }}
                                 useResizeHandler={true}
                                 onClick={handleChartClick}
@@ -823,74 +554,30 @@ const HouseholdEnergyPricesComparison = () => {
                     </div>
 
                     <div className="household-energy-prices-comparison-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div ref={topScrollRef} className="household-energy-prices-comparison-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                            <div ref={tableScrollRef} className="household-energy-prices-comparison-table-responsive" role="region" tabIndex="0">
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{getText('household_energy_prices_comparison_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style={{ fontWeight: 'bold' }}>
-                                                {getText('household_energy_prices_comparison_table_country', lang)}
-                                            </th>
-                                            <th scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                {getText('household_energy_prices_comparison_table_gasoline', lang)}
-                                            </th>
-                                            <th scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                {getText('household_energy_prices_comparison_table_electricity', lang)}
-                                            </th>
-                                            <th scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                {getText('household_energy_prices_comparison_table_natural_gas', lang)}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {COUNTRY_KEYS.map((key, i) => (
-                                            <tr key={key}>
-                                                <th scope="row" style={{ fontWeight: 'bold' }}>
-                                                    {countryLabels[i]}
-                                                </th>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    {formatGasoline(household_energy_prices_comparison_DATA[key].gasoline)}
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    {formatMwh(household_energy_prices_comparison_DATA[key].electricity)}
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    {formatMwh(household_energy_prices_comparison_DATA[key].naturalGas)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <div className="household-energy-prices-comparison-download-buttons">
-                                    <button type="button" onClick={downloadTableAsCSV}>
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button type="button" onClick={downloadTableAsDocx}>
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                            <div ref={bottomScrollRef} className="household-energy-prices-comparison-table-scrollbar" aria-hidden="true">
-                                <div />
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${fileSlugBase}.csv`}
+                            docx={{
+                                filename: `${fileSlugBase}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [3200, 2400, 2400, 2400],
+                                fontSize: 18,
+                            }}
+                            caption={getText('household_energy_prices_comparison_table_caption', lang)}
+                            tableAriaLabel={getText('household_energy_prices_comparison_table_caption', lang)}
+                            renderCell={(raw, { colIndex }) => {
+                                if (colIndex === 0) return String(raw ?? '');
+                                if (colIndex === 1) return formatGasoline(raw);
+                                return formatMwh(raw);
+                            }}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

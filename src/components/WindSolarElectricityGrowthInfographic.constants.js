@@ -63,7 +63,7 @@ export const exportWindSolarGrowthInfographicPng = async (figureEl, { title, sca
             img.onerror = reject;
         });
 
-    const bgImg = wrapper.querySelector('.wind-solar-electricity-growth-bg-image');
+    const bgImg = figureEl.querySelector('.wind-solar-electricity-growth-bg-image');
     const overlayEls = [...wrapper.querySelectorAll('.wind-solar-electricity-growth-overlay')];
     await waitForImage(bgImg);
 

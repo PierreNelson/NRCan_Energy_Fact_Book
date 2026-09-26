@@ -35,6 +35,13 @@ scripts/.env.*
 # SharePoint Excel cache (downloaded workbooks)
 data/sharepoint_cache/
 
+# Scratch / local probe files (do not commit)
+scripts/_tmp*
+scripts/_*.bin
+/_tmp*
+*.tmp
+*.bak
+
 # Python
 
 __pycache__/

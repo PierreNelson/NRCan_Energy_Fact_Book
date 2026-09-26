@@ -467,7 +467,7 @@ const getCompactModeSnapshot = () => window.innerWidth <= 768;
 
 const getCompactModeServerSnapshot = () => false;
 
-const GCHeader = ({ lang, onToggleLanguage }) => {
+const GCHeader = ({ lang, onToggleLanguage, slimMegaMenu = true }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [activeMenu, setActiveMenu] = useState('jobs');
     const [keyboardExpandedMenu, setKeyboardExpandedMenu] = useState(null);
@@ -1335,8 +1335,8 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                 </div>
             </div>
 
-            {/* Menu Bar - Left aligned */}
-            <div className="gc-menu-bar">
+            {/* Menu Bar — omitted when slimMegaMenu (Fact Book keeps FIP only) */}
+            {!slimMegaMenu && <div className="gc-menu-bar">
                 <div className="gc-menu-bar-inner">
                     <button 
                         type="button" 
@@ -1502,7 +1502,7 @@ const GCHeader = ({ lang, onToggleLanguage }) => {
                         </nav>
                     </div>
                 </div>
-            </div>
+            </div>}
 
            {/* Breadcrumb */}
            <nav className="gc-breadcrumb" aria-label={lang === 'en' ? 'You are here' : 'Vous êtes ici'}>

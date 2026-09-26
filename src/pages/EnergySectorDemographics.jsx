@@ -1,10 +1,13 @@
 import React, { useMemo, useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from '../utils/exportTableToDocx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
 import EnergySectorDemographicsInfographic from '../components/EnergySectorDemographicsInfographic';
 import { BUBBLE_KEYS, exportDemographicsInfographicPng } from '../components/EnergySectorDemographicsInfographic.constants';
+import { resolveAccessibleInfographicRoot } from '../utils/downloadInfographicPng';
 
 const YEAR = '2023';
 
@@ -16,11 +19,6 @@ const EnergySectorDemographics = () => {
 
     const pageTitle = getText('energy_sector_demographics_title', lang);
     const ariaLabel = getText('energy_sector_demographics_infographic_aria', lang);
-
-    const bubbleHtml = useMemo(
-        () => Object.fromEntries(BUBBLE_KEYS.map((key) => [key, getText(`energy_sector_demographics_bubble_${key}`, lang)])),
-        [lang],
-    );
 
     const tableRows = useMemo(
         () =>
@@ -98,12 +96,11 @@ const EnergySectorDemographics = () => {
             ],
         });
 
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
+        await saveDocxBlob(`${fileSlugBase}.docx`, doc);
     };
 
     const downloadPng = async () => {
-        const canvas = await exportDemographicsInfographicPng(figureRef.current, {
+        const canvas = await exportDemographicsInfographicPng(resolveAccessibleInfographicRoot(figureRef.current), {
             title: stripHtml(pageTitle),
             scale: 2,
         });
@@ -114,21 +111,13 @@ const EnergySectorDemographics = () => {
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-40 energy-sector-demographics-demographics"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-40 energy-sector-demographics-demographics page-chrome page-chrome--bleed"
             aria-labelledby="energy-sector-demographics-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-40.energy-sector-demographics-demographics {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .energy-sector-demographics-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-sector-demographics-title {
@@ -187,7 +176,7 @@ const EnergySectorDemographics = () => {
                     <EnergySectorDemographicsInfographic
                         figureRef={figureRef}
                         ariaLabel={ariaLabel}
-                        bubbleHtml={bubbleHtml}
+                        lang={lang}
                     />
 
                     <div className="energy-sector-demographics-download-buttons">
@@ -203,7 +192,7 @@ const EnergySectorDemographics = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

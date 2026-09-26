@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import windPowerCanadaBg from '../assets/wind_power_canada_bg.png';
 import { NATIVE_SIZE, OVERLAY_LAYOUT, BG_IMAGE_SCALE } from './CanadianWindPowerInfographic.constants';
 
@@ -100,29 +101,31 @@ const CanadianWindPowerInfographic = ({ capacity, generation, ariaLabel }) => {
     const fonts = OVERLAY_LAYOUT.fonts;
 
     return (
-        <figure className="wind-power-canada-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            as="figure"
+            mode="image"
+            className="wind-power-canada-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={windPowerCanadaBg}
+            imgClassName="wind-power-canada-bg-image"
+            imgStyle={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: `${BG_IMAGE_SCALE * 100}%`,
+                height: 'auto',
+            }}
+        >
             <div
                 className="wind-power-canada-infographic-wrapper"
                 style={{ aspectRatio: `${NATIVE_SIZE.width} / ${NATIVE_SIZE.height}` }}
             >
-                <img
-                    src={windPowerCanadaBg}
-                    alt=""
-                    className="wind-power-canada-bg-image"
-                    style={{
-                        position: 'absolute',
-                        left: '50%',
-                        top: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: `${BG_IMAGE_SCALE * 100}%`,
-                        height: 'auto',
-                    }}
-                />
-
                 <MetricOverlays metricKey="capacity" fonts={fonts} {...capacity} />
                 <MetricOverlays metricKey="generation" fonts={fonts} {...generation} />
             </div>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

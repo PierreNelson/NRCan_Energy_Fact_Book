@@ -2,6 +2,8 @@
 
 import pandas as pd
 
+from sections.section2_indicators._shared import raw_to_dimension_df
+
 from ._statcan import get_economic_contributions_url
 from .constants import ECON_VECTORS
 
@@ -39,17 +41,29 @@ def transform_economic_contributions(processor) -> int:
     df_filtered = df_filtered[df_filtered['vector_norm'].isin(all_vectors)].copy()
     years = sorted(df_filtered['year'].dropna().unique())
 
+    # Capex is stored as publisher-native rows (capex_type|naics). Expand dimensions
+    # the same way section2 capital_expenditures does — the old title-column join
+    # always summed to 0 after the EEDAS/EFB split.
     raw_capex = processor.repo.get_raw_dataframe('capital_expenditures')
     df_capex = None
     if raw_capex is not None and not raw_capex.empty:
-        df_capex = raw_capex.copy()
+        df_capex = raw_to_dimension_df(raw_capex, ['capex_type', 'naics'])
         df_capex['year'] = pd.to_numeric(df_capex['ref_date'], errors='coerce')
-        if 'title' in df_capex.columns:
-            titles = df_capex['title'].astype(str)
+        if 'capex_type' in df_capex.columns:
+            types = df_capex['capex_type'].astype(str)
             df_capex = df_capex[
-                titles.str.contains('Capital expenditures', case=False, na=False)
-                & ~titles.str.contains('Repair construction', case=False, na=False)
+                types.str.contains('Capital expenditures', case=False, na=False)
+                & ~types.str.contains('Repair construction', case=False, na=False)
             ].copy()
+
+    # Exact NAICS labels (avoid bare [211] matching Oil and gas except oil sands [21111]).
+    investment_naics = {
+        'Oil and gas extraction [211]',
+        'Electric power generation, transmission and distribution [2211]',
+        'Natural gas distribution [2212]',
+        'Petroleum and coal product manufacturing [324]',
+        'Pipeline transportation [486]',
+    }
 
     data_rows = []
 
@@ -75,13 +89,10 @@ def transform_economic_contributions(processor) -> int:
         gdp_total = gdp_direct + gdp_indirect
 
         investment_value = 0.0
-        if df_capex is not None and 'title' in df_capex.columns:
+        if df_capex is not None and 'naics' in df_capex.columns:
             year_capex = df_capex[df_capex['year'] == year]
-            investment_mask = year_capex['title'].str.contains(
-                r'\[211\]|\[2211\]|\[2212\]|\[486\]|\[324\]', regex=True, na=False
-            )
+            investment_mask = year_capex['naics'].astype(str).isin(investment_naics)
             investment_value = float(year_capex.loc[investment_mask, value_col].sum())
-
         if any([jobs_total, income_total, gdp_total]):
             year_int = int(year)
             data_rows.extend([

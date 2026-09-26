@@ -1,9 +1,16 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 
 const canada_global_energy_trade_CAT_ORDER = [
     'coal',
@@ -219,21 +226,23 @@ const canada_global_energy_trade_DATA = [
     },
 ];
 
-const stripHtml = (text) =>
-    text ? String(text).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
 const CanadaGlobalEnergyTrade = () => {
     const { lang } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [selectedSegments, setSelectedSegments] = useState(null);
-    const lastClickRef = useRef({ time: 0, curveNumber: null, pointIndex: null });
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedSegments,
+        clear: clearSelection,
+        onPlotClick: handleChartClick,
+        hasSelection,
+    } = usePlotlySelection({
+        mode: 'points',
+        traceCount: canada_global_energy_trade_CAT_ORDER.length * 2,
+        windowWidth,
+    });
     const chartRef = useRef(null);
     /** Slot the chart flex column actually occupies — drives Plotly layout.width (fixes overflow when responsive is off). */
     const chartSlotRef = useRef(null);
     const calloutsRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
     const [arrowMetrics, setArrowMetrics] = useState(null);
     /** Measured width of .canada-global-energy-trade-chart-main (not window.innerWidth — excludes callout column + padding). */
     const [plotSlotWidth, setPlotSlotWidth] = useState(null);
@@ -247,13 +256,6 @@ const CanadaGlobalEnergyTrade = () => {
     const [effectiveZoom, setEffectiveZoom] = useState(1);
 
     const years = useMemo(() => canada_global_energy_trade_DATA.map((r) => r.year), []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        onResize();
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
 
     useLayoutEffect(() => {
         const el = chartSlotRef.current;
@@ -336,7 +338,14 @@ const CanadaGlobalEnergyTrade = () => {
         [lang]
     );
 
-    /** Category rows per year, then a total row for that year (on-page table + DOCX). */
+    const exportChartTitle = stripHtml(getText('canada_global_energy_trade_chart_title', lang));
+    const chartSubtitle = getText('canada_global_energy_trade_chart_subtitle', lang);
+    const unitText = lang === 'en' ? 'billions of dollars' : 'milliards de dollars';
+    /** Title focus speaks the real subtitle wording (not a shortened "$ billions"). */
+    const titleUnitSpoken = stripHtml(chartSubtitle).replace(/^\(|\)$/g, '').trim();
+    const chartTitleSpoken = `${exportChartTitle}, ${titleUnitSpoken}`;
+
+    /** Category rows per year, then a total row for that year (on-page table + CSV/DOCX). */
     const tableRowsWithTotals = useMemo(() => {
         const rows = [];
         for (const r of canada_global_energy_trade_DATA) {
@@ -362,6 +371,13 @@ const CanadaGlobalEnergyTrade = () => {
         return rows;
     }, [lang]);
 
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('canada_global_energy_trade_table_year', lang), align: 'left' },
+        { key: 'categoryLabel', header: getText('canada_global_energy_trade_table_category', lang), align: 'left' },
+        { key: 'exports', header: getText('canada_global_energy_trade_table_exports_b', lang), align: 'num' },
+        { key: 'imports', header: getText('canada_global_energy_trade_table_imports_b', lang), align: 'num' },
+    ], [lang]);
+
     const syncCalloutArrows = useCallback(() => {
         const calloutsEl = calloutsRef.current;
         const gd = chartRef.current?.querySelector('.js-plotly-plot');
@@ -382,197 +398,25 @@ const CanadaGlobalEnergyTrade = () => {
         });
     }, []);
 
-    const downloadChartWithTitle = useCallback(async () => {
-        const plotElement = chartRef?.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const title = stripHtml(getText('canada_global_energy_trade_chart_title', lang));
-            const imgData = await window.Plotly.toImage(plotElement, { format: 'png', width: 1200, height: 720, scale: 2 });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#000000';
-                ctx.font = 'bold 22px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 36);
-                ctx.drawImage(img, 0, titleHeight);
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${canadaGlobalEnergyTradeExportStem}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (e) {
-            console.error(e);
-        }
-    }, [lang, canadaGlobalEnergyTradeExportStem]);
-
-    const downloadTableAsCSV = useCallback(() => {
-        const yLabel = getText('canada_global_energy_trade_table_year', lang);
-        const expS = getText('canada_global_energy_trade_table_csv_exp_suffix', lang);
-        const impS = getText('canada_global_energy_trade_table_csv_imp_suffix', lang);
-        const headers = [
-            yLabel,
-            ...canada_global_energy_trade_CAT_ORDER.flatMap((key) => {
-                const cat = getText(`canada_global_energy_trade_cat_${key}`, lang);
-                return [`"${cat} — ${expS}"`, `"${cat} — ${impS}"`];
-            }),
-            `"${getText('canada_global_energy_trade_table_total_exports', lang)}"`,
-            `"${getText('canada_global_energy_trade_table_total_imports', lang)}"`,
-        ];
-        const lines = [
-            headers.join(','),
-            ...canada_global_energy_trade_DATA.map((row) => {
-                const cells = [
-                    row.year,
-                    ...canada_global_energy_trade_CAT_ORDER.flatMap((key) => [formatBillions(row[`exp_${key}`]), formatBillions(row[`imp_${key}`])]),
-                    formatBillions(row.totalExp),
-                    formatBillions(row.totalImp),
-                ];
-                return cells.join(',');
-            }),
-        ];
-        const csv = lines.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${canadaGlobalEnergyTradeExportStem}.csv`;
-        link.click();
-        URL.revokeObjectURL(link.href);
-    }, [lang, canadaGlobalEnergyTradeExportStem, formatBillions]);
-
-    const downloadTableAsDocx = useCallback(async () => {
-        const heading = stripHtml(getText('canada_global_energy_trade_title', lang));
-        const yLabel = getText('canada_global_energy_trade_table_year', lang);
-        const cLabel = getText('canada_global_energy_trade_table_category', lang);
-        const eLabel = getText('canada_global_energy_trade_table_exports_b', lang);
-        const iLabel = getText('canada_global_energy_trade_table_imports_b', lang);
-        const headerShade = { fill: 'E6E6E6' };
-        const headerCells = [
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: yLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: cLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: eLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: iLabel, bold: true, size: 22 })],
-                        alignment: AlignmentType.CENTER,
-                    }),
-                ],
-                shading: headerShade,
-            }),
-        ];
-        const dataRows = tableRowsWithTotals.map((row) => {
-            const bold = row.rowKind === 'total';
-            const cell = (text, align, isBold) =>
-                new TableCell({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text, bold: isBold, size: 22 })],
-                            alignment: align,
-                        }),
-                    ],
-                });
-            return new TableRow({
-                children: [
-                    cell(String(row.year), AlignmentType.CENTER, bold),
-                    cell(row.categoryLabel, AlignmentType.LEFT, bold),
-                    cell(formatBillions(row.exports), AlignmentType.RIGHT, bold),
-                    cell(formatBillions(row.imports), AlignmentType.RIGHT, bold),
-                ],
-            });
-        });
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: heading, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [1200, 4000, 2200, 2200],
-                            rows: [new TableRow({ children: headerCells }), ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${canadaGlobalEnergyTradeExportStem}.docx`);
-    }, [lang, canadaGlobalEnergyTradeExportStem, tableRowsWithTotals, formatBillions]);
-
-    const plotConfig = useMemo(
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
         () => ({
-            displayModeBar: true,
-            displaylogo: false,
-            responsive: false,
-            scrollZoom: false,
-            doubleClick: false,
-            modeBarButtonsToRemove: [
-                'pan2d',
-                'select2d',
-                'lasso2d',
-                'zoom2d',
-                'zoomIn2d',
-                'zoomOut2d',
-                'autoScale2d',
-                'resetScale2d',
-                'toImage',
-            ],
-            modeBarButtonsToAdd: [
-                {
-                    name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                    icon: {
-                        width: 24,
-                        height: 24,
-                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                    },
-                    click: () => {
-                        downloadChartWithTitle();
-                    },
-                },
-            ],
-        }),
-        [lang, downloadChartWithTitle]
+        filename: `${canadaGlobalEnergyTradeExportStem}.png`,
+        title: exportChartTitle,
+        height: 720,
+    }),
+        [canadaGlobalEnergyTradeExportStem, exportChartTitle],
     );
 
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
+
     const plotBundle = useMemo(() => {
-        const segKey = (curveNumber, pointIndex) => `${curveNumber}:${pointIndex}`;
         const barOpacityForTrace = (curveNumber) =>
             years.map((_, pointIndex) =>
-                selectedSegments === null || selectedSegments.has(segKey(curveNumber, pointIndex)) ? 1 : 0.35
+                selectedSegments === null || selectedSegments[curveNumber]?.includes(pointIndex) ? 1 : 0.35
             );
 
         const traces = [];
@@ -791,36 +635,6 @@ const CanadaGlobalEnergyTrade = () => {
         };
     }, [lang]);
 
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll || !isTableOpen) return;
-        const syncTopToTable = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-        const handleTop = () => {
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-        };
-        const handleTable = () => {
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-        };
-        topScroll.addEventListener('scroll', handleTop);
-        tableScroll.addEventListener('scroll', handleTable);
-        syncTopToTable();
-        const ro = new ResizeObserver(() => window.requestAnimationFrame(syncTopToTable));
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) ro.observe(tableEl);
-        ro.observe(tableScroll);
-        return () => {
-            topScroll.removeEventListener('scroll', handleTop);
-            tableScroll.removeEventListener('scroll', handleTable);
-            ro.disconnect();
-        };
-    }, [isTableOpen, windowWidth, tableRowsWithTotals.length]);
-
     const scheduleArrowSync = useCallback(() => {
         requestAnimationFrame(() => {
             setTimeout(syncCalloutArrows, 0);
@@ -885,39 +699,37 @@ const CanadaGlobalEnergyTrade = () => {
         [lang, useVerticalCalloutLabels, useShortCalloutLabels]
     );
 
-    const handleChartClick = (data) => {
-        if (!data.points?.length) return;
-        const pt = data.points[0];
-        const pointIndex = pt.pointIndex;
-        const curveNumber = pt.curveNumber;
-        if (pointIndex == null || curveNumber == null) return;
-
-        const key = `${curveNumber}:${pointIndex}`;
-
-        if (windowWidth <= 768) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const sameSeg =
-                pointIndex === last.pointIndex && curveNumber === last.curveNumber;
-            const doubleTap = sameSeg && now - last.time < 300;
-            lastClickRef.current = { time: now, pointIndex, curveNumber };
-            if (!doubleTap) return;
-        }
-
-        setSelectedSegments((prev) => {
-            if (prev === null) return new Set([key]);
-            const next = new Set(prev);
-            if (next.has(key)) {
-                next.delete(key);
-                return next.size === 0 ? null : next;
-            }
-            next.add(key);
-            return next;
+    const getChartSummary = () => {
+        const totalExportsLabel = lang === 'en' ? 'Total exports' : 'Total des exportations';
+        const totalImportsLabel = lang === 'en' ? 'Total imports' : 'Total des importations';
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                {
+                    name: totalExportsLabel,
+                    values: canada_global_energy_trade_DATA.map((r) => r.totalExp),
+                    format: (v) => `${formatBillions(v)} ${unitText}`,
+                },
+                {
+                    name: totalImportsLabel,
+                    values: canada_global_energy_trade_DATA.map((r) => r.totalImp),
+                    format: (v) => `${formatBillions(v)} ${unitText}`,
+                },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Bar chart of Canada's global energy trade across ${years[0]}–${years[years.length - 1]}`
+                : `Graphique à barres du commerce énergétique mondial du Canada de ${years[0]} à ${years[years.length - 1]}`,
+            body,
+            lang,
         });
     };
+    const chartRegionLabel = `${getText('canada_global_energy_trade_chart_aria', lang)}. ${getChartSummary()}`;
 
     return (
-        <main
+        <PageShell
             id="main-content"
             tabIndex="-1"
             className="page-content page-15"
@@ -963,15 +775,24 @@ const CanadaGlobalEnergyTrade = () => {
     font-weight: bold;
     color: var(--gc-text);
     text-align: center;
-    margin: 0 0 5px 0;
+    margin: 0 0 15px 0;
     padding-left: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 .canada-global-energy-trade-chart-subtitle {
-    font-family: 'Noto Sans', sans-serif;
-    font-size: clamp(16px, 2.4vw, 20px);
+    display: block;
+    font-family: 'Noto Sans', sans-serif !important;
+    font-size: clamp(16px, 2.4vw, 20px) !important;
+    font-weight: 400 !important;
     color: var(--gc-text);
     text-align: center;
-    margin: 0 0 15px 0;
+    margin: 5px 0 0 0 !important;
 }
 .canada-global-energy-trade-chart-row {
     display: flex;
@@ -1179,27 +1000,10 @@ const CanadaGlobalEnergyTrade = () => {
     clear: both;
     position: relative;
 }
-.canada-global-energy-trade-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.canada-global-energy-trade-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.canada-global-energy-trade-table-wrapper details > summary:hover { background-color: #404040 !important; }
 .canada-global-energy-trade-table-wrapper button[type="button"]:hover,
 .canada-global-energy-trade-table-wrapper button:hover,
 .canada-global-energy-trade-chart-frame button[type="button"]:hover,
 .canada-global-energy-trade-chart-frame button:hover { background-color: #404040 !important; }
-.canada-global-energy-trade-table-wrapper .table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; }
-.canada-global-energy-trade-table-wrapper .table-responsive table { width: max-content; min-width: 100%; border-collapse: collapse; }
 .canada-global-energy-trade-summary {
     font-family: 'Noto Sans', sans-serif;
     font-size: 20px;
@@ -1223,29 +1027,21 @@ const CanadaGlobalEnergyTrade = () => {
             `}</style>
             <div className="canada-global-energy-trade-container">
                 <div className="canada-global-energy-trade-chart-frame">
-                    <h1 id="canada-global-energy-trade-heading" className="canada-global-energy-trade-chart-title">
-                        {getText('canada_global_energy_trade_chart_title', lang)}
+                    <h1
+                        id="canada-global-energy-trade-heading"
+                        className="canada-global-energy-trade-chart-title"
+                        aria-labelledby="canada-global-energy-trade-heading-spoken"
+                    >
+                        <span id="canada-global-energy-trade-heading-spoken" className="wb-inv">
+                            {chartTitleSpoken}
+                        </span>
+                        <span aria-hidden="true">{getText('canada_global_energy_trade_chart_title', lang)}</span>
+                        <span className="canada-global-energy-trade-chart-subtitle" aria-hidden="true">
+                            {chartSubtitle}
+                        </span>
                     </h1>
-                    <p className="canada-global-energy-trade-chart-subtitle">{getText('canada_global_energy_trade_chart_subtitle', lang)}</p>
-                    {selectedSegments !== null && (
-                        <div style={{ marginBottom: 8, textAlign: 'center' }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedSegments(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
+                    {hasSelection && (
+                        <ClearSelectionButton lang={lang} onClick={clearSelection} />
                     )}
                     <div
                         className="canada-global-energy-trade-chart-row"
@@ -1259,7 +1055,7 @@ const CanadaGlobalEnergyTrade = () => {
                             ref={chartSlotRef}
                             className="canada-global-energy-trade-map-wrap canada-global-energy-trade-chart-main"
                             role="region"
-                            aria-label={getText('canada_global_energy_trade_chart_aria', lang)}
+                            aria-label={chartRegionLabel}
                             tabIndex="0"
                             style={{ minHeight: plotBundle.layout.height }}
                         >
@@ -1333,151 +1129,25 @@ const CanadaGlobalEnergyTrade = () => {
                         </div>
                     </div>
                     <div className="canada-global-energy-trade-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginBottom: 0,
-                                    display: windowWidth <= 768 ? 'none' : 'block',
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                style={{ borderTop: 'none', padding: '15px' }}
-                                tabIndex="0"
-                            >
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{stripHtml(getText('canada_global_energy_trade_chart_title', lang))}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd' }}>
-                                                {getText('canada_global_energy_trade_table_year', lang)}
-                                            </th>
-                                            <th scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd' }}>
-                                                {getText('canada_global_energy_trade_table_category', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    padding: '10px',
-                                                    border: '1px solid #ddd',
-                                                    textAlign: 'right',
-                                                }}
-                                            >
-                                                {getText('canada_global_energy_trade_table_exports_b', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    fontWeight: 'bold',
-                                                    padding: '10px',
-                                                    border: '1px solid #ddd',
-                                                    textAlign: 'right',
-                                                }}
-                                            >
-                                                {getText('canada_global_energy_trade_table_imports_b', lang)}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tableRowsWithTotals.map((row, idx) => {
-                                            const isTotal = row.rowKind === 'total';
-                                            const w = isTotal ? 'bold' : 'normal';
-                                            return (
-                                                <tr key={`${row.year}-${row.categoryKey}-${idx}`}>
-                                                    <td
-                                                        style={{
-                                                            padding: '8px',
-                                                            border: '1px solid #ddd',
-                                                            textAlign: 'center',
-                                                            fontWeight: w,
-                                                        }}
-                                                    >
-                                                        {row.year}
-                                                    </td>
-                                                    <th
-                                                        scope="row"
-                                                        style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}
-                                                    >
-                                                        {row.categoryLabel}
-                                                    </th>
-                                                    <td
-                                                        style={{
-                                                            padding: '8px',
-                                                            border: '1px solid #ddd',
-                                                            textAlign: 'right',
-                                                            fontWeight: w,
-                                                        }}
-                                                    >
-                                                        {formatBillions(row.exports)}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: '8px',
-                                                            border: '1px solid #ddd',
-                                                            textAlign: 'right',
-                                                            fontWeight: w,
-                                                        }}
-                                                    >
-                                                        {formatBillions(row.imports)}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={downloadTableAsCSV}
-                                        style={{
-                                            padding: '8px 16px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontWeight: 'bold',
-                                            color: '#ffffff',
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={downloadTableAsDocx}
-                                        style={{
-                                            padding: '8px 16px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontWeight: 'bold',
-                                            color: '#ffffff',
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRowsWithTotals}
+                            csvFilename={`${canadaGlobalEnergyTradeExportStem}.csv`}
+                            docx={{
+                                filename: `${canadaGlobalEnergyTradeExportStem}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1200, 4000, 2200, 2200],
+                                fontSize: 22,
+                            }}
+                            caption={exportChartTitle}
+                            tableAriaLabel={exportChartTitle}
+                            renderCell={(raw, { row, colIndex }) => {
+                                const text = colIndex <= 1 ? String(raw ?? '') : formatBillions(raw);
+                                return row.rowKind === 'total' ? <strong>{text}</strong> : text;
+                            }}
+                        />
                     </div>
                 </div>
                 <p className="canada-global-energy-trade-summary canada-global-energy-trade-summary--below-frame">
@@ -1488,7 +1158,7 @@ const CanadaGlobalEnergyTrade = () => {
                     {getText('canada_global_energy_trade_summary_after', lang)}
                 </p>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

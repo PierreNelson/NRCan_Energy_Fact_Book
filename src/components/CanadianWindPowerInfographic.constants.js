@@ -80,7 +80,7 @@ export const exportCanadianWindInfographicPng = async (figureEl, { scale = 2 }) 
             img.onerror = reject;
         });
 
-    const bgImg = wrapper.querySelector('.wind-power-canada-bg-image');
+    const bgImg = figureEl.querySelector('.wind-power-canada-bg-image');
     const overlayEls = [...wrapper.querySelectorAll('.wind-power-canada-overlay')];
     await waitForImage(bgImg);
 

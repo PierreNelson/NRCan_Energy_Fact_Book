@@ -1,4 +1,5 @@
 import React from 'react';
+import PageShell from './PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 
@@ -9,7 +10,7 @@ const Glossary = () => {
         `${import.meta.env.BASE_URL}glossary/data-gallery.html`;
 
     return (
-        <main id="main-content" tabIndex="-1" className="page-content">
+        <PageShell tabIndex="-1" className="page-content">
             <style>{`
                 .glossary-landing {
                     max-width: 1140px;
@@ -67,7 +68,7 @@ const Glossary = () => {
                 </a>
                 <p className="glossary-secondary-note">{getText('glossary_note', lang)}</p>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import canadianCrudeReservesBg from '../assets/canadian_crude_reserves_bg.png';
 import { LABEL_SLOTS, NATIVE_SIZE, OVERLAY_COLORS, VALUE_SLOTS } from './CanadianCrudeReservesInfographic.constants';
 
@@ -58,9 +59,19 @@ const CanadianCrudeReservesInfographic = ({
     const valueSlots = VALUE_SLOTS;
 
     return (
-        <figure ref={figureRef} className="canadian-crude-reserves-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="canadian-crude-reserves-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={canadianCrudeReservesBg}
+            imgClassName="canadian-crude-reserves-bg-image"
+        >
             <style>{`
 .canadian-crude-reserves-infographic-figure {
+    position: relative;
     width: 100%;
     max-width: 520px;
     margin: 0 auto 20px auto;
@@ -122,8 +133,6 @@ const CanadianCrudeReservesInfographic = ({
             `}</style>
 
             <div className="canadian-crude-reserves-infographic-wrapper">
-                <img src={canadianCrudeReservesBg} alt="" className="canadian-crude-reserves-bg-image" draggable={false} />
-
                 <OverlayLabel
                     left={labelSlots.canada_total.left}
                     top={labelSlots.canada_total.top}
@@ -219,7 +228,7 @@ const CanadianCrudeReservesInfographic = ({
                     size={valueSlots.insitu_bb.size}
                 />
             </div>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

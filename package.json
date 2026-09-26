@@ -4,33 +4,61 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:bundle": "node scripts/check-bundle-budget.mjs",
+    "audit:ci": "npm audit --audit-level=high",
+    "audit:charts": "node scripts/audit-chart-alternatives.mjs",
+    "audit:sr-content": "node scripts/audit-sr-content-visibility.mjs",
+    "audit:chart-summaries": "node scripts/audit-chart-spoken-summary.mjs",
+    "audit:page-chrome": "node scripts/audit-no-page-docx-boilerplate.mjs",
+    "compress:assets": "node scripts/compress-png-assets.mjs",
+    "test:a11y-routes": "vitest run src/test/a11yRoutes.test.jsx",
+    "lighthouse:ci": "node scripts/lighthouse-ci.mjs"
   },
   "dependencies": {
     "docx": "^9.5.1",
+    "dompurify": "^3.4.14",
     "file-saver": "^2.0.5",
     "lucide-react": "^0.562.0",
     "plotly.js-dist-min": "^3.3.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-plotly.js": "^2.6.0",
-    "react-router-dom": "^7.11.0"
+    "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@fontsource/lato": "^5.3.0",
+    "@fontsource/noto-sans": "^5.3.0",
+    "@fontsource/noto-sans-canadian-aboriginal": "^5.3.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "axe-core": "^4.13.0",
     "eslint": "^9.39.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "fs-extra": "^11.3.3",
     "globals": "^16.5.0",
+    "jsdom": "^29.1.1",
+    "chrome-launcher": "^1.1.2",
+    "lighthouse": "^12.1.0",
     "papaparse": "^5.5.3",
-    "vite": "^7.2.4"
+    "sharp": "^0.35.4",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7",
+    "vitest-axe": "^0.1.0"
   }
 }

@@ -1,16 +1,32 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import PageFootnotes from '../components/PageFootnotes';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
+import YearSelect from '../components/YearSelect';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCanadianCrudeProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import hexToRgba from '../utils/hexToRgba';
 import CanadianCrudeProductionInfographic from '../components/CanadianCrudeProductionInfographic';
 import {
     PROVINCE_ORDER,
     exportCanadianProductionInfographicPng,
 } from '../components/CanadianCrudeProductionInfographic.constants';
+import { resolveAccessibleInfographicRoot } from '../utils/downloadInfographicPng';
 import { getOtherFootnoteKeys } from '../utils/buildCanadianProductionBarrelSvg';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
 
 const COLORS = {
     conventional: '#3C95C8',
@@ -38,40 +54,19 @@ const createInitialViewportZoom = () => {
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
 const CanadianCrudeProduction = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isChartTableOpen, setIsChartTableOpen] = useState(false);
-    const [isInfographicTableOpen, setIsInfographicTableOpen] = useState(false);
     const [selectedTraceIds, setSelectedTraceIds] = useState(null);
     const [selectedYear, setSelectedYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [viewportZoom, setViewportZoom] = useState(createInitialViewportZoom);
     const chartRef = useRef(null);
     const zoomBaselineRef = useRef(null);
     const infographicFigureRef = useRef(null);
     const lastClickRef = useRef({ time: 0, traceIndex: null });
-    const yearButtonRef = useRef(null);
-    const yearDropdownRef = useRef(null);
-    const chartTableTopRef = useRef(null);
-    const chartTableScrollRef = useRef(null);
-    const chartTableBottomRef = useRef(null);
-    const infographicTableTopRef = useRef(null);
-    const infographicTableScrollRef = useRef(null);
-    const infographicTableBottomRef = useRef(null);
-
-    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
     const pageZoomForLayout = Math.max(
         viewportZoom.cssZoomFactor,
@@ -94,36 +89,26 @@ const CanadianCrudeProduction = () => {
     const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
     const axisTitleFont = { size: windowWidth <= 768 ? 16 : 18, family: 'Arial, sans-serif', color: '#58585a' };
 
-    const formatNumber = (value, digits = 0) => {
-        if (value == null || Number.isNaN(Number(value))) return '–';
-        return Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-    };
+    const formatNumber = (value, digits = 0) => formatLocaleNumber(value, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
 
-    const formatPct = (value, digits = 1) => {
-        if (value == null || Number.isNaN(Number(value))) return '–';
-        return Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-    };
+    const formatPct = (value, digits = 1) => formatLocalePct(value, lang, {
+        suffix: false,
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
 
     const formatMmbd = (value, digits = 1) => formatNumber(value, digits);
 
     const formatHoverMmbd = (value, digits = 1) => {
         const formatted = formatMmbd(value, digits);
-        if (formatted === '–') return formatted;
+        if (formatted === '—') return formatted;
         return lang === 'fr' ? formatted.replace('.', ',') : formatted;
     };
 
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const scrollToElement = (id) => (event) => {
-        event?.preventDefault();
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToElement = (id) => makeScrollToIdHandler(id);
 
     const getProvinceLabel = useCallback(
         (key) => getText(`canadian_production_prov_${key}`, lang),
@@ -139,7 +124,6 @@ const CanadianCrudeProduction = () => {
 
     useEffect(() => {
         const syncViewport = () => {
-            setWindowWidth(window.innerWidth);
 
             const inner = window.innerWidth;
             const outer = window.outerWidth;
@@ -194,119 +178,15 @@ const CanadianCrudeProduction = () => {
         return result.selectorYears[0];
     }, [result, selectedYear]);
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const syncTableScroll = useCallback((topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    const bindTableScrollSync = useCallback((isOpen, topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isOpen) return undefined;
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(() => syncTableScroll(topRef, scrollRef, bottomRef));
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [syncTableScroll]);
-
-    useEffect(
-        () => bindTableScrollSync(isChartTableOpen, chartTableTopRef, chartTableScrollRef, chartTableBottomRef),
-        [isChartTableOpen, windowWidth, result, bindTableScrollSync],
-    );
-
-    useEffect(
-        () => bindTableScrollSync(
-            isInfographicTableOpen,
-            infographicTableTopRef,
-            infographicTableScrollRef,
-            infographicTableBottomRef,
-        ),
-        [isInfographicTableOpen, windowWidth, result, bindTableScrollSync],
-    );
-
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedTraceIds, result]);
-
-    const chartTableRows = useMemo(
-        () => (result?.production ? [...result.production].sort((a, b) => b.year - a.year) : []),
-        [result],
-    );
+    const chartTableRows = result?.production ?? [];
 
     const infographicTableRows = useMemo(
-        () => (result?.provinces ? [...result.provinces].sort((a, b) => b.year - a.year) : []),
+        () => (result?.provinces ?? []).map((row) => ({
+            year: row.year,
+            ...Object.fromEntries(
+                PROVINCE_ORDER.map((key) => [key, row.provinces?.[key]?.sharePct]),
+            ),
+        })),
         [result],
     );
 
@@ -337,6 +217,7 @@ const CanadianCrudeProduction = () => {
     const provinceOverlayValues = selectedProvinceRow?.provinces ?? null;
 
     const chartTitle = getText('canadian_production_chart_title', lang);
+    const exportChartTitle = stripHtml(`${chartTitle} (${chartStartYear}–${chartEndYear})`);
     const infographicTitleBase = substitute(getText('canadian_production_infographic_title', lang), textVars);
 
     const chartDownloadSlug = substitute(getText('canadian_production_download_title', lang), textVars)
@@ -348,21 +229,33 @@ const CanadianCrudeProduction = () => {
     const infographicPngSlug = substitute(getText('canadian_production_infographic_png_slug', lang), { year: year ?? '' })
         .replace(/\s+/g, '_');
 
-    const chartTableHeaders = [
-        getText('canadian_production_table_col_year', lang),
-        getText('canadian_production_table_col_oil_sands_m3', lang),
-        getText('canadian_production_table_col_conventional_m3', lang),
-        getText('canadian_production_table_col_total_m3', lang),
-        getText('canadian_production_table_col_oil_sands_mmbd', lang),
-        getText('canadian_production_table_col_conventional_mmbd', lang),
-        getText('canadian_production_table_col_total_mmbd', lang),
-        getText('canadian_production_table_col_share', lang),
-    ];
+    const tableCaption = substitute(getText('canadian_production_table_caption', lang), textVars);
+    const infographicTableCaption = substitute(
+        getText('canadian_production_infographic_table_caption', lang),
+        textVars,
+    );
+    const exportTableTitle = stripHtml(tableCaption);
+    const exportInfographicTableTitle = stripHtml(infographicTableCaption);
 
-    const infographicTableHeaders = [
-        getText('canadian_production_table_col_year', lang),
-        ...PROVINCE_ORDER.map((key) => getText(`canadian_production_table_col_${key}`, lang)),
-    ];
+    const chartTableColumns = useMemo(() => [
+        { key: 'year', header: getText('canadian_production_table_col_year', lang), align: 'left' },
+        { key: 'oilSandsThousandM3', header: getText('canadian_production_table_col_oil_sands_m3', lang), align: 'num' },
+        { key: 'conventionalThousandM3', header: getText('canadian_production_table_col_conventional_m3', lang), align: 'num' },
+        { key: 'totalThousandM3', header: getText('canadian_production_table_col_total_m3', lang), align: 'num' },
+        { key: 'oilSandsMmbd', header: getText('canadian_production_table_col_oil_sands_mmbd', lang), align: 'num' },
+        { key: 'conventionalMmbd', header: getText('canadian_production_table_col_conventional_mmbd', lang), align: 'num' },
+        { key: 'totalMmbd', header: getText('canadian_production_table_col_total_mmbd', lang), align: 'num' },
+        { key: 'sharePct', header: getText('canadian_production_table_col_share', lang), align: 'num' },
+    ], [lang]);
+
+    const infographicColumns = useMemo(() => [
+        { key: 'year', header: getText('canadian_production_table_col_year', lang), align: 'left' },
+        ...PROVINCE_ORDER.map((key) => ({
+            key,
+            header: getText(`canadian_production_table_col_${key}`, lang),
+            align: 'num',
+        })),
+    ], [lang]);
 
     const years = result?.production?.map((row) => row.year) ?? [];
     const yearTicks = years.filter((yearValue) => yearValue % 2 === 0);
@@ -417,209 +310,31 @@ const CanadianCrudeProduction = () => {
         [windowWidth],
     );
 
-    const downloadChartPng = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) return;
-        const title = `${chartTitle} (${chartStartYear}–${chartEndYear})`;
-        try {
-            if (!window.Plotly) return;
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 700,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 100;
-                const legendHeight = 56;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 36;
-                const legendItems = [
-                    { color: COLORS.conventional, label: conventionalLabel, type: 'box' },
-                    { color: COLORS.oilSands, label: oilSandsLabel, type: 'box' },
-                ];
-                const totalWidth = legendItems.length * 320;
-                let x = (canvas.width - totalWidth) / 2 + 20;
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'left';
-                legendItems.forEach((item) => {
-                    ctx.fillStyle = item.color;
-                    ctx.fillRect(x, legendY - 14, 24, 24);
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(item.label, x + 36, legendY + 6);
-                    x += 320;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${chartDownloadSlug}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: 700,
+        legendItems: [
+            { label: conventionalLabel, color: COLORS.conventional },
+            { label: oilSandsLabel, color: COLORS.oilSands },
+        ],
+    }),
+        [COLORS, chartDownloadSlug, conventionalLabel, exportChartTitle, oilSandsLabel],
+    );
 
-    const downloadChartCsv = () => {
-        const header = chartTableHeaders.map(csvEscape).join(',');
-        const rows = chartTableRows.map((row) =>
-            [
-                row.year,
-                formatNumber(row.oilSandsThousandM3, 1),
-                formatNumber(row.conventionalThousandM3, 1),
-                formatNumber(row.totalThousandM3, 1),
-                formatMmbd(row.oilSandsMmbd, 1),
-                formatMmbd(row.conventionalMmbd, 1),
-                formatMmbd(row.totalMmbd, 1),
-                formatPct(row.sharePct, 0),
-            ].map(csvEscape).join(','),
-        );
-        const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${chartDownloadSlug}.csv`);
-    };
-
-    const downloadChartDocx = async () => {
-        const headerRow = new TableRow({
-            children: chartTableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })] })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = chartTableRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        row.year,
-                        formatNumber(row.oilSandsThousandM3, 1),
-                        formatNumber(row.conventionalThousandM3, 1),
-                        formatNumber(row.totalThousandM3, 1),
-                        formatMmbd(row.oilSandsMmbd, 1),
-                        formatMmbd(row.conventionalMmbd, 1),
-                        formatMmbd(row.totalMmbd, 1),
-                        formatPct(row.sharePct, 0),
-                    ].map((value, index) =>
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(value), size: 18 })],
-                                    alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                    ),
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: substitute(getText('canadian_production_table_caption', lang), textVars),
-                                    bold: true,
-                                    size: 28,
-                                }),
-                            ],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 1400, 1500, 1200, 1300, 1500, 1200, 1300],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${chartDownloadSlug}.docx`);
-    };
-
-    const downloadInfographicCsv = () => {
-        const header = infographicTableHeaders.map(csvEscape).join(',');
-        const rows = infographicTableRows.map((row) =>
-            [
-                row.year,
-                ...PROVINCE_ORDER.map((key) => formatPct(row.provinces[key]?.sharePct, 1)),
-            ].map(csvEscape).join(','),
-        );
-        const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${infographicDownloadSlug}.csv`);
-    };
-
-    const downloadInfographicDocx = async () => {
-        const headerRow = new TableRow({
-            children: infographicTableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })] })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = infographicTableRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        row.year,
-                        ...PROVINCE_ORDER.map((key) => formatPct(row.provinces[key]?.sharePct, 1)),
-                    ].map((value, index) =>
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(value), size: 18 })],
-                                    alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                    ),
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: substitute(getText('canadian_production_infographic_table_caption', lang), textVars),
-                                    bold: true,
-                                    size: 28,
-                                }),
-                            ],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 1100, 1300, 2200, 1100, 1600, 900],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${infographicDownloadSlug}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('canadian_production_download_chart', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportCanadianProductionInfographicPng(infographicFigureRef.current, { scale: 2 });
+        const canvas = await exportCanadianProductionInfographicPng(
+            resolveAccessibleInfographicRoot(infographicFigureRef.current),
+            { scale: 2 },
+        );
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${infographicPngSlug}.png`);
@@ -633,49 +348,46 @@ const CanadianCrudeProduction = () => {
             : `Autres : ${otherFootnoteKeys.map((key) => getProvinceLabel(key)).join(', ')}.`)
         : null;
 
-    if (loading) return <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>;
-    if (error) return <p>{error}</p>;
+    if (loading || error) return <PageStatus lang={lang} loading={loading} error={error} />;
     if (!result?.production?.length || !selectedYearRow || !selectedProvinceRow) {
         return <p>{getText('canadian_production_no_data', lang)}</p>;
     }
 
+    const getChartSummary = () => {
+        const cats = years;
+        const body = summarizeByCategory({
+            categories: cats,
+            series: [
+                { name: conventionalLabel, values: conventionalValues, format: (v) => formatMmbd(v, 1) },
+                { name: oilSandsLabel, values: oilSandsValues, format: (v) => formatMmbd(v, 1) },
+                { name: totalLabel, values: totalValues, format: (v) => formatMmbd(v, 1) },
+            ].filter((ser) => Array.isArray(ser.values)),
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en' ? 'Chart of Canadian crude oil production' : 'Graphique de la production canadienne de pétrole brut',
+            body,
+            lang,
+        });
+    };
+    const chartRegionLabel = `${stripHtml(chartTitle)}. ${getChartSummary()}`;
+
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content page-111 canadian-crude-production-canadian-production"
+            className="page-content page-111 canadian-crude-production-canadian-production page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="canadian-crude-production-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-111.canadian-crude-production-canadian-production {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .canadian-crude-production-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .canadian-crude-production-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin: 0 0 20px 0;
+    margin-bottom: 20px;
     line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
     text-transform: none;
-}
-.canadian-crude-production-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .canadian-crude-production-intro {
     font-family: var(--font-body);
@@ -686,21 +398,9 @@ const CanadianCrudeProduction = () => {
     max-width: none;
 }
 .canadian-crude-production-intro p { margin: 0 0 0.65rem 0; }
-.canadian-crude-production-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-sizing: border-box;
-    overflow: visible;
-}
 .canadian-crude-production-chart-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 29px;
-    font-weight: bold;
     color: var(--gc-text);
-    text-align: center;
-    margin: 0 0 12px 0;
+    margin-bottom: 12px;
     text-transform: none;
 }
 .canadian-crude-production-chart-figure {
@@ -731,41 +431,7 @@ const CanadianCrudeProduction = () => {
 }
 .canadian-crude-production-table-wrapper { display: block; width: 100%; margin-top: 20px; }
 .canadian-crude-production-infographic-table-wrapper { margin-bottom: 0; }
-.canadian-crude-production-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    cursor: pointer;
-    list-style: none;
-}
-.canadian-crude-production-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.canadian-crude-production-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.canadian-crude-production-table-scrollbar > div { height: 20px; }
-.canadian-crude-production-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.canadian-crude-production-table-responsive::-webkit-scrollbar { display: none; }
-.canadian-crude-production-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.canadian-crude-production-table-responsive th, .canadian-crude-production-table-responsive td {
-    white-space: nowrap;
-    padding: 8px 12px;
-    font-family: Arial, sans-serif;
-    color: var(--gc-text);
-    border: 1px solid #ddd;
-}
-.canadian-crude-production-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+.canadian-crude-production-download-buttons { display: flex; gap: 10px; margin: 12px 0 20px; flex-wrap: wrap; }
 .canadian-crude-production-download-buttons button {
     padding: 8px 16px;
     border: 1px solid #404040;
@@ -773,10 +439,12 @@ const CanadianCrudeProduction = () => {
     background: #8C8C8C;
     cursor: pointer;
     font-family: Arial, sans-serif;
+    font-size: 14px;
     font-weight: bold;
     color: #ffffff;
 }
-.canadian-crude-production-table-wrapper summary:hover, .canadian-crude-production-download-buttons button:hover, .canadian-crude-production-chart-frame button[type="button"]:hover { background-color: #404040 !important; }
+.canadian-crude-production-download-buttons button:hover,
+.canadian-crude-production-chart-frame button[type="button"]:hover { background-color: #404040 !important; }
 .canadian-crude-production-footnotes {
     font-family: var(--font-body);
     font-size: 1rem;
@@ -794,135 +462,24 @@ const CanadianCrudeProduction = () => {
 }
 .canadian-crude-production-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
 @media (max-width: 768px) {
-    .canadian-crude-production-title { font-size: 37px; }
-    .canadian-crude-production-chart-title, .canadian-crude-production-infographic-heading { font-size: 26px; }
+    .canadian-crude-production-infographic-heading { font-size: 26px; }
     .canadian-crude-production-intro { font-size: 18px; }
 }
             `}</style>
 
             <div className="canadian-crude-production-inner">
-                <h1 id="canadian-crude-production-title" className="canadian-crude-production-title">{getText('canadian_production_title', lang)}</h1>
+                <h1 id="canadian-crude-production-title" className="canadian-crude-production-title page-chrome-title">{getText('canadian_production_title', lang)}</h1>
 
-                <div
-                    ref={yearDropdownRef}
-                    style={{ position: 'relative', marginBottom: '20px', width: '200px' }}
-                >
-                    <label
-                        htmlFor="canadian-crude-production-year-button"
-                        style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}
-                    >
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    <button
-                        ref={yearButtonRef}
-                        id="canadian-crude-production-year-button"
-                        type="button"
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        aria-haspopup="listbox"
-                        aria-label={year != null ? String(year) : ''}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px',
-                        }}
-                    >
-                        <span>{year ?? ''}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                    </button>
-                    {isYearDropdownOpen && (
-                        <div
-                            role="listbox"
-                            aria-label={getText('year_slider_label', lang)}
-                            style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                width: '100%',
-                                maxHeight: '300px',
-                                overflowY: 'auto',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                zIndex: 100,
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            }}
-                        >
-                            {selectorYears.map((optionYear) => {
-                                const isSelected = optionYear === effectiveSelectedYear;
-                                return (
-                                    <button
-                                        key={optionYear}
-                                        type="button"
-                                        role="option"
-                                        aria-selected={isSelected}
-                                        onClick={() => {
-                                            setSelectedYear(optionYear);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                        }}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px',
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#e0f2fe' : '#f5f5f5';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff';
-                                        }}
-                                    >
-                                        <span
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff',
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span
-                                                    style={{
-                                                        height: '10px',
-                                                        width: '10px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#000',
-                                                    }}
-                                                />
-                                            )}
-                                        </span>
-                                        <span style={{ fontSize: '16px', color: '#000000' }}>{optionYear}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                    <div role="status" className="wb-inv" aria-live="polite">
-                        {year != null ? (lang === 'en' ? `Showing data for ${year}` : `Données affichées pour ${year}`) : ''}
-                    </div>
+                <YearSelect
+                    lang={lang}
+                    id="canadian-crude-production-year-select"
+                    label={getText('year_slider_label', lang)}
+                    years={selectorYears}
+                    value={year}
+                    onChange={setSelectedYear}
+                />
+                <div role="status" className="wb-inv" aria-live="polite">
+                    {year != null ? (lang === 'en' ? `Showing data for ${year}` : `Données affichées pour ${year}`) : ''}
                 </div>
 
                 <div className="canadian-crude-production-intro">
@@ -936,31 +493,14 @@ const CanadianCrudeProduction = () => {
                     </p>
                 </div>
 
-                <div className="canadian-crude-production-chart-frame">
-                    <h2 className="canadian-crude-production-chart-title">{chartTitle}</h2>
+                <div className="canadian-crude-production-chart-frame page-chrome-chart-frame">
+                    <h2 className="canadian-crude-production-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
                     {selectedTraceIds != null && (
-                        <div style={{ marginBottom: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedTraceIds(null)}
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#8C8C8C',
-                                    border: '1px solid #404040',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: 14,
-                                    color: '#fff',
-                                }}
-                            >
-                                {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                            </button>
-                        </div>
+                        <ClearSelectionButton lang={lang} onClick={() => setSelectedTraceIds(null)} />
                     )}
 
-                    <figure ref={chartRef} className="canadian-crude-production-chart-figure">
+                    <figure ref={chartRef} className="canadian-crude-production-chart-figure" role="region" aria-label={chartRegionLabel} tabIndex={0}>
                         <Plot
                             key={`canadian-crude-production-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}-${useVerticalYearTicks ? 'v' : 'h'}-${plotHeight}`}
                             data={[
@@ -1039,27 +579,7 @@ const CanadianCrudeProduction = () => {
                                 plot_bgcolor: 'rgba(0,0,0,0)',
                             }}
                             style={{ width: '100%', height: `${plotHeight}px` }}
-                            config={{
-                                displayModeBar: true,
-                                displaylogo: false,
-                                responsive: true,
-                                scrollZoom: false,
-                                modeBarButtonsToRemove: [
-                                    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-                                    'autoScale2d', 'resetScale2d', 'toImage',
-                                ],
-                                modeBarButtonsToAdd: [
-                                    {
-                                        name: getText('canadian_production_download_chart', lang),
-                                        icon: {
-                                            width: 24,
-                                            height: 24,
-                                            path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z',
-                                        },
-                                        click: (gd) => downloadChartPng(gd),
-                                    },
-                                ],
-                            }}
+                            config={plotConfig}
                             className="canadian-crude-production-chart"
                             useResizeHandler
                             onClick={handleChartClick}
@@ -1078,53 +598,27 @@ const CanadianCrudeProduction = () => {
                     </div>
 
                     <div className="canadian-crude-production-table-wrapper">
-                        <details onToggle={(event) => setIsChartTableOpen(event.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isChartTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isChartTableOpen ? '▼' : '▶'}</span>
-                                {getText('canadian_production_table_summary', lang)}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
-                            <div ref={chartTableTopRef} className="canadian-crude-production-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div
-                                ref={chartTableScrollRef}
-                                className="canadian-crude-production-table-responsive"
-                                role="region"
-                                aria-labelledby="canadian-crude-production-table-caption"
-                                tabIndex={0}
-                            >
-                                <table className="table table-striped table-hover">
-                                    <caption id="canadian-crude-production-table-caption" className="wb-inv">
-                                        {substitute(getText('canadian_production_table_caption', lang), textVars)}
-                                    </caption>
-                                    <thead>
-                                        <tr>
-                                            {chartTableHeaders.map((header) => (
-                                                <th key={header} scope="col">{header}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {chartTableRows.map((row) => (
-                                            <tr key={row.year}>
-                                                <th scope="row">{row.year}</th>
-                                                <td style={{ textAlign: 'right' }}>{formatNumber(row.oilSandsThousandM3, 1)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatNumber(row.conventionalThousandM3, 1)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatNumber(row.totalThousandM3, 1)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMmbd(row.oilSandsMmbd, 1)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMmbd(row.conventionalMmbd, 1)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatMmbd(row.totalMmbd, 1)}</td>
-                                                <td style={{ textAlign: 'right' }}>{formatPct(row.sharePct, 0)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div ref={chartTableBottomRef} className="canadian-crude-production-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div className="canadian-crude-production-download-buttons">
-                                <button type="button" onClick={downloadChartCsv}>{getText('canadian_production_download_csv', lang)}</button>
-                                <button type="button" onClick={downloadChartDocx}>{getText('canadian_production_download_docx', lang)}</button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={chartTableColumns}
+                            rows={chartTableRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportTableTitle,
+                                titleAlign: 'center',
+                                columnWidths: [900, 1400, 1500, 1200, 1300, 1500, 1200, 1300],
+                                fontSize: 20,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { column, colIndex }) => {
+                                if (colIndex === 0) return String(raw ?? '');
+                                if (column?.key === 'sharePct') return formatPct(raw, 0);
+                                if (String(column?.key || '').endsWith('Mmbd')) return formatMmbd(raw, 1);
+                                return formatNumber(raw, 1);
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -1147,76 +641,46 @@ const CanadianCrudeProduction = () => {
                     graphicHeight={infographicHeight}
                 />
 
-                <div className="canadian-crude-production-table-wrapper canadian-crude-production-infographic-table-wrapper">
-                    <details onToggle={(event) => setIsInfographicTableOpen(event.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isInfographicTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isInfographicTableOpen ? '▼' : '▶'}</span>
-                            {getText('canadian_production_infographic_table_summary', lang)}
-                            <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                        </summary>
-                        <div ref={infographicTableTopRef} className="canadian-crude-production-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={infographicTableScrollRef}
-                            className="canadian-crude-production-table-responsive"
-                            role="region"
-                            aria-labelledby="canadian-crude-production-infographic-table-caption"
-                            tabIndex={0}
-                        >
-                            <table className="table table-striped table-hover">
-                                <caption id="canadian-crude-production-infographic-table-caption" className="wb-inv">
-                                    {substitute(getText('canadian_production_infographic_table_caption', lang), textVars)}
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        {infographicTableHeaders.map((header) => (
-                                            <th key={header} scope="col">{header}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {infographicTableRows.map((row) => (
-                                        <tr key={row.year}>
-                                            <th scope="row">{row.year}</th>
-                                            {PROVINCE_ORDER.map((key) => (
-                                                <td key={key} style={{ textAlign: 'right' }}>
-                                                    {formatPct(row.provinces[key]?.sharePct, 1)}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={infographicTableBottomRef} className="canadian-crude-production-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="canadian-crude-production-download-buttons">
-                            <button type="button" onClick={downloadInfographicPng}>{getText('canadian_production_download_png', lang)}</button>
-                            <button type="button" onClick={downloadInfographicCsv}>{getText('canadian_production_download_csv', lang)}</button>
-                            <button type="button" onClick={downloadInfographicDocx}>{getText('canadian_production_download_docx', lang)}</button>
-                        </div>
-                    </details>
+                <div className="canadian-crude-production-download-buttons">
+                    <button type="button" onClick={downloadInfographicPng}>
+                        {getText('canadian_production_download_png', lang)}
+                    </button>
                 </div>
 
-                <aside className="wb-fnote canadian-crude-production-footnotes" role="note">
-                    <h2 id="fn-canadian-crude-production">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</dt>
-                        {otherFootnoteText ? (
-                            <dd id="fn-province-canadian-crude-production">
-                                <a
-                                    href="#fn-province-rf-canadian-crude-production"
-                                    onClick={scrollToElement('fn-province-rf-canadian-crude-production')}
-                                    className="fn-num"
-                                    title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                                >
-                                    <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                                </a>
-                                {' '}{otherFootnoteText}
-                            </dd>
-                        ) : null}
-                    </dl>
-                </aside>
+                <div className="canadian-crude-production-table-wrapper canadian-crude-production-infographic-table-wrapper">
+                    <ChartDataTable
+                        lang={lang}
+                        columns={infographicColumns}
+                        rows={infographicTableRows}
+                        csvFilename={`${infographicDownloadSlug}.csv`}
+                        docx={{
+                            filename: `${infographicDownloadSlug}.docx`,
+                            title: exportInfographicTableTitle,
+                            titleAlign: 'center',
+                            columnWidths: [900, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100],
+                            fontSize: 20,
+                        }}
+                        caption={infographicTableCaption}
+                        tableAriaLabel={infographicTableCaption}
+                        renderCell={(raw, { colIndex }) => (
+                            colIndex === 0 ? String(raw ?? '') : formatPct(raw, 1)
+                        )}
+                    />
+                </div>
+
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn-canadian-crude-production"
+                    className="canadian-crude-production-footnotes"
+                    items={otherFootnoteText ? [{
+                        id: 'fn-province-canadian-crude-production',
+                        marker: '*',
+                        text: otherFootnoteText,
+                        returnHref: '#fn-province-rf-canadian-crude-production',
+                    }] : []}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -1,11 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import PageFootnotes from '../components/PageFootnotes';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
-import canadaEnergySupplyGlobalBgEn from '../assets/canada_energy_supply_global_bg.svg';
-import canadaEnergySupplyGlobalBgFr from '../assets/canada_energy_supply_global_bg_fr.svg';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+import AccessibleInfographic from '../components/AccessibleInfographic';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+
+import canadaEnergySupplyGlobalBgEn from '../assets/canada_energy_supply_global_bg.svg?raw';
+import canadaEnergySupplyGlobalBgFr from '../assets/canada_energy_supply_global_bg_fr.svg?raw';
+import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
 
 const REFERENCE_YEAR = 2023;
 const SOURCE_KEYS = [
@@ -55,18 +69,6 @@ const HOVER_LABEL = {
 
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
-
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
-
-const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, '');
 
 const computePageZoomScale = (baseline) => {
     if (typeof window === 'undefined') return { pageCssZoom: 1, baseline: null };
@@ -164,34 +166,11 @@ const decorationsEqual = (a, b) => (
     JSON.stringify(a?.footnoteButtons ?? []) === JSON.stringify(b?.footnoteButtons ?? [])
 );
 
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
-
-const exportInfographicPng = async (imgEl, { scale = 2 }) => {
-    if (!imgEl) return null;
-    const loaded = await waitForImage(imgEl);
-    const canvas = document.createElement('canvas');
-    canvas.width = loaded.naturalWidth * scale;
-    canvas.height = loaded.naturalHeight * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(loaded, 0, 0, loaded.naturalWidth, loaded.naturalHeight);
-    return canvas;
-};
-
 const CanadaEnergySupply = () => {
     const { lang, layoutPadding } = useOutletContext();
     const [selectedYear] = useState(REFERENCE_YEAR);
     const [selectedSlices, setSelectedSlices] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
     const [zoomLevel, setZoomLevel] = useState(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
     const [chartDecorations, setChartDecorations] = useState({ footnoteButtons: [], fnAnnotations: [] });
@@ -200,38 +179,23 @@ const CanadaEnergySupply = () => {
 
     const chartRef = useRef(null);
     const infographicImgRef = useRef(null);
-    const tableTopRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const tableBottomRef = useRef(null);
     const lastPieClickRef = useRef({ time: 0, index: null });
 
-    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const useStackedLayout = pageCssZoom >= STACKED_LAYOUT_DETECTED_ZOOM;
     const textVars = { year: selectedYear };
     const yearData = DATA_BY_YEAR[selectedYear] ?? DATA_BY_YEAR[REFERENCE_YEAR];
 
-    const formatPj = useCallback((value) => {
-        if (value == null || Number.isNaN(Number(value))) return '–';
-        return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
-    }, [locale]);
+    const formatPj = useCallback((value) => formatLocaleNumber(value, lang, { maximumFractionDigits: 0 }), [lang]);
 
-    const formatPct = useCallback((value, digits = 0) => {
-        if (value == null || Number.isNaN(Number(value))) return '–';
-        const formatted = Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-        return lang === 'fr' ? `${formatted} %` : `${formatted}%`;
-    }, [lang, locale]);
+    const formatPct = useCallback((value, digits = 0) => formatLocalePct(value, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    }), [lang]);
 
-    const scrollToElement = (id) => (event) => {
-        event?.preventDefault();
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToElement = (id) => makeScrollToIdHandler(id);
 
     useEffect(() => {
         const syncLayout = () => {
-            setWindowWidth(window.innerWidth);
             const viewportScale = window.visualViewport?.scale || 1;
             setZoomLevel(Math.max(viewportScale, window.devicePixelRatio || 1));
             const { pageCssZoom: nextPageCssZoom, baseline } = computePageZoomScale(zoomBaselineRef.current);
@@ -263,10 +227,26 @@ const CanadaEnergySupply = () => {
     const chartTitle = substitute(getText('canada_energy_supply_chart_title', lang), textVars);
     const chartTitleBefore = substitute(getText('canada_energy_supply_chart_title_before', lang), textVars);
     const chartTitleAfter = substitute(getText('canada_energy_supply_chart_title_after', lang), textVars);
+    const exportChartTitle = stripHtml(chartTitle);
     const fileTitle = substitute(getText('canada_energy_supply_download_title', lang), textVars);
+    const chartDownloadSlug = fileTitle.replace(/\s+/g, '_');
     const infographicFileSlug = getText('canada_energy_supply_infographic_download_title', lang).replace(/\s+/g, '_');
     const tableCaption = substitute(getText('canada_energy_supply_table_caption', lang), textVars);
-    const bgImage = lang === 'en' ? canadaEnergySupplyGlobalBgEn : canadaEnergySupplyGlobalBgFr;
+    const bgMarkup = lang === 'en' ? canadaEnergySupplyGlobalBgEn : canadaEnergySupplyGlobalBgFr;
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('canada_energy_supply_table_col_year', lang), align: 'left' },
+        { key: 'source', header: getText('canada_energy_supply_table_col_source', lang), align: 'left' },
+        { key: 'pj', header: getText('canada_energy_supply_table_col_pj', lang), align: 'num' },
+        { key: 'pct', header: getText('canada_energy_supply_table_col_share', lang), align: 'num' },
+    ], [lang]);
+
+    const tableRows = useMemo(() => slices.map((slice) => ({
+        year,
+        source: getText(`canada_energy_supply_label_${slice.key}`, lang),
+        pj: slice.pj,
+        pct: slice.pct,
+    })), [slices, year, lang]);
 
     const zoomLegendMode = windowWidth <= 1000 || zoomLevel >= 1.75;
     const effectiveSlices = windowWidth > 768 ? selectedSlices : null;
@@ -276,6 +256,37 @@ const CanadaEnergySupply = () => {
         ? baseColors.map((color, index) => (effectiveSlices.includes(index) ? color : hexToRgba(color, 0.3)))
         : baseColors;
     const labels = slices.map((slice) => getText(`canada_energy_supply_label_${slice.key}`, lang));
+
+    const getChartSummary = () => {
+        if (!slices.length) return '';
+        const body = summarizeByCategory({
+            categories: labels,
+            series: [
+                {
+                    name: lang === 'en' ? 'Share' : 'Part',
+                    values: slices.map((slice) => slice.pct),
+                    format: (value) => formatPct(value),
+                },
+                {
+                    name: lang === 'en' ? 'Supply' : 'Offre',
+                    values: slices.map((slice) => slice.pj),
+                    format: (value) => `${formatPj(value)} PJ`,
+                },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Pie chart of Canada total energy supply by source for ${year}. Total ${formatPj(totalPj)} PJ`
+                : `Graphique circulaire de l'offre totale d'énergie du Canada par source pour ${year}. Total ${formatPj(totalPj)} PJ`,
+            unitNote: lang === 'en'
+                ? 'Values in percent of total energy supply and petajoules'
+                : "Valeurs en pourcentage de l'offre totale d'énergie et en pétajoules",
+            body,
+        });
+    };
+
+    const chartRegionLabel = `${exportChartTitle}. ${getChartSummary()}`;
 
     const textSize = zoomLegendMode ? 14 : 16;
     const outsideTextSize = 16;
@@ -424,112 +435,31 @@ const CanadaEnergySupply = () => {
         graphDiv.on('plotly_unhover', graphDiv._canadaEnergySupplyUnhover);
     }, [bindPlotClickHandler, updateChartDecorations]);
 
-    const syncTableScroll = useCallback(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
+    
 
-    useEffect(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
+    const downloadChartImage = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        width: 1200,
+        height: 900,
+    }),
+        [chartDownloadSlug, exportChartTitle],
+    );
 
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll, lang, year]);
-
-    useEffect(() => {
-        if (!chartRef.current) return undefined;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, year, effectiveSlices]);
-
-    const tableHeaders = [
-        getText('canada_energy_supply_table_col_year', lang),
-        getText('canada_energy_supply_table_col_source', lang),
-        getText('canada_energy_supply_table_col_pj', lang),
-        getText('canada_energy_supply_table_col_share', lang),
-    ];
-
-    const tableRows = slices.map((slice) => ({
-        year,
-        source: getText(`canada_energy_supply_label_${slice.key}`, lang),
-        pj: slice.pj,
-        pct: slice.pct,
-    }));
-
-    const downloadChartPng = async (plotEl = null) => {
+    const downloadChartWithTitle = async (plotEl = null) => {
         const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
         const chartEl = chartRef.current;
         if (!plotElement || !window.Plotly) return;
-        const title = stripHtml(chartTitle);
+        const exportDecorations = computeChartDecorations({
+            plotEl: plotElement,
+            chartEl,
+            slices,
+            textSize,
+            zoomLegendMode,
+        });
         try {
-            const exportDecorations = computeChartDecorations({
-                plotEl: plotElement,
-                chartEl,
-                slices,
-                textSize,
-                zoomLegendMode,
-            });
             await window.Plotly.relayout(plotElement, {
                 paper_bgcolor: '#ffffff',
                 plot_bgcolor: '#ffffff',
@@ -538,39 +468,10 @@ const CanadaEnergySupply = () => {
                     ...exportDecorations.fnAnnotations,
                 ],
             });
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 900,
-                scale: 2,
-            });
-            await window.Plotly.relayout(plotElement, {
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                annotations: centerAnnotation ? [centerAnnotation] : [],
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 70;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#26374a';
-                ctx.font = 'bold 24px "Noto Sans", Arial, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 44);
-                ctx.drawImage(img, 0, titleHeight);
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = `${fileTitle}.png`;
-                link.click();
-            };
-            img.src = imgData;
+            await downloadChartImage(plotElement);
         } catch (err) {
             console.warn('Unable to download chart image.', err);
+        } finally {
             try {
                 await window.Plotly.relayout(plotElement, {
                     paper_bgcolor: 'rgba(0,0,0,0)',
@@ -583,69 +484,20 @@ const CanadaEnergySupply = () => {
         }
     };
 
-    const chartConfig = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
-        modeBarButtonsToAdd: [{
-            name: getText('canada_energy_supply_download_chart', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: (gd) => { downloadChartPng(gd); },
-        }],
-    };
-
-    const downloadTableCsv = () => {
-        if (!tableRows.length) return;
-        const rows = tableRows.map((row) => [row.year, row.source, row.pj, Number(row.pct).toFixed(0)]);
-        const csv = [tableHeaders.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${fileTitle}.csv`;
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-
-    const downloadTableDocx = async () => {
-        if (!tableRows.length) return;
-        const headerRow = new TableRow({
-            children: tableHeaders.map((header) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const rows = tableRows.map((row) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.year), size: 18 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: row.source, size: 18 })] })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.pj), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: Number(row.pct).toFixed(0), size: 18 })], alignment: AlignmentType.RIGHT })] }),
-            ],
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: fileTitle, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1400, 4200, 1600, 1600],
-                        rows: [headerRow, ...rows],
-                    }),
-                ],
-            }],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileTitle}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('canada_energy_supply_download_chart', lang),
+        click: (gd) => { downloadChartWithTitle(gd); },
+    });
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportInfographicPng(infographicImgRef.current, { scale: 2 });
-        if (!canvas) return;
-        canvas.toBlob((blob) => {
-            if (blob) saveAs(blob, `${infographicFileSlug}.png`);
-        });
+        await downloadInfographicImagePng(
+            infographicImgRef.current?.getGraphicElement?.() ?? infographicImgRef.current,
+            {
+                filename: `${infographicFileSlug}.png`,
+                scale: 2,
+            },
+        );
     };
 
     const renderFootnoteButton = (button) => (
@@ -687,43 +539,19 @@ const CanadaEnergySupply = () => {
     const pageTitle = getText('canada_energy_supply_title', lang);
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content canada-energy-supply"
-            role="main"
+            className="page-content canada-energy-supply page-chrome page-chrome--bleed"
             aria-labelledby="canada-energy-supply-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .canada-energy-supply {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .canada-energy-supply-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .canada-energy-supply.page-content h1.canada-energy-supply-title {
-    font-family: 'Lato', sans-serif;
     font-size: 41px !important;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin-top: 0;
-    margin-bottom: 25px;
-    position: relative;
-    padding-bottom: 0.5em;
-    line-height: 1.2;
     text-transform: none;
-}
-.canada-energy-supply.page-content h1.canada-energy-supply-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
 }
 .canada-energy-supply-intro {
     font-family: 'Noto Sans', sans-serif;
@@ -761,11 +589,7 @@ const CanadaEnergySupply = () => {
     flex-direction: column;
 }
 .canada-energy-supply-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    box-sizing: border-box;
-    overflow: visible;
+    margin-bottom: 0;
 }
 .canada-energy-supply-chart-title {
     font-family: 'Lato', sans-serif;
@@ -836,62 +660,8 @@ const CanadaEnergySupply = () => {
     border-radius: 2px;
     border: 1px solid rgba(0, 0, 0, 0.2);
 }
-.canada-energy-supply-clear-selection {
-    padding: 6px 12px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 8px;
-}
 .canada-energy-supply-table-wrapper { display: block; width: 100%; margin-top: 20px; margin-bottom: 0; }
-.canada-energy-supply-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-}
-.canada-energy-supply-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.canada-energy-supply-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.canada-energy-supply-table-scrollbar > div { height: 20px; }
-.canada-energy-supply-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.canada-energy-supply-table-responsive::-webkit-scrollbar { display: none; }
-.canada-energy-supply-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.canada-energy-supply-table-responsive th,
-.canada-energy-supply-table-responsive td {
-    white-space: nowrap;
-}
-.canada-energy-supply-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.canada-energy-supply-download-buttons button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background: #8C8C8C;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-}
 .canada-energy-supply-chart-frame button:hover,
-.canada-energy-supply-table-wrapper summary:hover,
 .canada-energy-supply-infographic-actions button:hover { background-color: #404040 !important; }
 .canada-energy-supply-bullets {
     font-family: var(--font-body);
@@ -961,7 +731,7 @@ const CanadaEnergySupply = () => {
             `}</style>
 
             <div className="canada-energy-supply-inner">
-                <h1 id="canada-energy-supply-title" className="canada-energy-supply-title">{pageTitle}</h1>
+                <h1 id="canada-energy-supply-title" className="canada-energy-supply-title page-chrome-title">{pageTitle}</h1>
 
                 <p className="canada-energy-supply-intro">
                     {getText('canada_energy_supply_intro_before', lang)}
@@ -985,7 +755,7 @@ const CanadaEnergySupply = () => {
 
                 <div className={`canada-energy-supply-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <div className="canada-energy-supply-chart-column">
-                        <div className="canada-energy-supply-chart-frame">
+                        <div className="canada-energy-supply-chart-frame page-chrome-chart-frame">
                             <h2 id="canada-energy-supply-chart-title" className="canada-energy-supply-chart-title">
                                 <span id="fn2-rf-canada-energy-supply">
                                     {chartTitleBefore}
@@ -1002,9 +772,7 @@ const CanadaEnergySupply = () => {
                             </h2>
 
                             {effectiveSlices?.length > 0 && (
-                                <button type="button" className="canada-energy-supply-clear-selection" onClick={() => setSelectedSlices(null)}>
-                                    {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                </button>
+                                <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />
                             )}
 
                             <div className="canada-energy-supply-chart-scroll">
@@ -1012,7 +780,7 @@ const CanadaEnergySupply = () => {
                                     ref={chartRef}
                                     className="canada-energy-supply-chart"
                                     role="region"
-                                    aria-label={chartTitle}
+                                    aria-label={chartRegionLabel}
                                     tabIndex="0"
                                     style={{ margin: 0 }}
                                 >
@@ -1022,7 +790,7 @@ const CanadaEnergySupply = () => {
                                                 key={`canada-energy-supply-pie-${year}-${zoomLegendMode ? 'compact' : 'wide'}-${effectiveSlices ? effectiveSlices.join('-') : 'none'}-${lang}`}
                                                 data={[pieTrace]}
                                                 layout={pieLayout}
-                                                config={chartConfig}
+                                                config={plotConfig}
                                                 style={{ width: '100%', height: '100%' }}
                                                 useResizeHandler
                                                 onInitialized={onPieInitialized}
@@ -1041,60 +809,26 @@ const CanadaEnergySupply = () => {
                             )}
 
                             <div className="canada-energy-supply-table-wrapper">
-                                <details className="canada-energy-supply-data-table" open={isTableOpen} onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                                    <summary role="button" aria-expanded={isTableOpen}>
-                                        <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                        {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                        <span className="wb-inv">
-                                            {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                        </span>
-                                    </summary>
-                                    <div ref={tableTopRef} className="canada-energy-supply-table-scrollbar" aria-hidden="true"><div /></div>
-                                    <div
-                                        ref={tableScrollRef}
-                                        className="canada-energy-supply-table-responsive table-responsive"
-                                        role="region"
-                                        aria-labelledby="canada-energy-supply-table-caption"
-                                        tabIndex={0}
-                                    >
-                                        <table className="table table-bordered table-striped table-hover">
-                                            <caption id="canada-energy-supply-table-caption" className="wb-inv">{tableCaption}</caption>
-                                            <thead>
-                                                <tr>
-                                                    {tableHeaders.map((header) => (
-                                                        <th
-                                                            key={header}
-                                                            scope="col"
-                                                            style={{
-                                                                fontWeight: 'bold',
-                                                                textAlign: 'center',
-                                                                whiteSpace: 'nowrap',
-                                                                verticalAlign: 'bottom',
-                                                            }}
-                                                        >
-                                                            {header}
-                                                        </th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {tableRows.map((row) => (
-                                                    <tr key={`${row.year}-${row.source}`}>
-                                                        <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{row.year}</th>
-                                                        <td style={{ textAlign: 'left' }}>{row.source}</td>
-                                                        <td style={{ textAlign: 'center' }}>{formatPj(row.pj)}</td>
-                                                        <td style={{ textAlign: 'center' }}>{formatPct(row.pct)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div ref={tableBottomRef} className="canada-energy-supply-table-scrollbar" aria-hidden="true"><div /></div>
-                                    <div className="canada-energy-supply-download-buttons">
-                                        <button type="button" onClick={downloadTableCsv}>{getText('canada_energy_supply_download_csv', lang)}</button>
-                                        <button type="button" onClick={downloadTableDocx}>{getText('canada_energy_supply_download_docx', lang)}</button>
-                                    </div>
-                                </details>
+                                <ChartDataTable
+                                    lang={lang}
+                                    columns={tableColumns}
+                                    rows={tableRows}
+                                    csvFilename={`${chartDownloadSlug}.csv`}
+                                    docx={{
+                                        filename: `${chartDownloadSlug}.docx`,
+                                        title: exportChartTitle,
+                                        titleAlign: 'center',
+                                        columnWidths: [1400, 4200, 1600, 1600],
+                                        fontSize: 18,
+                                    }}
+                                    caption={tableCaption}
+                                    tableAriaLabel={tableCaption}
+                                    renderCell={(raw, { colIndex }) => {
+                                        if (colIndex === 0 || colIndex === 1) return String(raw ?? '');
+                                        if (colIndex === 2) return formatPj(raw);
+                                        return formatPct(raw);
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
@@ -1114,14 +848,17 @@ const CanadaEnergySupply = () => {
                         </ul>
 
                         <div className="canada-energy-supply-infographic-section">
-                            <figure className="canada-energy-supply-infographic-figure">
-                                <img
-                                    ref={infographicImgRef}
-                                    className="canada-energy-supply-bg-image"
-                                    src={bgImage}
-                                    alt={getText('canada_energy_supply_infographic_aria', lang)}
-                                />
-                            </figure>
+                            <AccessibleInfographic
+                                ref={infographicImgRef}
+                                mode="text"
+                                as="figure"
+                                className="canada-energy-supply-infographic-figure"
+                                title={pageTitle}
+                                svgMarkup={bgMarkup}
+                                imgClassName="canada-energy-supply-bg-image"
+                                imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
+                                idPrefix={`canada-energy-supply-global-${lang}`}
+                            />
                             <div className="canada-energy-supply-infographic-actions">
                                 <button type="button" onClick={downloadInfographicPng}>
                                     {getText('canada_energy_supply_download_png', lang)}
@@ -1131,53 +868,18 @@ const CanadaEnergySupply = () => {
                     </div>
                 </div>
 
-                <aside className="wb-fnote canada-energy-supply-footnotes" role="note">
-                    <h2 id="fn-canada-energy-supply">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</dt>
-                        <dt>{lang === 'en' ? 'Footnote 1' : 'Note de bas de page 1'}</dt>
-                        <dd id="fn1-canada-energy-supply">
-                            <a
-                                href="#fn1-rf-canada-energy-supply"
-                                onClick={scrollToElement('fn1-rf-canada-energy-supply')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote 1 referrer' : 'Retour à la référence de la note de bas de page 1'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>
-                                1
-                            </a>
-                            <p>{getText('canada_energy_supply_footnote1', lang)}</p>
-                        </dd>
-                        <dt>{lang === 'en' ? 'Footnote 2' : 'Note de bas de page 2'}</dt>
-                        <dd id="fn2-canada-energy-supply">
-                            <a
-                                href="#fn2-rf-canada-energy-supply"
-                                onClick={scrollToElement('fn2-rf-canada-energy-supply')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote 2 referrer' : 'Retour à la référence de la note de bas de page 2'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>
-                                2
-                            </a>
-                            <p>{getText('canada_energy_supply_footnote2', lang)}</p>
-                        </dd>
-                        <dt>{lang === 'en' ? 'Footnote 3' : 'Note de bas de page 3'}</dt>
-                        <dd id="fn3-canada-energy-supply">
-                            <a
-                                href="#fn3-rf-canada-energy-supply"
-                                onClick={scrollToElement('fn3-rf-canada-energy-supply')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote 3 referrer' : 'Retour à la référence de la note de bas de page 3'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>
-                                3
-                            </a>
-                            <p>{getText('canada_energy_supply_footnote3', lang)}</p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn-canada-energy-supply"
+                    className="canada-energy-supply-footnotes"
+                    items={[
+                        { id: 'fn1-canada-energy-supply', marker: '1', text: getText('canada_energy_supply_footnote1', lang), returnHref: '#fn1-rf-canada-energy-supply' },
+                        { id: 'fn2-canada-energy-supply', marker: '2', text: getText('canada_energy_supply_footnote2', lang), returnHref: '#fn2-rf-canada-energy-supply' },
+                        { id: 'fn3-canada-energy-supply', marker: '3', text: getText('canada_energy_supply_footnote3', lang), returnHref: '#fn3-rf-canada-energy-supply' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

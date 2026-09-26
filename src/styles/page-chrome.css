@@ -1,0 +1,402 @@
+/**
+ * Shared Fact Book page chrome (data tables, downloads, bleed, year select).
+ * Pages opt in with class "page-chrome" and CSS variables from layoutBleedCssVars.
+ * ChartDataTable also embeds its own summary/button styles so chrome works
+ * even when a page forgot page-chrome / local summary CSS.
+ */
+
+.page-chrome {
+  --page-bleed-left: 55px;
+  --page-bleed-right: 15px;
+  --page-bleed-sum: 70px;
+  box-sizing: border-box;
+}
+
+.page-chrome.page-chrome--bleed {
+  margin-left: calc(-1 * var(--page-bleed-left));
+  margin-right: calc(-1 * var(--page-bleed-right));
+  width: calc(100% + var(--page-bleed-sum));
+  padding-left: var(--page-bleed-left);
+  padding-right: var(--page-bleed-right);
+  max-width: none;
+}
+
+/* ---- Shared page / chart title chrome ---- */
+
+.page-chrome-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 41px;
+  font-weight: bold;
+  color: var(--gc-text, #332f30);
+  margin-top: 0;
+  margin-bottom: 25px;
+  line-height: 1.2;
+  position: relative;
+  padding-bottom: 0.5em;
+}
+
+.page-chrome-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0.2em;
+  width: 72px;
+  height: 6px;
+  background-color: var(--gc-red, #a62a1e);
+}
+
+.page-chrome-chart-frame {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.page-chrome-chart-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 29px;
+  font-weight: bold;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .page-chrome-title {
+    font-size: 37px;
+  }
+
+  .page-chrome-chart-title {
+    font-size: 26px;
+  }
+}
+
+/* ---- Chart data table disclosure (global fallback + page-chrome) ---- */
+
+.data-table-wrapper.chart-data-table-root,
+.page-chrome .data-table-wrapper,
+.page-chrome details.data-table-wrapper {
+  padding-top: 5px;
+  margin-top: 20px;
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.data-table-wrapper.chart-data-table-root > summary,
+.page-chrome .data-table-wrapper > summary,
+.page-chrome details.data-table-wrapper > summary {
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px 12px;
+  background-color: #8C8C8C;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  list-style: none;
+  list-style-type: none;
+  box-sizing: border-box;
+  width: 100%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  text-align: left;
+}
+
+.data-table-wrapper.chart-data-table-root > summary:hover,
+.page-chrome .data-table-wrapper > summary:hover,
+.page-chrome details.data-table-wrapper > summary:hover {
+  background-color: #404040 !important;
+}
+
+.data-table-wrapper.chart-data-table-root > summary::-webkit-details-marker,
+.data-table-wrapper.chart-data-table-root > summary::marker,
+.page-chrome .data-table-wrapper > summary::-webkit-details-marker,
+.page-chrome details.data-table-wrapper > summary::-webkit-details-marker {
+  display: none;
+  content: none;
+}
+
+.page-chrome .chart-data-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.page-chrome .chart-data-table-toolbar button,
+.page-chrome .download-table-btn,
+.chart-data-table-root .download-table-btn {
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  padding: 8px 16px;
+  background-color: #8C8C8C;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.page-chrome .chart-data-table-toolbar button:hover,
+.page-chrome .download-table-btn:hover,
+.chart-data-table-root .download-table-btn:hover {
+  background-color: #404040;
+}
+
+.page-chrome .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-chrome .table-responsive table,
+.page-chrome .chart-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+.page-chrome .chart-data-table th,
+.page-chrome .chart-data-table td {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.page-chrome .chart-data-table th {
+  background-color: #e6e6e6;
+  font-weight: bold;
+}
+
+.page-chrome .chart-data-table td.num,
+.page-chrome .chart-data-table th.num {
+  text-align: right;
+}
+
+.page-chrome .table-scroll-top {
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 16px;
+  margin-bottom: 4px;
+}
+
+.page-chrome .table-scroll-top-spacer {
+  height: 1px;
+}
+
+/* ---- Year selector (stacked label + radio list — Fact Book standard) ---- */
+
+.year-select {
+  position: relative;
+  margin-bottom: 20px;
+  width: 200px;
+  max-width: 100%;
+  z-index: 20;
+  box-sizing: border-box;
+}
+
+.year-select__label {
+  display: block;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  color: #000;
+  margin: 0 0 5px 0;
+}
+
+.year-select__button {
+  width: 100%;
+  padding: 10px 15px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  color: #000;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.year-select__button:hover {
+  border-color: #999;
+}
+
+.year-select__button:focus {
+  outline: 2px solid #005fcc;
+  outline-offset: 2px;
+  border-color: #007bff;
+}
+
+.year-select__caret {
+  font-size: 12px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.year-select__list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 100;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+.year-select__option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 10px 15px;
+  cursor: pointer;
+  border: none;
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.year-select__option:last-child {
+  border-bottom: none;
+}
+
+.year-select__option:hover {
+  background-color: #f5f5f5;
+}
+
+.year-select__option.is-selected {
+  background-color: #f0f9ff;
+}
+
+.year-select__radio {
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.year-select__radio-dot {
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  background-color: #000;
+}
+
+.year-select__option-label {
+  font-size: 16px;
+  color: #333;
+}
+
+/* ---- Clear selection (Plotly multi-select) ---- */
+
+.clear-selection {
+  margin-bottom: 8px;
+}
+
+.clear-selection__button {
+  padding: 6px 12px;
+  background-color: #8c8c8c;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #fff;
+}
+
+.clear-selection__button:hover {
+  background-color: #404040;
+}
+
+.clear-selection__button:focus {
+  outline: 2px solid #26374a;
+  outline-offset: 2px;
+}
+
+/* ---- HTML chart legend ---- */
+
+.html-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px 24px;
+  margin-top: 16px;
+  margin-bottom: 10px;
+  font-family: Arial, sans-serif;
+}
+
+.html-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.html-legend__label {
+  font-size: 18px;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .html-legend__label {
+    font-size: 14px;
+  }
+}
+
+/* ---- Footnote badge: keep badge look inside chart titles ---- */
+
+a.fn-lnk,
+.fn-lnk {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.15rem;
+  font-family: var(--font-body, 'Noto Sans', sans-serif);
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--gc-text, #333) !important;
+  background-color: #fff !important;
+  border: 1px solid #6f6f6f !important;
+  border-radius: 2px;
+  text-decoration: none !important;
+  vertical-align: super;
+  margin-left: 1px;
+  box-sizing: border-box;
+}
+
+a.fn-lnk:hover,
+a.fn-lnk:focus,
+.fn-lnk:hover,
+.fn-lnk:focus {
+  background-color: #f5f5f5 !important;
+  border-color: var(--gc-text, #333) !important;
+  text-decoration: none !important;
+  color: var(--gc-text, #333) !important;
+}

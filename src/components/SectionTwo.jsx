@@ -1,116 +1,65 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import Investment from '../pages/Investment';
-import CapitalExpenditures from '../pages/CapitalExpenditures';
-import Infrastructure from '../pages/Infrastructure';
-import EconomicContributions from '../pages/EconomicContributions';
-import InvestmentByAsset from '../pages/InvestmentByAsset';
-import MajorEnergyProjects from '../pages/MajorEnergyProjects';
-import CleanTechTrends from '../pages/CleanTechTrends';
-import MajorProjectsMap from '../pages/MajorProjectsMap';
-import InternationalInvestment from '../pages/InternationalInvestment';
-import ForeignControl from '../pages/ForeignControl';
-import CEA from '../pages/CEA';
-import ResearchDevelopmentDemonstration from '../pages/ResearchDevelopmentDemonstration';
-import PublicEnergyRddExpenditures from '../pages/PublicEnergyRddExpenditures';
-import EnergyRddByTechnology from '../pages/EnergyRddByTechnology';
-import EnvironmentalProtection from '../pages/EnvironmentalProtection';
+import React from 'react';
+import { lazyWithPreload } from '../utils/lazyWithPreload';
+import { useOutletContext } from 'react-router-dom';
+import ActivePageSection from './ActivePageSection';
+
+const Investment = lazyWithPreload(() => import('../pages/Investment'));
+const CapitalExpenditures = lazyWithPreload(() => import('../pages/CapitalExpenditures'));
+const Infrastructure = lazyWithPreload(() => import('../pages/Infrastructure'));
+const EconomicContributions = lazyWithPreload(() => import('../pages/EconomicContributions'));
+const InvestmentByAsset = lazyWithPreload(() => import('../pages/InvestmentByAsset'));
+const MajorEnergyProjects = lazyWithPreload(() => import('../pages/MajorEnergyProjects'));
+const CleanTechTrends = lazyWithPreload(() => import('../pages/CleanTechTrends'));
+const MajorProjectsMap = lazyWithPreload(() => import('../pages/MajorProjectsMap'));
+const InternationalInvestment = lazyWithPreload(() => import('../pages/InternationalInvestment'));
+const ForeignControl = lazyWithPreload(() => import('../pages/ForeignControl'));
+const CEA = lazyWithPreload(() => import('../pages/CEA'));
+const ResearchDevelopmentDemonstration = lazyWithPreload(() => import('../pages/ResearchDevelopmentDemonstration'));
+const PublicEnergyRddExpenditures = lazyWithPreload(() => import('../pages/PublicEnergyRddExpenditures'));
+const EnergyRddByTechnology = lazyWithPreload(() => import('../pages/EnergyRddByTechnology'));
+const EnvironmentalProtection = lazyWithPreload(() => import('../pages/EnvironmentalProtection'));
+
+const PAGES = [
+  { id: 'investment-overview', Component: Investment },
+  { id: 'capital-expenditure', Component: CapitalExpenditures,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'infrastructure-stock', Component: Infrastructure,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'economic-contributions', Component: EconomicContributions },
+  { id: 'investment-by-asset', Component: InvestmentByAsset },
+  { id: 'major-projects', Component: MajorEnergyProjects },
+  { id: 'clean-tech-trends', Component: CleanTechTrends },
+  { id: 'projects-map', Component: MajorProjectsMap },
+  { id: 'international-investment', Component: InternationalInvestment,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'foreign-control', Component: ForeignControl },
+  { id: 'canadian-energy-assets', Component: CEA,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'research-development-demonstration', Component: ResearchDevelopmentDemonstration },
+  { id: 'public-energy-rdd-expenditures', Component: PublicEnergyRddExpenditures },
+  { id: 'energy-rdd-by-technology', Component: EnergyRddByTechnology },
+  { id: 'environmental-protection', Component: EnvironmentalProtection,
+    pageClassName: 'page-with-title-divider' }
+];
+
+const TOPIC_ANCHORS = [
+  'capital-expenditure',
+  'infrastructure-stock',
+  'international-investment',
+  'canadian-energy-assets',
+  'environmental-protection',
+];
 
 const SectionTwo = () => {
-    const location = useLocation();
-
-    // Scroll to anchor when hash changes (e.g., #page-24)
-    // Or scroll to top and focus page-23 when entering section without hash
-    useEffect(() => {
-        // Immediate scroll to top to prevent flash
-        window.scrollTo(0, 0);
-        
-        // Delayed scroll to override any page auto-focus effects (e.g., environmental protection expenditures focuses at 100ms)
-        const scrollTimer = setTimeout(() => {
-            if (location.hash) {
-                const elementId = location.hash.replace('#', '');
-                const element = document.getElementById(elementId);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            } else {
-                // No hash - scroll to top and focus on investment overview (title screen)
-                window.scrollTo({ top: 0, behavior: 'instant' });
-                const overviewPage = document.getElementById('investment-overview');
-                if (overviewPage) {
-                    overviewPage.scrollIntoView({ behavior: 'instant', block: 'start' });
-                }
-            }
-        }, 300); // Run after environmental protection expenditures page 100ms auto-focus effect
-        
-        return () => clearTimeout(scrollTimer);
-    }, [location.pathname, location.hash]);
-
-    return (
-        <div className="stacked-section-container">
-            {/* Each page wrapper has a semantic ID for anchor links */}
-            
-            <div id="investment-overview" className="stacked-page-wrapper">
-                <Investment />
-            </div>
-
-            <div id="capital-expenditure" className="stacked-page-wrapper page-with-title-divider">
-                <CapitalExpenditures />
-            </div>
-
-            <div id="infrastructure-stock" className="stacked-page-wrapper page-with-title-divider">
-                <Infrastructure />
-            </div>
-
-            <div id="economic-contributions" className="stacked-page-wrapper">
-                <EconomicContributions />
-            </div>
-
-            <div id="investment-by-asset" className="stacked-page-wrapper">
-                <InvestmentByAsset />
-            </div>
-
-            <div id="major-projects" className="stacked-page-wrapper">
-                <MajorEnergyProjects />
-            </div>
-
-            <div id="clean-tech-trends" className="stacked-page-wrapper">
-                <CleanTechTrends />
-            </div>
-
-            <div id="projects-map" className="stacked-page-wrapper">
-                <MajorProjectsMap />
-            </div>
-
-            <div id="international-investment" className="stacked-page-wrapper page-with-title-divider">
-                <InternationalInvestment />
-            </div>
-
-            <div id="foreign-control" className="stacked-page-wrapper">
-                <ForeignControl />
-            </div>
-
-            <div id="canadian-energy-assets" className="stacked-page-wrapper page-with-title-divider">
-                <CEA />
-            </div>
-
-            <div id="research-development-demonstration" className="stacked-page-wrapper">
-                <ResearchDevelopmentDemonstration />
-            </div>
-
-            <div id="public-energy-rdd-expenditures" className="stacked-page-wrapper">
-                <PublicEnergyRddExpenditures />
-            </div>
-
-            <div id="energy-rdd-by-technology" className="stacked-page-wrapper">
-                <EnergyRddByTechnology />
-            </div>
-
-            <div id="environmental-protection" className="stacked-page-wrapper page-with-title-divider">
-                <EnvironmentalProtection />
-            </div>
-        </div>
-    );
+  const { lang = 'en' } = useOutletContext() || {};
+  return (
+    <ActivePageSection
+      sectionPath="/section-2"
+      pages={PAGES}
+      topicAnchors={TOPIC_ANCHORS}
+      lang={lang}
+    />
+  );
 };
 
 export default SectionTwo;

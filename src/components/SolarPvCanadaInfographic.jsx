@@ -1,27 +1,29 @@
 import React from 'react';
-import solarPvCanadaBgColumn from '../assets/solar_pv_canada_bg_column.svg';
-import solarPvCanadaBgColumnFr from '../assets/solar_pv_canada_bg_column_fr.svg';
-import solarPvCanadaBgHorizontal from '../assets/solar_pv_canada_bg_horizontal.svg';
-import solarPvCanadaBgHorizontalFr from '../assets/solar_pv_canada_bg_horizontal_fr.svg';
+import AccessibleInfographic from './AccessibleInfographic';
+import solarPvCanadaBgColumn from '../assets/solar_pv_canada_bg_column.svg?raw';
+import solarPvCanadaBgColumnFr from '../assets/solar_pv_canada_bg_column_fr.svg?raw';
+import solarPvCanadaBgHorizontal from '../assets/solar_pv_canada_bg_horizontal.svg?raw';
+import solarPvCanadaBgHorizontalFr from '../assets/solar_pv_canada_bg_horizontal_fr.svg?raw';
 
-const SolarPvCanadaInfographic = ({ lang, stacked, ariaLabel, figureRef }) => {
+const SolarPvCanadaInfographic = ({ lang, stacked, title, figureRef }) => {
     const isEn = lang === 'en';
-    const src = stacked
+    const svgMarkup = stacked
         ? (isEn ? solarPvCanadaBgHorizontal : solarPvCanadaBgHorizontalFr)
         : (isEn ? solarPvCanadaBgColumn : solarPvCanadaBgColumnFr);
+    const layoutClass = stacked ? 'horizontal' : 'column';
 
     return (
-        <figure ref={figureRef} className="solar-pv-canada-infographic-figure" aria-label={ariaLabel}>
-            <div className={`solar-pv-canada-infographic solar-pv-canada-infographic-${stacked ? 'horizontal' : 'column'}`}>
-                <img
-                    src={src}
-                    alt=""
-                    className="solar-pv-canada-infographic-bg"
-                    draggable={false}
-                />
-            </div>
-            <figcaption className="wb-inv">{ariaLabel}</figcaption>
-        </figure>
+        <AccessibleInfographic
+            ref={figureRef}
+            mode="text"
+            as="figure"
+            className={`solar-pv-canada-infographic-figure solar-pv-canada-infographic solar-pv-canada-infographic-${layoutClass}`}
+            title={title || 'Solar PV in Canada'}
+            svgMarkup={svgMarkup}
+            imgClassName="solar-pv-canada-infographic-bg"
+            imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
+            idPrefix={`solar-pv-canada-${layoutClass}-${isEn ? 'en' : 'fr'}`}
+        />
     );
 };
 

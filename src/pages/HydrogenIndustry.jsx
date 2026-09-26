@@ -1,8 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import SafeHtml from '../components/SafeHtml';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { waitForImage } from '../utils/downloadInfographicPng';
+import { stripHtml } from '../utils/stripHtml';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import hydrogenIndustryBg from '../assets/hydrogen_industry_bg.svg';
 
 const NATIVE_WIDTH = 2037.8134;
@@ -27,18 +33,6 @@ const TABLE_ROW_KEYS = [
     'revenue',
     'rdd',
 ];
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
 
 const exportNuclearInfographicPng = async (exportRoot, { scale = 2 }) => {
     if (!exportRoot) return null;
@@ -135,27 +129,21 @@ const exportNuclearInfographicPng = async (exportRoot, { scale = 2 }) => {
 
 const HydrogenIndustry = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
     const exportRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
     const formatInt = useCallback((value) => Number(value).toLocaleString(locale, { maximumFractionDigits: 0 }), [locale]);
 
-    const tableHeaders = [
-        getText('hydrogen_industry_table_col_description', lang),
-        getText('hydrogen_industry_table_col_value', lang),
-    ];
+    const tableCaption = getText('hydrogen_industry_table_caption', lang);
+    const exportTableTitle = stripHtml(tableCaption);
+    const csvFilename = getText('hydrogen_industry_csv_slug', lang);
+    const docxFilename = getText('hydrogen_industry_docx_slug', lang);
+
+    const tableColumns = useMemo(() => [
+        { key: 'description', header: getText('hydrogen_industry_table_col_description', lang), align: 'left' },
+        { key: 'value', header: getText('hydrogen_industry_table_col_value', lang), align: 'num' },
+    ], [lang]);
 
     const tableRows = useMemo(() => {
         const overPrefix = getText('hydrogen_industry_table_over_prefix', lang);
@@ -192,143 +180,11 @@ const HydrogenIndustry = () => {
                     value = '';
             }
             return {
-                key,
                 description: getText(`hydrogen_industry_table_row_${key}`, lang),
                 value,
             };
         });
     }, [lang, formatInt]);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        if (!isTableOpen) return undefined;
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTop = () => syncFrom(topScroll);
-        const handleTable = () => syncFrom(tableScroll);
-        const handleBottom = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTop);
-        tableScroll.addEventListener('scroll', handleTable);
-        bottomScroll.addEventListener('scroll', handleBottom);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTop);
-            tableScroll.removeEventListener('scroll', handleTable);
-            bottomScroll.removeEventListener('scroll', handleBottom);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
-
-    const downloadBtnStyle = {
-        padding: '8px 16px',
-        backgroundColor: '#8C8C8C',
-        border: '1px solid #404040',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        color: '#ffffff',
-    };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = tableRows
-            .map((row) => [row.description, row.value].map(csvEscape).join(','))
-            .join('\n');
-        saveAs(
-            new Blob([[header, rows].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            getText('hydrogen_industry_csv_slug', lang),
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = tableRows.map(
-            (row) =>
-                new TableRow({
-                    children: [row.description, row.value].map(
-                        (value) =>
-                            new TableCell({
-                                children: [
-                                    new Paragraph({
-                                        children: [new TextRun({ text: String(value ?? ''), size: 22 })],
-                                        alignment: AlignmentType.CENTER,
-                                    }),
-                                ],
-                            }),
-                    ),
-                }),
-        );
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: stripHtml(getText('hydrogen_industry_table_caption', lang)),
-                                bold: true,
-                                size: 28,
-                            }),
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [5200, 2200],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), getText('hydrogen_industry_docx_slug', lang));
-    };
 
     const downloadInfographicPng = async () => {
         const canvas = await exportNuclearInfographicPng(exportRef.current, { scale: 2 });
@@ -339,22 +195,14 @@ const HydrogenIndustry = () => {
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-102"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-102 page-chrome page-chrome--bleed"
             aria-labelledby="hydrogen-industry-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-102.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-102 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .hydrogen-industry-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .hydrogen-industry-bullets {
@@ -368,6 +216,7 @@ const HydrogenIndustry = () => {
 .hydrogen-industry-bullets li { margin-bottom: 0.85rem; }
 .hydrogen-industry-bullets strong { font-weight: bold; }
 .hydrogen-industry-infographic-figure {
+    position: relative;
     width: 100%;
     margin: 0 0 20px 0;
 }
@@ -388,36 +237,6 @@ const HydrogenIndustry = () => {
 }
 .hydrogen-industry-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
 .hydrogen-industry-table-wrapper { display: block; width: 100%; margin-top: 0; margin-bottom: 0; }
-.hydrogen-industry-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    cursor: pointer;
-    list-style: none;
-    box-sizing: border-box;
-}
-.hydrogen-industry-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.hydrogen-industry-table-wrapper details > summary:hover,
-.hydrogen-industry-table-wrapper button:hover { background-color: #404040 !important; }
-.hydrogen-industry-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.hydrogen-industry-table-scrollbar > div { height: 20px; }
-.hydrogen-industry-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.hydrogen-industry-table-responsive::-webkit-scrollbar { display: none; }
-.hydrogen-industry-table-responsive table { width: max-content !important; min-width: 100%; }
             `}</style>
 
             <div className="hydrogen-industry-container">
@@ -427,88 +246,50 @@ const HydrogenIndustry = () => {
 
                 <div ref={exportRef} className="hydrogen-industry-export-region">
                     <ul className="hydrogen-industry-bullets">
-                        <li dangerouslySetInnerHTML={{ __html: getText('hydrogen_industry_bullet1', lang) }} />
+                        <SafeHtml as="li" html={getText('hydrogen_industry_bullet1', lang)}  />
                         <li>{getText('hydrogen_industry_bullet2', lang)}</li>
-                        <li dangerouslySetInnerHTML={{ __html: getText('hydrogen_industry_bullet3', lang) }} />
-                        <li dangerouslySetInnerHTML={{ __html: getText('hydrogen_industry_bullet4', lang) }} />
+                        <SafeHtml as="li" html={getText('hydrogen_industry_bullet3', lang)}  />
+                        <SafeHtml as="li" html={getText('hydrogen_industry_bullet4', lang)}  />
                     </ul>
 
-                    <figure
+                    <AccessibleInfographic
+                        as="figure"
+                        mode="image"
                         className="hydrogen-industry-infographic-figure"
-                        aria-label={getText('hydrogen_industry_infographic_aria', lang)}
+                        title={getText('hydrogen_industry_title', lang)}
+                        overview={`${getText('hydrogen_industry_title', lang)}. ${getText('hydrogen_industry_infographic_aria', lang)}`}
+                        src={hydrogenIndustryBg}
+                        imgClassName="hydrogen-industry-bg-image"
                     >
-                        <div className="hydrogen-industry-infographic-wrapper">
-                            <img
-                                src={hydrogenIndustryBg}
-                                alt=""
-                                className="hydrogen-industry-bg-image"
-                                draggable={false}
-                            />
-                        </div>
-                    </figure>
+                        <div className="hydrogen-industry-infographic-wrapper" aria-hidden="true" />
+                    </AccessibleInfographic>
                 </div>
 
                 <div className="hydrogen-industry-download-buttons">
-                    <button type="button" onClick={downloadInfographicPng} style={downloadBtnStyle}>
+                    <button type="button" className="download-table-btn" onClick={downloadInfographicPng}>
                         {getText('hydrogen_industry_download_infographic_png', lang)}
                     </button>
                 </div>
 
                 <div className="hydrogen-industry-table-wrapper">
-                    <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {getText('hydrogen_industry_table_summary', lang)}
-                            <span className="wb-inv">
-                                {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                            </span>
-                        </summary>
-                        <div ref={topScrollRef} className="hydrogen-industry-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={tableScrollRef}
-                            className="hydrogen-industry-table-responsive table-responsive"
-                            role="region"
-                            aria-label={getText('hydrogen_industry_table_summary', lang)}
-                            tabIndex={0}
-                        >
-                            <table className="table table-bordered table-striped table-hover">
-                                <caption className="wb-inv">{getText('hydrogen_industry_table_caption', lang)}</caption>
-                                <thead>
-                                    <tr>
-                                        {tableHeaders.map((header) => (
-                                            <th
-                                                key={header}
-                                                scope="col"
-                                                style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
-                                            >
-                                                {header}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tableRows.map((row) => (
-                                        <tr key={row.key}>
-                                            <td style={{ textAlign: 'center' }}>{row.description}</td>
-                                            <td style={{ textAlign: 'center' }}>{row.value}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={bottomScrollRef} className="hydrogen-industry-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="hydrogen-industry-download-buttons">
-                            <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>
-                                {getText('hydrogen_industry_download_csv', lang)}
-                            </button>
-                            <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>
-                                {getText('hydrogen_industry_download_docx', lang)}
-                            </button>
-                        </div>
-                    </details>
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={tableRows}
+                        csvFilename={csvFilename}
+                        docx={{
+                            filename: docxFilename,
+                            title: exportTableTitle,
+                            titleAlign: 'center',
+                            columnWidths: [5200, 2200],
+                            fontSize: 22,
+                        }}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                    />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

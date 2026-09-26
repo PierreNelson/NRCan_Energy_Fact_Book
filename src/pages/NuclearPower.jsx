@@ -1,8 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 
 const CANADA_CAPSULE = '#819476';
 const TOP_RANKS = [1, 2, 3, 4, 5];
@@ -33,8 +36,6 @@ const substitute = (text, vars) =>
         (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
         text || '',
     );
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
 const formatSharePct = (value, locale) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -151,21 +152,9 @@ const exportCapsuleInfographicPng = ({ title, rows, filename }) => {
 
 const NuclearPower = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
     const infographicRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
 
     const rankingRows = useMemo(
         () =>
@@ -194,83 +183,40 @@ const NuclearPower = () => {
         year: DATA_YEAR,
     });
 
-    const tableHeaders = [
-        getText('nuclear_power_table_col_year', lang),
-        getText('nuclear_power_table_col_total', lang),
-        ...TOP_RANKS.map((rank) => getText(`nuclear_power_table_col_rank${rank}`, lang)),
-        getText('nuclear_power_table_col_canada', lang),
-        getText('nuclear_power_table_col_canada_rank', lang),
-    ];
+    const tableCaption = substitute(getText('nuclear_power_table_caption', lang), { year: DATA_YEAR });
+    const exportTableTitle = stripHtml(tableCaption);
 
-    const formatTopCountryCell = useCallback(
-        (entry) => {
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('nuclear_power_table_col_year', lang), align: 'left' },
+        { key: 'totalTwh', header: getText('nuclear_power_table_col_total', lang), align: 'num' },
+        ...TOP_RANKS.map((rank) => ({
+            key: `rank${rank}`,
+            header: getText(`nuclear_power_table_col_rank${rank}`, lang),
+            align: 'left',
+        })),
+        { key: 'canadaPct', header: getText('nuclear_power_table_col_canada', lang), align: 'num' },
+        { key: 'canadaRank', header: getText('nuclear_power_table_col_canada_rank', lang), align: 'num' },
+    ], [lang]);
+
+    const tableRows = useMemo(() => {
+        const formatTopCountryCell = (entry) => {
             if (!entry) return '—';
             return `${hydroGenerationCountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
-        },
-        [lang, locale],
-    );
-
-    const tableRow = useMemo(
-        () => ({
-            year: DATA_YEAR,
-            totalTwh: formatTwh(WORLD_TOTAL_TWH, locale),
-            topCountryCells: TOP_RANKS.map((rank) =>
+        };
+        const rankCells = Object.fromEntries(
+            TOP_RANKS.map((rank) => [
+                `rank${rank}`,
                 formatTopCountryCell(TOP5_DATA.find((item) => item.rank === rank)),
-            ),
+            ]),
+        );
+        return [{
+            year: DATA_YEAR,
+            totalTwh: WORLD_TOTAL_TWH,
+            ...rankCells,
             canadaPct: formatSharePct(CANADA_DATA.sharePct, locale),
             canadaRank: CANADA_DATA.rank,
-        }),
-        [formatTopCountryCell, locale],
-    );
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        if (!isTableOpen) return undefined;
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncTableScroll));
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        syncTableScroll();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
+        }];
+    }, [lang, locale]);
 
     const downloadBtnStyle = {
         padding: '8px 16px',
@@ -281,85 +227,6 @@ const NuclearPower = () => {
         fontFamily: 'Arial, sans-serif',
         fontWeight: 'bold',
         color: '#ffffff',
-    };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const row = [
-            tableRow.year,
-            tableRow.totalTwh,
-            ...tableRow.topCountryCells,
-            tableRow.canadaPct,
-            tableRow.canadaRank,
-        ]
-            .map(csvEscape)
-            .join(',');
-        saveAs(
-            new Blob([[header, row].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            getText('nuclear_power_csv_slug', lang),
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = new TableRow({
-            children: [
-                tableRow.year,
-                tableRow.totalTwh,
-                ...tableRow.topCountryCells,
-                tableRow.canadaPct,
-                tableRow.canadaRank,
-            ].map(
-                (value) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(value ?? ''), size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                    }),
-            ),
-        });
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: stripHtml(substitute(getText('nuclear_power_table_caption', lang), { year: DATA_YEAR })),
-                                bold: true,
-                                size: 28,
-                            }),
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100],
-                        rows: [headerRow, dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), getText('nuclear_power_docx_slug', lang));
     };
 
     const downloadInfographicPng = () => {
@@ -414,22 +281,14 @@ const NuclearPower = () => {
     const pctDisplay = lang === 'fr' ? '13\u00a0%' : '13%';
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-86"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-86 page-chrome page-chrome--bleed"
             aria-labelledby="nuclear-power-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-86.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-86 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .nuclear-power-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .nuclear-power-title {
@@ -562,40 +421,10 @@ const NuclearPower = () => {
 .nuclear-power-capsule-row-canada .nuclear-power-capsule-pill { border-width: 2px; border-color: ${CANADA_CAPSULE}; }
 .nuclear-power-capsule-pill-text-canada { font-size: 22px; font-weight: bold; }
 .nuclear-power-capsule-ellipsis { min-height: 28px; padding-left: 4%; color: #333; font-size: 18px; font-weight: bold; }
-.nuclear-power-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.nuclear-power-table-responsive::-webkit-scrollbar { display: none; }
-.nuclear-power-table-responsive table { width: max-content !important; min-width: 100%; }
 .nuclear-power-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 .nuclear-power-chart-section .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-.page-86 .data-table-wrapper summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    color: #ffffff;
-    list-style: none;
-    box-sizing: border-box;
-    width: 100%;
-    color: #ffffff;
-}
-.page-86 .data-table-wrapper summary::-webkit-details-marker { display: none; }
 .page-86 .data-table-wrapper summary:hover,
 .page-86 .data-table-wrapper button:hover { background-color: #404040 !important; }
-.nuclear-power-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.nuclear-power-table-scrollbar > div { height: 20px; }
 @media (max-width: 880px) {
     .nuclear-power-split { grid-template-columns: 1fr; }
     .nuclear-power-title { font-size: 37px; }
@@ -631,7 +460,7 @@ const NuclearPower = () => {
 
                         <section className="nuclear-power-chart-section" aria-label={rankingAria}>
                             <h3 className="nuclear-power-graphic-title">{graphicTitle}</h3>
-                            <div className="nuclear-power-capsule-graphic" role="img" aria-label={rankingAria}>
+                            <div className="nuclear-power-capsule-graphic" role="img" tabIndex={0} aria-label={rankingAria}>
                                 {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                                 <div className="nuclear-power-capsule-row nuclear-power-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
                                 {renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}
@@ -643,57 +472,34 @@ const NuclearPower = () => {
                                 </button>
                             </div>
 
-                            <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                                <summary role="button" aria-expanded={isTableOpen}>
-                                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                    {getText('nuclear_power_table_summary', lang)}
-                                    <span className="wb-inv">
-                                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                    </span>
-                                </summary>
-                                <div ref={topScrollRef} className="nuclear-power-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div ref={tableScrollRef} className="nuclear-power-table-responsive table-responsive" role="region" tabIndex={0}>
-                                    <table className="table table-bordered table-striped table-hover">
-                                        <caption className="wb-inv">
-                                            {substitute(getText('nuclear_power_table_caption', lang), { year: DATA_YEAR })}
-                                        </caption>
-                                        <thead>
-                                            <tr>
-                                                {tableHeaders.map((header) => (
-                                                    <th
-                                                        key={header}
-                                                        scope="col"
-                                                        style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}
-                                                    >
-                                                        {header}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{tableRow.year}</th>
-                                                <td style={{ textAlign: 'center' }}>{tableRow.totalTwh}</td>
-                                                {tableRow.topCountryCells.map((cell, index) => (
-                                                    <td key={`${tableRow.year}-rank-${index + 1}`} style={{ textAlign: 'center' }}>{cell}</td>
-                                                ))}
-                                                <td style={{ textAlign: 'center' }}>{tableRow.canadaPct}</td>
-                                                <td style={{ textAlign: 'center' }}>{tableRow.canadaRank}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div ref={bottomScrollRef} className="nuclear-power-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div className="nuclear-power-download-buttons">
-                                    <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>{getText('nuclear_power_download_csv', lang)}</button>
-                                    <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>{getText('nuclear_power_download_docx', lang)}</button>
-                                </div>
-                            </details>
+                            <ChartDataTable
+                                lang={lang}
+                                label={getText('nuclear_power_table_summary', lang)}
+                                columns={tableColumns}
+                                rows={tableRows}
+                                csvFilename={getText('nuclear_power_csv_slug', lang)}
+                                docx={{
+                                    filename: getText('nuclear_power_docx_slug', lang),
+                                    title: exportTableTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100],
+                                    fontSize: 22,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                                renderCell={(raw, { column }) => {
+                                    const key = column?.key;
+                                    if (key === 'totalTwh') return formatTwh(raw, locale);
+                                    if (key === 'canadaPct') return raw === '' || raw == null ? '—' : String(raw);
+                                    if (key === 'canadaRank') return raw === '' || raw == null ? '—' : String(raw);
+                                    return String(raw ?? '');
+                                }}
+                            />
                         </section>
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

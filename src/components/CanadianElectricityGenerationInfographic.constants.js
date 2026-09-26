@@ -239,7 +239,7 @@ export const exportCanadianGenerationInfographicPng = async (figureEl, { scale =
         ctx.fillText(text, box.x, box.y + box.h / 2);
     };
 
-    const bgImg = wrapper.querySelector('.canadian-electricity-generation-bg-image');
+    const bgImg = figureEl.querySelector('.canadian-electricity-generation-bg-image');
     const bgLoaded = await waitForImage(bgImg);
     if (bgLoaded) {
         const box = rel(wrapper);

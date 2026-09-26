@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import PageShell from '../components/PageShell';
 import { useOutletContext, Link } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import energyEfficiencyOverviewImage from '../assets/energy_efficiency_overview_bg.jpg';
@@ -9,12 +10,13 @@ const EnergyEfficiencyOverview = () => {
     useEffect(() => {
     }, []);
 
+    useEffect(() => {
+    }, []);
+
     return (
-        <main 
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-47 energy-efficiency-overview-main cover-page" 
-            role="main"
+            className="page-content page-47 energy-efficiency-overview-main cover-page"
             style={{
                 backgroundColor: '#edb95e',
                 flex: '1 1 auto',
@@ -146,7 +148,7 @@ const EnergyEfficiencyOverview = () => {
                     </ul>
                 </nav>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

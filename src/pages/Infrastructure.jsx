@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import YearSelect from '../components/YearSelect';
+import usePlotlySelection from '../hooks/usePlotlySelection';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import PageStatus from '../components/PageStatus';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getInfrastructureData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
 
 const infrastructure_COLORS = {
     'environmental': '#8F7200', 'fuel_energy_pipelines': '#3A8357',
@@ -23,94 +30,12 @@ const Infrastructure = () => {
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [isTableOpen, setIsTableOpen] = useState(false);
     const [isChartInteractive, setIsChartInteractive] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
-    const [selectedSlices, setSelectedSlices] = useState(null);
+    const {
+        selected: selectedSlices,
+        clear: clearSelection,
+        onPlotClick: handlePieClick,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, index: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    
-    // Year dropdown state
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-
-        if (!topScroll || !tableScroll) return;
-
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-
-            const topSpacer = topScroll.firstElementChild;
-            if (topSpacer) {
-                topSpacer.style.width = `${scrollWidth}px`;
-            }
-
-            if (scrollWidth > containerWidth) {
-                topScroll.style.display = 'block';
-                topScroll.style.opacity = '1';
-            } else {
-                topScroll.style.display = 'none';
-            }
-        };
-
-        const handleTopScroll = () => {
-            if (tableScroll.scrollLeft !== topScroll.scrollLeft) {
-                tableScroll.scrollLeft = topScroll.scrollLeft;
-            }
-        };
-
-        const handleTableScroll = () => {
-            if (topScroll.scrollLeft !== tableScroll.scrollLeft) {
-                topScroll.scrollLeft = tableScroll.scrollLeft;
-            }
-        };
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-
-        const observer = new ResizeObserver(() => {
-            window.requestAnimationFrame(syncScrollbars);
-        });
-
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-
-        syncScrollbars();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth]);
-
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        }
-        return hex;
-    };
 
     const minYear = useMemo(() => pageData.length > 0 ? pageData[0].year : 2007, [pageData]);
     const maxYear = useMemo(() => pageData.length > 0 ? pageData[pageData.length - 1].year : 2024, [pageData]);
@@ -119,6 +44,7 @@ const Infrastructure = () => {
         { length: maxYear - minYear + 1 },
         (_, i) => minYear + i
     ), [minYear, maxYear]);
+    const yearsListDesc = useMemo(() => [...yearsList].sort((a, b) => b - a), [yearsList]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -159,122 +85,22 @@ const Infrastructure = () => {
             });
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
+    
 
-            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
-            svgElements.forEach(svg => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: lang === 'en' ? `infrastructure_chart_${year}.png` : `graphique_infrastructures_${year}.png`,
+        title: `${stripHtml(getText('infrastructure_title', lang))} (${year})`,
+        height: 800,
+    }),
+        [getText, lang, stripHtml, year],
+    );
 
-            // Find the download button using data-title attribute
-            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
-            
-            if (downloadBtn) {
-                // Make it tabbable
-                downloadBtn.setAttribute('tabindex', '0');
-                downloadBtn.setAttribute('role', 'button');
-                
-                // Ensure it has a label
-                const title = downloadBtn.getAttribute('data-title');
-                if (title) downloadBtn.setAttribute('aria-label', title);
-
-                // Add keyboard click support (crucial for screen readers)
-                downloadBtn.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        downloadBtn.click();
-                    }
-                };
-            }
-
-            // Hide other modebar buttons from screen readers
-            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
-            otherButtons.forEach(btn => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-
-        // Watch for changes (Plotly deletes/re-creates the modebar often)
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-
-        // Run once immediately
-        setupChartAccessibility();
-
-        return () => observer.disconnect();
-    }, [pageData, lang]);
-
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || document.querySelector('.infrastructure-stock-chart .js-plotly-plot') || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) {
-            console.error('Plot element not found');
-            alert('Could not find chart element. Please try again.');
-            return;
-        }
-
-        const title = `${stripHtml(getText('infrastructure_title', lang))} (${year})`;
-
-        try {
-            if (!window.Plotly) {
-                console.error('Plotly not available on window');
-                alert('Plotly library not loaded. Please refresh the page and try again.');
-                return;
-            }
-
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 800,
-                scale: 2
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                const titleHeight = 80;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 50);
-
-                ctx.drawImage(img, 0, titleHeight);
-
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? `infrastructure_chart_${year}.png` : `graphique_infrastructures_${year}.png`;
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-
-            img.onerror = () => {
-                console.error('Failed to load chart image');
-                alert('Failed to generate chart image. Please try again.');
-            };
-
-            img.src = imgData;
-        } catch (error) {
-            console.error('Error downloading chart:', error);
-            alert('Error downloading chart: ' + error.message);
-        }
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const currentYearData = useMemo(() => {
         if (!year || pageData.length === 0) return null;
@@ -345,12 +171,50 @@ const Infrastructure = () => {
         }];
     }, [chartData, currentYearData?.total_billions, lang]);
 
-    if (loading) {
-        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
-    }
+    const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
+    const categoryLabels = useMemo(() => ({
+        environmental: stripHtml(getText('infra_environmental', lang)),
+        fuel_energy_pipelines: stripHtml(getText('infra_fuel_energy', lang)),
+        transport: stripHtml(getText('infra_transport', lang)),
+        education: stripHtml(getText('infra_education', lang)),
+        health_housing: stripHtml(getText('infra_health_housing', lang)),
+        public_safety: stripHtml(getText('infra_public_safety', lang)),
+    }), [lang]);
 
-    if (error) {
-        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'red' }}>Error: {error}. Please refresh the page.</div>;
+    const tableCaption = lang === 'en'
+        ? 'Capital expenditures on construction in infrastructure (billions of dollars)'
+        : 'Dépenses en immobilisations pour la construction d\'infrastructures (milliards de dollars)';
+    const exportTableTitle = stripHtml(getText('infrastructure_title', lang));
+    const tableFilenameBase = lang === 'en' ? 'infrastructure_expenditures' : 'depenses_infrastructures';
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: lang === 'en' ? 'Year' : 'Année', align: 'left' },
+        ...infrastructure_CATEGORY_ORDER.map((cat) => ({
+            key: cat,
+            header: `${categoryLabels[cat]} ${unitHeader}`,
+            align: 'num',
+        })),
+        { key: 'total', header: `${lang === 'en' ? 'Total' : 'Total'} ${unitHeader}`, align: 'num' },
+    ], [lang, categoryLabels, unitHeader]);
+
+    const tableRows = useMemo(() => pageData.map((yearData) => {
+        const row = { year: yearData.year };
+        infrastructure_CATEGORY_ORDER.forEach((cat) => {
+            row[cat] = yearData[`${cat}_billions`] ?? ((yearData[cat] || 0) / 1000);
+        });
+        row.total = yearData.total_billions ?? ((yearData.total || 0) / 1000);
+        return row;
+    }), [pageData]);
+
+    if (loading || error) {
+        return (
+            <PageStatus
+                lang={lang}
+                loading={loading}
+                error={error}
+                style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+            />
+        );
     }
 
     if (!currentYearData) {
@@ -432,253 +296,6 @@ const Infrastructure = () => {
             minimumFractionDigits: 1, 
             maximumFractionDigits: 1 
         });
-    };
-
-    const getAccessibleDataTable = () => {
-        if (!pageData || pageData.length === 0) return null;
-
-        const categoryLabels = {
-            'environmental': stripHtml(getText('infra_environmental', lang)),
-            'fuel_energy_pipelines': stripHtml(getText('infra_fuel_energy', lang)),
-            'transport': stripHtml(getText('infra_transport', lang)),
-            'education': stripHtml(getText('infra_education', lang)),
-            'health_housing': stripHtml(getText('infra_health_housing', lang)),
-            'public_safety': stripHtml(getText('infra_public_safety', lang)),
-        };
-
-        const cellUnitSR = lang === 'en' ? ' billion dollars' : ' milliards de dollars';
-        const headerUnitVisual = lang === 'en' ? '($ billions)' : '(milliards $)';
-        const headerUnitSR = lang === 'en' ? '(billions of dollars)' : '(milliards de dollars)';
-        const captionId = 'infrastructure-stock-table-caption';
-
-        return (
-            <details 
-                onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                style={{ 
-                    marginTop: '20px', 
-                    marginBottom: '0', 
-                    width: '100%',
-                    marginLeft: 0,
-                    marginRight: 0,
-                    fontFamily: 'Arial, sans-serif'
-                }}
-            >
-                <summary 
-                    role="button"
-                    aria-expanded={isTableOpen}
-                    style={{ 
-                        cursor: 'pointer', 
-                        color: '#ffffff', 
-                        fontWeight: 'bold', 
-                        padding: '10px',
-                        border: '1px solid #404040',
-                        backgroundColor: '#8C8C8C',
-                        borderRadius: '4px',
-                        listStyle: 'none'
-                    }}
-                >
-                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                </summary>
-
-                <div 
-                    ref={topScrollRef}
-                    style={{ 
-                        width: '100%', 
-                        overflowX: 'auto', 
-                        overflowY: 'hidden',
-                        marginBottom: '0px',
-                        display: windowWidth <= 768 ? 'none' : 'block' 
-                    }}
-                    aria-hidden="true"
-                >
-                    <div style={{ height: '20px' }}></div>
-                </div>
-
-                <div 
-                    ref={tableScrollRef}
-                    className="table-responsive" 
-                    role="region" 
-                    aria-labelledby={captionId}
-                    tabIndex="0"
-                >
-                    <table className="table table-striped table-hover">
-                        <caption id={captionId} className="wb-inv">
-                            {lang === 'en' 
-                                ? 'Capital expenditures on construction in infrastructure (billions of dollars)'
-                                : 'Dépenses en immobilisations pour la construction d\'infrastructures (milliards de dollars)'}
-                        </caption>
-                        <thead>
-                            <tr>
-<th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                                {infrastructure_CATEGORY_ORDER.map(cat => (
-                                                    <th key={cat} scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                        {categoryLabels[cat]}<br/>
-                                                        <span aria-hidden="true">{headerUnitVisual}</span>
-                                                        <span className="wb-inv">{headerUnitSR}</span>
-                                                    </th>
-                                                ))}
-                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>
-                                                    {lang === 'en' ? 'Total' : 'Total'}<br/>
-                                                    <span aria-hidden="true">{headerUnitVisual}</span>
-                                                    <span className="wb-inv">{headerUnitSR}</span>
-                                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pageData.map(yearData => (
-                                <tr key={yearData.year}>
-<th scope="row" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{yearData.year}</th>
-                                                    {infrastructure_CATEGORY_ORDER.map(cat => (
-                                                        <td 
-                                                            key={cat} 
-                                                            style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                            aria-label={`${yearData.year}, ${categoryLabels[cat]}: ${formatNumberTable((yearData[cat] || 0) / 1000)}${cellUnitSR}`}
-                                                        >
-                                                            {formatNumberTable((yearData[cat] || 0) / 1000)}
-                                                        </td>
-                                                    ))}
-                                                    <td 
-                                                        style={{ textAlign: 'right', border: '1px solid #ddd' }}
-                                                        aria-label={`${yearData.year}, ${lang === 'en' ? 'Total' : 'Total'}: ${formatNumberTable((yearData.total || 0) / 1000)}${cellUnitSR}`}
-                                                    >
-                                                        <strong>{formatNumberTable((yearData.total || 0) / 1000)}</strong>
-                                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                    <button
-                        onClick={() => downloadTableAsCSV()}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#8C8C8C',
-                            border: '1px solid #404040',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontFamily: 'Arial, sans-serif',
-                            fontWeight: 'bold',
-                            color: '#ffffff'
-                        }}
-                    >
-                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                    </button>
-                    <button
-                        onClick={() => downloadTableAsDocx()}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#8C8C8C',
-                            border: '1px solid #404040',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontFamily: 'Arial, sans-serif',
-                            fontWeight: 'bold',
-                            color: '#ffffff'
-                        }}
-                    >
-                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                    </button>
-                </div>
-            </details>
-        );
-    };
-    const downloadTableAsCSV = () => {
-        if (!pageData || pageData.length === 0) return;
-
-        const categoryLabels = {
-            'environmental': stripHtml(getText('infra_environmental', lang)),
-            'fuel_energy_pipelines': stripHtml(getText('infra_fuel_energy', lang)),
-            'transport': stripHtml(getText('infra_transport', lang)),
-            'education': stripHtml(getText('infra_education', lang)),
-            'health_housing': stripHtml(getText('infra_health_housing', lang)),
-            'public_safety': stripHtml(getText('infra_public_safety', lang)),
-        };
-
-        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
-        const headers = [
-            lang === 'en' ? 'Year' : 'Année',
-            ...infrastructure_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
-            `Total ${unitHeader}`
-        ];
-        const rows = pageData.map(yearData => {
-            const values = infrastructure_CATEGORY_ORDER.map(cat => {
-                const val = (yearData[cat] || 0) / 1000;
-                return val.toFixed(2);
-            });
-            return [yearData.year, ...values, ((yearData.total || 0) / 1000).toFixed(2)];
-        });
-        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'infrastructure_expenditures_data.csv' : 'depenses_infrastructures_donnees.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-    const downloadTableAsDocx = async () => {
-        if (!pageData || pageData.length === 0) return;
-
-        const categoryLabels = {
-            'environmental': stripHtml(getText('infra_environmental', lang)),
-            'fuel_energy_pipelines': stripHtml(getText('infra_fuel_energy', lang)),
-            'transport': stripHtml(getText('infra_transport', lang)),
-            'education': stripHtml(getText('infra_education', lang)),
-            'health_housing': stripHtml(getText('infra_health_housing', lang)),
-            'public_safety': stripHtml(getText('infra_public_safety', lang)),
-        };
-
-        const unitHeader = lang === 'en' ? '($ billions)' : '(milliards $)';
-        const title = stripHtml(getText('infrastructure_title', lang));
-
-        const headers = [
-            lang === 'en' ? 'Year' : 'Année',
-            ...infrastructure_CATEGORY_ORDER.map(cat => `${categoryLabels[cat]} ${unitHeader}`),
-            `Total ${unitHeader}`
-        ];
-
-        const headerRow = new TableRow({
-            children: headers.map(header => new TableCell({
-                children: [new Paragraph({
-                    children: [new TextRun({ text: header, bold: true, size: 18 })],
-                    alignment: AlignmentType.CENTER
-                })],
-                shading: { fill: 'E6E6E6' }
-            }))
-        });
-
-        const dataRows = pageData.map(yearData => {
-            const values = infrastructure_CATEGORY_ORDER.map(cat => ((yearData[cat] || 0) / 1000).toFixed(2));
-            return new TableRow({
-                children: [
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(yearData.year), size: 20 })], alignment: AlignmentType.CENTER })] }),
-                    ...values.map(val => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: val, size: 20 })], alignment: AlignmentType.RIGHT })] })),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ((yearData.total || 0) / 1000).toFixed(2), bold: true, size: 20 })], alignment: AlignmentType.RIGHT })] })
-                ]
-            });
-        });
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: title, bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 }
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1100, 1150, 1150, 1150, 1150, 1150, 1150, 1150],
-                        rows: [headerRow, ...dataRows]
-                    })
-                ]
-            }]
-        });
-
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'infrastructure_expenditures_table.docx' : 'depenses_infrastructures_tableau.docx');
     };
 
     return (
@@ -1169,126 +786,18 @@ const Infrastructure = () => {
                 <div className={`infrastructure-stock-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
                     {/* Chart Frame with Year Selector and Chart */}
                     <div className="infrastructure-stock-chart-frame">
-                        {/* SINGLE-SELECT RADIO DROPDOWN */}
-                        <div 
-                            ref={yearDropdownRef} 
-                            style={{ 
-                                position: 'relative', 
-                                marginBottom: '20px', 
-                                width: '200px' 
-                            }}
-                        >
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    
-                    {/* TOGGLE BUTTON */}
-                    <button
-                        ref={yearButtonRef}
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px'
-                        }}
-                    >
-                        <span>{year || maxYear}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                    </button>
-
-                    {/* DROPDOWN LIST */}
-                    {isYearDropdownOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            width: '100%',
-                            maxHeight: '300px',
-                            overflowY: 'auto',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            zIndex: 100,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                        }}>
-                            {/* Sort Descending (Newest First) - Using buttons styled as radio */}
-                            {[...yearsList].sort((a, b) => b - a).map((y) => {
-                                const isSelected = year === y;
-                                return (
-                                    <button
-                                        key={y}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        aria-label={y.toString()}
-                                        onClick={() => {
-                                            setYear(y);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => {
-                                                yearButtonRef.current?.focus();
-                                            }, 0);
-                                        }}
-                                        style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px', 
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
-                                    >
-                                        {/* Fake radio circle */}
-                                        <span 
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff'
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span style={{
-                                                    height: '10px',
-                                                    width: '10px',
-                                                    borderRadius: '50%',
-                                                    backgroundColor: '#000'
-                                                }} />
-                                            )}
-                                        </span>
-                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
-                                            {y}
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                        <YearSelect
+                            lang={lang}
+                            id="infrastructure-year-select"
+                            className="infrastructure-year-selector"
+                            label={getText('year_slider_label', lang)}
+                            years={yearsListDesc}
+                            value={year || maxYear}
+                            onChange={setYear}
+                        />
+                        <div role="status" className="wb-inv" aria-live="polite">
+                            {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                         </div>
-                    )}
-                    
-                    <div role="status" className="wb-inv" aria-live="polite">
-                        {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
-                    </div>
-                </div>
 
                     <div 
                         className="infrastructure-stock-chart-column"
@@ -1298,10 +807,8 @@ const Infrastructure = () => {
                     >
                         {chartData && (
                             <>
-                                {selectedSlices !== null && selectedSlices.length > 0 && (
-                                    <div style={{ marginBottom: 8 }}>
-                                        <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
-                                    </div>
+                                    {selectedSlices !== null && selectedSlices.length > 0 && (
+                                    <ClearSelectionButton lang={lang} onClick={clearSelection} />
                                 )}
                                 <figure ref={chartRef} className="infrastructure-stock-chart" style={{ width: '100%', height: '450px', minHeight: '450px', margin: 0, position: 'relative' }}>
                                 <Plot
@@ -1408,71 +915,47 @@ const Infrastructure = () => {
                                         autosize: true, 
                                         annotations: annotations,
                                         clickmode: 'event',
-                                        dragmode: windowWidth <= 768 ? false : 'zoom'
+                                        dragmode: false
                                     }}
                                     useResizeHandler={true}
                                     style={{ width: '100%', height: '100%' }}
-                                    onClick={(data) => {
-                                        if (!data.points || data.points.length === 0) return;
-                                        const clickedPoint = data.points[0];
-                                        const sliceIndex = clickedPoint.pointNumber !== undefined ? clickedPoint.pointNumber : clickedPoint.pointIndex;
-
-                                        if (sliceIndex === undefined) return;
-
-                                        if (windowWidth <= 768) {
-                                            const currentTime = new Date().getTime();
-                                            const lastClick = lastClickRef.current;
-                                            const isSamePoint = (sliceIndex === lastClick.index);
-                                            const isDoubleTap = isSamePoint && (currentTime - lastClick.time < 300);
-                                            
-                                            lastClickRef.current = { time: currentTime, index: sliceIndex };
-                                            
-                                            if (!isDoubleTap) {
-                                                return; // Single tap: show hover label only
-                                            }
-                                        }
-
-                                        setSelectedSlices(prev => {
-                                            if (prev === null) {
-                                                return [sliceIndex];
-                                            }
-
-                                            const isSelected = prev.includes(sliceIndex);
-
-                                            if (isSelected) {
-                                                const newSelection = prev.filter(p => p !== sliceIndex);
-                                                if (newSelection.length === 0) {
-                                                    return null;
-                                                }
-                                                return newSelection;
-                                            } else {
-                                                return [...prev, sliceIndex];
-                                            }
-                                        });
-                                    }}
-                                    config={{ 
-                                        displayModeBar: true, 
-                                        displaylogo: false,
-                                        responsive: true, 
-                                        staticPlot: false,
-                                        modeBarButtonsToRemove: ['toImage', 'select2d', 'lasso2d'],
-                                        modeBarButtonsToAdd: [{
-                                            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                            icon: {
-                                                width: 24,
-                                                height: 24,
-                                                path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                            },
-                                            click: (gd) => downloadChartWithTitle(gd)
-                                        }]
-                                    }}
+                                    onClick={handlePieClick}
+                                    config={plotConfig}
                                 />
                             </figure>
                             </>
                         )}
 
-                        <div className="infrastructure-stock-table-wrapper">
-                            {getAccessibleDataTable()}
+                        <div
+                            className="infrastructure-stock-table-wrapper"
+                            onToggle={(e) => {
+                                if (e.target instanceof HTMLDetailsElement) {
+                                    setIsTableOpen(e.target.open);
+                                }
+                            }}
+                        >
+                            <ChartDataTable
+                                lang={lang}
+                                columns={tableColumns}
+                                rows={tableRows}
+                                csvFilename={`${tableFilenameBase}_data.csv`}
+                                docx={{
+                                    filename: `${tableFilenameBase}_table.docx`,
+                                    title: exportTableTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: [1100, 1150, 1150, 1150, 1150, 1150, 1150, 1150],
+                                    fontSize: 18,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                                renderCell={(raw, { colIndex }) => {
+                                    if (colIndex === 0) return String(raw ?? '');
+                                    const formatted = formatNumberTable(Number(raw) || 0);
+                                    return colIndex === tableColumns.length - 1
+                                        ? <strong>{formatted}</strong>
+                                        : formatted;
+                                }}
+                            />
                         </div>
                     </div>
                     </div>

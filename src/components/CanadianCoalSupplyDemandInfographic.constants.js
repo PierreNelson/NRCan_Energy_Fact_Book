@@ -57,7 +57,7 @@ export const exportCanadianCoalSupplyDemandInfographicPng = async (figureEl, { s
     if (!figureEl) return null;
 
     const wrapper = figureEl.querySelector('.canadian-coal-supply-demand-infographic-wrapper');
-    const bgImg = wrapper?.querySelector('.canadian-coal-supply-demand-bg-image');
+    const bgImg = figureEl.querySelector('.canadian-coal-supply-demand-bg-image');
     if (!wrapper || !bgImg) return null;
 
     const wrapperRect = wrapper.getBoundingClientRect();

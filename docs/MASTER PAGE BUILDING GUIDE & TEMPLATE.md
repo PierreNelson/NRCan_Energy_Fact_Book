@@ -675,7 +675,7 @@ Year Selector CSS (add to `[MANDATORY_CSS_BLOCK]`):
         className="page[[PAGE_NUMBER]]-data-table"
         onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
     >
-        <summary role="button" aria-expanded={isTableOpen}>
+        <summary>
             <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
             {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
             <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
@@ -1178,8 +1178,10 @@ Before finalizing a page, verify:
 - [ ] `role="main"` on `<main>` element
 - [ ] `tabIndex="-1"` on `<main>` element
 - [ ] Visual title has `aria-hidden="true"`, SR title uses `wb-inv` class
-- [ ] Chart SVGs have `aria-hidden="true"` (via useEffect)
+- [ ] Chart SVGs have `aria-hidden="true"` (via useEffect) — chart graphic only, not the data table
 - [ ] Download button is keyboard accessible (tabindex="0")
+- [ ] Chart data table uses native `<summary>` (no `role="button"`) so disclosure stays accessible
+- [ ] Data table is never under `aria-hidden`; headers and rows remain readable when open
 - [ ] Data table has `<caption className="wb-inv">`
 - [ ] Data cells have `aria-label` for screen reader reading
 - [ ] Currency values use screen-reader-friendly format (e.g., "159 billion dollars")

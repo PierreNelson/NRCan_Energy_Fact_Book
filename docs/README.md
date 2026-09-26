@@ -13,7 +13,10 @@ Guides for the NRCan Energy Factbook repository. The project has two parts: a **
 | Understand how data flows (EEDAS → EFB → export) | [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md) |
 | Add a new data source or indicator | [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md) |
 | Build a new page or chart | [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md) |
-| Deploy a release zip to a web server | [DEPLOYMENT.md](DEPLOYMENT.md) |
+| Deploy a release zip / SPA deep links / CSP | [DEPLOYMENT.md](DEPLOYMENT.md) |
+| Nest Fact Book without a second FIP | [EMBED_MODE.md](EMBED_MODE.md) |
+| Manual WCAG release checklist | [WCAG_SAMPLE_AUDIT.md](WCAG_SAMPLE_AUDIT.md) |
+| Client change inventory (PDF, 21 Sep 2026) | [client/Energy-Fact-Book-Review-Change-Inventory.pdf](client/Energy-Fact-Book-Review-Change-Inventory.pdf) — what changed for the codebase review, plus page-level screen reader follow-up |
 | Regenerate the glossary viewer | [GLOSSARY_UPDATE_GUIDE.md](GLOSSARY_UPDATE_GUIDE.md) |
 | Work as a coding agent | [AGENTS.md](../AGENTS.md) |
 
@@ -21,12 +24,14 @@ Guides for the NRCan Energy Factbook repository. The project has two parts: a **
 
 | Document | Description |
 |----------|-------------|
-| [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md) | Operator runbook: prerequisites, three-stage workflow, partial updates, logs, troubleshooting |
+| [DATA_UPDATE_GUIDE.md](DATA_UPDATE_GUIDE.md) | Operator runbook: NRCan package drops, three-stage workflow, partial updates, troubleshooting |
 | [DATA_PIPELINE_GUIDE.md](DATA_PIPELINE_GUIDE.md) | Developer reference: database layers, update/transform handlers, fetch patterns, frontend wiring |
-| [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md) | Step-by-step page patterns: routing, Plotly charts, downloads, translations |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Hosting static builds, release zips, Azure DevOps pipeline, data-only updates |
+| [PAGE_CREATION_GUIDE.md](PAGE_CREATION_GUIDE.md) | Step-by-step page patterns: routing, shared chrome, Plotly charts, downloads, translations |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Hosting static builds, SPA deep links, CSP/caching, asset budgets, release zips |
+| [EMBED_MODE.md](EMBED_MODE.md) | Optional `?embed=1` chrome-less nesting |
+| [WCAG_SAMPLE_AUDIT.md](WCAG_SAMPLE_AUDIT.md) | Manual keyboard/SR checklist and release sign-off |
 | [GLOSSARY_UPDATE_GUIDE.md](GLOSSARY_UPDATE_GUIDE.md) | Export glossary CSVs and `data-gallery.html` from SQL |
-| [EFB_MODERNIZATION_REVIEW.md](EFB_MODERNIZATION_REVIEW.md) | Client Q&A handoff: DevOps, lint, page index |
+| [client/Energy-Fact-Book-Review-Change-Inventory.pdf](client/Energy-Fact-Book-Review-Change-Inventory.pdf) | Client note of codebase-review changes (updated 21 Sep 2026) |
 
 ## Pipeline scripts (in-repo)
 

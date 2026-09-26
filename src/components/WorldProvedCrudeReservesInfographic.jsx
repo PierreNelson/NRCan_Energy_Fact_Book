@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
+import ClearSelectionButton from './ClearSelectionButton';
 import worldCrudeOilProvedReservesBg from '../assets/world_crude_oil_proved_reserves_bg.svg';
 import {
     COUNTRY_LABEL_KEYS,
@@ -96,9 +98,19 @@ const WorldProvedCrudeReservesInfographic = ({
     }, [pieChart]);
 
     return (
-        <figure ref={figureRef} className="world-crude-oil-proved-reserves-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="world-crude-oil-proved-reserves-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={worldCrudeOilProvedReservesBg}
+            imgClassName="world-crude-oil-proved-reserves-bg-image"
+        >
             <style>{`
 .world-crude-oil-proved-reserves-infographic-figure {
+    position: relative;
     width: 100%;
     max-width: none;
     margin: 0 0 24px 0;
@@ -143,18 +155,8 @@ const WorldProvedCrudeReservesInfographic = ({
     left: 0;
     top: ${GREY_SECTION_TOP}%;
     transform: translateY(0);
-    padding: 6px 12px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: ${OVERLAY_FONT_SIZES.clear_selection};
-    color: #fff;
+    margin-bottom: 0;
     pointer-events: auto;
-}
-.world-crude-oil-proved-reserves-clear-selection:hover {
-    background-color: #404040;
 }
 .world-crude-oil-proved-reserves-overlay--oil-sands-pct {
     font-weight: 700;
@@ -185,6 +187,11 @@ const WorldProvedCrudeReservesInfographic = ({
     height: 100%;
     z-index: 5;
     overflow: visible;
+}
+.world-crude-oil-proved-reserves-pie-clip .lazy-plot-host,
+.world-crude-oil-proved-reserves-pie-clip .lazy-plot-inner {
+    width: 100% !important;
+    height: 100% !important;
 }
 .world-crude-oil-proved-reserves-pie-clip .js-plotly-plot,
 .world-crude-oil-proved-reserves-pie-clip .plot-container,
@@ -276,12 +283,13 @@ const WorldProvedCrudeReservesInfographic = ({
             `}</style>
 
             <div className="world-crude-oil-proved-reserves-infographic-wrapper">
-                <img src={worldCrudeOilProvedReservesBg} alt="" className="world-crude-oil-proved-reserves-bg-image" draggable={false} />
-
                 {showClearSelection && (
-                    <button type="button" className="world-crude-oil-proved-reserves-clear-selection" onClick={onClearSelection}>
-                        {getText('world_crude_reserves_clear_selection', lang)}
-                    </button>
+                    <ClearSelectionButton
+                        lang={lang}
+                        label={getText('world_crude_reserves_clear_selection', lang)}
+                        onClick={onClearSelection}
+                        className="world-crude-oil-proved-reserves-clear-selection"
+                    />
                 )}
 
                 <MultilineOverlay
@@ -362,7 +370,7 @@ const WorldProvedCrudeReservesInfographic = ({
                     );
                 })}
             </div>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

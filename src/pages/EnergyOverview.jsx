@@ -1,4 +1,5 @@
 import React from 'react';
+import PageShell from '../components/PageShell';
 import { useOutletContext, Link } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import energyOverviewImage from '../assets/energy_overview_bg.jpg';
@@ -7,11 +8,9 @@ const EnergyOverview = () => {
     const { lang } = useOutletContext();
 
     return (
-        <main 
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-1 energy-overview-main cover-page" 
-            role="main"
+            className="page-content page-1 energy-overview-main cover-page"
             style={{
                 backgroundColor: '#5a7a8a',
                 flex: '1 1 auto',
@@ -184,7 +183,7 @@ const EnergyOverview = () => {
                     </ul>
                 </nav>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

@@ -1,11 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import PageFootnotes from '../components/PageFootnotes';
+import YearSelect from '../components/YearSelect';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import WindSolarElectricityGrowthInfographic from '../components/WindSolarElectricityGrowthInfographic';
 import { exportWindSolarGrowthInfographicPng } from '../components/WindSolarElectricityGrowthInfographic.constants';
 import { getWindSolarElectricityGrowthData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const CANADA_CAPSULE = '#819476';
 const RANKING_COUNTRY_KEYS = ['canada', 'usa', 'russia', 'china', 'india'];
@@ -13,9 +20,7 @@ const RANKING_COUNTRY_KEYS = ['canada', 'usa', 'russia', 'china', 'india'];
 const windSolarCountryLabel = (key, lang) => getText(`wind_solar_electricity_growth_country_${key}`, lang);
 const windSolarTableColLabel = (key, lang) => getText(`wind_solar_electricity_growth_table_col_${key}`, lang);
 
-const formatRankingPct = (value) => (value === '' ? '\u2014' : `${value}%`);
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
+const formatRankingPct = (value) => (value === '' || value == null ? '\u2014' : `${value}%`);
 
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
@@ -122,16 +127,8 @@ const WindSolarElectricityGrowth = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [year, setYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
     const infographicRef = useRef(null);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
-    const tableTopRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const tableBottomRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
@@ -145,80 +142,9 @@ const WindSolarElectricityGrowth = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-wind-solar-electricity-growth');
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll, result]);
-
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-wind-solar-electricity-growth')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-wind-solar-electricity-growth')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-wind-solar-electricity-growth');
 
     const rankingYears = useMemo(() => result?.rankingYears ?? [], [result]);
     const rankingYearsDesc = useMemo(
@@ -260,13 +186,30 @@ const WindSolarElectricityGrowth = () => {
     const rankingTitle = substitute(getText('wind_solar_electricity_growth_ranking_title', lang), textVars);
     const infographicTitle = substitute(getText('wind_solar_electricity_growth_infographic_title', lang), textVars);
     const tableCaption = getText('wind_solar_electricity_growth_table_caption', lang);
+    const exportTableTitle = stripHtml(tableCaption);
 
-    const tableHeaders = useMemo(
+    const tableColumns = useMemo(
         () => [
-            getText('wind_solar_electricity_growth_table_col_year', lang),
-            ...RANKING_COUNTRY_KEYS.map((k) => windSolarTableColLabel(k, lang)),
+            { key: 'year', header: getText('wind_solar_electricity_growth_table_col_year', lang), align: 'left' },
+            ...RANKING_COUNTRY_KEYS.map((k) => ({
+                key: k,
+                header: windSolarTableColLabel(k, lang),
+                align: 'num',
+            })),
         ],
         [lang],
+    );
+
+    const tableRows = useMemo(
+        () =>
+            rankingHistoryRows.map((row) => {
+                const cells = { year: row.year };
+                RANKING_COUNTRY_KEYS.forEach((key, idx) => {
+                    cells[key] = row.pcts?.[idx] ?? '';
+                });
+                return cells;
+            }),
+        [rankingHistoryRows],
     );
 
     const yearSpanFile = rankingYearsAsc.length > 1
@@ -299,60 +242,6 @@ const WindSolarElectricityGrowth = () => {
         });
     };
 
-    const downloadTableCsv = () => {
-        const rows = rankingHistoryRows.map((row) => [
-            row.year,
-            ...row.pcts.map((p) => (p === '' ? '' : String(p))),
-        ]);
-        saveAs(
-            new Blob([[tableHeaders.join(','), ...rows.map((r) => r.join(','))].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            downloadFilename('wind_solar_electricity_growth_table_csv_slug'),
-        );
-    };
-
-    const downloadTableDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = rankingHistoryRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                        ...row.pcts.map(
-                            (p) =>
-                                new TableCell({
-                                    children: [new Paragraph({ children: [new TextRun({ text: p === '' ? '\u2014' : `${p}%`, size: 22 })], alignment: AlignmentType.CENTER })],
-                                }),
-                        ),
-                    ],
-                }),
-        );
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(tableCaption), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [1200, ...RANKING_COUNTRY_KEYS.map(() => 1200)],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), downloadFilename('wind_solar_electricity_growth_table_docx_slug'));
-    };
-
     const downloadInfographicPng = async () => {
         const canvas = await exportWindSolarGrowthInfographicPng(infographicRef.current, {
             title: stripHtml(infographicTitle),
@@ -382,58 +271,42 @@ const WindSolarElectricityGrowth = () => {
         );
     };
 
-    if (loading) {
-        return <p className="wind-solar-electricity-growth-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>;
-    }
-    if (error) {
-        return <p className="wind-solar-electricity-growth-error" role="alert">{error}</p>;
-    }
-    if (!result || year == null) {
-        return <p className="wind-solar-electricity-growth-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>;
-    }
+    const hasPageData = !loading && !error && result && year != null;
 
     const maxPct = rankingRows[0]?.pct || 1;
 
-    const windOverlay = {
+    const windOverlay = hasPageData ? {
         label: getText('wind_solar_electricity_growth_wind_label', lang),
         endValue: Number(result.windEnd).toLocaleString(locale, { maximumFractionDigits: 0 }),
         endYear: result.endYear,
         startValue: Number(result.windStart).toLocaleString(locale, { maximumFractionDigits: 0 }),
         startYear: result.startYear,
-    };
+    } : null;
 
-    const solarOverlay = {
+    const solarOverlay = hasPageData ? {
         label: getText('wind_solar_electricity_growth_solar_label', lang),
         endValue: Number(result.solarEnd).toLocaleString(locale, { maximumFractionDigits: 0 }),
         endYear: result.endYear,
         startValue: Number(result.solarStart).toLocaleString(locale, { maximumFractionDigits: 0 }),
         startYear: result.startYear,
-    };
+    } : null;
 
     const rankingAria = lang === 'en'
         ? `Non-emitting electricity ranking for ${year}: ${rankingRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}.`
         : `Classement de l'électricité non émettrice pour ${year} : ${rankingRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}.`;
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
-            className="page-content page-70"
-            role="main"
+            className="page-content page-70 page-chrome page-chrome--bleed"
             aria-labelledby="wind-solar-electricity-growth-content"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-70.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-70 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .wind-solar-electricity-growth-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
-.wind-solar-electricity-growth-year-dropdown { position: relative; margin-bottom: 20px; width: 200px; }
 .wind-solar-electricity-growth-bullets {
     font-family: 'Noto Sans', sans-serif;
     font-size: 1.05rem;
@@ -444,7 +317,7 @@ const WindSolarElectricityGrowth = () => {
 }
 .wind-solar-electricity-growth-bullets li { margin-bottom: 0.85rem; }
 .wind-solar-electricity-growth-bullets strong { font-weight: 700; }
-.wind-solar-electricity-growth-bullets .fn-lnk { color: #26374a; text-decoration: underline; }
+.wind-solar-electricity-growth-bullets .fn-lnk { color: #26374a; }
 .wind-solar-electricity-growth-split-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -490,7 +363,7 @@ const WindSolarElectricityGrowth = () => {
 }
 .wind-solar-electricity-growth-capsule-row-canada .wind-solar-electricity-growth-capsule-pill { border-width: 2px; border-color: ${CANADA_CAPSULE}; font-weight: bold; font-size: 16px; }
 .wind-solar-electricity-growth-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-.wind-solar-electricity-growth-infographic-figure { margin: 0; width: 100%; }
+.wind-solar-electricity-growth-infographic-figure { position: relative; margin: 0; width: 100%; }
 .wind-solar-electricity-growth-infographic-wrapper {
     position: relative;
     width: 100%;
@@ -510,20 +383,7 @@ const WindSolarElectricityGrowth = () => {
 .wind-solar-electricity-growth-overlay.wind-solar-electricity-growth-value { font-weight: 700; }
 .wind-solar-electricity-growth-overlay.wind-solar-electricity-growth-year { font-weight: 400; }
 .wind-solar-electricity-growth-table-wrapper { display: block; width: 100%; margin-top: 20px; margin-bottom: 0; }
-.wind-solar-electricity-growth-table-wrapper details > summary {
-    cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; padding: 10px;
-    background-color: #8C8C8C; border: 1px solid #404040; border-radius: 4px;
-    list-style: none; box-sizing: border-box; width: 100%; color: #ffffff;
-}
-.wind-solar-electricity-growth-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.wind-solar-electricity-growth-table-wrapper summary:hover, .wind-solar-electricity-growth-download-buttons button:hover { background-color: #404040 !important; }
-.wind-solar-electricity-growth-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.wind-solar-electricity-growth-table-scrollbar > div { height: 20px; }
-.wind-solar-electricity-growth-table-responsive {
-    width: 100%; overflow-x: auto; overflow-y: hidden; -ms-overflow-style: none; scrollbar-width: none;
-}
-.wind-solar-electricity-growth-table-responsive::-webkit-scrollbar { display: none; }
-.wind-solar-electricity-growth-table-responsive table { width: max-content !important; min-width: 100%; }
+.wind-solar-electricity-growth-table-wrapper .data-table-wrapper { width: 100%; box-sizing: border-box; }
 .wind-solar-electricity-growth-footnotes {
     margin-top: 28px; font-family: 'Noto Sans', sans-serif; font-size: 0.95rem; color: var(--gc-text);
     border-top: 1px solid #ddd; padding-top: 16px;
@@ -540,243 +400,110 @@ const WindSolarElectricityGrowth = () => {
             `}</style>
 
             <div className="wind-solar-electricity-growth-container" id="wind-solar-electricity-growth-content">
-                {rankingYearsDesc.length > 0 && (
-                    <div ref={yearDropdownRef} className="wind-solar-electricity-growth-year-dropdown">
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                            {getText('year_slider_label', lang)}
-                        </label>
-                        <button
-                            ref={yearButtonRef}
-                            type="button"
-                            onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                            aria-expanded={isYearDropdownOpen}
-                            style={{
-                                width: '100%',
-                                padding: '10px 15px',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                textAlign: 'left',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                fontSize: '16px',
-                            }}
-                        >
-                            <span>{year}</span>
-                            <span aria-hidden="true" style={{ fontSize: '12px' }}>
-                                {isYearDropdownOpen ? '▲' : '▼'}
-                            </span>
-                        </button>
-                        {isYearDropdownOpen && (
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    left: 0,
-                                    width: '100%',
-                                    maxHeight: '300px',
-                                    overflowY: 'auto',
-                                    backgroundColor: '#fff',
-                                    border: '1px solid #ccc',
-                                    borderRadius: '4px',
-                                    zIndex: 100,
-                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                }}
-                            >
-                                {rankingYearsDesc.map((y) => {
-                                    const isSelected = year === y;
-                                    return (
-                                        <button
-                                            key={y}
-                                            type="button"
-                                            aria-pressed={isSelected}
-                                            aria-label={String(y)}
-                                            onClick={() => {
-                                                setYear(y);
-                                                setIsYearDropdownOpen(false);
-                                                setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                            }}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                width: '100%',
-                                                textAlign: 'left',
-                                                padding: '10px 15px',
-                                                cursor: 'pointer',
-                                                border: 'none',
-                                                borderBottom: '1px solid #eee',
-                                                backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                                fontFamily: 'Arial, sans-serif',
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = '#f5f5f5';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff';
-                                            }}
-                                        >
-                                            <span
-                                                aria-hidden="true"
-                                                style={{
-                                                    height: '18px',
-                                                    width: '18px',
-                                                    borderRadius: '50%',
-                                                    border: '1px solid #ccc',
-                                                    marginRight: '10px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    backgroundColor: '#fff',
-                                                }}
-                                            >
-                                                {isSelected && (
-                                                    <span
-                                                        style={{
-                                                            height: '10px',
-                                                            width: '10px',
-                                                            borderRadius: '50%',
-                                                            backgroundColor: '#000',
-                                                        }}
-                                                    />
-                                                )}
-                                            </span>
-                                            <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
-                                                {y}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-                        <div role="status" className="wb-inv" aria-live="polite">
-                            {year
-                                ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}`
-                                : ''}
-                        </div>
-                    </div>
+                {loading && (
+                    <p className="wind-solar-electricity-growth-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>
+                )}
+                {!loading && error && (
+                    <p className="wind-solar-electricity-growth-error" role="alert">{error}</p>
+                )}
+                {!loading && !error && !hasPageData && (
+                    <p className="wind-solar-electricity-growth-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>
                 )}
 
-                <ul className="wind-solar-electricity-growth-bullets">
-                    <li dangerouslySetInnerHTML={{ __html: substitute(getText('wind_solar_electricity_growth_bullet1', lang), textVars) }} />
-                    <li>
-                        <span dangerouslySetInnerHTML={{ __html: substitute(getText('wind_solar_electricity_growth_bullet2', lang), textVars) }} />
-                        <span id="fn-asterisk-rf-wind-solar-electricity-growth" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
-                            <a className="fn-lnk" href="#fn-asterisk-wind-solar-electricity-growth" onClick={scrollToFootnote}>*</a>
-                        </span>
-                    </li>
-                </ul>
+                {hasPageData && (
+                    <>
+                        {rankingYearsDesc.length > 0 && (
+                            <>
+                                <YearSelect
+                                    lang={lang}
+                                    id="wind-solar-electricity-growth-year-button"
+                                    className="wind-solar-electricity-growth-year-dropdown"
+                                    label={getText('year_slider_label', lang)}
+                                    years={rankingYearsDesc}
+                                    value={year}
+                                    onChange={setYear}
+                                />
+                                <div role="status" className="wb-inv" aria-live="polite">
+                                    {year
+                                        ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}`
+                                        : ''}
+                                </div>
+                            </>
+                        )}
 
-                <div className="wind-solar-electricity-growth-split-row">
-                    <section className="wind-solar-electricity-growth-ranking-col" aria-label={rankingAria}>
-                        <h2 className="wind-solar-electricity-growth-graphic-title">{rankingTitle}</h2>
-                        <div className="wind-solar-electricity-growth-capsule-graphic">
-                            {rankingRows.map((row) => renderCapsuleRow(row, maxPct))}
-                        </div>
-                        <div className="wind-solar-electricity-growth-download-buttons">
-                            <button type="button" style={downloadBtnStyle} onClick={downloadRankingPng}>
-                                {getText('wind_solar_electricity_growth_download_ranking_png', lang)}
-                            </button>
-                        </div>
-                    </section>
+                        <ul className="wind-solar-electricity-growth-bullets">
+                            <li dangerouslySetInnerHTML={{ __html: substitute(getText('wind_solar_electricity_growth_bullet1', lang), textVars) }} />
+                            <li>
+                                <span dangerouslySetInnerHTML={{ __html: substitute(getText('wind_solar_electricity_growth_bullet2', lang), textVars) }} />
+                                <span id="fn-asterisk-rf-wind-solar-electricity-growth" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
+                                    <a className="fn-lnk" href="#fn-asterisk-wind-solar-electricity-growth" onClick={scrollToFootnote}>*</a>
+                                </span>
+                            </li>
+                        </ul>
 
-                    <section className="wind-solar-electricity-growth-infographic-col" aria-label={stripHtml(infographicTitle)}>
-                        <h2 className="wind-solar-electricity-growth-graphic-title">{infographicTitle}</h2>
-                        <div ref={infographicRef}>
-                            <WindSolarElectricityGrowthInfographic
-                                wind={windOverlay}
-                                solar={solarOverlay}
-                                ariaLabel={stripHtml(infographicTitle)}
+                        <div className="wind-solar-electricity-growth-split-row">
+                            <section className="wind-solar-electricity-growth-ranking-col" aria-label={rankingAria}>
+                                <h2 className="wind-solar-electricity-growth-graphic-title">{rankingTitle}</h2>
+                                <div className="wind-solar-electricity-growth-capsule-graphic">
+                                    {rankingRows.map((row) => renderCapsuleRow(row, maxPct))}
+                                </div>
+                                <div className="wind-solar-electricity-growth-download-buttons">
+                                    <button type="button" style={downloadBtnStyle} onClick={downloadRankingPng}>
+                                        {getText('wind_solar_electricity_growth_download_ranking_png', lang)}
+                                    </button>
+                                </div>
+                            </section>
+
+                            <section className="wind-solar-electricity-growth-infographic-col" aria-label={stripHtml(infographicTitle)}>
+                                <h2 className="wind-solar-electricity-growth-graphic-title">{infographicTitle}</h2>
+                                <div ref={infographicRef}>
+                                    <WindSolarElectricityGrowthInfographic
+                                        wind={windOverlay}
+                                        solar={solarOverlay}
+                                        ariaLabel={stripHtml(infographicTitle)}
+                                    />
+                                </div>
+                                <div className="wind-solar-electricity-growth-download-buttons">
+                                    <button type="button" style={downloadBtnStyle} onClick={downloadInfographicPng}>
+                                        {getText('wind_solar_electricity_growth_download_infographic_png', lang)}
+                                    </button>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div className="wind-solar-electricity-growth-table-wrapper">
+                            <ChartDataTable
+                                lang={lang}
+                                columns={tableColumns}
+                                rows={tableRows}
+                                csvFilename={downloadFilename('wind_solar_electricity_growth_table_csv_slug')}
+                                docx={{
+                                    filename: downloadFilename('wind_solar_electricity_growth_table_docx_slug'),
+                                    title: exportTableTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: [1200, ...RANKING_COUNTRY_KEYS.map(() => 1200)],
+                                    fontSize: 22,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                                renderCell={(raw, { column }) => {
+                                    if (column?.key === 'year') return String(raw ?? '');
+                                    return formatRankingPct(raw);
+                                }}
                             />
                         </div>
-                        <div className="wind-solar-electricity-growth-download-buttons">
-                            <button type="button" style={downloadBtnStyle} onClick={downloadInfographicPng}>
-                                {getText('wind_solar_electricity_growth_download_infographic_png', lang)}
-                            </button>
-                        </div>
-                    </section>
-                </div>
 
-                <div className="wind-solar-electricity-growth-table-wrapper">
-                    <details className="wind-solar-electricity-growth-data-table" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                            <span className="wb-inv">
-                                {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                            </span>
-                        </summary>
-                        <div ref={tableTopRef} className="wind-solar-electricity-growth-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={tableScrollRef}
-                            className="wind-solar-electricity-growth-table-responsive"
-                            role="region"
-                            aria-labelledby="wind-solar-electricity-growth-table-caption"
-                            tabIndex={0}
-                        >
-                            <table className="table table-bordered table-striped table-hover">
-                                <caption id="wind-solar-electricity-growth-table-caption" className="wb-inv">{tableCaption}</caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col" style={{ position: 'sticky', left: 0, backgroundColor: '#f8f9fa', zIndex: 2, fontWeight: 'bold', textAlign: 'center', minWidth: '80px', borderRight: '2px solid #dee2e6' }}>
-                                            {getText('wind_solar_electricity_growth_table_col_year', lang)}
-                                        </th>
-                                        {RANKING_COUNTRY_KEYS.map((k) => (
-                                            <th key={k} scope="col" style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
-                                                {windSolarTableColLabel(k, lang)}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rankingHistoryRows.map((row) => (
-                                        <tr key={row.year}>
-                                            <th scope="row" style={{ position: 'sticky', left: 0, zIndex: 1, fontWeight: 'bold', textAlign: 'center', borderRight: '2px solid #dee2e6' }}>
-                                                {row.year}
-                                            </th>
-                                            {row.pcts.map((p, idx) => (
-                                                <td key={RANKING_COUNTRY_KEYS[idx]} style={{ textAlign: 'center' }}>
-                                                    {formatRankingPct(p)}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={tableBottomRef} className="wind-solar-electricity-growth-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                            <button type="button" style={downloadBtnStyle} onClick={downloadTableCsv}>
-                                {getText('wind_solar_electricity_growth_download_csv', lang)}
-                            </button>
-                            <button type="button" style={downloadBtnStyle} onClick={downloadTableDocx}>
-                                {getText('wind_solar_electricity_growth_download_docx', lang)}
-                            </button>
-                        </div>
-                    </details>
-                </div>
-
-                <aside className="wb-fnote wind-solar-electricity-growth-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note'}</dt>
-                        <dd id="fn-asterisk-wind-solar-electricity-growth">
-                            <a
-                                href="#fn-asterisk-rf-wind-solar-electricity-growth"
-                                onClick={scrollToRef}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('wind_solar_electricity_growth_footnote', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                        <PageFootnotes
+                            lang={lang}
+                            className="wind-solar-electricity-growth-footnotes"
+                            items={[
+                                { id: 'fn-asterisk-wind-solar-electricity-growth', marker: '*', text: getText('wind_solar_electricity_growth_footnote', lang), returnHref: '#fn-asterisk-rf-wind-solar-electricity-growth' },
+                            ]}
+                        />
+                    </>
+                )}
             </div>
-        </main>
+        </PageShell>
     );
 };
 

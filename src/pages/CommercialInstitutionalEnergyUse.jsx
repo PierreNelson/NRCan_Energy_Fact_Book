@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import YearSelect from '../components/YearSelect';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import PageStatus from '../components/PageStatus';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCommercialInstitutionalEnergyUseData, commercialInstitutionalEnergyUseRowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import hexToRgba from '../utils/hexToRgba';
 import commercialInstitutionalEnergyBg1 from '../assets/commercial_institutional_energy_bg1.png';
 import commercialInstitutionalEnergyBg2 from '../assets/commercial_institutional_energy_bg2.png';
 import commercialInstitutionalEnergyBg3 from '../assets/commercial_institutional_energy_bg3.png';
@@ -14,16 +21,10 @@ import commercialInstitutionalEnergyBg6 from '../assets/commercial_institutional
 
 const CIEU_SLICE_ORDER = ['sh', 'ae', 'lt', 'wh', 'am', 'sc'];
 const CIEU_COLORS = ['#CE8003', '#4b4c4d', '#6b5b95', '#6b666a', '#1f8093', '#7db8d4'];
-/** Fixed filename for CSV/DOCX (no year). */
+/** Fixed filename for CSV/DOCX/PNG (no year). */
 const commercial_institutional_TABLE_FILENAME_BASE = 'commercial_institutional_energy_by_end_use';
 /** Earliest year in the year selector and in chart data tables; newer years appear automatically from data. */
 const commercial_institutional_MIN_DISPLAY_YEAR = 2022;
-
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    return hex;
-};
 
 const substitute = (str, vars) => {
     if (!str || typeof str !== 'string') return str;
@@ -47,23 +48,30 @@ const boldNumbersInBullet = (str) => {
     return parts;
 };
 
+const getSliceLabelKey = (key) => {
+    const m = {
+        sh: 'commercial_institutional_label_space_heating',
+        wh: 'commercial_institutional_label_water_heating',
+        ae: 'commercial_institutional_label_auxiliary_equipment',
+        am: 'commercial_institutional_label_auxiliary_motors',
+        lt: 'commercial_institutional_label_lighting',
+        sc: 'commercial_institutional_label_space_cooling',
+    };
+    return m[key] || key;
+};
+
 const CommercialInstitutionalEnergyUse = () => {
     const outlet = useOutletContext();
     const lang = outlet?.lang ?? 'en';
+    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
+    const windowWidth = useWindowWidth();
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [pickedYear, setPickedYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedSlices, setSelectedSlices] = useState(null);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
     const chartRef = useRef(null);
     const lastPieClickRef = useRef({ time: 0, index: null });
-    const tableTopRef = useRef(null);
-    const tableScrollRef = useRef(null);
 
     useEffect(() => {
         getCommercialInstitutionalEnergyUseData()
@@ -73,59 +81,6 @@ const CommercialInstitutionalEnergyUse = () => {
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
     }, []);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(e.target)) setIsYearDropdownOpen(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    const syncTableScroll = (topRef, tableRef) => {
-        const topScroll = topRef?.current;
-        const tableScroll = tableRef?.current;
-        if (!topScroll || !tableScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        const scrollWidth = table.offsetWidth;
-        const containerWidth = tableScroll.clientWidth;
-        const spacer = topScroll?.firstElementChild;
-        if (spacer) spacer.style.width = `${scrollWidth}px`;
-        if (scrollWidth > containerWidth) {
-            topScroll.style.display = 'block';
-            topScroll.style.opacity = '1';
-        } else {
-            topScroll.style.display = 'none';
-        }
-    };
-
-    useEffect(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll || !isTableOpen) return;
-        const handleTopScroll = () => { if (tableScroll.scrollLeft !== topScroll.scrollLeft) tableScroll.scrollLeft = topScroll.scrollLeft; };
-        const handleTableScroll = () => { if (topScroll.scrollLeft !== tableScroll.scrollLeft) topScroll.scrollLeft = tableScroll.scrollLeft; };
-        const sync = () => window.requestAnimationFrame(() => syncTableScroll(tableTopRef, tableScrollRef));
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth]);
 
     const pad = { left: 0, right: 0 };
     const years = useMemo(() => {
@@ -144,11 +99,6 @@ const CommercialInstitutionalEnergyUse = () => {
         return [...filtered].reverse().find((r) => r.ee_improvement_pct != null && r.ee_savings_pj != null) || filtered[filtered.length - 1] || null;
     }, [result]);
 
-    const getSliceLabelKey = (key) => {
-        const m = { sh: 'commercial_institutional_label_space_heating', wh: 'commercial_institutional_label_water_heating', ae: 'commercial_institutional_label_auxiliary_equipment', am: 'commercial_institutional_label_auxiliary_motors', lt: 'commercial_institutional_label_lighting', sc: 'commercial_institutional_label_space_cooling' };
-        return m[key] || key;
-    };
-
     const orderedSlices = useMemo(() => {
         if (!selectedRow?.slices?.length) return [];
         return CIEU_SLICE_ORDER.map((k) => selectedRow.slices.find((s) => s.key === k)).filter(Boolean);
@@ -166,7 +116,7 @@ const CommercialInstitutionalEnergyUse = () => {
         const customdata = orderedSlices.map((s) => s.pct);
         const hoverTexts = orderedSlices.map((s) => {
             const label = getText(getSliceLabelKey(s.key), lang);
-            return `<b>${label}</b><br>${Number(s.pj).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 1 })} PJ<br>${Number(s.pct).toFixed(1)}%`;
+            return `<b>${label}</b><br>${Number(s.pj).toLocaleString(locale, { maximumFractionDigits: 1 })} PJ<br>${Number(s.pct).toFixed(1)}%`;
         });
         const baseColors = CIEU_COLORS.slice(0, values.length);
         const effectiveColors = effectiveSlices && effectiveSlices.length > 0
@@ -194,10 +144,11 @@ const CommercialInstitutionalEnergyUse = () => {
             hoverinfo: 'text',
             hoverlabel: { bgcolor: 'white', font: { color: '#333', size: 14, family: 'Arial, sans-serif' } },
         };
-    }, [selectedRow, orderedSlices, lang, textSize, effectiveSlices]);
+    }, [selectedRow, orderedSlices, lang, locale, textSize, effectiveSlices]);
 
     const chartTitle = substitute(getText('commercial_institutional_chart_title', lang), { year: selectedYear ?? '' });
-    const teuFormatted = selectedRow?.teu != null ? Math.round(Number(selectedRow.teu)).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 }) : '–';
+    const exportChartTitle = stripHtml(chartTitle);
+    const teuFormatted = selectedRow?.teu != null ? Math.round(Number(selectedRow.teu)).toLocaleString(locale, { maximumFractionDigits: 0 }) : '–';
     const compactCenterLabel = windowWidth <= 480;
     const centerLabel = compactCenterLabel ? 'Total' : getText('commercial_institutional_center_total', lang);
     const centerText = compactCenterLabel ? centerLabel : `${centerLabel}<br>${teuFormatted} PJ`;
@@ -217,7 +168,7 @@ const CommercialInstitutionalEnergyUse = () => {
                     eiPct: r.eiPct != null ? r.eiPct : null,
                     ee_improvement_pct: r.ee_improvement_pct != null ? r.ee_improvement_pct : null,
                     ee_savings_pj: r.ee_savings_pj != null ? r.ee_savings_pj : null,
-                    ee_savings_billion: r.ee_savings_billion != null ? r.ee_savings_billion : null
+                    ee_savings_billion: r.ee_savings_billion != null ? r.ee_savings_billion : null,
                 };
                 CIEU_SLICE_ORDER.forEach((k) => {
                     const slice = r.slices?.find((s) => s.key === k);
@@ -227,123 +178,54 @@ const CommercialInstitutionalEnergyUse = () => {
             });
     }, [result]);
 
-    const downloadChartPng = async () => {
-        const plotEl = chartRef?.current?.querySelector('.js-plotly-plot');
-        if (!plotEl || !window.Plotly) return;
-        const safeFilename = (chartTitle || 'chart').replace(/[^\w\s,-]/g, '').replace(/\s+/g, '_').trim() || 'commercial_institutional_energy_by_end_use';
-        const fullFilename = `${safeFilename}.png`;
-        try {
-            await window.Plotly.relayout(plotEl, { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff' });
-            const imgData = await window.Plotly.toImage(plotEl, { format: 'png', width: 1200, height: 800, scale: 2 });
-            await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 60;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#26374a';
-                ctx.font = 'bold 20px "Noto Sans", sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(chartTitle, canvas.width / 2, 40);
-                ctx.drawImage(img, 0, titleHeight);
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = fullFilename;
-                link.click();
-            };
-            img.src = imgData;
-        } catch {
-            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }); } catch { /* ignore relayout restore */ }
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: lang === 'en' ? 'Year' : 'Année', align: 'left' },
+        ...CIEU_SLICE_ORDER.map((k) => ({
+            key: k,
+            header: `${getText(getSliceLabelKey(k), lang)} (PJ)`,
+            align: 'num',
+        })),
+        { key: 'total', header: lang === 'en' ? 'Total (PJ)' : 'Total (PJ)', align: 'num' },
+        { key: 'chEuPct', header: lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)', align: 'num' },
+        { key: 'chEuWeiPct', header: lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)', align: 'num' },
+        { key: 'eiPct', header: lang === 'en' ? 'Change in energy intensity (%)' : 'Variation de l\'intensité énergétique (%)', align: 'num' },
+        { key: 'ee_improvement_pct', header: lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)', align: 'num' },
+        { key: 'ee_savings_pj', header: lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)', align: 'num' },
+        { key: 'ee_savings_billion', header: lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)', align: 'num' },
+    ], [lang]);
+
+    const tableColumnWidths = useMemo(
+        () => [800, ...CIEU_SLICE_ORDER.map(() => 1500), 1500, 1800, 1800, 2200, 1600, 1400, 1400],
+        [],
+    );
+
+    const formatTableCell = (raw, { column, colIndex }) => {
+        if (raw == null || raw === '') return '–';
+        if (colIndex === 0 || column?.key === 'year') return String(raw);
+        if (column?.key === 'ee_improvement_pct') return `${raw}%`;
+        if (CIEU_SLICE_ORDER.includes(column?.key) || column?.key === 'total' || column?.key === 'ee_savings_pj') {
+            const n = Number(raw);
+            if (Number.isNaN(n)) return '–';
+            if (column?.key === 'ee_savings_pj' && n === Math.round(n)) return String(raw);
+            return n.toLocaleString(locale, { maximumFractionDigits: 2 });
         }
+        return String(raw);
     };
 
-    const config = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
-        modeBarButtonsToAdd: [{
-            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: downloadChartPng,
-        }],
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${commercial_institutional_TABLE_FILENAME_BASE}.png`,
+        title: exportChartTitle,
+        height: 800,
+    }),
+        [commercial_institutional_TABLE_FILENAME_BASE, exportChartTitle],
+    );
 
-    const downloadTableCSV = () => {
-        if (!tableAllYearsRows.length) return;
-        const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const chSinceCol = lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)';
-        const chWithoutCol = lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)';
-        const eiCol = lang === 'en' ? 'Change in energy intensity (%)' : 'Variation de l\'intensité énergétique (%)';
-        const eeImpCol = lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)';
-        const eePjCol = lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)';
-        const eeBCol = lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)';
-        const headers = [yearCol, ...CIEU_SLICE_ORDER.map((k) => getText(getSliceLabelKey(k), lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)', chSinceCol, chWithoutCol, eiCol, eeImpCol, eePjCol, eeBCol];
-        const rows = tableAllYearsRows.map((r) => [r.year, ...CIEU_SLICE_ORDER.map((k) => r[k] != null ? Number(r[k]).toFixed(2) : ''), r.total != null ? Number(r.total).toFixed(2) : '', r.chEuPct != null ? String(r.chEuPct) : '', r.chEuWeiPct != null ? String(r.chEuWeiPct) : '', r.eiPct != null ? String(r.eiPct) : '', r.ee_improvement_pct != null ? String(r.ee_improvement_pct) : '', r.ee_savings_pj != null ? String(r.ee_savings_pj) : '', r.ee_savings_billion != null ? String(r.ee_savings_billion) : '']);
-        const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = commercial_institutional_TABLE_FILENAME_BASE + '.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-
-    const downloadTableDocx = async () => {
-        if (!tableAllYearsRows.length) return;
-        const yearCol = lang === 'en' ? 'Year' : 'Année';
-        const chSinceCol = lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)';
-        const chWithoutCol = lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)';
-        const eiCol = lang === 'en' ? 'Change in energy intensity (%)' : 'Variation de l\'intensité énergétique (%)';
-        const eeImpCol = lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)';
-        const eePjCol = lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)';
-        const eeBCol = lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)';
-        const headers = [yearCol, ...CIEU_SLICE_ORDER.map((k) => getText(getSliceLabelKey(k), lang)), lang === 'en' ? 'Total (PJ)' : 'Total (PJ)', chSinceCol, chWithoutCol, eiCol, eeImpCol, eePjCol, eeBCol];
-        const headerRow = new TableRow({
-            children: headers.map((h) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const dataRows = tableAllYearsRows.map((r) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(r.year), size: 20 })], alignment: AlignmentType.LEFT })] }),
-                ...CIEU_SLICE_ORDER.map((k) => new TableCell({
-                    children: [new Paragraph({
-                        children: [new TextRun({ text: r[k] != null ? Number(r[k]).toFixed(2) : '–', size: 20 })],
-                        alignment: AlignmentType.RIGHT
-                    })]
-                })),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.total != null ? Number(r.total).toFixed(2) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.chEuPct != null ? String(r.chEuPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.chEuWeiPct != null ? String(r.chEuWeiPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.eiPct != null ? String(r.eiPct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_improvement_pct != null ? String(r.ee_improvement_pct) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_pj != null ? String(r.ee_savings_pj) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.ee_savings_billion != null ? String(r.ee_savings_billion) : '–', size: 20 })], alignment: AlignmentType.RIGHT })] }),
-            ],
-        }));
-        const columnWidths = [800, ...CIEU_SLICE_ORDER.map(() => 1500), 1500, 1800, 1800, 2200, 1600, 1400, 1400];
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: chartTitle, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths,
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, commercial_institutional_TABLE_FILENAME_BASE + '.docx');
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const layout = useMemo(() => ({
         showlegend: false,
@@ -363,19 +245,15 @@ const CommercialInstitutionalEnergyUse = () => {
         }] : [],
     }), [selectedRow, centerText, compactCenterLabel]);
 
-    if (loading) {
+    if (loading || error) {
         return (
-            <div className="commercial-institutional-energy-main" style={{ padding: `0 ${pad.right}px 2rem ${pad.left}px` }}>
-                <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="commercial-institutional-energy-main" style={{ padding: `0 ${pad.right}px 2rem ${pad.left}px` }}>
-                <p>{error}</p>
-            </div>
+            <PageStatus
+                lang={lang}
+                loading={loading}
+                error={error}
+                className="commercial-institutional-energy-main"
+                style={{ padding: `0 ${pad.right}px 2rem ${pad.left}px` }}
+            />
         );
     }
 
@@ -392,11 +270,6 @@ const CommercialInstitutionalEnergyUse = () => {
             <style>{`
 .commercial-institutional-energy-main { width: 100%; margin: 0; padding: 0; font-family: 'Noto Sans', sans-serif; }
 .commercial-institutional-energy-stack { width: 100%; padding: 0 ${pad.right}px 2rem ${pad.left}px; box-sizing: border-box; display: flex; flex-direction: column; gap: 0; }
-.commercial-institutional-energy-year-dropdown { position: relative; margin-bottom: 20px; width: 200px; }
-.commercial-institutional-energy-year-dropdown label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-.commercial-institutional-energy-year-dropdown button[aria-expanded] { width: 100%; padding: 10px 15px; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold; text-align: left; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
-.commercial-institutional-energy-year-dropdown [role="listbox"] { position: absolute; top: 100%; left: 0; width: 100%; max-height: 300px; overflow-y: auto; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; z-index: 100; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-.commercial-institutional-energy-year-dropdown [role="option"] { display: flex; align-items: center; width: 100%; text-align: left; padding: 10px 15px; cursor: pointer; border: none; border-bottom: 1px solid #eee; background-color: #fff; font-family: Arial, sans-serif; }
 .commercial-institutional-energy-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; overflow: visible; }
 .commercial-institutional-energy-chart-title { font-family: 'Noto Sans', sans-serif; font-size: 20px; font-weight: bold; color: var(--gc-text, #333); margin: 0 0 12px 0; text-align: center; }
 .commercial-institutional-energy-chart { width: 100%; height: 520px; position: relative; z-index: 1; }
@@ -411,67 +284,29 @@ const CommercialInstitutionalEnergyUse = () => {
 .commercial-institutional-energy-visual-pct { font-size: 2.5rem; font-weight: bold; color: #c8782a; }
 .commercial-institutional-energy-narrative { margin-top: 1.25rem; margin-bottom: 0; }
 .commercial-institutional-energy-narrative p { margin: 0; font-size: 1.2rem; color: #333; line-height: 1.6; }
-.commercial-institutional-energy-table-responsive { display: block; width: 100%; overflow-x: auto; }
-.commercial-institutional-energy-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
 .commercial-institutional-energy-chart-frame details > summary:hover { background-color: #404040 !important; }
 .commercial-institutional-energy-chart-frame button[type="button"]:hover,
 .commercial-institutional-energy-chart-frame button:hover { background-color: #404040 !important; }
             `}</style>
 
             <div className="commercial-institutional-energy-stack">
-                    <div className="commercial-institutional-energy-year-dropdown" ref={yearDropdownRef}>
-                        <label htmlFor="commercial-institutional-energy-year-button">
-                            {getText('year_slider_label', lang)}
-                        </label>
-                        <button
-                            ref={yearButtonRef}
-                            id="commercial-institutional-energy-year-button"
-                            type="button"
-                            onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                            aria-expanded={isYearDropdownOpen}
-                            aria-haspopup="listbox"
-                            aria-label={selectedYear != null ? String(selectedYear) : ''}
-                        >
-                            <span>{selectedYear ?? ''}</span>
-                            <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                        </button>
-                        {isYearDropdownOpen && (
-                            <div role="listbox" aria-label={lang === 'en' ? 'Year' : 'Année'}>
-                                {years.map((y) => {
-                                    const isSelected = y === selectedYear;
-                                    return (
-                                        <button
-                                            key={y}
-                                            role="option"
-                                            aria-selected={isSelected}
-                                            type="button"
-                                            onClick={() => { setPickedYear(y); setIsYearDropdownOpen(false); setTimeout(() => yearButtonRef.current?.focus(), 0); }}
-                                            style={{ backgroundColor: isSelected ? '#f0f9ff' : '#fff' }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#f5f5f5'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'; }}
-                                        >
-                                            <span aria-hidden="true" style={{ height: '18px', width: '18px', borderRadius: '50%', border: '1px solid #ccc', marginRight: '10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
-                                                {isSelected && <span style={{ height: '10px', width: '10px', borderRadius: '50%', backgroundColor: '#000' }} />}
-                                            </span>
-                                            <span style={{ fontSize: '16px', color: '#333' }}>{y}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-                        <div role="status" className="wb-inv" aria-live="polite">
-                            {selectedYear != null ? (lang === 'en' ? `Showing data for ${selectedYear}` : `Données affichées pour ${selectedYear}`) : ''}
-                        </div>
+                    <YearSelect
+                        lang={lang}
+                        id="commercial-institutional-energy-year-select"
+                        className="commercial-institutional-energy-year-dropdown"
+                        label={getText('year_slider_label', lang)}
+                        years={years}
+                        value={selectedYear}
+                        onChange={setPickedYear}
+                    />
+                    <div role="status" className="wb-inv" aria-live="polite">
+                        {selectedYear != null ? (lang === 'en' ? `Showing data for ${selectedYear}` : `Données affichées pour ${selectedYear}`) : ''}
                     </div>
 
                     <div className="commercial-institutional-energy-chart-frame">
                         <h3 className="commercial-institutional-energy-chart-title">{chartTitle}</h3>
                         {effectiveSlices != null && effectiveSlices.length > 0 && (
-                            <div style={{ marginBottom: 8 }}>
-                                <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>
-                                    {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                </button>
-                            </div>
+                            <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />
                         )}
                         <div className="commercial-institutional-energy-chart" ref={chartRef} role="region" aria-label={chartTitle}>
                             {pieTrace ? (
@@ -479,7 +314,7 @@ const CommercialInstitutionalEnergyUse = () => {
                                     key={selectedYear}
                                     data={[pieTrace]}
                                     layout={layout}
-                                    config={config}
+                                    config={plotConfig}
                                     style={{ width: '100%', height: '100%' }}
                                     useResizeHandler
                                     onClick={(data) => {
@@ -507,72 +342,22 @@ const CommercialInstitutionalEnergyUse = () => {
                                 </p>
                             )}
                         </div>
-                        <details open={isTableOpen} onToggle={(e) => setIsTableOpen(e.currentTarget.open)} style={{ marginTop: 12, width: '100%' }}>
-                            <summary role="button" aria-expanded={isTableOpen} style={{ cursor: 'pointer', color: '#fff', fontWeight: 'bold', padding: '10px', border: '1px solid #404040', backgroundColor: '#8C8C8C', borderRadius: '4px', listStyle: 'none' }}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
-                            <div
-                                ref={tableTopRef}
-                                style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden', marginBottom: 0, display: windowWidth <= 768 ? 'none' : 'block' }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div
-                                ref={tableScrollRef}
-                                className="commercial-institutional-energy-table-responsive"
-                                role="region"
-                                aria-labelledby="commercial-institutional-energy-table-caption"
-                                tabIndex={0}
-                                style={{ marginTop: 0 }}
-                            >
-                                <table className="table table-striped table-hover">
-                                    <caption id="commercial-institutional-energy-table-caption" className="wb-inv">{chartTitle}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">{lang === 'en' ? 'Year' : 'Année'}</th>
-                                            {CIEU_SLICE_ORDER.map((k) => (
-                                                <th key={k} scope="col">{getText(getSliceLabelKey(k), lang)} (PJ)</th>
-                                            ))}
-                                            <th scope="col">{lang === 'en' ? 'Total (PJ)' : 'Total (PJ)'}</th>
-                                            <th scope="col">{lang === 'en' ? 'Change since 2000 (%)' : 'Variation depuis 2000 (%)'}</th>
-                                            <th scope="col">{lang === 'en' ? 'Change without EE (%)' : 'Variation sans EE (%)'}</th>
-                                            <th scope="col">{lang === 'en' ? 'Change in energy intensity (%)' : 'Variation de l\'intensité énergétique (%)'}</th>
-                                            <th scope="col">{lang === 'en' ? 'EE improvement (%)' : 'Amélioration EE (%)'}</th>
-                                            <th scope="col">{lang === 'en' ? 'EE savings (PJ)' : 'Économies EE (PJ)'}</th>
-                                            <th scope="col">{lang === 'en' ? 'EE savings ($B)' : 'Économies EE (G $)'}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tableAllYearsRows.map((r) => (
-                                            <tr key={r.year}>
-                                                <td>{r.year}</td>
-                                                {CIEU_SLICE_ORDER.map((k) => (
-                                                    <td key={k} style={{ textAlign: 'right' }}>{r[k] != null ? Number(r[k]).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }) : '–'}</td>
-                                                ))}
-                                                <td style={{ textAlign: 'right' }}>{r.total != null ? Number(r.total).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 }) : '–'}</td>
-                                                <td style={{ textAlign: 'right' }}>{r.chEuPct != null ? r.chEuPct : '–'}</td>
-                                                <td style={{ textAlign: 'right' }}>{r.chEuWeiPct != null ? r.chEuWeiPct : '–'}</td>
-                                                <td style={{ textAlign: 'right' }}>{r.eiPct != null ? r.eiPct : '–'}</td>
-                                                <td style={{ textAlign: 'right' }}>{r.ee_improvement_pct != null ? `${r.ee_improvement_pct}%` : '–'}</td>
-                                                <td style={{ textAlign: 'right' }}>{r.ee_savings_pj != null ? (Number(r.ee_savings_pj) === Math.round(r.ee_savings_pj) ? r.ee_savings_pj : Number(r.ee_savings_pj).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 2 })) : '–'}</td>
-                                                <td style={{ textAlign: 'right' }}>{r.ee_savings_billion != null ? r.ee_savings_billion : '–'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                <button type="button" onClick={downloadTableCSV} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', color: '#fff', fontSize: 14 }}>
-                                    {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                </button>
-                                <button type="button" onClick={downloadTableDocx} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', color: '#fff', fontSize: 14 }}>
-                                    {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                </button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableAllYearsRows}
+                            csvFilename={`${commercial_institutional_TABLE_FILENAME_BASE}.csv`}
+                            docx={{
+                                filename: `${commercial_institutional_TABLE_FILENAME_BASE}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: tableColumnWidths,
+                                fontSize: 20,
+                            }}
+                            caption={chartTitle}
+                            tableAriaLabel={chartTitle}
+                            renderCell={formatTableCell}
+                        />
                     </div>
 
                     {selectedRow && (
@@ -615,8 +400,8 @@ const CommercialInstitutionalEnergyUse = () => {
                                 <p>
                                     {boldNumbersInBullet(substitute(getText('commercial_institutional_narrative_3', lang), {
                                         improvement: selectedRow.ee_improvement_pct ?? latestWithEe?.ee_improvement_pct ?? '–',
-                                        pj: (selectedRow.ee_savings_pj ?? latestWithEe?.ee_savings_pj) != null ? Number(selectedRow.ee_savings_pj ?? latestWithEe?.ee_savings_pj).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { maximumFractionDigits: 0 }) : '–',
-                                        billion: (selectedRow.ee_savings_billion ?? latestWithEe?.ee_savings_billion) != null ? Number(selectedRow.ee_savings_billion ?? latestWithEe?.ee_savings_billion).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '–',
+                                        pj: (selectedRow.ee_savings_pj ?? latestWithEe?.ee_savings_pj) != null ? Number(selectedRow.ee_savings_pj ?? latestWithEe?.ee_savings_pj).toLocaleString(locale, { maximumFractionDigits: 0 }) : '–',
+                                        billion: (selectedRow.ee_savings_billion ?? latestWithEe?.ee_savings_billion) != null ? Number(selectedRow.ee_savings_billion ?? latestWithEe?.ee_savings_billion).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '–',
                                         year: selectedYear
                                     }))}
                                 </p>

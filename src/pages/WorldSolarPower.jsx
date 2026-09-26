@@ -1,9 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import YearSelect from '../components/YearSelect';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getWorldSolarPowerData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 
 const CANADA_CAPSULE = '#819476';
 const TOP_RANKS = [1, 2, 3, 4, 5];
@@ -22,8 +26,6 @@ const substitute = (text, vars) =>
         (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
         text || '',
     );
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
 const formatSharePct = (value, locale) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -141,47 +143,12 @@ const WorldSolarPower = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [year, setYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const bottomScrollRef = useRef(null);
     const infographicRef = useRef(null);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
-    useEffect(() => {
-        getWorldSolarPowerData()
-            .then((data) => {
-                setResult(data);
-                if (data.years?.length) setYear(data.years[data.years.length - 1]);
-            })
-            .catch((err) => setError(err?.message || 'Failed to load data'))
-            .finally(() => setLoading(false));
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    }, []);
-
     const selectorYears = useMemo(() => result?.years ?? [], [result]);
     const yearsDesc = useMemo(() => [...selectorYears].reverse(), [selectorYears]);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const effectiveYear = useMemo(() => {
         if (!selectorYears.length || year == null) return year;
@@ -197,7 +164,7 @@ const WorldSolarPower = () => {
     );
 
     const formatGw = (value) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
+        if (value == null || Number.isNaN(Number(value))) return '–';
         return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
     };
 
@@ -228,6 +195,12 @@ const WorldSolarPower = () => {
         year: effectiveYear ?? '',
     });
 
+    const tableCaption = substitute(getText('world_solar_pv_table_caption', lang), {
+        startYear: result?.startYear ?? '',
+        endYear: result?.endYear ?? '',
+    });
+    const exportTableTitle = stripHtml(tableCaption);
+
     const downloadFilename = (slugKey, yearSuffix = yearSpanFile) => {
         const slug = getText(slugKey, lang);
         const match = slug.match(/^(.+)\.(csv|docx|png)$/);
@@ -235,82 +208,41 @@ const WorldSolarPower = () => {
         return `${match[1]} ${yearSuffix}.${match[2]}`;
     };
 
-    const tableHeaders = [
-        getText('world_solar_pv_table_col_year', lang),
-        getText('world_solar_pv_table_col_total', lang),
-        ...TOP_RANKS.map((rank) => getText(`world_solar_pv_table_col_rank${rank}`, lang)),
-        getText('world_solar_pv_table_col_canada', lang),
-        getText('world_solar_pv_table_col_canada_rank', lang),
-    ];
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('world_solar_pv_table_col_year', lang), align: 'left' },
+        { key: 'totalGw', header: getText('world_solar_pv_table_col_total', lang), align: 'num' },
+        ...TOP_RANKS.map((rank) => ({
+            key: `rank${rank}`,
+            header: getText(`world_solar_pv_table_col_rank${rank}`, lang),
+            align: 'left',
+        })),
+        { key: 'canadaPct', header: getText('world_solar_pv_table_col_canada', lang), align: 'num' },
+        { key: 'canadaRank', header: getText('world_solar_pv_table_col_canada_rank', lang), align: 'num' },
+    ], [lang]);
 
-    const formatTopCountryCell = useCallback(
-        (entry) => {
-            if (!entry) return '—';
-            return `${worldSolarCountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
-        },
-        [lang, locale],
-    );
-
-    const historicalRows = useMemo(
+    const tableRows = useMemo(
         () =>
-            (result?.rows ?? []).slice().reverse().map((row) => ({
-                year: row.year,
-                totalGw: row.totalGw,
-                topCountryCells: TOP_RANKS.map((rank) => formatTopCountryCell(row.top5?.find((item) => item.rank === rank))),
-                canadaPct: row.canadaSharePct != null ? formatSharePct(row.canadaSharePct, locale) : '',
-                canadaRank: row.canadaRank != null ? Math.round(row.canadaRank) : '',
-            })),
-        [result, formatTopCountryCell, locale],
+            (result?.rows ?? []).map((row) => {
+                const formatTopCountryCell = (entry) => {
+                    if (!entry) return '–';
+                    return `${worldSolarCountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
+                };
+                const rankCells = Object.fromEntries(
+                    TOP_RANKS.map((rank) => [
+                        `rank${rank}`,
+                        formatTopCountryCell(row.top5?.find((item) => item.rank === rank)),
+                    ]),
+                );
+                return {
+                    year: row.year,
+                    totalGw: row.totalGw,
+                    ...rankCells,
+                    canadaPct: row.canadaSharePct != null ? formatSharePct(row.canadaSharePct, locale) : '',
+                    canadaRank: row.canadaRank != null ? Math.round(row.canadaRank) : '',
+                };
+            }),
+        [result, lang, locale],
     );
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        if (!isTableOpen) return undefined;
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = bottomScrollRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncTableScroll));
-        const tableElement = tableScroll.querySelector('table');
-        if (tableElement) observer.observe(tableElement);
-        observer.observe(tableScroll);
-        syncTableScroll();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
 
     const downloadBtnStyle = {
         padding: '8px 16px',
@@ -321,63 +253,6 @@ const WorldSolarPower = () => {
         fontFamily: 'Arial, sans-serif',
         fontWeight: 'bold',
         color: '#ffffff',
-    };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = historicalRows.map((row) =>
-            [row.year, row.totalGw, ...row.topCountryCells, row.canadaPct, row.canadaRank].map(csvEscape).join(','),
-        );
-        saveAs(
-            new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-            downloadFilename('world_solar_pv_csv_slug'),
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = historicalRows.map((row) =>
-            new TableRow({
-                children: [row.year, row.totalGw, ...row.topCountryCells, row.canadaPct, row.canadaRank].map((value) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: String(value ?? ''), size: 22 })],
-                                alignment: AlignmentType.CENTER,
-                            }),
-                        ],
-                    }),
-                ),
-            }),
-        );
-
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(substitute(getText('world_solar_pv_table_caption', lang), { startYear: result?.startYear ?? '', endYear: result?.endYear ?? '' })), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), downloadFilename('world_solar_pv_docx_slug'));
     };
 
     const downloadInfographicPng = () => {
@@ -430,22 +305,25 @@ const WorldSolarPower = () => {
 
     const hasChartData = !loading && !error && yearBundle && rankingRows.length > 0 && canadaRow;
 
+    useEffect(() => {
+        getWorldSolarPowerData()
+            .then((data) => {
+                setResult(data);
+                if (data.years?.length) setYear(data.years[data.years.length - 1]);
+            })
+            .catch((err) => setError(err?.message || 'Failed to load data'))
+            .finally(() => setLoading(false));
+    }, []);
+
     return (
-        <main
-            tabIndex="-1"
-            className="page-content page-82"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-82 page-chrome page-chrome--bleed"
             aria-labelledby="world-solar-pv-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-82.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-82 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .world-solar-pv-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .world-solar-pv-title {
@@ -571,38 +449,9 @@ const WorldSolarPower = () => {
 .world-solar-pv-capsule-row-canada .world-solar-pv-capsule-pill { border-width: 2px; border-color: ${CANADA_CAPSULE}; }
 .world-solar-pv-capsule-pill-text-canada { font-size: 22px; font-weight: bold; }
 .world-solar-pv-capsule-ellipsis { min-height: 28px; padding-left: 4%; color: #333; font-size: 18px; font-weight: bold; }
-.world-solar-pv-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.world-solar-pv-table-responsive::-webkit-scrollbar { display: none; }
-.world-solar-pv-table-responsive table { width: max-content !important; min-width: 100%; }
 .world-solar-pv-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
 .world-solar-pv-loading, .world-solar-pv-error { font-family: Arial, sans-serif; font-size: 16px; color: var(--gc-text); }
 .world-solar-pv-chart-section .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-.page-82 .data-table-wrapper summary {
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    padding: 10px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    list-style: none;
-    box-sizing: border-box;
-    width: 100%;
-    color: #ffffff;
-}
-.page-82 .data-table-wrapper summary::-webkit-details-marker { display: none; }
-.page-82 .data-table-wrapper summary:hover,
-.page-82 .data-table-wrapper button:hover { background-color: #404040 !important; }
-.world-solar-pv-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.world-solar-pv-table-scrollbar > div { height: 20px; }
 @media (max-width: 880px) {
     .world-solar-pv-split { grid-template-columns: 1fr; }
     .world-solar-pv-title { font-size: 37px; }
@@ -625,94 +474,17 @@ const WorldSolarPower = () => {
                             <h1 id="world-solar-pv-main-title" className="world-solar-pv-title">{getText('world_solar_pv_title', lang)}</h1>
                         </header>
 
-                        <div ref={yearDropdownRef} className="world-solar-pv-year-selector" style={{ position: 'relative', marginBottom: '20px', width: '200px' }}>
-                            <label htmlFor="world-solar-pv-year-button">{getText('year_slider_label', lang)}</label>
-                            <button
-                                id="world-solar-pv-year-button"
-                                ref={yearButtonRef}
-                                type="button"
-                                onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                                aria-expanded={isYearDropdownOpen}
-                                aria-haspopup="listbox"
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 15px',
-                                    backgroundColor: '#fff',
-                                    border: '1px solid #ccc',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontWeight: 'bold',
-                                    textAlign: 'left',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    fontSize: '16px',
-                                    fontFamily: "'Noto Sans', sans-serif",
-                                }}
-                            >
-                                <span>{year}</span>
-                                <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                            </button>
-                            {isYearDropdownOpen && (
-                                <div
-                                    role="listbox"
-                                    aria-label={getText('year_slider_label', lang)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: '100%',
-                                        left: 0,
-                                        width: '100%',
-                                        maxHeight: '300px',
-                                        overflowY: 'auto',
-                                        backgroundColor: '#fff',
-                                        border: '1px solid #ccc',
-                                        borderRadius: '4px',
-                                        zIndex: 100,
-                                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                    }}
-                                >
-                                    {yearsDesc.map((optionYear) => {
-                                        const isSelected = optionYear === year;
-                                        return (
-                                            <button
-                                                key={optionYear}
-                                                type="button"
-                                                role="option"
-                                                aria-selected={isSelected}
-                                                onClick={() => {
-                                                    setYear(optionYear);
-                                                    setIsYearDropdownOpen(false);
-                                                    setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                                }}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    width: '100%',
-                                                    textAlign: 'left',
-                                                    padding: '10px 15px',
-                                                    cursor: 'pointer',
-                                                    border: 'none',
-                                                    borderBottom: '1px solid #eee',
-                                                    backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                                    fontFamily: 'Arial, sans-serif',
-                                                    fontSize: '16px',
-                                                }}
-                                            >
-                                                <span aria-hidden="true" style={{
-                                                    height: 18, width: 18, borderRadius: '50%', border: '1px solid #ccc',
-                                                    marginRight: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                }}>
-                                                    {isSelected && <span style={{ height: 10, width: 10, borderRadius: '50%', backgroundColor: '#000' }} />}
-                                                </span>
-                                                <span>{optionYear}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                            <div role="status" className="wb-inv" aria-live="polite">
-                                {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
-                            </div>
+                        <YearSelect
+                            lang={lang}
+                            id="world-solar-pv-year-button"
+                            className="world-solar-pv-year-selector"
+                            label={getText('year_slider_label', lang)}
+                            years={yearsDesc}
+                            value={year}
+                            onChange={setYear}
+                        />
+                        <div role="status" className="wb-inv" aria-live="polite">
+                            {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                         </div>
 
                         <div className="world-solar-pv-split" ref={infographicRef}>
@@ -728,7 +500,7 @@ const WorldSolarPower = () => {
 
                                 <section className="world-solar-pv-chart-section" aria-label={rankingAria}>
                                     <h3 className="world-solar-pv-graphic-title">{graphicTitle}</h3>
-                                    <div className="world-solar-pv-capsule-graphic" role="img" aria-label={rankingAria}>
+                                    <div className="world-solar-pv-capsule-graphic" role="img" tabIndex={0} aria-label={rankingAria}>
                                         {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                                         <div className="world-solar-pv-capsule-row world-solar-pv-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
                                         {canadaRow && renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}
@@ -740,54 +512,36 @@ const WorldSolarPower = () => {
                                         </button>
                                     </div>
 
-                                    <details className="data-table-wrapper" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                                        <summary role="button" aria-expanded={isTableOpen}>
-                                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                            {getText('world_solar_pv_table_summary', lang)}
-                                        </summary>
-                                        <div ref={topScrollRef} className="world-solar-pv-table-scrollbar" aria-hidden="true"><div /></div>
-                                        <div ref={tableScrollRef} className="world-solar-pv-table-responsive table-responsive" role="region" tabIndex={0}>
-                                            <table className="table table-bordered table-striped table-hover">
-                                                <caption className="wb-inv">
-                                                    {substitute(getText('world_solar_pv_table_caption', lang), { startYear: result?.startYear ?? '', endYear: result?.endYear ?? '' })}
-                                                </caption>
-                                                <thead>
-                                                    <tr>
-                                                        {tableHeaders.map((header) => (
-                                                            <th key={header} scope="col" style={{ fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>
-                                                                {header}
-                                                            </th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {historicalRows.map((row) => (
-                                                        <tr key={row.year}>
-                                                            <th scope="row" style={{ fontWeight: 'bold', textAlign: 'center' }}>{row.year}</th>
-                                                            <td style={{ textAlign: 'center' }}>{formatGw(row.totalGw)}</td>
-                                                            {row.topCountryCells.map((cell, index) => (
-                                                                <td key={TOP_RANKS[index]} style={{ textAlign: 'center' }}>{cell}</td>
-                                                            ))}
-                                                            <td style={{ textAlign: 'center' }}>{row.canadaPct === '' ? '—' : `${row.canadaPct}%`}</td>
-                                                            <td style={{ textAlign: 'center' }}>{row.canadaRank === '' ? '—' : row.canadaRank}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <div ref={bottomScrollRef} className="world-solar-pv-table-scrollbar" aria-hidden="true"><div /></div>
-                                        <div className="world-solar-pv-download-buttons">
-                                            <button type="button" onClick={downloadCsv} style={downloadBtnStyle}>{getText('world_solar_pv_download_csv', lang)}</button>
-                                            <button type="button" onClick={downloadDocx} style={downloadBtnStyle}>{getText('world_solar_pv_download_docx', lang)}</button>
-                                        </div>
-                                    </details>
+                                    <ChartDataTable
+                                        lang={lang}
+                                        label={getText('world_solar_pv_table_summary', lang)}
+                                        columns={tableColumns}
+                                        rows={tableRows}
+                                        csvFilename={downloadFilename('world_solar_pv_csv_slug')}
+                                        docx={{
+                                            filename: downloadFilename('world_solar_pv_docx_slug'),
+                                            title: exportTableTitle,
+                                            titleAlign: 'center',
+                                            columnWidths: [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100],
+                                            fontSize: 22,
+                                        }}
+                                        caption={tableCaption}
+                                        tableAriaLabel={tableCaption}
+                                        renderCell={(raw, { column }) => {
+                                            const key = column?.key;
+                                            if (key === 'totalGw') return formatGw(raw);
+                                            if (key === 'canadaPct') return raw === '' || raw == null ? '—' : `${raw}%`;
+                                            if (key === 'canadaRank') return raw === '' || raw == null ? '—' : String(raw);
+                                            return String(raw ?? '');
+                                        }}
+                                    />
                                 </section>
                             </div>
                         </div>
                     </>
                 )}
             </div>
-        </main>
+        </PageShell>
     );
 };
 

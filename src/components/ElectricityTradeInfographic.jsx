@@ -1,11 +1,9 @@
 import React from 'react';
+import AccessibleInfographic from './AccessibleInfographic';
 import electricityTradeUsBg from '../assets/electricity_trade_us_bg.png';
 
 /** Matches electricity_trade_us_bg.png (408×157). Towers at 60% size, pinned left/right; values beside each tower. */
 const NATIVE_SIZE = { width: 408, height: 157 };
-const TOWER_WIDTH_PCT = (44 / NATIVE_SIZE.width) * 100;
-const VALUE_GAP_PCT = 2;
-const VALUE_OFFSET_PCT = TOWER_WIDTH_PCT + VALUE_GAP_PCT;
 
 const TEXT_SLOTS = {
     en: {
@@ -49,9 +47,19 @@ const ElectricityTradeInfographic = ({
     const slots = TEXT_SLOTS[overlayLang];
 
     return (
-        <figure ref={figureRef} className="electricity-trade-us-infographic-figure" aria-label={ariaLabel}>
+        <AccessibleInfographic
+            ref={figureRef}
+            as="figure"
+            mode="image"
+            className="electricity-trade-us-infographic-figure"
+            title={ariaLabel}
+            overview={ariaLabel}
+            src={electricityTradeUsBg}
+            imgClassName="electricity-trade-us-bg-image"
+        >
             <style>{`
 .electricity-trade-us-infographic-figure {
+    position: relative;
     display: block;
     width: 100%;
     max-width: none;
@@ -114,8 +122,6 @@ const ElectricityTradeInfographic = ({
             `}</style>
 
             <div className="electricity-trade-us-infographic-wrapper">
-                <img src={electricityTradeUsBg} alt="" className="electricity-trade-us-bg-image" draggable={false} aria-hidden="true" />
-
                 <OverlayBlock slot={slots.exportsLabel} className="electricity-trade-us-overlay--exports-label">
                     <p className="electricity-trade-us-overlay-label">{getText('electricity_trade_us_info_exports_label', lang)}</p>
                 </OverlayBlock>
@@ -132,8 +138,7 @@ const ElectricityTradeInfographic = ({
                     <p className="electricity-trade-us-overlay-value">{importsValue}</p>
                 </OverlayBlock>
             </div>
-            <figcaption className="wb-inv">{ariaLabel}</figcaption>
-        </figure>
+        </AccessibleInfographic>
     );
 };
 

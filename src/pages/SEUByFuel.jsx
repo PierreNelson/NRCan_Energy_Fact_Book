@@ -1,10 +1,19 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ChartDataTable from '../components/ChartDataTable';
+import FootnoteMarker from '../components/FootnoteMarker';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import YearSelect from '../components/YearSelect';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import PageStatus from '../components/PageStatus';
 import { getSEUByFuelData } from '../utils/dataLoader';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
+import { stripHtml } from '../utils/stripHtml';
 import { getText } from '../utils/translations';
+import hexToRgba from '../utils/hexToRgba';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const seu_by_fuel_KEYS = ['Ele', 'NG', 'mogas', 'Oil', 'OOP', 'BM', 'OT'];
 const seu_by_fuel_LABEL_KEYS = {
@@ -18,23 +27,13 @@ const seu_by_fuel_LABEL_KEYS = {
 };
 const seu_by_fuel_COLORS = ['#657f9b', '#CE8003', '#4b4c4d', '#6b666a', '#1f8093', '#A687A5', '#949494'];
 
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    return hex;
-};
-
 const SEUByFuel = () => {
     const { lang } = useOutletContext();
     const [seuData, setSeuData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedYear, setSelectedYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
     const [selectedSlices, setSelectedSlices] = useState(null);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
     const chartRef = useRef(null);
     const lastPieClickRef = useRef({ time: 0, index: null });
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -53,14 +52,6 @@ const SEUByFuel = () => {
         const onResize = () => setWindowWidth(window.innerWidth);
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(e.target)) setIsYearDropdownOpen(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const currentRow = useMemo(() => {
@@ -113,32 +104,55 @@ const SEUByFuel = () => {
         [yearsListFiltered]
     );
 
-    /** One row per year (left column = year), fuel PJ/% columns — same pattern as other chart data tables. */
-    const secondaryEnergyByFuelYearRows = useMemo(() => {
-        if (!seuData?.data?.length || !selectorYearsAsc.length) return [];
-        return selectorYearsAsc.map((y) => {
-            const row = seuData.data.find((r) => r.year === y);
-            const byKey = {};
-            if (!row || !row.TE || row.TE <= 0) {
-                seu_by_fuel_KEYS.forEach((k) => {
-                    byKey[k] = { value: null, pct: null };
-                });
-                return { year: y, te: null, byKey };
-            }
-            const te = Math.round(row.TE);
-            seu_by_fuel_KEYS.forEach((key) => {
-                const value = row[key] ?? 0;
-                const pct = Number(((value / row.TE) * 100).toFixed(1));
-                byKey[key] = { value: Math.round(value), pct };
-            });
-            return { year: y, te, byKey };
-        });
-    }, [seuData, selectorYearsAsc]);
-
     const chartTitle = useMemo(() => {
         const t = getText('seu_by_fuel_chart_title', lang) || '';
         return selectedYear != null ? t.replace(/\{\{year\}\}/g, String(selectedYear)) : t;
     }, [selectedYear, lang]);
+    const exportChartTitle = stripHtml(chartTitle);
+    const tableCaption = getText('seu_by_fuel_table_caption', lang);
+    const csvFilename = lang === 'en'
+        ? 'secondary_energy_use_by_fuel.csv'
+        : 'consommation_energie_secondaire_par_source.csv';
+    const docxFilename = lang === 'en'
+        ? 'secondary_energy_use_by_fuel_table.docx'
+        : 'consommation_energie_secondaire_par_source_tableau.docx';
+
+    const tableColumns = useMemo(() => {
+        const yearLabel = lang === 'en' ? 'Year' : 'Année';
+        const totalLabel = `${getText('seu_by_fuel_total', lang)} (PJ)`;
+        return [
+            { key: 'year', header: yearLabel, align: 'left' },
+            { key: 'te', header: totalLabel, align: 'num' },
+            ...seu_by_fuel_KEYS.flatMap((key) => {
+                const base = getText(seu_by_fuel_LABEL_KEYS[key], lang);
+                return [
+                    { key: `${key}_pj`, header: `${base} (PJ)`, align: 'num' },
+                    { key: `${key}_pct`, header: `${base} (%)`, align: 'num' },
+                ];
+            }),
+        ];
+    }, [lang]);
+
+    /** One row per year (left column = year), fuel PJ/% columns — data-mode ChartDataTable. */
+    const tableRows = useMemo(() => {
+        if (!seuData?.data?.length || !selectorYearsAsc.length) return [];
+        return selectorYearsAsc.map((y) => {
+            const row = seuData.data.find((r) => r.year === y);
+            const out = { year: y, te: null };
+            seu_by_fuel_KEYS.forEach((k) => {
+                out[`${k}_pj`] = null;
+                out[`${k}_pct`] = null;
+            });
+            if (!row || !row.TE || row.TE <= 0) return out;
+            out.te = Math.round(row.TE);
+            seu_by_fuel_KEYS.forEach((key) => {
+                const value = row[key] ?? 0;
+                out[`${key}_pj`] = Math.round(value);
+                out[`${key}_pct`] = Number(((value / row.TE) * 100).toFixed(1));
+            });
+            return out;
+        });
+    }, [seuData, selectorYearsAsc]);
 
     const donutData = useMemo(() => {
         if (!categories.length) return { values: [], labels: [], hoverTexts: [], total: 0 };
@@ -206,7 +220,7 @@ const SEUByFuel = () => {
         plot_bgcolor: 'transparent',
         font: { family: 'Arial, sans-serif', size: 12 },
         clickmode: 'event',
-        dragmode: windowWidth <= 768 ? false : 'zoom',
+        dragmode: false,
         annotations: donutData.total != null ? [{
             text: `${getText('seu_by_fuel_total', lang)}<br><b>${(donutData.total || 0).toLocaleString()}</b><br>PJ`,
             showarrow: false,
@@ -218,162 +232,47 @@ const SEUByFuel = () => {
         }] : []
     }), [donutData.total, lang, zoomLegendMode, windowWidth]);
 
-    const scrollToFootnote = (e) => {
-        e?.preventDefault();
-        document.getElementById('fn-asterisk-secondary-energy-by-fuel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-secondary-energy-by-fuel');
 
-    const scrollToRef = (e) => {
-        e?.preventDefault();
-        document.getElementById('fn-asterisk-rf-secondary-energy-by-fuel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-secondary-energy-by-fuel');
 
-    const downloadTableAsCSV = () => {
-        if (!secondaryEnergyByFuelYearRows.length) return;
-        const yearLabel = lang === 'en' ? 'Year' : 'Année';
-        const totalLabel = `${getText('seu_by_fuel_total', lang)} (PJ)`;
-        const headers = [
-            yearLabel,
-            totalLabel,
-            ...seu_by_fuel_KEYS.flatMap((key) => {
-                const base = getText(seu_by_fuel_LABEL_KEYS[key], lang);
-                return [`${base} (PJ)`, `${base} (%)`];
-            })
-        ];
-        const rows = secondaryEnergyByFuelYearRows.map((yr) => {
-            const cells = [
-                String(yr.year),
-                yr.te != null ? String(yr.te) : '',
-                ...seu_by_fuel_KEYS.flatMap((key) => {
-                    const cell = yr.byKey[key];
-                    if (cell?.value == null || cell?.pct == null) return ['', ''];
-                    return [String(cell.value), `${cell.pct}%`];
-                })
-            ];
-            return cells;
-        });
-        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'secondary_energy_use_by_fuel.csv' : 'consommation_energie_secondaire_par_source.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
+        const downloadChartWithTitle = useChartPngDownloader(
+            chartRef,
+            () => ({
+            filename: `${titleForFile}.png`,
+            title: exportChartTitle,
+            height: 800,
+            legendItems: seu_by_fuel_KEYS.map((key, i) => ({
+                label: getText(seu_by_fuel_LABEL_KEYS[key], lang),
+                color: seu_by_fuel_COLORS[i],
+            })),
+        }),
+            [exportChartTitle, getText, lang, seu_by_fuel_COLORS, seu_by_fuel_KEYS, seu_by_fuel_LABEL_KEYS, titleForFile],
+        );
 
-    const downloadTableAsDocx = async () => {
-        if (!secondaryEnergyByFuelYearRows.length) return;
-        const yearLabel = lang === 'en' ? 'Year' : 'Année';
-        const totalLabel = `${getText('seu_by_fuel_total', lang)} (PJ)`;
-        const headers = [
-            yearLabel,
-            totalLabel,
-            ...seu_by_fuel_KEYS.flatMap((key) => {
-                const base = getText(seu_by_fuel_LABEL_KEYS[key], lang);
-                return [`${base} (PJ)`, `${base} (%)`];
-            })
-        ];
-        const headerRow = new TableRow({
-            children: headers.map((h) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 14 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' }
-            }))
-        });
-        const dataRows = secondaryEnergyByFuelYearRows.map((yr) => new TableRow({
-            children: [
-                new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: String(yr.year), size: 18 })], alignment: AlignmentType.CENTER })]
-                }),
-                new TableCell({
-                    children: [new Paragraph({ children: [new TextRun({ text: yr.te != null ? String(yr.te) : '–', size: 18 })], alignment: AlignmentType.RIGHT })]
-                }),
-                ...seu_by_fuel_KEYS.flatMap((key) => {
-                    const cell = yr.byKey[key];
-                    const pj = cell?.value != null ? String(cell.value) : '–';
-                    const pct = cell?.pct != null ? `${cell.pct}%` : '–';
-                    return [
-                        new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: pj, size: 18 })], alignment: AlignmentType.RIGHT })]
-                        }),
-                        new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: pct, size: 18 })], alignment: AlignmentType.RIGHT })]
-                        })
-                    ];
-                })
-            ]
-        }));
-        const title = chartTitle;
-        const nCols = headers.length;
-        const columnWidths = Array.from({ length: nCols }, (_, i) => (i === 0 ? 3600 : 2000));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths, rows: [headerRow, ...dataRows] })
-                ]
-            }]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'secondary_energy_use_by_fuel_table.docx' : 'consommation_energie_secondaire_par_source_tableau.docx');
-    };
-
-    const downloadChartPng = async () => {
-        const plotEl = chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotEl || !window.Plotly) return;
-        const baseTitle = lang === 'en' ? "Canada's secondary energy use by fuel type" : "Consommation d'énergie secondaire au Canada par source d'énergie";
-        const year = selectedYear != null ? selectedYear : '';
-        const displayTitle = (baseTitle + ' ' + year).trim();
-        const titleForFile = (baseTitle + ' ' + year).replace(/[^\w\s,-]/g, '').replace(/\s+/g, '_').trim() || 'chart';
-        const filename = `${titleForFile}.png`;
-        try {
-            await window.Plotly.relayout(plotEl, { paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff' });
-            const imgData = await window.Plotly.toImage(plotEl, { format: 'png', width: 1200, height: 800, scale: 2 });
-            await window.Plotly.relayout(plotEl, { paper_bgcolor: 'transparent', plot_bgcolor: 'transparent' });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 60;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#26374a';
-                ctx.font = 'bold 20px "Noto Sans", sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(displayTitle, canvas.width / 2, 40);
-                ctx.drawImage(img, 0, titleHeight);
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = filename;
-                link.click();
-            };
-            img.src = imgData;
-        } catch {
-            try { await window.Plotly.relayout(plotEl, { paper_bgcolor: 'transparent', plot_bgcolor: 'transparent' }); } catch { /* ignore relayout restore */ }
-        }
-    };
-    const config = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
-        modeBarButtonsToAdd: [{
-            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: downloadChartPng
-        }]
-    };
+        const config = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+        name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
+    });
 
     if (loading) {
         return (
             <div className="secondary-energy-by-fuel-root">
-                <p className="secondary-energy-by-fuel-loading">{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>
+                <PageStatus lang={lang} loading className="secondary-energy-by-fuel-loading" />
             </div>
         );
     }
 
-    if (error || !seuData) {
+    if (error) {
+        return (
+            <div className="secondary-energy-by-fuel-root">
+                <PageStatus lang={lang} error={error} className="secondary-energy-by-fuel-error" />
+            </div>
+        );
+    }
+
+    if (!seuData) {
         return (
             <div className="secondary-energy-by-fuel-root">
                 <p className="secondary-energy-by-fuel-error">{getText('seu_by_fuel_no_data', lang)}</p>
@@ -415,88 +314,19 @@ const SEUByFuel = () => {
             </ul>
 
             {hasData && yearsListDesc.length > 0 && (
-                <div ref={yearDropdownRef} style={{ position: 'relative', marginBottom: '20px', width: '200px' }}>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    <button
-                        ref={yearButtonRef}
-                        type="button"
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px'
-                        }}
-                    >
-                        <span>{selectedYear}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                    </button>
-                    {isYearDropdownOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            width: '100%',
-                            maxHeight: '300px',
-                            overflowY: 'auto',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            zIndex: 100,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                        }}>
-                            {yearsListDesc.map((y) => {
-                                const isSelected = y === selectedYear;
-                                return (
-                                    <button
-                                        key={y}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        aria-label={y.toString()}
-                                        onClick={() => {
-                                            setSelectedYear(y);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                        }}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px',
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif'
-                                        }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'; }}
-                                    >
-                                        <span aria-hidden="true" style={{ height: '18px', width: '18px', borderRadius: '50%', border: '1px solid #ccc', marginRight: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
-                                            {isSelected && <span style={{ height: '10px', width: '10px', borderRadius: '50%', backgroundColor: '#000' }} />}
-                                        </span>
-                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>{y}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
+                <>
+                    <YearSelect
+                        lang={lang}
+                        id="seu-by-fuel-year-select"
+                        label={getText('year_slider_label', lang)}
+                        years={yearsListDesc}
+                        value={selectedYear}
+                        onChange={setSelectedYear}
+                    />
                     <div role="status" className="wb-inv" aria-live="polite">
                         {selectedYear ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${selectedYear}` : ''}
                     </div>
-                </div>
+                </>
             )}
 
             {hasData && (
@@ -506,19 +336,16 @@ const SEUByFuel = () => {
                             <div className="secondary-energy-by-fuel-chart-frame" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <p className="secondary-energy-by-fuel-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', margin: '0 0 1rem 0' }}>
                                     {chartTitle}
-                                    <span id="fn-asterisk-rf-secondary-energy-by-fuel" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
-                                        <a className="fn-lnk" href="#fn-asterisk-secondary-energy-by-fuel" onClick={scrollToFootnote}>
-                                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                                            <span aria-hidden="true">*</span>
-                                        </a>
-                                    </span>
+                                    <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-secondary-energy-by-fuel"
+                            id="fn-asterisk-rf-secondary-energy-by-fuel"
+                            marker="*"
+                            onClick={scrollToFootnote}
+                        />
                                 </p>
                                 <div className="secondary-energy-by-fuel-donut-wrap" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', minHeight: 480 }}>
-                                    {effectiveSelectedSlices !== null && (
-                                            <div style={{ marginBottom: 8 }}>
-                                                <button type="button" onClick={() => setSelectedSlices(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
-                                            </div>
-                                        )}
+                                    {effectiveSelectedSlices !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />}
                                         <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 450, height: 450, margin: 0, position: 'relative' }}>
                                         <Plot
                                             key={selectedYear}
@@ -549,75 +376,27 @@ const SEUByFuel = () => {
                                     </figure>
                                 </div>
 
-                            <details
-                                className="secondary-energy-by-fuel-data-table"
-                                open={isTableOpen}
-                                onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                                style={{ marginTop: 12, marginBottom: 24, width: '100%' }}
-                            >
-                                <summary
-                                    role="button"
-                                    aria-expanded={isTableOpen}
-                                    style={{
-                                        cursor: 'pointer',
-                                        color: '#ffffff',
-                                        fontWeight: 'bold',
-                                        padding: '10px',
-                                        border: '1px solid #404040',
-                                        backgroundColor: '#8C8C8C',
-                                        borderRadius: '4px',
-                                        listStyle: 'none'
-                                    }}
-                                >
-                                    {isTableOpen ? '▼' : '▶'}
-                                    {' '}
-                                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                    <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                                </summary>
-                                <div className="table-responsive" role="region" tabIndex={0} style={{ marginTop: 12, overflowX: 'auto' }}>
-                                    <table className="table table-striped table-hover">
-                                        <caption id="secondary-energy-by-fuel-table-caption" className="wb-inv">{getText('seu_by_fuel_table_caption', lang)}</caption>
-                                        <thead>
-                                            <tr>
-                                                <th scope="col" style={{ fontWeight: 'bold', border: '1px solid #ddd' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                                <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', whiteSpace: 'nowrap' }}>{getText('seu_by_fuel_total', lang)} (PJ)</th>
-                                                {seu_by_fuel_KEYS.map((key) => (
-                                                    <React.Fragment key={key}>
-                                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', whiteSpace: 'nowrap' }}>{getText(seu_by_fuel_LABEL_KEYS[key], lang)} (PJ)</th>
-                                                        <th scope="col" className="text-center" style={{ fontWeight: 'bold', border: '1px solid #ddd', whiteSpace: 'nowrap' }}>{getText(seu_by_fuel_LABEL_KEYS[key], lang)} (%)</th>
-                                                    </React.Fragment>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {secondaryEnergyByFuelYearRows.map((yr) => (
-                                                <tr key={yr.year}>
-                                                    <th scope="row" style={{ border: '1px solid #ddd' }}>{yr.year}</th>
-                                                    <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{yr.te != null ? yr.te : '–'}</td>
-                                                    {seu_by_fuel_KEYS.map((key) => {
-                                                        const cell = yr.byKey[key];
-                                                        const show = cell?.value != null && cell?.pct != null;
-                                                        return (
-                                                            <React.Fragment key={key}>
-                                                                <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{show ? cell.value : '–'}</td>
-                                                                <td style={{ border: '1px solid #ddd', textAlign: 'right' }}>{show ? `${cell.pct}%` : '–'}</td>
-                                                            </React.Fragment>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </details>
+                            <ChartDataTable
+                                lang={lang}
+                                columns={tableColumns}
+                                rows={tableRows}
+                                csvFilename={csvFilename}
+                                docx={{
+                                    filename: docxFilename,
+                                    title: exportChartTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: tableColumns.map((_, i) => (i === 0 ? 3600 : 2000)),
+                                    fontSize: 18,
+                                }}
+                                caption={tableCaption}
+                                tableAriaLabel={tableCaption}
+                                renderCell={(raw, { colIndex, column }) => {
+                                    if (raw == null || raw === '') return '–';
+                                    if (colIndex === 0) return String(raw);
+                                    if (String(column?.key || '').endsWith('_pct')) return `${raw}%`;
+                                    return String(raw);
+                                }}
+                            />
                             </div>
                         </div>
                     </div>

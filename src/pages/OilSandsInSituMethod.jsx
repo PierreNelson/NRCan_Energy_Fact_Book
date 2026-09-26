@@ -1,19 +1,14 @@
 import React, { useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import SafeHtml from '../components/SafeHtml';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { resolveAccessibleInfographicGraphic, waitForImage } from '../utils/downloadInfographicPng';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import oilSandsInSituBgEn from '../assets/oil_sands_in_situ_bg.svg';
 import oilSandsInSituBgFr from '../assets/oil_sands_in_situ_bg_fr.svg';
-
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
 
 const exportOilSandsInSituInfographicPng = async (imgEl, { scale = 2 }) => {
     if (!imgEl) return null;
@@ -40,7 +35,10 @@ const OilSandsInSituMethod = () => {
     const fileSlugBase = getText('oil_sands_in_situ_download_title', lang).replace(/\s+/g, '_');
 
     const downloadInfographicPng = async () => {
-        const canvas = await exportOilSandsInSituInfographicPng(infographicImgRef.current, { scale: 2 });
+        const canvas = await exportOilSandsInSituInfographicPng(
+            resolveAccessibleInfographicGraphic(infographicImgRef.current),
+            { scale: 2 },
+        );
         if (!canvas) return;
         canvas.toBlob((blob) => {
             if (blob) saveAs(blob, `${fileSlugBase}.png`);
@@ -48,21 +46,13 @@ const OilSandsInSituMethod = () => {
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content oil-sands-in-situ"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content oil-sands-in-situ page-chrome page-chrome--bleed"
             aria-labelledby="oil-sands-in-situ-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .oil-sands-in-situ {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .oil-sands-in-situ-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .oil-sands-in-situ.page-content .oil-sands-in-situ-title {
@@ -135,7 +125,7 @@ const OilSandsInSituMethod = () => {
             <div className="oil-sands-in-situ-inner">
                 <h1 id="oil-sands-in-situ-title" className="oil-sands-in-situ-title">
                     {titleUsesHtml ? (
-                        <span dangerouslySetInnerHTML={{ __html: pageTitle }} />
+                        <SafeHtml as="span" html={pageTitle}  />
                     ) : (
                         pageTitle
                     )}
@@ -143,24 +133,20 @@ const OilSandsInSituMethod = () => {
 
                 <div className="oil-sands-in-situ-intro">
                     <p>{getText('oil_sands_in_situ_intro_1', lang)}</p>
-                    <p dangerouslySetInnerHTML={{ __html: getText('oil_sands_in_situ_intro_2', lang) }} />
+                    <SafeHtml as="p" html={getText('oil_sands_in_situ_intro_2', lang)} />
                 </div>
 
                 <div className="oil-sands-in-situ-infographic-section">
-                    <figure
+                    <AccessibleInfographic
+                        ref={infographicImgRef}
+                        as="figure"
+                        mode="image"
                         className="oil-sands-in-situ-infographic-figure"
-                        aria-label={getText('oil_sands_in_situ_infographic_aria', lang)}
-                    >
-                        <img
-                            ref={infographicImgRef}
-                            src={bgImage}
-                            alt=""
-                            className="oil-sands-in-situ-bg-image"
-                            draggable={false}
-                            aria-hidden="true"
-                        />
-                        <figcaption className="wb-inv">{getText('oil_sands_in_situ_infographic_aria', lang)}</figcaption>
-                    </figure>
+                        title={getText('oil_sands_in_situ_title', lang).replace(/<[^>]*>/g, '')}
+                        overview={`${getText('oil_sands_in_situ_title', lang).replace(/<[^>]*>/g, '')}. ${getText('oil_sands_in_situ_infographic_aria', lang)}`}
+                        src={bgImage}
+                        imgClassName="oil-sands-in-situ-bg-image"
+                    />
 
                     <div className="oil-sands-in-situ-download-buttons">
                         <button type="button" onClick={downloadInfographicPng}>
@@ -169,7 +155,7 @@ const OilSandsInSituMethod = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

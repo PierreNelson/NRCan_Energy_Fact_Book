@@ -1,19 +1,13 @@
 import React, { useRef } from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { resolveAccessibleInfographicGraphic, waitForImage } from '../utils/downloadInfographicPng';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import biofuelCapacityBgEn from '../assets/biofuel_production_capacity_bg.svg';
 import biofuelCapacityBgFr from '../assets/biofuel_production_capacity_bg_fr.svg';
-
-const waitForImage = (img) =>
-    new Promise((resolve, reject) => {
-        if (img.complete && img.naturalWidth > 0) {
-            resolve(img);
-            return;
-        }
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-    });
 
 const BiofuelProductionCapacity = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -24,7 +18,7 @@ const BiofuelProductionCapacity = () => {
     const fileSlug = getText('biofuel_production_capacity_download_title', lang).replace(/\s+/g, '_');
 
     const downloadInfographicPng = async () => {
-        const imgEl = infographicImgRef.current;
+        const imgEl = resolveAccessibleInfographicGraphic(infographicImgRef.current);
         if (!imgEl) return;
         const loaded = await waitForImage(imgEl);
         const scale = 2;
@@ -61,21 +55,13 @@ const BiofuelProductionCapacity = () => {
     };
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content biofuel-production-capacity"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content biofuel-production-capacity page-chrome page-chrome--bleed"
             aria-labelledby="biofuel-production-capacity-infographic-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .biofuel-production-capacity {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .biofuel-production-capacity-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .biofuel-production-capacity-intro {
@@ -148,22 +134,16 @@ const BiofuelProductionCapacity = () => {
                     >
                         {infographicTitle}
                     </h2>
-                    <figure
+                    <AccessibleInfographic
+                        ref={infographicImgRef}
+                        as="figure"
+                        mode="image"
                         className="biofuel-production-capacity-infographic-figure"
-                        aria-label={getText('biofuel_production_capacity_infographic_aria', lang)}
-                    >
-                        <img
-                            ref={infographicImgRef}
-                            src={bgImage}
-                            alt=""
-                            className="biofuel-production-capacity-bg-image"
-                            draggable={false}
-                            aria-hidden="true"
-                        />
-                        <figcaption className="wb-inv">
-                            {getText('biofuel_production_capacity_infographic_aria', lang)}
-                        </figcaption>
-                    </figure>
+                        title={infographicTitle}
+                        overview={`${infographicTitle}. ${getText('biofuel_production_capacity_infographic_aria', lang)}`}
+                        src={bgImage}
+                        imgClassName="biofuel-production-capacity-bg-image"
+                    />
 
                     <div className="biofuel-production-capacity-download-buttons">
                         <button type="button" onClick={downloadInfographicPng} style={downloadBtnStyle}>
@@ -172,7 +152,7 @@ const BiofuelProductionCapacity = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

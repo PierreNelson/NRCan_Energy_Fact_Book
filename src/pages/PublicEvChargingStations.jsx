@@ -1,9 +1,22 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import FootnoteMarker from '../components/FootnoteMarker';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import useWindowWidth from '../hooks/useWindowWidth';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import hexToRgba from '../utils/hexToRgba';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
 
 const PIE_DATA_YEAR = 2026;
 const BAR_START_YEAR = 2018;
@@ -45,29 +58,12 @@ const HOVER_LABEL = {
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
 
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
-
-const hexToRgba = (hex, opacity = 1) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-    }
-    return hex;
-};
 
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
         (s, key) => s.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(vars[key] ?? '')),
         text || '',
     );
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
-const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
 const BAR_YEARS = BAR_HARDCODED_DATA.map((row) => row.year);
 
@@ -200,9 +196,7 @@ const PublicEvChargingStations = () => {
     const [selectedPieYear] = useState(PIE_DATA_YEAR);
     const [selectedPieSlices, setSelectedPieSlices] = useState(null);
     const [selectedBarPoints, setSelectedBarPoints] = useState(null);
-    const [isPieTableOpen, setIsPieTableOpen] = useState(false);
-    const [isBarTableOpen, setIsBarTableOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
     const [cssZoomFactor, setCssZoomFactor] = useState(() => computePageZoomScale(null).cssZoomFactor);
     const zoomBaselineRef = useRef(null);
@@ -215,87 +209,21 @@ const PublicEvChargingStations = () => {
     const pieClickHandlerRef = useRef(null);
     const barClickHandlerRef = useRef(null);
     const barGraphDivRef = useRef(null);
-    const pieTopScrollRef = useRef(null);
-    const pieTableScrollRef = useRef(null);
-    const pieBottomScrollRef = useRef(null);
-    const barTopScrollRef = useRef(null);
-    const barTableScrollRef = useRef(null);
-    const barBottomScrollRef = useRef(null);
 
-    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const useStackedLayout = pageCssZoom >= STACKED_LAYOUT_DETECTED_ZOOM;
     const pieColumnWidth = useStackedLayout ? windowWidth : Math.max(280, Math.floor(windowWidth * 0.4));
 
-    const formatNumber = (value) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
-        return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
-    };
+    const formatNumber = (value) => formatLocaleNumber(value, lang, { maximumFractionDigits: 0 });
 
-    const formatPct = (value, digits = 1) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
-        const formatted = Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-        return lang === 'fr' ? `${formatted} %` : `${formatted}%`;
-    };
+    const formatPct = (value, digits = 1) => formatLocalePct(value, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
 
     const formatGrowth = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '';
-        const formatted = Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
-        return lang === 'fr' ? `+${formatted} %` : `+${formatted}%`;
+        return `+${formatLocalePct(value, lang, { maximumFractionDigits: 0 })}`;
     };
-
-    const scrollToElement = (id) => (event) => {
-        event?.preventDefault();
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    useEffect(() => {
-        const syncLayout = () => {
-            setWindowWidth(window.innerWidth);
-            const {
-                pageCssZoom: nextPageCssZoom,
-                cssZoomFactor: nextCssZoomFactor,
-                baseline,
-            } = computePageZoomScale(zoomBaselineRef.current);
-            zoomBaselineRef.current = baseline;
-            setPageCssZoom(nextPageCssZoom);
-            setCssZoomFactor(nextCssZoomFactor);
-        };
-        syncLayout();
-        window.addEventListener('resize', syncLayout);
-        const vv = window.visualViewport;
-        vv?.addEventListener('resize', syncLayout);
-        vv?.addEventListener('scroll', syncLayout);
-        return () => {
-            window.removeEventListener('resize', syncLayout);
-            vv?.removeEventListener('resize', syncLayout);
-            vv?.removeEventListener('scroll', syncLayout);
-        };
-    }, []);
-
-    const resizeCharts = useCallback(() => {
-        [pieChartRef, barChartRef].forEach((ref) => {
-            const plotEl = ref.current?.querySelector('.js-plotly-plot');
-            if (plotEl && window.Plotly?.Plots?.resize) {
-                window.Plotly.Plots.resize(plotEl);
-            }
-        });
-    }, []);
-
-    useEffect(() => {
-        const timer = window.setTimeout(resizeCharts, 120);
-        window.addEventListener('resize', resizeCharts);
-        const rowEl = contentRowRef.current;
-        const observer = rowEl ? new ResizeObserver(() => window.requestAnimationFrame(resizeCharts)) : null;
-        if (rowEl && observer) observer.observe(rowEl);
-        return () => {
-            window.clearTimeout(timer);
-            window.removeEventListener('resize', resizeCharts);
-            observer?.disconnect();
-        };
-    }, [resizeCharts, useStackedLayout, windowWidth, cssZoomFactor, selectedPieYear, isPieTableOpen, isBarTableOpen]);
 
     const pieRow = useMemo(
         () => PIE_HARDCODED_DATA.find((row) => row.year === selectedPieYear) || PIE_HARDCODED_DATA[0],
@@ -312,10 +240,25 @@ const PublicEvChargingStations = () => {
 
     const pieChartTitle = useMemo(() => substitute(getText('public_ev_charging_stations_pie_chart_title', lang), pieTextVars), [lang, pieTextVars]);
     const barChartTitle = useMemo(() => getText('public_ev_charging_stations_bar_chart_title', lang), [lang]);
+    const exportPieChartTitle = useMemo(() => stripHtml(pieChartTitle), [pieChartTitle]);
+    const exportBarChartTitle = useMemo(() => stripHtml(barChartTitle), [barChartTitle]);
     const pieFileTitle = useMemo(() => substitute(getText('public_ev_charging_stations_pie_download_title', lang), pieTextVars), [lang, pieTextVars]);
     const barFileTitle = useMemo(() => substitute(getText('public_ev_charging_stations_bar_download_title', lang), barTextVars), [lang, barTextVars]);
     const pieTableCaption = substitute(getText('public_ev_charging_stations_pie_table_caption', lang), pieTextVars);
     const barTableCaption = substitute(getText('public_ev_charging_stations_bar_table_caption', lang), barTextVars);
+
+    const pieTableColumns = useMemo(() => [
+        { key: 'year', header: getText('public_ev_charging_stations_pie_table_col_year', lang), align: 'left' },
+        { key: 'type', header: getText('public_ev_charging_stations_pie_table_col_type', lang), align: 'left' },
+        { key: 'share', header: getText('public_ev_charging_stations_pie_table_col_share', lang), align: 'num' },
+    ], [lang]);
+
+    const barTableColumns = useMemo(() => [
+        { key: 'year', header: getText('public_ev_charging_stations_bar_table_col_year', lang), align: 'left' },
+        { key: 'stations', header: getText('public_ev_charging_stations_bar_table_col_stations', lang), align: 'num' },
+        { key: 'growth', header: getText('public_ev_charging_stations_bar_table_col_growth', lang), align: 'num' },
+    ], [lang]);
+
 
     const zoomLegendMode = windowWidth <= 768
         || cssZoomFactor >= PIE_LEGEND_DETECTED_ZOOM
@@ -501,116 +444,37 @@ const PublicEvChargingStations = () => {
         },
     };
 
-    const pieTableHeaders = [
-        getText('public_ev_charging_stations_pie_table_col_year', lang),
-        getText('public_ev_charging_stations_pie_table_col_type', lang),
-        getText('public_ev_charging_stations_pie_table_col_share', lang),
-    ];
-
-    const barTableHeaders = [
-        getText('public_ev_charging_stations_bar_table_col_year', lang),
-        getText('public_ev_charging_stations_bar_table_col_stations', lang),
-        getText('public_ev_charging_stations_bar_table_col_growth', lang),
-    ];
-
     const pieTableRows = pieSlices.map((slice) => ({
         year: selectedPieYear,
         type: getText(`public_ev_charging_stations_legend_${slice.key}`, lang),
         share: slice.pct,
     }));
 
-    const barTableRowsDesc = [...BAR_HARDCODED_DATA].reverse();
-
-    const syncTableScroll = useCallback((topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    const bindTableScroll = useCallback((isOpen, topRef, scrollRef, bottomRef) => {
-        if (!isOpen) return undefined;
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return undefined;
-
-        const sync = () => syncTableScroll(topRef, scrollRef, bottomRef);
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTop = () => syncFrom(topScroll);
-        const handleTable = () => syncFrom(tableScroll);
-        const handleBottom = () => syncFrom(bottomScroll);
-        const rafSync = () => window.requestAnimationFrame(sync);
-
-        topScroll.addEventListener('scroll', handleTop);
-        tableScroll.addEventListener('scroll', handleTable);
-        bottomScroll.addEventListener('scroll', handleBottom);
-        const observer = new ResizeObserver(rafSync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        rafSync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTop);
-            tableScroll.removeEventListener('scroll', handleTable);
-            bottomScroll.removeEventListener('scroll', handleBottom);
-            observer.disconnect();
-        };
-    }, [syncTableScroll]);
-
-    useEffect(() => bindTableScroll(isPieTableOpen, pieTopScrollRef, pieTableScrollRef, pieBottomScrollRef), [isPieTableOpen, windowWidth, bindTableScroll]);
-    useEffect(() => bindTableScroll(isBarTableOpen, barTopScrollRef, barTableScrollRef, barBottomScrollRef), [isBarTableOpen, windowWidth, bindTableScroll]);
-
-    const setupChartAccessibility = useCallback((chartRef) => {
-        const plotContainer = chartRef.current;
-        if (!plotContainer) return;
-        plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-            svg.setAttribute('aria-hidden', 'true');
-        });
-        plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-            const dataTitle = btn.getAttribute('data-title');
-            if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                btn.setAttribute('aria-label', dataTitle);
-                btn.setAttribute('role', 'button');
-                btn.setAttribute('tabindex', '0');
-                btn.removeAttribute('aria-hidden');
-            } else {
-                btn.setAttribute('aria-hidden', 'true');
-                btn.setAttribute('tabindex', '-1');
-            }
-        });
-    }, []);
+    const scrollToElement = (id) => makeScrollToIdHandler(id);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setupChartAccessibility(pieChartRef);
-            setupChartAccessibility(barChartRef);
-        }, 500);
-        const observers = [pieChartRef, barChartRef].map((ref) => {
-            if (!ref.current) return null;
-            const observer = new MutationObserver(() => setupChartAccessibility(ref));
-            observer.observe(ref.current, { childList: true, subtree: true });
-            return observer;
-        });
-        return () => {
-            clearTimeout(timer);
-            observers.forEach((observer) => observer?.disconnect());
+        const syncLayout = () => {
+            const {
+                pageCssZoom: nextPageCssZoom,
+                cssZoomFactor: nextCssZoomFactor,
+                baseline,
+            } = computePageZoomScale(zoomBaselineRef.current);
+            zoomBaselineRef.current = baseline;
+            setPageCssZoom(nextPageCssZoom);
+            setCssZoomFactor(nextCssZoomFactor);
         };
-    }, [lang, selectedPieSlices, selectedBarPoints, setupChartAccessibility, selectedPieYear]);
+        syncLayout();
+        window.addEventListener('resize', syncLayout);
+        const vv = window.visualViewport;
+        vv?.addEventListener('resize', syncLayout);
+        vv?.addEventListener('scroll', syncLayout);
+        return () => {
+            window.removeEventListener('resize', syncLayout);
+            vv?.removeEventListener('resize', syncLayout);
+            vv?.removeEventListener('scroll', syncLayout);
+        };
+    }, []);
+
 
     const togglePieSelection = useCallback((sliceIndex) => {
         if (windowWidth <= 768) {
@@ -649,6 +513,15 @@ const PublicEvChargingStations = () => {
         const clickHandler = (event) => pieClickHandlerRef.current?.(event);
         graphDiv._publicEvChargingStationsPieClick = clickHandler;
         graphDiv.on('plotly_click', clickHandler);
+    }, []);
+
+    const resizeCharts = useCallback(() => {
+        [pieChartRef, barChartRef].forEach((ref) => {
+            const plotEl = ref.current?.querySelector('.js-plotly-plot');
+            if (plotEl && window.Plotly?.Plots?.resize) {
+                window.Plotly.Plots.resize(plotEl);
+            }
+        });
     }, []);
 
     const onPiePlotReady = useCallback((_figure, graphDiv) => {
@@ -701,172 +574,56 @@ const PublicEvChargingStations = () => {
         window.requestAnimationFrame(resizeCharts);
     }, [bindBarPlotHandlers, resizeCharts]);
 
-    const downloadChartPng = useCallback(async (plotEl, title, fileTitleBase) => {
-        if (!plotEl || !window.Plotly) return;
-        const titlePlain = stripHtml(title);
-        try {
-            const imgData = await window.Plotly.toImage(plotEl, {
-                format: 'png',
-                width: 1200,
-                height: 700,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 90;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Lato, Arial, sans-serif';
-                ctx.textAlign = 'center';
-                const titleLines = titlePlain.match(/.{1,70}(\s|$)/g) || [titlePlain];
-                titleLines.forEach((line, index) => {
-                    ctx.fillText(line.trim(), canvas.width / 2, 40 + index * 36);
-                });
-                ctx.drawImage(img, 0, titleHeight);
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileTitleBase}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            /* ignore export errors */
-        }
-    }, []);
+    const downloadPieChartWithTitle = useChartPngDownloader(
+        pieChartRef,
+        () => ({
+        filename: `${pieFileTitle}.png`,
+        title: exportPieChartTitle,
+        height: 700,
+        legendItems: SLICE_KEYS.map((key) => ({
+            label: getText(`public_ev_charging_stations_legend_${key}`, lang),
+            color: SLICE_COLORS[key],
+        })),
+    }),
+        [SLICE_COLORS, SLICE_KEYS, exportPieChartTitle, getText, lang, pieFileTitle],
+    );
 
-    const downloadPieCsv = () => {
-        const header = pieTableHeaders.map(csvEscape).join(',');
-        const rows = pieTableRows.map((row) => [row.year, row.type, formatPct(row.share)].map(csvEscape).join(','));
-        saveAs(new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }), `${pieFileTitle}.csv`);
-    };
-
-    const downloadPieDocx = async () => {
-        const headerRow = new TableRow({
-            children: pieTableHeaders.map((header) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const dataRows = pieTableRows.map((row) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: row.type, size: 22 })], alignment: AlignmentType.LEFT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatPct(row.share), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-            ],
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(pieChartTitle), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 4200, 1800],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${pieFileTitle}.docx`);
-    };
-
-    const downloadBarCsv = () => {
-        const header = barTableHeaders.map(csvEscape).join(',');
-        const rows = barTableRowsDesc.map((row) => [
-            row.year,
-            row.stations,
-            row.growth != null ? formatGrowth(row.growth) : '',
-        ].map(csvEscape).join(','));
-        saveAs(new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' }), `${barFileTitle}.csv`);
-    };
-
-    const downloadBarDocx = async () => {
-        const headerRow = new TableRow({
-            children: barTableHeaders.map((header) => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 22 })], alignment: AlignmentType.CENTER })],
-                shading: { fill: 'E6E6E6' },
-            })),
-        });
-        const dataRows = barTableRowsDesc.map((row) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(row.year), size: 22 })], alignment: AlignmentType.CENTER })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatNumber(row.stations), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: row.growth != null ? formatGrowth(row.growth) : '—', size: 22 })], alignment: AlignmentType.RIGHT })] }),
-            ],
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: stripHtml(barChartTitle), bold: true, size: 28 })],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 300 },
-                    }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [900, 2600, 1800],
-                        rows: [headerRow, ...dataRows],
-                    }),
-                ],
-            }],
-        });
-        saveAs(await Packer.toBlob(doc), `${barFileTitle}.docx`);
-    };
-
-    const downloadBtnStyle = {
-        padding: '8px 16px',
-        backgroundColor: '#8C8C8C',
-        border: '1px solid #404040',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        color: '#ffffff',
-    };
+    const downloadBarChartWithTitle = useChartPngDownloader(
+        barChartRef,
+        () => ({
+        filename: `${barFileTitle}.png`,
+        title: exportBarChartTitle,
+        height: 700,
+        legendItems: [
+            { label: getText('public_ev_charging_stations_bar_table_col_stations', lang), color: BAR_COLOR },
+        ],
+    }),
+        [BAR_COLOR, barFileTitle, exportBarChartTitle, getText, lang],
+    );
 
     const piePlotKey = `public-ev-charging-stations-pie-${selectedPieYear}-${useStackedLayout ? 'stacked' : 'side'}-${zoomLegendMode ? 'zoom' : 'full'}-${pieColumnWidth}`;
     const barPlotKey = `public-ev-charging-stations-bar-${useStackedLayout ? 'stacked' : 'side'}-${barPlotHeight}`;
 
-    const pieChartConfig = useMemo(() => ({
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('public_ev_charging_stations_download_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: (gd) => downloadChartPng(gd, pieChartTitle, pieFileTitle),
-        }],
-    }), [lang, downloadChartPng, pieChartTitle, pieFileTitle]);
+    const pieChartConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadPieChartWithTitle(gd),
+        name: getText('public_ev_charging_stations_download_png', lang),
+    });
 
-    const barChartConfig = useMemo(() => ({
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('public_ev_charging_stations_download_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: (gd) => downloadChartPng(gd, barChartTitle, barFileTitle),
-        }],
-    }), [lang, downloadChartPng, barChartTitle, barFileTitle]);
+    const barChartConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadBarChartWithTitle(gd),
+        name: getText('public_ev_charging_stations_download_png', lang),
+    });
 
     const footnoteLink = (referrerId) => (
-        <span id={referrerId} style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
-            <a className="fn-lnk" href="#fn-asterisk-public-ev-charging-stations" onClick={scrollToElement('fn-asterisk-public-ev-charging-stations')}>
-                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                <span aria-hidden="true">*</span>
-            </a>
-        </span>
+        <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-public-ev-charging-stations"
+                            id={referrerId}
+                            marker="*"
+                            onClick={scrollToElement('fn-asterisk-public-ev-charging-stations')}
+                        />
     );
 
     const getPieLegendLabel = (sliceKey) => getText(`public_ev_charging_stations_legend_${sliceKey}`, lang);
@@ -880,23 +637,37 @@ const PublicEvChargingStations = () => {
         </span>
     );
 
+    const getChartSummary = () => {
+        const pieBody = summarizeByCategory({
+            categories: (pieSlices || []).map((slice) => slice.label || slice.name || slice.key),
+            series: [{ name: lang === 'en' ? 'Share' : 'Part', values: (pieSlices || []).map((slice) => slice.pct ?? slice.value), format: (v) => String(v ?? '—') }],
+            lang,
+        });
+        const barBody = summarizeByCategory({
+            categories: barYears || [],
+            series: [{ name: lang === 'en' ? 'Stations' : 'Bornes', values: barPlotValues || [], format: (v) => String(v ?? '—') }],
+            lang,
+        });
+        return {
+            pie: joinChartSummary({ intro: pieChartTitle, body: pieBody, lang }),
+            bar: joinChartSummary({ intro: barChartTitle, body: barBody, lang }),
+        };
+    };
+    const summaries = getChartSummary();
+    const pieRegionLabel = summaries.pie;
+    const barRegionLabel = summaries.bar;
+
     return (
-        <main
-            id="main-content"
+        <PageShell id="main-content"
             tabIndex="-1"
-            className="page-content page-99"
+            className="page-content page-99 page-chrome page-chrome--bleed"
             role="main"
             aria-labelledby="public-ev-charging-stations-pie-chart-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
 .page-99.page-content { max-width: none !important; overflow-x: visible !important; }
 .page-99 {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .public-ev-charging-stations-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .public-ev-charging-stations-content-row {
@@ -926,11 +697,7 @@ const PublicEvChargingStations = () => {
     flex-direction: column;
 }
 .public-ev-charging-stations-chart-frame {
-    background-color: #f5f5f5;
-    padding: 20px;
-    border-radius: 8px;
-    box-sizing: border-box;
-    overflow: visible;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -1035,19 +802,6 @@ const PublicEvChargingStations = () => {
     font-weight: bold;
     line-height: 1.1;
 }
-.public-ev-charging-stations-clear-selection {
-    padding: 6px 12px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 8px;
-    width: fit-content;
-    align-self: flex-start;
-}
 .public-ev-charging-stations-custom-legend {
     display: flex;
     justify-content: center;
@@ -1077,29 +831,7 @@ const PublicEvChargingStations = () => {
     width: 100%;
     box-sizing: border-box;
 }
-.public-ev-charging-stations-download-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-.public-ev-charging-stations-download-buttons button:hover,
-.page-99 .data-table-wrapper summary:hover,
-.page-99 .data-table-wrapper button:hover,
-.public-ev-charging-stations-clear-selection:hover { background-color: #404040 !important; }
-.page-99 .data-table-wrapper { padding-top: 5px; margin-top: 20px; width: 100%; box-sizing: border-box; }
 .page-99 .data-table-wrapper.public-ev-charging-stations-panel-footer { margin-top: auto; padding-top: 20px; }
-.page-99 .data-table-wrapper summary {
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    padding: 10px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    list-style: none;
-    box-sizing: border-box;
-    width: 100%;
-    color: #ffffff;
-}
-.page-99 .data-table-wrapper summary::-webkit-details-marker { display: none; }
-.public-ev-charging-stations-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.public-ev-charging-stations-table-scrollbar > div { height: 20px; }
 .public-ev-charging-stations-footnotes {
     font-family: var(--font-body);
     font-size: 1rem;
@@ -1147,24 +879,20 @@ const PublicEvChargingStations = () => {
             <div className="public-ev-charging-stations-inner">
                 <div ref={contentRowRef} className={`public-ev-charging-stations-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <div className={`public-ev-charging-stations-pie-column ${useStackedLayout ? '' : 'public-ev-charging-stations-pie-column-side'}`}>
-                        <div className={useStackedLayout ? 'public-ev-charging-stations-chart-frame' : 'public-ev-charging-stations-pie-panel'}>
+                        <div className={useStackedLayout ? 'public-ev-charging-stations-chart-frame page-chrome-chart-frame' : 'public-ev-charging-stations-pie-panel'}>
                             <h2 id="public-ev-charging-stations-pie-chart-title" className="public-ev-charging-stations-chart-title">
                                 {substitute(getText('public_ev_charging_stations_pie_chart_title_plain', lang), pieTextVars)}
                                 {footnoteLink('fn-asterisk-rf-public-ev-charging-stations-pie')}
                             </h2>
 
-                            {effectivePieSlices?.length > 0 && (
-                                <button type="button" className="public-ev-charging-stations-clear-selection" onClick={() => setSelectedPieSlices(null)}>
-                                    {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                </button>
-                            )}
+                            {effectivePieSlices?.length > 0 && <ClearSelectionButton lang={lang} onClick={() => setSelectedPieSlices(null)} />}
 
                             <div className="public-ev-charging-stations-chart-block public-ev-charging-stations-chart-scroll">
                                 <figure
                                     ref={pieChartRef}
                                     className="public-ev-charging-stations-chart"
                                     role="region"
-                                    aria-label={pieChartTitle}
+                                    aria-label={pieRegionLabel}
                                     tabIndex={0}
                                     style={{ margin: 0, height: `${piePlotHeight}px` }}
                                 >
@@ -1196,104 +924,45 @@ const PublicEvChargingStations = () => {
                                 </div>
                             )}
 
-                            <details className="data-table-wrapper public-ev-charging-stations-panel-footer" onToggle={(e) => setIsPieTableOpen(e.currentTarget.open)}>
-                                <summary role="button" aria-expanded={isPieTableOpen}>
-                                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isPieTableOpen ? '▼' : '▶'}</span>
-                                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                    <span className="wb-inv">
-                                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                    </span>
-                                </summary>
-                                <div ref={pieTopScrollRef} className="public-ev-charging-stations-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div
-                                    ref={pieTableScrollRef}
-                                    className="table-responsive"
-                                    role="region"
-                                    aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                    tabIndex={0}
-                                >
-                                    <table className="table table-bordered table-striped table-hover">
-                                        <caption className="wb-inv">{pieTableCaption}</caption>
-                                        <thead>
-                                            <tr>
-                                                {pieTableHeaders.map((header, index) => (
-                                                    <th
-                                                        key={header}
-                                                        scope="col"
-                                                        style={{
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'center',
-                                                            whiteSpace: 'nowrap',
-                                                            verticalAlign: 'bottom',
-                                                            ...(index === 0 ? {
-                                                                position: 'sticky',
-                                                                left: 0,
-                                                                backgroundColor: '#f8f9fa',
-                                                                zIndex: 2,
-                                                                borderRight: '2px solid #dee2e6',
-                                                            } : {}),
-                                                        }}
-                                                    >
-                                                        {header}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {pieTableRows.map((row) => (
-                                                <tr key={row.type}>
-                                                    <th
-                                                        scope="row"
-                                                        style={{
-                                                            position: 'sticky',
-                                                            left: 0,
-                                                            zIndex: 1,
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'center',
-                                                            borderRight: '2px solid #dee2e6',
-                                                        }}
-                                                    >
-                                                        {row.year}
-                                                    </th>
-                                                    <td>{row.type}</td>
-                                                    <td style={{ textAlign: 'right' }}>{formatPct(row.share)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div ref={pieBottomScrollRef} className="public-ev-charging-stations-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div className="public-ev-charging-stations-download-buttons">
-                                    <button type="button" onClick={downloadPieCsv} style={downloadBtnStyle}>
-                                        {getText('public_ev_charging_stations_download_csv', lang)}
-                                    </button>
-                                    <button type="button" onClick={downloadPieDocx} style={downloadBtnStyle}>
-                                        {getText('public_ev_charging_stations_download_docx', lang)}
-                                    </button>
-                                </div>
-                            </details>
+                            <ChartDataTable
+                                lang={lang}
+                                className="public-ev-charging-stations-panel-footer"
+                                columns={pieTableColumns}
+                                rows={pieTableRows}
+                                csvFilename={`${pieFileTitle}.csv`}
+                                docx={{
+                                    filename: `${pieFileTitle}.docx`,
+                                    title: exportPieChartTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: [900, 4200, 1800],
+                                    fontSize: 22,
+                                }}
+                                caption={pieTableCaption}
+                                tableAriaLabel={pieTableCaption}
+                                renderCell={(raw, { colIndex }) => {
+                                    if (colIndex === 0) return String(raw ?? '');
+                                    if (colIndex === 1) return String(raw ?? '');
+                                    return formatPct(raw);
+                                }}
+                            />
                         </div>
                     </div>
 
                     <div className="public-ev-charging-stations-bar-column">
-                        <div className="public-ev-charging-stations-chart-frame">
+                        <div className="public-ev-charging-stations-chart-frame page-chrome-chart-frame">
                             <h2 id="public-ev-charging-stations-bar-chart-title" className="public-ev-charging-stations-chart-title">
                                 {getText('public_ev_charging_stations_bar_chart_title_plain', lang)}
                                 {footnoteLink('fn-asterisk-rf-public-ev-charging-stations-bar')}
                             </h2>
 
-                            {selectedBarPoints !== null && (
-                                <button type="button" className="public-ev-charging-stations-clear-selection" onClick={() => setSelectedBarPoints(null)}>
-                                    {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                </button>
-                            )}
+                            {selectedBarPoints !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedBarPoints(null)} />}
 
                             <div className="public-ev-charging-stations-chart-block">
                                 <figure
                                     ref={barChartRef}
                                     className="public-ev-charging-stations-chart"
                                     role="region"
-                                    aria-label={barChartTitle}
+                                    aria-label={barRegionLabel}
                                     tabIndex={0}
                                     style={{ margin: 0, height: `${barPlotHeight}px` }}
                                 >
@@ -1308,82 +977,27 @@ const PublicEvChargingStations = () => {
                                 </figure>
                             </div>
 
-                            <details className="data-table-wrapper public-ev-charging-stations-panel-footer" onToggle={(e) => setIsBarTableOpen(e.currentTarget.open)}>
-                                <summary role="button" aria-expanded={isBarTableOpen}>
-                                    <span aria-hidden="true" style={{ marginRight: '8px' }}>{isBarTableOpen ? '▼' : '▶'}</span>
-                                    {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                    <span className="wb-inv">
-                                        {lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                    </span>
-                                </summary>
-                                <div ref={barTopScrollRef} className="public-ev-charging-stations-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div
-                                    ref={barTableScrollRef}
-                                    className="table-responsive"
-                                    role="region"
-                                    aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                    tabIndex={0}
-                                >
-                                    <table className="table table-bordered table-striped table-hover">
-                                        <caption className="wb-inv">{barTableCaption}</caption>
-                                        <thead>
-                                            <tr>
-                                                {barTableHeaders.map((header, index) => (
-                                                    <th
-                                                        key={header}
-                                                        scope="col"
-                                                        style={{
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'center',
-                                                            whiteSpace: 'nowrap',
-                                                            verticalAlign: 'bottom',
-                                                            ...(index === 0 ? {
-                                                                position: 'sticky',
-                                                                left: 0,
-                                                                backgroundColor: '#f8f9fa',
-                                                                zIndex: 2,
-                                                                borderRight: '2px solid #dee2e6',
-                                                            } : {}),
-                                                        }}
-                                                    >
-                                                        {header}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {barTableRowsDesc.map((row) => (
-                                                <tr key={row.year}>
-                                                    <th
-                                                        scope="row"
-                                                        style={{
-                                                            position: 'sticky',
-                                                            left: 0,
-                                                            zIndex: 1,
-                                                            fontWeight: 'bold',
-                                                            textAlign: 'center',
-                                                            borderRight: '2px solid #dee2e6',
-                                                        }}
-                                                    >
-                                                        {row.year}
-                                                    </th>
-                                                    <td style={{ textAlign: 'right' }}>{formatNumber(row.stations)}</td>
-                                                    <td style={{ textAlign: 'right' }}>{row.growth != null ? formatGrowth(row.growth) : '—'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div ref={barBottomScrollRef} className="public-ev-charging-stations-table-scrollbar" aria-hidden="true"><div /></div>
-                                <div className="public-ev-charging-stations-download-buttons">
-                                    <button type="button" onClick={downloadBarCsv} style={downloadBtnStyle}>
-                                        {getText('public_ev_charging_stations_download_csv', lang)}
-                                    </button>
-                                    <button type="button" onClick={downloadBarDocx} style={downloadBtnStyle}>
-                                        {getText('public_ev_charging_stations_download_docx', lang)}
-                                    </button>
-                                </div>
-                            </details>
+                            <ChartDataTable
+                                lang={lang}
+                                className="public-ev-charging-stations-panel-footer"
+                                columns={barTableColumns}
+                                rows={BAR_HARDCODED_DATA}
+                                csvFilename={`${barFileTitle}.csv`}
+                                docx={{
+                                    filename: `${barFileTitle}.docx`,
+                                    title: exportBarChartTitle,
+                                    titleAlign: 'center',
+                                    columnWidths: [900, 2600, 1800],
+                                    fontSize: 22,
+                                }}
+                                caption={barTableCaption}
+                                tableAriaLabel={barTableCaption}
+                                renderCell={(raw, { colIndex }) => {
+                                    if (colIndex === 0) return String(raw ?? '');
+                                    if (colIndex === 1) return formatNumber(raw);
+                                    return raw != null ? formatGrowth(raw) : '—';
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
@@ -1394,26 +1008,15 @@ const PublicEvChargingStations = () => {
                     {getText('public_ev_charging_stations_paragraph_part2', lang)}
                 </p>
 
-                <aside className="wb-fnote public-ev-charging-stations-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd id="fn-asterisk-public-ev-charging-stations">
-                            <a
-                                href="#fn-asterisk-rf-public-ev-charging-stations-pie"
-                                onClick={scrollToElement('fn-asterisk-rf-public-ev-charging-stations-pie')}
-                                className="fn-num"
-                                title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}
-                            >
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}
-                            <p>{getText('public_ev_charging_stations_footnote', lang)}</p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    className="public-ev-charging-stations-footnotes"
+                    items={[
+                        { id: 'fn-asterisk-public-ev-charging-stations', marker: '*', text: getText('public_ev_charging_stations_footnote', lang), returnHref: '#fn-asterisk-rf-public-ev-charging-stations-pie' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

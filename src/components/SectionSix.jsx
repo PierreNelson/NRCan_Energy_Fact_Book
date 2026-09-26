@@ -1,142 +1,96 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import OilGasCoalOverview from '../pages/OilGasCoalOverview';
-import PetroleumEmploymentByRegion from '../pages/PetroleumEmploymentByRegion';
-import PetroleumEmployment from '../pages/PetroleumEmployment';
-import PetroleumGdp from '../pages/PetroleumGdp';
-import CrudeOilInternational from '../pages/CrudeOilInternational';
-import WorldProvedCrudeReserves from '../pages/WorldProvedCrudeReserves';
-import CanadianCrudeReserves from '../pages/CanadianCrudeReserves';
-import CanadianCrudeProduction from '../pages/CanadianCrudeProduction';
-import CanadianSupplyDemand from '../pages/CanadianSupplyDemand';
-import OilSandsProduction from '../pages/OilSandsProduction';
-import OilSandsMiningMethod from '../pages/OilSandsMiningMethod';
-import OilSandsInSituMethod from '../pages/OilSandsInSituMethod';
-import CrudeOilPrices from '../pages/CrudeOilPrices';
-import MajorCerRegulatedOilPipelines from '../pages/MajorCerRegulatedOilPipelines';
-import OilByRail from '../pages/OilByRail';
-import NaturalGasInternational from '../pages/NaturalGasInternational';
-import WorldProvedGasReserves from '../pages/WorldProvedGasReserves';
-import WesternCanadaGasWellCompletions from '../pages/WesternCanadaGasWellCompletions';
-import OilGasGhgSpotlight from '../pages/OilGasGhgSpotlight';
-import RefinedPetroleumProducts from '../pages/RefinedPetroleumProducts';
-import NaturalGasLiquidsEnergyUse from '../pages/NaturalGasLiquidsEnergyUse';
-import NaturalGasEnergyUse from '../pages/NaturalGasEnergyUse';
-import RppSupplyDemand from '../pages/RppSupplyDemand';
-import RetailGasolinePrices from '../pages/RetailGasolinePrices';
-import RefineryCapacity from '../pages/RefineryCapacity';
-import CoalInternational from '../pages/CoalInternational';
-import CanadianCoalSupplyDemand from '../pages/CanadianCoalSupplyDemand';
+import React from 'react';
+import { lazyWithPreload } from '../utils/lazyWithPreload';
+import { useOutletContext } from 'react-router-dom';
+import ActivePageSection from './ActivePageSection';
+
+const OilGasCoalOverview = lazyWithPreload(() => import('../pages/OilGasCoalOverview'));
+const PetroleumEmploymentByRegion = lazyWithPreload(() => import('../pages/PetroleumEmploymentByRegion'));
+const PetroleumEmployment = lazyWithPreload(() => import('../pages/PetroleumEmployment'));
+const PetroleumGdp = lazyWithPreload(() => import('../pages/PetroleumGdp'));
+const CrudeOilInternational = lazyWithPreload(() => import('../pages/CrudeOilInternational'));
+const WorldProvedCrudeReserves = lazyWithPreload(() => import('../pages/WorldProvedCrudeReserves'));
+const CanadianCrudeReserves = lazyWithPreload(() => import('../pages/CanadianCrudeReserves'));
+const CanadianCrudeProduction = lazyWithPreload(() => import('../pages/CanadianCrudeProduction'));
+const CanadianSupplyDemand = lazyWithPreload(() => import('../pages/CanadianSupplyDemand'));
+const OilSandsProduction = lazyWithPreload(() => import('../pages/OilSandsProduction'));
+const OilSandsMiningMethod = lazyWithPreload(() => import('../pages/OilSandsMiningMethod'));
+const OilSandsInSituMethod = lazyWithPreload(() => import('../pages/OilSandsInSituMethod'));
+const CrudeOilPrices = lazyWithPreload(() => import('../pages/CrudeOilPrices'));
+const MajorCerRegulatedOilPipelines = lazyWithPreload(() => import('../pages/MajorCerRegulatedOilPipelines'));
+const OilByRail = lazyWithPreload(() => import('../pages/OilByRail'));
+const NaturalGasInternational = lazyWithPreload(() => import('../pages/NaturalGasInternational'));
+const WorldProvedGasReserves = lazyWithPreload(() => import('../pages/WorldProvedGasReserves'));
+const WesternCanadaGasWellCompletions = lazyWithPreload(() => import('../pages/WesternCanadaGasWellCompletions'));
+const CerRegulatedGasPipelines = lazyWithPreload(() => import('../pages/CerRegulatedGasPipelines'));
+const NaturalGasEnergyUse = lazyWithPreload(() => import('../pages/NaturalGasEnergyUse'));
+const HglSupplyDemand = lazyWithPreload(() => import('../pages/HglSupplyDemand'));
+const OilGasGhgSpotlight = lazyWithPreload(() => import('../pages/OilGasGhgSpotlight'));
+const RefinedPetroleumProducts = lazyWithPreload(() => import('../pages/RefinedPetroleumProducts'));
+const NaturalGasLiquidsEnergyUse = lazyWithPreload(() => import('../pages/NaturalGasLiquidsEnergyUse'));
+const RppSupplyDemand = lazyWithPreload(() => import('../pages/RppSupplyDemand'));
+const RetailGasolinePrices = lazyWithPreload(() => import('../pages/RetailGasolinePrices'));
+const RefineryCapacity = lazyWithPreload(() => import('../pages/RefineryCapacity'));
+const CoalInternational = lazyWithPreload(() => import('../pages/CoalInternational'));
+const CanadianCoalSupplyDemand = lazyWithPreload(() => import('../pages/CanadianCoalSupplyDemand'));
+
+const PAGES = [
+  { id: 'oil-gas-coal-overview', Component: OilGasCoalOverview,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'petroleum-employment-by-region', Component: PetroleumEmploymentByRegion,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'petroleum-employment', Component: PetroleumEmployment },
+  { id: 'petroleum-gdp', Component: PetroleumGdp },
+  { id: 'crude-oil-international', Component: CrudeOilInternational,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'world-crude-oil-proved-reserves', Component: WorldProvedCrudeReserves },
+  { id: 'canadian-crude-reserves', Component: CanadianCrudeReserves },
+  { id: 'canadian-crude-production', Component: CanadianCrudeProduction },
+  { id: 'canadian-supply-demand', Component: CanadianSupplyDemand },
+  { id: 'oil-sands', Component: OilSandsProduction },
+  { id: 'oil-sands-mining', Component: OilSandsMiningMethod },
+  { id: 'oil-sands-in-situ', Component: OilSandsInSituMethod },
+  { id: 'crude-oil-prices', Component: CrudeOilPrices },
+  { id: 'major-cer-regulated-oil-pipelines', Component: MajorCerRegulatedOilPipelines },
+  { id: 'oil-by-rail', Component: OilByRail },
+  { id: 'natural-gas-international', Component: NaturalGasInternational,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'world-natural-gas-proved-reserves', Component: WorldProvedGasReserves },
+  { id: 'western-canada-gas-well-completions', Component: WesternCanadaGasWellCompletions },
+  { id: 'cer-regulated-gas-pipelines', Component: CerRegulatedGasPipelines },
+  { id: 'natural-gas-energy-use', Component: NaturalGasEnergyUse },
+  { id: 'hgl-supply-demand', Component: HglSupplyDemand,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'ghg-spotlight-oil-gas', Component: OilGasGhgSpotlight },
+  { id: 'refined-petroleum-products', Component: RefinedPetroleumProducts,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'natural-gas-liquids-energy-use', Component: NaturalGasLiquidsEnergyUse },
+  { id: 'rpp-supply-demand', Component: RppSupplyDemand },
+  { id: 'retail-gasoline-prices', Component: RetailGasolinePrices },
+  { id: 'refinery-capacity', Component: RefineryCapacity },
+  { id: 'coal-international', Component: CoalInternational,
+    pageClassName: 'page-with-title-divider' },
+  { id: 'canadian-coal-supply-demand', Component: CanadianCoalSupplyDemand }
+];
+
+const TOPIC_ANCHORS = [
+  'petroleum-employment-by-region',
+  'crude-oil-international',
+  'natural-gas-international',
+  'hgl-supply-demand',
+  'refined-petroleum-products',
+  'coal-international',
+];
+
 const SectionSix = () => {
-    const location = useLocation();
-
-    useEffect(() => {
-        window.scrollTo(0, 0);
-        
-        const scrollTimer = setTimeout(() => {
-            if (location.hash) {
-                const elementId = location.hash.replace('#', '');
-                const element = document.getElementById(elementId);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            } else {
-                window.scrollTo({ top: 0, behavior: 'instant' });
-                const overviewPage = document.getElementById('oil-gas-coal-overview');
-                if (overviewPage) {
-                    overviewPage.scrollIntoView({ behavior: 'instant', block: 'start' });
-                }
-            }
-        }, 300);
-        
-        return () => clearTimeout(scrollTimer);
-    }, [location.pathname, location.hash]);
-
-    return (
-        <div className="stacked-section-container">
-            <div id="oil-gas-coal-overview" className="stacked-page-wrapper page-with-title-divider">
-                <OilGasCoalOverview />
-            </div>
-            <div id="petroleum-employment-by-region" className="stacked-page-wrapper">
-                <PetroleumEmploymentByRegion />
-            </div>
-            <div id="petroleum-employment" className="stacked-page-wrapper">
-                <PetroleumEmployment />
-            </div>
-            <div id="petroleum-gdp" className="stacked-page-wrapper">
-                <PetroleumGdp />
-            </div>
-            <div id="crude-oil-international" className="stacked-page-wrapper">
-                <CrudeOilInternational />
-            </div>
-            <div id="world-crude-oil-proved-reserves" className="stacked-page-wrapper">
-                <WorldProvedCrudeReserves />
-            </div>
-            <div id="canadian-crude-reserves" className="stacked-page-wrapper">
-                <CanadianCrudeReserves />
-            </div>
-            <div id="canadian-crude-production" className="stacked-page-wrapper">
-                <CanadianCrudeProduction />
-            </div>
-            <div id="canadian-supply-demand" className="stacked-page-wrapper">
-                <CanadianSupplyDemand />
-            </div>
-            <div id="oil-sands" className="stacked-page-wrapper">
-                <OilSandsProduction />
-            </div>
-            <div id="oil-sands-mining" className="stacked-page-wrapper">
-                <OilSandsMiningMethod />
-            </div>
-            <div id="oil-sands-in-situ" className="stacked-page-wrapper">
-                <OilSandsInSituMethod />
-            </div>
-            <div id="crude-oil-prices" className="stacked-page-wrapper">
-                <CrudeOilPrices />
-            </div>
-            <div id="major-cer-regulated-oil-pipelines" className="stacked-page-wrapper">
-                <MajorCerRegulatedOilPipelines />
-            </div>
-            <div id="oil-by-rail" className="stacked-page-wrapper">
-                <OilByRail />
-            </div>
-            <div id="natural-gas-international" className="stacked-page-wrapper">
-                <NaturalGasInternational />
-            </div>
-            <div id="world-natural-gas-proved-reserves" className="stacked-page-wrapper">
-                <WorldProvedGasReserves />
-            </div>
-            <div id="western-canada-gas-well-completions" className="stacked-page-wrapper">
-                <WesternCanadaGasWellCompletions />
-            </div>
-            <div id="ghg-spotlight-oil-gas" className="stacked-page-wrapper">
-                <OilGasGhgSpotlight />
-            </div>
-            <div id="refined-petroleum-products" className="stacked-page-wrapper">
-                <RefinedPetroleumProducts />
-            </div>
-            <div id="natural-gas-energy-use" className="stacked-page-wrapper">
-                <NaturalGasEnergyUse />
-            </div>
-            <div id="natural-gas-liquids-energy-use" className="stacked-page-wrapper">
-                <NaturalGasLiquidsEnergyUse />
-            </div>
-            <div id="rpp-supply-demand" className="stacked-page-wrapper">
-                <RppSupplyDemand />
-            </div>
-            <div id="retail-gasoline-prices" className="stacked-page-wrapper">
-                <RetailGasolinePrices />
-            </div>
-            <div id="refinery-capacity" className="stacked-page-wrapper">
-                <RefineryCapacity />
-            </div>
-            <div id="coal-international" className="stacked-page-wrapper">
-                <CoalInternational />
-            </div>
-            <div id="canadian-coal-supply-demand" className="stacked-page-wrapper">
-                <CanadianCoalSupplyDemand />
-            </div>
-        </div>
-    );
+  const { lang = 'en' } = useOutletContext() || {};
+  return (
+    <ActivePageSection
+      sectionPath="/section-6"
+      pages={PAGES}
+      topicAnchors={TOPIC_ANCHORS}
+      lang={lang}
+    />
+  );
 };
 
 export default SectionSix;

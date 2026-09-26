@@ -1,12 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import FootnoteMarker from '../components/FootnoteMarker';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import PageFootnotes from '../components/PageFootnotes';
+import usePlotlySelection from '../hooks/usePlotlySelection';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import PageStatus from '../components/PageStatus';
 import largestSolarProjectsBg from '../assets/largest_solar_projects_bg.png';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getLargestSolarProjectsData } from '../utils/dataLoader';
+import { stripHtml } from '../utils/stripHtml';
 import { getText } from '../utils/translations';
 
+import { makeScrollToIdHandler } from '../utils/scrollToId';
 const PROJECT_PROV_COLORS = {
     ab: '#709735',
     on: '#4b4c4d',
@@ -18,14 +26,6 @@ const HOVER_LABEL = {
     bordercolor: '#000000',
     font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
 };
-
-const MODEBAR_REMOVE = [
-    'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
-    'autoScale2d', 'resetScale2d', 'toImage', 'hoverClosestCartesian',
-    'hoverCompareCartesian', 'toggleSpikelines',
-];
-
-const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
 
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
@@ -94,17 +94,16 @@ const LargestSolarProjects = () => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedPoints, setSelectedPoints] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick: handleChartClick,
+    } = usePlotlySelection({ mode: 'slices', windowWidth });
     const [viewportZoom, setViewportZoom] = useState(createInitialViewportZoom);
 
     const chartRef = useRef(null);
     const zoomBaselineRef = useRef(null);
-    const tableTopRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const tableBottomRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, pointIndex: null });
     const clickHandlerRef = useRef(null);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
@@ -117,17 +116,9 @@ const LargestSolarProjects = () => {
         return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
     }, [locale]);
 
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-largest-solar-projects');
 
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-largest-solar-projects')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-largest-solar-projects')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-largest-solar-projects');
 
     useEffect(() => {
         getLargestSolarProjectsData()
@@ -195,84 +186,7 @@ const LargestSolarProjects = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /télécharger|charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints, loading, error, result]);
-
-    const syncTableScroll = useCallback(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    useEffect(() => {
-        const topScroll = tableTopRef.current;
-        const tableScroll = tableScrollRef.current;
-        const bottomScroll = tableBottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isTableOpen) return;
-
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(syncTableScroll);
-
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth, syncTableScroll]);
+    
 
     const projects = useMemo(() => result?.projects ?? [], [result]);
     const referenceYear = result?.referenceYear;
@@ -402,35 +316,6 @@ const LargestSolarProjects = () => {
         autosize: true,
     }), [projXMax, projLabels, projTickText, tickFont, projPlotHeight, useWrapLabels, projLeftMargin, projRightMargin]);
 
-    const getPointIndex = (point) => {
-        if (point.pointIndex != null && point.pointIndex >= 0) return point.pointIndex;
-        if (point.pointNumber != null && point.pointNumber >= 0) return point.pointNumber;
-        return undefined;
-    };
-
-    const handleChartClick = useCallback((event) => {
-        if (!event?.points?.length) return;
-        const pointIndex = getPointIndex(event.points[0]);
-        if (pointIndex === undefined) return;
-
-        if (windowWidth <= 768) {
-            const now = Date.now();
-            const last = lastClickRef.current;
-            const isDoubleTap = pointIndex === last.pointIndex && now - last.time < 300;
-            lastClickRef.current = { time: now, pointIndex };
-            if (!isDoubleTap) return;
-        }
-
-        setSelectedPoints((prev) => {
-            if (prev === null) return [pointIndex];
-            if (prev.includes(pointIndex)) {
-                const next = prev.filter((i) => i !== pointIndex);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, pointIndex];
-        });
-    }, [windowWidth]);
-
     useEffect(() => { clickHandlerRef.current = handleChartClick; });
 
     const bindPlotClickHandler = useCallback((graphDiv) => {
@@ -448,121 +333,49 @@ const LargestSolarProjects = () => {
         [bindPlotClickHandler],
     );
 
-    const clearSelection = () => {
-        lastClickRef.current = { time: 0, pointIndex: null };
-        setSelectedPoints(null);
-    };
-
     const chartTitleSuffix = substitute(getText('largest_solar_projects_chart_title_suffix', lang), { year: referenceYear ?? '' });
     const chartTitleFull = `${stripHtml(getText('largest_solar_projects_chart_title', lang))}*${stripHtml(chartTitleSuffix)}`;
     const tableCaption = substitute(getText('largest_solar_projects_table_caption', lang), { year: referenceYear ?? '' });
+    const downloadSlug = lang === 'en' ? 'largest_solar_projects' : 'principales_installations_solaires';
 
-    const downloadChartWithLegend = useCallback(async () => {
-        const plotElement = chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1000,
-                height: projPlotHeight,
-                scale: 2,
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 50;
-                const legendHeight = 50;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 20px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(chartTitleFull, canvas.width / 2, 35);
-                ctx.drawImage(img, 0, titleHeight);
+    const tableColumns = useMemo(() => [
+        { key: 'facility', header: getText('largest_solar_projects_table_col_facility', lang), align: 'left' },
+        { key: 'capacity', header: getText('largest_solar_projects_table_col_capacity', lang), align: 'num' },
+    ], [lang]);
 
-                const legendItems = LEGEND_KEYS.map((key) => ({
-                    color: PROJECT_PROV_COLORS[key],
-                    label: getLegendLabel(key),
-                }));
-                const legendY = titleHeight + img.height + 32;
-                ctx.font = '16px Arial';
-                const totalLegendWidth = legendItems.reduce((sum, item) => sum + ctx.measureText(item.label).width + 36, 0);
-                let legendX = (canvas.width - totalLegendWidth) / 2;
-                legendItems.forEach((item) => {
-                    ctx.fillStyle = item.color;
-                    ctx.fillRect(legendX, legendY - 8, 22, 14);
-                    ctx.fillStyle = '#333333';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(item.label, legendX + 28, legendY + 4);
-                    legendX += ctx.measureText(item.label).width + 36;
-                });
+    const downloadChartWithLegend = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${downloadSlug}.png`,
+        title: chartTitleFull,
+        width: 1000,
+        height: projPlotHeight,
+        legendItems: LEGEND_KEYS.map((key) => ({
+            color: PROJECT_PROV_COLORS[key],
+            label: getLegendLabel(key),
+        })),
+    }),
+        [LEGEND_KEYS, PROJECT_PROV_COLORS, chartTitleFull, downloadSlug, getLegendLabel, projPlotHeight],
+    );
 
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        saveAs(blob, lang === 'en' ? 'largest_solar_projects.png' : 'principales_installations_solaires.png');
-                    }
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error(err);
-        }
-    }, [projPlotHeight, chartTitleFull, getLegendLabel, lang]);
-
-    const downloadCsv = () => {
-        const headers = [getText('largest_solar_projects_table_col_facility', lang), getText('largest_solar_projects_table_col_capacity', lang)];
-        const rows = projects.map((row) => [row.facility, row.capacity]);
-        const csv = [headers.map(csvEscape).join(','), ...rows.map((r) => r.map(csvEscape).join(','))].join('\n');
-        saveAs(
-            new Blob([csv], { type: 'text/csv;charset=utf-8;' }),
-            lang === 'en' ? 'largest_solar_projects.csv' : 'principales_installations_solaires.csv',
-        );
-    };
-
-    const downloadDocx = async () => {
-        const headerCells = [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('largest_solar_projects_table_col_facility', lang), bold: true, size: 22 })], alignment: AlignmentType.LEFT })], shading: { fill: 'E6E6E6' } }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('largest_solar_projects_table_col_capacity', lang), bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' } }),
-        ];
-        const dataRows = projects.map((row) => new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: row.facility, size: 22 })] })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatMw(row.capacity), size: 22 })], alignment: AlignmentType.RIGHT })] }),
-            ],
-        }));
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: chartTitleFull, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [5200, 2200], rows: [new TableRow({ children: headerCells }), ...dataRows] }),
-                ],
-            }],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'largest_solar_projects.docx' : 'principales_installations_solaires.docx');
-    };
-
-    const chartConfig = useMemo(() => ({
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        scrollZoom: false,
-        modeBarButtonsToRemove: MODEBAR_REMOVE,
-        modeBarButtonsToAdd: [{
-            name: getText('largest_solar_projects_download_png', lang),
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: () => downloadChartWithLegend(),
-        }],
-    }), [lang, downloadChartWithLegend]);
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('largest_solar_projects_download_png', lang),
+        click: (gd) => downloadChartWithLegend(gd),
+    });
 
     if (loading) {
-        return <p className="largest-solar-projects-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>;
+        return (
+            <PageStatus
+                lang={lang}
+                loading
+                loadingMessage={lang === 'en' ? 'Loading data…' : 'Chargement des données…'}
+                className="largest-solar-projects-loading"
+            />
+        );
     }
     if (error) {
-        return <p className="largest-solar-projects-error" role="alert">{error}</p>;
+        return <PageStatus lang={lang} error={error} className="largest-solar-projects-error" />;
     }
     if (!projects.length) {
         return <p className="largest-solar-projects-error">{lang === 'en' ? 'No data available.' : 'Aucune donnée disponible.'}</p>;
@@ -582,7 +395,7 @@ const LargestSolarProjects = () => {
 .largest-solar-projects-container { width: 100%; padding: 15px 0 40px 0; display: flex; flex-direction: column; box-sizing: border-box; }
 .largest-solar-projects-chart-frame { background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 24px; box-sizing: border-box; overflow: visible; }
 .largest-solar-projects-chart-title { font-family: 'Lato', sans-serif; font-size: 29px; font-weight: bold; color: var(--gc-text); text-align: center; margin: 0 0 12px 0; text-transform: none; }
-.largest-solar-projects-chart-title .fn-lnk { color: #26374a; text-decoration: underline; }
+.largest-solar-projects-chart-title .fn-lnk { color: #26374a; }
 .largest-solar-projects-chart-bg-wrapper {
     position: relative;
     width: 100%;
@@ -612,7 +425,6 @@ const LargestSolarProjects = () => {
 .largest-solar-projects-chart .plot-container,
 .largest-solar-projects-chart .svg-container { overflow: visible !important; pointer-events: auto !important; }
 .largest-solar-projects-chart .js-plotly-plot .plotly .modebar { right: 4px !important; top: 2px !important; }
-.largest-solar-projects-clear-selection { padding: 6px 12px; background-color: #8C8C8C; border: 1px solid #404040; border-radius: 4px; cursor: pointer; font-family: Arial, sans-serif; font-size: 14px; color: #fff; margin-bottom: 8px; }
 .largest-solar-projects-column-headers {
     display: grid;
     align-items: flex-end;
@@ -630,16 +442,7 @@ const LargestSolarProjects = () => {
 .largest-solar-projects-legend-item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .largest-solar-projects-legend-swatch { width: 22px; height: 14px; display: inline-block; border: 1px solid rgba(0, 0, 0, 0.12); }
 .largest-solar-projects-table-wrapper { display: block; width: 100%; margin-top: 20px; margin-bottom: 0; }
-.largest-solar-projects-table-wrapper details > summary { display: block; width: 100%; padding: 12px 15px; background-color: #8C8C8C; border: 1px solid #404040; border-radius: 4px; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; list-style: none; }
-.largest-solar-projects-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.largest-solar-projects-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.largest-solar-projects-table-scrollbar > div { height: 20px; }
-.largest-solar-projects-table-responsive { display: block; width: 100%; overflow-x: auto; border: 1px solid #ddd; background: #fff; scrollbar-width: none; -ms-overflow-style: none; }
-.largest-solar-projects-table-responsive::-webkit-scrollbar { display: none; }
-.largest-solar-projects-table-responsive table { width: max-content !important; min-width: 100%; }
-.largest-solar-projects-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-.largest-solar-projects-download-buttons button { padding: 8px 16px; border: 1px solid #404040; border-radius: 4px; background: #8C8C8C; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; }
-.largest-solar-projects-chart-frame button:hover, .largest-solar-projects-table-wrapper summary:hover, .largest-solar-projects-download-buttons button:hover { background-color: #404040 !important; }
+.largest-solar-projects-chart-frame button:hover { background-color: #404040 !important; }
 .largest-solar-projects-footnotes { font-family: var(--font-body); font-size: 1rem; color: var(--gc-text); margin-top: 24px; margin-bottom: 0; padding-top: 12px; border-top: 1px solid #e0e0e0; line-height: 1.65; max-width: 100%; box-sizing: border-box; }
 .largest-solar-projects-footnotes h2 { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--gc-text); margin-top: 0; margin-bottom: 1rem; }
 .largest-solar-projects-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
@@ -656,19 +459,18 @@ const LargestSolarProjects = () => {
                 <div className="largest-solar-projects-chart-frame">
                     <h2 id="largest-solar-projects-chart-title" className="largest-solar-projects-chart-title">
                         {getText('largest_solar_projects_chart_title', lang)}
-                        <span id="fn-asterisk-rf-largest-solar-projects" style={{ verticalAlign: 'super', fontSize: '0.75em' }}>
-                            <a className="fn-lnk" href="#fn-asterisk-largest-solar-projects" onClick={scrollToFootnote}>
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                                <span aria-hidden="true">*</span>
-                            </a>
-                        </span>
+                        <FootnoteMarker
+                            lang={lang}
+                            href="#fn-asterisk-largest-solar-projects"
+                            id="fn-asterisk-rf-largest-solar-projects"
+                            marker="*"
+                            onClick={scrollToFootnote}
+                        />
                         {chartTitleSuffix}
                     </h2>
 
                     {selectedPoints !== null && (
-                        <button type="button" className="largest-solar-projects-clear-selection" onClick={clearSelection}>
-                            {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                        </button>
+                        <ClearSelectionButton lang={lang} onClick={clearSelection} />
                     )}
 
                     <div className="largest-solar-projects-chart-bg-wrapper" style={{ minHeight: projPlotHeight }}>
@@ -694,7 +496,7 @@ const LargestSolarProjects = () => {
                                         key={`largest-solar-projects-${useWrapLabels ? 'wrap' : 'plain'}-${Math.round(zoomEffective * 100)}-${projPlotHeight}-${projLeftMargin}`}
                                         data={projPlotData}
                                         layout={projPlotLayout}
-                                        config={chartConfig}
+                                        config={plotConfig}
                                         style={{ width: '100%', height: '100%' }}
                                         useResizeHandler
                                         onInitialized={onPlotReady}
@@ -715,59 +517,35 @@ const LargestSolarProjects = () => {
                     </div>
 
                     <div className="largest-solar-projects-table-wrapper">
-                        <details className="largest-solar-projects-data-table" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
-                            <div ref={tableTopRef} className="largest-solar-projects-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div
-                                ref={tableScrollRef}
-                                className="largest-solar-projects-table-responsive"
-                                role="region"
-                                aria-labelledby="largest-solar-projects-table-caption"
-                                tabIndex={0}
-                            >
-                                <table className="table table-bordered table-striped table-hover">
-                                    <caption id="largest-solar-projects-table-caption" className="wb-inv">{tableCaption}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">{getText('largest_solar_projects_table_col_facility', lang)}</th>
-                                            <th scope="col">{getText('largest_solar_projects_table_col_capacity', lang)}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {projects.map((row) => (
-                                            <tr key={row.index}>
-                                                <th scope="row">{row.facility}</th>
-                                                <td style={{ textAlign: 'right' }}>{formatMw(row.capacity)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div ref={tableBottomRef} className="largest-solar-projects-table-scrollbar" aria-hidden="true"><div /></div>
-                            <div className="largest-solar-projects-download-buttons">
-                                <button type="button" onClick={downloadCsv}>{getText('largest_solar_projects_download_csv', lang)}</button>
-                                <button type="button" onClick={downloadDocx}>{getText('largest_solar_projects_download_docx', lang)}</button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            className="largest-solar-projects-data-table"
+                            columns={tableColumns}
+                            rows={projects}
+                            csvFilename={`${downloadSlug}.csv`}
+                            docx={{
+                                filename: `${downloadSlug}.docx`,
+                                title: chartTitleFull,
+                                titleAlign: 'center',
+                                columnWidths: [5200, 2200],
+                                fontSize: 22,
+                            }}
+                            caption={tableCaption}
+                            tableAriaLabel={tableCaption}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatMw(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
-                <aside className="wb-fnote largest-solar-projects-footnotes" role="note">
-                    <h2>{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt className="wb-inv">{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd id="fn-asterisk-largest-solar-projects">
-                            <a href="#fn-asterisk-rf-largest-solar-projects" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            {' '}{getText('largest_solar_projects_footnote', lang)}
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    className="largest-solar-projects-footnotes"
+                    items={[
+                        { id: 'fn-asterisk-largest-solar-projects', marker: '*', text: getText('largest_solar_projects_footnote', lang), returnHref: '#fn-asterisk-rf-largest-solar-projects' },
+                    ]}
+                />
             </div>
         </main>
     );

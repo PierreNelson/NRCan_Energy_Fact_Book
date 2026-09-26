@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import PageFootnotes from '../components/PageFootnotes';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
+import YearSelect from '../components/YearSelect';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import { getCEAData } from '../utils/dataLoader';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from '../utils/exportTableToDocx';
+
+import { makeScrollToIdHandler } from '../utils/scrollToId';
+import { formatLocalePct } from '../utils/formatLocale';
 
 const canadian_energy_assets_REGION_DEFINITIONS = [
     { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#48A36C', labelLat: 78, labelLon: -160 },
@@ -25,31 +37,17 @@ const formatCEABillionSR = (num, lang) => {
 };
 
 const CEA = () => {
-    const { lang } = useOutletContext();
+    const { lang, layoutPadding } = useOutletContext();
+    const windowWidth = useWindowWidth();
     const [year, setYear] = useState(null);
     const [allData, setAllData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const scrollToFootnote = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-canadian-energy-assets')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-canadian-energy-assets');
 
-    const scrollToRef = (e) => {
-        e.preventDefault();
-        document.getElementById('fn-asterisk-rf-canadian-energy-assets')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false);
+    const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-canadian-energy-assets');
     const chartRef = useRef(null);
-    
-    // Year dropdown state
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const yearDropdownRef = useRef(null);
-    const yearButtonRef = useRef(null);
-
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
 
     const formatBillion = (num, useFrench = false) => {
         if (num === undefined || num === null) return '—';
@@ -62,29 +60,10 @@ const CEA = () => {
         return `$${rounded}B`;
     };
 
-    const formatPercent = (num) => {
-        if (num === undefined || num === null) return '—';
-        return `${num.toFixed(1)}%`;
-    };
-
-    useEffect(() => {
-        const handleResize = () => {
-            setWindowWidth(window.innerWidth);
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const formatPercent = (num) => formatLocalePct(num, lang, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+    });
 
     useEffect(() => {
         getCEAData()
@@ -105,59 +84,7 @@ const CEA = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-
-            const svgElements = plotContainer.querySelectorAll('.main-svg, .svg-container svg');
-            svgElements.forEach(svg => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-
-            // Find the download button using data-title attribute
-            const downloadBtn = plotContainer.querySelector('.modebar-btn[data-title*="Download"], .modebar-btn[data-title*="Télécharger"]');
-            
-            if (downloadBtn) {
-                // Make it tabbable
-                downloadBtn.setAttribute('tabindex', '0');
-                downloadBtn.setAttribute('role', 'button');
-                
-                // Ensure it has a label
-                const title = downloadBtn.getAttribute('data-title');
-                if (title) downloadBtn.setAttribute('aria-label', title);
-
-                // Add keyboard click support (crucial for screen readers)
-                downloadBtn.onkeydown = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        downloadBtn.click();
-                    }
-                };
-            }
-
-            // Hide other modebar buttons from screen readers
-            const otherButtons = plotContainer.querySelectorAll('.modebar-btn');
-            otherButtons.forEach(btn => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (!dataTitle || (!dataTitle.includes('Download') && !dataTitle.includes('Télécharger'))) {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-
-        // Watch for changes (Plotly deletes/re-creates the modebar often)
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-
-        // Run once immediately
-        setupChartAccessibility();
-
-        return () => observer.disconnect();
-    }, [allData, lang]);
+    
 
     const currentYearData = useMemo(() => {
         if (!year || !allData.length) return null;
@@ -187,93 +114,54 @@ const CEA = () => {
         return { A1, A2, A3, A4, A5, B1, B2 };
     }, [currentYearData, previousYearData]);
 
-    const downloadChartWithTitle = async () => {
-        const plotElement = chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement) {
-            alert(lang === 'en' ? 'Could not find chart element. Please try again.' : 'Impossible de trouver l\'élément du graphique. Veuillez réessayer.');
-            return;
-        }
-
-        const title = stripHtml(`${getText('canadian_energy_assets_chart_title', lang)} ${year}`);
-
-        try {
-            if (!window.Plotly) {
-                alert(lang === 'en' ? 'Plotly library not loaded. Please refresh the page and try again.' : 'La bibliothèque Plotly n\'est pas chargée. Veuillez actualiser la page et réessayer.');
-                return;
-            }
-
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1400,
-                height: 900,
-                scale: 2
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                const titleHeight = 80;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 36px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 50);
-
-                ctx.drawImage(img, 0, titleHeight);
-
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? `canadian_energy_assets_${year}.png` : `actifs_energetiques_canadiens_${year}.png`;
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-
-            img.src = imgData;
-        } catch (error) {
-            console.error('Error downloading chart:', error);
-            alert(lang === 'en' ? 'Error downloading chart: ' + error.message : 'Erreur lors du téléchargement du graphique : ' + error.message);
-        }
-    };
-
     const tableData = useMemo(() => {
         if (!allData || allData.length === 0) return [];
         return allData.filter(d => d.year !== 2012).sort((a, b) => a.year - b.year);
     }, [allData]);
 
-    const downloadTableAsCSV = () => {
-        if (!tableData || tableData.length === 0) return;
+    const yearsDescending = useMemo(
+        () => tableData.map((d) => d.year).slice().sort((a, b) => b - a),
+        [tableData],
+    );
 
-        const regionKeys = canadian_energy_assets_REGION_DEFINITIONS.map(r => r.key);
-        const headers = [
-            lang === 'en' ? 'Year' : 'Année',
-            ...canadian_energy_assets_REGION_DEFINITIONS.map(r => lang === 'en' ? r.nameEn.replace(/\n/g, ' ') : r.nameFr.replace(/\n/g, ' '))
-        ];
+    const unitHeader = lang === 'en' ? '($ billions)' : '(G$)';
+    const exportChartTitle = stripHtml(`${getText('canadian_energy_assets_chart_title', lang)} ${year ?? ''}`.trim());
+    const chartDownloadSlug = lang === 'en' ? `canadian_energy_assets_${year}` : `actifs_energetiques_canadiens_${year}`;
+    const tableCaption = lang === 'en'
+        ? 'Canadian energy assets by region and year (values in billions of dollars)'
+        : 'Actifs énergétiques canadiens par région et année (valeurs en milliards de dollars)';
+    const csvFilename = lang === 'en' ? 'canadian_energy_assets.csv' : 'actifs_energetiques_canadiens.csv';
+    const docxFilename = lang === 'en' ? 'canadian_energy_assets.docx' : 'actifs_energetiques_canadiens.docx';
 
-        const rows = tableData.map(yearData => [
-            yearData.year,
-            ...regionKeys.map(key => yearData[key] ? yearData[key].toFixed(1) : '—')
-        ]);
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: lang === 'en' ? 'Year' : 'Année', align: 'left' },
+        ...canadian_energy_assets_REGION_DEFINITIONS.map((r) => ({
+            key: r.key,
+            header: `${(lang === 'en' ? r.nameEn : r.nameFr).replace(/\n/g, ' ')} ${unitHeader}`,
+            align: 'num',
+        })),
+    ], [lang, unitHeader]);
 
-        const csvContent = [
-            headers.map(h => `"${h}"`).join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\n');
-        
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'canadian_energy_assets.csv' : 'actifs_energetiques_canadiens.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
+    const formatTableValue = (num) => {
+        if (num === undefined || num === null || num === '') return '—';
+        return Number(num).toFixed(1);
     };
+
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        width: 1400,
+        height: 900,
+    }),
+        [chartDownloadSlug, exportChartTitle],
+    );
+
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const downloadTableAsDocx = async () => {
         if (!tableData || tableData.length === 0) return;
@@ -282,7 +170,6 @@ const CEA = () => {
         const minYear = Math.min(...years);
         const maxYear = Math.max(...years);
         const title = `${getText('canadian_energy_assets_chart_title', lang)} ${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
-        const unitHeader = lang === 'en' ? '($ billions)' : '(G$)';
         const regionKeys = canadian_energy_assets_REGION_DEFINITIONS.map(r => r.key);
 
         const unitRow = new TableRow({
@@ -362,8 +249,7 @@ const CEA = () => {
             }]
         });
 
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'canadian_energy_assets.docx' : 'actifs_energetiques_canadiens.docx');
+        await saveDocxBlob(docxFilename, doc);
     };
 
     // ISO-3 country codes for each region (excluding Antarctica)
@@ -611,29 +497,23 @@ const CEA = () => {
         }
     }, [calculatedValues, year, lang]);
 
-    if (loading) {
+    if (loading || error) {
         return (
-            <main id="main-content" tabIndex="-1" className="page-content page-33" role="main">
-                <div style={{ padding: '40px', textAlign: 'center' }}>
-                    {lang === 'en' ? 'Loading data...' : 'Chargement des données...'}
-                </div>
-            </main>
-        );
-    }
-
-    if (error) {
-        return (
-            <main id="main-content" tabIndex="-1" className="page-content page-33" role="main">
-                <div style={{ padding: '40px', color: 'red' }}>
-                    {lang === 'en' ? 'Error: ' : 'Erreur : '}{error}
-                </div>
-            </main>
+            <PageShell tabIndex="-1" className="page-content page-33 page-chrome page-chrome--bleed" style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}>
+                <PageStatus
+                    lang={lang}
+                    loading={loading}
+                    error={error}
+                    loadingMessage={lang === 'en' ? 'Loading data...' : 'Chargement des données...'}
+                    style={{ padding: '40px', textAlign: 'center' }}
+                />
+            </PageShell>
         );
     }
 
     if (!currentYearData || !calculatedValues) {
         return (
-            <main id="main-content" tabIndex="-1" className="page-content page-33" role="main">
+            <PageShell tabIndex="-1" className="page-content page-33 page-chrome page-chrome--bleed" style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}>
                 <div className="canadian-energy-assets-container">
                     <header>
                         <h1 className="canadian-energy-assets-title">
@@ -651,22 +531,16 @@ const CEA = () => {
                         </p>
                     </div>
                 </div>
-            </main>
+            </PageShell>
         );
     }
 
     return (
-        <main 
-            id="main-content"
+        <PageShell 
             tabIndex="-1"
-            className="page-content page-33" 
-            role="main"
-            style={{
-                backgroundColor: 'white',
-                flex: '1 1 auto',
-                display: 'flex',
-                flexDirection: 'column',
-            }}
+            className="page-content page-33 page-chrome page-chrome--bleed" 
+            aria-labelledby="canadian-energy-assets-title"
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
                 .page-33 {
@@ -821,72 +695,6 @@ const CEA = () => {
                 .canadian-energy-assets-footnote-container dd {
                     margin: 0;
                     flex: 1;
-                }
-                
-                .data-table-wrapper {
-                    margin-top: 20px;
-                    position: relative;
-                    z-index: 10;
-                    background-color: white;
-                    clear: both;
-                }
-                
-                .data-table-wrapper summary {
-                    cursor: pointer;
-                    font-weight: bold;
-                    padding: 10px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    font-family: Arial, sans-serif;
-                    list-style: none;
-                    color: #ffffff;
-                }
-                
-                .data-table-wrapper summary::-webkit-details-marker {
-                    display: none;
-                }
-                
-                .data-table-wrapper summary::marker {
-                    display: none;
-                }
-                
-                .data-table-wrapper summary:hover {
-                    background-color: #404040 !important;
-                }
-                
-                .data-table-wrapper .table-responsive {
-                    margin-top: 10px;
-                    overflow-x: auto;
-                    border: 1px solid #ddd;
-                }
-                
-                .data-table-wrapper table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-family: Arial, sans-serif;
-                    font-size: 0.9rem;
-                }
-                
-                .data-table-wrapper th,
-                .data-table-wrapper td {
-                    padding: 8px 12px;
-                    border: 1px solid #ddd;
-                    text-align: right;
-                }
-                
-                .data-table-wrapper th {
-                    background-color: #f5f5f5;
-                    font-weight: bold;
-                }
-                
-                .data-table-wrapper th:first-child,
-                .data-table-wrapper td:first-child {
-                    text-align: left;
-                }
-                
-                .data-table-wrapper tbody tr:nth-child(even) {
-                    background-color: #fafafa;
                 }
 
                 .year-selector {
@@ -1075,170 +883,32 @@ const CEA = () => {
                     box-sizing: border-box;
                 }
 
-                .canadian-energy-assets-data-table {
+                .canadian-energy-assets-table-wrapper {
                     display: block;
                     width: 100%;
                     margin-top: 20px;
-                    margin-bottom: 0;
-                }
-
-                .canadian-energy-assets-data-table > summary {
-                    display: block;
-                    width: 100%;
-                    padding: 12px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    box-sizing: border-box;
-                    list-style: none;
-                    color: #ffffff;
-                }
-
-                .canadian-energy-assets-data-table > summary::-webkit-details-marker {
-                    display: none;
-                }
-
-                .canadian-energy-assets-data-table > summary:hover {
-                    background-color: #404040 !important;
-                }
-
-                .canadian-energy-assets-data-table button[type="button"]:hover,
-                .canadian-energy-assets-data-table button:hover,
-                .data-table-wrapper button[type="button"]:hover,
-                .data-table-wrapper button:hover {
-                    background-color: #404040 !important;
                 }
             `}</style>
 
             <div className="canadian-energy-assets-container">
                 <header>
-                    <h1 className="canadian-energy-assets-title">
+                    <h1 id="canadian-energy-assets-title" className="canadian-energy-assets-title">
                         {getText('canadian_energy_assets_title', lang)}
                     </h1>
                 </header>
 
                 <div className="canadian-energy-assets-chart-frame">
                 {/* SINGLE-SELECT RADIO DROPDOWN */}
-                <div 
-                    ref={yearDropdownRef} 
-                    style={{ 
-                        position: 'relative', 
-                        marginBottom: '20px', 
-                        width: '200px' 
-                    }}
-                >
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    
-                    {/* TOGGLE BUTTON */}
-                    <button
-                        ref={yearButtonRef}
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px'
-                        }}
-                    >
-                        <span>{year || '...'}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                    </button>
-
-                    {/* DROPDOWN LIST */}
-                    {isYearDropdownOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            width: '100%',
-                            maxHeight: '300px',
-                            overflowY: 'auto',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            zIndex: 100,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                        }}>
-                            {/* Sort Descending (Newest First), filter out 2012 - Using buttons styled as radio */}
-                            {[...allData].filter(d => d.year !== 2012).sort((a, b) => b.year - a.year).map((yearData) => {
-                                const isSelected = year === yearData.year;
-                                return (
-                                    <button
-                                        key={yearData.year}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        aria-label={yearData.year.toString()}
-                                        onClick={() => {
-                                            setYear(yearData.year);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => {
-                                                yearButtonRef.current?.focus();
-                                            }, 0);
-                                        }}
-                                        style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px', 
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff'}
-                                    >
-                                        {/* Fake radio circle */}
-                                        <span 
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff'
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span style={{
-                                                    height: '10px',
-                                                    width: '10px',
-                                                    borderRadius: '50%',
-                                                    backgroundColor: '#000'
-                                                }} />
-                                            )}
-                                        </span>
-                                        <span aria-hidden="true" style={{ fontSize: '16px', color: '#333' }}>
-                                            {yearData.year}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                    
-                    <div role="status" className="wb-inv" aria-live="polite">
-                        {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
-                    </div>
+                <YearSelect
+                    lang={lang}
+                    id="canadian-energy-assets-year-select"
+                    label={getText('year_slider_label', lang)}
+                    years={yearsDescending}
+                    value={year}
+                    onChange={setYear}
+                />
+                <div role="status" className="wb-inv" aria-live="polite">
+                    {year ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${year}` : ''}
                 </div>
 
                 <p className="canadian-energy-assets-narrative" role="region" aria-label={narrativeTextSR}>
@@ -1306,23 +976,7 @@ const CEA = () => {
                                             plot_bgcolor: 'rgba(0,0,0,0)',
                                             showlegend: false
                                         }}
-                                        config={{
-                                            displayModeBar: true,
-                                            displaylogo: false,
-                                            responsive: true,
-                                            scrollZoom: false,
-                                            doubleClick: false,
-                                            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'resetScale2d', 'toImage', 'resetGeo', 'pan2d', 'zoomin', 'zoomout'],
-                                            modeBarButtonsToAdd: [{
-                                                name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-                                                    icon: {
-                                                        width: 24,
-                                                        height: 24,
-                                                        path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                                    },
-                                                click: () => downloadChartWithTitle()
-                                            }]
-                                        }}
+                                        config={plotConfig}
                                         useResizeHandler={true}
                                         style={{ width: '100%', height: '100%' }}
                                     />
@@ -1356,108 +1010,31 @@ const CEA = () => {
                     </div>
                 </div>
 
-                <details 
-                    className="canadian-energy-assets-data-table"
-                    onToggle={(e) => setIsTableOpen(e.currentTarget.open)}
-                >
-                    <summary role="button" aria-expanded={isTableOpen}>
-                        <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                        {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                        <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                    </summary>
-                    <div className="table-responsive" role="region" aria-label={lang === 'en' ? 'Data Table' : 'Tableau de données'} tabIndex="0">
-                        <table className="table table-striped table-hover">
-                            <caption className="wb-inv">
-                                {lang === 'en' 
-                                    ? 'Canadian energy assets by region and year (values in billions of dollars)' 
-                                    : 'Actifs énergétiques canadiens par région et année (valeurs en milliards de dollars)'}
-                            </caption>
-                            <thead>
-                                <tr>
-                                    <th scope="col" rowSpan={2} style={{ verticalAlign: 'bottom' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                    <th scope="colgroup" colSpan={canadian_energy_assets_REGION_DEFINITIONS.length} style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                                        <span aria-hidden="true">{lang === 'en' ? '($ billions)' : '(G$)'}</span>
-                                        <span className="wb-inv">{lang === 'en' ? 'billions of dollars' : 'milliards de dollars'}</span>
-                                    </th>
-                                </tr>
-                                <tr>
-                                    {canadian_energy_assets_REGION_DEFINITIONS.map(region => (
-                                        <th key={region.key} scope="col" style={{ textAlign: 'right' }}>
-                                            <span aria-hidden="true">{lang === 'en' ? region.nameEn.replace(/\n/g, ' ') : region.nameFr.replace(/\n/g, ' ')}</span>
-                                            <span className="wb-inv">{lang === 'en' ? region.nameEn.replace(/\n/g, ' ') : region.nameFr.replace(/\n/g, ' ')}, {lang === 'en' ? 'billions of dollars' : 'milliards de dollars'}</span>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {tableData.map(yearData => (
-                                    <tr key={yearData.year}>
-                                        <th scope="row">{yearData.year}</th>
-                                        {canadian_energy_assets_REGION_DEFINITIONS.map(region => (
-                                            <td 
-                                                key={region.key}
-                                                style={{ textAlign: 'right' }}
-                                                aria-label={`${yearData.year}, ${lang === 'en' ? region.nameEn.replace(/\n/g, ' ') : region.nameFr.replace(/\n/g, ' ')}: ${yearData[region.key] ? yearData[region.key].toFixed(1) : '—'} ${lang === 'en' ? 'billion dollars' : 'milliards de dollars'}`}
-                                            >
-                                                {yearData[region.key] ? yearData[region.key].toFixed(1) : '—'}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-                        <button
-                            onClick={() => downloadTableAsCSV()}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#8C8C8C',
-                            border: '1px solid #404040',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontFamily: 'Arial, sans-serif',
-                            fontWeight: 'bold',
-                            color: '#ffffff'
-                        }}
-                    >
-                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                    </button>
-                    <button
-                        onClick={() => downloadTableAsDocx()}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#8C8C8C',
-                            border: '1px solid #404040',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontFamily: 'Arial, sans-serif',
-                            fontWeight: 'bold',
-                            color: '#ffffff'
-                        }}
-                        >
-                            {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                        </button>
-                    </div>
-                </details>
+                <div className="canadian-energy-assets-table-wrapper">
+                    <ChartDataTable
+                        lang={lang}
+                        columns={tableColumns}
+                        rows={tableData}
+                        csvFilename={csvFilename}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        onDownloadDocx={downloadTableAsDocx}
+                        renderCell={(raw, { colIndex }) => (
+                            colIndex === 0 ? String(raw ?? '') : formatTableValue(raw)
+                        )}
+                    />
+                </div>
                 </div>
 
-                <aside className="wb-fnote" role="note">
-                    <h2 id="fn">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt>{lang === 'en' ? 'Footnote *' : 'Note de bas de page *'}</dt>
-                        <dd id="fn-asterisk-canadian-energy-assets">
-                            <a href="#fn-asterisk-rf-canadian-energy-assets" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
-                                <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
-                            </a>
-                            <p>
-                                {getText('canadian_energy_assets_footnote', lang)}
-                            </p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn"
+                    items={[
+                        { id: 'fn-asterisk-canadian-energy-assets', marker: '*', text: getText('canadian_energy_assets_footnote', lang), returnHref: '#fn-asterisk-rf-canadian-energy-assets' },
+                    ]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 

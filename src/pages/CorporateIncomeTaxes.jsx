@@ -1,9 +1,18 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import HtmlLegend from '../components/HtmlLegend';
+import hexToRgba from '../utils/hexToRgba';
 
 const corporate_income_taxes_YEARS = [2011, 2013, 2015, 2017, 2019, 2021, 2023];
 const corporate_income_taxes_CATEGORIES = ['oil_gas', 'petroleum_coal', 'utilities', 'pipelines'];
@@ -32,59 +41,73 @@ const formatEnergyRevenueNumber = (num, lang) => {
 
 const CorporateIncomeTaxes = () => {
     const { lang } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const windowWidth = useWindowWidth();
+    const {
+        selected: selectedPoints,
+        clear: clearSelection,
+        onPlotClick: handleChartClick,
+    } = usePlotlySelection({
+        mode: 'points',
+        traceCount: corporate_income_taxes_CATEGORIES.length,
+        windowWidth,
+    });
     const chartRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
 
-    const hexToRgba = (hex, opacity = 1) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})`;
-        return hex;
+    const chartTitle = getText('corporate_income_taxes_title', lang);
+    const exportChartTitle = stripHtml(chartTitle);
+    const yAxisTitle = getText('corporate_income_taxes_yaxis', lang);
+    const chartDownloadSlug = lang === 'en'
+        ? 'corporate_income_taxes_energy'
+        : 'impots_revenu_industries_energetiques';
+
+    const legendLabels = useMemo(
+        () => Object.fromEntries(
+            corporate_income_taxes_CATEGORIES.map((key) => [
+                key,
+                getText(`corporate_income_taxes_legend_${key}`, lang),
+            ]),
+        ),
+        [lang],
+    );
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
+        ...corporate_income_taxes_CATEGORIES.map((key) => ({
+            key,
+            header: `${legendLabels[key]} (${yAxisTitle})`,
+            align: 'num',
+        })),
+        { key: 'total', header: `${lang === 'en' ? 'Total' : 'Total'} (${yAxisTitle})`, align: 'num' },
+    ], [lang, legendLabels, yAxisTitle]);
+
+    const tableRows = useMemo(
+        () => corporate_income_taxes_HARDCODED.map((row) => ({
+            ...row,
+            total: corporate_income_taxes_CATEGORIES.reduce((sum, key) => sum + row[key], 0),
+        })),
+        [],
+    );
+
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: corporate_income_taxes_YEARS,
+            series: corporate_income_taxes_CATEGORIES.map((key) => ({
+                name: legendLabels[key],
+                values: corporate_income_taxes_HARDCODED.map((row) => row[key]),
+                format: (v) => formatEnergyRevenueNumber(v, lang),
+            })),
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? 'Stacked bar chart of corporate income taxes paid by energy industries from 2011 to 2023'
+                : 'Graphique à barres empilées des impôts sur le revenu des sociétés des industries énergétiques de 2011 à 2023',
+            unitNote: lang === 'en' ? 'Values in billions of dollars' : 'Valeurs en milliards de dollars',
+            body,
+        });
     };
 
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-        const syncScrollbars = () => {
-            const table = tableScroll.querySelector('table');
-            if (!table) return;
-            const scrollWidth = table.offsetWidth;
-            const containerWidth = tableScroll.clientWidth;
-            const topSpacer = topScroll.firstElementChild;
-            if (topSpacer) topSpacer.style.width = `${scrollWidth}px`;
-            if (scrollWidth > containerWidth) {
-                topScroll.style.display = 'block';
-                topScroll.style.opacity = '1';
-            } else {
-                topScroll.style.display = 'none';
-            }
-        };
-        const handleTopScroll = () => { if (tableScroll.scrollLeft !== topScroll.scrollLeft) tableScroll.scrollLeft = topScroll.scrollLeft; };
-        const handleTableScroll = () => { if (topScroll.scrollLeft !== tableScroll.scrollLeft) topScroll.scrollLeft = tableScroll.scrollLeft; };
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        const observer = new ResizeObserver(() => window.requestAnimationFrame(syncScrollbars));
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        syncScrollbars();
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            observer.disconnect();
-        };
-    }, [isTableOpen, windowWidth]);
+    const chartRegionLabel = `${exportChartTitle}. ${getChartSummary()}`;
 
     useEffect(() => {
         if (!chartRef?.current) return;
@@ -108,7 +131,7 @@ const CorporateIncomeTaxes = () => {
 
     const chartTraces = useMemo(() => {
         return corporate_income_taxes_CATEGORIES.map((key, traceIndex) => {
-            const label = getText(`corporate_income_taxes_legend_${key}`, lang);
+            const label = legendLabels[key];
             const yArr = corporate_income_taxes_HARDCODED.map(row => row[key]);
             const hovertext = corporate_income_taxes_HARDCODED.map((row) => {
                 const val = row[key];
@@ -119,7 +142,7 @@ const CorporateIncomeTaxes = () => {
             const markerColor = selectedPoints === null
                 ? baseColor
                 : yArr.map((_, pointIndex) => {
-                    const isSelected = selectedPoints.some(p => p.traceIndex === traceIndex && p.pointIndex === pointIndex);
+                    const isSelected = selectedPoints[traceIndex]?.includes(pointIndex);
                     return isSelected ? baseColor : hexToRgba(baseColor, 0.3);
                 });
             return {
@@ -134,7 +157,7 @@ const CorporateIncomeTaxes = () => {
                 textinfo: 'none'
             };
         });
-    }, [lang, selectedPoints]);
+    }, [lang, legendLabels, selectedPoints]);
 
     const plotLayout = useMemo(() => ({
         barmode: 'stack',
@@ -153,7 +176,7 @@ const CorporateIncomeTaxes = () => {
             automargin: true
         },
         yaxis: {
-            title: { text: getText('corporate_income_taxes_yaxis', lang), font: { size: windowWidth <= 480 ? 14 : 18, family: 'Arial, sans-serif' }, standoff: 15 },
+            title: { text: yAxisTitle, font: { size: windowWidth <= 480 ? 14 : 18, family: 'Arial, sans-serif' }, standoff: 15 },
             range: [0, 14],
             dtick: 2,
             showgrid: false,
@@ -165,146 +188,31 @@ const CorporateIncomeTaxes = () => {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         autosize: true
-    }), [lang, windowWidth]);
+    }), [windowWidth, yAxisTitle]);
 
-    const handleChartClick = (data) => {
-        if (!data.points || data.points.length === 0) return;
-        const pt = data.points[0];
-        const traceIndex = pt.curveNumber;
-        const pointIndex = pt.pointIndex;
-        const now = Date.now();
-        const last = lastClickRef.current;
-        if (now - last.time < 400 && last.traceIndex === traceIndex && last.pointIndex === pointIndex) {
-            setSelectedPoints(prev => {
-                if (prev === null) return [{ traceIndex, pointIndex }];
-                const idx = prev.findIndex(p => p.traceIndex === traceIndex && p.pointIndex === pointIndex);
-                if (idx >= 0) {
-                    const next = prev.filter((_, i) => i !== idx);
-                    return next.length === 0 ? null : next;
-                }
-                return [...prev, { traceIndex, pointIndex }];
-            });
-            lastClickRef.current = { time: 0, traceIndex: null, pointIndex: null };
-            return;
-        }
-        lastClickRef.current = { time: now, traceIndex, pointIndex };
-        setSelectedPoints(prev => {
-            const key = { traceIndex, pointIndex };
-            if (prev === null) return [key];
-            const idx = prev.findIndex(p => p.traceIndex === traceIndex && p.pointIndex === pointIndex);
-            if (idx >= 0) {
-                const next = prev.filter((_, i) => i !== idx);
-                return next.length === 0 ? null : next;
-            }
-            return [...prev, key];
-        });
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${chartDownloadSlug}.png`,
+        title: exportChartTitle,
+        height: 500,
+        legendItems: corporate_income_taxes_CATEGORIES.map((key) => ({
+            label: legendLabels[key],
+            color: corporate_income_taxes_COLORS[key],
+        })),
+    }),
+        [chartDownloadSlug, corporate_income_taxes_CATEGORIES, corporate_income_taxes_COLORS, exportChartTitle, legendLabels],
+    );
 
-    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-
-    const downloadChartWithTitle = async () => {
-        const plotElement = chartRef?.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const title = stripHtml(getText('corporate_income_taxes_title', lang));
-            const imgData = await window.Plotly.toImage(plotElement, { format: 'png', width: 1000, height: 500, scale: 2 });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 60;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 40);
-                ctx.drawImage(img, 0, titleHeight);
-                const link = document.createElement('a');
-                link.download = lang === 'en' ? 'corporate_income_taxes_energy.png' : 'impots_revenu_industries_energetiques.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            };
-            img.src = imgData;
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const downloadTableAsCSV = () => {
-        const headers = [lang === 'en' ? 'Year' : 'Année', ...corporate_income_taxes_CATEGORIES.map(k => getText(`corporate_income_taxes_legend_${k}`, lang)), lang === 'en' ? 'Total' : 'Total'];
-        const rows = corporate_income_taxes_HARDCODED.map(row => {
-            const vals = corporate_income_taxes_CATEGORIES.map(k => row[k]);
-            const total = vals.reduce((a, b) => a + b, 0);
-            return [row.year, ...vals.map(v => formatEnergyRevenueNumber(v, lang)), formatEnergyRevenueNumber(total, lang)];
-        });
-        const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = lang === 'en' ? 'corporate_income_taxes_energy.csv' : 'impots_revenu_industries_energetiques.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const title = stripHtml(getText('corporate_income_taxes_title', lang));
-        const uom = getText('corporate_income_taxes_yaxis', lang);
-        const headerRow1 = [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: lang === 'en' ? 'Year' : 'Année', bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' }, rowSpan: 2 }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: uom, bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' }, columnSpan: 5 })
-        ];
-        const catCells = corporate_income_taxes_CATEGORIES.map(k =>
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: getText('corporate_income_taxes_legend_' + k, lang), bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' } })
-        );
-        const totalLabel = lang === 'en' ? 'Total' : 'Total';
-        const totalCell = new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: totalLabel, bold: true, size: 22 })], alignment: AlignmentType.CENTER })], shading: { fill: 'E6E6E6' } });
-        const headerRow2 = new TableRow({ children: [...catCells, totalCell] });
-        const dataRows = corporate_income_taxes_HARDCODED.map(row => {
-            const vals = corporate_income_taxes_CATEGORIES.map(k => row[k]);
-            const total = vals.reduce((a, b) => a + b, 0);
-            const cells = [row.year, ...vals.map(v => formatEnergyRevenueNumber(v, lang)), formatEnergyRevenueNumber(total, lang)].map((text, i) =>
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(text), size: 22 })], alignment: i === 0 ? AlignmentType.CENTER : AlignmentType.CENTER })] })
-            );
-            return new TableRow({ children: cells });
-        });
-        const tableRows = [
-            new TableRow({ children: headerRow1 }),
-            headerRow2,
-            ...dataRows
-        ];
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
-                    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [1200, 2200, 2200, 1400, 1400, 1200], rows: tableRows })
-                ]
-            }]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, lang === 'en' ? 'corporate_income_taxes_energy.docx' : 'impots_revenu_industries_energetiques.docx');
-    };
-
-    const config = {
-        displayModeBar: true,
-        displaylogo: false,
-        responsive: true,
-        modeBarButtonsToRemove: ['pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
-        modeBarButtonsToAdd: [{
-            name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
-            icon: { width: 24, height: 24, path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z' },
-            click: () => downloadChartWithTitle()
-        }]
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     return (
-        <main
-            id="main-content"
+        <PageShell
             tabIndex="-1"
             className="page-content corporate-income-taxes"
-            role="main"
             aria-labelledby="corporate-income-taxes-chart-title"
             style={{ backgroundColor: '#ffffff' }}
         >
@@ -316,8 +224,7 @@ const CorporateIncomeTaxes = () => {
 .corporate-income-taxes-chart { width: 100%; height: 420px; position: relative; z-index: 1; }
 .corporate-income-taxes-chart button[type="button"]:hover,
 .corporate-income-taxes-chart button:hover { background-color: #404040 !important; }
-.corporate-income-taxes-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px 24px; margin-top: 16px; margin-bottom: 10px; font-family: Arial, sans-serif; position: relative; z-index: 10; background-color: #f5f5f5; padding: 10px 0; }
-.corporate-income-taxes-legend-item { display: flex; align-items: center; gap: 8px; }
+.corporate-income-taxes-legend { position: relative; z-index: 10; background-color: #f5f5f5; padding: 10px 0; }
 .corporate-income-taxes-legend-color { width: 20px; height: 12px; display: inline-block; }
 .corporate-income-taxes-legend-label { font-size: 18px; color: #333333; }
 .corporate-income-taxes-table-wrapper { display: block; width: 100%; margin: 20px 0 0 0; }
@@ -335,90 +242,56 @@ const CorporateIncomeTaxes = () => {
             `}</style>
             <div className="corporate-income-taxes-container">
                 <div className="corporate-income-taxes-chart-frame">
-                    <h2 id="corporate-income-taxes-chart-title" className="corporate-income-taxes-chart-title" aria-hidden="true">{getText('corporate_income_taxes_title', lang)}</h2>
-                    <h1 className="wb-inv">{stripHtml(getText('corporate_income_taxes_title', lang))}</h1>
-                    <div role="region" aria-label={getText('corporate_income_taxes_title', lang)} tabIndex="0">
+                    <h2 id="corporate-income-taxes-chart-title" className="corporate-income-taxes-chart-title">{chartTitle}</h2>
+                    <div role="region" aria-label={chartRegionLabel} tabIndex={0}>
                         {selectedPoints !== null && selectedPoints.length > 0 && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button type="button" onClick={() => setSelectedPoints(null)} style={{ padding: '6px 12px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontSize: 14, color: '#fff' }}>{lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}</button>
-                                </div>
+                                <ClearSelectionButton lang={lang} onClick={clearSelection} />
                             )}
                         <figure ref={chartRef} className="corporate-income-taxes-chart" style={{ margin: 0, position: 'relative' }}>
-                            <div aria-hidden="true">
-                                <Plot
-                                    data={chartTraces}
-                                    layout={plotLayout}
-                                    config={config}
-                                    style={{ width: '100%', height: '100%' }}
-                                    useResizeHandler={true}
-                                    onClick={handleChartClick}
-                                />
-                            </div>
+                            <Plot
+                                data={chartTraces}
+                                layout={plotLayout}
+                                config={plotConfig}
+                                style={{ width: '100%', height: '100%' }}
+                                useResizeHandler={true}
+                                onClick={handleChartClick}
+                            />
                         </figure>
                     </div>
-                    <div className="corporate-income-taxes-legend" aria-hidden="true">
-                        {corporate_income_taxes_CATEGORIES.map(key => (
-                            <div key={key} className="corporate-income-taxes-legend-item">
-                                <span className="corporate-income-taxes-legend-color" style={{ backgroundColor: corporate_income_taxes_COLORS[key] }} />
-                                <span className="corporate-income-taxes-legend-label">{getText(`corporate_income_taxes_legend_${key}`, lang)}</span>
-                            </div>
-                        ))}
-                    </div>
+                    <HtmlLegend
+                        className="corporate-income-taxes-legend"
+                        variant="swatch"
+                        itemClassName="corporate-income-taxes-legend-item"
+                        markerClassName="corporate-income-taxes-legend-color"
+                        labelClassName="corporate-income-taxes-legend-label"
+                        items={corporate_income_taxes_CATEGORIES.map((key) => ({
+                            label: legendLabels[key],
+                            color: corporate_income_taxes_COLORS[key],
+                        }))}
+                    />
                     <div className="corporate-income-taxes-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                            </summary>
-                            <div ref={topScrollRef} style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden', marginBottom: 0, display: windowWidth <= 768 ? 'none' : 'block' }} aria-hidden="true">
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div ref={tableScrollRef} className="table-responsive" role="region" style={{ borderTop: 'none', padding: '15px' }} tabIndex="0">
-                                <table className="table table-striped table-hover">
-                                    <caption className="wb-inv">{getText('corporate_income_taxes_title', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" rowSpan={2} style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd', verticalAlign: 'middle' }}>{lang === 'en' ? 'Year' : 'Année'}</th>
-                                            <th scope="col" colSpan={5} style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>{getText('corporate_income_taxes_yaxis', lang)}</th>
-                                        </tr>
-                                        <tr>
-                                            {corporate_income_taxes_CATEGORIES.map(k => (
-                                                <th key={k} scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd' }}>{getText(`corporate_income_taxes_legend_${k}`, lang)}</th>
-                                            ))}
-                                            <th scope="col" style={{ fontWeight: 'bold', padding: '10px', border: '1px solid #ddd' }}>{lang === 'en' ? 'Total' : 'Total'}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {corporate_income_taxes_HARDCODED.map(row => {
-                                            const vals = corporate_income_taxes_CATEGORIES.map(k => row[k]);
-                                            const total = vals.reduce((a, b) => a + b, 0);
-                                            return (
-                                                <tr key={row.year}>
-                                                    <th scope="row" style={{ fontWeight: 'bold', padding: '8px', border: '1px solid #ddd' }}>{row.year}</th>
-                                                    {vals.map((v, i) => (
-                                                        <td key={i} style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }} aria-label={`${row.year}, ${getText(`corporate_income_taxes_legend_${corporate_income_taxes_CATEGORIES[i]}`, lang)}: ${formatEnergyRevenueNumber(v, lang)} ${getText('corporate_income_taxes_yaxis', lang)}`}>{formatEnergyRevenueNumber(v, lang)}</td>
-                                                    ))}
-                                                    <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{formatEnergyRevenueNumber(total, lang)}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-                                    <button type="button" onClick={downloadTableAsCSV} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                        {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                    </button>
-                                    <button type="button" onClick={downloadTableAsDocx} style={{ padding: '8px 16px', backgroundColor: '#8C8C8C', border: '1px solid #404040', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#ffffff' }}>
-                                        {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                    </button>
-                                </div>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${chartDownloadSlug}.csv`}
+                            docx={{
+                                filename: `${chartDownloadSlug}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [1200, 2200, 2200, 1400, 1400, 1200],
+                                fontSize: 20,
+                            }}
+                            caption={exportChartTitle}
+                            tableAriaLabel={exportChartTitle}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatEnergyRevenueNumber(raw, lang)
+                            )}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

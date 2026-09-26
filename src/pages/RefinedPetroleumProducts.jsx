@@ -1,29 +1,25 @@
 import React from 'react';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import AccessibleInfographic from '../components/AccessibleInfographic';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
-import refinedPetroleumProductsBgEn from '../assets/refined_petroleum_products_bg.svg';
-import refinedPetroleumProductsBgFr from '../assets/refined_petroleum_products_bg_fr.svg';
+import refinedPetroleumProductsBgEn from '../assets/refined_petroleum_products_bg.svg?raw';
+import refinedPetroleumProductsBgFr from '../assets/refined_petroleum_products_bg_fr.svg?raw';
 
 const RefinedPetroleumProducts = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const diagramSrc = lang === 'fr' ? refinedPetroleumProductsBgFr : refinedPetroleumProductsBgEn;
+    const svgMarkup = lang === 'fr' ? refinedPetroleumProductsBgFr : refinedPetroleumProductsBgEn;
+    const pageTitle = getText('refined_petroleum_products_title', lang);
 
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-108 refined-petroleum-products-refined-products"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-108 refined-petroleum-products-refined-products page-chrome page-chrome--bleed"
             aria-labelledby="refined-petroleum-products-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
                 .page-108.refined-petroleum-products-refined-products {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                 }
                 .refined-petroleum-products-inner {
                     width: 100%;
@@ -75,7 +71,8 @@ const RefinedPetroleumProducts = () => {
                     max-width: 640px;
                     margin: 0;
                 }
-                .refined-petroleum-products-figure img {
+                .refined-petroleum-products-figure .accessible-infographic-svg,
+                .refined-petroleum-products-figure .accessible-infographic-svg svg {
                     display: block;
                     width: 100%;
                     height: auto;
@@ -93,7 +90,7 @@ const RefinedPetroleumProducts = () => {
             <div className="crude-oil-international-container refined-petroleum-products-inner">
                 <header>
                     <h1 id="refined-petroleum-products-main-title" className="crude-oil-international-title">
-                        {getText('refined_petroleum_products_title', lang)}
+                        {pageTitle}
                     </h1>
                     <p className="crude-oil-international-subtitle">{getText('refined_petroleum_products_subtitle', lang)}</p>
                 </header>
@@ -141,12 +138,19 @@ const RefinedPetroleumProducts = () => {
                         </section>
                     </div>
 
-                    <figure className="refined-petroleum-products-figure">
-                        <img src={diagramSrc} alt={getText('refined_petroleum_products_diagram_alt', lang)} />
-                    </figure>
+                    <AccessibleInfographic
+                        mode="text"
+                        as="figure"
+                        className="refined-petroleum-products-figure"
+                        title={pageTitle}
+                        overview={getText('refined_petroleum_products_subtitle', lang)}
+                        svgMarkup={svgMarkup}
+                        imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
+                        idPrefix={`refined-petroleum-products-${lang}`}
+                    />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

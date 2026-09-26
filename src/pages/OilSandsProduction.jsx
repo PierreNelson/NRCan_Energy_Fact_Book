@@ -1,13 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import PageShell from '../components/PageShell';
+import PageStatus from '../components/PageStatus';
+import YearSelect from '../components/YearSelect';
 import { useOutletContext } from 'react-router-dom';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getOilSandsProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
 import OilSandsProductionInfographic from '../components/OilSandsProductionInfographic';
 import { OVERLAY_COLORS, OVERLAY_SLOTS } from '../components/OilSandsProductionInfographic.constants';
 import oilSandsBgEn from '../assets/oil_sands_bg.png';
 import oilSandsBgFr from '../assets/oil_sands_bg_fr.png';
+import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
 
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
@@ -17,66 +23,38 @@ const OilSandsProduction = () => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [isInfographicTableOpen, setIsInfographicTableOpen] = useState(false);
     const [selectedYear, setSelectedYear] = useState(null);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const figureRef = useRef(null);
-    const yearButtonRef = useRef(null);
-    const yearDropdownRef = useRef(null);
-    const tableTopRef = useRef(null);
-    const tableScrollRef = useRef(null);
-    const tableBottomRef = useRef(null);
-    const infographicTableTopRef = useRef(null);
-    const infographicTableScrollRef = useRef(null);
-    const infographicTableBottomRef = useRef(null);
 
-    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
+    const formatNumber = (value, digits = 0) => formatLocaleNumber(value, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
 
-    const formatNumber = (value, digits = 0) => {
-        if (value == null || Number.isNaN(Number(value))) return '–';
-        return Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-    };
+    const formatPct = (value, digits = 0) => formatLocalePct(value, lang, {
+        suffix: false,
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
 
-    const formatPct = (value, digits = 0) => {
-        if (value == null || Number.isNaN(Number(value))) return '–';
-        return Number(value).toLocaleString(locale, {
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        });
-    };
-
-    const formatPctDisplay = (value, digits = 0) => {
-        const formatted = formatPct(value, digits);
-        if (formatted === '–') return formatted;
-        return lang === 'fr' ? `${formatted} %` : `${formatted}%`;
-    };
+    const formatPctDisplay = (value, digits = 0) => formatLocalePct(value, lang, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
 
     const formatMmbd = (value, digits = 1) => formatNumber(value, digits);
 
     const formatMmbdDisplay = (value, digits = 1) => {
         const formatted = formatMmbd(value, digits);
-        if (formatted === '–') return formatted;
+        if (formatted === '—') return formatted;
         return lang === 'fr' ? formatted.replace('.', ',') : formatted;
     };
-
-    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
     useEffect(() => {
         getOilSandsProductionData()
             .then(setResult)
             .catch((err) => setError(err?.message || 'Failed to load data'))
             .finally(() => setLoading(false));
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
     }, []);
 
     const effectiveSelectedYear = useMemo(() => {
@@ -87,83 +65,10 @@ const OilSandsProduction = () => {
         return result.selectorYears[0];
     }, [result, selectedYear]);
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target)) {
-                setIsYearDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const syncTableScroll = useCallback((topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll) return;
-        const table = tableScroll.querySelector('table');
-        if (!table) return;
-        [topScroll.firstElementChild, bottomScroll.firstElementChild].forEach((spacer) => {
-            if (spacer) spacer.style.width = `${table.offsetWidth}px`;
-        });
-        const shouldShow = table.offsetWidth > tableScroll.clientWidth;
-        topScroll.style.display = shouldShow ? 'block' : 'none';
-        bottomScroll.style.display = shouldShow ? 'block' : 'none';
-    }, []);
-
-    const bindTableScrollSync = useCallback((isOpen, topRef, scrollRef, bottomRef) => {
-        const topScroll = topRef.current;
-        const tableScroll = scrollRef.current;
-        const bottomScroll = bottomRef.current;
-        if (!topScroll || !tableScroll || !bottomScroll || !isOpen) return undefined;
-        const syncFrom = (source) => {
-            if (source !== topScroll && topScroll.scrollLeft !== source.scrollLeft) topScroll.scrollLeft = source.scrollLeft;
-            if (source !== tableScroll && tableScroll.scrollLeft !== source.scrollLeft) tableScroll.scrollLeft = source.scrollLeft;
-            if (source !== bottomScroll && bottomScroll.scrollLeft !== source.scrollLeft) bottomScroll.scrollLeft = source.scrollLeft;
-        };
-        const handleTopScroll = () => syncFrom(topScroll);
-        const handleTableScroll = () => syncFrom(tableScroll);
-        const handleBottomScroll = () => syncFrom(bottomScroll);
-        const sync = () => window.requestAnimationFrame(() => syncTableScroll(topRef, scrollRef, bottomRef));
-        topScroll.addEventListener('scroll', handleTopScroll);
-        tableScroll.addEventListener('scroll', handleTableScroll);
-        bottomScroll.addEventListener('scroll', handleBottomScroll);
-        const observer = new ResizeObserver(sync);
-        const tableEl = tableScroll.querySelector('table');
-        if (tableEl) observer.observe(tableEl);
-        observer.observe(tableScroll);
-        sync();
-        return () => {
-            topScroll.removeEventListener('scroll', handleTopScroll);
-            tableScroll.removeEventListener('scroll', handleTableScroll);
-            bottomScroll.removeEventListener('scroll', handleBottomScroll);
-            observer.disconnect();
-        };
-    }, [syncTableScroll]);
-
-    useEffect(
-        () => bindTableScrollSync(isTableOpen, tableTopRef, tableScrollRef, tableBottomRef),
-        [isTableOpen, windowWidth, result, bindTableScrollSync],
-    );
-
-    useEffect(
-        () => bindTableScrollSync(
-            isInfographicTableOpen,
-            infographicTableTopRef,
-            infographicTableScrollRef,
-            infographicTableBottomRef,
-        ),
-        [isInfographicTableOpen, windowWidth, result, bindTableScrollSync],
-    );
-
-    const chartTableRows = useMemo(
-        () => (result?.production ? [...result.production].sort((a, b) => b.year - a.year) : []),
-        [result],
-    );
+    const productionRows = result?.production ?? [];
     const selectorYears = result?.selectorYears ?? [];
     const selectedRow = effectiveSelectedYear != null
-        ? result?.production?.find((row) => row.year === effectiveSelectedYear) ?? null
+        ? productionRows.find((row) => row.year === effectiveSelectedYear) ?? null
         : null;
     const year = selectedRow?.year ?? effectiveSelectedYear ?? null;
     const startYear = result?.startYear ?? 2000;
@@ -201,189 +106,28 @@ const OilSandsProduction = () => {
         .replace(/\s+/g, '_')
         .replace(/–/g, '-');
 
-    const infographicHeaders = [
-        getText('oil_sands_table_col_year', lang),
-        getText('oil_sands_infographic_table_col_reserves', lang),
-        getText('oil_sands_infographic_table_col_production_share', lang),
-        getText('oil_sands_infographic_table_col_production_mmbd', lang),
-    ];
+    const tableCaption = substitute(getText('oil_sands_table_caption', lang), textVars);
+    const infographicTableCaption = substitute(getText('oil_sands_infographic_table_caption', lang), textVars);
+    const exportTableTitle = stripHtml(tableCaption);
+    const exportInfographicTableTitle = stripHtml(infographicTableCaption);
 
-    const formatInfographicCell = (value, format) => {
-        if (value == null || Number.isNaN(Number(value))) return '–';
-        return format === 'pct' ? formatPct(value, 0) : formatMmbd(value, 1);
-    };
+    const infographicColumns = useMemo(() => [
+        { key: 'year', header: getText('oil_sands_table_col_year', lang), align: 'left' },
+        { key: 'provedReservesPct', header: getText('oil_sands_infographic_table_col_reserves', lang), align: 'num' },
+        { key: 'sharePct', header: getText('oil_sands_infographic_table_col_production_share', lang), align: 'num' },
+        { key: 'oilSandsMmbd', header: getText('oil_sands_infographic_table_col_production_mmbd', lang), align: 'num' },
+    ], [lang]);
 
-    const infographicTableRows = chartTableRows.map((row) => ({
-        year: row.year,
-        reservesPct: formatInfographicCell(row.provedReservesPct, 'pct'),
-        sharePct: formatInfographicCell(row.sharePct, 'pct'),
-        oilSandsMmbd: formatInfographicCell(row.oilSandsMmbd, 'mmbd'),
-    }));
-
-    const tableHeaders = [
-        getText('oil_sands_table_col_year', lang),
-        getText('oil_sands_table_col_oil_sands_m3', lang),
-        getText('oil_sands_table_col_conventional_m3', lang),
-        getText('oil_sands_table_col_total_m3', lang),
-        getText('oil_sands_table_col_oil_sands_mmbd', lang),
-        getText('oil_sands_table_col_conventional_mmbd', lang),
-        getText('oil_sands_table_col_total_mmbd', lang),
-        getText('oil_sands_table_col_share', lang),
-    ];
-
-    const downloadCsv = () => {
-        const header = tableHeaders.map(csvEscape).join(',');
-        const rows = chartTableRows.map((row) =>
-            [
-                row.year,
-                formatNumber(row.oilSandsThousandM3, 1),
-                formatNumber(row.conventionalThousandM3, 1),
-                formatNumber(row.totalThousandM3, 1),
-                formatMmbd(row.oilSandsMmbd, 1),
-                formatMmbd(row.conventionalMmbd, 1),
-                formatMmbd(row.totalMmbd, 1),
-                formatPct(row.sharePct, 0),
-            ].map(csvEscape).join(','),
-        );
-        const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${fileSlugBase}.csv`);
-    };
-
-    const downloadDocx = async () => {
-        const headerRow = new TableRow({
-            children: tableHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })] })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = chartTableRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        row.year,
-                        formatNumber(row.oilSandsThousandM3, 1),
-                        formatNumber(row.conventionalThousandM3, 1),
-                        formatNumber(row.totalThousandM3, 1),
-                        formatMmbd(row.oilSandsMmbd, 1),
-                        formatMmbd(row.conventionalMmbd, 1),
-                        formatMmbd(row.totalMmbd, 1),
-                        formatPct(row.sharePct, 0),
-                    ].map((value, index) =>
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(value), size: 18 })],
-                                    alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                    ),
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: substitute(getText('oil_sands_table_caption', lang), textVars),
-                                    bold: true,
-                                    size: 28,
-                                }),
-                            ],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 1300, 1300, 1300, 1200, 1200, 1200, 1100],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
-    };
-
-    const downloadInfographicCsv = () => {
-        if (!infographicTableRows.length) return;
-        const rows = infographicTableRows.map((row) => [
-            row.year,
-            row.reservesPct,
-            row.sharePct,
-            row.oilSandsMmbd,
-        ]);
-        const blob = new Blob(
-            [[infographicHeaders.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))].join('\n')],
-            { type: 'text/csv;charset=utf-8;' },
-        );
-        saveAs(blob, `${infographicDownloadTitle}.csv`);
-    };
-
-    const downloadInfographicDocx = async () => {
-        if (!infographicTableRows.length) return;
-        const headerRow = new TableRow({
-            children: infographicHeaders.map(
-                (header) =>
-                    new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: header, bold: true, size: 18 })] })],
-                        shading: { fill: 'E6E6E6' },
-                    }),
-            ),
-        });
-        const dataRows = infographicTableRows.map(
-            (row) =>
-                new TableRow({
-                    children: [
-                        row.year,
-                        row.reservesPct,
-                        row.sharePct,
-                        row.oilSandsMmbd,
-                    ].map((value, index) =>
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(value), size: 18 })],
-                                    alignment: index === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
-                                }),
-                            ],
-                        }),
-                    ),
-                }),
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: substitute(getText('oil_sands_infographic_table_caption', lang), textVars),
-                                    bold: true,
-                                    size: 28,
-                                }),
-                            ],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 },
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 1800, 1800, 1600],
-                            rows: [headerRow, ...dataRows],
-                        }),
-                    ],
-                },
-            ],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${infographicDownloadTitle}.docx`);
-    };
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('oil_sands_table_col_year', lang), align: 'left' },
+        { key: 'oilSandsThousandM3', header: getText('oil_sands_table_col_oil_sands_m3', lang), align: 'num' },
+        { key: 'conventionalThousandM3', header: getText('oil_sands_table_col_conventional_m3', lang), align: 'num' },
+        { key: 'totalThousandM3', header: getText('oil_sands_table_col_total_m3', lang), align: 'num' },
+        { key: 'oilSandsMmbd', header: getText('oil_sands_table_col_oil_sands_mmbd', lang), align: 'num' },
+        { key: 'conventionalMmbd', header: getText('oil_sands_table_col_conventional_mmbd', lang), align: 'num' },
+        { key: 'totalMmbd', header: getText('oil_sands_table_col_total_mmbd', lang), align: 'num' },
+        { key: 'sharePct', header: getText('oil_sands_table_col_share', lang), align: 'num' },
+    ], [lang]);
 
     const downloadInfographicPng = async () => {
         const bgImage = lang === 'fr' ? oilSandsBgFr : oilSandsBgEn;
@@ -445,26 +189,19 @@ const OilSandsProduction = () => {
         });
     };
 
-    if (loading) return <p>{lang === 'en' ? 'Loading...' : 'Chargement...'}</p>;
-    if (error) return <p>{error}</p>;
-    if (!result?.production?.length || !selectedRow) return <p>{getText('oil_sands_no_data', lang)}</p>;
+    if (loading || error) return <PageStatus lang={lang} loading={loading} error={error} />;
+    if (!productionRows.length || !selectedRow) return <p>{getText('oil_sands_no_data', lang)}</p>;
 
     return (
-        <main
+        <PageShell
             id="main-content"
             tabIndex="-1"
-            className="page-content page-113 oil-sands-oil-sands"
-            role="main"
+            className="page-content page-113 oil-sands-oil-sands page-chrome page-chrome--bleed"
             aria-labelledby="oil-sands-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
         >
             <style>{`
 .page-113.oil-sands-oil-sands {
-    margin-left: -${layoutPadding?.left || 55}px;
-    margin-right: -${layoutPadding?.right || 15}px;
-    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-    padding-left: ${layoutPadding?.left || 55}px;
-    padding-right: ${layoutPadding?.right || 15}px;
 }
 .oil-sands-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .oil-sands-title {
@@ -523,40 +260,6 @@ const OilSandsProduction = () => {
 }
 .oil-sands-table-wrapper { display: block; width: 100%; margin-top: 20px; }
 .oil-sands-section-title--after-infographic { margin-top: 28px !important; }
-.oil-sands-table-wrapper details > summary {
-    display: block;
-    width: 100%;
-    padding: 12px 15px;
-    background-color: #8C8C8C;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    cursor: pointer;
-    list-style: none;
-}
-.oil-sands-table-wrapper details > summary::-webkit-details-marker { display: none; }
-.oil-sands-table-scrollbar { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0; }
-.oil-sands-table-scrollbar > div { height: 20px; }
-.oil-sands-table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    background: #fff;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.oil-sands-table-responsive::-webkit-scrollbar { display: none; }
-.oil-sands-table-responsive table { width: max-content !important; min-width: 100%; border-collapse: collapse; }
-.oil-sands-table-responsive th, .oil-sands-table-responsive td {
-    white-space: nowrap;
-    padding: 8px 12px;
-    font-family: Arial, sans-serif;
-    color: var(--gc-text);
-    border: 1px solid #ddd;
-}
 .oil-sands-download-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
 .oil-sands-download-buttons button {
     padding: 8px 16px;
@@ -568,7 +271,7 @@ const OilSandsProduction = () => {
     font-weight: bold;
     color: #ffffff;
 }
-.oil-sands-table-wrapper summary:hover, .oil-sands-download-buttons button:hover { background-color: #404040 !important; }
+.oil-sands-download-buttons button:hover { background-color: #404040 !important; }
 @media (max-width: 768px) {
     .oil-sands-title { font-size: 37px; }
     .oil-sands-section-title { font-size: 24px; }
@@ -579,126 +282,16 @@ const OilSandsProduction = () => {
             <div className="oil-sands-inner">
                 <h1 id="oil-sands-title" className="oil-sands-title">{getText('oil_sands_title', lang)}</h1>
 
-                <div
-                    ref={yearDropdownRef}
-                    style={{ position: 'relative', marginBottom: '20px', width: '200px' }}
-                >
-                    <label
-                        htmlFor="oil-sands-year-button"
-                        style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}
-                    >
-                        {getText('year_slider_label', lang)}
-                    </label>
-                    <button
-                        ref={yearButtonRef}
-                        id="oil-sands-year-button"
-                        type="button"
-                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                        aria-expanded={isYearDropdownOpen}
-                        aria-haspopup="listbox"
-                        aria-label={year != null ? String(year) : ''}
-                        style={{
-                            width: '100%',
-                            padding: '10px 15px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            textAlign: 'left',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '16px',
-                        }}
-                    >
-                        <span>{year ?? ''}</span>
-                        <span aria-hidden="true" style={{ fontSize: '12px' }}>{isYearDropdownOpen ? '▲' : '▼'}</span>
-                    </button>
-                    {isYearDropdownOpen && (
-                        <div
-                            role="listbox"
-                            aria-label={getText('year_slider_label', lang)}
-                            style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                width: '100%',
-                                maxHeight: '300px',
-                                overflowY: 'auto',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                zIndex: 100,
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            }}
-                        >
-                            {selectorYears.map((optionYear) => {
-                                const isSelected = optionYear === effectiveSelectedYear;
-                                return (
-                                    <button
-                                        key={optionYear}
-                                        type="button"
-                                        role="option"
-                                        aria-selected={isSelected}
-                                        onClick={() => {
-                                            setSelectedYear(optionYear);
-                                            setIsYearDropdownOpen(false);
-                                            setTimeout(() => yearButtonRef.current?.focus(), 0);
-                                        }}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '10px 15px',
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderBottom: '1px solid #eee',
-                                            backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-                                            fontFamily: 'Arial, sans-serif',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#e0f2fe' : '#f5f5f5';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = isSelected ? '#f0f9ff' : '#fff';
-                                        }}
-                                    >
-                                        <span
-                                            aria-hidden="true"
-                                            style={{
-                                                height: '18px',
-                                                width: '18px',
-                                                borderRadius: '50%',
-                                                border: '1px solid #ccc',
-                                                marginRight: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: '#fff',
-                                            }}
-                                        >
-                                            {isSelected && (
-                                                <span
-                                                    style={{
-                                                        height: '10px',
-                                                        width: '10px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#000',
-                                                    }}
-                                                />
-                                            )}
-                                        </span>
-                                        <span style={{ fontSize: '16px', color: '#000000' }}>{optionYear}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                    <div role="status" className="wb-inv" aria-live="polite">
-                        {year != null ? (lang === 'en' ? `Showing data for ${year}` : `Données affichées pour ${year}`) : ''}
-                    </div>
+                <YearSelect
+                    lang={lang}
+                    id="oil-sands-year-button"
+                    label={getText('year_slider_label', lang)}
+                    years={selectorYears}
+                    value={year}
+                    onChange={setSelectedYear}
+                />
+                <div role="status" className="wb-inv" aria-live="polite">
+                    {year != null ? (lang === 'en' ? `Showing data for ${year}` : `Données affichées pour ${year}`) : ''}
                 </div>
 
                 <p className="oil-sands-capex">
@@ -733,51 +326,34 @@ const OilSandsProduction = () => {
                     ariaLabel={getText('oil_sands_bg_alt', lang)}
                 />
 
+                <div className="oil-sands-download-buttons">
+                    <button type="button" onClick={downloadInfographicPng}>
+                        {getText('oil_sands_download_png', lang)}
+                    </button>
+                </div>
+
                 <div className="oil-sands-table-wrapper oil-sands-infographic-table-wrapper">
-                    <details onToggle={(event) => setIsInfographicTableOpen(event.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isInfographicTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isInfographicTableOpen ? '▼' : '▶'}</span>
-                            {getText('oil_sands_infographic_table_summary', lang)}
-                            <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                        </summary>
-                        <div ref={infographicTableTopRef} className="oil-sands-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={infographicTableScrollRef}
-                            className="oil-sands-table-responsive"
-                            role="region"
-                            aria-labelledby="oil-sands-infographic-table-caption"
-                            tabIndex={0}
-                        >
-                            <table className="table table-striped table-hover">
-                                <caption id="oil-sands-infographic-table-caption" className="wb-inv">
-                                    {substitute(getText('oil_sands_infographic_table_caption', lang), textVars)}
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        {infographicHeaders.map((header) => (
-                                            <th key={header} scope="col">{header}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {infographicTableRows.map((row) => (
-                                        <tr key={row.year}>
-                                            <th scope="row">{row.year}</th>
-                                            <td style={{ textAlign: 'right' }}>{row.reservesPct}</td>
-                                            <td style={{ textAlign: 'right' }}>{row.sharePct}</td>
-                                            <td style={{ textAlign: 'right' }}>{row.oilSandsMmbd}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={infographicTableBottomRef} className="oil-sands-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="oil-sands-download-buttons">
-                            <button type="button" onClick={downloadInfographicPng}>{getText('oil_sands_download_png', lang)}</button>
-                            <button type="button" onClick={downloadInfographicCsv}>{getText('oil_sands_download_csv', lang)}</button>
-                            <button type="button" onClick={downloadInfographicDocx}>{getText('oil_sands_download_docx', lang)}</button>
-                        </div>
-                    </details>
+                    <ChartDataTable
+                        lang={lang}
+                        label={getText('oil_sands_infographic_table_summary', lang)}
+                        columns={infographicColumns}
+                        rows={productionRows}
+                        csvFilename={`${infographicDownloadTitle}.csv`}
+                        docx={{
+                            filename: `${infographicDownloadTitle}.docx`,
+                            title: exportInfographicTableTitle,
+                            titleAlign: 'center',
+                            columnWidths: [900, 1800, 1800, 1600],
+                            fontSize: 20,
+                        }}
+                        caption={infographicTableCaption}
+                        tableAriaLabel={infographicTableCaption}
+                        renderCell={(raw, { column }) => {
+                            if (column?.key === 'year') return String(raw ?? '');
+                            if (column?.key === 'oilSandsMmbd') return formatMmbd(raw, 1);
+                            return formatPct(raw, 0);
+                        }}
+                    />
                 </div>
 
                 <h2 className="oil-sands-section-title oil-sands-section-title--after-infographic">{getText('oil_sands_upgrading_title', lang)}</h2>
@@ -800,56 +376,31 @@ const OilSandsProduction = () => {
                 </div>
 
                 <div className="oil-sands-table-wrapper">
-                    <details onToggle={(event) => setIsTableOpen(event.currentTarget.open)}>
-                        <summary role="button" aria-expanded={isTableOpen}>
-                            <span aria-hidden="true" style={{ marginRight: '8px' }}>{isTableOpen ? '▼' : '▶'}</span>
-                            {getText('oil_sands_table_summary', lang)}
-                            <span className="wb-inv">{lang === 'en' ? ' Press Enter to open or close.' : ' Appuyez sur Entrée pour ouvrir ou fermer.'}</span>
-                        </summary>
-                        <div ref={tableTopRef} className="oil-sands-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div
-                            ref={tableScrollRef}
-                            className="oil-sands-table-responsive"
-                            role="region"
-                            aria-labelledby="oil-sands-table-caption"
-                            tabIndex={0}
-                        >
-                            <table className="table table-striped table-hover">
-                                <caption id="oil-sands-table-caption" className="wb-inv">
-                                    {substitute(getText('oil_sands_table_caption', lang), textVars)}
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        {tableHeaders.map((header) => (
-                                            <th key={header} scope="col">{header}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {chartTableRows.map((row) => (
-                                        <tr key={row.year}>
-                                            <th scope="row">{row.year}</th>
-                                            <td style={{ textAlign: 'right' }}>{formatNumber(row.oilSandsThousandM3, 1)}</td>
-                                            <td style={{ textAlign: 'right' }}>{formatNumber(row.conventionalThousandM3, 1)}</td>
-                                            <td style={{ textAlign: 'right' }}>{formatNumber(row.totalThousandM3, 1)}</td>
-                                            <td style={{ textAlign: 'right' }}>{formatMmbd(row.oilSandsMmbd, 1)}</td>
-                                            <td style={{ textAlign: 'right' }}>{formatMmbd(row.conventionalMmbd, 1)}</td>
-                                            <td style={{ textAlign: 'right' }}>{formatMmbd(row.totalMmbd, 1)}</td>
-                                            <td style={{ textAlign: 'right' }}>{formatPct(row.sharePct, 0)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div ref={tableBottomRef} className="oil-sands-table-scrollbar" aria-hidden="true"><div /></div>
-                        <div className="oil-sands-download-buttons">
-                            <button type="button" onClick={downloadCsv}>{getText('oil_sands_download_csv', lang)}</button>
-                            <button type="button" onClick={downloadDocx}>{getText('oil_sands_download_docx', lang)}</button>
-                        </div>
-                    </details>
+                    <ChartDataTable
+                        lang={lang}
+                        label={getText('oil_sands_table_summary', lang)}
+                        columns={tableColumns}
+                        rows={productionRows}
+                        csvFilename={`${fileSlugBase}.csv`}
+                        docx={{
+                            filename: `${fileSlugBase}.docx`,
+                            title: exportTableTitle,
+                            titleAlign: 'center',
+                            columnWidths: [900, 1300, 1300, 1300, 1200, 1200, 1200, 1100],
+                            fontSize: 20,
+                        }}
+                        caption={tableCaption}
+                        tableAriaLabel={tableCaption}
+                        renderCell={(raw, { column }) => {
+                            if (column?.key === 'year') return String(raw ?? '');
+                            if (column?.key === 'sharePct') return formatPct(raw, 0);
+                            if (column?.key?.endsWith('Mmbd')) return formatMmbd(raw, 1);
+                            return formatNumber(raw, 1);
+                        }}
+                    />
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

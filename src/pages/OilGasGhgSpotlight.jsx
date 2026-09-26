@@ -1,64 +1,42 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import usePlotlySelection from '../hooks/usePlotlySelection';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import HtmlLegend from '../components/HtmlLegend';
 import { getOilGasGhgSpotlightData, getGhgNarrativeStats } from '../utils/dataLoader';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
 
 const TRACE_COUNT = 4;
 const COLORS = ['#5c4033', '#6097b6', '#DF793A', '#1e3a5f'];
 
 const OilGasGhgSpotlight = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [chartRows, setChartRows] = useState([]);
     const [narrativeStats, setNarrativeStats] = useState(null);
     const [loadError, setLoadError] = useState(false);
-    const [isTableOpen, setIsTableOpen] = useState(false);
-    const [selectedPoints, setSelectedPoints] = useState(null);
+    const {
+        selected: selectedPoints,
+        clear,
+        onPlotClick,
+        opacityFor,
+    } = usePlotlySelection({ mode: 'points', traceCount: TRACE_COUNT, windowWidth });
     const chartRef = useRef(null);
-    const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
-
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
-    const formatMt = (num) => {
-        if (num === undefined || num === null || Number.isNaN(Number(num))) return '\u2014';
-        return Math.round(Number(num) * 10) / 10;
-    };
 
     const formatMtLocale = (num) => {
         if (num === undefined || num === null || Number.isNaN(Number(num))) return '\u2014';
         const v = Math.round(Number(num) * 10) / 10;
         return v.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     };
-
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            try {
-                const [rows, stats] = await Promise.all([
-                    getOilGasGhgSpotlightData(),
-                    getGhgNarrativeStats(),
-                ]);
-                if (!cancelled) {
-                    setChartRows(rows);
-                    setNarrativeStats(stats);
-                    setLoadError(!rows || rows.length === 0);
-                }
-            } catch {
-                if (!cancelled) {
-                    setChartRows([]);
-                    setLoadError(true);
-                }
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const stats = narrativeStats ?? {
         baseYear: 2000,
@@ -121,18 +99,40 @@ const OilGasGhgSpotlight = () => {
     const legendOther = getText('ghg_oilgas_spotlight_legend_other', lang);
     const legendLabels = [legendOilSands, legendNaturalGas, legendConventional, legendOther];
 
-    const exportChartTitle = stripHtml(getText('ghg_oilgas_spotlight_chart_title', lang));
+    const chartTitle = getText('ghg_oilgas_spotlight_chart_title', lang);
+    const exportChartTitle = stripHtml(chartTitle);
     const quantityHdrSuffix = getText('ghg_oilgas_spotlight_table_hdr_quantity_suffix', lang);
-    const tableHeaders = [
-        getText('petroleum_employment_table_col_year', lang),
-        ...legendLabels.map((label) => `${label}${quantityHdrSuffix}`),
-        `${getText('ghg_oilgas_spotlight_table_col_total', lang)}${quantityHdrSuffix}`
-    ];
 
     const fileSlugBase =
         lang === 'en'
             ? 'oil_gas_sector_ghg_emissions_canada_2000-2023'
             : 'emissions_ges_petrole_gaz_canada_2000-2023';
+
+    const tableColumns = useMemo(() => [
+        { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
+        { key: 'oil_sands', header: `${legendOilSands}${quantityHdrSuffix}`, align: 'num' },
+        { key: 'natural_gas', header: `${legendNaturalGas}${quantityHdrSuffix}`, align: 'num' },
+        { key: 'conventional_oil', header: `${legendConventional}${quantityHdrSuffix}`, align: 'num' },
+        { key: 'other', header: `${legendOther}${quantityHdrSuffix}`, align: 'num' },
+        {
+            key: 'total',
+            header: `${getText('ghg_oilgas_spotlight_table_col_total', lang)}${quantityHdrSuffix}`,
+            align: 'num',
+        },
+    ], [lang, legendOilSands, legendNaturalGas, legendConventional, legendOther, quantityHdrSuffix]);
+
+    const tableRows = useMemo(
+        () =>
+            chartRows.map((r) => ({
+                ...r,
+                total:
+                    Number(r.oil_sands) +
+                    Number(r.natural_gas) +
+                    Number(r.conventional_oil) +
+                    Number(r.other),
+            })),
+        [chartRows],
+    );
 
     const plotBottomMargin = windowWidth <= 480 ? 88 : windowWidth <= 768 ? 76 : 64;
     const plotTopMargin = windowWidth <= 480 ? 56 : 48;
@@ -149,225 +149,44 @@ const OilGasGhgSpotlight = () => {
         xTickvals.push(y);
     }
 
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                    btn.onkeydown = (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            btn.click();
-                        }
-                    };
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [lang, selectedPoints, chartRows.length]);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-        let isSyncingTop = false;
-        let isSyncingTable = false;
-        const syncTopToTable = () => {
-            if (isSyncingTable) return;
-            isSyncingTop = true;
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTop = false;
-            });
-        };
-        const syncTableToTop = () => {
-            if (isSyncingTop) return;
-            isSyncingTable = true;
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTable = false;
-            });
-        };
-        const updateTopScrollWidth = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-        topScroll.addEventListener('scroll', syncTopToTable);
-        tableScroll.addEventListener('scroll', syncTableToTop);
-        updateTopScrollWidth();
-        const resizeObserver = new ResizeObserver(updateTopScrollWidth);
-        const table = tableScroll.querySelector('table');
-        if (table) resizeObserver.observe(table);
-        return () => {
-            topScroll.removeEventListener('scroll', syncTopToTable);
-            tableScroll.removeEventListener('scroll', syncTableToTop);
-            resizeObserver.disconnect();
-        };
-    }, [isTableOpen, chartRows.length]);
-
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        const title = exportChartTitle;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 640,
-                scale: 2
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 96;
-                const legendHeight = 64;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, 48);
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 28;
-                const items = legendLabels.map((label, idx) => ({ label, color: COLORS[idx] }));
-                const gap = 28;
-                let totalW = 0;
-                items.forEach((it) => {
-                    ctx.font = '18px Arial';
-                    totalW += 28 + gap + ctx.measureText(it.label).width + gap;
-                });
-                let xPos = (canvas.width - totalW) / 2;
-                items.forEach((it) => {
-                    ctx.fillStyle = it.color;
-                    ctx.fillRect(xPos, legendY - 10, 22, 14);
-                    ctx.fillStyle = '#333333';
-                    ctx.font = '18px Arial';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(it.label, xPos + 28, legendY + 4);
-                    xPos += 28 + gap + ctx.measureText(it.label).width + gap;
-                });
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileSlugBase}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch (err) {
-            console.error('Error downloading chart:', err);
-        }
+    const getChartSummary = () => {
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: legendOilSands, values: oilSands, format: formatMtLocale },
+                { name: legendNaturalGas, values: naturalGas, format: formatMtLocale },
+                { name: legendConventional, values: conventionalOil, format: formatMtLocale },
+                { name: legendOther, values: other, format: formatMtLocale },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: exportChartTitle,
+            unitNote: lang === 'en' ? 'Values in Mt' : 'Valeurs en Mt',
+            body,
+            lang,
+        });
     };
 
-    const downloadTableAsCSV = () => {
-        const lines = [tableHeaders.join(',')];
-        chartRows.forEach((r) => {
-            const total =
-                Number(r.oil_sands) + Number(r.natural_gas) + Number(r.conventional_oil) + Number(r.other);
-            lines.push(
-                [r.year, formatMt(r.oil_sands), formatMt(r.natural_gas), formatMt(r.conventional_oil), formatMt(r.other), formatMt(total)].join(
-                    ','
-                )
-            );
-        });
-        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${fileSlugBase}.csv`);
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${fileSlugBase}.png`,
+        title: exportChartTitle,
+        height: 640,
+        legendItems: legendLabels.map((label, idx) => ({ label, color: COLORS[idx] })),
+    }),
+        [COLORS, exportChartTitle, fileSlugBase, legendLabels],
+    );
 
-    const downloadTableAsDocx = async () => {
-        const yCol = getText('petroleum_employment_table_col_year', lang);
-        const h = [yCol, ...legendLabels, getText('ghg_oilgas_spotlight_table_col_total', lang)];
-        const headerRow = new TableRow({
-            children: h.map(
-                (cell) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: cell, bold: true, size: 20 })],
-                                alignment: AlignmentType.CENTER
-                            })
-                        ],
-                        shading: { fill: 'E6E6E6' }
-                    })
-            )
-        });
-        const dataRows = chartRows.map(
-            (r) =>
-                new TableRow({
-                    children: [
-                        r.year,
-                        formatMt(r.oil_sands),
-                        formatMt(r.natural_gas),
-                        formatMt(r.conventional_oil),
-                        formatMt(r.other),
-                        formatMt(
-                            Number(r.oil_sands) + Number(r.natural_gas) + Number(r.conventional_oil) + Number(r.other)
-                        )
-                    ].map(
-                        (val) =>
-                            new TableCell({
-                                children: [
-                                    new Paragraph({
-                                        children: [new TextRun({ text: String(val), size: 20 })],
-                                        alignment: AlignmentType.CENTER
-                                    })
-                                ]
-                            })
-                    )
-                })
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: exportChartTitle, bold: true, size: 28 })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 }
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [900, 1100, 1100, 1100, 900, 900],
-                            rows: [headerRow, ...dataRows]
-                        })
-                    ]
-                }
-            ]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${fileSlugBase}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const barOpacityFor = (traceIdx) => {
         if (selectedPoints === null) return 1;
-        return years.map((_, i) => (selectedPoints[traceIdx]?.includes(i) ? 1 : 0.3));
+        return years.map((_, i) => opacityFor(traceIdx, i));
     };
 
     const plotData =
@@ -419,26 +238,43 @@ const OilGasGhgSpotlight = () => {
                   }
               ];
 
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const [rows, stats] = await Promise.all([
+                    getOilGasGhgSpotlightData(),
+                    getGhgNarrativeStats(),
+                ]);
+                if (!cancelled) {
+                    setChartRows(rows);
+                    setNarrativeStats(stats);
+                    setLoadError(!rows || rows.length === 0);
+                }
+            } catch {
+                if (!cancelled) {
+                    setChartRows([]);
+                    setLoadError(true);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    
+
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-132"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-132 page-chrome page-chrome--bleed"
             aria-labelledby="ghg-spotlight-oil-gas-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
                 .page-132.page-content {
                     max-width: none !important;
                     overflow-x: visible !important;
-                }
-                .page-132 {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                 }
                 .ghg-spotlight-oil-gas-container {
                     width: 100%;
@@ -446,24 +282,7 @@ const OilGasGhgSpotlight = () => {
                     box-sizing: border-box;
                 }
                 .page-132.page-content h1.ghg-spotlight-oil-gas-title {
-                    font-family: 'Lato', sans-serif;
                     font-size: 41px !important;
-                    font-weight: bold;
-                    color: var(--gc-text);
-                    margin-top: 0;
-                    margin-bottom: 25px;
-                    position: relative;
-                    padding-bottom: 0.5em;
-                    line-height: 1.2;
-                }
-                .page-132.page-content h1.ghg-spotlight-oil-gas-title::after {
-                    content: '';
-                    position: absolute;
-                    left: 0;
-                    bottom: 0.2em;
-                    width: 72px;
-                    height: 6px;
-                    background-color: var(--gc-red);
                 }
                 .ghg-spotlight-oil-gas-body {
                     font-family: 'Noto Sans', sans-serif;
@@ -476,20 +295,8 @@ const OilGasGhgSpotlight = () => {
                 .ghg-spotlight-oil-gas-body .visual-bold {
                     font-weight: 700;
                 }
-                .ghg-spotlight-oil-gas-chart-frame {
-                    background-color: #f5f5f5;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                    box-sizing: border-box;
-                    overflow: visible;
-                }
                 .ghg-spotlight-oil-gas-chart-title {
-                    font-family: 'Lato', sans-serif;
-                    font-size: 29px;
-                    font-weight: bold;
                     color: var(--gc-text);
-                    text-align: center;
                     margin: 0 0 12px 0;
                 }
                 .ghg-spotlight-oil-gas-chart-block {
@@ -505,23 +312,11 @@ const OilGasGhgSpotlight = () => {
                     min-height: 0;
                 }
                 .ghg-spotlight-oil-gas-legend {
-                    display: flex;
-                    justify-content: center;
+                    gap: 15px 28px;
                     margin-top: 20px;
                     margin-bottom: 20px;
                     font-family: 'Noto Sans', sans-serif;
                     padding: 10px 20px;
-                }
-                .ghg-spotlight-oil-gas-legend-inner {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 15px 28px;
-                    justify-content: center;
-                }
-                .ghg-spotlight-oil-gas-legend-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
                 }
                 .ghg-spotlight-oil-gas-legend-swatch {
                     width: 22px;
@@ -538,67 +333,14 @@ const OilGasGhgSpotlight = () => {
                     margin-top: 20px;
                     margin-bottom: 0;
                 }
-                .ghg-spotlight-oil-gas-table-wrapper details > summary {
-                    display: block;
-                    width: 100%;
-                    padding: 12px 15px;
-                    background-color: #8C8C8C;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                    list-style: none;
-                }
-                .ghg-spotlight-oil-gas-table-wrapper details > summary::-webkit-details-marker {
-                    display: none;
-                }
-                .ghg-spotlight-oil-gas-table-wrapper details > summary:hover,
                 .ghg-spotlight-oil-gas-chart-frame button[type="button"]:hover {
                     background-color: #404040 !important;
-                }
-                .ghg-spotlight-oil-gas-table-wrapper .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                    margin-top: 10px;
-                }
-                .ghg-spotlight-oil-gas-table-wrapper .table-responsive table th,
-                .ghg-spotlight-oil-gas-table-wrapper .table-responsive table td {
-                    white-space: nowrap;
-                    padding: 8px 12px;
-                    font-family: var(--font-body);
-                    color: var(--gc-text);
-                }
-                .ghg-spotlight-oil-gas-download-buttons {
-                    display: flex;
-                    gap: 10px;
-                    margin-top: 15px;
-                    flex-wrap: wrap;
-                }
-                .ghg-spotlight-oil-gas-download-buttons button {
-                    padding: 8px 16px;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    background: #8C8C8C;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                }
-                .ghg-spotlight-oil-gas-download-buttons button:hover {
-                    background: #404040 !important;
                 }
                 @media (max-width: 768px) {
                     .page-132.page-content h1.ghg-spotlight-oil-gas-title {
                         font-size: 37px !important;
                     }
                     .ghg-spotlight-oil-gas-body { font-size: 18px; }
-                    .ghg-spotlight-oil-gas-chart-title { font-size: 26px; }
                     .ghg-spotlight-oil-gas-legend-label { font-size: 16px; }
                 }
                 @media (max-width: 480px) {
@@ -607,7 +349,7 @@ const OilGasGhgSpotlight = () => {
             `}</style>
 
             <div className="ghg-spotlight-oil-gas-container">
-                <h1 id="ghg-spotlight-oil-gas-main-title" className="ghg-spotlight-oil-gas-title">
+                <h1 id="ghg-spotlight-oil-gas-main-title" className="ghg-spotlight-oil-gas-title page-chrome-title">
                     {getText('ghg_oilgas_spotlight_title', lang)}
                 </h1>
 
@@ -632,32 +374,15 @@ const OilGasGhgSpotlight = () => {
                     </p>
                 )}
 
-                <div className="ghg-spotlight-oil-gas-chart-frame">
-                    <h2 id="ghg-spotlight-oil-gas-chart-title" className="ghg-spotlight-oil-gas-chart-title">
-                        {getText('ghg_oilgas_spotlight_chart_title', lang)}
+                <div className="ghg-spotlight-oil-gas-chart-frame page-chrome-chart-frame">
+                    <h2 id="ghg-spotlight-oil-gas-chart-title" className="ghg-spotlight-oil-gas-chart-title page-chrome-chart-title">
+                        {chartTitle}
                     </h2>
 
                     <div className="ghg-spotlight-oil-gas-chart-block">
-                        <div role="region" aria-label={getText('ghg_oilgas_spotlight_chart_aria', lang)} tabIndex="0">
+                        <div role="region" aria-label={getChartSummary()} tabIndex="0">
                             {selectedPoints !== null && (
-                                <div style={{ marginBottom: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedPoints(null)}
-                                        style={{
-                                            padding: '6px 12px',
-                                            backgroundColor: '#8C8C8C',
-                                            border: '1px solid #404040',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Arial, sans-serif',
-                                            fontSize: 14,
-                                            color: '#fff'
-                                        }}
-                                    >
-                                        {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                    </button>
-                                </div>
+                                <ClearSelectionButton lang={lang} onClick={clear} />
                             )}
                             <figure ref={chartRef} className="ghg-spotlight-oil-gas-chart" style={{ margin: 0 }}>
                                 {years.length > 0 && (
@@ -710,183 +435,52 @@ const OilGasGhgSpotlight = () => {
                                                 paper_bgcolor: 'rgba(0,0,0,0)',
                                                 plot_bgcolor: 'rgba(0,0,0,0)'
                                             }}
-                                            config={{
-                                                displayModeBar: true,
-                                                displaylogo: false,
-                                                responsive: true,
-                                                scrollZoom: false,
-                                                modeBarButtonsToRemove: [
-                                                    'pan2d',
-                                                    'select2d',
-                                                    'lasso2d',
-                                                    'zoom2d',
-                                                    'zoomIn2d',
-                                                    'zoomOut2d',
-                                                    'autoScale2d',
-                                                    'resetScale2d',
-                                                    'toImage'
-                                                ],
-                                                modeBarButtonsToAdd: [
-                                                    {
-                                                        name:
-                                                            lang === 'en'
-                                                                ? 'Download chart as PNG'
-                                                                : 'Télécharger le graphique en PNG',
-                                                        icon: {
-                                                            width: 24,
-                                                            height: 24,
-                                                            path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                                        },
-                                                        click: (gd) => downloadChartWithTitle(gd)
-                                                    }
-                                                ]
-                                            }}
+                                            config={plotConfig}
                                             style={{ width: '100%', height: `${chartHeight}px` }}
                                             useResizeHandler={true}
-                                            onClick={(data) => {
-                                                if (!data.points || data.points.length === 0) return;
-                                                const clickedPoint = data.points[0];
-                                                const traceIndex = clickedPoint.curveNumber;
-                                                const pointIndex = clickedPoint.pointIndex;
-                                                if (traceIndex === undefined || pointIndex === undefined) return;
-
-                                                if (windowWidth <= 768) {
-                                                    const currentTime = Date.now();
-                                                    const lastClick = lastClickRef.current;
-                                                    const isSamePoint =
-                                                        traceIndex === lastClick.traceIndex &&
-                                                        pointIndex === lastClick.pointIndex;
-                                                    const isDoubleTap = isSamePoint && currentTime - lastClick.time < 300;
-                                                    lastClickRef.current = {
-                                                        time: currentTime,
-                                                        traceIndex,
-                                                        pointIndex
-                                                    };
-                                                    if (!isDoubleTap) return;
-                                                }
-
-                                                setSelectedPoints((prev) => {
-                                                    if (prev === null) {
-                                                        const next = Array.from({ length: TRACE_COUNT }, () => []);
-                                                        next[traceIndex].push(pointIndex);
-                                                        return next;
-                                                    }
-                                                    const isSelected = prev[traceIndex]?.includes(pointIndex);
-                                                    if (isSelected) {
-                                                        const next = prev.map((tracePoints, idx) =>
-                                                            idx === traceIndex
-                                                                ? tracePoints.filter((p) => p !== pointIndex)
-                                                                : [...tracePoints]
-                                                        );
-                                                        return next.every((arr) => arr.length === 0) ? null : next;
-                                                    }
-                                                    return prev.map((tracePoints, idx) =>
-                                                        idx === traceIndex ? [...tracePoints, pointIndex] : [...tracePoints]
-                                                    );
-                                                });
-                                            }}
+                                            onClick={onPlotClick}
                                         />
                                     </div>
                                 )}
                             </figure>
                         </div>
 
-                        <div className="ghg-spotlight-oil-gas-legend" aria-hidden="true">
-                            <div className="ghg-spotlight-oil-gas-legend-inner">
-                                {legendLabels.map((label, idx) => (
-                                    <div key={label} className="ghg-spotlight-oil-gas-legend-item">
-                                        <span
-                                            className="ghg-spotlight-oil-gas-legend-swatch"
-                                            style={{ backgroundColor: COLORS[idx] }}
-                                        />
-                                        <span className="ghg-spotlight-oil-gas-legend-label">{label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <HtmlLegend
+                            className="ghg-spotlight-oil-gas-legend"
+                            variant="swatch"
+                            itemClassName="ghg-spotlight-oil-gas-legend-item"
+                            markerClassName="ghg-spotlight-oil-gas-legend-swatch"
+                            labelClassName="ghg-spotlight-oil-gas-legend-label"
+                            items={legendLabels.map((label, idx) => ({
+                                label,
+                                color: COLORS[idx],
+                            }))}
+                        />
                     </div>
 
                     <div className="ghg-spotlight-oil-gas-table-wrapper">
-                        <details onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                <span className="wb-inv">
-                                    {lang === 'en'
-                                        ? ' Press Enter to open or close.'
-                                        : ' Appuyez sur Entrée pour ouvrir ou fermer.'}
-                                </span>
-                            </summary>
-
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginTop: '10px',
-                                    display: windowWidth <= 768 ? 'none' : 'block'
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                aria-label={lang === 'en' ? 'Chart data table' : 'Tableau de données du graphique'}
-                                tabIndex="0"
-                            >
-                                <table className="table table-bordered table-striped table-hover">
-                                    <caption className="wb-inv">{getText('ghg_oilgas_spotlight_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            {tableHeaders.map((hdr) => (
-                                                <th key={hdr} scope="col" style={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                                    {hdr}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {chartRows.map((r) => {
-                                            const total =
-                                                Number(r.oil_sands) +
-                                                Number(r.natural_gas) +
-                                                Number(r.conventional_oil) +
-                                                Number(r.other);
-                                            return (
-                                                <tr key={r.year}>
-                                                    <td style={{ textAlign: 'center' }}>{r.year}</td>
-                                                    <td style={{ textAlign: 'center' }}>{formatMtLocale(r.oil_sands)}</td>
-                                                    <td style={{ textAlign: 'center' }}>{formatMtLocale(r.natural_gas)}</td>
-                                                    <td style={{ textAlign: 'center' }}>{formatMtLocale(r.conventional_oil)}</td>
-                                                    <td style={{ textAlign: 'center' }}>{formatMtLocale(r.other)}</td>
-                                                    <td style={{ textAlign: 'center' }}>{formatMtLocale(total)}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="ghg-spotlight-oil-gas-download-buttons">
-                                <button type="button" onClick={downloadTableAsCSV}>
-                                    {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
-                                </button>
-                                <button type="button" onClick={() => downloadTableAsDocx()}>
-                                    {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
-                                </button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${fileSlugBase}.csv`}
+                            docx={{
+                                filename: `${fileSlugBase}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [900, 1100, 1100, 1100, 900, 900],
+                                fontSize: 20,
+                            }}
+                            caption={getText('ghg_oilgas_spotlight_table_caption', lang)}
+                            tableAriaLabel={getText('ghg_oilgas_spotlight_table_caption', lang)}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0 ? String(raw ?? '') : formatMtLocale(raw)
+                            )}
+                        />
                     </div>
                 </div>
             </div>
-        </main>
+        </PageShell>
     );
 };
 

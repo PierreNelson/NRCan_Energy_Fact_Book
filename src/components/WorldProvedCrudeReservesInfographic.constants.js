@@ -22,7 +22,6 @@ export const OVERLAY_FONT_SIZES = {
     definition: '14px',
     oil_sands_pct: '8cqw',
     oil_sands_text: '26px',
-    clear_selection: '14px',
 };
 
 export const COUNTRY_LABEL_FONT = { mobile: 10, tablet: 12, desktop: 18 };

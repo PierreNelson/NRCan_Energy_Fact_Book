@@ -1,9 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
+import ClearSelectionButton from '../components/ClearSelectionButton';
+import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
+import useWindowWidth from '../hooks/useWindowWidth';
+import PageFootnotes from '../components/PageFootnotes';
+import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
+import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
-import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
+import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import { formatLocaleNumber } from '../utils/formatLocale';
 
 const BAR_COLORS = ['#59A63A', '#437D2C', '#396624', '#2c6a38'];
 const LINE_COLOR = '#26374A';
@@ -51,7 +60,7 @@ const OilByRail = () => {
     const { lang, layoutPadding } = useOutletContext();
     const quarters = oil_by_rail_QUARTERS;
     const domesticByYear = oil_by_rail_DOMESTIC_BY_YEAR;
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const windowWidth = useWindowWidth();
     const [viewportZoom, setViewportZoom] = useState(() => {
         if (typeof window === 'undefined') {
             return { pinScale: 1, layoutRatio: 1, cssZoomFactor: 1, dprZoomFactor: 1, screenZoomHint: 1 };
@@ -74,173 +83,60 @@ const OilByRail = () => {
         }
         return { pinScale, layoutRatio, cssZoomFactor: 1, dprZoomFactor: 1, screenZoomHint };
     });
-    const [isTableOpen, setIsTableOpen] = useState(false);
     /** null = no focus; bars = per-quarter selection; line = whole domestic trace on/off. */
     const [chartFocus, setChartFocus] = useState(null);
     const chartRef = useRef(null);
     const lastClickRef = useRef({ time: 0, traceIndex: null, pointIndex: null });
     /** When outerWidth is stable, innerWidth shrink/grow tracks Ctrl+ page zoom (Chromium keeps visualViewport.scale≈1). */
     const zoomBaselineRef = useRef(null);
-    const topScrollRef = useRef(null);
-    const tableScrollRef = useRef(null);
 
-    const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
-
-    const formatNumber = (num) => {
-        if (num === undefined || num === null || Number.isNaN(num)) return '\u2014';
-        return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
-    };
+    const formatNumber = (num) => formatLocaleNumber(num, lang, { maximumFractionDigits: 0 });
 
     const exportLabel = getText('oil_by_rail_legend_exports', lang);
     const domesticLabel = getText('oil_by_rail_legend_domestic', lang);
     const chartTitlePlain = stripHtml(getText('oil_by_rail_chart_title', lang));
-
     const yearSpanLabel = `${oil_by_rail_QUARTERS[0].year}-${oil_by_rail_QUARTERS[oil_by_rail_QUARTERS.length - 1].year}`;
     const downloadFileStem =
         lang === 'en' ? `oil_by_rail_volume_${yearSpanLabel}` : `volume_petrole_voie_ferree_${yearSpanLabel}`;
+    const exportChartTitle = `${stripHtml(getText('oil_by_rail_title', lang))} — ${chartTitlePlain} (${yearSpanLabel})`;
 
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    const tableColumns = useMemo(() => [
+        { key: 'period', header: getText('oil_by_rail_table_col_period', lang), align: 'left' },
+        { key: 'exports', header: getText('oil_by_rail_table_col_exports', lang), align: 'num' },
+        { key: 'domestic', header: getText('oil_by_rail_table_col_domestic', lang), align: 'num' },
+    ], [lang]);
 
-    useEffect(() => {
-        const syncZoom = () => {
-            const inner = window.innerWidth;
-            const outer = window.outerWidth;
+    const tableRows = useMemo(
+        () =>
+            quarters.map((q) => ({
+                period: `${q.year} Q${q.quarter}`,
+                exports: q.exportVal,
+                domestic: q.domesticAnnual,
+            })),
+        [quarters],
+    );
 
-            const dpr = window.devicePixelRatio || 1;
-            if (zoomBaselineRef.current == null) {
-                zoomBaselineRef.current = { outer, inner, dpr };
-            } else {
-                const b0 = zoomBaselineRef.current;
-                if (Math.abs(outer - b0.outer) > 64) {
-                    zoomBaselineRef.current = { outer, inner, dpr };
-                }
-            }
-            const b = zoomBaselineRef.current;
-
-            const outerStable = b && Math.abs(outer - b.outer) <= 64;
-
-            let cssZoomFactor = 1;
-            if (b && inner > 0 && b.inner > 0 && outerStable) {
-                cssZoomFactor = Math.max(b.inner / inner, inner / b.inner);
-            }
-
-            let dprZoomFactor = 1;
-            if (b && b.dpr > 0 && outerStable) {
-                dprZoomFactor = Math.max(b.dpr / dpr, dpr / b.dpr);
-            }
-
-            const sw = window.screen?.availWidth ?? window.screen?.width ?? 0;
-            let screenZoomHint = 1;
-            if (sw > 0 && outer >= sw - 24 && inner > 0) {
-                const ratio = sw / inner;
-                if (ratio >= 1.75) screenZoomHint = Math.min(ratio, 10);
-            }
-
-            const vv = window.visualViewport;
-            let pinScale = 1;
-            let layoutRatio = 1;
-            if (vv) {
-                pinScale = vv.scale || 1;
-                const w = vv.width || inner;
-                layoutRatio = w > 0 ? inner / w : 1;
-            }
-
-            setViewportZoom({ pinScale, layoutRatio, cssZoomFactor, dprZoomFactor, screenZoomHint });
-        };
-
-        const rafId = requestAnimationFrame(() => {
-            syncZoom();
+    const getChartSummary = () => {
+        if (!quarters.length) return '';
+        const body = summarizeByCategory({
+            categories: quarters.map((q) => `${q.year} Q${q.quarter}`),
+            series: [
+                { name: exportLabel, values: quarters.map((q) => q.exportVal), format: formatNumber },
+                { name: domesticLabel, values: quarters.map((q) => q.domesticAnnual), format: formatNumber },
+            ],
+            lang,
         });
-        const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-        if (vv) {
-            vv.addEventListener('resize', syncZoom);
-            vv.addEventListener('scroll', syncZoom);
-        }
-        window.addEventListener('resize', syncZoom);
-        return () => {
-            cancelAnimationFrame(rafId);
-            if (vv) {
-                vv.removeEventListener('resize', syncZoom);
-                vv.removeEventListener('scroll', syncZoom);
-            }
-            window.removeEventListener('resize', syncZoom);
-        };
-    }, []);
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Combined bar and line chart of oil by rail volumes for ${yearSpanLabel}`
+                : `Graphique combiné (barres et ligne) des volumes de pétrole transporté par train pour ${yearSpanLabel}`,
+            unitNote: lang === 'en'
+                ? 'Values in thousand barrels per day. Domestic values are annual'
+                : 'Valeurs en milliers de barils par jour. Les valeurs intérieures sont annuelles',
+            body,
+        });
+    };
 
-    useEffect(() => {
-        if (!chartRef.current) return;
-        const setupChartAccessibility = () => {
-            const plotContainer = chartRef.current;
-            if (!plotContainer) return;
-            plotContainer.querySelectorAll('.main-svg, .svg-container svg').forEach((svg) => {
-                svg.setAttribute('aria-hidden', 'true');
-            });
-            plotContainer.querySelectorAll('.modebar-btn').forEach((btn) => {
-                const dataTitle = btn.getAttribute('data-title');
-                if (dataTitle && (dataTitle.includes('Download') || /charger/i.test(dataTitle))) {
-                    btn.setAttribute('aria-label', dataTitle);
-                    btn.setAttribute('role', 'button');
-                    btn.setAttribute('tabindex', '0');
-                    btn.removeAttribute('aria-hidden');
-                } else {
-                    btn.setAttribute('aria-hidden', 'true');
-                    btn.setAttribute('tabindex', '-1');
-                }
-            });
-        };
-        const timer = setTimeout(setupChartAccessibility, 500);
-        const observer = new MutationObserver(setupChartAccessibility);
-        observer.observe(chartRef.current, { childList: true, subtree: true });
-        return () => {
-            clearTimeout(timer);
-            observer.disconnect();
-        };
-    }, [quarters, lang, chartFocus]);
-
-    useEffect(() => {
-        const topScroll = topScrollRef.current;
-        const tableScroll = tableScrollRef.current;
-        if (!topScroll || !tableScroll) return;
-        let isSyncingTop = false;
-        let isSyncingTable = false;
-        const syncTopToTable = () => {
-            if (isSyncingTable) return;
-            isSyncingTop = true;
-            tableScroll.scrollLeft = topScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTop = false;
-            });
-        };
-        const syncTableToTop = () => {
-            if (isSyncingTop) return;
-            isSyncingTable = true;
-            topScroll.scrollLeft = tableScroll.scrollLeft;
-            requestAnimationFrame(() => {
-                isSyncingTable = false;
-            });
-        };
-        const updateTopScrollWidth = () => {
-            const table = tableScroll.querySelector('table');
-            if (table && topScroll.firstChild) {
-                topScroll.firstChild.style.width = `${table.scrollWidth}px`;
-            }
-        };
-        topScroll.addEventListener('scroll', syncTopToTable);
-        tableScroll.addEventListener('scroll', syncTableToTop);
-        updateTopScrollWidth();
-        const resizeObserver = new ResizeObserver(updateTopScrollWidth);
-        const table = tableScroll.querySelector('table');
-        if (table) resizeObserver.observe(table);
-        return () => {
-            topScroll.removeEventListener('scroll', syncTopToTable);
-            tableScroll.removeEventListener('scroll', syncTableToTop);
-            resizeObserver.disconnect();
-        };
-    }, [isTableOpen, quarters]);
 
     const zebraShapes = useMemo(() => {
         if (!quarters.length) return [];
@@ -370,161 +266,25 @@ const OilByRail = () => {
         }));
     }, [yearAxisTickInfo, useVerticalQuarterTicks, windowWidth]);
 
-    const downloadChartWithTitle = async (plotEl = null) => {
-        const plotElement = plotEl || chartRef.current?.querySelector('.js-plotly-plot');
-        if (!plotElement || !window.Plotly) return;
-        try {
-            const imgData = await window.Plotly.toImage(plotElement, {
-                format: 'png',
-                width: 1200,
-                height: 640,
-                scale: 2
-            });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                const titleHeight = 90;
-                const legendHeight = 36;
-                canvas.width = img.width;
-                canvas.height = img.height + titleHeight + legendHeight;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#333333';
-                ctx.font = 'bold 32px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(
-                    `${stripHtml(getText('oil_by_rail_title', lang))} — ${chartTitlePlain} (${yearSpanLabel})`,
-                    canvas.width / 2,
-                    42
-                );
-                ctx.drawImage(img, 0, titleHeight);
-                const legendY = titleHeight + img.height + 14;
-                ctx.font = '18px Arial';
-                ctx.textAlign = 'left';
-                ctx.fillStyle = BAR_COLORS[2];
-                ctx.fillRect(40, legendY - 14, 22, 14);
-                ctx.fillStyle = '#333333';
-                ctx.fillText(exportLabel, 70, legendY);
-                ctx.strokeStyle = LINE_COLOR;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(240, legendY - 8);
-                ctx.lineTo(280, legendY - 8);
-                ctx.stroke();
-                ctx.fillStyle = LINE_COLOR;
-                ctx.fillRect(256, legendY - 12, 8, 8);
-                ctx.fillStyle = '#333333';
-                ctx.fillText(domesticLabel, 295, legendY);
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${downloadFileStem}.png`);
-                });
-            };
-            img.src = imgData;
-        } catch {
-            return;
-        }
-    };
+    const downloadChartWithTitle = useChartPngDownloader(
+        chartRef,
+        () => ({
+        filename: `${downloadFileStem}.png`,
+        title: exportChartTitle,
+        height: 640,
+        legendItems: [
+            { label: exportLabel, color: BAR_COLORS[2] },
+            { label: domesticLabel, color: LINE_COLOR },
+        ],
+    }),
+        [BAR_COLORS, LINE_COLOR, domesticLabel, downloadFileStem, exportChartTitle, exportLabel],
+    );
 
-    const downloadTableAsCSV = () => {
-        const pCol = getText('oil_by_rail_table_col_period', lang);
-        const eCol = getText('oil_by_rail_table_col_exports', lang);
-        const dCol = getText('oil_by_rail_table_col_domestic', lang);
-        const headers = [pCol, eCol, dCol];
-        const rows = quarters.map((q) => [
-            `${q.year} Q${q.quarter}`,
-            String(Math.round(q.exportVal)),
-            q.domesticAnnual != null ? String(Math.round(q.domesticAnnual)) : ''
-        ]);
-        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `${downloadFileStem}.csv`);
-    };
-
-    const downloadTableAsDocx = async () => {
-        const pCol = getText('oil_by_rail_table_col_period', lang);
-        const eCol = getText('oil_by_rail_table_col_exports', lang);
-        const dCol = getText('oil_by_rail_table_col_domestic', lang);
-        const headerRow = new TableRow({
-            children: [pCol, eCol, dCol].map(
-                (header) =>
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun({ text: header, bold: true, size: 22 })],
-                                alignment: AlignmentType.CENTER
-                            })
-                        ],
-                        shading: { fill: 'E6E6E6' }
-                    })
-            )
-        });
-        const dataRows = quarters.map(
-            (q) =>
-                new TableRow({
-                    children: [
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: `${q.year} Q${q.quarter}`, size: 22 })],
-                                    alignment: AlignmentType.CENTER
-                                })
-                            ]
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [new TextRun({ text: String(Math.round(q.exportVal)), size: 22 })],
-                                    alignment: AlignmentType.CENTER
-                                })
-                            ]
-                        }),
-                        new TableCell({
-                            children: [
-                                new Paragraph({
-                                    children: [
-                                        new TextRun({
-                                            text:
-                                                q.domesticAnnual != null
-                                                    ? String(Math.round(q.domesticAnnual))
-                                                    : '\u2014',
-                                            size: 22
-                                        })
-                                    ],
-                                    alignment: AlignmentType.CENTER
-                                })
-                            ]
-                        })
-                    ]
-                })
-        );
-        const doc = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: `${stripHtml(getText('oil_by_rail_title', lang))} — ${chartTitlePlain} (${yearSpanLabel})`,
-                                    bold: true,
-                                    size: 28
-                                })
-                            ],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 300 }
-                        }),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            columnWidths: [2800, 2200, 2200],
-                            rows: [headerRow, ...dataRows]
-                        })
-                    ]
-                }
-            ]
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${downloadFileStem}.docx`);
-    };
+    const plotConfig = buildPngOnlyPlotConfig({
+        lang,
+        name: getText('oil_by_rail_download_chart', lang),
+        click: (gd) => downloadChartWithTitle(gd),
+    });
 
     const xIndices = quarters.map((q) => q.idx);
     const exportVals = quarters.map((q) => q.exportVal);
@@ -579,15 +339,82 @@ const OilByRail = () => {
         ]
     );
 
+
+
+    useEffect(() => {
+        const syncZoom = () => {
+            const inner = window.innerWidth;
+            const outer = window.outerWidth;
+
+            const dpr = window.devicePixelRatio || 1;
+            if (zoomBaselineRef.current == null) {
+                zoomBaselineRef.current = { outer, inner, dpr };
+            } else {
+                const b0 = zoomBaselineRef.current;
+                if (Math.abs(outer - b0.outer) > 64) {
+                    zoomBaselineRef.current = { outer, inner, dpr };
+                }
+            }
+            const b = zoomBaselineRef.current;
+
+            const outerStable = b && Math.abs(outer - b.outer) <= 64;
+
+            let cssZoomFactor = 1;
+            if (b && inner > 0 && b.inner > 0 && outerStable) {
+                cssZoomFactor = Math.max(b.inner / inner, inner / b.inner);
+            }
+
+            let dprZoomFactor = 1;
+            if (b && b.dpr > 0 && outerStable) {
+                dprZoomFactor = Math.max(b.dpr / dpr, dpr / b.dpr);
+            }
+
+            const sw = window.screen?.availWidth ?? window.screen?.width ?? 0;
+            let screenZoomHint = 1;
+            if (sw > 0 && outer >= sw - 24 && inner > 0) {
+                const ratio = sw / inner;
+                if (ratio >= 1.75) screenZoomHint = Math.min(ratio, 10);
+            }
+
+            const vv = window.visualViewport;
+            let pinScale = 1;
+            let layoutRatio = 1;
+            if (vv) {
+                pinScale = vv.scale || 1;
+                const w = vv.width || inner;
+                layoutRatio = w > 0 ? inner / w : 1;
+            }
+
+            setViewportZoom({ pinScale, layoutRatio, cssZoomFactor, dprZoomFactor, screenZoomHint });
+        };
+
+        const rafId = requestAnimationFrame(() => {
+            syncZoom();
+        });
+        const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+        if (vv) {
+            vv.addEventListener('resize', syncZoom);
+            vv.addEventListener('scroll', syncZoom);
+        }
+        window.addEventListener('resize', syncZoom);
+        return () => {
+            cancelAnimationFrame(rafId);
+            if (vv) {
+                vv.removeEventListener('resize', syncZoom);
+                vv.removeEventListener('scroll', syncZoom);
+            }
+            window.removeEventListener('resize', syncZoom);
+        };
+    }, []);
+
+    
+
     return (
-        <main
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-119"
-            role="main"
+        <PageShell tabIndex="-1"
+            className="page-content page-119 page-chrome page-chrome--bleed"
             lang={lang}
             aria-labelledby="oil-by-rail-main-title"
-            style={{ backgroundColor: '#ffffff' }}
+            style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
                 .page-119.page-content {
@@ -595,11 +422,6 @@ const OilByRail = () => {
                     overflow-x: visible !important;
                 }
                 .page-119 {
-                    margin-left: -${layoutPadding?.left || 55}px;
-                    margin-right: -${layoutPadding?.right || 15}px;
-                    width: calc(100% + ${(layoutPadding?.left || 55) + (layoutPadding?.right || 15)}px);
-                    padding-left: ${layoutPadding?.left || 55}px;
-                    padding-right: ${layoutPadding?.right || 15}px;
                 }
                 .oil-by-rail-container {
                     width: 100%;
@@ -609,24 +431,7 @@ const OilByRail = () => {
                     box-sizing: border-box;
                 }
                 .page-119.page-content h1.oil-by-rail-title {
-                    font-family: 'Lato', sans-serif;
                     font-size: 41px !important;
-                    font-weight: bold;
-                    color: var(--gc-text);
-                    margin-top: 0;
-                    margin-bottom: 25px;
-                    position: relative;
-                    padding-bottom: 0.5em;
-                    line-height: 1.2;
-                }
-                .page-119.page-content h1.oil-by-rail-title::after {
-                    content: '';
-                    position: absolute;
-                    left: 0;
-                    bottom: 0.2em;
-                    width: 72px;
-                    height: 6px;
-                    background-color: var(--gc-red);
                 }
                 .page-119 p.oil-by-rail-para {
                     font-family: 'Noto Sans', sans-serif;
@@ -636,13 +441,7 @@ const OilByRail = () => {
                     margin: 0 0 16px 0;
                 }
                 .oil-by-rail-chart-frame {
-                    background-color: #f5f5f5;
-                    padding: 20px;
-                    border-radius: 8px;
                     margin-top: 8px;
-                    margin-bottom: 20px;
-                    box-sizing: border-box;
-                    overflow: visible;
                 }
                 .oil-by-rail-chart-block {
                     display: flex;
@@ -651,11 +450,7 @@ const OilByRail = () => {
                     width: 100%;
                 }
                 .oil-by-rail-chart-title {
-                    font-family: 'Lato', sans-serif;
-                    font-size: 29px;
-                    font-weight: bold;
                     color: var(--gc-text);
-                    text-align: center;
                     margin: 0 0 12px 0;
                 }
                 .oil-by-rail-legend {
@@ -732,49 +527,12 @@ const OilByRail = () => {
                 .oil-by-rail-table-wrapper details > summary:hover {
                     background-color: #404040 !important;
                 }
-                .oil-by-rail-table-wrapper .table-responsive {
-                    display: block;
-                    width: 100%;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch;
-                    border: 1px solid #ddd;
-                    background: #fff;
-                }
-                .oil-by-rail-table-wrapper .table-responsive table th,
-                .oil-by-rail-table-wrapper .table-responsive table td {
-                    white-space: nowrap;
-                    padding: 8px 12px;
-                    font-family: var(--font-body);
-                    color: var(--gc-text);
-                }
-                .oil-by-rail-download-buttons {
-                    display: flex;
-                    gap: 10px;
-                    margin-top: 15px;
-                    flex-wrap: wrap;
-                }
-                .oil-by-rail-download-buttons button {
-                    padding: 8px 16px;
-                    border: 1px solid #404040;
-                    border-radius: 4px;
-                    background: #8C8C8C;
-                    cursor: pointer;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #ffffff;
-                }
-                .oil-by-rail-download-buttons button:hover {
-                    background: #404040 !important;
-                }
                 @media (max-width: 768px) {
                     .page-119.page-content h1.oil-by-rail-title {
                         font-size: 37px !important;
                     }
                     .page-119 p.oil-by-rail-para {
                         font-size: 18px;
-                    }
-                    .oil-by-rail-chart-title {
-                        font-size: 26px;
                     }
                     .oil-by-rail-legend-label {
                         font-size: 16px;
@@ -786,37 +544,20 @@ const OilByRail = () => {
             `}</style>
 
             <div className="oil-by-rail-container">
-                <h1 id="oil-by-rail-main-title" className="oil-by-rail-title">
+                <h1 id="oil-by-rail-main-title" className="oil-by-rail-title page-chrome-title">
                     {getText('oil_by_rail_title', lang)}
                 </h1>
                 <p className="oil-by-rail-para">{getText('oil_by_rail_para1', lang)}</p>
                 <p className="oil-by-rail-para">{getText('oil_by_rail_para2', lang)}</p>
                 <p className="oil-by-rail-para">{getText('oil_by_rail_para3', lang)}</p>
 
-                <div className="oil-by-rail-chart-frame">
-                    <h2 className="oil-by-rail-chart-title">{getText('oil_by_rail_chart_title', lang)}</h2>
+                <div className="oil-by-rail-chart-frame page-chrome-chart-frame">
+                    <h2 className="oil-by-rail-chart-title page-chrome-chart-title">{getText('oil_by_rail_chart_title', lang)}</h2>
 
                     <div className="oil-by-rail-chart-block">
-                    <div role="region" aria-label={getText('oil_by_rail_chart_aria', lang)} tabIndex="0">
+                    <div role="region" aria-label={`${chartTitlePlain}. ${getChartSummary()}`} tabIndex="0">
                         {chartFocus !== null && (
-                            <div style={{ marginBottom: 8 }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setChartFocus(null)}
-                                    style={{
-                                        padding: '6px 12px',
-                                        backgroundColor: '#8C8C8C',
-                                        border: '1px solid #404040',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontSize: 14,
-                                        color: '#fff'
-                                    }}
-                                >
-                                    {lang === 'en' ? 'Clear selection' : 'Effacer la sélection'}
-                                </button>
-                            </div>
+                            <ClearSelectionButton lang={lang} onClick={() => setChartFocus(null)} />
                         )}
                         <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                             <div aria-hidden="true">
@@ -875,34 +616,7 @@ const OilByRail = () => {
                                         paper_bgcolor: 'rgba(0,0,0,0)',
                                         plot_bgcolor: 'rgba(0,0,0,0)'
                                     }}
-                                    config={{
-                                        displayModeBar: true,
-                                        displaylogo: false,
-                                        responsive: true,
-                                        scrollZoom: false,
-                                        modeBarButtonsToRemove: [
-                                            'pan2d',
-                                            'select2d',
-                                            'lasso2d',
-                                            'zoom2d',
-                                            'zoomIn2d',
-                                            'zoomOut2d',
-                                            'autoScale2d',
-                                            'resetScale2d',
-                                            'toImage'
-                                        ],
-                                        modeBarButtonsToAdd: [
-                                            {
-                                                name: getText('oil_by_rail_download_chart', lang),
-                                                icon: {
-                                                    width: 24,
-                                                    height: 24,
-                                                    path: 'M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z'
-                                                },
-                                                click: (gd) => downloadChartWithTitle(gd)
-                                            }
-                                        ]
-                                    }}
+                                    config={plotConfig}
                                     style={{ width: '100%', height: `${chartHeight}px` }}
                                     useResizeHandler={true}
                                     onClick={(data) => {
@@ -972,131 +686,44 @@ const OilByRail = () => {
                     </div>
 
                     <div className="oil-by-rail-table-wrapper">
-                        <details className="oil-by-rail-data-table" onToggle={(e) => setIsTableOpen(e.currentTarget.open)}>
-                            <summary role="button" aria-expanded={isTableOpen}>
-                                <span aria-hidden="true" style={{ marginRight: '8px' }}>
-                                    {isTableOpen ? '▼' : '▶'}
-                                </span>
-                                {getText('oil_by_rail_table_summary', lang)}
-                                <span className="wb-inv">{getText('oil_by_rail_table_toggle_sr', lang)}</span>
-                            </summary>
-
-                            <div
-                                ref={topScrollRef}
-                                style={{
-                                    width: '100%',
-                                    overflowX: 'auto',
-                                    overflowY: 'hidden',
-                                    marginBottom: '0px',
-                                    display: windowWidth <= 768 ? 'none' : 'block'
-                                }}
-                                aria-hidden="true"
-                            >
-                                <div style={{ height: '20px' }} />
-                            </div>
-                            <div
-                                ref={tableScrollRef}
-                                className="table-responsive"
-                                role="region"
-                                tabIndex="0"
-                                aria-label={getText('oil_by_rail_table_aria', lang)}
-                            >
-                                <table className="table table-striped table-hover" style={{ marginTop: '15px' }}>
-                                    <caption className="wb-inv">{getText('oil_by_rail_table_caption', lang)}</caption>
-                                    <thead>
-                                        <tr>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    border: '1px solid #ddd',
-                                                    padding: '10px',
-                                                    backgroundColor: '#f0f0f0'
-                                                }}
-                                            >
-                                                {getText('oil_by_rail_table_col_period', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    border: '1px solid #ddd',
-                                                    padding: '10px',
-                                                    backgroundColor: '#f0f0f0',
-                                                    textAlign: 'right'
-                                                }}
-                                            >
-                                                {getText('oil_by_rail_table_col_exports', lang)}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                style={{
-                                                    border: '1px solid #ddd',
-                                                    padding: '10px',
-                                                    backgroundColor: '#f0f0f0',
-                                                    textAlign: 'right'
-                                                }}
-                                            >
-                                                {getText('oil_by_rail_table_col_domestic', lang)}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {quarters.map((q) => (
-                                            <tr key={`${q.refDate}`}>
-                                                <th
-                                                    scope="row"
-                                                    style={{ border: '1px solid #ddd', padding: '10px' }}
-                                                >
-                                                    {q.year} Q{q.quarter}
-                                                </th>
-                                                <td
-                                                    style={{
-                                                        border: '1px solid #ddd',
-                                                        padding: '10px',
-                                                        textAlign: 'right'
-                                                    }}
-                                                >
-                                                    {formatNumber(q.exportVal)}
-                                                </td>
-                                                <td
-                                                    style={{
-                                                        border: '1px solid #ddd',
-                                                        padding: '10px',
-                                                        textAlign: 'right'
-                                                    }}
-                                                >
-                                                    {q.domesticAnnual != null
-                                                        ? formatNumber(q.domesticAnnual)
-                                                        : '\u2014'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="oil-by-rail-download-buttons">
-                                <button type="button" onClick={downloadTableAsCSV}>
-                                    {getText('oil_by_rail_download_csv', lang)}
-                                </button>
-                                <button type="button" onClick={downloadTableAsDocx}>
-                                    {getText('oil_by_rail_download_docx', lang)}
-                                </button>
-                            </div>
-                        </details>
+                        <ChartDataTable
+                            lang={lang}
+                            className="oil-by-rail-data-table"
+                            columns={tableColumns}
+                            rows={tableRows}
+                            csvFilename={`${downloadFileStem}.csv`}
+                            docx={{
+                                filename: `${downloadFileStem}.docx`,
+                                title: exportChartTitle,
+                                titleAlign: 'center',
+                                columnWidths: [2800, 2200, 2200],
+                                fontSize: 22,
+                            }}
+                            caption={getText('oil_by_rail_table_caption', lang)}
+                            tableAriaLabel={getText('oil_by_rail_table_caption', lang)}
+                            renderCell={(raw, { colIndex }) => (
+                                colIndex === 0
+                                    ? String(raw ?? '')
+                                    : raw == null
+                                      ? '\u2014'
+                                      : formatNumber(raw)
+                            )}
+                        />
                     </div>
                 </div>
 
-                <aside className="wb-fnote" role="note" style={{ marginTop: '12px', marginBottom: 0 }}>
-                    <h2 id="fn-oil-by-rail">{lang === 'en' ? 'Footnotes' : 'Notes de bas de page'}</h2>
-                    <dl>
-                        <dt>{lang === 'en' ? 'Footnote' : 'Note de bas de page'}</dt>
-                        <dd style={{ marginBottom: 0 }}>
-                            <p style={{ margin: 0 }}>{getText('oil_by_rail_footnote', lang)}</p>
-                        </dd>
-                    </dl>
-                </aside>
+                <PageFootnotes
+                    lang={lang}
+                    titleId="fn-oil-by-rail"
+                    items={[{
+                        id: 'fn-asterisk-oil-by-rail',
+                        marker: '*',
+                        text: getText('oil_by_rail_footnote', lang),
+                        hideReturn: true,
+                    }]}
+                />
             </div>
-        </main>
+        </PageShell>
     );
 };
 
