@@ -265,11 +265,17 @@ const Employment = () => {
     });
 
     const getMapSRSummary = () => {
-        if (lang === 'en') {
-            return `Map showing energy sector direct employment by province and territory for ${year}. Alberta has the highest employment at ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.ab.direct, lang)} jobs. Total direct employment is ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.direct_total, lang)} jobs.`;
-        } else {
-            return `Carte montrant les emplois directs du secteur de l'énergie par province et territoire pour ${year}. L'Alberta a le plus grand nombre d'emplois avec ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.ab.direct, lang)} emplois. Le total des emplois directs est de ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.direct_total, lang)} emplois.`;
-        }
+        const jobsWord = getText('employment_jobs', lang);
+        const places = employment_PROVINCE_CODES.map((code) => {
+            const info = employment_PROVINCE_INFO[code];
+            const name = lang === 'en' ? info.nameEn : info.nameFr;
+            const value = formatNationalAccountsNumber(employment_EMPLOYMENT_DATA[code]?.direct, lang);
+            return `${name}, ${value} ${jobsWord}.`;
+        }).join(' ');
+        const intro = lang === 'en'
+            ? `Energy sector direct employment by province and territory, ${year}.`
+            : `Emplois directs du secteur de l'énergie par province et territoire, ${year}.`;
+        return `${intro} ${places}`;
     };
 
     const getPieSRSummary = () => {

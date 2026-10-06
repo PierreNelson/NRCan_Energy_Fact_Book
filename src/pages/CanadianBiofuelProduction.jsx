@@ -288,19 +288,20 @@ const CanadianBiofuelProduction = () => {
 
     const getChartSummary = () => {
         const body = summarizeByCategory({
-            categories: chartData.map((row) => row.dateLabel || row.date || row.x),
+            categories: chartData.map((row) => formatMonthRef(row.refDate, lang)),
             series: [
-                { name: getText('canadian_biofuel_production_legend_ethanol', lang), values: ethanolValues, format: (v) => String(v) },
-                { name: getText('canadian_biofuel_production_legend_biodiesel', lang), values: biodieselValues, format: (v) => String(v) },
+                { name: biodieselLabel, values: biodieselValues, format: formatVolume },
+                { name: ethanolLabel, values: ethanolValues, format: formatVolume },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
                 ? `Line chart of Canadian biofuel production from ${CHART_START_YEAR} to ${CHART_END_YEAR}`
                 : `Graphique linéaire de la production canadienne de biocarburants de ${CHART_START_YEAR} à ${CHART_END_YEAR}`,
+            unitNote: lang === 'en' ? 'Values in million litres' : 'Valeurs en millions de litres',
             body,
-            lang,
         });
     };
     const chartRegionLabel = `${chartTitle}. ${getChartSummary()}`;
@@ -458,6 +459,7 @@ const CanadianBiofuelProduction = () => {
                                 tabIndex={0}
                                 style={{ margin: 0 }}
                             >
+                                <div aria-hidden="true">
                                 <CanadianBiofuelProductionPlot
                                     plotKey={plotKey}
                                     plotData={plotData}
@@ -507,6 +509,7 @@ const CanadianBiofuelProduction = () => {
                                     plotHeight={plotHeight}
                                     onChartClick={handleChartClick}
                                 />
+                                </div>
                             </figure>
 
                             <div className="canadian-biofuel-production-legend" aria-hidden="true">

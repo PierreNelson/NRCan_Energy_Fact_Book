@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import AccessibleInfographic from './AccessibleInfographic';
+import { extractSvgTextContent } from '../utils/extractSvgTextContent';
 import biomassBg from '../assets/biomass_bg.svg?raw';
 import biomassBgFr from '../assets/biomass_bg_fr.svg?raw';
 
@@ -36,18 +37,22 @@ const FootnoteMark = ({ number, lang, scrollToElement, style }) => (
 const BiomassInfographic = ({
     lang,
     scrollToElement,
-    title,
 }) => {
     const isEn = lang === 'en';
     const fnPos = isEn ? EN_FN : FR_FN;
+    const svgMarkup = isEn ? biomassBg : biomassBgFr;
+    const spokenLabel = useMemo(
+        () => extractSvgTextContent(svgMarkup, { separator: ' ' }),
+        [svgMarkup],
+    );
 
     return (
         <AccessibleInfographic
             mode="text"
             as="figure"
             className={`biomass-infographic-figure biomass-infographic biomass-infographic-${lang}`}
-            title={title || 'Biomass'}
-            svgMarkup={isEn ? biomassBg : biomassBgFr}
+            label={spokenLabel}
+            svgMarkup={svgMarkup}
             imgClassName="biomass-infographic-bg"
             imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
             idPrefix={isEn ? 'biomass-en' : 'biomass-fr'}

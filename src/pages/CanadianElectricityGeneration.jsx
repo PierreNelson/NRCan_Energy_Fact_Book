@@ -14,6 +14,7 @@ import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 import CanadianElectricityGenerationInfographic from '../components/CanadianElectricityGenerationInfographic';
 import { formatLocalePct } from '../utils/formatLocale';
@@ -83,6 +84,17 @@ const CanadianElectricityGeneration = () => {
         });
     }, [lang]);
 
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const totalTwh = national?.totalTwh != null
+        ? Math.round(national.totalTwh).toLocaleString(locale)
+        : '';
     const chartTitle = substitute(getText('electricity_generation_canada_chart_title', lang), vars);
     const exportChartTitle = stripHtml(chartTitle);
     const generationTotal = substitute(getText('electricity_generation_canada_generation_total', lang), vars);
@@ -105,6 +117,21 @@ const CanadianElectricityGeneration = () => {
         ? baseColors.map((color, index) => (effectiveSelectedSlices.includes(index) ? color : hexToRgba(color, 0.3)))
         : baseColors;
     const labels = slices.map((slice) => getText(PIE_LABEL_KEYS[slice.key], lang));
+    const chartSummary = slices.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of electricity generation in Canada by source for ${selectedYear}. Total ${totalTwh} terawatt hours`
+            : `Graphique circulaire de la production d'électricité au Canada par source pour ${selectedYear}. Total ${totalTwh} térawattheures`,
+        body: summarizeByCategory({
+            categories: labels,
+            series: [{
+                name: lang === 'en' ? 'Share' : 'Part',
+                values: slices.map((slice) => (typeof slice.pct === 'number' ? slice.pct : 0)),
+                format: formatShareSpoken,
+            }],
+            lang,
+        }),
+    }) : '';
+    const chartRegionLabel = chartSummary ? `${exportChartTitle}. ${chartSummary}` : exportChartTitle;
     const textSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 18;
     const outsideTextSize = zoomLegendMode ? 18 : textSize;
 
@@ -340,7 +367,8 @@ const CanadianElectricityGeneration = () => {
                             <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />
                         )}
                         <div className="canadian-electricity-generation-donut-wrap" ref={chartRef}>
-                            <figure className="canadian-electricity-generation-donut-figure" role="region" aria-label={chartTitle}>
+                            <figure className="canadian-electricity-generation-donut-figure" role="region" aria-label={chartRegionLabel} tabIndex="0">
+                                <div aria-hidden="true">
                                 <Plot
                                     key={`canadian-electricity-generation-${selectedYear}-${zoomLegendMode ? 'compact' : 'wide'}-${effectiveSelectedSlices ? effectiveSelectedSlices.join('-') : 'none'}`}
                                     data={plotData}
@@ -366,6 +394,7 @@ const CanadianElectricityGeneration = () => {
                                         });
                                     }}
                                 />
+                                </div>
                             </figure>
                             {zoomLegendMode && (
                                 <div className="canadian-electricity-generation-custom-legend" aria-label={lang === 'en' ? 'Chart legend' : 'Légende du graphique'}>

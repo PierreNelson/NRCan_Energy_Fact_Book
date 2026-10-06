@@ -16,6 +16,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCanadianCrudeReservesData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 import CanadianCrudeReservesInfographic from '../components/CanadianCrudeReservesInfographic';
@@ -211,6 +212,23 @@ const CanadianCrudeReserves = () => {
     if (loading || error) return <PageStatus lang={lang} loading={loading} error={error} />;
     if (!reserves || !chartData.length) return <p>{getText('petroleum_reserves_no_data', lang)}</p>;
 
+    const chartSummary = joinChartSummary({
+        intro: lang === 'en'
+            ? `Combination chart from ${startYear} to ${endYear} showing the count of oil wells completed in Western Canada as bars and average well depth as a line`
+            : `Diagramme combiné de ${startYear} à ${endYear} montrant le nombre de puits de pétrole réalisés dans l'Ouest canadien sous forme de bandes et la profondeur moyenne des puits sous forme de courbe`,
+        unitNote: lang === 'en' ? 'Well counts as integers; depth in metres' : 'Nombre de puits en entiers; profondeur en mètres',
+        body: summarizeByCategory({
+            categories: years,
+            series: [
+                { name: legendBars, values: counts, format: formatInt },
+                { name: legendLine, values: depths, format: (v) => `${formatInt(v)} m` },
+            ],
+            lang,
+            newestFirst: true,
+        }),
+    });
+    const chartRegionLabel = `${stripHtml(chartTitle)}. ${chartSummary}`;
+
     return (
         <PageShell
             tabIndex="-1"
@@ -332,7 +350,7 @@ const CanadianCrudeReserves = () => {
                     <h2 id="canadian-crude-reserves-chart-title" className="canadian-crude-reserves-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
                     <div className="canadian-crude-reserves-chart-block">
-                        <div role="region" aria-label={getText('petroleum_reserves_chart_aria', lang)} tabIndex="0">
+                        <div role="region" aria-label={chartRegionLabel} tabIndex="0">
                             {selectedPoints !== null && (
                                 <ClearSelectionButton lang={lang} onClick={clearSelection} />
                             )}
@@ -452,7 +470,6 @@ const CanadianCrudeReserves = () => {
                     <div className="canadian-crude-reserves-table-wrapper">
                         <ChartDataTable
                             lang={lang}
-                            label={getText('petroleum_reserves_table_summary', lang)}
                             columns={tableColumns}
                             rows={chartData}
                             csvFilename={`${fileSlugBase}.csv`}

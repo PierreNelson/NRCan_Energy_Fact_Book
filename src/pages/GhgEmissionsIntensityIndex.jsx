@@ -8,12 +8,12 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
+import { prepareInlineSvgMarkup } from '../utils/prefixSvgIds';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import HtmlLegend from '../components/HtmlLegend';
-import AccessibleInfographic from '../components/AccessibleInfographic';
 import bgColumnEn from '../assets/ghg_emissions_intensity_index_bg_column.svg?raw';
 import bgColumnFr from '../assets/ghg_emissions_intensity_index_bg_column_fr.svg?raw';
 import bgStackedEn from '../assets/ghg_emissions_intensity_index_bg_stacked.svg?raw';
@@ -55,6 +55,36 @@ const COLORS = {
 };
 
 const SERIES_KEYS = ['perGdp', 'perCapita', 'perEnergy'];
+
+const INFOGRAPHIC_BLOCK_KEYS = ['emissions', 'gdp', 'intensity'];
+
+/** Percent boxes for the three infographic statements. Column is the side-by-side graphic; stacked is the wide layout. */
+const INFOGRAPHIC_BLOCK_BOXES = {
+    column: {
+        en: {
+            emissions: { left: 0, top: 0, width: 100, height: 33.6 },
+            gdp: { left: 0, top: 33.6, width: 100, height: 25.9 },
+            intensity: { left: 0, top: 59.5, width: 100, height: 40.5 },
+        },
+        fr: {
+            emissions: { left: 0, top: 0, width: 100, height: 32.8 },
+            gdp: { left: 0, top: 32.8, width: 100, height: 23.8 },
+            intensity: { left: 0, top: 56.6, width: 100, height: 43.4 },
+        },
+    },
+    stacked: {
+        en: {
+            emissions: { left: 0, top: 0, width: 33, height: 100 },
+            gdp: { left: 33, top: 0, width: 41, height: 100 },
+            intensity: { left: 74, top: 0, width: 26, height: 100 },
+        },
+        fr: {
+            emissions: { left: 0, top: 0, width: 34, height: 100 },
+            gdp: { left: 34, top: 0, width: 40, height: 100 },
+            intensity: { left: 74, top: 0, width: 26, height: 100 },
+        },
+    },
+};
 
 const STACKED_LAYOUT_BROWSER_ZOOM = 1.1;
 const STACKED_LAYOUT_DETECTED_ZOOM = 1.0 + (STACKED_LAYOUT_BROWSER_ZOOM - 1.0) * 0.25;
@@ -142,6 +172,19 @@ const GhgEmissionsIntensityIndex = () => {
     const bgMarkup = lang === 'en'
         ? (useStackedLayout ? bgStackedEn : bgColumnEn)
         : (useStackedLayout ? bgStackedFr : bgColumnFr);
+    const preparedInfographicSvg = useMemo(
+        () => prepareInlineSvgMarkup(bgMarkup, `ghg-intensity-${useStackedLayout ? 'stacked' : 'column'}-${lang}`),
+        [bgMarkup, lang, useStackedLayout],
+    );
+    const infographicBlocks = useMemo(() => {
+        const layout = useStackedLayout ? 'stacked' : 'column';
+        const boxes = INFOGRAPHIC_BLOCK_BOXES[layout][lang === 'fr' ? 'fr' : 'en'];
+        return INFOGRAPHIC_BLOCK_KEYS.map((key) => ({
+            key,
+            label: getText(`ghg_emissions_intensity_index_block_${key}`, lang),
+            box: boxes[key],
+        }));
+    }, [lang, useStackedLayout]);
 
     const xTickvals = years.filter((y) => y % 2 === 1);
     const yTickvals = [55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105];
@@ -178,7 +221,7 @@ const GhgEmissionsIntensityIndex = () => {
     const downloadInfographicPng = async () => {
         try {
             await downloadInfographicImagePng(
-                infographicImgRef.current?.getGraphicElement?.() ?? infographicImgRef.current,
+                infographicImgRef.current,
                 { filename: `${infographicDownloadSlug}.png`, scale: 2 },
             );
         } catch (err) {
@@ -307,11 +350,33 @@ const GhgEmissionsIntensityIndex = () => {
     min-width: 0 !important;
 }
 .layout-stacked .ghg-emissions-intensity-index-info-column { margin-bottom: 28px; }
-.ghg-emissions-intensity-index-figure { margin: 0; width: 100%; }
+.ghg-emissions-intensity-index-figure {
+    position: relative;
+    margin: 0;
+    width: 100%;
+}
+.ghg-emissions-intensity-index-graphic {
+    position: relative;
+    width: 100%;
+}
 .ghg-emissions-intensity-index-bg-image {
     width: 100%;
     height: auto;
     display: block;
+}
+.ghg-emissions-intensity-index-bg-image svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.ghg-emissions-intensity-index-block {
+    position: absolute;
+    box-sizing: border-box;
+}
+.ghg-emissions-intensity-index-block:focus,
+.ghg-emissions-intensity-index-block:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 2px;
 }
 .ghg-emissions-intensity-index-infographic-actions {
     display: flex;
@@ -373,17 +438,31 @@ const GhgEmissionsIntensityIndex = () => {
 
                 <div className={`ghg-emissions-intensity-index-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <section className="ghg-emissions-intensity-index-info-column">
-                        <AccessibleInfographic
-                            ref={infographicImgRef}
-                            mode="text"
-                            as="figure"
-                            className="ghg-emissions-intensity-index-figure"
-                            title={pageTitle}
-                            svgMarkup={bgMarkup}
-                            imgClassName="ghg-emissions-intensity-index-bg-image"
-                            imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
-                            idPrefix={`ghg-intensity-${useStackedLayout ? 'stacked' : 'column'}-${lang}`}
-                        />
+                        <figure ref={infographicImgRef} className="ghg-emissions-intensity-index-figure">
+                            <div className="ghg-emissions-intensity-index-graphic">
+                                <div
+                                    className="ghg-emissions-intensity-index-bg-image"
+                                    aria-hidden="true"
+                                    dangerouslySetInnerHTML={{ __html: preparedInfographicSvg }}
+                                />
+                                {infographicBlocks.map(({ key, label, box }) => (
+                                    <div
+                                        key={key}
+                                        className={`ghg-emissions-intensity-index-block ghg-emissions-intensity-index-block--${key}`}
+                                        role="region"
+                                        tabIndex={0}
+                                        aria-label={label}
+                                        data-prose-tab="1"
+                                        style={{
+                                            left: `${box.left}%`,
+                                            top: `${box.top}%`,
+                                            width: `${box.width}%`,
+                                            height: `${box.height}%`,
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </figure>
                         <div className="ghg-emissions-intensity-index-infographic-actions">
                             <button type="button" onClick={downloadInfographicPng}>
                                 {getText('ghg_emissions_intensity_index_download_png', lang)}

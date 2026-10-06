@@ -123,7 +123,6 @@ const SectorEnergyTrends = () => {
     const figureRef = useRef(null);
 
     const chartTitle = getText('sector_energy_trends_chart_title', lang);
-    const ariaLabel = getText('sector_energy_trends_infographic_aria', lang);
     const fileSlugBase = getText('sector_energy_trends_download_title', lang).replace(/\s+/g, '_');
 
     const tableRows = useMemo(
@@ -259,7 +258,6 @@ const SectorEnergyTrends = () => {
                         figureRef={figureRef}
                         lang={lang}
                         getText={getText}
-                        ariaLabel={ariaLabel}
                         title={chartTitle}
                         titleId="sector-energy-trends-chart-title"
                     />

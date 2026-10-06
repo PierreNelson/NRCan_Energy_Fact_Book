@@ -3,11 +3,16 @@ import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
 import { waitForImage } from '../utils/downloadInfographicPng';
-import AccessibleInfographic from '../components/AccessibleInfographic';
 import cleanTechnologyEconomyBgEn from '../assets/clean_technology_economy_bg.png';
 import cleanTechnologyEconomyBgFr from '../assets/clean_technology_economy_bg_fr.png';
 
 const stripHtml = (text) => (text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '');
+
+const COLUMN_STOPS = [
+    { key: 'clean_technology_economy_col_energy', className: 'clean-technology-economy-column-stop--energy' },
+    { key: 'clean_technology_economy_col_clean_energy', className: 'clean-technology-economy-column-stop--clean-energy' },
+    { key: 'clean_technology_economy_col_clean_tech', className: 'clean-technology-economy-column-stop--clean-tech' },
+];
 
 const exportCleantechInfographicPng = async (exportRoot, { title, scale = 2 }) => {
     if (!exportRoot) return null;
@@ -162,11 +167,24 @@ const CleanTechnologyEconomy = () => {
                     color: var(--gc-text);
                 }
                 .clean-technology-economy-infographic-section { width: 100%; margin-bottom: 0; }
-                .clean-technology-economy-infographic-figure { margin: 0; width: 100%; }
+                .clean-technology-economy-infographic-figure { position: relative; margin: 0; width: 100%; }
                 .clean-technology-economy-bg-image {
                     width: 100%;
                     height: auto;
                     display: block;
+                }
+                .clean-technology-economy-column-stop {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    z-index: 2;
+                }
+                .clean-technology-economy-column-stop--energy { left: 0; width: 35.2%; }
+                .clean-technology-economy-column-stop--clean-energy { left: 35.6%; width: 28.2%; }
+                .clean-technology-economy-column-stop--clean-tech { left: 64.2%; width: 35.8%; }
+                .clean-technology-economy-column-stop:focus,
+                .clean-technology-economy-column-stop:focus-visible {
+                    outline-offset: 0 !important;
                 }
                 .clean-technology-economy-download-buttons {
                     display: flex;
@@ -203,15 +221,25 @@ const CleanTechnologyEconomy = () => {
                 </ul>
 
                 <div className="clean-technology-economy-infographic-section">
-                    <AccessibleInfographic
-                        as="figure"
-                        mode="image"
-                        className="clean-technology-economy-infographic-figure"
-                        title={getText('clean_technology_economy_infographic_aria', lang)}
-                        overview={getText('clean_technology_economy_infographic_aria', lang)}
-                        src={bgImage}
-                        imgClassName="clean-technology-economy-bg-image"
-                    />
+                    <figure className="clean-technology-economy-infographic-figure">
+                        <img
+                            src={bgImage}
+                            alt=""
+                            className="clean-technology-economy-bg-image"
+                            draggable={false}
+                            aria-hidden="true"
+                        />
+                        {COLUMN_STOPS.map((column) => (
+                            <div
+                                key={column.key}
+                                className={`clean-technology-economy-column-stop ${column.className}`}
+                                tabIndex={0}
+                                data-prose-tab="1"
+                                role="group"
+                                aria-label={getText(column.key, lang)}
+                            />
+                        ))}
+                    </figure>
 
                     <div className="clean-technology-economy-download-buttons">
                         <button type="button" className="clean-technology-economy-download-btn" onClick={downloadPng}>

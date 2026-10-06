@@ -119,6 +119,7 @@ const ForeignControl = () => {
                 { name: legendUtilities, values: utilitiesValues, format: (v) => `${formatPct(v)}%` },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
@@ -331,6 +332,9 @@ const ForeignControl = () => {
                     as="p"
                     className="foreign-control-section-text"
                     html={sectionHtml}
+                    tabIndex={0}
+                    data-prose-tab="1"
+                    aria-label={getText('foreign_control_section_text', lang)}
                 />
 
                 <div className="foreign-control-chart-frame page-chrome-chart-frame">
@@ -390,10 +394,10 @@ const ForeignControl = () => {
                                             tickfont: { size: windowWidth <= 480 ? 11 : 12, family: 'Arial, sans-serif' },
                                         },
                                         margin: {
-                                            l: 0,
-                                            r: 0,
+                                            l: 70,
+                                            r: 16,
                                             t: 20,
-                                            b: windowWidth <= 1280 ? 80 : 50,
+                                            b: windowWidth <= 1280 ? 90 : 50,
                                         },
                                         autosize: true,
                                         height: plotHeight,
@@ -402,7 +406,7 @@ const ForeignControl = () => {
                                         paper_bgcolor: 'rgba(0,0,0,0)',
                                         plot_bgcolor: 'rgba(0,0,0,0)',
                                     }}
-                                    style={{ width: '100%', height: '100%' }}
+                                    style={{ width: '100%', height: plotHeight }}
                                     className="foreign-control-chart"
                                     useResizeHandler
                                     onClick={handleChartClick}

@@ -194,13 +194,14 @@ const CanadianSupplyDemand = () => {
                 { name: importsLabel, values: importValues, format: (v) => String(v) },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
                 ? `Line chart of Canadian crude oil exports and imports from ${startYear} to ${endYear}`
                 : `Graphique linéaire des exportations et importations canadiennes de pétrole brut de ${startYear} à ${endYear}`,
+            unitNote: lang === 'en' ? 'Values in million barrels per day' : 'Valeurs en millions de barils par jour',
             body,
-            lang,
         });
     };
     const chartRegionLabel = `${stripHtml(chartTitle)}. ${getChartSummary()}`;
@@ -331,6 +332,7 @@ const CanadianSupplyDemand = () => {
                     )}
 
                     <figure ref={chartRef} className="canadian-supply-demand-chart-figure" role="region" aria-label={chartRegionLabel} tabIndex={0}>
+                        <div aria-hidden="true">
                         <Plot
                             key={`canadian-supply-demand-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}-${plotHeight}`}
                             data={[
@@ -402,6 +404,7 @@ const CanadianSupplyDemand = () => {
                             useResizeHandler
                             onClick={handleChartClick}
                         />
+                        </div>
                     </figure>
 
                     <div className="canadian-supply-demand-legend" aria-hidden="true">

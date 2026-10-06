@@ -74,6 +74,109 @@ describe('pageProseKeyboardNav', () => {
     expect(document.querySelector('h4').getAttribute('tabindex')).toBe('0');
   });
 
+  it('marks the sector energy trends title as its own tab stop', () => {
+    document.body.innerHTML = `
+      <article>
+        <figure class="sector-energy-trends-infographic-figure">
+          <h2 id="sector-energy-trends-chart-title" class="sector-energy-trends-infographic-title-overlay sector-energy-trends-chart-title">Trends in energy use and intensity by sector, 2000–2022</h2>
+          <p class="sector-energy-trends-sector-title">Residential</p>
+        </figure>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const title = document.querySelector('h2.sector-energy-trends-chart-title');
+    expect(title.getAttribute('tabindex')).toBe('0');
+    expect(title.getAttribute('data-prose-tab')).toBe('1');
+    expect(document.querySelector('p.sector-energy-trends-sector-title').getAttribute('tabindex')).toBeNull();
+  });
+
+  it('marks paragraph chart titles as tab stops', () => {
+    document.body.innerHTML = `
+      <article>
+        <h1>Energy use</h1>
+        <p class="energy-use-chart-title">Primary and secondary energy use by sector</p>
+        <p class="energy-use-chart-title">Breakdown of secondary energy use</p>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const titles = document.querySelectorAll('p.energy-use-chart-title');
+    expect(titles[0].getAttribute('tabindex')).toBe('0');
+    expect(titles[0].getAttribute('data-prose-tab')).toBe('1');
+    expect(titles[1].getAttribute('tabindex')).toBe('0');
+    expect(titles[1].getAttribute('data-prose-tab')).toBe('1');
+  });
+
+  it('marks each half of the energy intensity infographic as its own tab stop', () => {
+    document.body.innerHTML = `
+      <article>
+        <h1>Energy intensity index</h1>
+        <figure class="energy-intensity-index-infographic-figure">
+          <div class="energy-intensity-index-infographic-wrapper" aria-hidden="true">
+            <p class="energy-intensity-index-overlay-body">Per capita energy consumption was</p>
+            <p class="energy-intensity-index-overlay-body">Canada used</p>
+          </div>
+          <p class="energy-intensity-index-visual-text energy-intensity-index-visual-text--left">Per capita energy consumption was 9% lower in 2022 than in 2000.</p>
+          <p class="energy-intensity-index-visual-text energy-intensity-index-visual-text--right">Canada used 25% less energy per dollar of GDP in 2022 than in 2000.</p>
+        </figure>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const halves = document.querySelectorAll('p.energy-intensity-index-visual-text');
+    expect(halves).toHaveLength(2);
+    expect(halves[0].getAttribute('tabindex')).toBe('0');
+    expect(halves[0].getAttribute('data-prose-tab')).toBe('1');
+    expect(halves[1].getAttribute('tabindex')).toBe('0');
+    expect(halves[1].getAttribute('data-prose-tab')).toBe('1');
+    document.querySelectorAll('p.energy-intensity-index-overlay-body').forEach((overlay) => {
+      expect(overlay.getAttribute('tabindex')).toBeNull();
+    });
+  });
+
+  it('marks environmental clean technology stats as separate tab stops', () => {
+    document.body.innerHTML = `
+      <article>
+        <h1 class="wb-inv">Environmental and clean technology</h1>
+        <div class="environmental-clean-technology-stats-block">
+          <p class="environmental-clean-technology-heading environmental-clean-technology-visual-text">Environmental and clean technology (2022):</p>
+          <p class="environmental-clean-technology-stat environmental-clean-technology-visual-text">$82.7 billion of GDP (2.9% of total GDP).</p>
+          <p class="environmental-clean-technology-stat environmental-clean-technology-visual-text">333,176 jobs representing 1.7% of jobs in the Canadian economy.</p>
+          <p class="environmental-clean-technology-stat environmental-clean-technology-visual-text">$20.9 billion in exports.</p>
+        </div>
+        <div class="environmental-clean-technology-stats-block">
+          <p class="environmental-clean-technology-heading environmental-clean-technology-visual-text">Of this, clean energy alone accounted for</p>
+          <p class="environmental-clean-technology-stat environmental-clean-technology-visual-text">1.5% of Canada's GDP.</p>
+          <p class="environmental-clean-technology-stat environmental-clean-technology-visual-text">and employed 111,561 people.</p>
+        </div>
+        <p class="environmental-clean-technology-tsx environmental-clean-technology-visual-text">The TSX and TSX-Venture exchanges list 83 companies.</p>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const blocks = document.querySelectorAll('p.environmental-clean-technology-visual-text');
+    expect(blocks).toHaveLength(8);
+    blocks.forEach((block) => {
+      expect(block.getAttribute('tabindex')).toBe('0');
+      expect(block.getAttribute('data-prose-tab')).toBe('1');
+    });
+    expect(document.querySelector('h1.wb-inv').getAttribute('tabindex')).toBeNull();
+  });
+
+  it('marks each visual text block as its own tab stop', () => {
+    document.body.innerHTML = `
+      <article>
+        <h1>Energy in our daily lives</h1>
+        <p class="energy-in-daily-lives-visual-text">Residential energy use increased 6% since 2000,</p>
+        <p class="energy-in-daily-lives-visual-text">but would have increased by 30% without energy efficiency improvements.</p>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const blocks = document.querySelectorAll('p.energy-in-daily-lives-visual-text');
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].getAttribute('tabindex')).toBe('0');
+    expect(blocks[0].getAttribute('data-prose-tab')).toBe('1');
+    expect(blocks[1].getAttribute('tabindex')).toBe('0');
+    expect(blocks[1].getAttribute('data-prose-tab')).toBe('1');
+  });
+
   it('marks h2/h3 page subtitles as tab stops', () => {
     document.body.innerHTML = `
       <article>
@@ -107,6 +210,23 @@ describe('pageProseKeyboardNav', () => {
     expect(notes.every((p) => p.getAttribute('tabindex') === '0')).toBe(true);
   });
 
+  it('marks footnote paragraphs that are not inside a definition list', () => {
+    document.body.innerHTML = `
+      <article>
+        <h1>Energy poverty</h1>
+        <aside class="wb-fnote" role="note">
+          <h2>Footnotes</h2>
+          <p>Energy poverty rates are based on households.</p>
+          <p>Energy excludes transportation.</p>
+        </aside>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const notes = [...document.querySelectorAll('.wb-fnote p')];
+    expect(notes).toHaveLength(2);
+    expect(notes.every((p) => p.getAttribute('tabindex') === '0')).toBe(true);
+  });
+
   it('marks formula and bullet list items', () => {
     document.body.innerHTML = `
       <article>
@@ -125,6 +245,56 @@ describe('pageProseKeyboardNav', () => {
         (li) => li.getAttribute('tabindex') === '0',
       ),
     ).toBe(true);
+  });
+
+  it('marks a body paragraph whose own class contains -body', () => {
+    document.body.innerHTML = `
+      <article>
+        <h2 class="public-energy-rdd-expenditures-chart-title">Canadian public expenditures on energy RD&D</h2>
+        <details>
+          <summary>Chart data table</summary>
+        </details>
+        <p class="public-energy-rdd-expenditures-body">Generally, federal and provincial/territorial energy RD&D spending continues to increase.</p>
+        <aside class="wb-fnote" role="note">
+          <h2>Footnotes</h2>
+          <p>Provincial and territorial includes utilities.</p>
+        </aside>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const body = document.querySelector('.public-energy-rdd-expenditures-body');
+    expect(body.getAttribute('tabindex')).toBe('0');
+    expect(body.getAttribute('data-prose-tab')).toBe('1');
+    expect(body.getAttribute('aria-hidden')).toBeNull();
+    expect(body.textContent).toContain('continues to increase');
+  });
+
+  it('does not mark overlay body copy inside a graphic', () => {
+    document.body.innerHTML = `
+      <article>
+        <div role="img" aria-label="Energy intensity index">
+          <p class="energy-intensity-index-overlay-body">Lower intensity</p>
+        </div>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    expect(document.querySelector('.energy-intensity-index-overlay-body').getAttribute('tabindex')).toBeNull();
+  });
+
+  it('marks paragraphs inside an intro wrapper', () => {
+    document.body.innerHTML = `
+      <article>
+        <h1>Indexed GHG emissions intensity</h1>
+        <div class="ghg-emissions-intensity-index-intro">
+          <p>Since 2000, there has been a decoupling.</p>
+          <p>In 2023, emissions increased slightly.</p>
+        </div>
+      </article>
+    `;
+    enhancePageProse(document.querySelector('article'));
+    const paras = [...document.querySelectorAll('.ghg-emissions-intensity-index-intro p')];
+    expect(paras).toHaveLength(2);
+    expect(paras.every((p) => p.getAttribute('tabindex') === '0')).toBe(true);
   });
 
   it('marks summary paragraphs and li.-bullet items without ul.-bullets', () => {

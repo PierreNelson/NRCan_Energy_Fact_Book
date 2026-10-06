@@ -1,6 +1,5 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
-import FootnoteMarker from '../components/FootnoteMarker';
 import ClearSelectionButton from '../components/ClearSelectionButton';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import useWindowWidth from '../hooks/useWindowWidth';
@@ -54,9 +53,32 @@ const getPrimaryEnergyProductionLabelKey = (key) => {
     return keyMap[key] || key;
 };
 
-const getPrimaryEnergyProductionDisplayLabel = (key, lang) => {
-    const label = getText(getPrimaryEnergyProductionLabelKey(key), lang);
-    return key === 'other_renewables' ? `${label}*` : label;
+const getPrimaryEnergyProductionDisplayLabel = (key, lang) =>
+    getText(getPrimaryEnergyProductionLabelKey(key), lang);
+
+/** Place the footnote button at the end of the "other renewables" pie label. */
+const measureOtherRenewablesFootnote = (figureEl, label) => {
+    if (!figureEl || !label) return null;
+    const needle = label.toUpperCase();
+    const texts = [...figureEl.querySelectorAll('text')];
+    const text = texts.find((el) => (el.textContent || '').toUpperCase().includes(needle.slice(0, 10)));
+    if (!text) return null;
+    const tspans = [...text.querySelectorAll('tspan')];
+    const nameSpans = tspans.filter((span) => !/^\s*\d/.test(span.textContent || ''));
+    const nameSpan = nameSpans[nameSpans.length - 1] || text;
+    const box = nameSpan.getBoundingClientRect();
+    const root = figureEl.getBoundingClientRect();
+    if (!box.width || !root.width) return null;
+    return {
+        left: box.right - root.left + 2,
+        top: box.top - root.top + Math.max(0, (box.height - 18) / 2),
+    };
+};
+
+const footnotePosChanged = (prev, next) => {
+    if (!prev && !next) return false;
+    if (!prev || !next) return true;
+    return Math.abs(prev.left - next.left) > 1 || Math.abs(prev.top - next.top) > 1;
 };
 
 const formatPrimaryEnergyProductionNumber = (num, lang) =>
@@ -170,6 +192,8 @@ const PrimaryEnergyProduction = () => {
     } = usePlotlySelection({ mode: 'slices', windowWidth });
     const chartRef1 = useRef(null);
     const chartRef2 = useRef(null);
+    const [footnotePos1, setFootnotePos1] = useState(null);
+    const [footnotePos2, setFootnotePos2] = useState(null);
 
     const formatNumber = (num) => formatLocaleNumber(num, lang, { maximumFractionDigits: 0 });
 
@@ -182,8 +206,30 @@ const PrimaryEnergyProduction = () => {
     const downloadSlug = lang === 'en' ? 'primary_energy_production' : 'production_energie_primaire';
 
     const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-primary-energy-production');
+    const otherRenewablesLabel = getPrimaryEnergyProductionDisplayLabel('other_renewables', lang);
 
-    
+    const syncFootnoteButtons = useCallback(() => {
+        const next1 = measureOtherRenewablesFootnote(chartRef1.current, otherRenewablesLabel);
+        const next2 = measureOtherRenewablesFootnote(chartRef2.current, otherRenewablesLabel);
+        setFootnotePos1((prev) => (footnotePosChanged(prev, next1) ? next1 : prev));
+        setFootnotePos2((prev) => (footnotePosChanged(prev, next2) ? next2 : prev));
+    }, [otherRenewablesLabel]);
+
+    const renderOtherRenewablesFootnote = (pos, { withReturnId = false } = {}) => {
+        if (!pos) return null;
+        return (
+            <a
+                id={withReturnId ? 'fn-asterisk-rf-primary-energy-production' : undefined}
+                className="fn-lnk primary-energy-production-fn"
+                href="#fn-asterisk-primary-energy-production"
+                onClick={scrollToFootnote}
+                style={{ left: `${pos.left}px`, top: `${pos.top}px` }}
+            >
+                <span className="wb-inv">{lang === 'fr' ? 'Note de bas de page ' : 'Footnote '}</span>
+                *
+            </a>
+        );
+    };
 
     const chart1Data = useMemo(
         () => createPrimaryEnergyProductionChartData(
@@ -204,9 +250,23 @@ const PrimaryEnergyProduction = () => {
         [lang, windowWidth, selectedSlices2],
     );
 
+    useEffect(() => {
+        const timer = window.setTimeout(syncFootnoteButtons, 80);
+        window.addEventListener('resize', syncFootnoteButtons);
+        return () => {
+            window.clearTimeout(timer);
+            window.removeEventListener('resize', syncFootnoteButtons);
+        };
+    }, [syncFootnoteButtons, chart1Data, chart2Data, windowWidth]);
+
     const getChartSummary = (data, title) => {
+        const sum = data.sources.reduce((acc, s) => acc + s.value, 0) || 1;
         const sources = data.sources
-            .map((s) => `${getPrimaryEnergyProductionDisplayLabel(s.key, lang)}: ${s.value}%`)
+            .map((s) => {
+                // Match the on-chart labels, which are each slice's share of the pie rounded to a whole percent.
+                const pct = Math.round((s.value / sum) * 100);
+                return `${getPrimaryEnergyProductionDisplayLabel(s.key, lang)}: ${pct}%`;
+            })
             .join(', ');
         return `${stripHtml(title)}. Total: ${formatNumber(data.total)} PJ. ${sources}`;
     };
@@ -408,6 +468,13 @@ const PrimaryEnergyProduction = () => {
                     margin: 0 auto;
                 }
 
+                .primary-energy-production-fn {
+                    position: absolute;
+                    z-index: 5;
+                    margin: 0;
+                    line-height: 1;
+                }
+
                 .primary-energy-production-table-wrapper {
                     display: block;
                     width: 100%;
@@ -440,13 +507,6 @@ const PrimaryEnergyProduction = () => {
                         <div className="primary-energy-production-chart-column">
                             <h2 className="primary-energy-production-chart-title">
                                 {chart1Title}
-                                <FootnoteMarker
-                            lang={lang}
-                            href="#fn-asterisk-primary-energy-production"
-                            id="fn-asterisk-rf-primary-energy-production"
-                            marker="*"
-                            onClick={scrollToFootnote}
-                        />
                             </h2>
                             <div
                                 role="region"
@@ -465,8 +525,10 @@ const PrimaryEnergyProduction = () => {
                                                 style={{ width: '100%', height: '100%' }}
                                                 useResizeHandler
                                                 onClick={onPieClick1}
+                                                onUpdate={syncFootnoteButtons}
                                             />
                                         </div>
+                                        {renderOtherRenewablesFootnote(footnotePos1, { withReturnId: true })}
                                     </figure>
                                 </div>
                             </div>
@@ -493,8 +555,10 @@ const PrimaryEnergyProduction = () => {
                                                 style={{ width: '100%', height: '100%' }}
                                                 useResizeHandler
                                                 onClick={onPieClick2}
+                                                onUpdate={syncFootnoteButtons}
                                             />
                                         </div>
+                                        {renderOtherRenewablesFootnote(footnotePos2)}
                                     </figure>
                                 </div>
                             </div>

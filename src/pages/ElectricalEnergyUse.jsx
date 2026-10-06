@@ -17,7 +17,9 @@ import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
-import { formatLocalePct } from '../utils/formatLocale';
+import { exportTableToCsv, exportTableToDocx } from '../utils/exportTableToDocx';
+import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 const SECTOR_KEYS = ['R', 'C', 'I', 'T', 'A'];
 const SECTOR_LABEL_KEYS = {
     R: 'electrical_energy_use_sector_R',
@@ -137,6 +139,34 @@ const ElectricalEnergyUse = () => {
         ? baseColors.map((color, index) => (effectiveSlices.includes(index) ? color : hexToRgba(color, 0.3)))
         : baseColors;
     const labels = slices.map((slice) => getText(PROVINCE_LABEL_KEYS[slice.key], lang));
+    const spokenLabels = slices.map((slice) => getText(PROVINCE_FULL_LABEL_KEYS[slice.key], lang));
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const energyUnit = lang === 'en' ? 'petajoules' : 'pétajoules';
+    const formatEnergySpoken = (value) => `${formatLocaleNumber(value, lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ${energyUnit}`;
+    const pieChartSummary = !slices.length || selectedRow?.total == null ? '' : joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of electrical energy use in Canada by province for ${year}. Total ${formatPj(selectedRow.total)} ${energyUnit}`
+            : `Graphique circulaire de la consommation d'électricité au Canada par province pour ${year}. Total ${formatPj(selectedRow.total)} ${energyUnit}`,
+        unitNote: lang === 'en'
+            ? 'Values in petajoules and percent of total electrical energy use'
+            : "Valeurs en pétajoules et en pourcentage de la consommation totale d'électricité",
+        body: summarizeByCategory({
+            categories: spokenLabels,
+            series: [
+                { name: lang === 'en' ? 'Energy use' : 'Consommation', values: slices.map((slice) => slice.value), format: formatEnergySpoken },
+                { name: lang === 'en' ? 'Share' : 'Part', values: slices.map((slice) => slice.pct), format: formatShareSpoken },
+            ],
+            lang,
+        }),
+    });
+    const chartRegionLabel = pieChartSummary ? `${exportChartTitle}. ${pieChartSummary}` : exportChartTitle;
     const textSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 16;
     const outsideTextSize = zoomLegendMode ? 16 : textSize;
     const hiddenLabelKeys = ['atl'];
@@ -209,7 +239,7 @@ const ElectricalEnergyUse = () => {
         click: (gd) => downloadChartWithTitle(gd),
     });
 
-    const sectorTableCaption = getText('electrical_energy_use_table_caption', lang);
+    const sectorTableCaption = `${getText('electrical_energy_use_table_caption', lang)}, ${year ?? ''}`;
 
     const sectorTableColumns = useMemo(() => [
         { key: 'sector', header: getText('electrical_energy_use_table_col_sector', lang), align: 'left' },
@@ -286,6 +316,33 @@ const ElectricalEnergyUse = () => {
     margin-bottom: 24px;
 }
 .electricity-energy-use-table-col, .electricity-energy-use-chart-col { min-width: 0; width: 100%; }
+.electricity-energy-use-table-col .chart-data-table thead th {
+    background-color: #48484A !important;
+    color: #ffffff !important;
+}
+.electricity-energy-use-table-col .chart-data-table tbody tr:nth-child(odd):not(:last-child) > * {
+    background-color: #B8BEAD !important;
+}
+.electricity-energy-use-table-col .chart-data-table tbody tr:nth-child(even):not(:last-child) > * {
+    background-color: #fefefe !important;
+}
+.electricity-energy-use-table-col .chart-data-table tbody tr:last-child > * {
+    background-color: #48484A !important;
+    color: #ffffff !important;
+    font-weight: bold;
+}
+.electricity-energy-use-sector-downloads { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+.electricity-energy-use-sector-downloads button {
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    padding: 8px 16px;
+    background-color: #8C8C8C;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    color: #ffffff;
+    cursor: pointer;
+}
+.electricity-energy-use-sector-downloads button:hover { background-color: #404040; }
 .electricity-energy-use-table-subtitle {
     font-family: 'Lato', sans-serif;
     font-size: 22px;
@@ -317,7 +374,12 @@ const ElectricalEnergyUse = () => {
     text-align: center;
     pointer-events: auto;
 }
-.electricity-energy-use-atl-label { left: calc(50% - 72px); top: 36px; color: ${COLORS.atl}; }
+.electricity-energy-use-atl-label {
+    left: 53.3%;
+    top: 19%;
+    transform: translate(-50%, calc(-100% - 14px));
+    color: ${COLORS.atl};
+}
 .electricity-energy-use-custom-legend {
     position: relative;
     z-index: 60;
@@ -367,7 +429,7 @@ const ElectricalEnergyUse = () => {
 @media (max-width: 768px) {
     .electricity-energy-use-table-subtitle { font-size: 20px; }
     .electricity-energy-use-chart-title { font-size: 22px; }
-    .electricity-energy-use-atl-label { left: calc(50% - 58px); top: 40px; }
+    .electricity-energy-use-atl-label { left: 54%; top: 16%; }
 }
             `}</style>
 
@@ -384,27 +446,64 @@ const ElectricalEnergyUse = () => {
                                 href="#fn1-electricity-energy-use"
                                 onClick={scrollToElement('fn1-electricity-energy-use')}
                             >
-                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>1
                             </a>
                             {tableSubtitleAfterFn}
                         </h2>
-                        <ChartDataTable
-                            lang={lang}
-                            label={sectorTableCaption}
-                            columns={sectorTableColumns}
-                            rows={sectorTableRows}
-                            csvFilename={`${tableFileTitle}.csv`}
-                            docx={{
-                                filename: `${tableFileTitle}.docx`,
-                                title: sectorDocxTitle,
-                                titleAlign: 'center',
-                                columnWidths: [4200, 2400, 2400],
-                                fontSize: 22,
-                            }}
-                            caption={sectorTableCaption}
-                            tableAriaLabel={sectorTableCaption}
-                            renderCell={renderSectorCell}
-                        />
+                        <div className="table-responsive">
+                            <table className="chart-data-table table" aria-label={sectorTableCaption}>
+                                <caption className="wb-inv">{sectorTableCaption}</caption>
+                                <thead>
+                                    <tr>
+                                        {sectorTableColumns.map((col) => (
+                                            <th key={col.key} scope="col" className={col.align === 'num' ? 'num' : undefined}>{col.header}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sectorTableRows.map((row) => (
+                                        <tr key={row.sector}>
+                                            <th scope="row">{renderSectorCell(row.sector, { colIndex: 0 })}</th>
+                                            <td className="num">{renderSectorCell(row.value, { colIndex: 1 })}</td>
+                                            <td className="num">{renderSectorCell(row.pct, { colIndex: 2 })}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="electricity-energy-use-sector-downloads">
+                            <button
+                                type="button"
+                                onClick={() => exportTableToCsv({
+                                    filename: `${tableFileTitle}.csv`,
+                                    headers: sectorTableColumns.map((col) => col.header),
+                                    rows: sectorTableRows.map((row) => [
+                                        renderSectorCell(row.sector, { colIndex: 0 }),
+                                        renderSectorCell(row.value, { colIndex: 1 }),
+                                        renderSectorCell(row.pct, { colIndex: 2 }),
+                                    ]),
+                                })}
+                            >
+                                {lang === 'fr' ? 'Télécharger les données (CSV)' : 'Download data (CSV)'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => exportTableToDocx({
+                                    filename: `${tableFileTitle}.docx`,
+                                    title: sectorDocxTitle,
+                                    headers: sectorTableColumns.map((col) => col.header),
+                                    rows: sectorTableRows.map((row) => [
+                                        renderSectorCell(row.sector, { colIndex: 0 }),
+                                        renderSectorCell(row.value, { colIndex: 1 }),
+                                        renderSectorCell(row.pct, { colIndex: 2 }),
+                                    ]),
+                                    columnWidths: [4200, 2400, 2400],
+                                    options: { titleAlign: 'center', fontSize: 22, alignByColumn: 'firstLeftRestRight' },
+                                })}
+                            >
+                                {lang === 'fr' ? 'Télécharger le tableau (DOCX)' : 'Download table (DOCX)'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="electricity-energy-use-chart-col">
@@ -412,7 +511,7 @@ const ElectricalEnergyUse = () => {
                             <h2 id="electricity-energy-use-chart-title" className="electricity-energy-use-chart-title">{chartTitle}</h2>
                             {effectiveSlices?.length > 0 && <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />}
                             <div className="electricity-energy-use-chart-scroll">
-                                <figure ref={chartRef} className="electricity-energy-use-chart" role="region" aria-label={exportChartTitle} tabIndex="0" style={{ margin: 0 }}>
+                                <figure ref={chartRef} className="electricity-energy-use-chart" role="region" aria-label={chartRegionLabel} tabIndex="0" style={{ margin: 0 }}>
                                     <div aria-hidden="true">
                                         {pieTrace && (
                                             <Plot
@@ -448,7 +547,7 @@ const ElectricalEnergyUse = () => {
                                         <span id="fn2-rf-electricity-energy-use" className="electricity-energy-use-html-pie-label electricity-energy-use-atl-label">
                                             {getText('electrical_energy_use_label_atl', lang)}
                                             <a className="fn-lnk" href="#fn2-electricity-energy-use" onClick={scrollToElement('fn2-electricity-energy-use')}>
-                                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                                                <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>2
                                             </a>
                                             <br />
                                             {formatPct(atlSlice.pct)}
@@ -464,7 +563,7 @@ const ElectricalEnergyUse = () => {
                                             <span>{getText(PROVINCE_LABEL_KEYS[slice.key], lang)}</span>
                                             {slice.key === 'atl' && (
                                                 <a className="fn-lnk" href="#fn2-electricity-energy-use" onClick={scrollToElement('fn2-electricity-energy-use')}>
-                                                    <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                                                    <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>2
                                                 </a>
                                             )}
                                             <span>{formatPct(slice.pct)}</span>

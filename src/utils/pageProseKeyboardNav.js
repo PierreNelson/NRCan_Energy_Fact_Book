@@ -16,9 +16,13 @@ const INTRO_P_SELECTOR = [
   'p[class*="-narrative"]',
   'p[class*="-paragraph"]',
   'p[class*="-intro"]',
+  '[class*="-intro"] > p',
   'p[class*="-formula"]',
   'p[class*="-summary"]',
+  'p[class*="-visual-text"]',
   '[class*="-body"] > p',
+  // Class on the paragraph itself (e.g. public-energy-rdd-expenditures-body).
+  'p[class*="-body"]',
   'header > p',
 ].join(', ');
 
@@ -32,11 +36,12 @@ const CHART_TITLE_SELECTOR = [
   'h2[class*="-chart-title"]',
   'h3[class*="-chart-title"]',
   'h4[class*="-chart-title"]',
+  'p[class*="-chart-title"]',
   'h3[class*="-graphic-title"]',
 ].join(', ');
 
 const FOOTNOTE_HEADING_SELECTOR = '.wb-fnote h2, [role="note"] h2';
-const FOOTNOTE_BODY_SELECTOR = '.wb-fnote dd p, [role="note"] dd p';
+const FOOTNOTE_BODY_SELECTOR = '.wb-fnote p, [role="note"] p';
 /** Prefer ul.-bullets > li; also li.-bullet when the list itself has no -bullets class. */
 const BULLET_SELECTOR = [
   'ul[class*="-bullets"] > li',
@@ -46,7 +51,10 @@ const BULLET_SELECTOR = [
 function isDecorativeExcluded(el) {
   if (!el) return true;
   if (el.classList?.contains('wb-inv')) return true;
-  if (el.closest('details, table, .js-plotly-plot, [aria-hidden="true"]')) {
+  // role="img" graphics already expose one accessible name. Overlay copy inside
+  // them (for example energy-intensity-index-overlay-body) must not become
+  // extra tab stops.
+  if (el.closest('details, table, .js-plotly-plot, [aria-hidden="true"], [role="img"]')) {
     return true;
   }
   return false;

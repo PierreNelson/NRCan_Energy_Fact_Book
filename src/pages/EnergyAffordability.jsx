@@ -240,7 +240,7 @@ const EnergyAffordability = () => {
                         />
                     </div>
                 </div>
-                <aside className="energy-affordability-footer wb-fnote" role="contentinfo">
+                <aside className="energy-affordability-footer wb-fnote" role="note">
                     <h2 id="footer-energy-affordability">{getText('energy_affordability_footer_heading', lang)}</h2>
                     <p>{getText('energy_affordability_footer1', lang)}</p>
                     <p>{getText('energy_affordability_footer2', lang)}</p>

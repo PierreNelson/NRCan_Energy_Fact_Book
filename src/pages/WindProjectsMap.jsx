@@ -13,6 +13,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getWindProjectsMapData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import { getText } from '../utils/translations';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -506,6 +507,40 @@ const WindProjectsMap = () => {
         [projects],
     );
 
+    const capacityName = lang === 'en' ? 'Capacity' : 'Capacité';
+    const mwUnitNote = lang === 'en' ? 'Values in megawatts' : 'Valeurs en mégawatts';
+    const provSpokenLabels = provinces.map((row) => getText(`electricity_generation_provincial_prov_${row.key}_full`, lang));
+    const provChartSummary = provinces.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? 'Bar chart of wind capacity by province'
+            : 'Graphique à barres de la capacité éolienne par province',
+        unitNote: mwUnitNote,
+        body: summarizeByCategory({
+            categories: provSpokenLabels,
+            series: [{ name: capacityName, values: provValues, format: formatMw }],
+            lang,
+        }),
+    }) : '';
+    const provRegionLabel = provChartSummary ? `${exportProvChartTitle}. ${provChartSummary}` : exportProvChartTitle;
+    const projChartSummary = projects.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? 'Bar chart of the largest wind projects'
+            : 'Graphique à barres des principales installations éoliennes',
+        unitNote: mwUnitNote,
+        body: summarizeByCategory({
+            categories: projLabels,
+            series: [
+                { name: capacityName, values: projValues, format: formatMw },
+                {
+                    name: lang === 'en' ? 'Province' : 'Province',
+                    values: projects.map((row) => (row.provKey ? getLegendLabel(row.provKey) : '—')),
+                },
+            ],
+            lang,
+        }),
+    }) : '';
+    const projRegionLabel = projChartSummary ? `${exportProjChartTitle}. ${projChartSummary}` : exportProjChartTitle;
+
     return (
         <PageShell
             className="page-content page-81 page-chrome page-chrome--bleed"
@@ -574,19 +609,21 @@ const WindProjectsMap = () => {
                                 className="wind-capacity-chart"
                                 style={{ height: provPlotHeight, margin: 0 }}
                                 role="region"
-                                aria-label={exportProvChartTitle}
+                                aria-label={provRegionLabel}
                                 tabIndex={0}
                             >
-                                <Plot
-                                    key={`wind-capacity-prov-${useVerticalProvTicks ? 'v' : 'h'}-${provPlotHeight}`}
-                                    data={provPlotData}
-                                    layout={provPlotLayout}
-                                    config={provChartConfig}
-                                    style={{ width: '100%', height: '100%' }}
-                                    useResizeHandler
-                                    onInitialized={onProvPlotReady}
-                                    onUpdate={onProvPlotReady}
-                                />
+                                <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
+                                    <Plot
+                                        key={`wind-capacity-prov-${useVerticalProvTicks ? 'v' : 'h'}-${provPlotHeight}`}
+                                        data={provPlotData}
+                                        layout={provPlotLayout}
+                                        config={provChartConfig}
+                                        style={{ width: '100%', height: '100%' }}
+                                        useResizeHandler
+                                        onInitialized={onProvPlotReady}
+                                        onUpdate={onProvPlotReady}
+                                    />
+                                </div>
                             </figure>
                         </div>
 
@@ -640,19 +677,21 @@ const WindProjectsMap = () => {
                                 className="wind-capacity-chart"
                                 style={{ height: projPlotHeight, margin: 0 }}
                                 role="region"
-                                aria-label={exportProjChartTitle}
+                                aria-label={projRegionLabel}
                                 tabIndex={0}
                             >
-                                <Plot
-                                    key={`wind-capacity-proj-${useWrapProjLabels ? 'wrap' : 'plain'}-${projPlotHeight}-${projLeftMargin}`}
-                                    data={projPlotData}
-                                    layout={projPlotLayout}
-                                    config={projChartConfig}
-                                    style={{ width: '100%', height: '100%' }}
-                                    useResizeHandler
-                                    onInitialized={onProjPlotReady}
-                                    onUpdate={onProjPlotReady}
-                                />
+                                <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
+                                    <Plot
+                                        key={`wind-capacity-proj-${useWrapProjLabels ? 'wrap' : 'plain'}-${projPlotHeight}-${projLeftMargin}`}
+                                        data={projPlotData}
+                                        layout={projPlotLayout}
+                                        config={projChartConfig}
+                                        style={{ width: '100%', height: '100%' }}
+                                        useResizeHandler
+                                        onInitialized={onProjPlotReady}
+                                        onUpdate={onProjPlotReady}
+                                    />
+                                </div>
                             </figure>
                         </div>
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, within, fireEvent } from '@testing-library/react';
 import React, { useState } from 'react';
+import ChartDataTable from '../components/ChartDataTable';
 
 /**
  * Smoke: native details/summary; table cells exposed; no hollow region host.
@@ -67,5 +68,27 @@ describe('chart data table screenreader pattern', () => {
     const host = container.querySelector('.table-responsive');
     expect(host.getAttribute('role')).toBeNull();
     expect(host.getAttribute('tabindex')).toBeNull();
+  });
+
+  it('does not expose a group stop between the chart data table button and the cells', () => {
+    const { container } = render(
+      <ChartDataTable
+        columns={['Year', 'Source', 'Petajoules', 'Share (%)']}
+        rows={[['2023', 'Natural gas', '4884', '40']]}
+        tableAriaLabel="Canada's total energy supply"
+        caption="Canada's total energy supply"
+        defaultOpen
+      />,
+    );
+
+    const scrollTop = container.querySelector('.table-scroll-top');
+    const host = container.querySelector('.table-responsive');
+    const table = container.querySelector('table');
+    expect(scrollTop.getAttribute('tabindex')).toBe('-1');
+    expect(scrollTop.getAttribute('aria-hidden')).toBe('true');
+    expect(host.getAttribute('aria-label')).toBeNull();
+    expect(host.getAttribute('role')).toBeNull();
+    expect(host.getAttribute('tabindex')).toBe('-1');
+    expect(table.getAttribute('aria-label')).toBe("Canada's total energy supply");
   });
 });

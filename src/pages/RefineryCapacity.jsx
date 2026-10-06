@@ -434,7 +434,6 @@ const RefineryCapacity = () => {
                 <div className="refinery-capacity-table-wrapper">
                     <ChartDataTable
                         lang={lang}
-                        label={tableCaption}
                         columns={tableColumns}
                         rows={chartDataRows}
                         csvFilename={csvFilename}

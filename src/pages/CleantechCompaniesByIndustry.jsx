@@ -173,7 +173,18 @@ const CleantechCompaniesByIndustry = () => {
             categories: labels,
             series: [
                 { name: getText('cleantech_companies_industry_col_companies', lang), values: industries.map((item) => item.count), format: formatNumber },
-                { name: getText('cleantech_companies_industry_col_share', lang), values: industries.map((item) => item.pct), format: formatPct },
+                {
+                    name: lang === 'en' ? 'Share' : 'Part',
+                    values: industries.map((item) => item.pct),
+                    format: (value) => {
+                        const formatted = formatLocalePct(value, lang, {
+                            minimumFractionDigits: 1,
+                            maximumFractionDigits: 1,
+                            suffix: false,
+                        });
+                        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+                    },
+                },
             ],
             lang,
         });
@@ -181,7 +192,7 @@ const CleantechCompaniesByIndustry = () => {
             intro: lang === 'en'
                 ? `Bar chart of Canadian cleantech companies by industry for ${year}`
                 : `Diagramme à bandes des entreprises de technologies propres canadiennes par industrie pour ${year}`,
-            unitNote: lang === 'en' ? 'Company counts and share of total (%)' : 'Nombre d\'entreprises et part du total (%)',
+            unitNote: lang === 'en' ? 'Company counts and share of the total' : 'Nombre d\'entreprises et part du total',
             body,
         });
     };

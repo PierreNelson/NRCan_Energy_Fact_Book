@@ -193,6 +193,18 @@ const CanadianCoalSupplyDemand = () => {
         value: formatMtPlain(INFOGRAPHIC_DATA.electricityMt, 1),
     });
     const metallurgicalLabel = getText('canadian_coal_supply_demand_metallurgical_text', lang);
+    const megatonneWord = lang === 'en' ? 'megatonnes' : 'mégatonnes';
+    const speakGraphic = (text) => String(text || '')
+        .replace(/\s*\n\s*/g, ' ')
+        .replace(/\bMt\b/g, megatonneWord)
+        .trim();
+    const infographicSpoken = [
+        lang === 'en'
+            ? `Canadian domestic coal demand, ${REFERENCE_YEAR}. Total ${formatMtPlain(INFOGRAPHIC_DATA.totalMt, 0)} ${megatonneWord}`
+            : `Demande intérieure canadienne de charbon, ${REFERENCE_YEAR}. Total ${formatMtPlain(INFOGRAPHIC_DATA.totalMt, 0)} ${megatonneWord}`,
+        speakGraphic(electricityLabel),
+        speakGraphic(metallurgicalLabel),
+    ].join('. ');
 
     const legendExportsText = substitute(getText('canadian_coal_supply_demand_legend_exports_value', lang), {
         value: formatMtPlain(latestExports, 0),
@@ -246,10 +258,11 @@ const CanadianCoalSupplyDemand = () => {
         const body = summarizeByCategory({
             categories: years,
             series: [
-                { name: exportsLabel, values: exportValues, format: (v) => `${formatMtPlain(v, 0)} Mt` },
-                { name: importsLabel, values: importValues, format: (v) => `${formatMtPlain(v, 0)} Mt` },
+                { name: exportsLabel, values: exportValues, format: (v) => `${formatMtPlain(v, 0)} ${megatonneWord}` },
+                { name: importsLabel, values: importValues, format: (v) => `${formatMtPlain(v, 0)} ${megatonneWord}` },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
@@ -379,7 +392,7 @@ const CanadianCoalSupplyDemand = () => {
                             totalMt={INFOGRAPHIC_DATA.totalMt}
                             electricityLabel={electricityLabel}
                             metallurgicalLabel={metallurgicalLabel}
-                            ariaLabel={getText('canadian_coal_supply_demand_bg_alt', lang)}
+                            ariaLabel={infographicSpoken}
                         />
 
                         <div className="canadian-coal-supply-demand-infographic-actions">
@@ -398,6 +411,7 @@ const CanadianCoalSupplyDemand = () => {
                             )}
 
                             <figure ref={chartRef} className="canadian-coal-supply-demand-chart-figure" role="region" aria-label={chartRegionLabel} tabIndex={0}>
+                                <div aria-hidden="true">
                                 <Plot
                                     key={`canadian-coal-supply-demand-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}-${plotHeight}`}
                                     data={[
@@ -468,6 +482,7 @@ const CanadianCoalSupplyDemand = () => {
                                     useResizeHandler
                                     onClick={handleChartClick}
                                 />
+                                </div>
                             </figure>
 
                             <div className="canadian-coal-supply-demand-legend" aria-hidden="true">

@@ -13,6 +13,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getPetroleumEmploymentByRegionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 
 const REGION_ORDER = ['bc', 'alta', 'sask', 'man', 'ont', 'que', 'maritimes', 'nl'];
@@ -261,15 +262,25 @@ const PetroleumEmploymentByRegion = () => {
         };
     });
 
-    const chartAriaParts = REGION_ORDER.map((k) => {
-        const r = regionPcts[k] ?? {};
-        const nm = getText(`petroleum_sector_employment_region_${k}_full`, lang);
-        return `${nm}: ${formatPctCell(r.direct)} ${getText('petroleum_sector_employment_aria_direct', lang)}, ${formatPctCell(r.indirect)} ${getText('petroleum_sector_employment_aria_indirect', lang)}`;
+    const formatShareSpoken = (value) => {
+        if (value == null) return '\u2014';
+        const spoken = value.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+        return `${spoken} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const chartSummary = joinChartSummary({
+        intro: lang === 'en'
+            ? `Horizontal stacked bar chart of direct and indirect petroleum employment by region for ${reportingYear}`
+            : `Graphique à barres empilées horizontales de l'emploi pétrolier direct et indirect par région pour ${reportingYear}`,
+        body: summarizeByCategory({
+            categories: REGION_ORDER.map((key) => regionFullName(key)),
+            series: [
+                { name: directRowLabel, values: REGION_ORDER.map((key) => regionPcts[key]?.direct), format: formatShareSpoken },
+                { name: indirectRowLabel, values: REGION_ORDER.map((key) => regionPcts[key]?.indirect), format: formatShareSpoken },
+            ],
+            lang,
+        }),
     });
-    const chartAria =
-        substitute(getText('petroleum_sector_employment_chart_aria_prefix', lang), textVars) +
-        chartAriaParts.join('. ') +
-        '.';
+    const chartAria = `${exportChartTitle}. ${chartSummary}`;
 
     useEffect(() => {
         const tick = () => {
@@ -831,7 +842,7 @@ const PetroleumEmploymentByRegion = () => {
                                                     key={s.key}
                                                     className="petroleum-employment-by-region-segment-strip-item"
                                                     role="listitem"
-                                                    aria-label={`${regionFullName(s.key)}, ${formatPctCell(s.v)}`}
+                                                    aria-label={`${regionFullName(s.key)}, ${formatShareSpoken(s.v)}`}
                                                 >
                                                     <span
                                                         className="petroleum-employment-by-region-segment-strip-swatch"
@@ -860,7 +871,7 @@ const PetroleumEmploymentByRegion = () => {
                                                     key={s.key}
                                                     className="petroleum-employment-by-region-segment-strip-item"
                                                     role="listitem"
-                                                    aria-label={`${regionFullName(s.key)}, ${formatPctCell(s.v)}`}
+                                                    aria-label={`${regionFullName(s.key)}, ${formatShareSpoken(s.v)}`}
                                                 >
                                                     <span
                                                         className="petroleum-employment-by-region-segment-strip-swatch"
@@ -903,7 +914,6 @@ const PetroleumEmploymentByRegion = () => {
                     <div className="petroleum-employment-by-region-table-wrapper">
                         <ChartDataTable
                             lang={lang}
-                            label={getText('petroleum_sector_employment_table_summary', lang)}
                             columns={tableColumns}
                             rows={tableRows}
                             csvFilename={`${fileSlugBase}.csv`}

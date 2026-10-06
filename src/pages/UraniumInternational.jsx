@@ -253,7 +253,7 @@ const UraniumRankingSection = ({
     return (
         <section className="uranium-international-chart-section" aria-labelledby={`${sectionId}-title`}>
             <h3 id={`${sectionId}-title`} className="uranium-international-graphic-title">{graphicTitle}</h3>
-            <div className="uranium-international-capsule-graphic" role="img" aria-label={rankingAria} tabIndex={0}>
+            <div className="uranium-international-capsule-graphic" role="region" aria-label={rankingAria} tabIndex={0}>
                 {rankingRows.map((row) => renderCapsuleRow(row, maxPct))}
             </div>
 
@@ -459,12 +459,12 @@ const UraniumInternational = () => {
                         </header>
 
                         <div className="uranium-international-intro">
-                            <ul>
+                            <ul className="uranium-international-bullets">
                                 <li dangerouslySetInnerHTML={{ __html: getText('uranium_international_bullet1', lang) }} />
                             </ul>
                         </div>
 
-                        <h2 className="uranium-international-context-title">{getText('uranium_international_context_title', lang)}</h2>
+                        <h2 className="uranium-international-context-title" tabIndex={0} data-prose-tab="1">{getText('uranium_international_context_title', lang)}</h2>
 
                         <UraniumRankingSection
                             sectionId="uranium-international-exports"

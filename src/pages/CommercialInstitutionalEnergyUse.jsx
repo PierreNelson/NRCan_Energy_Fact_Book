@@ -10,6 +10,7 @@ import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCommercialInstitutionalEnergyUseData, commercialInstitutionalEnergyUseRowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 import commercialInstitutionalEnergyBg1 from '../assets/commercial_institutional_energy_bg1.png';
@@ -148,6 +149,22 @@ const CommercialInstitutionalEnergyUse = () => {
 
     const chartTitle = substitute(getText('commercial_institutional_chart_title', lang), { year: selectedYear ?? '' });
     const exportChartTitle = stripHtml(chartTitle);
+    const formatShare = (value) => `${Number(value).toFixed(1)} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    const formatEnergy = (value) => `${Math.round(Number(value)).toLocaleString(locale)} PJ`;
+    const pieChartSummary = !orderedSlices.length || selectedRow?.teu == null ? '' : joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of commercial and institutional energy use by end use for ${selectedYear}. Total ${formatEnergy(selectedRow.teu)}`
+            : `Graphique circulaire de la consommation d'énergie des secteurs commercial et institutionnel par utilisation finale pour ${selectedYear}. Total ${formatEnergy(selectedRow.teu)}`,
+        body: summarizeByCategory({
+            categories: orderedSlices.map((slice) => getText(getSliceLabelKey(slice.key), lang)),
+            series: [
+                { name: lang === 'en' ? 'Share' : 'Part', values: orderedSlices.map((slice) => slice.pct), format: formatShare },
+                { name: lang === 'en' ? 'Energy' : 'Énergie', values: orderedSlices.map((slice) => slice.pj), format: formatEnergy },
+            ],
+            lang,
+        }),
+    });
+    const chartRegionLabel = `${exportChartTitle}. ${pieChartSummary}`;
     const teuFormatted = selectedRow?.teu != null ? Math.round(Number(selectedRow.teu)).toLocaleString(locale, { maximumFractionDigits: 0 }) : '–';
     const compactCenterLabel = windowWidth <= 480;
     const centerLabel = compactCenterLabel ? 'Total' : getText('commercial_institutional_center_total', lang);
@@ -308,8 +325,9 @@ const CommercialInstitutionalEnergyUse = () => {
                         {effectiveSlices != null && effectiveSlices.length > 0 && (
                             <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />
                         )}
-                        <div className="commercial-institutional-energy-chart" ref={chartRef} role="region" aria-label={chartTitle}>
+                        <div className="commercial-institutional-energy-chart" ref={chartRef} role="region" aria-label={chartRegionLabel} tabIndex={0}>
                             {pieTrace ? (
+                                <div aria-hidden="true">
                                 <Plot
                                     key={selectedYear}
                                     data={[pieTrace]}
@@ -336,6 +354,7 @@ const CommercialInstitutionalEnergyUse = () => {
                                         });
                                     }}
                                 />
+                                </div>
                             ) : (
                                 <p style={{ padding: '2rem', textAlign: 'center', color: '#555' }}>
                                     {lang === 'en' ? 'No chart data for the selected year.' : 'Aucune donnée pour l\'année sélectionnée.'}

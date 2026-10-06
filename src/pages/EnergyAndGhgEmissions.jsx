@@ -1,11 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
-import AccessibleInfographic from '../components/AccessibleInfographic';
 import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { saveDocxBlob, Document, Table, TableRow, TableCell, Paragraph, TextRun, WidthType } from '../utils/exportTableToDocx';
 import { saveAs } from 'file-saver';
 import { getText } from '../utils/translations';
+import { prepareInlineSvgMarkup } from '../utils/prefixSvgIds';
 import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
 import energyAndGhgEmissionsBgEn from '../assets/energy_and_ghg_emissions_bg.svg?raw';
 import energyAndGhgEmissionsBgFr from '../assets/energy_and_ghg_emissions_bg_fr.svg?raw';
@@ -13,6 +13,24 @@ import energyAndGhgEmissionsBgFr from '../assets/energy_and_ghg_emissions_bg_fr.
 const INFO_COLUMN_WIDTHS = [5200, 3600];
 
 const HIGHLIGHT_KEYS = ['global_share', 'canada_share'];
+
+const TEXT_BLOCK_KEYS = ['global', 'includes', 'canada', 'challenges'];
+
+/** Percent boxes over the four text regions (EN canvas 990×596, FR 834×543). */
+const TEXT_BLOCK_BOXES = {
+    en: {
+        global: { left: 0, top: 14, width: 50, height: 30 },
+        includes: { left: 0, top: 58, width: 48, height: 22 },
+        canada: { left: 56.5, top: 2, width: 42.5, height: 24 },
+        challenges: { left: 56, top: 28, width: 43, height: 30 },
+    },
+    fr: {
+        global: { left: 0, top: 18, width: 56, height: 27 },
+        includes: { left: 0, top: 62, width: 46, height: 32 },
+        canada: { left: 57, top: 1, width: 42, height: 25 },
+        challenges: { left: 55, top: 27, width: 44, height: 36 },
+    },
+};
 
 const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
@@ -22,6 +40,18 @@ const EnergyAndGhgEmissions = () => {
 
     const pageTitle = getText('energy_and_ghg_emissions_title', lang);
     const svgMarkup = lang === 'en' ? energyAndGhgEmissionsBgEn : energyAndGhgEmissionsBgFr;
+    const preparedSvg = useMemo(
+        () => prepareInlineSvgMarkup(svgMarkup, `energy-and-ghg-${lang}`),
+        [lang, svgMarkup],
+    );
+    const textBlocks = useMemo(() => {
+        const boxes = lang === 'fr' ? TEXT_BLOCK_BOXES.fr : TEXT_BLOCK_BOXES.en;
+        return TEXT_BLOCK_KEYS.map((key) => ({
+            key,
+            label: getText(`energy_and_ghg_emissions_block_${key}`, lang),
+            box: boxes[key],
+        }));
+    }, [lang]);
     const fileTitle = getText('energy_and_ghg_emissions_download_title', lang);
 
     const tableRows = HIGHLIGHT_KEYS.map((key) => ({
@@ -33,7 +63,7 @@ const EnergyAndGhgEmissions = () => {
     const downloadInfographicPng = async () => {
         try {
             await downloadInfographicImagePng(
-                infographicRef.current?.getGraphicElement?.() ?? infographicRef.current,
+                infographicRef.current,
                 { filename: `${fileTitle}.png`, scale: 2 },
             );
         } catch (err) {
@@ -125,13 +155,33 @@ const EnergyAndGhgEmissions = () => {
     background-color: var(--gc-red);
 }
 .energy-and-ghg-emissions-figure {
+    position: relative;
     margin: 0;
+    width: 100%;
+}
+.energy-and-ghg-emissions-graphic {
+    position: relative;
     width: 100%;
 }
 .energy-and-ghg-emissions-bg-image {
     width: 100%;
     height: auto;
     display: block;
+}
+.energy-and-ghg-emissions-bg-image svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.energy-and-ghg-emissions-block {
+    position: absolute;
+    box-sizing: border-box;
+    border-radius: 4px;
+}
+.energy-and-ghg-emissions-block:focus,
+.energy-and-ghg-emissions-block:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 2px;
 }
 .energy-and-ghg-emissions-actions {
     display: flex;
@@ -187,17 +237,31 @@ const EnergyAndGhgEmissions = () => {
                     {pageTitle}
                 </h1>
 
-                <AccessibleInfographic
-                    ref={infographicRef}
-                    mode="text"
-                    as="figure"
-                    className="energy-and-ghg-emissions-figure"
-                    title={pageTitle}
-                    svgMarkup={svgMarkup}
-                    imgClassName="energy-and-ghg-emissions-bg-image"
-                    imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
-                    idPrefix={`energy-and-ghg-${lang}`}
-                />
+                <figure ref={infographicRef} className="energy-and-ghg-emissions-figure">
+                    <div className="energy-and-ghg-emissions-graphic">
+                        <div
+                            className="energy-and-ghg-emissions-bg-image"
+                            aria-hidden="true"
+                            dangerouslySetInnerHTML={{ __html: preparedSvg }}
+                        />
+                        {textBlocks.map(({ key, label, box }) => (
+                            <div
+                                key={key}
+                                className={`energy-and-ghg-emissions-block energy-and-ghg-emissions-block--${key}`}
+                                role="region"
+                                tabIndex={0}
+                                aria-label={label}
+                                data-prose-tab="1"
+                                style={{
+                                    left: `${box.left}%`,
+                                    top: `${box.top}%`,
+                                    width: `${box.width}%`,
+                                    height: `${box.height}%`,
+                                }}
+                            />
+                        ))}
+                    </div>
+                </figure>
 
                 <div className="energy-and-ghg-emissions-actions">
                     <button type="button" onClick={downloadInfographicPng}>

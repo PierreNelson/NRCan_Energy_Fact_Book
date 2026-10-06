@@ -20,8 +20,8 @@ import { formatLocalePct } from '../utils/formatLocale';
 
 const canadian_energy_assets_REGION_DEFINITIONS = [
     { key: 'canada', nameEn: 'Canada', nameFr: 'Canada', color: '#48A36C', labelLat: 78, labelLon: -160 },
-    { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis et Mexique', color: '#48A36C', labelLat: 35, labelLon: -150 },
-    { key: 'latin_america', nameEn: 'Americas (South and Central\nAmerica, Caribbean)', nameFr: 'Amériques (Amérique du Sud,\nAmérique centrale et Caraïbes)', color: '#f26721', labelLat: -18, labelLon: -120 },
+    { key: 'north_america', nameEn: 'U.S. and Mexico', nameFr: 'États-Unis\net Mexique', color: '#48A36C', labelLat: 35, labelLon: -150 },
+    { key: 'latin_america', nameEn: 'Americas (South and\nCentral America,\nCaribbean)', nameFr: 'Amériques\n(Amérique du Sud,\nAmérique centrale\net Caraïbes)', color: '#f26721', labelLat: -18, labelLon: -132 },
     { key: 'europe', nameEn: 'Europe', nameFr: 'Europe', color: '#204897', labelLat: 48, labelLon: -32 },
     { key: 'africa', nameEn: 'Africa', nameFr: 'Afrique', color: '#AB9217', labelLat: -10, labelLon: -5 },
     { key: 'asia', nameEn: 'Asia', nameFr: 'Asie', color: '#a91e22', labelLat: 20, labelLon: 140 },
@@ -34,6 +34,14 @@ const formatCEABillionSR = (num, lang) => {
     return lang === 'en'
         ? `${rounded} billion dollars`
         : `${rounded} milliards de dollars`;
+};
+
+const formatCEABillionSpoken = (num, lang) => {
+    if (num === undefined || num === null) return '';
+    const text = (Math.round(num * 10) / 10).toFixed(1);
+    return lang === 'en'
+        ? `${text} billion dollars`
+        : `${text.replace('.', ',')} milliards de dollars`;
 };
 
 const CEA = () => {
@@ -294,6 +302,15 @@ const CEA = () => {
         })).filter(r => r.value > 0);
     }, [currentYearData, regionCountryCodes]);
 
+    const mapRegionSummary = useMemo(() => {
+        if (!regionData.length) return getText('canadian_energy_assets_chart_summary', lang);
+        const values = regionData.map((region) => {
+            const name = (lang === 'en' ? region.nameEn : region.nameFr).replace(/\s*\n\s*/g, ' ');
+            return `${name}, ${formatCEABillionSpoken(region.value, lang)}`;
+        }).join('. ');
+        return `${getText('canadian_energy_assets_chart_summary', lang)}. ${values}.`;
+    }, [regionData, lang]);
+
     const mapData = useMemo(() => {
         if (!regionData.length) return [];
 
@@ -336,8 +353,7 @@ const CEA = () => {
                         // "U.S. and /nMexico"
                         rawName = 'U.S. and\nMexico';
                     } else if (r.key === 'latin_america') {
-                        // "Americas (South and /nCentral America, /nCaribbean)"
-                        rawName = 'Americas (South \nand Central\n America, Caribbean)';
+                        rawName = 'Americas (South and\nCentral America,\nCaribbean)';
                     }
                 }
 
@@ -616,13 +632,20 @@ const CEA = () => {
                 .canadian-energy-assets-map-container {
                     flex: 1;
                     position: relative;
-                    overflow: hidden;
+                    overflow: visible;
                     min-height: 300px;
-                    display: block; 
+                    display: block;
+                    min-width: 0;
+                }
+
+                .canadian-energy-assets-map-plot {
+                    width: 100%;
+                    height: 100%;
+                    box-sizing: border-box;
                 }
                 
                 .canadian-energy-assets-map-container .js-plotly-plot {
-                    max-width: 90%;
+                    max-width: 100%;
                 }
                 
                 .canadian-energy-assets-map-container .plot-container,
@@ -631,19 +654,24 @@ const CEA = () => {
                 }
 
                 .canadian-energy-assets-stats-container {
-                    width: 280px;
+                    width: max-content;
+                    max-width: 42%;
                     flex-shrink: 0;
                     display: flex;
                     flex-direction: column;
-                    gap: 20px;
-                    padding-top: 0;         
-                    margin-left: auto;      
-                    align-items: flex-end;  
+                    gap: 28px;
+                    padding: 8px 8px 8px 16px;
+                    margin-left: auto;
+                    align-items: flex-end;
                     box-sizing: border-box;
                 }
 
                 .canadian-energy-assets-stat {
                     text-align: right;
+                    width: max-content;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                    padding: 8px 12px 12px;
                 }
 
                 .canadian-energy-assets-stat-title {
@@ -653,7 +681,6 @@ const CEA = () => {
                     color: var(--gc-text);
                     margin-bottom: 5px;
                     line-height: 1.3;
-                    white-space: nowrap;
                 }
 
                 .canadian-energy-assets-stat-value {
@@ -661,6 +688,7 @@ const CEA = () => {
                     font-size: 2.2rem;
                     font-weight: bold;
                     color: #857550;
+                    margin: 0 0 8px;
                 }
 
                 .canadian-energy-assets-footnote {
@@ -815,12 +843,14 @@ const CEA = () => {
 
                     .canadian-energy-assets-stats-container {
                         width: 100%;
+                        max-width: none;
                         flex-direction: row;
+                        flex-wrap: wrap;
                         justify-content: flex-start;
+                        align-items: flex-start;
                         gap: 40px;
-                        padding-top: 10px;
+                        padding: 10px 0 0 0;
                         margin-right: 0;
-                        padding-right: 0;
                     }
                     .canadian-energy-assets-stat {
                         text-align: left;
@@ -938,60 +968,63 @@ const CEA = () => {
                         </h2>
                     </div>
                         {}
-                        <div 
-                            ref={chartRef} 
-                            style={{ 
-                                position: 'relative', 
-                                width: '100%', 
-                                height: windowWidth <= 768 ? '400px' : '500px' 
+                        <div
+                            ref={chartRef}
+                            className="canadian-energy-assets-map-plot"
+                            role="region"
+                            aria-label={mapRegionSummary}
+                            tabIndex="0"
+                            style={{
+                                position: 'relative',
+                                width: '100%',
+                                height: windowWidth <= 768 ? '400px' : '500px',
                             }}
                         >
-                            <div role="region" aria-label={getText('canadian_energy_assets_chart_summary', lang)} tabIndex="0">
-                                <figure style={{ margin: 0, position: 'relative' }} aria-hidden="true">
-                                    <Plot
-                                        data={mapData}
-                                        layout={{
-                                            geo: {
-                                                scope: 'world',
-                                                projection: {
-                                                    type: 'natural earth'
-                                                },
-                                                showframe: false,
-                                                showland: true,
-                                                landcolor: '#e8e8e8',
-                                                showcountries: false,
-                                                showcoastlines: true,
-                                                coastlinecolor: '#999999',
-                                                showlakes: false,
-                                                showocean: false,
-                                                bgcolor: 'rgba(0,0,0,0)',
-                                                lataxis: { range: [-55, 85] },
-                                                lonaxis: { range: [-170, 180] },
-                                                fitbounds: false
+                            <figure style={{ margin: 0, position: 'relative', height: '100%' }} aria-hidden="true">
+                                <Plot
+                                    data={mapData}
+                                    layout={{
+                                        geo: {
+                                            scope: 'world',
+                                            projection: {
+                                                type: 'natural earth'
                                             },
-                                            margin: { l: 0, r: 0, t: 0, b: 0 },
-                                            height: windowWidth <= 768 ? 400 : 500,
-                                            dragmode: false,
-                                            paper_bgcolor: 'rgba(0,0,0,0)',
-                                            plot_bgcolor: 'rgba(0,0,0,0)',
-                                            showlegend: false
-                                        }}
-                                        config={plotConfig}
-                                        useResizeHandler={true}
-                                        style={{ width: '100%', height: '100%' }}
-                                    />
-                                </figure>
-                            </div>
+                                            showframe: false,
+                                            showland: true,
+                                            landcolor: '#e8e8e8',
+                                            showcountries: false,
+                                            showcoastlines: true,
+                                            coastlinecolor: '#999999',
+                                            showlakes: false,
+                                            showocean: false,
+                                            bgcolor: 'rgba(0,0,0,0)',
+                                            lataxis: { range: [-55, 85] },
+                                            lonaxis: { range: [-170, 180] },
+                                            fitbounds: false
+                                        },
+                                        margin: { l: 0, r: 0, t: 0, b: 0 },
+                                        height: windowWidth <= 768 ? 400 : 500,
+                                        dragmode: false,
+                                        paper_bgcolor: 'rgba(0,0,0,0)',
+                                        plot_bgcolor: 'rgba(0,0,0,0)',
+                                        showlegend: false
+                                    }}
+                                    config={plotConfig}
+                                    useResizeHandler={true}
+                                    style={{ width: '100%', height: windowWidth <= 768 ? 400 : 500 }}
+                                />
+                            </figure>
                         </div>
                     </div>
 
-                    <div 
-                        className="canadian-energy-assets-stats-container" 
-                        role="region" 
-                        aria-label={`${getText('canadian_energy_assets_card_total', lang)}: ${formatCEABillionSR(calculatedValues.A1, lang)}. ${getText('canadian_energy_assets_card_abroad', lang)}: ${formatCEABillionSR(calculatedValues.A4, lang)}.`} 
-                        tabIndex="0"
-                    >
-                        <div className="canadian-energy-assets-stat">
+                    <div className="canadian-energy-assets-stats-container">
+                        <div
+                            className="canadian-energy-assets-stat"
+                            role="region"
+                            tabIndex={0}
+                            data-prose-tab="1"
+                            aria-label={`${getText('canadian_energy_assets_card_total', lang)}, ${formatCEABillionSpoken(calculatedValues.A1, lang)}`}
+                        >
                             <div className="canadian-energy-assets-stat-title" aria-hidden="true">
                                 {getText('canadian_energy_assets_card_total', lang)}
                             </div>
@@ -999,7 +1032,13 @@ const CEA = () => {
                                 {formatBillion(calculatedValues.A1, lang === 'fr')}
                             </div>
                         </div>
-                        <div className="canadian-energy-assets-stat">
+                        <div
+                            className="canadian-energy-assets-stat"
+                            role="region"
+                            tabIndex={0}
+                            data-prose-tab="1"
+                            aria-label={`${getText('canadian_energy_assets_card_abroad', lang)}, ${formatCEABillionSpoken(calculatedValues.A4, lang)}`}
+                        >
                             <div className="canadian-energy-assets-stat-title" aria-hidden="true">
                                 {getText('canadian_energy_assets_card_abroad', lang)}
                             </div>

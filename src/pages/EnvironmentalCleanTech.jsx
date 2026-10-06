@@ -235,27 +235,27 @@ const EnvironmentalCleanTech = () => {
 
                 <div className="environmental-clean-technology-stats-row">
                     <div className="environmental-clean-technology-stats-block">
-                        <p className="environmental-clean-technology-heading">
+                        <p className="environmental-clean-technology-heading environmental-clean-technology-visual-text">
                             {getText('environmental_clean_tech_heading', lang)} ({year}):
                         </p>
-                        <p className="environmental-clean-technology-stat">
+                        <p className="environmental-clean-technology-stat environmental-clean-technology-visual-text">
                             <span className="environmental-clean-technology-stat-value">${formatNum(gdpEco)} {lang === 'en' ? 'billion' : 'milliards de dollars'}</span> {getText('environmental_clean_tech_gdp_of', lang)} ({formatNum(gdpPct)}% {getText('environmental_clean_tech_gdp_pct_of_total', lang)}).
                         </p>
-                        <p className="environmental-clean-technology-stat">
+                        <p className="environmental-clean-technology-stat environmental-clean-technology-visual-text">
                             <span className="environmental-clean-technology-stat-value">{formatInt(jobsEco)} {lang === 'en' ? 'jobs' : 'emplois'}</span> {getText('environmental_clean_tech_jobs_representing', lang)} <strong>{formatNum(jobsPct)}%</strong> {getText('environmental_clean_tech_jobs_pct_economy', lang)}.
                         </p>
-                        <p className="environmental-clean-technology-stat">
+                        <p className="environmental-clean-technology-stat environmental-clean-technology-visual-text">
                             <span className="environmental-clean-technology-stat-value">${formatNum(exportsEco)} {lang === 'en' ? 'billion' : 'milliards de dollars'}</span> {getText('environmental_clean_tech_in_exports', lang)}.
                         </p>
                     </div>
                     <div className="environmental-clean-technology-stats-block">
-                        <p className="environmental-clean-technology-heading">
+                        <p className="environmental-clean-technology-heading environmental-clean-technology-visual-text">
                             {getText('environmental_clean_tech_of_this_clean_energy', lang)}
                         </p>
-                        <p className="environmental-clean-technology-stat">
+                        <p className="environmental-clean-technology-stat environmental-clean-technology-visual-text">
                             <span className="environmental-clean-technology-stat-value">{formatNum(cleanEnergyGdpPct)}%</span> {getText('environmental_clean_tech_of_canada_gdp', lang)}.
                         </p>
-                        <p className="environmental-clean-technology-stat">
+                        <p className="environmental-clean-technology-stat environmental-clean-technology-visual-text">
                             {getText('environmental_clean_tech_and_employed', lang)} <span className="environmental-clean-technology-stat-value">{formatInt(cleanEnergyJobs)}</span> {getText('environmental_clean_tech_people', lang)}
                         </p>
                     </div>
@@ -270,7 +270,7 @@ const EnvironmentalCleanTech = () => {
                     imgStyle={{ minHeight: '320px', width: '100%' }}
                 />
 
-                <p className="environmental-clean-technology-tsx">
+                <p className="environmental-clean-technology-tsx environmental-clean-technology-visual-text">
                     {getText('environmental_clean_tech_tsx_intro', lang)} <strong>{formatInt(tmxCount)}</strong> {getText('environmental_clean_tech_tsx_companies', lang)} <strong>${formatNum(tmxMcap)} {lang === 'en' ? 'billion' : 'milliards de dollars'}</strong>. {getText('environmental_clean_tech_tsx_of_these', lang)} <strong>{formatInt(tmxCanCount)}</strong> {getText('environmental_clean_tech_tsx_headquartered', lang)} <strong>${formatNum(tmxCanMcap)} {lang === 'en' ? 'billion' : 'milliards de dollars'}</strong> {getText('environmental_clean_tech_tsx_as_of', lang)}
                 </p>
 

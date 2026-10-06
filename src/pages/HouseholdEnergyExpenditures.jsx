@@ -13,6 +13,7 @@ import { waitForImage } from '../utils/downloadInfographicPng';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import householdEnergyExpendituresBg from '../assets/household_energy_expenditures_bg.png';
 import hexToRgba from '../utils/hexToRgba';
 import HtmlLegend from '../components/HtmlLegend';
@@ -170,6 +171,30 @@ const HouseholdEnergyExpenditures = () => {
     const formatIndex = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
         return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
+    };
+
+    const getChartSummary = () => {
+        const firstYear = CPI_YEARS[0];
+        const lastYear = CPI_YEARS[CPI_YEARS.length - 1];
+        const body = summarizeByCategory({
+            categories: CPI_YEARS,
+            series: [
+                { name: legendEnergy, values: CPI_DATA.energy, format: formatIndex },
+                { name: legendTotal, values: CPI_DATA.total, format: formatIndex },
+                { name: legendExcluding, values: CPI_DATA.excluding, format: formatIndex },
+            ],
+            lang,
+            newestFirst: true,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Line chart of ${legendEnergy}, ${legendTotal}, and ${legendExcluding} from ${firstYear} to ${lastYear}`
+                : `Graphique linéaire de ${legendEnergy}, ${legendTotal} et ${legendExcluding} de ${firstYear} à ${lastYear}`,
+            unitNote: lang === 'en'
+                ? 'Index, 2002 equals 100'
+                : 'Indice, 2002 égale 100',
+            body,
+        });
     };
 
     const plotHeight = windowWidth <= 480 ? 340 : windowWidth <= 768 ? 380 : 420;
@@ -420,7 +445,7 @@ const HouseholdEnergyExpenditures = () => {
                         )}
 
                         <figure ref={chartRef} style={{ margin: 0 }}>
-                            <div role="region" aria-label={getText('household_energy_expenditures_chart_aria', lang)} tabIndex="0">
+                            <div role="region" aria-label={`${exportChartTitle}. ${getChartSummary()}`} tabIndex="0">
                                 <Plot
                                     key={`household-energy-expenditures-${selectionKey}-${plotHeight}`}
                                     data={[

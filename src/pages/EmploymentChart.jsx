@@ -92,6 +92,7 @@ const EmploymentChart = () => {
                 { name: indirectLabel, values: indirectValues, format: (v) => `${v} ${unitText}` },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'

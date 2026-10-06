@@ -22,6 +22,16 @@ const REFERENCE_YEAR = 2023;
 
 const PROVINCE_KEYS = ['alta', 'bc_ter', 'atl', 'que', 'ont', 'man', 'sask'];
 
+const SPOKEN_PROVINCE = {
+    alta: { en: 'Alberta', fr: 'Alberta' },
+    bc_ter: { en: 'British Columbia and the territories', fr: 'Colombie-Britannique et les territoires' },
+    atl: { en: 'Atlantic provinces', fr: 'Provinces de l\'Atlantique' },
+    que: { en: 'Quebec', fr: 'Québec' },
+    ont: { en: 'Ontario', fr: 'Ontario' },
+    man: { en: 'Manitoba', fr: 'Manitoba' },
+    sask: { en: 'Saskatchewan', fr: 'Saskatchewan' },
+};
+
 const PROVINCE_COLORS = {
     alta: '#7A6F4E',
     bc_ter: '#3CA1AF',
@@ -365,13 +375,23 @@ const NaturalGasLiquidsEnergyUse = () => {
         click: (gd) => downloadChartWithTitle(gd),
     });
 
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const spokenProvince = (key) => SPOKEN_PROVINCE[key]?.[lang === 'fr' ? 'fr' : 'en'] || key;
+
     const getChartSummary = () => {
         if (!provinceSlices.length) return '';
         const body = summarizeByCategory({
-            categories: provinceSlices.map((slice) => getText(`natural_gas_liquids_energy_use_province_${slice.key}`, lang)),
+            categories: provinceSlices.map((slice) => spokenProvince(slice.key)),
             series: [
                 { name: lang === 'en' ? 'Energy use' : "Consommation d'énergie", values: provinceSlices.map((slice) => slice.value), format: (v) => `${formatPj(v, 1)} PJ` },
-                { name: lang === 'en' ? 'Share' : 'Part', values: provinceSlices.map((slice) => slice.pct), format: (v) => formatPct(v, 1) },
+                { name: lang === 'en' ? 'Share' : 'Part', values: provinceSlices.map((slice) => slice.pct), format: formatShareSpoken },
             ],
             lang,
         });
@@ -493,7 +513,6 @@ const NaturalGasLiquidsEnergyUse = () => {
                             </h2>
                             <ChartDataTable
                                 lang={lang}
-                                label={summaryCaption}
                                 columns={sectorTableColumns}
                                 rows={sectorTableRows}
                                 csvFilename={`${summaryFileSlug}.csv`}
@@ -522,6 +541,7 @@ const NaturalGasLiquidsEnergyUse = () => {
                             )}
 
                             <figure ref={chartRef} className="natural-gas-liquids-energy-use-chart-figure" role="region" aria-label={chartRegionLabel} tabIndex={0} style={{ margin: 0 }}>
+                                <div aria-hidden="true">
                                 {pieTrace && (
                                     <Plot
                                         key={`natural-gas-liquids-energy-use-pie-${selectedYear}-${effectiveSelectedSlices ? effectiveSelectedSlices.join('-') : 'all'}-${plotHeight}`}
@@ -534,6 +554,7 @@ const NaturalGasLiquidsEnergyUse = () => {
                                         onClick={handlePieClick}
                                     />
                                 )}
+                                </div>
                             </figure>
 
                             <div className="natural-gas-liquids-energy-use-table-wrapper">

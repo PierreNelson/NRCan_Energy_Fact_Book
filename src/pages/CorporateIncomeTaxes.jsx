@@ -97,6 +97,7 @@ const CorporateIncomeTaxes = () => {
                 format: (v) => formatEnergyRevenueNumber(v, lang),
             })),
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
 import ClearSelectionButton from './ClearSelectionButton';
 import worldCrudeOilProvedReservesBg from '../assets/world_crude_oil_proved_reserves_bg.svg';
 import {
@@ -67,7 +66,6 @@ const WorldProvedCrudeReservesInfographic = ({
     labelFontSize,
     getText,
     onFootnoteClick,
-    ariaLabel,
     figureRef,
     pieChart,
     showClearSelection,
@@ -79,6 +77,22 @@ const WorldProvedCrudeReservesInfographic = ({
     const sliceByKey = Object.fromEntries((slices || []).map((slice) => [slice.key, slice]));
     const pieClipRef = useRef(null);
     const modebarSlotRef = useRef(null);
+    const rootRef = useRef(null);
+
+    useEffect(() => {
+        if (!figureRef) return undefined;
+        figureRef.current = {
+            getGraphicElement() {
+                return rootRef.current?.querySelector('.world-crude-oil-proved-reserves-bg-image') ?? null;
+            },
+            getRootElement() {
+                return rootRef.current;
+            },
+        };
+        return () => {
+            figureRef.current = null;
+        };
+    }, [figureRef]);
 
     useEffect(() => {
         const reparentModebar = () => {
@@ -98,15 +112,9 @@ const WorldProvedCrudeReservesInfographic = ({
     }, [pieChart]);
 
     return (
-        <AccessibleInfographic
-            ref={figureRef}
-            as="figure"
-            mode="image"
+        <figure
+            ref={rootRef}
             className="world-crude-oil-proved-reserves-infographic-figure"
-            title={ariaLabel}
-            overview={ariaLabel}
-            src={worldCrudeOilProvedReservesBg}
-            imgClassName="world-crude-oil-proved-reserves-bg-image"
         >
             <style>{`
 .world-crude-oil-proved-reserves-infographic-figure {
@@ -283,6 +291,13 @@ const WorldProvedCrudeReservesInfographic = ({
             `}</style>
 
             <div className="world-crude-oil-proved-reserves-infographic-wrapper">
+                <img
+                    src={worldCrudeOilProvedReservesBg}
+                    alt=""
+                    className="world-crude-oil-proved-reserves-bg-image"
+                    draggable={false}
+                    aria-hidden="true"
+                />
                 {showClearSelection && (
                     <ClearSelectionButton
                         lang={lang}
@@ -370,7 +385,7 @@ const WorldProvedCrudeReservesInfographic = ({
                     );
                 })}
             </div>
-        </AccessibleInfographic>
+        </figure>
     );
 };
 

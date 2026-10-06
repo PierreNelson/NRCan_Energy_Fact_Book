@@ -22,6 +22,19 @@ describe('summarizeByCategory', () => {
     });
     expect(body).toBe('En 2020, Direct: 5 k');
   });
+
+  it('reads multi-year bar charts from the newest year backwards', () => {
+    const body = summarizeByCategory({
+      categories: [2018, 2019],
+      series: [
+        { name: 'Direct', values: [10, 11] },
+        { name: 'Indirect', values: [20, 21] },
+      ],
+      lang: 'en',
+      newestFirst: true,
+    });
+    expect(body).toBe('In 2019, Direct: 11; Indirect: 21. In 2018, Direct: 10; Indirect: 20');
+  });
 });
 
 describe('joinChartSummary', () => {

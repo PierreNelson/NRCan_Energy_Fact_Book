@@ -203,6 +203,7 @@ const TransportationGhgSpotlight = () => {
                 format: formatMt,
             })),
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
@@ -281,6 +282,7 @@ const TransportationGhgSpotlight = () => {
 
                     <figure ref={chartRef} style={{ margin: 0 }}>
                         <div role="region" aria-label={`${exportChartTitle}. ${getChartSummary()}`} tabIndex="0">
+                            <div aria-hidden="true">
                             <Plot
                                 key={`transportation-ghg-spotlight-${selectedPoints ? selectedPoints.map((t) => t.join('-')).join('_') : 'all'}-${plotHeight}`}
                                 data={plotData}
@@ -320,6 +322,7 @@ const TransportationGhgSpotlight = () => {
                                 useResizeHandler
                                 onClick={handleChartClick}
                             />
+                            </div>
                         </div>
                     </figure>
 

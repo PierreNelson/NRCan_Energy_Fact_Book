@@ -12,6 +12,7 @@ import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -74,7 +75,10 @@ const Biomass = () => {
     const vars = { year: selectedYear };
     const chartTitle = getText('biomass_chart_title', lang);
     const exportChartTitle = stripHtml(chartTitle);
-    const chartRegionLabel = exportChartTitle;
+    const formatShareSpoken = (value) => {
+        const formatted = Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
     const fileSlugBase = substitute(getText('biomass_download_title', lang), vars).replace(/\s+/g, '_');
     const tableCaption = substitute(getText('biomass_table_caption', lang), vars);
 
@@ -94,6 +98,21 @@ const Biomass = () => {
         ? baseColors.map((color, index) => (effectiveSelectedSlices.includes(index) ? color : hexToRgba(color, 0.3)))
         : baseColors;
     const labels = slices.map((slice) => getText(PIE_LABEL_KEYS[slice.key], lang));
+    const chartSummary = slices.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of renewable electricity generation shares for ${selectedYear}`
+            : `Graphique circulaire des parts de production d'électricité renouvelable pour ${selectedYear}`,
+        body: summarizeByCategory({
+            categories: labels,
+            series: [{
+                name: lang === 'en' ? 'Share' : 'Part',
+                values: slices.map((slice) => slice.pct),
+                format: formatShareSpoken,
+            }],
+            lang,
+        }),
+    }) : '';
+    const chartRegionLabel = chartSummary ? `${exportChartTitle}. ${chartSummary}` : exportChartTitle;
     const textSize = windowWidth <= 480 ? 10 : windowWidth <= 768 ? 12 : 16;
     const outsideTextSize = zoomLegendMode ? 16 : textSize;
 
@@ -323,7 +342,6 @@ const Biomass = () => {
                         <BiomassInfographic
                             lang={lang}
                             scrollToElement={scrollToElement}
-                            title={getText('biomass_title', lang)}
                         />
 
                         <div className="biomass-chart-frame page-chrome-chart-frame">
@@ -337,6 +355,7 @@ const Biomass = () => {
                             )}
                             <div className="biomass-donut-wrap" ref={chartRef}>
                                 <figure className="biomass-donut-figure" role="region" aria-label={chartRegionLabel} tabIndex={0}>
+                                    <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                     <Plot
                                         key={`biomass-${selectedYear}-${zoomLegendMode ? 'compact' : 'wide'}-${effectiveSelectedSlices ? effectiveSelectedSlices.join('-') : 'none'}`}
                                         data={plotData}
@@ -362,6 +381,7 @@ const Biomass = () => {
                                             });
                                         }}
                                     />
+                                    </div>
                                 </figure>
                                 {zoomLegendMode && (
                                     <div className="biomass-custom-legend" aria-label={lang === 'en' ? 'Chart legend' : 'Légende du graphique'}>

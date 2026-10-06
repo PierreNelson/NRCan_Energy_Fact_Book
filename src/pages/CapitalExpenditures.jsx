@@ -13,6 +13,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCapitalExpendituresData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import HtmlLegend from '../components/HtmlLegend';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -209,14 +210,33 @@ const CapitalExpenditures = () => {
         ));
     };
 
+    const formatChartValue = (val) => {
+        if (val == null || Number.isNaN(Number(val))) return '—';
+        return Number(val).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+        });
+    };
+
     const getChartSummary = () => {
-        if (!pageData || pageData.length === 0) return '';
-        const latestYear = pageData[pageData.length - 1]?.year || 2025;
-        const firstYear = pageData[0]?.year || 2007;
-        if (lang === 'en') {
-            return `Stacked bar chart showing capital expenditures in Canada's energy industry from ${firstYear} to ${latestYear}. The chart displays oil and gas extraction, electricity, and other energy expenditures in billions of dollars. Expand the data table below for detailed values.`;
-        }
-        return `Graphique à barres empilées montrant les dépenses en immobilisations dans l'industrie énergétique canadienne de ${firstYear} à ${latestYear}. Le graphique affiche l'extraction de pétrole et de gaz, l'électricité et les autres dépenses énergétiques en milliards de dollars. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
+        if (!pageData.length || !years.length) return '';
+        const body = summarizeByCategory({
+            categories: years,
+            series: [
+                { name: oilGasLabel, values: oilGasValues, format: formatChartValue },
+                { name: electricityLabel, values: electricValues, format: formatChartValue },
+                { name: otherLabel, values: otherValues, format: formatChartValue },
+            ],
+            lang,
+            newestFirst: true,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Stacked bar chart of capital expenditures in Canada's energy industry from ${minYear} to ${maxYear}`
+                : `Graphique à barres empilées des dépenses en immobilisations dans l'industrie de l'énergie de ${minYear} à ${maxYear}`,
+            unitNote: lang === 'en' ? 'Values in billions of dollars' : 'Valeurs en milliards de dollars',
+            body,
+        });
     };
 
     const plotConfig = buildPngOnlyPlotConfig({
@@ -229,9 +249,8 @@ const CapitalExpenditures = () => {
         { id: 'electricity', label: getText('capital_expenditures_legend_electricity', lang), color: COLORS.electricity },
         { id: 'other', label: getText('capital_expenditures_legend_other', lang), color: COLORS.other },
     ];
-    const isColumnFormat = windowWidth <= 1400;
     const chartMarginLeft = 50;
-    const chartMarginRight = isColumnFormat ? 0 : 15;
+    const chartMarginRight = 40;
 
     return (
         <main 
@@ -298,19 +317,15 @@ const CapitalExpenditures = () => {
 
                 .capital-expenditure-chart-wrapper {
                     position: relative;
-                    width: calc(100% + 30px);
-                    margin-left: 0px;
+                    width: 100%;
+                    margin-left: 0;
+                    overflow: visible;
                 }
 
-                .layout-stacked .capital-expenditure-legend {
-                    margin-top: -200px !important; /* Reduces the standard 10px gap to 5px */
-                }
-
-                @media (max-width: 1400px) {
-                    .capital-expenditure-chart-wrapper {
-                        width: 100%;
-                        margin-left: 0;
-                    }
+                .capital-expenditure-chart-region {
+                    overflow: visible;
+                    padding-right: 8px;
+                    box-sizing: border-box;
                 }
 
                 .capital-expenditure-chart-wrapper div[role="button"]:focus {
@@ -519,7 +534,7 @@ const CapitalExpenditures = () => {
                         />
                         </h2>
 
-                        <div role="region" aria-label={getChartSummary()} tabIndex="0">
+                        <div className="capital-expenditure-chart-region" role="region" aria-label={getChartSummary()} tabIndex="0">
                             {selectedPoints !== null && (
                                     <ClearSelectionButton lang={lang} onClick={clearSelection} />
                                 )}
@@ -578,7 +593,8 @@ const CapitalExpenditures = () => {
                                     paper_bgcolor: 'rgba(0,0,0,0)',
                                     plot_bgcolor: 'rgba(0,0,0,0)'
                                 }}
-                                className="capital-expenditure-chart" 
+                                className="capital-expenditure-chart"
+                                style={{ width: '100%', height: windowWidth <= 480 ? 275 : 300 }} 
                                 useResizeHandler={true} 
                                 onClick={handleChartClick}
                                 config={plotConfig}

@@ -363,11 +363,12 @@ const CanadianCrudeProduction = () => {
                 { name: totalLabel, values: totalValues, format: (v) => formatMmbd(v, 1) },
             ].filter((ser) => Array.isArray(ser.values)),
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en' ? 'Chart of Canadian crude oil production' : 'Graphique de la production canadienne de pétrole brut',
+            unitNote: lang === 'en' ? 'Values in million barrels per day' : 'Valeurs en millions de barils par jour',
             body,
-            lang,
         });
     };
     const chartRegionLabel = `${stripHtml(chartTitle)}. ${getChartSummary()}`;
@@ -501,6 +502,7 @@ const CanadianCrudeProduction = () => {
                     )}
 
                     <figure ref={chartRef} className="canadian-crude-production-chart-figure" role="region" aria-label={chartRegionLabel} tabIndex={0}>
+                        <div aria-hidden="true">
                         <Plot
                             key={`canadian-crude-production-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}-${useVerticalYearTicks ? 'v' : 'h'}-${plotHeight}`}
                             data={[
@@ -584,6 +586,7 @@ const CanadianCrudeProduction = () => {
                             useResizeHandler
                             onClick={handleChartClick}
                         />
+                        </div>
                     </figure>
 
                     <div className="canadian-crude-production-legend" aria-hidden="true">

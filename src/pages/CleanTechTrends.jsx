@@ -1,229 +1,527 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import ChartDataTable from '../components/ChartDataTable';
-import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
-import PageFootnotes from '../components/PageFootnotes';
-import PageShell from '../components/PageShell';
-import PageStatus from '../components/PageStatus';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getCleanTechTrendsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
-import { stripHtml } from '../utils/stripHtml';
-
-const CATEGORY_DEFS = [
-    { key: 'total', labelKey: 'clean_tech_trends_total', isTotal: true },
-    { key: 'hydro', labelKey: 'clean_tech_trends_hydro' },
-    { key: 'wind', labelKey: 'clean_tech_trends_wind' },
-    { key: 'biomass', labelKey: 'clean_tech_trends_biomass' },
-    { key: 'solar', labelKey: 'clean_tech_trends_solar' },
-    { key: 'nuclear', labelKey: 'clean_tech_trends_nuclear' },
-    { key: 'ccs', labelKey: 'clean_tech_trends_ccs' },
-    { key: 'geothermal', labelKey: 'clean_tech_trends_geothermal' },
-    { key: 'tidal', labelKey: 'clean_tech_trends_tidal' },
-    { key: 'multiple', labelKey: 'clean_tech_trends_multiple', footnote: '1' },
-    { key: 'other', labelKey: 'clean_tech_trends_other', footnote: '2' },
-];
-
+import { Document, Packer, Table, TableRow, TableCell, Paragraph, TextRun, WidthType, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
+import FootnoteMarker from '../components/FootnoteMarker';
+import PageFootnotes from '../components/PageFootnotes';
 const CleanTechTrends = () => {
-    const { lang, layoutPadding } = useOutletContext();
+    const { lang } = useOutletContext();
     const [pageData, setPageData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const stripHtml = (text) => text ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+
     useEffect(() => {
         getCleanTechTrendsData()
-            .then((data) => setPageData(data))
-            .catch((err) => setError(err.message))
+            .then(data => {
+                setPageData(data);
+            })
+            .catch(err => setError(err.message))
             .finally(() => setLoading(false));
     }, []);
 
-    const years = useMemo(() => pageData.map((d) => d.year), [pageData]);
+    const categories = [
+        { key: 'total', label: getText('clean_tech_trends_total', lang), isTotal: true },
+        { key: 'hydro', label: getText('clean_tech_trends_hydro', lang) },
+        { key: 'wind', label: getText('clean_tech_trends_wind', lang) },
+        { key: 'biomass', label: getText('clean_tech_trends_biomass', lang), footnote: null },
+        { key: 'solar', label: getText('clean_tech_trends_solar', lang) },
+        { key: 'nuclear', label: getText('clean_tech_trends_nuclear', lang) },
+        { key: 'ccs', label: getText('clean_tech_trends_ccs', lang) },
+        { key: 'geothermal', label: getText('clean_tech_trends_geothermal', lang) },
+        { key: 'tidal', label: getText('clean_tech_trends_tidal', lang) },
+        { key: 'multiple', label: getText('clean_tech_trends_multiple', lang), footnote: '1' },
+        { key: 'other', label: getText('clean_tech_trends_other', lang), footnote: '2' },
+    ];
+
+    const years = pageData.map(d => d.year);
     const minYear = years.length > 0 ? Math.min(...years) : 2021;
     const maxYear = years.length > 0 ? Math.max(...years) : 2024;
     const pageTitle = `${getText('clean_tech_trends_title_prefix', lang)}${minYear} ${lang === 'en' ? 'to' : 'à'} ${maxYear}`;
-    const exportTitle = stripHtml(pageTitle);
-    const tableCaption = getText('clean_tech_trends_table_caption', lang);
-    const csvFilename = lang === 'en' ? 'clean_technology_trends.csv' : 'tendances_technologies_propres.csv';
-    const docxFilename = lang === 'en' ? 'clean_technology_trends.docx' : 'tendances_technologies_propres.docx';
 
-    const categories = useMemo(() => CATEGORY_DEFS.map((cat) => ({
-        ...cat,
-        label: getText(cat.labelKey, lang),
-    })), [lang]);
+    const formatValue = (val) => {
+        if (val === undefined || val === null) return '—';
+        if (val < 1) return `$${val.toFixed(2)}B`;
+        return `$${val.toFixed(1)}B`;
+    };
 
-    const tableColumns = useMemo(() => [
-        {
-            key: 'category',
-            header: lang === 'en' ? 'Category' : 'Catégorie',
-            align: 'left',
-        },
-        ...years.map((y) => ({
-            key: String(y),
-            header: String(y),
-            align: 'num',
-        })),
-    ], [lang, years]);
+    const formatValueFr = (val) => {
+        if (val === undefined || val === null) return '—';
+        if (val < 1) return `${val.toFixed(2).replace('.', ',')} G$`;
+        return `${val.toFixed(1).replace('.', ',')} G$`;
+    };
 
-    const tableRows = useMemo(() => {
-        const formatValue = (val) => {
-            if (val === undefined || val === null) return '—';
-            if (lang === 'en') {
-                if (val < 1) return `$${val.toFixed(2)}B`;
-                return `$${val.toFixed(1)}B`;
-            }
-            if (val < 1) return `${val.toFixed(2).replace('.', ',')} G$`;
-            return `${val.toFixed(1).replace('.', ',')} G$`;
-        };
-        const projectsWord = getText('clean_tech_trends_projects', lang);
-        return categories.map((cat) => {
-            const row = {
-                category: cat.label,
-                footnote: cat.footnote || null,
-            };
-            years.forEach((y) => {
-                const yearData = pageData.find((d) => d.year === y);
-                const projects = yearData ? yearData[`${cat.key}_projects`] : 0;
-                const value = yearData ? yearData[`${cat.key}_value`] : 0;
-                const projectLabel = projects === 1
-                    ? (lang === 'en' ? 'project' : 'projet')
-                    : projectsWord;
-                row[String(y)] = `${projects ?? 0} ${projectLabel} (${formatValue(value)})`;
+    const downloadTableAsCSV = () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const headers = [
+            lang === 'en' ? 'Category' : 'Catégorie',
+            ...years.map(y => `${y} ${lang === 'en' ? 'Projects' : 'Projets'}`),
+            ...years.map(y => `${y} ${lang === 'en' ? 'Value ($B)' : 'Valeur (G$)'}`)
+        ];
+
+        const rows = categories.map(cat => {
+            const projectsData = years.map(y => {
+                const yearData = pageData.find(d => d.year === y);
+                return yearData ? yearData[`${cat.key}_projects`] : '';
             });
-            return row;
+            const valuesData = years.map(y => {
+                const yearData = pageData.find(d => d.year === y);
+                return yearData ? yearData[`${cat.key}_value`] : '';
+            });
+            return [cat.label, ...projectsData, ...valuesData];
         });
-    }, [categories, years, pageData, lang]);
 
-    const docxColumnWidths = useMemo(() => {
-        const yearWidth = years.length > 0 ? Math.floor(6500 / years.length) : 1500;
-        return [2500, ...years.map(() => yearWidth)];
-    }, [years]);
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = lang === 'en' ? 'clean_technology_trends.csv' : 'tendances_technologies_propres.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
 
-    if (loading || error) return <PageStatus lang={lang} loading={loading} error={error} />;
-    if (!pageData || pageData.length === 0) {
-        return <div className="error">{lang === 'en' ? 'No data available' : 'Aucune donnée disponible'}</div>;
-    }
+    const downloadTableAsDocx = async () => {
+        if (!pageData || pageData.length === 0) return;
+
+        const title = stripHtml(pageTitle);
+
+        const headerBgColor = '8e7e52';
+        const totalRowBgColor = '48494a';
+        const zebraStripeBgColor = 'd4cbba';
+
+        const headerRow = new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: '', size: 22 })] })],
+                    shading: { fill: headerBgColor }
+                }),
+                ...years.map(y => new TableCell({
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: String(y), bold: true, size: 28, color: 'FFFFFF' })],
+                        alignment: AlignmentType.CENTER
+                    })],
+                    shading: { fill: headerBgColor }
+                }))
+            ]
+        });
+
+        const dataRows = categories.map((cat, index) => {
+            const isTotal = cat.isTotal;
+            const isEvenRow = (index + 1) % 2 === 0;
+            
+            return new TableRow({
+                children: [
+                    new TableCell({
+                        children: [new Paragraph({
+                            children: [new TextRun({ 
+                                text: cat.label + (cat.footnote ? ` (${cat.footnote})` : ''), 
+                                bold: true, 
+                                size: 22, 
+                                color: 'FFFFFF' 
+                            })],
+                            alignment: AlignmentType.LEFT
+                        })],
+                        shading: { fill: headerBgColor }
+                    }),
+                    ...years.map(y => {
+                        const yearData = pageData.find(d => d.year === y);
+                        const projects = yearData ? yearData[`${cat.key}_projects`] : 0;
+                        const value = yearData ? yearData[`${cat.key}_value`] : 0;
+                        const projectLabel = projects === 1 
+                            ? (lang === 'en' ? 'project' : 'projet')
+                            : (lang === 'en' ? 'projects' : 'projets');
+                        const valueStr = lang === 'en'
+                            ? (value < 1 ? `$${value.toFixed(2)}B` : `$${value.toFixed(1)}B`)
+                            : (value < 1 ? `${value.toFixed(2).replace('.', ',')} G$` : `${value.toFixed(1).replace('.', ',')} G$`);
+                        
+                        let cellBgColor = undefined;
+                        let textColor = '000000';
+                        
+                        if (isTotal) {
+                            cellBgColor = totalRowBgColor;
+                            textColor = 'FFFFFF';
+                        } else if (isEvenRow) {
+                            cellBgColor = zebraStripeBgColor;
+                        }
+                        
+                        return new TableCell({
+                            children: [
+                                new Paragraph({
+                                    children: [new TextRun({ 
+                                        text: `${projects} ${projectLabel}`, 
+                                        size: 22, 
+                                        bold: isTotal,
+                                        color: textColor
+                                    })],
+                                    alignment: AlignmentType.CENTER
+                                }),
+                                new Paragraph({
+                                    children: [new TextRun({ 
+                                        text: `(${valueStr})`, 
+                                        size: 18, 
+                                        bold: isTotal,
+                                        color: isTotal ? 'DDDDDD' : '000000'
+                                    })],
+                                    alignment: AlignmentType.CENTER
+                                })
+                            ],
+                            shading: cellBgColor ? { fill: cellBgColor } : undefined
+                        });
+                    })
+                ]
+            });
+        });
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: title, bold: true, size: 28 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [2500, 1500, 1500, 1500, 1500],
+                        rows: [headerRow, ...dataRows]
+                    })
+                ]
+            }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, lang === 'en' ? 'clean_technology_trends.docx' : 'tendances_technologies_propres.docx');
+    };
+
+    if (loading) return <div className="loading">{lang === 'en' ? 'Loading...' : 'Chargement...'}</div>;
+    if (error) return <div className="error">Error: {error}</div>;
+    if (!pageData || pageData.length === 0) return <div className="error">{lang === 'en' ? 'No data available' : 'Aucune donnée disponible'}</div>;
 
     return (
-        <PageShell
-            id="main-content"
-            tabIndex="-1"
-            className="page-content page-29 clean-tech-trends-page page-chrome page-chrome--bleed"
-            role="main"
-            aria-labelledby="clean-tech-trends-main-title"
-            style={{ backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding) }}
-        >
+        <main id="main-content" tabIndex="-1" className="page-content clean-tech-trends-main" role="main">
             <style>{`
-.page-29.page-content { max-width: none !important; overflow-x: visible !important; }
-.clean-tech-trends-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
-.clean-tech-trends-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 41px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin: 0 0 25px 0;
-    line-height: 1.25;
-    position: relative;
-    padding-bottom: 0.5em;
-    text-transform: none;
-}
-.clean-tech-trends-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0.2em;
-    width: 72px;
-    height: 6px;
-    background-color: var(--gc-red);
-}
-.clean-tech-trends-table-wrapper { display: block; width: 100%; margin-top: 20px; }
-.clean-tech-trends-values-note {
-    font-family: var(--font-body);
-    font-size: 1rem;
-    color: var(--gc-text);
-    margin: 2rem 0 0.75rem 0;
-    line-height: 1.65;
-    max-width: 80ch;
-}
-@media (max-width: 768px) {
-    .clean-tech-trends-title { font-size: 37px; }
-}
-@media (max-width: 480px) {
-    .clean-tech-trends-title { font-size: 28px; }
-}
+                .clean-tech-trends-main {
+                    width: 100%;
+                }
+
+                .clean-tech-trends-container {
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .clean-tech-trends-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 41px;
+                    font-weight: bold;
+                    margin-top: 0;
+                    margin-bottom: 25px;
+                    color: var(--gc-text);
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+
+                .clean-tech-trends-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+
+                .clean-tech-trends-table-wrapper {
+                    width: 100%;
+                    margin-top: 20px;
+                }
+
+                .clean-tech-trends-table-wrapper table {
+                    width: 100% !important;
+                    min-width: 100% !important;
+                    max-width: 100% !important;
+                    table-layout: auto;
+                }
+
+                .clean-tech-trends-table-wrapper .table-responsive {
+                    overflow-x: visible !important;
+                    width: 100%;
+                }
+
+                .clean-tech-trends-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-family: Arial, sans-serif;
+                    font-size: 0.9rem;
+                }
+
+                .clean-tech-trends-table th,
+                .clean-tech-trends-table td {
+                    border: 1px solid #ddd;
+                    padding: 8px 12px;
+                    text-align: center;
+                }
+
+                .clean-tech-trends-table th {
+                    background-color: #8e7e52;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 1.4rem;
+                }
+
+                .clean-tech-trends-table .category-cell {
+                    text-align: left;
+                    background-color: #8e7e52; 
+                    color: white;
+                    font-weight: bold;
+                    font-size: 1rem;
+                    white-space: normal;      
+                    width: 180px;             
+                    min-width: 150px;         
+                    vertical-align: middle;   
+                    line-height: 1.2;         
+                }
+
+                .clean-tech-trends-table .total-row td {
+                    background-color: #48494a; 
+                    color: white;
+                    font-weight: bold;
+                }
+
+                .clean-tech-trends-project-text {
+                    color: #000000;
+                }
+                
+                .clean-tech-trends-table .total-row .clean-tech-trends-project-text {
+                    color: #ffffff;
+                }
+
+                .clean-tech-trends-table .total-row .category-cell {
+                    background-color: #8e7e52;
+                    color: white;
+                }
+
+                .clean-tech-trends-table tbody tr:nth-child(even):not(.total-row) {
+                    background-color: #d4cbba;
+                }
+
+                .clean-tech-trends-table tbody tr:hover:not(.total-row) {
+                    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.2);
+                    background-color: transparent; 
+                }
+
+                .clean-tech-trends-cell-value {
+                    font-size: 0.85rem;
+                    color: #000000;
+                }
+
+                .clean-tech-trends-total-cell-value {
+                    font-size: 0.85rem;
+                    color: rgba(255, 255, 255, 0.9);
+                }
+
+                .clean-tech-trends-download-buttons {
+                    display: flex;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                    margin-top: 15px;
+                }
+
+                .clean-tech-trends-download-btn {
+                    padding: 8px 16px;
+                    background-color: #8C8C8C;
+                    border: 1px solid #404040;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-family: Arial, sans-serif;
+                    font-weight: bold;
+                    color: #ffffff;
+                }
+
+                .clean-tech-trends-download-btn:hover {
+                    background-color: #404040 !important;
+                }
+
+                .clean-tech-trends-footnotes {
+                    font-family: var(--font-body);
+                    font-size: 1rem;
+                    color: var(--gc-text);
+                    margin-top: 2rem;
+                    margin-bottom: 0;
+                    line-height: 1.65;
+                    max-width: 80ch;
+                }
+
+                .clean-tech-trends-footnotes dl {
+                    margin: 0;
+                    padding: 0;
+                }
+
+                .clean-tech-trends-footnotes dt {
+                    float: left;
+                    clear: left;
+                    width: 1.5em;
+                    font-weight: normal;
+                }
+
+                .clean-tech-trends-footnotes dd {
+                    margin-left: 1.5em;
+                    margin-bottom: 0.5em;
+                }
+
+                .clean-tech-trends-footnotes dd p {
+                    margin: 0;
+                }
+
+                @media (max-width: 992px) {
+                    .clean-tech-trends-main {
+                        width: 100% !important;
+                        margin-left: 0 !important;
+                        margin-right: 0 !important;
+                    }
+                    .clean-tech-trends-container {
+                        padding-left: 4px !important;
+                        padding-right: 4px !important;
+                    }
+
+                    .clean-tech-trends-table-wrapper, 
+                    .table-responsive {
+                        width: 100% !important;
+                        overflow-x: hidden !important;
+                    }
+
+                    .clean-tech-trends-table {
+                        width: 100% !important;
+                        table-layout: fixed;
+                        min-width: 0 !important;
+                        font-size: 0.7rem;
+                    }
+
+                    .clean-tech-trends-table th,
+                    .clean-tech-trends-table td {
+                        padding: 4px 2px;
+                        white-space: normal !important;
+                        overflow-wrap: break-word;
+                        word-break: break-word;
+                        hyphens: auto;
+                    }
+
+                    .clean-tech-trends-table .category-cell {
+                        width: 24%; 
+                        font-size: 0.7rem;
+                        min-width: auto;
+                    }
+
+                    .clean-tech-trends-footnotes {
+                        font-size: 0.9rem;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .clean-tech-trends-title {
+                        font-size: 37px;
+                    }
+                }
             `}</style>
 
             <div className="clean-tech-trends-container">
-                <header>
-                    <h1 id="clean-tech-trends-main-title" className="clean-tech-trends-title">
-                        {pageTitle}
-                    </h1>
-                </header>
+                <h1 className="clean-tech-trends-title">{pageTitle}</h1>
 
                 <div className="clean-tech-trends-table-wrapper">
-                    <ChartDataTable
-                        lang={lang}
-                        defaultOpen
-                        label={lang === 'en' ? 'Data table' : 'Tableau de données'}
-                        columns={tableColumns}
-                        rows={tableRows}
-                        csvFilename={csvFilename}
-                        docx={{
-                            filename: docxFilename,
-                            title: exportTitle,
-                            titleAlign: 'center',
-                            columnWidths: docxColumnWidths,
-                            fontSize: 20,
-                        }}
-                        caption={tableCaption}
-                        tableAriaLabel={tableCaption}
-                        renderCell={(raw, { colIndex, row }) => {
-                            if (colIndex === 0) {
-                                const footnote = row?.footnote;
-                                if (!footnote) return String(raw ?? '');
-                                return (
-                                    <>
-                                        {String(raw ?? '')}
-                                        <span
-                                            id={`fn${footnote}-rf`}
-                                            style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}
-                                        >
-                                            <a className="fn-lnk" href={`#fn${footnote}`}>
-                                                <span className="wb-inv">
-                                                    {lang === 'en' ? 'Footnote ' : 'Note de bas de page '}
-                                                </span>
-                                                <span aria-hidden="true">{footnote}</span>
-                                            </a>
-                                        </span>
-                                    </>
-                                );
-                            }
-                            return String(raw ?? '');
-                        }}
-                    />
-                </div>
+                    <div className="table-responsive" role="region">
+                        <table className="clean-tech-trends-table">
+                            <caption className="wb-inv">
+                                {getText('clean_tech_trends_table_caption', lang)}
+                            </caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col"></th>
+                                    {years.map(y => (
+                                        <th key={y} scope="col">{y}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {categories.map(cat => {
+                                    const isTotal = cat.isTotal;
+                                    return (
+                                        <tr key={cat.key} className={isTotal ? 'total-row' : ''}>
+                                            <td className="category-cell" scope="row">
+                                                {cat.label}
+                                                {cat.footnote && (
+                                                    <FootnoteMarker
+                                                        href={`#fn${cat.footnote}`}
+                                                        id={`fn${cat.footnote}-rf`}
+                                                        marker={cat.footnote}
+                                                        lang={lang}
+                                                    />
+                                                )}
+                                            </td>
+                                            {years.map(y => {
+                                                const yearData = pageData.find(d => d.year === y);
+                                                const projects = yearData ? yearData[`${cat.key}_projects`] : 0;
+                                                const value = yearData ? yearData[`${cat.key}_value`] : 0;
+                                                const valueDisplay = lang === 'en' ? formatValue(value) : formatValueFr(value);
+                                                const projectLabel = projects === 1 
+                                                    ? (lang === 'en' ? 'project' : 'projet')
+                                                    : getText('clean_tech_trends_projects', lang);
+                                                
+                                                    return (
+                                                        <td 
+                                                            key={y}
+                                                            aria-label={`${y}, ${cat.label}: ${projects} ${projectLabel}, ${value} ${lang === 'en' ? 'billion dollars' : 'milliards de dollars'}`}
+                                                        >
+                                                            <div className="clean-tech-trends-project-text">{projects} {projectLabel}</div>
+                                                            
+                                                            <div className={isTotal ? 'clean-tech-trends-total-cell-value' : 'clean-tech-trends-cell-value'}>
+                                                                ({valueDisplay})
+                                                            </div>
+                                                        </td>
+                                                    );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
 
-                <p className="clean-tech-trends-values-note">
-                    {getText('clean_tech_trends_footnote_values', lang)}
-                </p>
+                    <div className="clean-tech-trends-download-buttons">
+                        <button className="clean-tech-trends-download-btn" onClick={downloadTableAsCSV}>
+                            {lang === 'en' ? 'Download data (CSV)' : 'Télécharger les données (CSV)'}
+                        </button>
+                        <button className="clean-tech-trends-download-btn" onClick={downloadTableAsDocx}>
+                            {lang === 'en' ? 'Download table (DOCX)' : 'Télécharger le tableau (DOCX)'}
+                        </button>
+                    </div>
+                </div>
 
                 <PageFootnotes
                     lang={lang}
+                    className="clean-tech-trends-footnotes"
                     items={[
+                        {
+                            id: 'fn-values',
+                            hideMarker: true,
+                            text: getText('clean_tech_trends_footnote_values', lang),
+                        },
                         {
                             id: 'fn1',
                             marker: '1',
                             text: getText('clean_tech_trends_footnote1', lang),
-                            returnHref: '#fn1-rf',
                         },
                         {
                             id: 'fn2',
                             marker: '2',
                             text: getText('clean_tech_trends_footnote2', lang),
-                            returnHref: '#fn2-rf',
                         },
                     ]}
                 />
             </div>
-        </PageShell>
+        </main>
     );
 };
 

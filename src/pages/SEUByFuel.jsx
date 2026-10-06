@@ -10,6 +10,7 @@ import { getSEUByFuelData } from '../utils/dataLoader';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { getText } from '../utils/translations';
 import hexToRgba from '../utils/hexToRgba';
 
@@ -109,6 +110,11 @@ const SEUByFuel = () => {
         return selectedYear != null ? t.replace(/\{\{year\}\}/g, String(selectedYear)) : t;
     }, [selectedYear, lang]);
     const exportChartTitle = stripHtml(chartTitle);
+    const titleForFile = exportChartTitle
+        .replace(/[^\w\s,-]/g, '')
+        .replace(/\s+/g, '_')
+        .trim()
+        || (lang === 'en' ? 'secondary_energy_use_by_fuel' : 'consommation_energie_secondaire_par_source');
     const tableCaption = getText('seu_by_fuel_table_caption', lang);
     const csvFilename = lang === 'en'
         ? 'secondary_energy_use_by_fuel.csv'
@@ -281,6 +287,22 @@ const SEUByFuel = () => {
     }
 
     const hasData = currentRow != null && categories.length > 0;
+    const formatShare = (value) => `${Number(value).toFixed(1)} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    const formatEnergy = (value) => `${Math.round(Number(value)).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA')} PJ`;
+    const pieChartSummary = !hasData ? '' : joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of Canada's secondary energy use by fuel type for ${selectedYear}. Total ${formatEnergy(donutData.total)}`
+            : `Graphique circulaire de la consommation d'énergie secondaire au Canada par source d'énergie pour ${selectedYear}. Total ${formatEnergy(donutData.total)}`,
+        body: summarizeByCategory({
+            categories: donutData.labels,
+            series: [
+                { name: lang === 'en' ? 'Share' : 'Part', values: categories.map((item) => item.pct), format: formatShare },
+                { name: lang === 'en' ? 'Energy' : 'Énergie', values: donutData.values, format: formatEnergy },
+            ],
+            lang,
+        }),
+    });
+    const pieRegionLabel = `${exportChartTitle}. ${pieChartSummary}`;
 
     return (
         <div className="secondary-energy-by-fuel-root">
@@ -346,7 +368,13 @@ const SEUByFuel = () => {
                                 </p>
                                 <div className="secondary-energy-by-fuel-donut-wrap" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', minHeight: 480 }}>
                                     {effectiveSelectedSlices !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />}
-                                        <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 450, height: 450, margin: 0, position: 'relative' }}>
+                                        <figure
+                                            role="region"
+                                            aria-label={pieRegionLabel}
+                                            tabIndex="0"
+                                            style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 450, height: 450, margin: 0, position: 'relative' }}
+                                        >
+                                        <div aria-hidden="true">
                                         <Plot
                                             key={selectedYear}
                                             data={plotData}
@@ -373,6 +401,7 @@ const SEUByFuel = () => {
                                                 });
                                             }}
                                         />
+                                        </div>
                                     </figure>
                                 </div>
 
@@ -409,10 +438,10 @@ const SEUByFuel = () => {
                                 <a href="#fn-asterisk-rf-secondary-energy-by-fuel" onClick={scrollToRef} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
                                     <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                                 </a>
-                                {' '}{getText('seu_by_fuel_footnote_other', lang)}
+                                <p>{getText('seu_by_fuel_footnote_other', lang)}</p>
                             </dd>
                             <dd>
-                                {getText('seu_by_fuel_footnote_rounding', lang)}
+                                <p>{getText('seu_by_fuel_footnote_rounding', lang)}</p>
                             </dd>
                         </dl>
                     </aside>

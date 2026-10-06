@@ -291,9 +291,10 @@ const WindSolarElectricityGrowth = () => {
         startYear: result.startYear,
     } : null;
 
-    const rankingAria = lang === 'en'
+    const rankingBody = lang === 'en'
         ? `Non-emitting electricity ranking for ${year}: ${rankingRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}.`
         : `Classement de l'électricité non émettrice pour ${year} : ${rankingRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}.`;
+    const rankingAria = `${stripHtml(rankingTitle)}. ${rankingBody}`;
 
     return (
         <PageShell
@@ -370,6 +371,18 @@ const WindSolarElectricityGrowth = () => {
     container-type: inline-size;
     overflow: visible;
 }
+.wind-solar-electricity-growth-column-stop {
+    position: absolute;
+    z-index: 4;
+    top: 0;
+    /* Start values sit on the bottom edge; extend the stop so the focus outline clears them. */
+    bottom: -8%;
+}
+.wind-solar-electricity-growth-column-stop:focus,
+.wind-solar-electricity-growth-column-stop:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 0;
+}
 .wind-solar-electricity-growth-bg-image { display: block; max-width: 100%; pointer-events: none; user-select: none; }
 .wind-solar-electricity-growth-overlay {
     position: absolute;
@@ -442,9 +455,9 @@ const WindSolarElectricityGrowth = () => {
                         </ul>
 
                         <div className="wind-solar-electricity-growth-split-row">
-                            <section className="wind-solar-electricity-growth-ranking-col" aria-label={rankingAria}>
-                                <h2 className="wind-solar-electricity-growth-graphic-title">{rankingTitle}</h2>
-                                <div className="wind-solar-electricity-growth-capsule-graphic">
+                            <section className="wind-solar-electricity-growth-ranking-col">
+                                <h2 className="wind-solar-electricity-growth-graphic-title" tabIndex={0} data-prose-tab="1">{rankingTitle}</h2>
+                                <div className="wind-solar-electricity-growth-capsule-graphic" role="region" tabIndex={0} aria-label={rankingAria}>
                                     {rankingRows.map((row) => renderCapsuleRow(row, maxPct))}
                                 </div>
                                 <div className="wind-solar-electricity-growth-download-buttons">
@@ -454,13 +467,13 @@ const WindSolarElectricityGrowth = () => {
                                 </div>
                             </section>
 
-                            <section className="wind-solar-electricity-growth-infographic-col" aria-label={stripHtml(infographicTitle)}>
-                                <h2 className="wind-solar-electricity-growth-graphic-title">{infographicTitle}</h2>
+                            <section className="wind-solar-electricity-growth-infographic-col">
+                                <h2 className="wind-solar-electricity-growth-graphic-title" tabIndex={0} data-prose-tab="1">{infographicTitle}</h2>
                                 <div ref={infographicRef}>
                                     <WindSolarElectricityGrowthInfographic
                                         wind={windOverlay}
                                         solar={solarOverlay}
-                                        ariaLabel={stripHtml(infographicTitle)}
+                                        lang={lang}
                                     />
                                 </div>
                                 <div className="wind-solar-electricity-growth-download-buttons">

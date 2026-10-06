@@ -450,17 +450,19 @@ const RenewableElectricityCapacity = () => {
         const body = summarizeByCategory({
             categories: years,
             series: [
-                { name: hydroLabel, values: hydroValues, format: (v) => String(v) },
-                { name: windLabel, values: windValues, format: (v) => String(v) },
-                { name: solarTidalLabel, values: solarTidalValues, format: (v) => String(v) },
-                { name: biomassLabel, values: biomassValues, format: (v) => String(v) },
+                { name: hydroLabel, values: hydroValues, format: formatMw },
+                { name: windLabel, values: windValues, format: formatMw },
+                { name: solarTidalLabel, values: solarTidalValues, format: formatMw },
+                { name: biomassLabel, values: biomassValues, format: formatMw },
             ].filter((ser) => Array.isArray(ser.values) && ser.values.length),
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
                 ? `Area chart of renewable electricity capacity from ${startYear} to ${endYear}`
                 : `Graphique en aires de la capacité d'électricité renouvelable de ${startYear} à ${endYear}`,
+            unitNote: lang === 'en' ? 'Values in megawatts' : 'Valeurs en mégawatts',
             body,
             lang,
         });
@@ -551,6 +553,7 @@ const RenewableElectricityCapacity = () => {
                         tabIndex={0}
                         style={{ margin: 0 }}
                     >
+                        <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                         <RenewableElectricityCapacityPlot
                             plotData={plotData}
                             plotLayout={{
@@ -598,6 +601,7 @@ const RenewableElectricityCapacity = () => {
                             plotHeight={plotHeight}
                             onPlotReady={onPlotReady}
                         />
+                        </div>
                     </figure>
 
                     <HtmlLegend

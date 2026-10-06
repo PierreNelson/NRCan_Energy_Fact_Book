@@ -114,6 +114,7 @@ const WesternCanadaGasWellCompletions = () => {
                 { name: legendLine, values: depths, format: (v) => `${formatInt(v)} m` },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
@@ -279,7 +280,7 @@ const WesternCanadaGasWellCompletions = () => {
                     </h2>
 
                     <div className="western-canada-gas-well-completions-chart-block">
-                        <div role="region" aria-label={getChartSummary()} tabIndex="0">
+                        <div role="region" aria-label={`${exportChartTitle}. ${getChartSummary()}`} tabIndex="0">
                             {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
                             <figure ref={chartRef} className="western-canada-gas-well-completions-chart" style={{ margin: 0 }}>
                                 <div aria-hidden="true">

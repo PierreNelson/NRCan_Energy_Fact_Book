@@ -541,11 +541,11 @@ const WorldWindPower = () => {
                             </div>
 
                             <div className="world-wind-power-right">
-                                <h2 className="world-wind-power-context-title">{getText('world_wind_power_context_title', lang)}</h2>
+                                <h2 className="world-wind-power-context-title" tabIndex={0} data-prose-tab="1">{getText('world_wind_power_context_title', lang)}</h2>
 
-                                <section className="world-wind-power-chart-section" aria-label={rankingAria}>
+                                <section className="world-wind-power-chart-section">
                                     <h3 className="world-wind-power-graphic-title">{graphicTitle}</h3>
-                                    <div className="world-wind-power-capsule-graphic" role="img" tabIndex={0} aria-label={rankingAria}>
+                                    <div className="world-wind-power-capsule-graphic" role="region" tabIndex={0} aria-label={rankingAria}>
                                         {rankingRows.map((row) => renderCapsuleRow({ ...row, pctRounded: row.pctRounded, isCanada: false }, rankingRows[0]?.pctRounded || 1))}
                                         <div className="world-wind-power-capsule-row world-wind-power-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
                                         {canadaRow && renderCapsuleRow(canadaRow, rankingRows[0]?.pctRounded || 1)}

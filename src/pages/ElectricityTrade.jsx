@@ -14,6 +14,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getElectricityTradeData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 
@@ -101,13 +102,32 @@ const ElectricityTrade = () => {
         startYear: chartStartYear ?? '',
         endYear: chartEndYear ?? '',
     });
-    const infographicAria = referenceRow
-        ? substitute(getText('electricity_trade_us_infographic_aria', lang), {
-            year: referenceRow.year,
-            exports: formatTwh(referenceRow.exports),
-            imports: formatTwh(referenceRow.imports),
-        })
-        : getText('electricity_trade_us_infographic_aria', lang);
+    const unitSpoken = getText('electricity_trade_us_yaxis', lang).toLowerCase();
+    const formatSpokenTwh = (value) => `${formatTwh(value)} ${unitSpoken}`;
+    const exportsStopLabel = referenceRow
+        ? `${exportsLabel}, ${formatSpokenTwh(referenceRow.exports)}`
+        : exportsLabel;
+    const importsStopLabel = referenceRow
+        ? `${importsLabel}, ${formatSpokenTwh(referenceRow.imports)}`
+        : importsLabel;
+    const chartSummary = pageData.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? `Combined bar and line chart of Canada's electricity trade with the U.S. for ${yearRangeLabel}`
+            : `Graphique combiné (barres et ligne) du commerce de l'électricité entre le Canada et les États-Unis pour ${yearRangeLabel}`,
+        unitNote: lang === 'en'
+            ? `Values in ${unitSpoken}`
+            : `Valeurs en ${unitSpoken}`,
+        body: summarizeByCategory({
+            categories: years.map((year) => String(year)),
+            series: [
+                { name: exportsLabel, values: exportValues, format: formatTwh },
+                { name: importsLabel, values: importValues, format: formatTwh },
+                { name: netLabel, values: netValues, format: formatTwh },
+            ],
+            lang,
+            newestFirst: true,
+        }),
+    }) : '';
     const exportsInfographicValue = referenceRow
         ? `${formatTwh(referenceRow.exports)} ${getText('electricity_trade_us_twh_unit', lang)}`
         : '';
@@ -192,8 +212,7 @@ const ElectricityTrade = () => {
 .page-65.electricity-trade-us { width: 100%; }
 .electricity-trade-us-container { width: 100%; padding: 15px 0 0 0; display: flex; flex-direction: column; box-sizing: border-box; flex: 1; overflow: visible; }
 .electricity-trade-us-title { line-height: 1.25; text-transform: none; }
-.electricity-trade-us-subtitle { font-family: 'Noto Sans', sans-serif; font-size: 20px; color: #332f30; margin: 0 0 20px 0; line-height: 1.45; white-space: nowrap; }
-.electricity-trade-us-subtitle--with-infographic { margin-bottom: -60px; }
+.electricity-trade-us-subtitle { font-family: 'Noto Sans', sans-serif; font-size: 20px; color: #332f30; margin: 0 0 20px 0; line-height: 1.45; white-space: nowrap; position: relative; z-index: 2; }
 .electricity-trade-us-chart-frame { margin-top: 0; }
 .electricity-trade-us-chart-title { color: var(--gc-text); margin: 0 0 12px 0; text-transform: none; }
 .electricity-trade-us-chart-title .fn-lnk { color: #26374a; }
@@ -218,7 +237,7 @@ const ElectricityTrade = () => {
 
             <div className="electricity-trade-us-container">
                 <h1 id="electricity-trade-us-title" className="electricity-trade-us-title page-chrome-title">{pageTitle}</h1>
-                <p className={`electricity-trade-us-subtitle${!loading && !error && referenceRow ? ' electricity-trade-us-subtitle--with-infographic' : ''}`}>{getText('electricity_trade_us_subtitle', lang)}</p>
+                <p className="electricity-trade-us-subtitle">{getText('electricity_trade_us_subtitle', lang)}</p>
 
                 {loading && <p className="electricity-trade-us-loading">{lang === 'en' ? 'Loading data…' : 'Chargement des données…'}</p>}
                 {error && <p className="electricity-trade-us-error" role="alert">{error}</p>}
@@ -230,7 +249,8 @@ const ElectricityTrade = () => {
                 <ElectricityTradeInfographic
                     lang={lang}
                     getText={getText}
-                    ariaLabel={infographicAria}
+                    exportsStopLabel={exportsStopLabel}
+                    importsStopLabel={importsStopLabel}
                     exportsValue={exportsInfographicValue}
                     importsValue={importsInfographicValue}
                 />
@@ -252,7 +272,7 @@ const ElectricityTrade = () => {
                     {hasSelection && <ClearSelectionButton lang={lang} onClick={clear} />}
 
                     <div className="electricity-trade-us-chart-scroll">
-                        <figure ref={chartRef} className="electricity-trade-us-chart" role="region" aria-label={chartTitle} tabIndex="0" style={{ margin: 0 }}>
+                        <figure ref={chartRef} className="electricity-trade-us-chart" role="region" aria-label={chartSummary ? `${exportChartTitle}. ${chartSummary}` : exportChartTitle} tabIndex="0" style={{ margin: 0 }}>
                             <div aria-hidden="true">
                                 <Plot
                                     key={`electricity-trade-us-${selectionKey}-${plotHeight}`}

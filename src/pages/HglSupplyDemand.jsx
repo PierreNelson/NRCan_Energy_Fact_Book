@@ -23,6 +23,12 @@ import { formatLocalePct } from '../utils/formatLocale';
 
 const REFERENCE_YEAR = 2025;
 const PROVINCE_KEYS = ['alberta', 'bc', 'saskatchewan'];
+
+const SPOKEN_PROVINCE = {
+    alberta: { en: 'Alberta', fr: 'Alberta' },
+    bc: { en: 'British Columbia', fr: 'Colombie-Britannique' },
+    saskatchewan: { en: 'Saskatchewan', fr: 'Saskatchewan' },
+};
 const PROVINCE_COLORS = {
     alberta: '#3e2f2c',
     bc: '#6896ba',
@@ -227,16 +233,26 @@ const HglSupplyDemand = () => {
         click: (gd) => downloadChartWithTitle(gd),
     });
 
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            maximumFractionDigits: 0,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const spokenProvince = (key) => SPOKEN_PROVINCE[key]?.[lang === 'fr' ? 'fr' : 'en'] || key;
+
     const getChartSummary = () => {
         const body = summarizeByCategory({
-            categories: labels,
-            series: [{ name: getText('hgl_supply_demand_table_col_share', lang), values: slices.map((s) => s.pct), format: formatPct }],
+            categories: slices.map((slice) => spokenProvince(slice.key)),
+            series: [{ name: lang === 'en' ? 'Share' : 'Part', values: slices.map((s) => s.pct), format: formatShareSpoken }],
             lang,
         });
         return joinChartSummary({
-            intro: exportChartTitle,
+            intro: lang === 'en'
+                ? `Donut chart of hydrocarbon gas liquids supply by province for ${selectedYear}`
+                : `Graphique en anneau de l'offre de liquides de gaz d'hydrocarbures par province pour ${selectedYear}`,
             body,
-            lang,
         });
     };
 
@@ -443,6 +459,7 @@ const HglSupplyDemand = () => {
                                     aria-label={`${exportChartTitle}. ${getChartSummary()}`}
                                     tabIndex={0}
                                 >
+                                    <div aria-hidden="true">
                                     <Plot
                                         key={`hgl-${selectedYear}-${zoomLegendMode ? 'compact' : 'wide'}-${effectiveSelectedKeys ? effectiveSelectedKeys.join('-') : 'none'}`}
                                         data={plotData}
@@ -452,6 +469,7 @@ const HglSupplyDemand = () => {
                                         useResizeHandler
                                         onClick={handlePieClick}
                                     />
+                                    </div>
                                 </figure>
                                 {zoomLegendMode && (
                                     <div

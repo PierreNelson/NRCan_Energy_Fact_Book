@@ -1,5 +1,4 @@
 import React from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
 import electricityTradeUsBg from '../assets/electricity_trade_us_bg.png';
 
 /** Matches electricity_trade_us_bg.png (408×157). Towers at 60% size, pinned left/right; values beside each tower. */
@@ -38,24 +37,19 @@ const OverlayBlock = ({ slot, className, children }) => (
 const ElectricityTradeInfographic = ({
     lang,
     getText,
-    ariaLabel,
     figureRef,
     exportsValue,
     importsValue,
+    exportsStopLabel,
+    importsStopLabel,
 }) => {
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const slots = TEXT_SLOTS[overlayLang];
 
     return (
-        <AccessibleInfographic
+        <figure
             ref={figureRef}
-            as="figure"
-            mode="image"
             className="electricity-trade-us-infographic-figure"
-            title={ariaLabel}
-            overview={ariaLabel}
-            src={electricityTradeUsBg}
-            imgClassName="electricity-trade-us-bg-image"
         >
             <style>{`
 .electricity-trade-us-infographic-figure {
@@ -82,6 +76,21 @@ const ElectricityTradeInfographic = ({
     object-fit: fill;
     user-select: none;
     pointer-events: none;
+}
+.electricity-trade-us-side {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 48%;
+    z-index: 3;
+    pointer-events: auto;
+}
+.electricity-trade-us-side--exports { left: 0; }
+.electricity-trade-us-side--imports { right: 0; }
+.electricity-trade-us-side:focus,
+.electricity-trade-us-side:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 0;
 }
 .electricity-trade-us-overlay {
     position: absolute;
@@ -122,6 +131,19 @@ const ElectricityTradeInfographic = ({
             `}</style>
 
             <div className="electricity-trade-us-infographic-wrapper">
+                <img src={electricityTradeUsBg} alt="" className="electricity-trade-us-bg-image" draggable={false} aria-hidden="true" />
+                <div
+                    className="electricity-trade-us-side electricity-trade-us-side--exports"
+                    tabIndex={0}
+                    role="group"
+                    aria-label={exportsStopLabel}
+                />
+                <div
+                    className="electricity-trade-us-side electricity-trade-us-side--imports"
+                    tabIndex={0}
+                    role="group"
+                    aria-label={importsStopLabel}
+                />
                 <OverlayBlock slot={slots.exportsLabel} className="electricity-trade-us-overlay--exports-label">
                     <p className="electricity-trade-us-overlay-label">{getText('electricity_trade_us_info_exports_label', lang)}</p>
                 </OverlayBlock>
@@ -138,7 +160,7 @@ const ElectricityTradeInfographic = ({
                     <p className="electricity-trade-us-overlay-value">{importsValue}</p>
                 </OverlayBlock>
             </div>
-        </AccessibleInfographic>
+        </figure>
     );
 };
 

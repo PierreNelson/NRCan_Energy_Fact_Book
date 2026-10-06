@@ -13,6 +13,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getLargestSolarProjectsData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import { getText } from '../utils/translations';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 const PROJECT_PROV_COLORS = {
@@ -335,6 +336,24 @@ const LargestSolarProjects = () => {
 
     const chartTitleSuffix = substitute(getText('largest_solar_projects_chart_title_suffix', lang), { year: referenceYear ?? '' });
     const chartTitleFull = `${stripHtml(getText('largest_solar_projects_chart_title', lang))}*${stripHtml(chartTitleSuffix)}`;
+    const chartSummary = projects.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? 'Bar chart of the largest solar projects'
+            : 'Graphique à barres des principales installations solaires',
+        unitNote: lang === 'en' ? 'Values in megawatts' : 'Valeurs en mégawatts',
+        body: summarizeByCategory({
+            categories: projLabels,
+            series: [
+                { name: lang === 'en' ? 'Capacity' : 'Capacité', values: projValues, format: formatMw },
+                {
+                    name: lang === 'en' ? 'Province' : 'Province',
+                    values: projects.map((row) => (row.provKey ? getLegendLabel(row.provKey) : '—')),
+                },
+            ],
+            lang,
+        }),
+    }) : '';
+    const chartRegionLabel = chartSummary ? `${chartTitleFull}. ${chartSummary}` : chartTitleFull;
     const tableCaption = substitute(getText('largest_solar_projects_table_caption', lang), { year: referenceYear ?? '' });
     const downloadSlug = lang === 'en' ? 'largest_solar_projects' : 'principales_installations_solaires';
 
@@ -489,9 +508,10 @@ const LargestSolarProjects = () => {
                                     className="largest-solar-projects-chart"
                                     style={{ height: projPlotHeight, margin: 0 }}
                                     role="region"
-                                    aria-label={chartTitleFull}
+                                    aria-label={chartRegionLabel}
                                     tabIndex={0}
                                 >
+                                    <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                     <Plot
                                         key={`largest-solar-projects-${useWrapLabels ? 'wrap' : 'plain'}-${Math.round(zoomEffective * 100)}-${projPlotHeight}-${projLeftMargin}`}
                                         data={projPlotData}
@@ -502,6 +522,7 @@ const LargestSolarProjects = () => {
                                         onInitialized={onPlotReady}
                                         onUpdate={onPlotReady}
                                     />
+                                    </div>
                                 </figure>
                             </div>
                         </div>

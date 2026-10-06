@@ -20,6 +20,17 @@ describe('extractSvgTextContent', () => {
     expect(extractSvgTextContent(markup)).toBe('Natural Resources Canada. Energy regulators');
   });
 
+  it('joins line breaks with a space when asked', () => {
+    const markup = `
+      <svg>
+        <text>Biomass</text>
+        <text>accounts for the</text>
+        <text>, at</text>
+        <text>46%.</text>
+      </svg>`;
+    expect(extractSvgTextContent(markup, { separator: ' ' })).toBe('Biomass accounts for the, at 46%.');
+  });
+
   it('returns empty string when there is no text', () => {
     expect(extractSvgTextContent('<svg><path d="M0 0"/></svg>')).toBe('');
   });

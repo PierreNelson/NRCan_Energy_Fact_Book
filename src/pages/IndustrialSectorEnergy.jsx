@@ -9,6 +9,7 @@ import { getIndustrialEnergyUseData, industrialEnergyUseRowHasCompleteData } fro
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { getText } from '../utils/translations';
 import hexToRgba from '../utils/hexToRgba';
 
@@ -84,6 +85,8 @@ const IndustrialSectorEnergy = () => {
     const selectedRow = selectedYear == null ? null : dataRows.find((r) => r.year === selectedYear) || null;
     const chartTitle = substitute(getText('industrial_sector_energy_chart_title', lang), { year: selectedYear ?? '' });
     const exportChartTitle = stripHtml(chartTitle);
+    const formatShare = (value) => `${Math.round(Number(value))} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    const formatEnergy = (value) => `${formatNumber(value)} PJ`;
     const tableCaption = getText('industrial_sector_energy_table_caption', lang);
 
     const tableColumns = useMemo(() => [
@@ -177,6 +180,20 @@ const IndustrialSectorEnergy = () => {
         hoverlabel: { bgcolor: '#ffffff', font: { color: '#333333', size: 14, family: 'Arial, sans-serif' } },
         automargin: true
     } : null;
+    const pieChartSummary = !pieCategories.length || selectedRow?.teu == null ? '' : joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of industrial sector energy use by fuel type for ${selectedYear}. Total ${formatEnergy(selectedRow.teu)}`
+            : `Graphique circulaire de la consommation d'énergie du secteur industriel par type de combustible pour ${selectedYear}. Total ${formatEnergy(selectedRow.teu)}`,
+        body: summarizeByCategory({
+            categories: pieCategories.map((slice) => getText(LABEL_KEYS[slice.key], lang)),
+            series: [
+                { name: lang === 'en' ? 'Share' : 'Part', values: pieCategories.map((slice) => slice.pct), format: formatShare },
+                { name: lang === 'en' ? 'Energy' : 'Énergie', values: pieCategories.map((slice) => slice.pj), format: formatEnergy },
+            ],
+            lang,
+        }),
+    });
+    const chartRegionLabel = `${exportChartTitle}. ${pieChartSummary}`;
 
     const layout = {
         showlegend: zoomLegendMode,
@@ -328,7 +345,7 @@ const IndustrialSectorEnergy = () => {
                     </h2>
                     {effectiveSlices?.length > 0 && <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />}
                     <div className="industrial-sector-energy-chart-scroll">
-                        <figure ref={chartRef} className="industrial-sector-energy-chart" role="region" aria-label={exportChartTitle} tabIndex="0" style={{ margin: 0 }}>
+                        <figure ref={chartRef} className="industrial-sector-energy-chart" role="region" aria-label={chartRegionLabel} tabIndex="0" style={{ margin: 0 }}>
                             <div aria-hidden="true">
                                 {pieTrace && (
                                     <Plot
@@ -402,9 +419,9 @@ const IndustrialSectorEnergy = () => {
                             <a href="#fn-other-rf-industrial-sector-energy" onClick={scrollToElement('fn-other-rf-industrial-sector-energy')} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
                                 <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                             </a>
-                            {' '}{getText('industrial_sector_energy_footnote_other', lang)}
+                            <p>{getText('industrial_sector_energy_footnote_other', lang)}</p>
                         </dd>
-                        <dd>{getText('industrial_sector_energy_footnote_rounding', lang)}</dd>
+                        <dd><p>{getText('industrial_sector_energy_footnote_rounding', lang)}</p></dd>
                     </dl>
                 </aside>
             </div>

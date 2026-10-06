@@ -17,6 +17,7 @@ import { stripHtml } from '../utils/stripHtml';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 import { formatLocaleNumber } from '../utils/formatLocale';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 const international_investment_COLORS = {
     cdia: '#419563',
     fdi: '#2EA3AD',
@@ -183,25 +184,36 @@ const InternationalInvestment = () => {
         return { traces, years, tickVals, minYear, maxYear, cdiaValues, fdiValues };
     }, [pageData, lang, windowWidth, selectedPoints, cdiaLabel, fdiLabel]);
 
-    const formatBillionSR = (val) => {
-        const decimals = val < 1 ? 2 : 1;
-        return lang === 'en'
-            ? `${val.toFixed(decimals)} billion dollars`
-            : `${val.toFixed(decimals)} milliards de dollars`;
-    };
-
     const getChartDataSummary = () => {
-        if (!pageData || pageData.length === 0) return '';
+        if (!chartData?.years?.length) return '';
 
-        const latestYear = pageData[pageData.length - 1];
-        const latestYearNum = latestYear.year;
-        const latestCDIA = latestYear.cdia_billions ?? ((latestYear.cdia || 0) / 1000);
-        const latestFDI = latestYear.fdi_billions ?? ((latestYear.fdi || 0) / 1000);
+        const formatValue = (val) => {
+            if (val == null || Number.isNaN(Number(val))) return '—';
+            const n = Number(val);
+            const decimals = n < 1 ? 2 : 1;
+            return n.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals,
+            });
+        };
 
-        if (lang === 'en') {
-            return `Grouped bar chart showing stock of foreign direct investment in Canada and Canadian direct investment abroad in the energy industry from ${chartData?.minYear} to ${latestYearNum}. In ${latestYearNum}, Canadian direct investment abroad was approximately ${formatBillionSR(latestCDIA)} and foreign direct investment was approximately ${formatBillionSR(latestFDI)}. Expand the data table below for detailed values.`;
-        }
-        return `Graphique à barres groupées montrant le stock d'investissement direct étranger au Canada et l'investissement direct canadien à l'étranger dans le secteur de l'énergie de ${chartData?.minYear} à ${latestYearNum}. En ${latestYearNum}, l'investissement direct canadien à l'étranger était d'environ ${formatBillionSR(latestCDIA)} et l'investissement direct étranger était d'environ ${formatBillionSR(latestFDI)}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
+        const body = summarizeByCategory({
+            categories: chartData.years,
+            series: [
+                { name: stripHtml(cdiaLabel), values: chartData.cdiaValues, format: formatValue },
+                { name: stripHtml(fdiLabel), values: chartData.fdiValues, format: formatValue },
+            ],
+            lang,
+            newestFirst: true,
+        });
+
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Grouped bar chart of Canadian direct investment abroad and foreign direct investment in Canada in the energy industry from ${chartData.minYear} to ${chartData.maxYear}`
+                : `Graphique à barres groupées de l'investissement direct canadien à l'étranger et de l'investissement direct étranger au Canada dans le secteur de l'énergie de ${chartData.minYear} à ${chartData.maxYear}`,
+            unitNote: lang === 'en' ? 'Values in billions of dollars' : 'Valeurs en milliards de dollars',
+            body,
+        });
     };
 
     const renderTextWithFootnoteLink = (text) => {
@@ -431,8 +443,12 @@ const InternationalInvestment = () => {
             `}</style>
 
             <div className="international-investment-container">
-                <header role="region" aria-label={exportPageTitle}>
-                    <h1 className="international-investment-title page-chrome-title" aria-hidden="true">
+                <header>
+                    <h1
+                        className="international-investment-title page-chrome-title"
+                        tabIndex={0}
+                        data-prose-tab="1"
+                    >
                         {pageTitle}
                     </h1>
                     <p className="international-investment-subtitle">

@@ -67,14 +67,35 @@ const CanadianUraniumSupplyDemand = () => {
         [productionDisplay, valueDisplay, exportPctDisplay, domesticPctDisplay, pctSuffix],
     );
 
-    const infographicAria = [
-        getText('canadian_uranium_supply_demand_infographic_aria', lang),
-        `${getText('canadian_uranium_supply_demand_production_label', lang)} ${productionDisplay}`,
+    const speakPercent = (value) => {
+        const formatted = Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const usParagraphSpoken = stripHtml(
+        substitute(getText('canadian_uranium_supply_demand_us_paragraph', lang), {
+            pct: canadian_uranium_supply_demand_DATA.usPurchasesPct,
+        }),
+    )
+        .replace(/(\d+(?:[.,]\d+)?)\s*%/g, (_, num) => `${num} ${lang === 'en' ? 'percent' : 'pour cent'}`)
+        .replace(/\bU\.S\./g, 'United States');
+    const joinSpoken = (parts) => parts
+        .map((part) => String(part || '').replace(/\.+$/g, '').trim())
+        .filter(Boolean)
+        .join('. ');
+    const leftColumnLabel = joinSpoken([
+        getText('canadian_uranium_supply_demand_subtitle', lang),
+        `${getText('canadian_uranium_supply_demand_production_label', lang)}, ${productionDisplay}`,
+        getText('canadian_uranium_supply_demand_saskatchewan_note', lang),
         `${getText('canadian_uranium_supply_demand_value_heading', lang)} ${getText('canadian_uranium_supply_demand_value_about', lang)} ${valueDisplay}`,
-        `${getText('canadian_uranium_supply_demand_export_prefix', lang)} ${exportPctDisplay} ${getText('canadian_uranium_supply_demand_export_of_production', lang)}. ${getText('canadian_uranium_supply_demand_export_suffix', lang)}`,
-        stripHtml(substitute(getText('canadian_uranium_supply_demand_us_paragraph', lang), { pct: canadian_uranium_supply_demand_DATA.usPurchasesPct })),
-        `${getText('canadian_uranium_supply_demand_domestic_heading', lang)} ${getText('canadian_uranium_supply_demand_domestic_prefix', lang)} ${domesticPctDisplay} ${getText('canadian_uranium_supply_demand_domestic_of_production', lang)}`,
-    ].join('. ');
+    ]);
+    const exportBlockLabel = joinSpoken([
+        `${getText('canadian_uranium_supply_demand_export_prefix', lang)} ${speakPercent(canadian_uranium_supply_demand_DATA.exportPct)} ${getText('canadian_uranium_supply_demand_export_of_production', lang)} ${getText('canadian_uranium_supply_demand_export_suffix', lang)}`,
+        usParagraphSpoken,
+    ]);
+    const domesticBlockLabel = joinSpoken([
+        `${getText('canadian_uranium_supply_demand_domestic_heading', lang)} ${getText('canadian_uranium_supply_demand_domestic_prefix', lang)} ${speakPercent(canadian_uranium_supply_demand_DATA.domesticPct)} ${getText('canadian_uranium_supply_demand_domestic_of_production', lang)}`,
+        getText('canadian_uranium_supply_demand_domestic_paragraph', lang),
+    ]);
 
     return (
         <PageShell tabIndex="-1"
@@ -124,6 +145,15 @@ const CanadianUraniumSupplyDemand = () => {
     margin-bottom: 28px;
 }
 .canadian-uranium-supply-demand-col { min-width: 0; font-family: var(--font-body); color: var(--gc-text); line-height: 1.45; }
+.canadian-uranium-supply-demand-title:focus,
+.canadian-uranium-supply-demand-title:focus-visible,
+.canadian-uranium-supply-demand-col:focus,
+.canadian-uranium-supply-demand-col:focus-visible,
+.canadian-uranium-supply-demand-block:focus,
+.canadian-uranium-supply-demand-block:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 2px;
+}
 .canadian-uranium-supply-demand-production-line {
     display: flex;
     flex-wrap: wrap;
@@ -202,18 +232,20 @@ const CanadianUraniumSupplyDemand = () => {
 
             <div className="canadian-uranium-supply-demand-container">
                 <header>
-                    <h1 id="canadian-uranium-supply-demand-main-title" className="canadian-uranium-supply-demand-title">
+                    <h1 id="canadian-uranium-supply-demand-main-title" className="canadian-uranium-supply-demand-title" tabIndex={0}>
                         {getText('canadian_uranium_supply_demand_title', lang)} ({DATA_YEAR})
                     </h1>
                 </header>
 
-                <div
-                    className="canadian-uranium-supply-demand-split"
-                    role="img"
-                    tabIndex="0"
-                    aria-label={infographicAria}
-                >
-                    <div className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-left" aria-hidden="true">
+                <div className="canadian-uranium-supply-demand-split">
+                    <div
+                        className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-left"
+                        tabIndex={0}
+                        role="group"
+                        data-prose-tab="1"
+                        aria-label={leftColumnLabel}
+                    >
+                    <div aria-hidden="true">
                         <h2 className="canadian-uranium-supply-demand-subtitle">{getText('canadian_uranium_supply_demand_subtitle', lang)}</h2>
 
                         <p className="canadian-uranium-supply-demand-production-line">
@@ -234,27 +266,47 @@ const CanadianUraniumSupplyDemand = () => {
                             <img src={canadianUraniumSupplyDemandBg} alt="" className="canadian-uranium-supply-demand-truck-image" draggable={false} aria-hidden="true" />
                         </div>
                     </div>
+                    </div>
 
-                    <div className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-right" aria-hidden="true">
-                        <p className="canadian-uranium-supply-demand-export-line">
-                            <span className="canadian-uranium-supply-demand-inline-prefix">{getText('canadian_uranium_supply_demand_export_prefix', lang)}</span>
-                            <span className="canadian-uranium-supply-demand-stat-mid">{exportPctDisplay}</span>
-                            <span className="canadian-uranium-supply-demand-inline-suffix">{getText('canadian_uranium_supply_demand_export_of_production', lang)}</span>
-                        </p>
-                        <p className="canadian-uranium-supply-demand-export-suffix-line">{getText('canadian_uranium_supply_demand_export_suffix', lang)}</p>
-                        <SafeHtml
-                            as="p"
-                            className="canadian-uranium-supply-demand-paragraph"
-                            html={substitute(getText('canadian_uranium_supply_demand_us_paragraph', lang), { pct: canadian_uranium_supply_demand_DATA.usPurchasesPct })}
-                        />
-
-                        <h3 className="canadian-uranium-supply-demand-section-heading">{getText('canadian_uranium_supply_demand_domestic_heading', lang)}</h3>
-                        <p className="canadian-uranium-supply-demand-domestic-line">
-                            <span className="canadian-uranium-supply-demand-inline-prefix">{getText('canadian_uranium_supply_demand_domestic_prefix', lang)}</span>
-                            <span className="canadian-uranium-supply-demand-stat-mid">{domesticPctDisplay}</span>
-                            <span className="canadian-uranium-supply-demand-inline-suffix">{getText('canadian_uranium_supply_demand_domestic_of_production', lang)}</span>
-                        </p>
-                        <p className="canadian-uranium-supply-demand-paragraph">{getText('canadian_uranium_supply_demand_domestic_paragraph', lang)}</p>
+                    <div className="canadian-uranium-supply-demand-col canadian-uranium-supply-demand-right">
+                        <div
+                            className="canadian-uranium-supply-demand-block"
+                            tabIndex={0}
+                            role="group"
+                            data-prose-tab="1"
+                            aria-label={exportBlockLabel}
+                        >
+                            <div aria-hidden="true">
+                                <p className="canadian-uranium-supply-demand-export-line">
+                                    <span className="canadian-uranium-supply-demand-inline-prefix">{getText('canadian_uranium_supply_demand_export_prefix', lang)}</span>
+                                    <span className="canadian-uranium-supply-demand-stat-mid">{exportPctDisplay}</span>
+                                    <span className="canadian-uranium-supply-demand-inline-suffix">{getText('canadian_uranium_supply_demand_export_of_production', lang)}</span>
+                                </p>
+                                <p className="canadian-uranium-supply-demand-export-suffix-line">{getText('canadian_uranium_supply_demand_export_suffix', lang)}</p>
+                                <SafeHtml
+                                    as="p"
+                                    className="canadian-uranium-supply-demand-paragraph"
+                                    html={substitute(getText('canadian_uranium_supply_demand_us_paragraph', lang), { pct: canadian_uranium_supply_demand_DATA.usPurchasesPct })}
+                                />
+                            </div>
+                        </div>
+                        <div
+                            className="canadian-uranium-supply-demand-block"
+                            tabIndex={0}
+                            role="group"
+                            data-prose-tab="1"
+                            aria-label={domesticBlockLabel}
+                        >
+                            <div aria-hidden="true">
+                                <h3 className="canadian-uranium-supply-demand-section-heading">{getText('canadian_uranium_supply_demand_domestic_heading', lang)}</h3>
+                                <p className="canadian-uranium-supply-demand-domestic-line">
+                                    <span className="canadian-uranium-supply-demand-inline-prefix">{getText('canadian_uranium_supply_demand_domestic_prefix', lang)}</span>
+                                    <span className="canadian-uranium-supply-demand-stat-mid">{domesticPctDisplay}</span>
+                                    <span className="canadian-uranium-supply-demand-inline-suffix">{getText('canadian_uranium_supply_demand_domestic_of_production', lang)}</span>
+                                </p>
+                                <p className="canadian-uranium-supply-demand-paragraph">{getText('canadian_uranium_supply_demand_domestic_paragraph', lang)}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

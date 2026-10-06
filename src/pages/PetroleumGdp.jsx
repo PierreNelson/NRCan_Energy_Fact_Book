@@ -100,6 +100,7 @@ const PetroleumGdp = () => {
                 },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'

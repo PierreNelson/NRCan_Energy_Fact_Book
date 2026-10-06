@@ -1,5 +1,4 @@
 import React from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
 import SafeHtml from './SafeHtml';
 import energyIntensityIndexBg from '../assets/energy_intensity_index_bg.png';
 
@@ -28,6 +27,14 @@ const TEXT_SLOTS = {
     },
 };
 
+const plainText = (value) => String(value ?? '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const joinSpoken = (...parts) => parts.map(plainText).filter(Boolean).join(' ');
+
 const OverlayBlock = ({ slot, className, children }) => (
     <div
         className={`energy-intensity-index-overlay ${className}`}
@@ -41,21 +48,22 @@ const OverlayBlock = ({ slot, className, children }) => (
     </div>
 );
 
-const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }) => {
+const EnergyIntensityIndexInfographic = ({ lang, getText, figureRef }) => {
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const slots = TEXT_SLOTS[overlayLang];
+    const leftSpoken = joinSpoken(
+        getText('energy_intensity_index_info_left_lead', lang),
+        getText('energy_intensity_index_info_left_pct', lang),
+        getText('energy_intensity_index_info_left_suffix', lang),
+    );
+    const rightSpoken = joinSpoken(
+        getText('energy_intensity_index_info_right_lead', lang),
+        getText('energy_intensity_index_info_right_pct', lang),
+        getText('energy_intensity_index_info_right_suffix', lang),
+    );
 
     return (
-        <AccessibleInfographic
-            ref={figureRef}
-            as="figure"
-            mode="image"
-            className="energy-intensity-index-infographic-figure"
-            title={ariaLabel}
-            overview={ariaLabel}
-            src={energyIntensityIndexBg}
-            imgClassName="energy-intensity-index-bg-image"
-        >
+        <figure ref={figureRef} className="energy-intensity-index-infographic-figure">
             <style>{`
 .energy-intensity-index-infographic-figure {
     position: relative;
@@ -88,6 +96,24 @@ const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }
     box-sizing: border-box;
     pointer-events: none;
 }
+.energy-intensity-index-infographic-figure p.energy-intensity-index-visual-text {
+    position: absolute;
+    top: 0;
+    z-index: 3;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: transparent !important;
+    background: transparent;
+    font-size: 1rem;
+    line-height: 1.2;
+    user-select: none;
+    pointer-events: auto;
+}
+/* Split in the gap after the left sentence and arrow (~55%) and before "Canada used" (63%). */
+.energy-intensity-index-infographic-figure p.energy-intensity-index-visual-text--left { left: 0; width: 57%; }
+.energy-intensity-index-infographic-figure p.energy-intensity-index-visual-text--right { left: 61%; width: 39%; }
 .energy-intensity-index-infographic-figure p.energy-intensity-index-overlay-body {
     font-family: 'Noto Sans', sans-serif;
     font-size: 1.4cqw;
@@ -116,7 +142,8 @@ const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }
 }
             `}</style>
 
-            <div className="energy-intensity-index-infographic-wrapper">
+            <div className="energy-intensity-index-infographic-wrapper" aria-hidden="true">
+                <img src={energyIntensityIndexBg} alt="" className="energy-intensity-index-bg-image" draggable={false} aria-hidden="true" />
                 <OverlayBlock slot={slots.leftLead} className="energy-intensity-index-overlay--left-lead">
                     <p className="energy-intensity-index-overlay-body">{getText('energy_intensity_index_info_left_lead', lang)}</p>
                 </OverlayBlock>
@@ -147,7 +174,9 @@ const EnergyIntensityIndexInfographic = ({ lang, getText, ariaLabel, figureRef }
                      />
                 </OverlayBlock>
             </div>
-        </AccessibleInfographic>
+            <p className="energy-intensity-index-visual-text energy-intensity-index-visual-text--left">{leftSpoken}</p>
+            <p className="energy-intensity-index-visual-text energy-intensity-index-visual-text--right">{rightSpoken}</p>
+        </figure>
     );
 };
 

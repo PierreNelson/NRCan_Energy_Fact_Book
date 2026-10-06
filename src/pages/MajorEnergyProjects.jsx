@@ -13,6 +13,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getMajorProjectsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 
 const COLORS = {
     oil_gas_value: '#857550',
@@ -152,11 +153,34 @@ const MajorEnergyProjects = () => {
         : 'Données des grands projets énergétiques par année (valeurs en milliards de dollars, nombre de projets)';
 
     const getChartSummary = () => {
-        const latestD = pageData.yearlyData.find((d) => d.year === maxYear) || {};
-        if (lang === 'en') {
-            return `Combo chart showing trends in major energy projects from ${minYear} to ${maxYear}. Stacked bars show project value in billions of dollars, lines show number of projects. In ${maxYear}, oil and gas projects were valued at ${formatBillionSR(latestD.oil_gas_value)}, electricity at ${formatBillionSR(latestD.electricity_value)}, and other at ${formatBillionSR(latestD.other_value)}. Expand the data table below for detailed values.`;
-        }
-        return `Graphique combiné montrant les tendances des grands projets énergétiques de ${minYear} à ${maxYear}. Les barres empilées montrent la valeur des projets en milliards de dollars, les lignes montrent le nombre de projets. En ${maxYear}, les projets de pétrole et gaz étaient évalués à ${formatBillionSR(latestD.oil_gas_value)}, l'électricité à ${formatBillionSR(latestD.electricity_value)}, et autres à ${formatBillionSR(latestD.other_value)}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
+        const rows = pageData.yearlyData || [];
+        if (!rows.length) return '';
+        const formatAmount = (val) => {
+            if (val == null || Number.isNaN(Number(val))) return '—';
+            return Math.round(Number(val)).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+        };
+        const valueWord = lang === 'en' ? 'value' : 'valeur';
+        const projectsWord = lang === 'en' ? 'projects' : 'projets';
+        const body = summarizeByCategory({
+            categories: rows.map((d) => d.year),
+            series: [
+                { name: `${oilGasLabel} ${valueWord}`, values: rows.map((d) => d.oil_gas_value), format: formatAmount },
+                { name: `${electricityLabel} ${valueWord}`, values: rows.map((d) => d.electricity_value), format: formatAmount },
+                { name: `${otherLabel} ${valueWord}`, values: rows.map((d) => d.other_value), format: formatAmount },
+                { name: `${oilGasLabel} ${projectsWord}`, values: rows.map((d) => d.oil_gas_projects), format: formatAmount },
+                { name: `${electricityLabel} ${projectsWord}`, values: rows.map((d) => d.electricity_projects), format: formatAmount },
+                { name: `${otherLabel} ${projectsWord}`, values: rows.map((d) => d.other_projects), format: formatAmount },
+            ],
+            lang,
+            newestFirst: true,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Combo chart of major energy projects from ${minYear} to ${maxYear}. Stacked bars show project value and lines show the number of projects`
+                : `Graphique combiné des grands projets énergétiques de ${minYear} à ${maxYear}. Les barres empilées montrent la valeur des projets et les lignes montrent le nombre de projets`,
+            unitNote: lang === 'en' ? 'Values in billions of dollars' : 'Valeurs en milliards de dollars',
+            body,
+        });
     };
 
     downloadChartWithTitleOptionsRef.current = ({
@@ -189,6 +213,25 @@ const MajorEnergyProjects = () => {
     const bullet3AriaLabel = lang === 'en'
         ? `There were ${summary.clean_tech_projects || 215} clean technology projects valued at ${formatBillionSR(summary.clean_tech_value || 194)}.`
         : `Il y avait ${summary.clean_tech_projects || 215} projets de technologies propres d'une valeur de ${formatBillionSR(summary.clean_tech_value || 194)}.`;
+
+    const sidebarTitle = getText('major_energy_projects_sidebar_title', lang);
+    const sidebarBlocks = getText('major_energy_projects_sidebar_content', lang)
+        .split(/<br\s*\/?>/i)
+        .map((para) => para.trim())
+        .filter(Boolean)
+        .map((para) => {
+            let audioLabel = stripHtml(para);
+            if (lang === 'en') {
+                audioLabel = audioLabel.replace(/\$(\d+) million/g, '$1 million dollars');
+            }
+            let visualHtml = para;
+            if (lang === 'en') {
+                visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
+            } else {
+                visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
+            }
+            return { audioLabel, visualHtml };
+        });
 
     return (
         <PageShell
@@ -265,8 +308,17 @@ const MajorEnergyProjects = () => {
         margin-bottom: 10px;
     }
 
-    .major-projects-sidebar p {
+    .major-projects-sidebar p,
+    .major-projects-sidebar-block {
         margin: 0 0 10px 0;
+    }
+
+    .major-projects-sidebar-title:focus,
+    .major-projects-sidebar-title:focus-visible,
+    .major-projects-sidebar-block:focus,
+    .major-projects-sidebar-block:focus-visible {
+        outline: 3px solid #26374a;
+        outline-offset: 3px;
     }
 
     .major-projects-chart {
@@ -659,35 +711,28 @@ const MajorEnergyProjects = () => {
 
                     <aside className="major-projects-right-column">
                         <div className="major-projects-sidebar">
-                            <h3 className="major-projects-sidebar-title">{getText('major_energy_projects_sidebar_title', lang)}</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                {getText('major_energy_projects_sidebar_content', lang).split(/<br\s*\/?>/i).map((para, idx) => {
-                                    if (!para.trim()) return null;
-                                    let audioLabel = stripHtml(para);
-                                    if (lang === 'en') {
-                                        audioLabel = audioLabel.replace(/\$(\d+) million/g, '$1 million dollars');
-                                    }
-                                    let visualHtml = para;
-                                    if (lang === 'en') {
-                                        visualHtml = visualHtml.replace(/(\$\d+ million)/g, '<strong>$1</strong>');
-                                    } else {
-                                        visualHtml = visualHtml.replace(/(\d+ millions de dollars)/g, '<strong>$1</strong>');
-                                    }
-
-                                    return (
-                                        <li
-                                            key={idx}
-                                            style={{ marginBottom: '10px', lineHeight: '1.6', fontFamily: 'Arial, sans-serif', color: '#333' }}
-                                            aria-label={audioLabel}
-                                        >
-                                            <span
-                                                aria-hidden="true"
-                                                dangerouslySetInnerHTML={{ __html: visualHtml }}
-                                            />
-                                        </li>
-                                    );
-                                })}
-                            </ul>
+                            <h3
+                                className="major-projects-sidebar-title"
+                                tabIndex={0}
+                                data-prose-tab="1"
+                            >
+                                {sidebarTitle}
+                            </h3>
+                            {sidebarBlocks.map((block) => (
+                                <p
+                                    key={block.audioLabel}
+                                    className="major-projects-sidebar-block"
+                                    role="region"
+                                    tabIndex={0}
+                                    data-prose-tab="1"
+                                    aria-label={block.audioLabel}
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        dangerouslySetInnerHTML={{ __html: block.visualHtml }}
+                                    />
+                                </p>
+                            ))}
                         </div>
                     </aside>
 

@@ -429,24 +429,22 @@ const WorldBiofuelsProduction = () => {
     ];
 
     const getChartSummary = () => {
-        const series = (tableRows || []).reduce((acc, row) => {
-            Object.keys(row).forEach((k) => {
-                if (k === 'year' || k === 'Year') return;
-                if (!acc[k]) acc[k] = [];
-                acc[k].push(row[k]);
-            });
-            return acc;
-        }, {});
-        const cats = (tableRows || []).map((row) => row.year ?? row.Year);
         const body = summarizeByCategory({
-            categories: cats,
-            series: Object.entries(series).map(([name, values]) => ({ name, values, format: (v) => String(v ?? '—') })),
+            categories: years,
+            series: TRACE_KEYS.map((key, index) => ({
+                name: traceLabels[index],
+                values: traceValueArrays[index],
+                format: formatPj,
+            })),
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
-            intro: lang === 'en' ? 'Chart of world biofuels production over time' : 'Graphique de la production mondiale de biocarburants au fil du temps',
+            intro: lang === 'en'
+                ? `Stacked area chart of world biofuels production from ${START_YEAR} to ${END_YEAR}`
+                : `Graphique en aires empilées de la production mondiale de biocarburants de ${START_YEAR} à ${END_YEAR}`,
+            unitNote: lang === 'en' ? 'Values in petajoules' : 'Valeurs en pétajoules',
             body,
-            lang,
         });
     };
     const chartRegionLabel = `${exportChartTitle}. ${getChartSummary()}`;
@@ -530,6 +528,7 @@ const WorldBiofuelsProduction = () => {
                         tabIndex={0}
                         style={{ margin: 0 }}
                     >
+                        <div aria-hidden="true">
                         <WorldBiofuelsProductionPlot
                             plotData={plotData}
                             plotLayout={{
@@ -577,6 +576,7 @@ const WorldBiofuelsProduction = () => {
                             plotHeight={plotHeight}
                             onPlotReady={onPlotReady}
                         />
+                        </div>
                     </figure>
 
                     <HtmlLegend

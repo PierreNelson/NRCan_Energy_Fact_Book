@@ -251,15 +251,17 @@ const CanadianWindPower = () => {
         const body = summarizeByCategory({
             categories: years,
             series: [
-                { name: getText('wind_power_canada_legend_cumulative', lang), values: cumulativeValues, format: (v) => String(v) },
-                { name: getText('wind_power_canada_legend_annual', lang), values: annualValues, format: (v) => String(v) },
+                { name: getText('wind_power_canada_legend_cumulative', lang), values: cumulativeValues, format: formatMw },
+                { name: getText('wind_power_canada_legend_annual', lang), values: annualValues, format: formatMw },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
                 ? `Bar chart of Canadian wind power capacity from ${startYear} to ${endYear}`
                 : `Graphique à barres de la capacité éolienne canadienne de ${startYear} à ${endYear}`,
+            unitNote: lang === 'en' ? 'Values in megawatts' : 'Valeurs en mégawatts',
             body,
             lang,
         });
@@ -306,6 +308,18 @@ const CanadianWindPower = () => {
     width: 100%;
     container-type: inline-size;
     overflow: visible;
+}
+.wind-power-canada-column-stop {
+    position: absolute;
+    z-index: 4;
+    top: 0;
+    bottom: auto;
+    box-sizing: border-box;
+}
+.wind-power-canada-column-stop:focus,
+.wind-power-canada-column-stop:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 0;
 }
 .wind-power-canada-bg-image {
     display: block;
@@ -406,6 +420,7 @@ const CanadianWindPower = () => {
 
             <section className="wind-power-canada-infographic-section" ref={infographicRef} aria-label={infographicAria}>
                 <CanadianWindPowerInfographic
+                    lang={lang}
                     capacity={{
                         label: substitute(getText('wind_power_canada_capacity_label', lang), { year: capYear }),
                         value: `${formatGw(stats.capGw)} ${capUnit}`,
@@ -439,16 +454,18 @@ const CanadianWindPower = () => {
                         <ClearSelectionButton lang={lang} onClick={clearSelection} />
                     )}
                     <div className="wind-power-canada-chart-scroll">
-                        <figure ref={chartRef} className="wind-power-canada-chart" role="img" aria-label={chartRegionLabel} tabIndex={0}>
+                        <figure ref={chartRef} className="wind-power-canada-chart" role="region" aria-label={chartRegionLabel} tabIndex={0}>
+                            <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                             <Plot
                                 key={`wind-power-canada-${selectedPoints ? 'sel' : 'all'}-${plotHeight}`}
                                 data={plotData}
                                 layout={layout}
                                 config={plotConfig}
-                                style={{ width: '100%' }}
+                                style={{ width: '100%', height: '100%' }}
                                 useResizeHandler
                                 onClick={handleChartClick}
                             />
+                            </div>
                         </figure>
                     </div>
                     <div className="wind-power-canada-custom-legend" aria-hidden="true">

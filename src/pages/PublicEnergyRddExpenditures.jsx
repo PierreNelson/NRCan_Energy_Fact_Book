@@ -125,6 +125,7 @@ const PublicEnergyRddExpenditures = () => {
                 format: formatMillions,
             })),
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'

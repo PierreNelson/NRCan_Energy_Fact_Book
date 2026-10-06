@@ -336,15 +336,17 @@ const Hydroelectricity = () => {
     };
 
     const rankingAria = useMemo(() => {
-        const parts = rankingRows.map((row) =>
-            lang === 'en'
-                ? `Rank ${row.rank}, ${row.name}, ${row.shareLabel}`
-                : `Rang ${row.rank}, ${row.name}, ${row.shareLabel}`,
-        );
+        const shareWord = lang === 'en' ? 'percent' : 'pour cent';
+        const parts = rankingRows.map((row) => {
+            const share = Number(row.pct).toLocaleString(locale, { maximumFractionDigits: 0 });
+            return lang === 'en'
+                ? `Rank ${row.rank}, ${row.name}, ${share} ${shareWord}`
+                : `Rang ${row.rank}, ${row.name}, ${share} ${shareWord}`;
+        });
         return lang === 'en'
             ? `World generation of hydroelectricity ranking for ${YEAR}: ${parts.join('. ')}.`
             : `Classement de la production mondiale d'hydroélectricité pour ${YEAR} : ${parts.join('. ')}.`;
-    }, [rankingRows, lang]);
+    }, [rankingRows, lang, locale]);
 
     const bodyHtml = substitute(getText('hydroelectricity_body', lang), {
         share: `<strong class="hydroelectricity-share-emphasis">${formatSharePct(CANADA_ELECTRICITY_SHARE)}</strong>`,
@@ -542,13 +544,13 @@ const Hydroelectricity = () => {
                     </div>
 
                     <div className="hydroelectricity-right">
-                        <h2 className="hydroelectricity-context-title">
+                        <h2 className="hydroelectricity-context-title" tabIndex={0} data-prose-tab="1">
                             {getText('hydroelectricity_context_title', lang)}
                         </h2>
 
-                        <section className="hydroelectricity-chart-section" aria-label={rankingAria}>
+                        <section className="hydroelectricity-chart-section">
                             <h3 className="hydroelectricity-graphic-title">{graphicTitle}</h3>
-                            <div className="hydroelectricity-capsule-graphic" role="img" aria-label={rankingAria} tabIndex={0}>
+                            <div className="hydroelectricity-capsule-graphic" role="region" aria-label={rankingAria} tabIndex={0}>
                                 {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                             </div>
 

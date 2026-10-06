@@ -329,14 +329,6 @@ const NuclearPower = () => {
     box-sizing: border-box;
     position: relative;
 }
-.nuclear-power-left-kicker {
-    font-family: 'Lato', sans-serif;
-    font-size: clamp(26px, 3vw, 34px);
-    font-weight: bold;
-    color: #4d7c2f;
-    margin: 0 0 18px 0;
-    text-transform: none;
-}
 .nuclear-power-context-title {
     font-family: 'Lato', sans-serif;
     font-size: clamp(22px, 2.6vw, 28px);
@@ -441,7 +433,6 @@ const NuclearPower = () => {
 
                 <div className="nuclear-power-split" ref={infographicRef}>
                     <div className="nuclear-power-left">
-                        <p className="nuclear-power-left-kicker" aria-hidden="true">{getText('nuclear_power_title', lang)}</p>
                         <ul className="nuclear-power-bullets">
                             <li>
                                 <span className="wb-inv">{getText('nuclear_power_bullet_full', lang)}</span>
@@ -456,11 +447,11 @@ const NuclearPower = () => {
                     </div>
 
                     <div className="nuclear-power-right">
-                        <h2 className="nuclear-power-context-title">{getText('nuclear_power_context_title', lang)}</h2>
+                        <h2 className="nuclear-power-context-title" tabIndex={0} data-prose-tab="1">{getText('nuclear_power_context_title', lang)}</h2>
 
-                        <section className="nuclear-power-chart-section" aria-label={rankingAria}>
+                        <section className="nuclear-power-chart-section">
                             <h3 className="nuclear-power-graphic-title">{graphicTitle}</h3>
-                            <div className="nuclear-power-capsule-graphic" role="img" tabIndex={0} aria-label={rankingAria}>
+                            <div className="nuclear-power-capsule-graphic" role="region" tabIndex={0} aria-label={rankingAria}>
                                 {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                                 <div className="nuclear-power-capsule-row nuclear-power-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
                                 {renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}

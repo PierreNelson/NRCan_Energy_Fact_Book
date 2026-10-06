@@ -14,6 +14,8 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import { parseColumnHeader } from '../utils/chartDataTableCellNav';
+import { exportTableToCsv, exportTableToDocx } from '../utils/exportTableToDocx';
 import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -122,6 +124,9 @@ const NuclearPowerPlantsUraniumPrices = () => {
     const chartTitle = getText('nuclear_power_plants_uranium_prices_chart_title', lang);
     const exportChartTitle = stripHtml(chartTitle);
     const priceUnit = getText('nuclear_power_plants_uranium_prices_yaxis', lang);
+    const priceUnitSpoken = parseColumnHeader(
+        getText('nuclear_power_plants_uranium_prices_chart_table_col_spot', lang),
+    ).unitSpoken || priceUnit;
     const facilitiesTitle = getText('nuclear_power_plants_uranium_prices_facilities_title', lang);
     const facilitiesCaption = getText('nuclear_power_plants_uranium_prices_facilities_caption', lang);
     const facilitiesFileSlug = getText('nuclear_power_plants_uranium_prices_facilities_csv_slug', lang).replace(/\.csv$/i, '');
@@ -136,6 +141,32 @@ const NuclearPowerPlantsUraniumPrices = () => {
         { key: 'outputMw', header: getText('nuclear_power_plants_uranium_prices_facilities_col_output', lang), align: 'num' },
         { key: 'units', header: getText('nuclear_power_plants_uranium_prices_facilities_col_units', lang), align: 'num' },
     ], [lang]);
+
+    const facilitiesExportRows = facilitiesRows.map((row) => [
+        row.facility,
+        row.province,
+        formatMw(row.outputMw),
+        String(row.units),
+    ]);
+
+    const downloadFacilitiesCsv = () => {
+        exportTableToCsv({
+            filename: `${facilitiesFileSlug}.csv`,
+            headers: facilitiesColumns.map((column) => column.header),
+            rows: facilitiesExportRows,
+        });
+    };
+
+    const downloadFacilitiesDocx = () => {
+        exportTableToDocx({
+            filename: `${facilitiesFileSlug}.docx`,
+            title: facilitiesTitle,
+            headers: facilitiesColumns.map((column) => column.header),
+            rows: facilitiesExportRows,
+            columnWidths: [3200, 2400, 3200, 1400],
+            options: { titleAlign: 'center', fontSize: 22 },
+        });
+    };
 
     const chartTableColumns = useMemo(() => [
         { key: 'year', header: getText('nuclear_power_plants_uranium_prices_chart_table_col_year', lang), align: 'left' },
@@ -260,12 +291,13 @@ const NuclearPowerPlantsUraniumPrices = () => {
                 { name: foreignLabel, values: foreignValues, format: formatPrice },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
                 ? `Line chart of uranium prices from ${chartYearStart} to ${chartYearEnd}`
                 : `Graphique linéaire des prix de l'uranium de ${chartYearStart} à ${chartYearEnd}`,
-            unitNote: lang === 'en' ? `Values in ${priceUnit}` : `Valeurs en ${priceUnit}`,
+            unitNote: lang === 'en' ? `Values in ${priceUnitSpoken}` : `Valeurs en ${priceUnitSpoken}`,
             body,
         });
     };
@@ -284,15 +316,36 @@ const NuclearPowerPlantsUraniumPrices = () => {
 .page-90 {
 }
 .nuclear-power-plants-uranium-prices-container { width: 100%; padding: 15px 0 0 0; box-sizing: border-box; }
-.nuclear-power-plants-uranium-prices-facilities-title {
-    font-family: 'Lato', sans-serif;
-    font-size: 22px;
-    font-weight: bold;
-    color: var(--gc-text);
-    margin: 0 0 16px 0;
-    line-height: 1.35;
-    text-transform: none;
+.nuclear-power-plants-uranium-prices-facilities-title { text-align: left; }
+.nuclear-power-plants-uranium-prices-sector-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
+    table-layout: fixed;
+}
+.nuclear-power-plants-uranium-prices-sector-table th,
+.nuclear-power-plants-uranium-prices-sector-table td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
     text-align: center;
+    vertical-align: middle;
+}
+.nuclear-power-plants-uranium-prices-sector-table thead th {
+    background-color: #48484A;
+    color: #ffffff;
+    font-weight: bold;
+}
+.nuclear-power-plants-uranium-prices-sector-table tbody tr:nth-child(odd) { background-color: #B8BEAD; }
+.nuclear-power-plants-uranium-prices-sector-table tbody tr:nth-child(even) { background-color: #fefefe; }
+.nuclear-power-plants-uranium-prices-sector-table tbody tr th[scope="row"] {
+    text-align: left;
+    font-weight: bold;
+    color: inherit;
+    background-color: inherit;
+}
+.nuclear-power-plants-uranium-prices-sector-table tbody tr:hover {
+    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.12);
 }
 .nuclear-power-plants-uranium-prices-table-wrapper { display: block; width: 100%; margin-top: 0; margin-bottom: 0; }
 .nuclear-power-plants-uranium-prices-chart-frame {
@@ -340,35 +393,46 @@ const NuclearPowerPlantsUraniumPrices = () => {
 }
 .nuclear-power-plants-uranium-prices-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
 .nuclear-power-plants-uranium-prices-footnotes dd p { margin: 0; }
-@media (max-width: 768px) {
-    .nuclear-power-plants-uranium-prices-facilities-title { font-size: 20px; }
-}
             `}</style>
 
             <div className="nuclear-power-plants-uranium-prices-container">
-                <h2 id="nuclear-power-plants-uranium-prices-facilities-title" className="nuclear-power-plants-uranium-prices-facilities-title">{facilitiesTitle}</h2>
+                <h1 id="nuclear-power-plants-uranium-prices-facilities-title" className="nuclear-power-plants-uranium-prices-facilities-title page-chrome-title">{facilitiesTitle}</h1>
 
-                <div className="nuclear-power-plants-uranium-prices-table-wrapper">
-                    <ChartDataTable
-                        lang={lang}
-                        defaultOpen
-                        label={facilitiesCaption}
-                        columns={facilitiesColumns}
-                        rows={facilitiesRows}
-                        csvFilename={`${facilitiesFileSlug}.csv`}
-                        docx={{
-                            filename: `${facilitiesFileSlug}.docx`,
-                            title: facilitiesTitle,
-                            titleAlign: 'center',
-                            columnWidths: [3200, 2400, 3200, 1400],
-                            fontSize: 22,
-                        }}
-                        caption={facilitiesCaption}
-                        tableAriaLabel={facilitiesCaption}
-                        renderCell={(raw, { colIndex }) => (
-                            colIndex === 2 ? formatMw(raw) : String(raw ?? '')
-                        )}
-                    />
+                <div className="nuclear-power-plants-uranium-prices-table-wrapper table-responsive">
+                    <table className="nuclear-power-plants-uranium-prices-sector-table" aria-label={facilitiesCaption}>
+                        <caption className="wb-inv">{facilitiesCaption}</caption>
+                        <colgroup>
+                            <col style={{ width: '28%' }} />
+                            <col style={{ width: '22%' }} />
+                            <col style={{ width: '32%' }} />
+                            <col style={{ width: '18%' }} />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                {facilitiesColumns.map((column) => (
+                                    <th key={column.key} scope="col">{column.header}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {facilitiesRows.map((row) => (
+                                <tr key={row.facility}>
+                                    <th scope="row">{row.facility}</th>
+                                    <td>{row.province}</td>
+                                    <td>{formatMw(row.outputMw)}</td>
+                                    <td>{row.units}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div className="chart-data-table-toolbar">
+                        <button type="button" className="download-table-btn" onClick={downloadFacilitiesCsv}>
+                            {getText('nuclear_power_plants_uranium_prices_download_csv', lang)}
+                        </button>
+                        <button type="button" className="download-table-btn" onClick={downloadFacilitiesDocx}>
+                            {getText('nuclear_power_plants_uranium_prices_download_docx', lang)}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="nuclear-power-plants-uranium-prices-chart-frame page-chrome-chart-frame">
@@ -388,15 +452,17 @@ const NuclearPowerPlantsUraniumPrices = () => {
                     )}
 
                     <figure ref={chartRef} className="nuclear-power-plants-uranium-prices-chart" role="region" aria-label={chartRegionLabel} tabIndex={0} style={{ margin: 0 }}>
-                        <Plot
-                            key={`nuclear-power-plants-uranium-prices-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}-${plotHeight}`}
-                            data={plotData}
-                            layout={plotLayout}
-                            config={plotConfig}
-                            style={{ width: '100%', height: '100%' }}
-                            useResizeHandler
-                            onClick={handleChartClick}
-                        />
+                        <div aria-hidden="true">
+                            <Plot
+                                key={`nuclear-power-plants-uranium-prices-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}-${plotHeight}`}
+                                data={plotData}
+                                layout={plotLayout}
+                                config={plotConfig}
+                                style={{ width: '100%', height: '100%' }}
+                                useResizeHandler
+                                onClick={handleChartClick}
+                            />
+                        </div>
                     </figure>
 
                     <div className="nuclear-power-plants-uranium-prices-legend" aria-hidden="true">

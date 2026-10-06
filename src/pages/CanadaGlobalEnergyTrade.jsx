@@ -717,6 +717,7 @@ const CanadaGlobalEnergyTrade = () => {
                 },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'

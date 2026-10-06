@@ -421,6 +421,7 @@ const GlobalHydrogenProductionDemand = () => {
         fileSlug,
         downloadTitle,
         colorsMap,
+        chartRegionLabel,
     }) => {
         const tableCaption = substitute(getText(tableCaptionKey, lang), textVars);
         return (
@@ -453,6 +454,7 @@ const GlobalHydrogenProductionDemand = () => {
                     tabIndex={0}
                     style={{ margin: 0, height: `${plotHeight}px` }}
                 >
+                    <div aria-hidden="true">
                     {pieTrace && (
                         <Plot
                             key={`global-hydrogen-${kind}-${selectedYear}-${selectedSlices ? selectedSlices.join('-') : 'all'}-${zoomLegendMode ? 'compact' : 'wide'}-${lang}`}
@@ -464,6 +466,7 @@ const GlobalHydrogenProductionDemand = () => {
                             onClick={onPieClick}
                         />
                     )}
+                    </div>
                 </figure>
 
                 {zoomLegendMode && (
@@ -498,24 +501,54 @@ const GlobalHydrogenProductionDemand = () => {
         );
     };
 
-    const getChartSummary = () => {
-        const prodBody = summarizeByCategory({
-            categories: (productionSlices || []).map((slice) => slice.label || slice.name || slice.key),
-            series: [{ name: lang === 'en' ? 'Production' : 'Production', values: (productionSlices || []).map((slice) => slice.value ?? slice.pct), format: (v) => String(v ?? '—') }],
-            lang,
+    const formatShareSpoken = (value) => {
+        if (value == null || Number.isNaN(Number(value))) return '—';
+        const digits = digitCount(value);
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+            suffix: false,
         });
-        const demandBody = summarizeByCategory({
-            categories: (demandSlices || []).map((slice) => slice.label || slice.name || slice.key),
-            series: [{ name: lang === 'en' ? 'Demand' : 'Demande', values: (demandSlices || []).map((slice) => slice.value ?? slice.pct), format: (v) => String(v ?? '—') }],
-            lang,
-        });
-        return joinChartSummary({
-            intro: lang === 'en' ? 'Pie charts of global hydrogen production and demand' : "Graphiques circulaires de la production et de la demande mondiales d'hydrogène",
-            body: [prodBody, demandBody].filter(Boolean).join('. '),
-            lang,
-        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
     };
-    const chartRegionLabel = `${productionChartTitle}. ${demandChartTitle}. ${getChartSummary()}`;
+    const formatMtSpoken = (value) => {
+        const formatted = formatMt(value);
+        if (formatted === '–' || formatted === '—') return formatted;
+        return `${formatted} ${lang === 'en' ? 'megatonnes' : 'mégatonnes'}`;
+    };
+    const buildPieRegionLabel = (slices, labelPrefix, chartTitle, intro) => {
+        const summary = joinChartSummary({
+            intro,
+            unitNote: lang === 'en'
+                ? 'Values in megatonnes and percent of total'
+                : 'Valeurs en mégatonnes et en pourcentage du total',
+            body: summarizeByCategory({
+                categories: slices.map((slice) => getText(`${labelPrefix}${slice.key}`, lang)),
+                series: [
+                    { name: lang === 'en' ? 'Amount' : 'Quantité', values: slices.map((slice) => slice.mt), format: formatMtSpoken },
+                    { name: lang === 'en' ? 'Share' : 'Part', values: slices.map((slice) => slice.pct), format: formatShareSpoken },
+                ],
+                lang,
+            }),
+        });
+        return `${stripHtml(chartTitle)}. ${summary}`;
+    };
+    const productionRegionLabel = buildPieRegionLabel(
+        productionSlices,
+        'global_hydrogen_production_demand_production_',
+        productionChartTitle,
+        lang === 'en'
+            ? `Pie chart of global hydrogen production by energy source for ${selectedYear}`
+            : `Graphique circulaire de la production mondiale d'hydrogène par source d'énergie pour ${selectedYear}`,
+    );
+    const demandRegionLabel = buildPieRegionLabel(
+        demandSlices,
+        'global_hydrogen_production_demand_demand_',
+        demandChartTitle,
+        lang === 'en'
+            ? `Pie chart of global hydrogen demand by end use for ${selectedYear}`
+            : `Graphique circulaire de la demande mondiale d'hydrogène par utilisation finale pour ${selectedYear}`,
+    );
 
     return (
         <PageShell id="main-content"
@@ -697,6 +730,7 @@ const GlobalHydrogenProductionDemand = () => {
                         fileSlug: productionFileSlug,
                         downloadTitle: productionDownloadTitle,
                         colorsMap: PRODUCTION_COLORS,
+                        chartRegionLabel: productionRegionLabel,
                     })}
                     {renderChartColumn({
                         kind: 'demand',
@@ -712,6 +746,7 @@ const GlobalHydrogenProductionDemand = () => {
                         fileSlug: demandFileSlug,
                         downloadTitle: demandDownloadTitle,
                         colorsMap: DEMAND_COLORS,
+                        chartRegionLabel: demandRegionLabel,
                     })}
                 </div>
             </div>

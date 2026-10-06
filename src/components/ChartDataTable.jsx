@@ -83,6 +83,19 @@ export default function ChartDataTable({
     return keys.map((key) => String(row?.[key] ?? ''));
   });
 
+  // Name the table itself. A label on the scroll wrapper is exposed as a group
+  // and becomes an extra screen-reader stop between the disclosure and the cells.
+  useEffect(() => {
+    const host = tableScrollRef.current;
+    const table = host?.querySelector('table');
+    if (!host || !table) return;
+    host.removeAttribute('aria-label');
+    host.removeAttribute('role');
+    if (tableAriaLabel && !table.querySelector('caption') && !table.getAttribute('aria-label')) {
+      table.setAttribute('aria-label', tableAriaLabel);
+    }
+  }, [open, tableAriaLabel, children, columns, rows]);
+
   useEffect(() => {
     const top = topScrollRef.current;
     const table = tableScrollRef.current;
@@ -267,17 +280,20 @@ export default function ChartDataTable({
         </span>
       </summary>
 
-      <div ref={topScrollRef} className="table-scroll-top" aria-hidden="true">
+      <div ref={topScrollRef} className="table-scroll-top" aria-hidden="true" tabIndex={-1}>
         <div ref={spacerRef} className="table-scroll-top-spacer" />
       </div>
 
       <div
         ref={tableScrollRef}
         className="table-responsive"
-        aria-label={tableAriaLabel}
+        tabIndex={-1}
       >
         {children || (
-          <table className="chart-data-table table table-striped table-hover">
+          <table
+            className="chart-data-table table table-striped table-hover"
+            aria-label={tableAriaLabel || undefined}
+          >
             {caption ? <caption className="wb-inv">{caption}</caption> : null}
             <thead>
               <tr>

@@ -222,10 +222,15 @@ const GovernmentRevenues = () => {
     });
 
     const getChartSummary = () => {
+        const unit = lang === 'fr' ? 'milliards de dollars' : 'billions of dollars';
+        const amount = (num) => `${formatTradeBalanceNumber(num, lang)} ${unit}`;
+        const spokenTitle = exportChartTitle
+            .replace(/\s*\(\s*\$\s*billions?\s*\)/i, ', billions of dollars')
+            .replace(/\s*\(\s*milliards de dollars\s*\)/i, ', milliards de dollars');
         const parts = government_revenues_CATEGORIES.map((k, i) => (
-            `${donutLabels[i]}: ${formatTradeBalanceNumber(donutValues[i], lang)} ${uom}`
+            `${donutLabels[i]}: ${amount(donutValues[i])}`
         )).join(', ');
-        return `${exportChartTitle}. ${totalLabel}: ${totalFormatted}. ${parts}.`;
+        return `${spokenTitle}. ${totalLabel}: ${amount(government_revenues_TOTAL)}. ${parts}.`;
     };
 
     return (

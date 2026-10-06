@@ -159,6 +159,7 @@ const OilGasGhgSpotlight = () => {
                 { name: legendOther, values: other, format: formatMtLocale },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: exportChartTitle,

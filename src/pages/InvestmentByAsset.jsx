@@ -12,6 +12,7 @@ import { getInvestmentByAssetData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { formatLocaleNumber } from '../utils/formatLocale';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 
 const investment_by_asset_COLORS = {
     'transmission_distribution': '#224397',
@@ -192,35 +193,27 @@ const InvestmentByAsset = () => {
         return { traces, years, tickVals, minYear, maxYear, chartTitle, numTraces: investment_by_asset_CATEGORY_ORDER.length };
     }, [pageData, lang, windowWidth, selectedPoints]);
 
-    const formatBillionSR = (val) => {
-        const decimals = val < 1 ? 2 : 1;
-        return lang === 'en' 
-            ? `${val.toFixed(decimals)} billion dollars` 
-            : `${val.toFixed(decimals)} milliards de dollars`;
-    };
-
     const getChartDataSummary = () => {
-        if (!pageData || pageData.length === 0) return '';
+        if (!chartData?.years?.length || !pageData?.length) return '';
 
-        const firstYear = pageData[0];
-        const latestYear = pageData[pageData.length - 1];
-        const firstYearNum = firstYear.year;
-        const latestYearNum = latestYear.year;
+        const body = summarizeByCategory({
+            categories: chartData.years,
+            series: investment_by_asset_CATEGORY_ORDER.map((cat) => ({
+                name: stripHtml(getText(investment_by_asset_LEGEND_KEYS[cat], lang)),
+                values: pageData.map((d) => d[`${cat}_billions`] ?? ((d[cat] || 0) / 1000)),
+                format: (val) => (val == null || Number.isNaN(Number(val)) ? '—' : formatNumber(val)),
+            })),
+            lang,
+            newestFirst: true,
+        });
 
-        // Use pre-calculated total_billions from database if available
-        let total = latestYear.total_billions ?? (() => {
-            let t = 0;
-            investment_by_asset_CATEGORY_ORDER.forEach(cat => {
-                t += (latestYear[cat] || 0) / 1000;
-            });
-            return t;
-        })();
-
-        if (lang === 'en') {
-            return `Stacked bar chart showing public and private investment in fuel, energy and pipeline infrastructure from ${firstYearNum} to ${latestYearNum}. Total investment in ${latestYearNum} was approximately ${formatBillionSR(total)}. Expand the data table below for detailed values.`;
-        } else {
-            return `Graphique à barres empilées montrant les investissements publics et privés dans les infrastructures de carburant, d'énergie et de pipeline de ${firstYearNum} à ${latestYearNum}. L'investissement total en ${latestYearNum} était d'environ ${formatBillionSR(total)}. Développez le tableau de données ci-dessous pour les valeurs détaillées.`;
-        }
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Stacked bar chart of public and private investment in fuel, energy and pipeline infrastructure from ${chartData.minYear} to ${chartData.maxYear}`
+                : `Graphique à barres empilées des investissements publics et privés dans les infrastructures de carburant, d'énergie et de pipeline de ${chartData.minYear} à ${chartData.maxYear}`,
+            unitNote: lang === 'en' ? 'Values in billions of dollars' : 'Valeurs en milliards de dollars',
+            body,
+        });
     };
 
     const formatNumber = (val) => {
@@ -494,11 +487,8 @@ const InvestmentByAsset = () => {
             `}</style>
 
             <div className="investment-by-asset-container">
-                <header 
-                    role="region"
-                    aria-label={chartData.chartTitle}
-                >
-                    <h1 className="investment-by-asset-title" aria-hidden="true">
+                <header>
+                    <h1 className="investment-by-asset-title" tabIndex={0}>
                         {chartData.chartTitle}
                     </h1>
                 </header>

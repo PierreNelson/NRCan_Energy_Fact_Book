@@ -233,13 +233,15 @@ const SolarPvInCanada = () => {
         const body = summarizeByCategory({
             categories: years,
             series: [
-                { name: cumulativeLabel, values: cumulativeValues, format: (v) => String(v) },
-                { name: annualLabel, values: annualValues, format: (v) => String(v) },
+                { name: cumulativeLabel, values: cumulativeValues, format: formatMw },
+                { name: annualLabel, values: annualValues, format: formatMw },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en' ? 'Bar chart of solar PV capacity in Canada' : 'Graphique à barres de la capacité solaire photovoltaïque au Canada',
+            unitNote: lang === 'en' ? 'Values in megawatts' : 'Valeurs en mégawatts',
             body,
             lang,
         });
@@ -404,16 +406,18 @@ const SolarPvInCanada = () => {
                                 />
                             )}
                             <div className="solar-pv-canada-chart-scroll">
-                                <figure ref={chartRef} className="solar-pv-canada-chart" role="img" aria-label={chartRegionLabel} tabIndex={0}>
+                                <figure ref={chartRef} className="solar-pv-canada-chart" role="region" aria-label={chartRegionLabel} tabIndex={0}>
+                                    <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                     <Plot
                                         key={`solar-pv-canada-${selectedPoints ? 'sel' : 'all'}-${plotHeight}-${stackedLayout ? 'stack' : 'side'}`}
                                         data={plotData}
                                         layout={layout}
                                         config={plotConfig}
-                                        style={{ width: '100%' }}
+                                        style={{ width: '100%', height: '100%' }}
                                         useResizeHandler
                                         onClick={handleChartClick}
                                     />
+                                    </div>
                                 </figure>
                             </div>
                             <div className="solar-pv-canada-custom-legend" aria-hidden="true">

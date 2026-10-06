@@ -13,6 +13,7 @@ import { getSolidBiofuelsProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import { formatLocalePct } from '../utils/formatLocale';
 import hexToRgba from '../utils/hexToRgba';
 
 const BAR_KEYS = ['pulping', 'swr', 'firewood', 'pellets'];
@@ -106,6 +107,15 @@ const SolidBiofuelsProduction = () => {
     const formatPct = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
         return String(value);
+    };
+
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 1,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
     };
 
     useEffect(() => {
@@ -495,19 +505,37 @@ const SolidBiofuelsProduction = () => {
                 format: formatPj,
             })),
             lang,
+            newestFirst: true,
         });
         const pieBody = summarizeByCategory({
             categories: pieCategories.map((slice) => getText(PIE_LABEL_KEYS[slice.key], lang)),
-            series: [{
-                name: lang === 'en' ? 'Share' : 'Part',
-                values: pieCategories.map((slice) => slice.pj),
-                format: formatPj,
-            }],
+            series: [
+                {
+                    name: lang === 'en' ? 'Energy' : 'Énergie',
+                    values: pieCategories.map((slice) => slice.pj),
+                    format: formatPj,
+                },
+                {
+                    name: lang === 'en' ? 'Share' : 'Part',
+                    values: pieCategories.map((slice) => slice.pct),
+                    format: formatShareSpoken,
+                },
+            ],
             lang,
         });
         return {
-            bar: joinChartSummary({ intro: exportBarChartTitle, body, lang }),
-            pie: joinChartSummary({ intro: exportPieChartTitle, body: pieBody, lang }),
+            bar: joinChartSummary({
+                intro: exportBarChartTitle,
+                unitNote: lang === 'en' ? 'Values in petajoules' : 'Valeurs en pétajoules',
+                body,
+                lang,
+            }),
+            pie: joinChartSummary({
+                intro: exportPieChartTitle,
+                unitNote: lang === 'en' ? 'Energy values in petajoules' : 'Valeurs énergétiques en pétajoules',
+                body: pieBody,
+                lang,
+            }),
         };
     };
     const summaries = getChartSummary();
@@ -574,7 +602,8 @@ const SolidBiofuelsProduction = () => {
                     <h2 id="solid-biofuels-bar-chart-title" className="solid-biofuels-chart-title page-chrome-chart-title">{barChartTitle}</h2>
                     {selectedBarPoints && <ClearSelectionButton lang={lang} onClick={() => setSelectedBarPoints(null)} />}
                     <div className="solid-biofuels-chart-scroll">
-                        <div ref={barChartRef} className="solid-biofuels-chart" role="img" aria-label={barRegionLabel} tabIndex={0}>
+                        <div ref={barChartRef} className="solid-biofuels-chart" role="region" aria-label={barRegionLabel} tabIndex={0}>
+                            <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                             <Plot
                                 key={`solid-biofuels-bar-${useVerticalBarTicks ? 'v' : 'h'}-${barPlotHeight}`}
                                 data={barTraces}
@@ -585,6 +614,7 @@ const SolidBiofuelsProduction = () => {
                                 onInitialized={onBarInitialized}
                                 onUpdate={onBarInitialized}
                             />
+                            </div>
                         </div>
                     </div>
                     <div className="solid-biofuels-legend" aria-hidden="false">
@@ -621,7 +651,8 @@ const SolidBiofuelsProduction = () => {
                     <h2 id="solid-biofuels-pie-chart-title" className="solid-biofuels-chart-title page-chrome-chart-title">{pieChartTitle}</h2>
                     {selectedPieSlices && <ClearSelectionButton lang={lang} onClick={() => setSelectedPieSlices(null)} />}
                     <div className="solid-biofuels-chart-scroll">
-                        <div ref={pieChartRef} className="solid-biofuels-chart" role="img" aria-label={pieRegionLabel} tabIndex={0}>
+                        <div ref={pieChartRef} className="solid-biofuels-chart" role="region" aria-label={pieRegionLabel} tabIndex={0}>
+                            <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                             {pieTrace && (
                                 <Plot
                                     key={`solid-biofuels-pie-${pieYear}-${zoomLegendMode ? 'compact' : 'wide'}-${effectivePieSlices ? effectivePieSlices.join('-') : 'none'}`}
@@ -634,6 +665,7 @@ const SolidBiofuelsProduction = () => {
                                     onUpdate={onPieInitialized}
                                 />
                             )}
+                            </div>
                         </div>
                     </div>
                     {!zoomLegendMode && (

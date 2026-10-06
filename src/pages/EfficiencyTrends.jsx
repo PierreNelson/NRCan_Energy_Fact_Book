@@ -98,6 +98,7 @@ const EfficiencyTrends = () => {
                 { name: legendExcluding, values: excludingValues, format: (v) => `${formatPj(v)} PJ` },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'

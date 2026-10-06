@@ -489,7 +489,7 @@ const BiofuelsTransportation = () => {
 
                         <section className="biofuels-transportation-chart-section" aria-label={rankingAria}>
                             <h3 className="biofuels-transportation-graphic-title">{graphicTitle}</h3>
-                            <div className="biofuels-transportation-capsule-graphic" role="img" tabIndex={0} aria-label={rankingAria}>
+                            <div className="biofuels-transportation-capsule-graphic" role="region" tabIndex={0} aria-label={rankingAria}>
                                 {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                                 <div className="biofuels-transportation-capsule-row biofuels-transportation-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
                                 {renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}

@@ -468,25 +468,34 @@ const EconomicContributions = () => {
     display: block;
     max-width: none;
 }
-/* Hit targets match left / centre / right text columns on the anchors. */
+/* Hit targets match left / centre / right text columns. The right column has an extra line. */
 .economic-contributions-chunks-top {
     position: absolute;
-    top: 0.5%;
+    top: 0;
     left: 0;
-    right: 0;
-    height: 22%;
+    right: -10px;
+    height: 28%;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     column-gap: 0.5%;
+    align-items: start;
     box-sizing: border-box;
 }
-.economic-contributions-chunk-footer {
+.economic-contributions-chunks-top .economic-contributions-chunk:nth-child(1),
+.economic-contributions-chunks-top .economic-contributions-chunk:nth-child(2) {
+    height: 78%;
+}
+.economic-contributions-chunk.economic-contributions-chunk-footer {
     position: absolute;
-    left: 0;
+    left: -8px;
     right: 0;
-    bottom: 0.5%;
-    height: 9%;
+    top: auto;
+    bottom: -6px;
+    height: 8%;
     width: auto;
+}
+.economic-contributions-chunk.economic-contributions-chunk-footer.is-fr {
+    height: 13%;
 }
 .economic-contributions-chunk {
     min-width: 0;
@@ -498,7 +507,7 @@ const EconomicContributions = () => {
 .economic-contributions-chunk:focus,
 .economic-contributions-chunk:focus-visible {
     outline: 3px solid #ffbf47;
-    outline-offset: -3px;
+    outline-offset: 2px;
 }
 .economic-contributions-data-table-wrapper {
     position: relative;
@@ -559,7 +568,7 @@ const EconomicContributions = () => {
                         ))}
                     </div>
                     <div
-                        className="economic-contributions-chunk economic-contributions-chunk-footer"
+                        className={`economic-contributions-chunk economic-contributions-chunk-footer${lang === 'fr' ? ' is-fr' : ''}`}
                         role="region"
                         aria-label={footerChunk}
                         tabIndex={0}

@@ -637,25 +637,58 @@ const PublicEvChargingStations = () => {
         </span>
     );
 
-    const getChartSummary = () => {
-        const pieBody = summarizeByCategory({
-            categories: (pieSlices || []).map((slice) => slice.label || slice.name || slice.key),
-            series: [{ name: lang === 'en' ? 'Share' : 'Part', values: (pieSlices || []).map((slice) => slice.pct ?? slice.value), format: (v) => String(v ?? '—') }],
-            lang,
+    const formatShareSpoken = (value, digits = 1) => {
+        if (value == null || Number.isNaN(Number(value))) return '—';
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
+            suffix: false,
         });
-        const barBody = summarizeByCategory({
-            categories: barYears || [],
-            series: [{ name: lang === 'en' ? 'Stations' : 'Bornes', values: barPlotValues || [], format: (v) => String(v ?? '—') }],
-            lang,
-        });
-        return {
-            pie: joinChartSummary({ intro: pieChartTitle, body: pieBody, lang }),
-            bar: joinChartSummary({ intro: barChartTitle, body: barBody, lang }),
-        };
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
     };
-    const summaries = getChartSummary();
-    const pieRegionLabel = summaries.pie;
-    const barRegionLabel = summaries.bar;
+    const piePlainTitle = substitute(getText('public_ev_charging_stations_pie_chart_title_plain', lang), pieTextVars);
+    const barPlainTitle = getText('public_ev_charging_stations_bar_chart_title_plain', lang);
+    const pieSummary = joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of public EV charger types in Canada for ${selectedPieYear}`
+            : `Graphique circulaire des types de bornes de recharge publiques au Canada pour ${selectedPieYear}`,
+        body: summarizeByCategory({
+            categories: pieLabels,
+            series: [{
+                name: lang === 'en' ? 'Share' : 'Part',
+                values: pieSlices.map((slice) => slice.pct),
+                format: (value) => formatShareSpoken(value, 1),
+            }],
+            lang,
+        }),
+    });
+    const barSummary = joinChartSummary({
+        intro: lang === 'en'
+            ? `Bar chart of public EV charging stations in Canada from ${BAR_START_YEAR} to ${BAR_END_YEAR}`
+            : `Graphique à barres des stations publiques de recharge de véhicules électriques au Canada de ${BAR_START_YEAR} à ${BAR_END_YEAR}`,
+        unitNote: lang === 'en'
+            ? 'Station counts and year-over-year growth'
+            : 'Nombre de stations et croissance d’une année à l’autre',
+        body: summarizeByCategory({
+            categories: barYears,
+            series: [
+                {
+                    name: lang === 'en' ? 'Stations' : 'Stations',
+                    values: BAR_HARDCODED_DATA.map((row) => row.stations),
+                    format: (value) => formatNumber(value),
+                },
+                {
+                    name: lang === 'en' ? 'Growth' : 'Croissance',
+                    values: BAR_HARDCODED_DATA.map((row) => row.growth),
+                    format: (value) => formatShareSpoken(value, 0),
+                },
+            ],
+            lang,
+            newestFirst: true,
+        }),
+    });
+    const pieRegionLabel = `${piePlainTitle}. ${pieSummary}`;
+    const barRegionLabel = `${barPlainTitle}. ${barSummary}`;
 
     return (
         <PageShell id="main-content"
@@ -896,6 +929,7 @@ const PublicEvChargingStations = () => {
                                     tabIndex={0}
                                     style={{ margin: 0, height: `${piePlotHeight}px` }}
                                 >
+                                    <div aria-hidden="true">
                                     {pieTrace && (
                                         <PublicEvChargingStationsPlot
                                             plotData={[pieTrace]}
@@ -906,6 +940,7 @@ const PublicEvChargingStations = () => {
                                             onPlotReady={onPiePlotReady}
                                         />
                                     )}
+                                    </div>
                                     {!zoomLegendMode && level1Slice && (
                                         <span className="public-ev-charging-stations-level1-label" aria-hidden="true">
                                             <span className="public-ev-charging-stations-level1-row">
@@ -966,6 +1001,7 @@ const PublicEvChargingStations = () => {
                                     tabIndex={0}
                                     style={{ margin: 0, height: `${barPlotHeight}px` }}
                                 >
+                                    <div aria-hidden="true">
                                     <PublicEvChargingStationsPlot
                                         plotData={barPlotData}
                                         plotLayout={barLayout}
@@ -974,6 +1010,7 @@ const PublicEvChargingStations = () => {
                                         plotKey={barPlotKey}
                                         onPlotReady={onBarPlotReady}
                                     />
+                                    </div>
                                 </figure>
                             </div>
 

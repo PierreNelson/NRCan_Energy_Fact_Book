@@ -284,12 +284,13 @@ const Infrastructure = () => {
         return `${parts.join('. ')}. ${totalText}.`;
     };
 
-    const getRightSideText = () => {
+    const getDefinitionText = () => {
         const title = getText('infra_definition_title', lang).replace(/\n/g, ' ');
         const quote = getText('infra_definition_text', lang).replace(/\n/g, ' ');
-        const description = getText('infra_description', lang).replace(/\n/g, ' ');
-        return `${title} "${quote}" ${description}`;
+        return `${title} ${quote}`;
     };
+
+    const getDescriptionText = () => getText('infra_description', lang).replace(/\n/g, ' ');
 
     const formatNumberTable = (val) => {
         return val.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { 
@@ -771,16 +772,20 @@ const Infrastructure = () => {
             `}</style>
 
             <div className="infrastructure-stock-container">
-                <header 
-                    role="region" 
-                    aria-label={`${getText('infrastructure_title', lang).replace(/<br>/g, ' ')}. ${getSubtitleText()}`}
-                >
-                    <h1 className="infrastructure-stock-title" aria-hidden="true">
+                <header>
+                    <h1 className="infrastructure-stock-title" tabIndex="0">
                         {getText('infrastructure_title', lang)}
                     </h1>
 
-                    <p className="infrastructure-stock-subtitle" aria-hidden="true" style={{ color: '#333', marginBottom: '5px', whiteSpace: 'pre-line' }}>
-                        {getSubtitle()}
+                    <p
+                        className="infrastructure-stock-subtitle"
+                        role="region"
+                        tabIndex="0"
+                        aria-label={getSubtitleText()}
+                        data-prose-tab="1"
+                        style={{ color: '#333', marginBottom: '5px', whiteSpace: 'pre-line' }}
+                    >
+                        <span aria-hidden="true">{getSubtitle()}</span>
                     </p>
                 </header>
                 <div className={`infrastructure-stock-content-row ${isTableOpen ? 'layout-stacked' : ''}`}>
@@ -960,24 +965,32 @@ const Infrastructure = () => {
                     </div>
                     </div>
 
-                    <aside 
-                        className="infrastructure-stock-text-column"
-                        role="region"
-                        aria-label={getRightSideText()}
-                        tabIndex="0"
-                    >
-                        <div className="infrastructure-stock-definition-box" aria-hidden="true">
-                            <h2 className="infrastructure-stock-definition-title" style={{ textAlign: 'center', color: '#333', margin: '0 0 15px 0px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
+                    <aside className="infrastructure-stock-text-column">
+                        <div
+                            className="infrastructure-stock-definition-box"
+                            role="region"
+                            tabIndex="0"
+                            aria-label={getDefinitionText()}
+                            data-prose-tab="1"
+                        >
+                            <h2 className="infrastructure-stock-definition-title" aria-hidden="true" style={{ textAlign: 'center', color: '#333', margin: '0 0 15px 0px', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
                                 {getText('infra_definition_title', lang)}
                             </h2>
-                            <div style={{ textAlign: 'center' }}>
+                            <div aria-hidden="true" style={{ textAlign: 'center' }}>
                                 <p className="infrastructure-stock-body-text" style={{ color: '#333', lineHeight: '1.6', whiteSpace: 'pre-line', textAlign: 'center', margin: 0, padding: '0 10px' }}>
                                     {getText('infra_definition_text', lang)}
                                 </p>
                             </div>
                         </div>
-                        <p className="infrastructure-stock-body-text" aria-hidden="true" style={{ color: '#333', lineHeight: '1.5', marginTop: '10px', marginLeft: '0', textAlign: 'center', whiteSpace: 'pre-line' }}>
-                            {getText('infra_description', lang)}
+                        <p
+                            className="infrastructure-stock-body-text"
+                            role="region"
+                            tabIndex="0"
+                            aria-label={getDescriptionText()}
+                            data-prose-tab="1"
+                            style={{ color: '#333', lineHeight: '1.5', marginTop: '10px', marginLeft: '0', textAlign: 'center', whiteSpace: 'pre-line' }}
+                        >
+                            <span aria-hidden="true">{getText('infra_description', lang)}</span>
                         </p>
                     </aside>
                 </div>

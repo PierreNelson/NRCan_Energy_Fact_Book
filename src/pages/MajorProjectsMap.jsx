@@ -162,6 +162,124 @@ const LegendItem = ({ windowWidth, color, symbol, label, isLine, isOutline, size
     );
 };
 
+const CAPITAL_COST_RANGE_KEYS = ['10_999', '1000_5000', '5000_plus'];
+
+function projectMatchesCapitalCostRanges(project, ranges) {
+    if (!ranges?.length) return true;
+    const cost = parseFloat(String(project.capital_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
+    return ranges.some((range) => {
+        if (range === '10_999') return cost >= 10 && cost < 1000;
+        if (range === '1000_5000') return cost >= 1000 && cost <= 5000;
+        if (range === '5000_plus') return cost > 5000;
+        return false;
+    });
+}
+
+function ProjectsMapChoiceMenu({
+    menuRef,
+    label,
+    isOpen,
+    onToggle,
+    onKeyDown,
+    options,
+    value,
+    onSelect,
+    minWidth,
+    multiple = false,
+    buttonLabel,
+}) {
+    const current = buttonLabel ?? options.find((option) => option.value === value)?.label ?? '';
+    return (
+        <div ref={menuRef} style={{ position: 'relative', minWidth, flex: `1 1 ${minWidth}` }}>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
+                {label}
+            </label>
+            <button
+                type="button"
+                onKeyDown={onKeyDown}
+                onClick={onToggle}
+                style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    fontSize: '11px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}
+            >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{current}</span>
+                <span style={{ marginLeft: '4px' }}>{isOpen ? '▲' : '▼'}</span>
+            </button>
+            {isOpen && (
+                <div
+                    data-single-select={multiple ? undefined : '1'}
+                    data-multi-select={multiple ? '1' : undefined}
+                    style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        backgroundColor: '#fff',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        zIndex: 1000,
+                    }}
+                >
+                    {options.map((option, index) => (
+                        <label
+                            key={option.value}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '6px 8px',
+                                cursor: 'pointer',
+                                fontSize: '11px',
+                                borderBottom: index === 0 ? '2px solid #ddd' : '1px solid #eee',
+                                fontWeight: index === 0 ? 'bold' : undefined,
+                                backgroundColor: index === 0 ? '#f9f9f9' : '#fff',
+                            }}
+                            onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = '#f0f0f0'; }}
+                            onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = index === 0 ? '#f9f9f9' : '#fff'; }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={multiple
+                                    ? (option.value === 'all' ? value.length === 0 : value.includes(option.value))
+                                    : value === option.value}
+                                onChange={() => onSelect(option.value, option.label)}
+                                style={{ marginRight: '8px' }}
+                            />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{option.label}</span>
+                        </label>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function focusAfterFilterMenu(root, trigger) {
+    const tabbables = [...document.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )].filter((el) => {
+        if (el.tabIndex < 0) return false;
+        if (el.closest('[aria-hidden="true"]')) return false;
+        if (root?.contains(el) && el !== trigger) return false;
+        return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    });
+    const index = tabbables.indexOf(trigger);
+    if (index < 0) return;
+    tabbables[index + 1]?.focus();
+}
+
 const MajorProjectsMap = () => {
     const { lang } = useOutletContext();
     const windowWidth = useWindowWidth();
@@ -180,19 +298,26 @@ const MajorProjectsMap = () => {
     const [provinceFilter, setProvinceFilter] = useState([]);
     const [typeFilter, setTypeFilter] = useState([]);
     const [locationFilter, setLocationFilter] = useState([]);
-    const [capitalCostFilter, setCapitalCostFilter] = useState('all');
+    const [capitalCostFilter, setCapitalCostFilter] = useState([]);
     const [statusFilter, setStatusFilter] = useState('all');
     const [cleanTechFilter, setCleanTechFilter] = useState('all');
+    const [filterAnnouncement, setFilterAnnouncement] = useState('');
     const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
     const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
     const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false);
     const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
     const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
+    const [capitalCostDropdownOpen, setCapitalCostDropdownOpen] = useState(false);
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+    const [cleanTechDropdownOpen, setCleanTechDropdownOpen] = useState(false);
     const projectDropdownRef = useRef(null);
     const companyDropdownRef = useRef(null);
     const provinceDropdownRef = useRef(null);
     const typeDropdownRef = useRef(null);
     const locationDropdownRef = useRef(null);
+    const capitalCostDropdownRef = useRef(null);
+    const statusDropdownRef = useRef(null);
+    const cleanTechDropdownRef = useRef(null);
 
     useEffect(() => {
         const handleResize = () => {
@@ -225,10 +350,152 @@ const MajorProjectsMap = () => {
             if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target)) {
                 setLocationDropdownOpen(false);
             }
+            if (capitalCostDropdownRef.current && !capitalCostDropdownRef.current.contains(event.target)) {
+                setCapitalCostDropdownOpen(false);
+            }
+            if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) {
+                setStatusDropdownOpen(false);
+            }
+            if (cleanTechDropdownRef.current && !cleanTechDropdownRef.current.contains(event.target)) {
+                setCleanTechDropdownOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isChartInteractive, windowWidth]);
+
+    const filterOpenedByKeyboardRef = useRef(false);
+    const announceFilterRef = useRef(() => {});
+    announceFilterRef.current = (message) => {
+        setFilterAnnouncement('');
+        window.setTimeout(() => setFilterAnnouncement(message), 30);
+    };
+    const onFilterButtonKeyDown = (isOpen) => (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const button = event.currentTarget;
+        const field = button.parentElement?.querySelector('label')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+        const value = button.textContent?.replace(/[▲▼]/g, '').replace(/\s+/g, ' ').trim() || '';
+        const name = [field, value].filter(Boolean).join(', ');
+        if (name) {
+            announceFilterRef.current(lang === 'en' ? `${name}, selected` : `${name}, sélectionné`);
+        }
+        if (!isOpen) filterOpenedByKeyboardRef.current = true;
+    };
+
+    useEffect(() => {
+        const openMenu = [
+            [projectDropdownOpen, projectDropdownRef, setProjectDropdownOpen],
+            [companyDropdownOpen, companyDropdownRef, setCompanyDropdownOpen],
+            [provinceDropdownOpen, provinceDropdownRef, setProvinceDropdownOpen],
+            [locationDropdownOpen, locationDropdownRef, setLocationDropdownOpen],
+            [typeDropdownOpen, typeDropdownRef, setTypeDropdownOpen],
+            [capitalCostDropdownOpen, capitalCostDropdownRef, setCapitalCostDropdownOpen],
+            [statusDropdownOpen, statusDropdownRef, setStatusDropdownOpen],
+            [cleanTechDropdownOpen, cleanTechDropdownRef, setCleanTechDropdownOpen],
+        ].find(([isOpen]) => isOpen);
+        if (!openMenu) return undefined;
+
+        const [, rootRef, setOpen] = openMenu;
+        const root = rootRef.current;
+        let focusTimer;
+        if (filterOpenedByKeyboardRef.current) {
+            focusTimer = window.setTimeout(() => {
+                root?.querySelector('input[type="checkbox"]')?.focus();
+                filterOpenedByKeyboardRef.current = false;
+            }, 0);
+        }
+
+        const onKeyDown = (event) => {
+            if (!root) return;
+            const checkboxes = [...root.querySelectorAll('input[type="checkbox"]')];
+            const active = document.activeElement;
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setOpen(false);
+                root.querySelector('button')?.focus();
+                return;
+            }
+
+            if (event.key === 'Enter' && active instanceof HTMLInputElement && active.type === 'checkbox' && root.contains(active)) {
+                event.preventDefault();
+                event.stopPropagation();
+                const choice = (active.closest('label')?.innerText || '').replace(/\s+/g, ' ').trim();
+                const announcesFromChange = Boolean(active.closest('[data-single-select], [data-multi-select]'));
+                const willSelect = announcesFromChange || !active.checked;
+                active.click();
+                if (choice && !announcesFromChange) {
+                    announceFilterRef.current(lang === 'en'
+                        ? `${choice}, ${willSelect ? 'selected' : 'cleared'}`
+                        : `${choice}, ${willSelect ? 'sélectionné' : 'désélectionné'}`);
+                }
+                return;
+            }
+
+            if (event.key !== 'Tab' || !checkboxes.length) return;
+            const onFirst = active === checkboxes[0];
+            const onLast = active === checkboxes[checkboxes.length - 1];
+            if (!event.shiftKey && onLast) {
+                event.preventDefault();
+                setOpen(false);
+                focusAfterFilterMenu(root, root.querySelector('button'));
+            } else if (event.shiftKey && onFirst) {
+                event.preventDefault();
+                setOpen(false);
+                root.querySelector('button')?.focus();
+            }
+        };
+
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => {
+            if (focusTimer) window.clearTimeout(focusTimer);
+            document.removeEventListener('keydown', onKeyDown, true);
+        };
+    }, [projectDropdownOpen, companyDropdownOpen, provinceDropdownOpen, locationDropdownOpen, typeDropdownOpen, capitalCostDropdownOpen, statusDropdownOpen, cleanTechDropdownOpen, lang]);
+
+    const closeFilterDropdowns = (keep) => {
+        if (keep !== 'project') setProjectDropdownOpen(false);
+        if (keep !== 'company') setCompanyDropdownOpen(false);
+        if (keep !== 'province') setProvinceDropdownOpen(false);
+        if (keep !== 'location') setLocationDropdownOpen(false);
+        if (keep !== 'type') setTypeDropdownOpen(false);
+        if (keep !== 'capitalCost') setCapitalCostDropdownOpen(false);
+        if (keep !== 'status') setStatusDropdownOpen(false);
+        if (keep !== 'cleanTech') setCleanTechDropdownOpen(false);
+    };
+
+    const selectChoiceFilter = (setter, field) => (value, label) => {
+        setter(value);
+        if (label) {
+            announceFilterRef.current(lang === 'en' ? `${field}, ${label}, selected` : `${field}, ${label}, sélectionné`);
+        }
+    };
+
+    const toggleCapitalCostFilter = (value, label) => {
+        const field = lang === 'en' ? 'Capital Cost' : 'Coût en capital';
+        const allLabel = lang === 'en' ? 'All' : 'Tous';
+        const announce = (choice, selected) => {
+            announceFilterRef.current(lang === 'en'
+                ? `${field}, ${choice}, ${selected ? 'selected' : 'cleared'}`
+                : `${field}, ${choice}, ${selected ? 'sélectionné' : 'désélectionné'}`);
+        };
+        if (value === 'all') {
+            setCapitalCostFilter([]);
+            announce(allLabel, true);
+            return;
+        }
+        const alreadySelected = capitalCostFilter.includes(value);
+        const next = alreadySelected
+            ? capitalCostFilter.filter((item) => item !== value)
+            : [...capitalCostFilter, value];
+        if (CAPITAL_COST_RANGE_KEYS.every((key) => next.includes(key))) {
+            setCapitalCostFilter([]);
+            announce(allLabel, true);
+            return;
+        }
+        setCapitalCostFilter(next);
+        announce(label, !alreadySelected);
+    };
 
     const toggleProjectFilter = (project) => {
         setProjectFilter(prev => 
@@ -478,18 +745,8 @@ const MajorProjectsMap = () => {
             );
         }
 
-        if (capitalCostFilter !== 'all') {
-            filtered = filtered.filter(project => {
-                const cost = parseFloat((project.capital_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
-                if (capitalCostFilter === '10_999') {
-                    return cost >= 10 && cost < 1000;
-                } else if (capitalCostFilter === '1000_5000') {
-                    return cost >= 1000 && cost <= 5000;
-                } else if (capitalCostFilter === '5000_plus') {
-                    return cost > 5000;
-                }
-                return true;
-            });
+        if (capitalCostFilter.length > 0) {
+            filtered = filtered.filter((project) => projectMatchesCapitalCostRanges(project, capitalCostFilter));
         }
 
         if (statusFilter !== 'all') {
@@ -572,18 +829,8 @@ const MajorProjectsMap = () => {
             );
         }
 
-        if (capitalCostFilter !== 'all') {
-            filtered = filtered.filter(project => {
-                const cost = parseFloat((project.capital_cost || '0').replace(/[^0-9.-]/g, '')) || 0;
-                if (capitalCostFilter === '10_999') {
-                    return cost >= 10 && cost < 1000;
-                } else if (capitalCostFilter === '1000_5000') {
-                    return cost >= 1000 && cost <= 5000;
-                } else if (capitalCostFilter === '5000_plus') {
-                    return cost > 5000;
-                }
-                return true;
-            });
+        if (capitalCostFilter.length > 0) {
+            filtered = filtered.filter((project) => projectMatchesCapitalCostRanges(project, capitalCostFilter));
         }
 
         if (statusFilter !== 'all') {
@@ -629,7 +876,7 @@ const MajorProjectsMap = () => {
         setProvinceFilter([]);
         setTypeFilter([]);
         setLocationFilter([]);
-        setCapitalCostFilter('all');
+        setCapitalCostFilter([]);
         setStatusFilter('all');
         setCleanTechFilter('all');
         setSortColumn('project_name');
@@ -921,7 +1168,26 @@ const MajorProjectsMap = () => {
                     font-weight: bold;
                     color: #58585a;
                     text-align: center;
-                    margin: 0 0 1em 0;
+                    width: fit-content;
+                    margin: 0 auto 1em;
+                }
+
+                .projects-map-chart-title:focus,
+                .projects-map-chart-title:focus-visible {
+                    outline: 3px solid #ffbf47;
+                    outline-offset: 4px;
+                }
+
+                .projects-map-filters {
+                    display: block;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .projects-map-filters:focus,
+                .projects-map-filters:focus-visible {
+                    outline: 3px solid #ffbf47;
+                    outline-offset: 4px;
                 }
 
                 .projects-map-chart-frame {
@@ -1077,7 +1343,11 @@ const MajorProjectsMap = () => {
                 </header>
 
                 <div className="projects-map-chart-frame">
-                    <p className="projects-map-chart-title">
+                    <p
+                        className="projects-map-chart-title"
+                        tabIndex={0}
+                        data-prose-tab="1"
+                    >
                         {getText('major_projects_map_subtitle', lang)}
                     </p>
                     <div className="projects-map-content">
@@ -1170,11 +1440,14 @@ const MajorProjectsMap = () => {
                 </aside>
                 </div>
 
-                <div 
-                    role="region" 
+                <div
+                    className="projects-map-filters"
+                    role="region"
+                    tabIndex={0}
+                    data-prose-tab="1"
                     aria-label={lang === 'en' ? 'Filter controls for projects table' : 'Contrôles de filtre pour le tableau des projets'}
                 >
-                    <h3 className="wb-inv">{lang === 'en' ? 'Filter area - Use the controls below to filter the projects table' : 'Zone de filtre - Utilisez les contrôles ci-dessous pour filtrer le tableau des projets'}</h3>
+                    <h3 className="wb-inv" aria-hidden="true">{lang === 'en' ? 'Filter area - Use the controls below to filter the projects table' : 'Zone de filtre - Utilisez les contrôles ci-dessous pour filtrer le tableau des projets'}</h3>
                 <div style={{ 
                     display: 'flex',
                     alignItems: 'center',
@@ -1186,7 +1459,15 @@ const MajorProjectsMap = () => {
                     borderRadius: '4px'
                 }}>
                     <button
+                        type="button"
                         onClick={clearAllFilters}
+                        onKeyDown={(event) => {
+                            if (event.key !== 'Enter' && event.key !== ' ') return;
+                            const label = event.currentTarget.textContent?.replace(/\s+/g, ' ').trim();
+                            if (label) {
+                                announceFilterRef.current(lang === 'en' ? `${label}, selected` : `${label}, sélectionné`);
+                            }
+                        }}
                         style={{
                             padding: '6px 12px',
                             fontSize: '11px',
@@ -1222,7 +1503,9 @@ const MajorProjectsMap = () => {
                             {lang === 'en' ? 'Project' : 'Projet'}
                         </label>
                         <button
-                            onClick={() => { setProjectDropdownOpen(!projectDropdownOpen); setCompanyDropdownOpen(false); setProvinceDropdownOpen(false); }}
+                            type="button"
+                            onKeyDown={onFilterButtonKeyDown(projectDropdownOpen)}
+                            onClick={() => { setProjectDropdownOpen(!projectDropdownOpen); closeFilterDropdowns('project'); }}
                             style={{
                                 width: '100%',
                                 padding: '6px 8px',
@@ -1312,7 +1595,9 @@ const MajorProjectsMap = () => {
                             {lang === 'en' ? 'Company' : 'Entreprise'}
                         </label>
                         <button
-                            onClick={() => { setCompanyDropdownOpen(!companyDropdownOpen); setProjectDropdownOpen(false); setProvinceDropdownOpen(false); }}
+                            type="button"
+                            onKeyDown={onFilterButtonKeyDown(companyDropdownOpen)}
+                            onClick={() => { setCompanyDropdownOpen(!companyDropdownOpen); closeFilterDropdowns('company'); }}
                             style={{
                                 width: '100%',
                                 padding: '6px 8px',
@@ -1402,7 +1687,9 @@ const MajorProjectsMap = () => {
                             {lang === 'en' ? 'Province' : 'Province'}
                         </label>
                         <button
-                            onClick={() => { setProvinceDropdownOpen(!provinceDropdownOpen); setProjectDropdownOpen(false); setCompanyDropdownOpen(false); }}
+                            type="button"
+                            onKeyDown={onFilterButtonKeyDown(provinceDropdownOpen)}
+                            onClick={() => { setProvinceDropdownOpen(!provinceDropdownOpen); closeFilterDropdowns('province'); }}
                             style={{
                                 width: '100%',
                                 padding: '6px 8px',
@@ -1492,7 +1779,9 @@ const MajorProjectsMap = () => {
                             {lang === 'en' ? 'Location' : 'Emplacement'}
                         </label>
                         <button
-                            onClick={() => { setLocationDropdownOpen(!locationDropdownOpen); setProjectDropdownOpen(false); setCompanyDropdownOpen(false); setProvinceDropdownOpen(false); setTypeDropdownOpen(false); }}
+                            type="button"
+                            onKeyDown={onFilterButtonKeyDown(locationDropdownOpen)}
+                            onClick={() => { setLocationDropdownOpen(!locationDropdownOpen); closeFilterDropdowns('location'); }}
                             style={{
                                 width: '100%',
                                 padding: '6px 8px',
@@ -1581,7 +1870,9 @@ const MajorProjectsMap = () => {
                             {lang === 'en' ? 'Type' : 'Type'}
                         </label>
                         <button
-                            onClick={() => { setTypeDropdownOpen(!typeDropdownOpen); setProjectDropdownOpen(false); setCompanyDropdownOpen(false); setProvinceDropdownOpen(false); setLocationDropdownOpen(false); }}
+                            type="button"
+                            onKeyDown={onFilterButtonKeyDown(typeDropdownOpen)}
+                            onClick={() => { setTypeDropdownOpen(!typeDropdownOpen); closeFilterDropdowns('type'); }}
                             style={{
                                 width: '100%',
                                 padding: '6px 8px',
@@ -1665,74 +1956,61 @@ const MajorProjectsMap = () => {
                         )}
                     </div>
 
-                    <div style={{ minWidth: '150px', flex: '1 1 150px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
-                            {lang === 'en' ? 'Capital Cost' : 'Coût en capital'}
-                        </label>
-                        <select
-                            value={capitalCostFilter}
-                            onChange={(e) => setCapitalCostFilter(e.target.value)}
-                            style={{ 
-                                padding: '6px 8px', 
-                                fontSize: '11px',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                width: '100%',
-                                backgroundColor: '#fff'
-                            }}
-                        >
-                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
-                            <option value="10_999">{lang === 'en' ? '$10-999 million' : '10-999 millions $'}</option>
-                            <option value="1000_5000">{lang === 'en' ? '$1-5 billion' : '1-5 milliards $'}</option>
-                            <option value="5000_plus">{lang === 'en' ? 'More than $5 billion' : 'Plus de 5 milliards $'}</option>
-                        </select>
-                    </div>
+                    <ProjectsMapChoiceMenu
+                        menuRef={capitalCostDropdownRef}
+                        label={lang === 'en' ? 'Capital Cost' : 'Coût en capital'}
+                        isOpen={capitalCostDropdownOpen}
+                        onToggle={() => { setCapitalCostDropdownOpen(!capitalCostDropdownOpen); closeFilterDropdowns('capitalCost'); }}
+                        onKeyDown={onFilterButtonKeyDown(capitalCostDropdownOpen)}
+                        minWidth="150px"
+                        multiple
+                        value={capitalCostFilter}
+                        buttonLabel={capitalCostFilter.length === 0
+                            ? (lang === 'en' ? 'All' : 'Tous')
+                            : `${capitalCostFilter.length} ${lang === 'en' ? 'selected' : 'sélectionné(s)'}`}
+                        onSelect={toggleCapitalCostFilter}
+                        options={[
+                            { value: 'all', label: lang === 'en' ? 'All' : 'Tous' },
+                            { value: '10_999', label: lang === 'en' ? '$10-999 million' : '10-999 millions $' },
+                            { value: '1000_5000', label: lang === 'en' ? '$1-5 billion' : '1-5 milliards $' },
+                            { value: '5000_plus', label: lang === 'en' ? 'More than $5 billion' : 'Plus de 5 milliards $' },
+                        ]}
+                    />
 
-                    <div style={{ minWidth: '130px', flex: '1 1 130px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
-                            {lang === 'en' ? 'Status' : 'Statut'}
-                        </label>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            style={{ 
-                                padding: '6px 8px', 
-                                fontSize: '11px',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                width: '100%',
-                                backgroundColor: '#fff'
-                            }}
-                        >
-                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
-                            <option value="planned">{lang === 'en' ? 'Planned' : 'Prévu'}</option>
-                            <option value="under_construction">{lang === 'en' ? 'Under Construction' : 'En construction'}</option>
-                        </select>
-                    </div>
+                    <ProjectsMapChoiceMenu
+                        menuRef={statusDropdownRef}
+                        label={lang === 'en' ? 'Status' : 'Statut'}
+                        isOpen={statusDropdownOpen}
+                        onToggle={() => { setStatusDropdownOpen(!statusDropdownOpen); closeFilterDropdowns('status'); }}
+                        onKeyDown={onFilterButtonKeyDown(statusDropdownOpen)}
+                        minWidth="130px"
+                        value={statusFilter}
+                        onSelect={selectChoiceFilter(setStatusFilter, lang === 'en' ? 'Status' : 'Statut')}
+                        options={[
+                            { value: 'all', label: lang === 'en' ? 'All' : 'Tous' },
+                            { value: 'planned', label: lang === 'en' ? 'Planned' : 'Prévu' },
+                            { value: 'under_construction', label: lang === 'en' ? 'Under Construction' : 'En construction' },
+                        ]}
+                    />
 
-                    <div style={{ minWidth: '120px', flex: '1 1 120px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>
-                            {lang === 'en' ? 'Clean Tech' : 'Tech. propre'}
-                        </label>
-                        <select
-                            value={cleanTechFilter}
-                            onChange={(e) => setCleanTechFilter(e.target.value)}
-                            style={{ 
-                                padding: '6px 8px', 
-                                fontSize: '11px',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                width: '100%',
-                                backgroundColor: '#fff'
-                            }}
-                        >
-                            <option value="all">{lang === 'en' ? 'All' : 'Tous'}</option>
-                            <option value="yes">{lang === 'en' ? 'Yes' : 'Oui'}</option>
-                            <option value="no">{lang === 'en' ? 'No' : 'Non'}</option>
-                        </select>
-                    </div>
+                    <ProjectsMapChoiceMenu
+                        menuRef={cleanTechDropdownRef}
+                        label={lang === 'en' ? 'Clean Tech' : 'Tech. propre'}
+                        isOpen={cleanTechDropdownOpen}
+                        onToggle={() => { setCleanTechDropdownOpen(!cleanTechDropdownOpen); closeFilterDropdowns('cleanTech'); }}
+                        onKeyDown={onFilterButtonKeyDown(cleanTechDropdownOpen)}
+                        minWidth="120px"
+                        value={cleanTechFilter}
+                        onSelect={selectChoiceFilter(setCleanTechFilter, lang === 'en' ? 'Clean Tech' : 'Tech. propre')}
+                        options={[
+                            { value: 'all', label: lang === 'en' ? 'All' : 'Tous' },
+                            { value: 'yes', label: lang === 'en' ? 'Yes' : 'Oui' },
+                            { value: 'no', label: lang === 'en' ? 'No' : 'Non' },
+                        ]}
+                    />
                 </div>
                 </div>
+                <div className="wb-inv" aria-live="polite" aria-atomic="true">{filterAnnouncement}</div>
 
                 <div className="projects-map-table-wrapper">
                     <ChartDataTable

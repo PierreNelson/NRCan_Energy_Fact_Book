@@ -203,22 +203,29 @@ const ElectricityGhgSpotlight = () => {
         click: (gd) => downloadChartWithTitle(gd),
     });
 
+    const megatonneWord = lang === 'en' ? 'megatonnes' : 'mégatonnes';
+    const formatMtSpoken = (value) => {
+        const formatted = formatMt(value);
+        if (formatted === '—') return formatted;
+        return `${formatted} ${megatonneWord}`;
+    };
     const getChartSummary = () => {
         if (!years.length) return '';
         const body = summarizeByCategory({
             categories: years,
             series: [
-                { name: coalLabel, values: coalValues, format: formatMt },
-                { name: naturalGasLabel, values: naturalGasValues, format: formatMt },
-                { name: otherLabel, values: otherValues, format: formatMt },
+                { name: coalLabel, values: coalValues, format: formatMtSpoken },
+                { name: naturalGasLabel, values: naturalGasValues, format: formatMtSpoken },
+                { name: otherLabel, values: otherValues, format: formatMtSpoken },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
                 ? `Stacked bar chart of electricity GHG emissions from ${startYear ?? years[0]} to ${endYear ?? years[years.length - 1]}`
                 : `Graphique à barres empilées des émissions de GES de l'électricité de ${startYear ?? years[0]} à ${endYear ?? years[years.length - 1]}`,
-            unitNote: lang === 'en' ? 'Values in Mt' : 'Valeurs en Mt',
+            unitNote: lang === 'en' ? 'Values in megatonnes' : 'Valeurs en mégatonnes',
             body,
             lang,
         });
@@ -362,6 +369,7 @@ const ElectricityGhgSpotlight = () => {
 
                     <figure ref={chartRef} style={{ margin: 0 }}>
                         <div role="region" aria-label={`${exportChartTitle}. ${getChartSummary()}`} tabIndex="0">
+                            <div aria-hidden="true">
                             <Plot
                                 key={`electricity-ghg-spotlight-${selectedPoints ? selectedPoints.map((t) => t.join('-')).join('_') : 'all'}-${plotHeight}`}
                                 data={plotData}
@@ -401,6 +409,7 @@ const ElectricityGhgSpotlight = () => {
                                 useResizeHandler
                                 onClick={handleChartClick}
                             />
+                            </div>
                         </div>
                     </figure>
 

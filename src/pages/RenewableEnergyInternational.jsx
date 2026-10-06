@@ -599,7 +599,14 @@ const RenewableEnergyInternational = () => {
             series: [{
                 name: lang === 'en' ? 'Share' : 'Part',
                 values: shareValues,
-                format: (v) => formatPct(v, 1),
+                format: (v) => {
+                    const formatted = formatLocalePct(v, lang, {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                        suffix: false,
+                    });
+                    return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+                },
             }],
             lang,
         });
@@ -612,6 +619,27 @@ const RenewableEnergyInternational = () => {
         });
     };
     const chartRegionLabel = `${chartTitle}. ${getChartSummary()}`;
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            maximumFractionDigits: 0,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const rankingAria = rankingRows.length ? joinChartSummary({
+        intro: stripHtml(productionTitle),
+        body: summarizeByCategory({
+            categories: rankingRows.map((row) => (
+                lang === 'en' ? `Rank ${row.rank}, ${row.name}` : `Rang ${row.rank}, ${row.name}`
+            )),
+            series: [{
+                name: lang === 'en' ? 'Share' : 'Part',
+                values: rankingRows.map((row) => row.pct),
+                format: formatShareSpoken,
+            }],
+            lang,
+        }),
+    }) : stripHtml(productionTitle);
 
     return (
         <PageShell id="main-content"
@@ -809,17 +837,17 @@ const RenewableEnergyInternational = () => {
                 <h1 id="renewable-energy-international-title" className="renewable-energy-international-title page-chrome-title">{pageTitle}</h1>
                 <h2 className="renewable-energy-international-subtitle">{subtitle}</h2>
 
-                <h3 className="renewable-energy-international-production-title">{productionTitle}</h3>
+                <h3 className="renewable-energy-international-production-title" tabIndex={0} data-prose-tab="1">{productionTitle}</h3>
                 <div
                     className="renewable-energy-international-capsule-graphic"
-                    role="list"
-                    aria-label={getText('renewable_energy_international_ranking_aria', lang)}
+                    role="region"
+                    tabIndex={0}
+                    aria-label={rankingAria}
                 >
                     {rankingRows.map((row) => (
                         <div
                             key={row.key}
                             className={`renewable-energy-international-capsule-row${row.isCanada ? ' renewable-energy-international-capsule-row-canada' : ''}`}
-                            role="listitem"
                         >
                             <div className="renewable-energy-international-capsule-bar-wrap">
                                 <div className="renewable-energy-international-capsule-bar">
@@ -864,13 +892,15 @@ const RenewableEnergyInternational = () => {
                                 aria-label={chartRegionLabel}
                                 tabIndex={0}
                             >
-                                <RenewableEnergyInternationalPlot
-                                    plotKey={plotKey}
-                                    plotData={plotData}
-                                    plotLayout={plotLayout}
-                                    chartConfig={chartConfig}
-                                    onPlotReady={onPlotReady}
-                                />
+                                <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
+                                    <RenewableEnergyInternationalPlot
+                                        plotKey={plotKey}
+                                        plotData={plotData}
+                                        plotLayout={plotLayout}
+                                        chartConfig={chartConfig}
+                                        onPlotReady={onPlotReady}
+                                    />
+                                </div>
                             </figure>
                         </div>
                         {hoverTip && (

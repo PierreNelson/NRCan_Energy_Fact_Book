@@ -95,6 +95,7 @@ const EnergyIntensityIndex = () => {
                 { name: legendPerGdp, values: perGdpValues, format: formatIndex },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: getText('energy_intensity_index_chart_aria', lang),
@@ -158,6 +159,7 @@ const EnergyIntensityIndex = () => {
         >
             <style>{`
 .page-55.energy-intensity-index-intensity-index {
+    overflow: visible !important;
 }
 .energy-intensity-index-inner { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
 .energy-intensity-index-infographic-section {
@@ -331,7 +333,6 @@ const EnergyIntensityIndex = () => {
                         figureRef={infographicRef}
                         lang={lang}
                         getText={getText}
-                        ariaLabel={getText('energy_intensity_index_infographic_aria', lang)}
                     />
                 </div>
             </div>

@@ -24,6 +24,7 @@ import { getElectricityPricesMapData } from '../utils/dataLoader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -146,6 +147,33 @@ const ElectricityPricesMap = () => {
     const chartTitleMain = getText('electricity_prices_chart_title', lang);
     const chartTitleSuffix = substitute(getText('electricity_prices_chart_title_suffix', lang), textVars);
     const chartTitleFull = `${stripHtml(chartTitleMain)}${stripHtml(chartTitleSuffix)}`;
+    const priceUnit = lang === 'en' ? 'cents per kWh' : 'cents par kWh';
+    const formatPriceSpoken = (value) => {
+        const formatted = formatPrice(value);
+        return formatted === '—' ? formatted : `${formatted} ${priceUnit}`;
+    };
+    const chartSummary = cities.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? 'Grouped bar chart of industrial and residential electricity prices by city'
+            : "Graphique à barres groupées des prix de l'électricité industrielle et résidentielle par ville",
+        body: summarizeByCategory({
+            categories: cities.map((row) => row.label),
+            series: [
+                {
+                    name: getText('electricity_prices_legend_industrial', lang),
+                    values: cities.map((row) => row.industrial),
+                    format: formatPriceSpoken,
+                },
+                {
+                    name: getText('electricity_prices_legend_residential', lang),
+                    values: cities.map((row) => row.residential),
+                    format: formatPriceSpoken,
+                },
+            ],
+            lang,
+        }),
+    }) : '';
+    const chartRegionLabel = chartSummary ? `${chartTitleFull}. ${chartSummary}` : chartTitleFull;
     const tableCaption = substitute(getText('electricity_prices_table_caption', lang), textVars);
     const fileTitle = getText('electricity_prices_download_title', lang);
 
@@ -486,18 +514,19 @@ const ElectricityPricesMap = () => {
 }
 .electricity-prices-chart-title {
     color: var(--gc-text);
-    margin: 0 0 6px 0;
+    margin: 0 0 12px 0;
     text-transform: none;
     line-height: 1.3;
 }
 .electricity-prices-chart-title .fn-lnk { color: #26374a; }
 .electricity-prices-unit {
+    display: block;
     font-family: Arial, sans-serif;
     font-size: 16px;
     font-weight: bold;
     color: #58585a;
     text-align: center;
-    margin: 0 0 12px 0;
+    margin: 6px 0 0 0;
 }
 .electricity-prices-chart-bg-wrapper { position: relative; width: 100%; }
 .electricity-prices-chart-overlay { position: relative; z-index: 4; width: 100%; }
@@ -550,8 +579,8 @@ const ElectricityPricesMap = () => {
                             onClick={scrollToFootnote}
                         />
                         {chartTitleSuffix}
+                        <span className="electricity-prices-unit">{getText('electricity_prices_unit', lang)}</span>
                     </h2>
-                    <p className="electricity-prices-unit">{getText('electricity_prices_unit', lang)}</p>
 
                     {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clearSelection} />}
 
@@ -571,15 +600,18 @@ const ElectricityPricesMap = () => {
                                 className="electricity-prices-chart"
                                 style={{ height: plotHeight, margin: 0 }}
                                 role="region"
-                                aria-label={chartTitleFull}
+                                aria-label={chartRegionLabel}
+                                tabIndex={0}
                             >
-                                <ElectricityPricesMapPlot
-                                    plotData={plotData}
-                                    plotLayout={plotLayout}
-                                    chartConfig={chartConfig}
-                                    plotHeight={plotHeight}
-                                    onPlotReady={onPlotReady}
-                                />
+                                <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
+                                    <ElectricityPricesMapPlot
+                                        plotData={plotData}
+                                        plotLayout={plotLayout}
+                                        chartConfig={chartConfig}
+                                        plotHeight={plotHeight}
+                                        onPlotReady={onPlotReady}
+                                    />
+                                </div>
                             </figure>
                         </div>
 

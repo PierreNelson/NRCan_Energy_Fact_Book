@@ -248,17 +248,27 @@ const RppSupplyDemand = () => {
         name: lang === 'en' ? 'Download chart as PNG' : 'Télécharger le graphique en PNG',
     });
 
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 1,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+
     const getChartSummary = () => {
         if (!productSlices.length) return '';
         const body = summarizeByCategory({
             categories: labels,
-            series: [{ name: shareHeader, values: productSlices.map((s) => s.pct), format: formatPct }],
+            series: [{ name: lang === 'en' ? 'Share' : 'Part', values: productSlices.map((s) => s.pct), format: formatShareSpoken }],
             lang,
         });
         return joinChartSummary({
-            intro: exportChartTitle,
+            intro: lang === 'en'
+                ? `Pie chart of refinery production by product for ${year}`
+                : `Graphique circulaire de la production des raffineries par produit pour ${year}`,
             body,
-            lang,
         });
     };
 
@@ -446,7 +456,6 @@ const RppSupplyDemand = () => {
                 <div className="rpp-supply-demand-table-wrapper rpp-supply-demand-supply-table-wrapper">
                     <ChartDataTable
                         lang={lang}
-                        label={getText('rpp_refinery_input_supply_table_summary', lang)}
                         columns={supplyTableColumns}
                         rows={supplyTableRows}
                         csvFilename={`${supplySlug}.csv`}

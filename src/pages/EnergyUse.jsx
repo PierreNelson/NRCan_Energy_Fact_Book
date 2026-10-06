@@ -15,6 +15,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getEnergyUseData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -378,6 +379,53 @@ const EnergyUse = () => {
         click: (gd) => downloadBarChartWithTitle(gd),
     });
 
+    const percentWord = lang === 'en' ? 'percent' : 'pour cent';
+    const formatShare = (value) => `${Math.round(Number(value))} ${percentWord}`;
+
+    const getPieChartSummary = () => {
+        if (!computed || computed.TPD <= 0) return '';
+        const shares = computed.pieValues.map((value) => (value / computed.TPD) * 100);
+        const body = summarizeByCategory({
+            categories: pieLabels.map((label) => stripHtml(label)),
+            series: [
+                { name: lang === 'en' ? 'Share' : 'Part', values: shares, format: formatShare },
+                { name: lang === 'en' ? 'Energy' : 'Énergie', values: computed.pieValues, format: (value) => `${formatPJ(value, lang)} PJ` },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Pie chart of primary and secondary energy use by sector for ${selectedYear}. Total ${formatPJ(computed.TPD, lang)} PJ`
+                : `Graphique circulaire de la consommation d'énergie primaire et secondaire par secteur pour ${selectedYear}. Total ${formatPJ(computed.TPD, lang)} PJ`,
+            body,
+        });
+    };
+
+    const getBarChartSummary = () => {
+        if (!computed || computed.TSEU <= 0) return '';
+        const body = summarizeByCategory({
+            categories: barLabels.map((label) => stripHtml(label)),
+            series: [
+                { name: lang === 'en' ? 'Share' : 'Part', values: computed.barPct, format: formatShare },
+                { name: lang === 'en' ? 'Energy' : 'Énergie', values: computed.barValues, format: (value) => `${formatPJ(value, lang)} PJ` },
+            ],
+            lang,
+        });
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `Stacked bar chart of secondary energy use by sector for ${selectedYear}. Total ${formatPJ(computed.TSEU, lang)} PJ`
+                : `Graphique à barres empilées de la consommation d'énergie secondaire par secteur pour ${selectedYear}. Total ${formatPJ(computed.TSEU, lang)} PJ`,
+            body,
+        });
+    };
+
+    const pieRegionLabel = `${exportPieChartTitle}. ${getPieChartSummary()}`;
+    const barRegionLabel = `${exportBarChartTitle}. ${getBarChartSummary()}`;
+    const subtitleText = getText('energy_use_subtitle', lang).replace(
+        /\{\{year\}\}/g,
+        selectedYear != null ? String(selectedYear) : '',
+    );
+
     const renderTableCell = (raw, { colIndex, column }) => {
         if (raw == null || raw === '') return '—';
         if (colIndex === 0) return String(raw);
@@ -464,7 +512,7 @@ const EnergyUse = () => {
                     {getText('energy_use_title', lang)}
                 </h1>
                 <p className="energy-use-subtitle">
-                    {getText('energy_use_subtitle', lang)}
+                    {subtitleText}
                 </p>
 
                 <ul className="energy-use-bullets">
@@ -509,7 +557,13 @@ const EnergyUse = () => {
                                     </p>
                                     <div className="energy-use-pie-wrap" ref={pieChartRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                                         {selectedSlices !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />}
-                                        <figure style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 380, margin: '0 auto', position: 'relative' }}>
+                                        <figure
+                                            role="region"
+                                            aria-label={pieRegionLabel}
+                                            tabIndex="0"
+                                            style={{ width: '100%', maxWidth: 800, minWidth: 360, minHeight: 380, margin: '0 auto', position: 'relative' }}
+                                        >
+                                            <div aria-hidden="true">
                                             <Plot
                                                 key={selectedYear}
                                                 data={pieData}
@@ -540,6 +594,7 @@ const EnergyUse = () => {
                                                     });
                                                 }}
                                             />
+                                            </div>
                                         </figure>
                                     </div>
 
@@ -571,7 +626,13 @@ const EnergyUse = () => {
 
                                     <div className="energy-use-bar-wrap" ref={barChartRef} style={{ width: '100%', maxWidth: 1140, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         {selectedBars !== null && <ClearSelectionButton lang={lang} onClick={() => setSelectedBars(null)} />}
-                                        <figure style={{ width: '100%', minHeight: 250, margin: '0 auto', position: 'relative' }}>
+                                        <figure
+                                            role="region"
+                                            aria-label={barRegionLabel}
+                                            tabIndex="0"
+                                            style={{ width: '100%', minHeight: 250, margin: '0 auto', position: 'relative' }}
+                                        >
+                                            <div aria-hidden="true">
                                             <Plot
                                                 key={selectedYear}
                                                 data={barData}
@@ -594,6 +655,7 @@ const EnergyUse = () => {
                                                     });
                                                 }}
                                             />
+                                            </div>
                                         </figure>
                                     </div>
 

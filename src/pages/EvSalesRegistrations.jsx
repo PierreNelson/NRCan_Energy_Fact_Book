@@ -13,6 +13,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getEvSalesRegistrationsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import evSalesBg from '../assets/ev_sales_bg.png';
 import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
 
@@ -259,6 +260,37 @@ const EvSalesRegistrations = () => {
         return <p>{getText('ev_sales_no_data', lang)}</p>;
     }
 
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const formatThousands = (value) => {
+        if (value == null || Number.isNaN(Number(value))) return '—';
+        return formatLocaleNumber(value, lang, { maximumFractionDigits: 1 });
+    };
+    const chartSummary = years.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? `Combined bar and line chart of plug-in electric vehicle registrations and their share of new vehicle registrations from ${textVars.startYear} to ${textVars.endYear}`
+            : `Graphique combiné à barres et à lignes des immatriculations de véhicules électriques rechargeables et de leur part des nouvelles immatriculations de ${textVars.startYear} à ${textVars.endYear}`,
+        unitNote: lang === 'en'
+            ? 'Registration values in thousands of vehicles'
+            : 'Valeurs d’immatriculation en milliers de véhicules',
+        body: summarizeByCategory({
+            categories: years,
+            series: [
+                { name: barsLabel, values: barValues, format: formatThousands },
+                { name: lang === 'en' ? 'Share of new registrations' : 'Part des nouvelles immatriculations', values: lineValues, format: formatShareSpoken },
+            ],
+            lang,
+            newestFirst: true,
+        }),
+    }) : '';
+    const chartRegionLabel = chartSummary ? `${exportChartTitle}. ${chartSummary}` : exportChartTitle;
+
     return (
         <PageShell
             tabIndex="-1"
@@ -351,9 +383,10 @@ const EvSalesRegistrations = () => {
                     <figure ref={chartRef} className="ev-sales-chart-figure">
                         <div
                             role="region"
-                            aria-label={substitute(getText('ev_sales_chart_aria', lang), textVars)}
+                            aria-label={chartRegionLabel}
                             tabIndex="0"
                         >
+                            <div aria-hidden="true">
                             <Plot
                                 key={`ev-sales-${selectedPoints ? `${selectedPoints[0].join('-')}_${selectedPoints[1].join('-')}` : 'all'}-${useVerticalYearTicks ? 'v' : 'h'}-${plotHeight}`}
                                 data={[
@@ -494,6 +527,7 @@ const EvSalesRegistrations = () => {
                                 useResizeHandler
                                 style={{ width: '100%', height: `${plotHeight}px` }}
                             />
+                            </div>
                         </div>
                     </figure>
 

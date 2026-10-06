@@ -4,21 +4,40 @@
  */
 
 /**
+ * Reverse category order and each series' values together.
+ * Used so multi-year bar charts are spoken newest year first.
+ * @param {Array<string|number>} categories
+ * @param {Array<{ values?: Array<unknown> }>} series
+ */
+function reverseCategories(categories, series) {
+  const order = categories.map((_, i) => i).reverse();
+  return {
+    categories: order.map((i) => categories[i]),
+    series: series.map((s) => ({
+      ...s,
+      values: order.map((i) => s.values?.[i]),
+    })),
+  };
+}
+
+/**
  * @param {object} options
  * @param {Array<string|number>} options.categories - x-axis labels (years, cities, …)
  * @param {Array<{ name: string, values: Array<number|string|null|undefined>, format?: (v: any) => string }>} options.series
  * @param {'en'|'fr'|string} [options.lang='en']
+ * @param {boolean} [options.newestFirst] - Speak the last category first (multi-year bar charts)
  * @returns {string}
  */
-export function summarizeByCategory({ categories, series, lang = 'en' }) {
+export function summarizeByCategory({ categories, series, lang = 'en', newestFirst = false }) {
   if (!categories?.length || !series?.length) return '';
 
+  const spoken = newestFirst ? reverseCategories(categories, series) : { categories, series };
   const inWord = lang === 'fr' || String(lang).startsWith('fr') ? 'En' : 'In';
   const sep = lang === 'fr' || String(lang).startsWith('fr') ? ' ; ' : '; ';
 
-  return categories
+  return spoken.categories
     .map((cat, i) => {
-      const parts = series
+      const parts = spoken.series
         .map((s) => {
           const raw = s.values?.[i];
           const formatted =

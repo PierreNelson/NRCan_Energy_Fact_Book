@@ -1,5 +1,4 @@
 import React from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
 import canadianElectricityGenerationBgEn from '../assets/canadian_electricity_generation_bg.png';
 import canadianElectricityGenerationBgFr from '../assets/canadian_electricity_generation_bg_fr.png';
 import {
@@ -32,7 +31,7 @@ const OverlaySlot = ({ left, top, align = 'left', className, children }) => (
     </span>
 );
 
-const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ariaLabel, data }) => {
+const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, data }) => {
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const bgImage = overlayLang === 'fr' ? canadianElectricityGenerationBgFr : canadianElectricityGenerationBgEn;
     const native = NATIVE_SIZE[overlayLang];
@@ -40,16 +39,12 @@ const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ar
     const { fonts, columns } = layout;
     const sources = data?.sources || {};
 
+    const canadaLabel = getText('electricity_generation_canada_canada_label', lang);
+
     return (
-        <AccessibleInfographic
+        <figure
             ref={figureRef}
-            as="figure"
-            mode="image"
             className="canadian-electricity-generation-infographic-figure"
-            title={ariaLabel}
-            overview={ariaLabel}
-            src={bgImage}
-            imgClassName="canadian-electricity-generation-bg-image"
         >
             <style>{`
 .canadian-electricity-generation-infographic-figure {
@@ -76,6 +71,18 @@ const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ar
     object-fit: contain;
     user-select: none;
     pointer-events: none;
+}
+.canadian-electricity-generation-column-stop {
+    position: absolute;
+    z-index: 4;
+    top: 0;
+    bottom: 0;
+    pointer-events: auto;
+}
+.canadian-electricity-generation-column-stop:focus,
+.canadian-electricity-generation-column-stop:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 0 !important;
 }
 .canadian-electricity-generation-overlay-layer {
     position: absolute;
@@ -105,6 +112,28 @@ const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ar
             `}</style>
 
             <div className="canadian-electricity-generation-infographic-wrapper">
+                <img src={bgImage} alt="" className="canadian-electricity-generation-bg-image" draggable={false} aria-hidden="true" />
+                {columns.map((column) => {
+                    const block = sources[column.key];
+                    if (!block) return null;
+                    const provinceRows = getCanadianGenerationProvinceRows(column.key, block);
+                    const spoken = [
+                        getText(`electricity_generation_canada_infographic_${column.key}`, lang),
+                        `${canadaLabel}, ${formatSharePct(block.canada, lang)}`,
+                        ...provinceRows.map((row) => `${getText(`electricity_generation_provincial_prov_${row.key}_full`, lang)}, ${formatSharePct(row.value, lang)}`),
+                    ].join('. ') + '.';
+                    return (
+                        <div
+                            key={`stop-${column.key}`}
+                            className="canadian-electricity-generation-column-stop"
+                            style={{ left: `${column.left}%`, width: `${column.width}%` }}
+                            tabIndex={0}
+                            data-prose-tab="1"
+                            role="group"
+                            aria-label={spoken}
+                        />
+                    );
+                })}
                 <div className="canadian-electricity-generation-overlay-layer" aria-hidden="true">
                     {columns.map((column) => {
                         const block = sources[column.key];
@@ -153,7 +182,7 @@ const CanadianElectricityGenerationInfographic = ({ lang, getText, figureRef, ar
                     })}
                 </div>
             </div>
-        </AccessibleInfographic>
+        </figure>
     );
 };
 

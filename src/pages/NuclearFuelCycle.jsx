@@ -18,6 +18,17 @@ const NuclearFuelCycle = () => {
     const svgMarkup = lang === 'en' ? nuclearFuelCycleBgEn : nuclearFuelCycleBgFr;
     const fileSlugBase = getText('nuclear_fuel_cycle_download_title', lang).replace(/\s+/g, '_');
     const pageTitle = getText('nuclear_fuel_cycle_title', lang);
+    const infographicOverview = useMemo(() => {
+        const sentences = [];
+        const re = /<text\b[^>]*>([\s\S]*?)<\/text>/gi;
+        let match = re.exec(svgMarkup);
+        while (match) {
+            const raw = match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            if (raw.length > 40) sentences.push(raw);
+            match = re.exec(svgMarkup);
+        }
+        return [pageTitle, ...sentences].filter(Boolean).join('. ').replace(/\.\s*\./g, '.').trim();
+    }, [svgMarkup, pageTitle]);
     const exportTitle = stripHtml(pageTitle);
     const tableCaption = getText('nuclear_fuel_cycle_table_caption', lang);
 
@@ -72,7 +83,7 @@ const NuclearFuelCycle = () => {
                         mode="text"
                         as="figure"
                         className="nuclear-fuel-cycle-infographic-figure"
-                        title={exportTitle}
+                        label={infographicOverview}
                         svgMarkup={svgMarkup}
                         imgClassName="nuclear-fuel-cycle-bg-image"
                         imgStyle={{ width: '100%', height: 'auto', display: 'block' }}

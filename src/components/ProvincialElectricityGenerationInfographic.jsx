@@ -1,5 +1,4 @@
 import React from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
 import provincialElectricityGenerationBgEn from '../assets/provincial_electricity_generation_bg.png';
 import provincialElectricityGenerationBgFr from '../assets/provincial_electricity_generation_bg_fr.png';
 import {
@@ -31,7 +30,7 @@ const OverlaySlot = ({ left, top, align = 'left', className, children }) => (
     </span>
 );
 
-const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, ariaLabel, data, title, titleId }) => {
+const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, data, title, titleId }) => {
     const overlayLang = lang === 'fr' ? 'fr' : 'en';
     const bgImage = overlayLang === 'fr' ? provincialElectricityGenerationBgFr : provincialElectricityGenerationBgEn;
     const native = NATIVE_SIZE[overlayLang];
@@ -39,16 +38,12 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
     const { fonts, columns } = layout;
     const sources = data?.sources || {};
 
+    const canadaLabel = getText('electricity_generation_canada_canada_label', lang);
+
     return (
-        <AccessibleInfographic
+        <figure
             ref={figureRef}
-            as="figure"
-            mode="image"
             className="provincial-electricity-generation-infographic-figure"
-            title={title || ariaLabel}
-            overview={ariaLabel}
-            src={bgImage}
-            imgClassName="provincial-electricity-generation-bg-image"
         >
             <style>{`
 .provincial-electricity-generation-infographic-figure {
@@ -75,6 +70,18 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
     object-fit: fill;
     user-select: none;
     pointer-events: none;
+}
+.provincial-electricity-generation-column-stop {
+    position: absolute;
+    z-index: 4;
+    top: 16%;
+    bottom: 0;
+    pointer-events: auto;
+}
+.provincial-electricity-generation-column-stop:focus,
+.provincial-electricity-generation-column-stop:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 0 !important;
 }
 .provincial-electricity-generation-overlay-layer {
     position: absolute;
@@ -106,7 +113,7 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
     top: 2.5%;
     left: 0;
     right: 0;
-    z-index: 3;
+    z-index: 5;
     margin: 0;
     padding: 0 3%;
     font-family: 'Lato', sans-serif;
@@ -116,17 +123,43 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
     color: #333333;
     text-align: center;
     text-transform: none;
-    pointer-events: none;
+    pointer-events: auto;
     box-sizing: border-box;
+}
+.provincial-electricity-generation-infographic-title-overlay:focus,
+.provincial-electricity-generation-infographic-title-overlay:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 2px;
 }
             `}</style>
 
             <div className="provincial-electricity-generation-infographic-wrapper">
+                <img src={bgImage} alt="" className="provincial-electricity-generation-bg-image" draggable={false} aria-hidden="true" />
                 {title && (
-                    <h1 id={titleId} className="provincial-electricity-generation-infographic-title-overlay">
+                    <h1 id={titleId} className="provincial-electricity-generation-infographic-title-overlay" tabIndex={0} data-prose-tab="1">
                         {title}
                     </h1>
                 )}
+                {columns.map((column) => {
+                    const block = sources[column.key];
+                    if (!block) return null;
+                    const spoken = [
+                        getText(`electricity_generation_provincial_source_${column.key}`, lang),
+                        `${canadaLabel}, ${formatSharePct(block.canada, lang)}`,
+                        ...(block.provinces || []).map((row) => `${getText(`electricity_generation_provincial_prov_${row.key}_full`, lang)}, ${formatSharePct(row.value, lang)}`),
+                    ].join('. ') + '.';
+                    return (
+                        <div
+                            key={`stop-${column.key}`}
+                            className="provincial-electricity-generation-column-stop"
+                            style={{ left: `${column.left}%`, width: `${column.width}%` }}
+                            tabIndex={0}
+                            data-prose-tab="1"
+                            role="group"
+                            aria-label={spoken}
+                        />
+                    );
+                })}
 
                 <div className="provincial-electricity-generation-overlay-layer" aria-hidden="true">
                     {columns.map((column) => {
@@ -173,7 +206,7 @@ const ProvincialElectricityGenerationInfographic = ({ lang, getText, figureRef, 
                     })}
                 </div>
             </div>
-        </AccessibleInfographic>
+        </figure>
     );
 };
 

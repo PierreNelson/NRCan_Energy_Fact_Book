@@ -15,6 +15,7 @@ import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 
 const REGION_KEYS = ['terr', 'atl', 'que', 'ont', 'man', 'sask', 'alta', 'bc'];
 const LABEL_KEYS = {
@@ -187,6 +188,28 @@ const CleantechCompaniesByRegion = () => {
         pct: slice.pct
     })) : [];
     const tableCaption = getText('cleantech_companies_geo_table_caption', lang);
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocaleNumber(value, lang, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const companiesWord = getText('cleantech_companies_geo_center_companies', lang);
+    const pieChartSummary = !slices.length || selectedRow?.total == null ? '' : joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of Canadian cleantech companies by province for ${year}. Total ${formatNumber(selectedRow.total)} ${companiesWord}`
+            : `Graphique circulaire des entreprises de technologies propres canadiennes par province pour ${year}. Total ${formatNumber(selectedRow.total)} ${companiesWord}`,
+        body: summarizeByCategory({
+            categories: slices.map((slice) => getText(FULL_LABEL_KEYS[slice.key], lang)),
+            series: [
+                { name: lang === 'en' ? 'Companies' : 'Entreprises', values: slices.map((slice) => slice.count), format: (value) => formatNumber(value) },
+                { name: lang === 'en' ? 'Share' : 'Part', values: slices.map((slice) => slice.pct), format: formatShareSpoken },
+            ],
+            lang,
+        }),
+    });
+    const chartRegionLabel = pieChartSummary ? `${exportChartTitle}. ${pieChartSummary}` : exportChartTitle;
 
     if (loading || error) return <PageStatus lang={lang} loading={loading} error={error} />;
     if (!selectedRow) return <p>{getText('cleantech_companies_geo_no_data', lang)}</p>;
@@ -251,7 +274,23 @@ const CleantechCompaniesByRegion = () => {
                         <ClearSelectionButton lang={lang} onClick={() => setSelectedSlices(null)} />
                     )}
                     <div className="cleantech-companies-chart-scroll">
-                        <figure ref={chartRef} className="cleantech-companies-chart" role="region" aria-label={chartTitle} tabIndex="0" style={{ margin: 0 }}>
+                        <figure ref={chartRef} className="cleantech-companies-chart" role="region" aria-label={chartRegionLabel} tabIndex="0" style={{ margin: 0 }}>
+                            {terrSlice && (
+                                <span className="cleantech-companies-html-pie-label cleantech-companies-terr-label" aria-hidden="true">
+                                    {getText('cleantech_companies_geo_label_terr', lang)}<br />
+                                    {formatPct(terrSlice.pct)}
+                                </span>
+                            )}
+                            {!zoomLegendMode && atlSlice && (
+                                <span id="fn-atl-rf-cleantech-companies" className="cleantech-companies-html-pie-label cleantech-companies-atl-label">
+                                    {getText('cleantech_companies_geo_label_atl', lang)}
+                                    <a className="fn-lnk" href="#fn-atl-cleantech-companies" onClick={scrollToElement('fn-atl-cleantech-companies')}>
+                                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
+                                    </a>
+                                    <br />
+                                    {formatPct(atlSlice.pct)}
+                                </span>
+                            )}
                             <div aria-hidden="true">
                                 {pieTrace && (
                                     <Plot
@@ -281,22 +320,6 @@ const CleantechCompaniesByRegion = () => {
                                     />
                                 )}
                             </div>
-                            {terrSlice && (
-                                <span className="cleantech-companies-html-pie-label cleantech-companies-terr-label" aria-hidden="true">
-                                    {getText('cleantech_companies_geo_label_terr', lang)}<br />
-                                    {formatPct(terrSlice.pct)}
-                                </span>
-                            )}
-                            {!zoomLegendMode && atlSlice && (
-                                <span id="fn-atl-rf-cleantech-companies" className="cleantech-companies-html-pie-label cleantech-companies-atl-label">
-                                    {getText('cleantech_companies_geo_label_atl', lang)}
-                                    <a className="fn-lnk" href="#fn-atl-cleantech-companies" onClick={scrollToElement('fn-atl-cleantech-companies')}>
-                                        <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>*
-                                    </a>
-                                    <br />
-                                    {formatPct(atlSlice.pct)}
-                                </span>
-                            )}
                         </figure>
                     </div>
                     {zoomLegendMode && (
@@ -345,9 +368,9 @@ const CleantechCompaniesByRegion = () => {
                             <a href="#fn-atl-rf-cleantech-companies" onClick={scrollToElement('fn-atl-rf-cleantech-companies')} className="fn-num" title={lang === 'en' ? 'Return to footnote * referrer' : 'Retour à la référence de la note de bas de page *'}>
                                 <span className="wb-inv">{lang === 'en' ? 'Return to footnote ' : 'Retour à la note de bas de page '}</span>*
                             </a>
-                            {' '}{getText('cleantech_companies_geo_footnote_atl', lang)}
+                            <p>{getText('cleantech_companies_geo_footnote_atl', lang)}</p>
                         </dd>
-                        <dd>{getText('cleantech_companies_geo_footnote_rounding', lang)}</dd>
+                        <dd><p>{getText('cleantech_companies_geo_footnote_rounding', lang)}</p></dd>
                     </dl>
                 </aside>
             </div>

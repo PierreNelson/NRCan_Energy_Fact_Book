@@ -11,6 +11,7 @@ import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -399,6 +400,33 @@ const TransportationFuelMix = () => {
         );
     };
 
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const energyUnit = lang === 'en' ? 'petajoules' : 'pétajoules';
+    const pieChartSummary = slices.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? `Donut chart of the transportation sector fuel mix for ${year}. Total ${formatPj(totalPj)} ${energyUnit}`
+            : `Graphique en anneau du bouquet énergétique du secteur des transports pour ${year}. Total ${formatPj(totalPj)} ${energyUnit}`,
+        unitNote: lang === 'en'
+            ? 'Values in petajoules and percent of transportation energy use'
+            : "Valeurs en pétajoules et en pourcentage de la consommation d'énergie des transports",
+        body: summarizeByCategory({
+            categories: labels,
+            series: [
+                { name: lang === 'en' ? 'Energy use' : 'Consommation', values: slices.map((slice) => slice.pj), format: (value) => `${formatPj(value)} ${energyUnit}` },
+                { name: lang === 'en' ? 'Share' : 'Part', values: slices.map((slice) => slice.pct), format: formatShareSpoken },
+            ],
+            lang,
+        }),
+    }) : '';
+    const chartRegionLabel = pieChartSummary ? `${exportChartTitle}. ${pieChartSummary}` : exportChartTitle;
+
     return (
         <PageShell
             tabIndex="-1"
@@ -501,7 +529,7 @@ const TransportationFuelMix = () => {
                             ref={chartRef}
                             className="transportation-fuel-mix-chart"
                             role="region"
-                            aria-label={getText('transportation_fuel_mix_chart_aria', lang)}
+                            aria-label={chartRegionLabel}
                             tabIndex="0"
                             style={{ margin: 0 }}
                         >

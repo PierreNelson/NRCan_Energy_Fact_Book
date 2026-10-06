@@ -125,6 +125,7 @@ const OilByRail = () => {
                 { name: domesticLabel, values: quarters.map((q) => q.domesticAnnual), format: formatNumber },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'

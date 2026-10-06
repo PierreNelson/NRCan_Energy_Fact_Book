@@ -1,5 +1,4 @@
 import React from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
 import { windSolarElectricityGrowthBg, NATIVE_SIZE, OVERLAY_LAYOUT, BG_IMAGE_SCALE } from './WindSolarElectricityGrowthInfographic.constants';
 
 const slotStyle = (slot) => ({
@@ -59,35 +58,61 @@ const MetricOverlays = ({ metricKey, fonts, label, endValue, endYear, startValue
     );
 };
 
-const WindSolarElectricityGrowthInfographic = ({ wind, solar, ariaLabel }) => {
+const speakMetric = (metric, lang) => {
+    if (!metric) return '';
+    const unit = lang === 'fr' ? 'gigawattheures' : 'gigawatt hours';
+    const end = `${metric.endValue} ${unit}, ${metric.endYear}`;
+    const start = `${metric.startValue} ${unit}, ${metric.startYear}`;
+    return `${metric.label}. ${end}. ${start}.`;
+};
+
+const COLUMNS = [
+    { key: 'wind', left: 0, width: 50 },
+    { key: 'solar', left: 50, width: 50 },
+];
+
+const WindSolarElectricityGrowthInfographic = ({ wind, solar, lang = 'en' }) => {
     const fonts = OVERLAY_LAYOUT.fonts;
+    const metrics = { wind, solar };
 
     return (
-        <AccessibleInfographic
-            as="figure"
-            mode="image"
-            className="wind-solar-electricity-growth-infographic-figure"
-            title={ariaLabel}
-            overview={ariaLabel}
-            src={windSolarElectricityGrowthBg}
-            imgClassName="wind-solar-electricity-growth-bg-image"
-            imgStyle={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: `${BG_IMAGE_SCALE * 100}%`,
-                height: 'auto',
-            }}
-        >
+        <figure className="wind-solar-electricity-growth-infographic-figure">
             <div
                 className="wind-solar-electricity-growth-infographic-wrapper"
                 style={{ aspectRatio: `${NATIVE_SIZE.width} / ${NATIVE_SIZE.height}` }}
             >
-                <MetricOverlays metricKey="wind" fonts={fonts} {...wind} />
-                <MetricOverlays metricKey="solar" fonts={fonts} {...solar} />
+                <img
+                    src={windSolarElectricityGrowthBg}
+                    alt=""
+                    className="wind-solar-electricity-growth-bg-image"
+                    draggable={false}
+                    aria-hidden="true"
+                    style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: `${BG_IMAGE_SCALE * 100}%`,
+                        height: 'auto',
+                    }}
+                />
+                {COLUMNS.map((column) => (
+                    <div
+                        key={column.key}
+                        className="wind-solar-electricity-growth-column-stop"
+                        style={{ left: `${column.left}%`, width: `${column.width}%` }}
+                        tabIndex={0}
+                        data-prose-tab="1"
+                        role="group"
+                        aria-label={speakMetric(metrics[column.key], lang)}
+                    />
+                ))}
+                <div aria-hidden="true">
+                    <MetricOverlays metricKey="wind" fonts={fonts} {...wind} />
+                    <MetricOverlays metricKey="solar" fonts={fonts} {...solar} />
+                </div>
             </div>
-        </AccessibleInfographic>
+        </figure>
     );
 };
 

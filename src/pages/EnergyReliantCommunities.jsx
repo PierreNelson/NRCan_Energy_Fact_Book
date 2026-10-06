@@ -683,7 +683,7 @@ const EnergyReliantCommunities = () => {
     };
 
     const getBarChartSummary = () => {
-        const unit = lang === 'fr' ? 'pour cent' : 'percent';
+        const unit = lang === 'fr' ? 'communautés' : 'communities';
         const parts = energy_reliant_communities_BAR_PROVINCES.map(
             (p, i) => `${getProvinceName(p.key)}: ${barValues[i]} ${unit}`,
         ).join(', ');

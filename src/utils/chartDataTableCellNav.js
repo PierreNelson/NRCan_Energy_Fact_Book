@@ -3,13 +3,23 @@
  *
  * Tab order:
  *   1. Table title (visible heading or caption) — focus styles the title
- *   2. Column headers stop — unique/expanded headers (not Res./Prod./Exp. spam)
- *   3. Each body cell — e.g. "Crude oil production, 4" or "Canada, 2023, 4 percent"
- *   4. Controls after the table
+ *   2. Each body cell — e.g. "Crude oil production, 4" or "Canada, 2023, Natural gas, 4,884"
+ *   3. Controls after the table
+ *
+ * Column names are spoken with each cell. There is no separate header-row stop
+ * between the chart-data-table button and the first cell.
  */
 
 function headerText(el) {
   return (el?.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+/** Title text that is actually in the accessibility tree (not aria-hidden). */
+function exposedTitleText(el) {
+  if (!el?.cloneNode) return '';
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('[aria-hidden="true"], .wb-inv').forEach((node) => node.remove());
+  return (clone.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
 function isFrenchDoc() {
@@ -31,8 +41,11 @@ export function expandMetricAbbrev(text) {
   if (lower === 'exp') {
     return fr ? 'exportations' : 'exports';
   }
+  if (lower === 'prov') {
+    return 'Province';
+  }
   // Full static-table headers → metric word for cell phrases
-  if (/reserve|réserve|capacit/i.test(t)) {
+  if (/reserve|réserve/i.test(t)) {
     return fr ? 'réserves' : 'reserves';
   }
   if (/^production$/i.test(t)) {
@@ -76,7 +89,12 @@ function spokenMoneyUnit(unitRaw) {
     || /^millions?\s*\$/.test(u)
     || /^millions?\s+de\s+(\$|dollars)$/.test(u)
     || /^millions?\s+of\s+dollars$/.test(u)
+    || /^\$\s*m$/.test(u)
+    || /^m\s*\$$/.test(u)
   ) {
+    if (/^\$\s*m$/.test(u) || /^m\s*\$$/.test(u)) {
+      return fr ? 'millions de dollars' : 'million dollars';
+    }
     return fr ? 'millions de dollars' : 'millions of dollars';
   }
   if (
@@ -101,6 +119,27 @@ export function parseColumnHeader(colHeader) {
   const text = (colHeader || '').trim();
   const match = text.match(/^(.*?)(?:\s*\(([^)]*)\))\s*$/);
   if (!match) {
+    if (/^mt$/i.test(text)) {
+      return {
+        name: isFrenchDoc() ? 'Mégatonnes' : 'Megatonnes',
+        unitSpoken: '',
+        unitRaw: 'mt',
+      };
+    }
+    if (/^mmb\/d$/i.test(text)) {
+      return {
+        name: isFrenchDoc() ? 'Millions de barils par jour' : 'Million barrels per day',
+        unitSpoken: '',
+        unitRaw: 'mmb/d',
+      };
+    }
+    if (/^mb\/d$/i.test(text)) {
+      return {
+        name: isFrenchDoc() ? 'Milliers de barils par jour' : 'Thousand barrels per day',
+        unitSpoken: '',
+        unitRaw: 'mb/d',
+      };
+    }
     return { name: text, unitSpoken: '', unitRaw: '' };
   }
   const name = match[1].trim();
@@ -112,6 +151,26 @@ export function parseColumnHeader(colHeader) {
   const rawLower = unitRaw.toLowerCase();
   if (unitRaw === '%' || rawLower === 'pct' || rawLower === 'percent') {
     unitSpoken = isFrenchDoc() ? 'pour cent' : 'percent';
+  } else if (rawLower === 'pj') {
+    unitSpoken = isFrenchDoc() ? 'pétajoules' : 'petajoules';
+  } else if (rawLower === 'mb/d') {
+    unitSpoken = isFrenchDoc() ? 'milliers de barils par jour' : 'thousand barrels per day';
+  } else if (rawLower === 'mmb/d') {
+    unitSpoken = isFrenchDoc() ? 'millions de barils par jour' : 'million barrels per day';
+  } else if (rawLower === 'bb') {
+    unitSpoken = isFrenchDoc() ? 'milliards de barils' : 'billion barrels';
+  } else if (rawLower === 'mt') {
+    unitSpoken = isFrenchDoc() ? 'mégatonnes' : 'megatonnes';
+  } else if (rawLower === 'cents/kwh') {
+    unitSpoken = isFrenchDoc() ? 'cents par kilowattheure' : 'cents per kilowatt hour';
+  } else if (rawLower === 'mw') {
+    unitSpoken = isFrenchDoc() ? 'mégawatts' : 'megawatts';
+  } else if (rawLower === 'gw') {
+    unitSpoken = isFrenchDoc() ? 'gigawatts' : 'gigawatts';
+  } else if (rawLower === 'gwh') {
+    unitSpoken = isFrenchDoc() ? 'gigawattheures' : 'gigawatt hours';
+  } else if (rawLower === 'twh') {
+    unitSpoken = isFrenchDoc() ? 'térawattheures' : 'terawatt hours';
   } else {
     const money = spokenMoneyUnit(unitRaw);
     if (money) {
@@ -120,6 +179,10 @@ export function parseColumnHeader(colHeader) {
       unitSpoken = unitRaw;
     }
   }
+  // "US$" is spoken as the word "us dollars". Spaced letters are read "U S dollars".
+  unitSpoken = unitSpoken
+    .replace(/US\$/g, 'U S dollars')
+    .replace(/\$\s*US\b/g, 'dollars U S');
   return { name, unitSpoken, unitRaw };
 }
 
@@ -139,6 +202,10 @@ function stripCurrencyGlyphs(spoken) {
     .trim();
 }
 
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function formatValueWithUnit(value, unitSpoken) {
   let spoken = formatSpokenValue(value);
   if (spoken === 'not applicable' || spoken === 'sans objet') return spoken;
@@ -148,6 +215,16 @@ function formatValueWithUnit(value, unitSpoken) {
   // "$232" + "billions of dollars" would be spoken as "dollar … billions of dollars".
   if (/(dollar|dollars)/i.test(unitSpoken)) {
     spoken = stripCurrencyGlyphs(spoken);
+  }
+  // "14.3 ktU" in a "(ktU)" column, or "3 milliards de dollars" in a matching column.
+  if (new RegExp(`(?:^|\\s)${escapeRegExp(unitSpoken)}\\s*$`, 'i').test(spoken)) {
+    return spoken;
+  }
+  // "$3 billion" + "billions of dollars" → "3 billions of dollars".
+  const scale = unitSpoken.match(/^(millions?|billions?|milliards?)\b/i);
+  if (scale) {
+    const word = scale[1].replace(/s$/i, '');
+    spoken = spoken.replace(new RegExp(`\\s+${word}s?\\.?$`, 'i'), '').trim();
   }
   return `${spoken} ${unitSpoken}`;
 }
@@ -208,7 +285,7 @@ export function columnHeadersFor(table) {
     if (!parts.length) return '';
     if (parts.length === 1) {
       const only = parts[0];
-      return /^(res|prod|exp|rés)\.?$/i.test(only)
+      return /^(res|prod|exp|rés|prov)\.?$/i.test(only)
         ? expandMetricAbbrev(only)
         : only;
     }
@@ -275,7 +352,7 @@ export function columnHeadersAnnouncement(colHeaders) {
 export function speakHeaderLabel(header) {
   const text = (header || '').trim();
   if (!text) return '';
-  if (/^(res|prod|exp|rés)\.?$/i.test(text)) {
+  if (/^(res|prod|exp|rés|prov)\.?$/i.test(text)) {
     return expandMetricAbbrev(text) || text;
   }
   const { name, unitSpoken, unitRaw } = parseColumnHeader(text);
@@ -302,7 +379,32 @@ function findRowHeaderCell(row, colHeaders) {
 
 function looksLikeYearHeader(colHeaders) {
   const first = (colHeaders[0] || '').toLowerCase();
-  return first === 'year' || first === 'année' || first === 'annee';
+  return first === 'year' || first === 'année' || first === 'annee'
+    || first === 'period' || first === 'période' || first === 'periode'
+    || first === 'rank' || first === 'rang';
+}
+
+/** Year + Source/State/Category tables: earlier columns are row labels, not value series. */
+function isDescriptiveBesideYear(name) {
+  const n = String(name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (/^(source|sources|state|states|état|etats|états|category|categories|catégorie|catégories|categorie|region|regions|région|régions|industry|industries|industrie|energy source)$/.test(n)) return true;
+  if (/^source d['’][eé]nergie$/.test(n)) return true;
+  if (/^charger type$/.test(n) || /^type de borne$/.test(n)) return true;
+  if (/^country or region$/.test(n) || /^pays ou r[eé]gion$/.test(n)) return true;
+  if (/^(country|countries|pays)$/.test(n)) return true;
+  return /province|territoire|territory/.test(n);
+}
+
+function sourceBesideYear(colHeaders, cells, index) {
+  if (!looksLikeYearHeader(colHeaders) || index <= 1) return '';
+  const parts = [];
+  for (let i = 1; i < index; i += 1) {
+    const name = parseColumnHeader(colHeaders[i] || '').name.toLowerCase();
+    if (!isDescriptiveBesideYear(name)) break;
+    const text = headerText(cells[i]);
+    if (text) parts.push(text);
+  }
+  return parts.join(', ');
 }
 
 function looksLikeProvinceHeader(colHeaders) {
@@ -326,12 +428,24 @@ function isRankingsContext(table, colHeaders) {
       return true;
     }
   }
-  const joined = (colHeaders || []).join(' ');
+  // "Exports (C$ millions)" and "Exports (Terawatt hours)" are value columns, not rankings metrics.
+  const metricHeaders = (colHeaders || []).filter((h) => {
+    const { unitRaw } = parseColumnHeader(h);
+    if (spokenMoneyUnit(unitRaw)) return false;
+    if (isPhysicalQuantityUnit(unitRaw)) return false;
+    return true;
+  });
+  const joined = metricHeaders.join(' ');
   const hasMetrics = /(reserve|production|export|\bres\.?\b|\bprod\.?\b|\bexp\.?\b)/i.test(
     joined,
   );
   const hasPercent = /\(%\)/.test(joined);
   return hasMetrics && !hasPercent;
+}
+
+function isPhysicalQuantityUnit(unitRaw) {
+  const u = (unitRaw || '').toLowerCase();
+  return /terawatt|térawatt|twh|petajoule|gigawatt|gwh|megawatt|mwh|barrel|baril|tonne|mb\/d|\bbb\b|\bmt\b/.test(u);
 }
 
 function rankingWord() {
@@ -389,11 +503,57 @@ export function labelForCell(cell, colHeaders, table = null) {
     }
   }
 
-  // Year × country (%) tables (not rankings)
+  // Year × country (%) tables (not rankings).
+  // Year + Source + values also speaks the source with each number.
   if (looksLikeYearHeader(colHeaders) && !rankings) {
     const { name: colName, unitSpoken } = parseColumnHeader(rawCol);
     const valueOut = formatValueWithUnit(value, unitSpoken);
-    return [colName, rowHeader, valueOut].filter(Boolean).join(', ');
+    const source = sourceBesideYear(colHeaders, cells, index);
+    const firstHeader = (colHeaders[0] || '').toLowerCase();
+    const rowSpoken = firstHeader === 'rank' || firstHeader === 'rang'
+      ? `${colHeaders[0]} ${rowHeader}`
+      : rowHeader;
+    return [colName, rowSpoken, source, valueOut].filter(Boolean).join(', ');
+  }
+
+  // Energy source × province × value, with the year only in the caption.
+  if (!looksLikeYearHeader(colHeaders) && !rankings && index > 1) {
+    const firstName = parseColumnHeader(colHeaders[0] || '').name.toLowerCase();
+    if (isDescriptiveBesideYear(firstName)) {
+      const extras = [];
+      let descriptive = true;
+      for (let i = 1; i < index; i += 1) {
+        const name = parseColumnHeader(colHeaders[i] || '').name.toLowerCase();
+        if (!isDescriptiveBesideYear(name)) {
+          descriptive = false;
+          break;
+        }
+        const text = headerText(cells[i]);
+        if (text) extras.push(text);
+      }
+      if (descriptive && extras.length) {
+        const { name: colName, unitSpoken } = parseColumnHeader(rawCol);
+        const valueOut = formatValueWithUnit(value, unitSpoken);
+        const cap = table ? tableCaptionText(table) : '';
+        const years = cap.match(/\b(?:19|20)\d{2}\b/g) || [];
+        const year = years.length === 1 ? years[0] : '';
+        return [colName, year, rowHeader, ...extras, valueOut].filter(Boolean).join(', ');
+      }
+    }
+  }
+
+  // Sector × values: speak the sector with each number, and the year when the caption has one.
+  if (!looksLikeYearHeader(colHeaders) && !rankings && index > 0) {
+    const firstName = parseColumnHeader(colHeaders[0] || '').name.toLowerCase();
+    if (/^(sector|sectors|secteur|secteurs|category|categories|catégorie|catégories|categorie|region|regions|région|régions|province|provinces|city|cities|ville|villes|facility|facilities|centrale|centrales|indicator|indicators|indicateur|indicateurs)$/.test(firstName)
+      && !isYearColumnName(parseColumnHeader(rawCol).name)) {
+      const { name: colName, unitSpoken } = parseColumnHeader(rawCol);
+      const valueOut = formatValueWithUnit(value, unitSpoken);
+      const cap = table ? tableCaptionText(table) : '';
+      const years = cap.match(/\b(?:19|20)\d{2}\b/g) || [];
+      const year = years.length === 1 ? years[0] : '';
+      return [colName, year, rowHeader, valueOut].filter(Boolean).join(', ');
+    }
   }
 
   // Rankings tables (static summary + yearly Res/Prod/Exp grid)
@@ -418,16 +578,20 @@ export function labelForCell(cell, colHeaders, table = null) {
     return [phrase, rank, value].filter((p) => p !== '').join(', ');
   }
 
-  // Generic fallback
-  let metric = '';
-  if (rawCol) {
-    const withoutGroup = rawCol.replace(rowHeader, '').trim();
-    metric = expandMetricAbbrev(withoutGroup || rawCol);
-  }
-  if (rowHeader && metric) return `${rowHeader} ${metric}, ${value}`;
-  if (metric) return `${metric}, ${value}`;
-  if (rowHeader) return `${rowHeader}, ${value}`;
-  return value;
+  // Generic fallback. Money units follow the number: "12,000.00 million dollars".
+  const { name, unitSpoken, unitRaw } = parseColumnHeader(rawCol);
+  const metricSource = name || rawCol;
+  const withoutGroup = rowHeader
+    ? metricSource.replace(rowHeader, '').trim()
+    : metricSource;
+  const metric = expandMetricAbbrev(withoutGroup || metricSource);
+  const valueOut = spokenMoneyUnit(unitRaw) || unitSpoken === 'percent' || unitSpoken === 'pour cent'
+    ? formatValueWithUnit(value, unitSpoken)
+    : value;
+  if (rowHeader && metric) return `${rowHeader} ${metric}, ${valueOut}`;
+  if (metric) return `${metric}, ${valueOut}`;
+  if (rowHeader) return `${rowHeader}, ${valueOut}`;
+  return valueOut;
 }
 
 function bodyCells(table) {
@@ -441,6 +605,8 @@ function cellMatrix(table) {
 }
 
 const SENTINEL_CLASS = 'chart-table-colheaders';
+let lastTabShift = false;
+let tabFromKeyboard = false;
 const TITLE_FOCUS_CLASS = 'chart-table-title-focused';
 const CHEVRON_CLASS = 'chart-summary-chevron';
 const TRIANGLE_RE = /^[▼▶►▾▸◄▷▽△▴]+$/u;
@@ -499,6 +665,14 @@ function scrubSummaryChevrons(root) {
   });
 }
 
+function isUsableTitleHeading(el) {
+  if (!el || !/^H[1-6]$/.test(el.tagName)) return false;
+  if (el.classList.contains('wb-inv')) return false;
+  if (el.getAttribute('aria-hidden') === 'true') return false;
+  if (el.closest('[aria-hidden="true"]')) return false;
+  return true;
+}
+
 function findTableTitleEl(table) {
   const host =
     table.closest(
@@ -507,19 +681,111 @@ function findTableTitleEl(table) {
   if (!host) return null;
 
   let prev = host.previousElementSibling;
-  while (prev && prev.getAttribute('aria-hidden') === 'true') {
-    prev = prev.previousElementSibling;
+  while (prev) {
+    if (prev.getAttribute('aria-hidden') === 'true' || prev.classList.contains('wb-inv')) {
+      prev = prev.previousElementSibling;
+      continue;
+    }
+    if (/^H[1-6]$/.test(prev.tagName)) {
+      if (isUsableTitleHeading(prev)) return prev;
+      prev = prev.previousElementSibling;
+      continue;
+    }
+    break;
   }
-  if (prev && /^H[1-6]$/.test(prev.tagName)) return prev;
 
   const section = table.closest(
     '.energy-production-rankings-section, [class*="rankings-section"], section, article',
   );
   if (section) {
-    const heading = section.querySelector('h2, h3, h4');
+    const heading = [...section.querySelectorAll('h2, h3, h4')].find(
+      (el) => isUsableTitleHeading(el),
+    );
     if (heading && section.contains(table)) return heading;
   }
   return null;
+}
+
+function yearsIn(text) {
+  return [...String(text || '').matchAll(/\b(?:19|20)\d{2}\b/g)].map((match) => match[0]);
+}
+
+/**
+ * Keep years inside an accessible name aligned with the title's current text.
+ * A year selector rewrites the visible title; a label captured on first paint
+ * would otherwise keep announcing the previous year.
+ * Labels with a different count of years are left alone (spoken summaries).
+ */
+export function syncYearsInLabel(label, source) {
+  const current = String(label || '');
+  const visible = String(source || '');
+  if (!current || !visible) return current;
+  const labelYears = yearsIn(current);
+  const sourceYears = yearsIn(visible);
+  if (!labelYears.length || labelYears.length !== sourceYears.length) return current;
+  if (labelYears.every((year, index) => year === sourceYears[index])) return current;
+  let index = 0;
+  return current.replace(/\b(?:19|20)\d{2}\b/g, () => sourceYears[index++]);
+}
+
+/** Chart titles whose accessible name must follow the selected year. */
+const CHART_TITLE_YEAR_SELECTOR = [
+  '[data-chart-title-nav="1"]',
+  'h1[class*="-chart-title"]',
+  'h2[class*="-chart-title"]',
+  'h3[class*="-chart-title"]',
+  'h4[class*="-chart-title"]',
+  'h2[class*="-graphic-title"]',
+  'h3[class*="-graphic-title"]',
+  'h4[class*="-graphic-title"]',
+  'p[class*="-chart-title"]',
+].join(', ');
+
+/** Same sentence with different figures, e.g. a title snapshot from another year. */
+function sameTitleShape(a, b) {
+  const shape = (text) => String(text || '')
+    .replace(/\d[\d,.\u00a0\u202f]*/g, '#')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return shape(a) === shape(b);
+}
+
+function refreshTitleAccessibleName(titleEl) {
+  if (!titleEl || titleEl.classList?.contains('wb-inv')) return;
+  if (titleEl.getAttribute('aria-hidden') === 'true') return;
+  const source = headerText(titleEl);
+  if (!source) return;
+  const label = titleEl.getAttribute('aria-label');
+  if (!label) return;
+  const exposed = exposedTitleText(titleEl);
+  const captionLabel = labelIsNearbyCaption(titleEl, label);
+  // A copied label or another chart's caption overrides the live title, so a
+  // year change keeps announcing the first total and year.
+  if (exposed && (label === exposed || sameTitleShape(label, exposed) || captionLabel)) {
+    titleEl.removeAttribute('aria-label');
+    return;
+  }
+  // Visible wording is hidden; the label is the only name, so keep every figure.
+  if (!exposed && sameTitleShape(label, source)) {
+    if (label !== source) titleEl.setAttribute('aria-label', source);
+    return;
+  }
+  const synced = syncYearsInLabel(label, source);
+  if (synced !== label) titleEl.setAttribute('aria-label', synced);
+}
+
+function labelIsNearbyCaption(titleEl, label) {
+  const root = titleEl.closest('article, main, section') || titleEl.ownerDocument;
+  if (!root?.querySelectorAll) return false;
+  const wanted = label.replace(/\s+/g, ' ').trim();
+  return [...root.querySelectorAll('caption')].some((caption) => headerText(caption) === wanted);
+}
+
+function syncChartTitleYears(root) {
+  if (!root?.querySelectorAll) return;
+  root.querySelectorAll(CHART_TITLE_YEAR_SELECTOR).forEach((el) => {
+    refreshTitleAccessibleName(el);
+  });
 }
 
 function applyTitleSection(table) {
@@ -527,39 +793,82 @@ function applyTitleSection(table) {
   const caption = tableCaptionText(table);
   if (!titleEl) return;
 
-  if (titleEl.getAttribute('data-chart-title-nav') === '1') {
-    if (caption && !titleEl.getAttribute('aria-label')) {
-      titleEl.setAttribute('aria-label', caption);
+  const titleText = headerText(titleEl) || caption;
+
+  if (titleEl.getAttribute('data-chart-title-nav') !== '1') {
+    titleEl.setAttribute('tabindex', '0');
+    titleEl.setAttribute('data-chart-title-nav', '1');
+    // Don't copy an exposed title into aria-label. That snapshot overrides the
+    // text and keeps announcing the first year's total after the selector changes.
+    if (titleText && !titleEl.getAttribute('aria-label') && !exposedTitleText(titleEl)) {
+      titleEl.setAttribute('aria-label', titleText);
     }
-    return;
+
+    titleEl.addEventListener('focus', () => {
+      titleEl.classList.add(TITLE_FOCUS_CLASS);
+    });
+    titleEl.addEventListener('blur', () => {
+      titleEl.classList.remove(TITLE_FOCUS_CLASS);
+    });
+  } else if (caption && !titleEl.getAttribute('aria-label') && !exposedTitleText(titleEl)) {
+    titleEl.setAttribute('aria-label', caption);
   }
 
-  titleEl.setAttribute('tabindex', '0');
-  titleEl.setAttribute('data-chart-title-nav', '1');
-  // Prefer visible title text; fall back to caption
-  const titleText = headerText(titleEl) || caption;
-  if (titleText) titleEl.setAttribute('aria-label', titleText);
+  refreshTitleAccessibleName(titleEl);
+}
 
-  titleEl.addEventListener('focus', () => {
-    titleEl.classList.add(TITLE_FOCUS_CLASS);
-  });
-  titleEl.addEventListener('blur', () => {
-    titleEl.classList.remove(TITLE_FOCUS_CLASS);
+function removeHeaderSentinel(table) {
+  table.parentElement?.querySelectorAll(`:scope > .${SENTINEL_CLASS}`).forEach((el) => {
+    el.remove();
   });
 }
 
-function ensureHeaderSentinel(table) {
-  const parent = table.parentElement;
-  if (!parent) return null;
+function ensureTabDirectionTracking() {
+  if (typeof document === 'undefined') return;
+  const host = document.documentElement;
+  if (!host || host.dataset.chartTabDir === '1') return;
+  host.dataset.chartTabDir = '1';
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Tab') return;
+    lastTabShift = event.shiftKey;
+    tabFromKeyboard = true;
+  }, true);
+  document.addEventListener('keyup', (event) => {
+    if (event.key === 'Tab') tabFromKeyboard = false;
+  }, true);
+}
 
-  let sentinel = parent.querySelector(`:scope > .${SENTINEL_CLASS}`);
-  if (!sentinel) {
-    sentinel = document.createElement('div');
-    sentinel.className = SENTINEL_CLASS;
-    sentinel.setAttribute('tabindex', '0');
-    parent.insertBefore(sentinel, table);
-  }
-  return sentinel;
+function skipIfScrollStop(el, table) {
+  if (el.dataset.scrollStopSkip === '1') return;
+  el.dataset.scrollStopSkip = '1';
+  el.addEventListener('focus', () => {
+    if (!tabFromKeyboard) return;
+    const summary = table.closest('details')?.querySelector('summary');
+    const cell = table.querySelector('tbody th, tbody td');
+    const next = lastTabShift ? summary : cell;
+    if (next && next !== document.activeElement) next.focus();
+  });
+}
+
+/**
+ * Scroll panes between the disclosure button and the table are not tab stops.
+ * A named wrapper is exposed as a group; a focusable scroller is announced as "group".
+ */
+function disarmScrollStops(table) {
+  const root = table.closest('details') || table.parentElement?.parentElement || table.parentElement;
+  if (!root?.querySelectorAll) return;
+  ensureTabDirectionTracking();
+  root.querySelectorAll('.table-scroll-top').forEach((el) => {
+    el.setAttribute('tabindex', '-1');
+    el.setAttribute('aria-hidden', 'true');
+    skipIfScrollStop(el, table);
+  });
+  root.querySelectorAll('.table-responsive, .static-rankings-scroll-container').forEach((el) => {
+    el.setAttribute('tabindex', '-1');
+    el.removeAttribute('aria-label');
+    el.removeAttribute('role');
+    skipIfScrollStop(el, table);
+  });
 }
 
 function applyHeaderSection(table) {
@@ -569,32 +878,10 @@ function applyHeaderSection(table) {
   }
 
   applyTitleSection(table);
-
-  const headers = columnHeadersFor(table);
-  const announcement = columnHeadersAnnouncement(headers);
-  if (!announcement) return;
-
-  const parent = table.parentElement;
-  if (parent && getComputedStyle(parent).position === 'static') {
-    parent.style.position = 'relative';
-  }
-
-  const sentinel = ensureHeaderSentinel(table);
-  if (!sentinel) return;
-
-  const headerPrefix = isFrenchDoc() ? 'En-têtes de colonne' : 'Column headers';
-  // Title is a separate tab stop — do not repeat caption here.
-  sentinel.setAttribute('role', 'group');
-  sentinel.setAttribute('aria-label', `${headerPrefix}: ${announcement}`);
-  sentinel.setAttribute('tabindex', '0');
-
-  const thead = table.tHead;
-  if (thead) {
-    const top = table.offsetTop + thead.offsetTop;
-    const height = Math.max(thead.offsetHeight, 40);
-    sentinel.style.top = `${top}px`;
-    sentinel.style.height = `${height}px`;
-  }
+  // Drop the old column-header tab stop and any scroll-pane group so focus
+  // moves from the disclosure button straight to the first cell.
+  removeHeaderSentinel(table);
+  disarmScrollStops(table);
 
   const cap = table.querySelector('caption');
   if (cap) cap.setAttribute('aria-hidden', 'true');
@@ -607,7 +894,7 @@ function applyLeafHeaderAria(table) {
   // and never speaks "$ millions" as "dollar millions".
   thead.querySelectorAll('th').forEach((th) => {
     const text = headerText(th);
-    if (/^(res|prod|exp|rés)\.?$/i.test(text)) {
+    if (/^(res|prod|exp|rés|prov)\.?$/i.test(text)) {
       th.setAttribute('aria-label', expandMetricAbbrev(text));
       return;
     }
@@ -735,6 +1022,7 @@ function enhanceInRoot(root) {
   root.querySelectorAll('table').forEach((table) => {
     if (isChartDataTable(table)) enhanceTable(table);
   });
+  syncChartTitleYears(root);
 }
 
 export function enableChartDataTableCellNavigation(

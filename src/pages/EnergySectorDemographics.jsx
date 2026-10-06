@@ -18,7 +18,6 @@ const EnergySectorDemographics = () => {
     const figureRef = useRef(null);
 
     const pageTitle = getText('energy_sector_demographics_title', lang);
-    const ariaLabel = getText('energy_sector_demographics_infographic_aria', lang);
 
     const tableRows = useMemo(
         () =>
@@ -175,7 +174,6 @@ const EnergySectorDemographics = () => {
                 <div className="energy-sector-demographics-infographic-section">
                     <EnergySectorDemographicsInfographic
                         figureRef={figureRef}
-                        ariaLabel={ariaLabel}
                         lang={lang}
                     />
 

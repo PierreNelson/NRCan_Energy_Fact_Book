@@ -335,7 +335,6 @@ const OilSandsProduction = () => {
                 <div className="oil-sands-table-wrapper oil-sands-infographic-table-wrapper">
                     <ChartDataTable
                         lang={lang}
-                        label={getText('oil_sands_infographic_table_summary', lang)}
                         columns={infographicColumns}
                         rows={productionRows}
                         csvFilename={`${infographicDownloadTitle}.csv`}
@@ -378,7 +377,6 @@ const OilSandsProduction = () => {
                 <div className="oil-sands-table-wrapper">
                     <ChartDataTable
                         lang={lang}
-                        label={getText('oil_sands_table_summary', lang)}
                         columns={tableColumns}
                         rows={productionRows}
                         csvFilename={`${fileSlugBase}.csv`}

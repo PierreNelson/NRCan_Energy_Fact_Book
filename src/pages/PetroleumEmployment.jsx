@@ -77,6 +77,7 @@ const PetroleumEmployment = () => {
                 { name: indirectLabel, values: indirectValues, format: (v) => formatLocaleNumber(v, lang, { maximumFractionDigits: 0 }) },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
@@ -316,7 +317,7 @@ const PetroleumEmployment = () => {
                     <p className="petroleum-employment-chart-subtitle">{chartSubtitle}</p>
 
                     <div className="petroleum-employment-chart-block">
-                        <div role="region" aria-label={getChartSummary()} tabIndex="0">
+                        <div role="region" aria-label={`${exportChartTitle}. ${getChartSummary()}`} tabIndex="0">
                             {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clearSelection} />}
                             <figure ref={chartRef} style={{ margin: 0, position: 'relative' }}>
                                 <div aria-hidden="true">

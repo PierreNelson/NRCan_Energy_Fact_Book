@@ -364,14 +364,6 @@ const WorldSolarPower = () => {
     box-sizing: border-box;
     position: relative;
 }
-.world-solar-pv-left-kicker {
-    font-family: 'Lato', sans-serif;
-    font-size: clamp(26px, 3vw, 34px);
-    font-weight: bold;
-    color: #4d7c2f;
-    margin: 0 0 18px 0;
-    text-transform: none;
-}
 .world-solar-pv-context-title {
     font-family: 'Lato', sans-serif;
     font-size: clamp(22px, 2.6vw, 28px);
@@ -489,18 +481,17 @@ const WorldSolarPower = () => {
 
                         <div className="world-solar-pv-split" ref={infographicRef}>
                             <div className="world-solar-pv-left">
-                                <p className="world-solar-pv-left-kicker" aria-hidden="true">{getText('world_solar_pv_title', lang)}</p>
                                 <ul className="world-solar-pv-bullets">
                                     <li>{getText('world_solar_pv_bullet1', lang)}</li>
                                 </ul>
                             </div>
 
                             <div className="world-solar-pv-right">
-                                <h2 className="world-solar-pv-context-title">{getText('world_solar_pv_context_title', lang)}</h2>
+                                <h2 className="world-solar-pv-context-title" tabIndex={0} data-prose-tab="1">{getText('world_solar_pv_context_title', lang)}</h2>
 
-                                <section className="world-solar-pv-chart-section" aria-label={rankingAria}>
+                                <section className="world-solar-pv-chart-section">
                                     <h3 className="world-solar-pv-graphic-title">{graphicTitle}</h3>
-                                    <div className="world-solar-pv-capsule-graphic" role="img" tabIndex={0} aria-label={rankingAria}>
+                                    <div className="world-solar-pv-capsule-graphic" role="region" tabIndex={0} aria-label={rankingAria}>
                                         {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
                                         <div className="world-solar-pv-capsule-row world-solar-pv-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
                                         {canadaRow && renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}
@@ -514,7 +505,6 @@ const WorldSolarPower = () => {
 
                                     <ChartDataTable
                                         lang={lang}
-                                        label={getText('world_solar_pv_table_summary', lang)}
                                         columns={tableColumns}
                                         rows={tableRows}
                                         csvFilename={downloadFilename('world_solar_pv_csv_slug')}

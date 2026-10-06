@@ -3,13 +3,15 @@
  * Used so screen readers get real infographic wording even when AT
  * support for inline SVG text nodes is incomplete.
  *
- * Each top-level <text> element becomes one phrase; phrases are joined
- * with ". " so SRs pause between intro / headings / list items.
+ * Each top-level <text> element becomes one phrase. The default join is
+ * ". " so separate headings and list items get a pause. Pass a space when
+ * the nodes are one sentence broken across lines.
  *
  * @param {string} markup
+ * @param {{ separator?: string }} [options]
  * @returns {string}
  */
-export function extractSvgTextContent(markup) {
+export function extractSvgTextContent(markup, { separator = '. ' } = {}) {
   if (!markup) return '';
   const parts = [];
   // Prefer whole <text> nodes (nested <tspan> folded in) so list items
@@ -46,5 +48,5 @@ export function extractSvgTextContent(markup) {
   for (const p of parts) {
     if (out[out.length - 1] !== p) out.push(p);
   }
-  return out.join('. ').replace(/\s+/g, ' ').replace(/\.\s*\./g, '.').trim();
+  return out.join(separator).replace(/\s+/g, ' ').replace(/\s+,/g, ',').replace(/\.\s*\./g, '.').trim();
 }

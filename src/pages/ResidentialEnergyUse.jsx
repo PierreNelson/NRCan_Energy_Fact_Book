@@ -14,6 +14,7 @@ import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getResidentialEnergyUseData, residentialEnergyUseRowHasCompleteData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 
@@ -399,6 +400,46 @@ const ResidentialEnergyUse = () => {
         }] : [],
     }), [spaceHeatingTotalDisplay, lang, locale]);
 
+    const formatShare = (value) => `${Number(value).toFixed(1)} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    const formatEnergy = (value) => `${Math.round(Number(value)).toLocaleString(locale)} PJ`;
+    const pieSummary = (categories, labelFor, total, introEn, introFr) => {
+        if (!categories.length || total == null) return '';
+        return joinChartSummary({
+            intro: lang === 'en'
+                ? `${introEn} for ${selectedYear}. Total ${formatEnergy(total)}`
+                : `${introFr} pour ${selectedYear}. Total ${formatEnergy(total)}`,
+            body: summarizeByCategory({
+                categories: categories.map(labelFor),
+                series: [
+                    { name: lang === 'en' ? 'Share' : 'Part', values: categories.map((item) => item.pct), format: formatShare },
+                    { name: lang === 'en' ? 'Energy' : 'Énergie', values: categories.map((item) => item.value), format: formatEnergy },
+                ],
+                lang,
+            }),
+        });
+    };
+    const chart1RegionLabel = `${exportChart1Title}. ${pieSummary(
+        reuByTypeCategories,
+        (item) => getText(getReuLabelKey(item.key), lang),
+        selectedRow?.reuByType?.total,
+        'Pie chart of residential energy use by type',
+        "Graphique circulaire de la consommation d'énergie résidentielle par utilisation finale",
+    )}`;
+    const chart2RegionLabel = `${exportChart2Title}. ${pieSummary(
+        waterHeatingCategories,
+        (item) => getSourceLabel(item.key, lang),
+        waterHeatingTotalDisplay,
+        'Pie chart of water-heating energy use by source',
+        "Graphique circulaire de la consommation d'énergie pour le chauffage de l'eau par source",
+    )}`;
+    const chart3RegionLabel = `${exportChart3Title}. ${pieSummary(
+        spaceHeatingCategories,
+        (item) => getSourceLabel(item.key, lang),
+        spaceHeatingTotalDisplay,
+        'Pie chart of space-heating energy use by source',
+        "Graphique circulaire de la consommation d'énergie pour le chauffage des locaux par source",
+    )}`;
+
     const table1Caption = getText('residential_daily_lives_table_caption_by_type', lang);
     const table2Caption = getText('residential_daily_lives_table_caption_water', lang);
     const table3Caption = getText('residential_daily_lives_table_caption_space', lang);
@@ -451,8 +492,9 @@ const ResidentialEnergyUse = () => {
                             </p>
                             {effectiveSlices1 != null && effectiveSlices1.length > 0 && <ClearSelectionButton lang={lang} onClick={clearSelection1} />}
                             <div style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-                                <div ref={chartRef1} role="region" aria-label={exportChart1Title} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: residential_daily_lives_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
+                                <div ref={chartRef1} role="region" aria-label={chart1RegionLabel} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: residential_daily_lives_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
                                     <figure style={{ width: '100%', height: residential_daily_lives_CHART_HEIGHT, margin: 0, overflow: 'visible' }}>
+                                        <div aria-hidden="true">
                                         <Plot
                                             key={selectedYear}
                                             data={plot1Data}
@@ -462,6 +504,7 @@ const ResidentialEnergyUse = () => {
                                             useResizeHandler
                                             onClick={onPieClick1}
                                         />
+                                        </div>
                                     </figure>
                                 </div>
                             </div>
@@ -487,8 +530,9 @@ const ResidentialEnergyUse = () => {
                             <p className="residential-energy-use-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', margin: '0 0 1rem 0' }}>{chart2Title}</p>
                             {effectiveSlices2 != null && effectiveSlices2.length > 0 && <ClearSelectionButton lang={lang} onClick={clearSelection2} />}
                             <div style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-                                <div ref={chartRef2} role="region" aria-label={exportChart2Title} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: residential_daily_lives_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
+                                <div ref={chartRef2} role="region" aria-label={chart2RegionLabel} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: residential_daily_lives_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
                                     <figure style={{ width: '100%', height: residential_daily_lives_CHART_HEIGHT, margin: 0, overflow: 'visible' }}>
+                                        <div aria-hidden="true">
                                         <Plot
                                             key={selectedYear}
                                             data={plot2Data}
@@ -498,6 +542,7 @@ const ResidentialEnergyUse = () => {
                                             useResizeHandler
                                             onClick={onPieClick2}
                                         />
+                                        </div>
                                     </figure>
                                 </div>
                             </div>
@@ -523,8 +568,9 @@ const ResidentialEnergyUse = () => {
                             <p className="residential-energy-use-chart-title" style={{ textAlign: 'center', width: '100%', boxSizing: 'border-box', margin: '0 0 1rem 0' }}>{chart3Title}</p>
                             {effectiveSlices3 != null && effectiveSlices3.length > 0 && <ClearSelectionButton lang={lang} onClick={clearSelection3} />}
                             <div style={{ width: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-                                <div ref={chartRef3} role="region" aria-label={exportChart3Title} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: residential_daily_lives_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
+                                <div ref={chartRef3} role="region" aria-label={chart3RegionLabel} tabIndex={0} style={{ position: 'relative', overflow: 'visible', minWidth: residential_daily_lives_CHART_MIN_WIDTH, width: '100%', maxWidth: '100%', flexShrink: 0 }}>
                                     <figure style={{ width: '100%', height: residential_daily_lives_CHART_HEIGHT, margin: 0, overflow: 'visible' }}>
+                                        <div aria-hidden="true">
                                         <Plot
                                             key={selectedYear}
                                             data={plot3Data}
@@ -534,6 +580,7 @@ const ResidentialEnergyUse = () => {
                                             useResizeHandler
                                             onClick={onPieClick3}
                                         />
+                                        </div>
                                     </figure>
                                 </div>
                             </div>

@@ -194,6 +194,7 @@ const CrudeOilPrices = () => {
                 { name: wtiLabel, values: years.map((y) => lastByYear.get(y).wti), format: formatPrice },
             ],
             lang,
+            newestFirst: true,
         });
         return joinChartSummary({
             intro: lang === 'en'
@@ -365,6 +366,7 @@ const CrudeOilPrices = () => {
 
                     <figure ref={chartRef} style={{ margin: 0 }}>
                         <div role="region" aria-label={chartRegionLabel} tabIndex="0">
+                            <div aria-hidden="true">
                             <Plot
                                 key={`crude-oil-prices-${selectedTraceIds ? selectedTraceIds.join('-') : 'all'}`}
                                 data={[
@@ -462,6 +464,7 @@ const CrudeOilPrices = () => {
                                     });
                                 }}
                             />
+                            </div>
                         </div>
                     </figure>
 
@@ -483,7 +486,6 @@ const CrudeOilPrices = () => {
                     <div className="crude-oil-prices-table-wrapper">
                         <ChartDataTable
                             lang={lang}
-                            label={getText('crude_prices_table_summary', lang)}
                             columns={tableColumns}
                             rows={tableRows}
                             csvFilename={`${fileSlugBase}.csv`}

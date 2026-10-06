@@ -535,7 +535,14 @@ const CanadianRenewableEnergyProduction = () => {
             series: [{
                 name: lang === 'en' ? 'Share' : 'Part',
                 values: shareValues,
-                format: (v) => formatPct(v, 1),
+                format: (v) => {
+                    const formatted = formatLocalePct(v, lang, {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                        suffix: false,
+                    });
+                    return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+                },
             }],
             lang,
         });
@@ -714,13 +721,15 @@ const CanadianRenewableEnergyProduction = () => {
                                 aria-label={chartRegionLabel}
                                 tabIndex={0}
                             >
-                                <CanadianRenewableEnergyProductionPlot
-                                    plotKey={plotKey}
-                                    plotData={plotData}
-                                    plotLayout={plotLayout}
-                                    chartConfig={plotConfig}
-                                    onPlotReady={onPlotReady}
-                                />
+                                <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
+                                    <CanadianRenewableEnergyProductionPlot
+                                        plotKey={plotKey}
+                                        plotData={plotData}
+                                        plotLayout={plotLayout}
+                                        chartConfig={plotConfig}
+                                        onPlotReady={onPlotReady}
+                                    />
+                                </div>
                             </figure>
                         </div>
                         {hoverTip && (

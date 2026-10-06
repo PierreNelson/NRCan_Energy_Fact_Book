@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import ClearSelectionButton from '../components/ClearSelectionButton';
 import useWindowWidth from '../hooks/useWindowWidth';
@@ -440,8 +440,16 @@ const HydroelectricCapacity = () => {
 
     const chartTitleSuffix = substitute(getText('major_hydro_facilities_chart_title_suffix', lang), { year: referenceYear ?? '' });
     const chartTitleFull = `${stripHtml(getText('major_hydro_facilities_chart_title', lang))}${stripHtml(chartTitleSuffix)}`;
+    const chartTitleSpoken = substitute(getText('major_hydro_facilities_chart_title_spoken', lang), { year: referenceYear ?? '' });
+    const subtitleSpoken = getText('major_hydro_facilities_subtitle_spoken', lang);
+    const unitSpoken = getText('major_hydro_facilities_unit_spoken', lang);
+    const calloutSpoken = (totalHydroMw != null && referenceYear != null)
+        ? substitute(getText('major_hydro_facilities_callout_spoken', lang), {
+            value: formatMw(totalHydroMw),
+            year: referenceYear,
+        })
+        : '';
     const exportChartTitle = chartTitleFull;
-    const tableCaption = substitute(getText('major_hydro_facilities_table_caption', lang), { year: referenceYear ?? '' });
     const chartDownloadSlug = getText('major_hydro_facilities_download_title', lang).replace(/\s+/g, '_');
     const colFacility = getText('major_hydro_facilities_table_col_facility', lang);
     const colCapacity = getText('major_hydro_facilities_table_col_capacity', lang);
@@ -460,6 +468,42 @@ const HydroelectricCapacity = () => {
             substitute(getText('major_hydro_facilities_callout_line3', lang), { year: referenceYear }),
         ];
     }, [totalHydroMw, referenceYear, lang, formatMw]);
+
+    const calloutStopRef = useRef(null);
+    useLayoutEffect(() => {
+        const stop = calloutStopRef.current;
+        const figure = chartRef.current;
+        const root = chartBgRef.current;
+        if (!stop || !figure || !root) return undefined;
+
+        const place = () => {
+            const lines = root.querySelectorAll('.major-hydro-facilities-overlay-callout-line');
+            if (!lines.length) return;
+            const figBox = figure.getBoundingClientRect();
+            let top = Infinity;
+            let left = Infinity;
+            let right = -Infinity;
+            let bottom = -Infinity;
+            lines.forEach((el) => {
+                const box = el.getBoundingClientRect();
+                top = Math.min(top, box.top);
+                left = Math.min(left, box.left);
+                right = Math.max(right, box.right);
+                bottom = Math.max(bottom, box.bottom);
+            });
+            const pad = 8;
+            stop.style.top = `${top - figBox.top - pad}px`;
+            stop.style.left = `${left - figBox.left - pad}px`;
+            stop.style.width = `${Math.max(0, right - left + pad * 2)}px`;
+            stop.style.height = `${Math.max(0, bottom - top + pad * 2)}px`;
+        };
+
+        place();
+        const observer = new ResizeObserver(place);
+        observer.observe(figure);
+        observer.observe(root);
+        return () => observer.disconnect();
+    }, [calloutLines, facPlotHeight, lang]);
 
     const downloadChartWithTitle = useChartPngDownloader(
         chartRef,
@@ -504,7 +548,14 @@ const HydroelectricCapacity = () => {
         const vals = facValues || facPlotData?.[0]?.x || facPlotData?.[0]?.y || [];
         const body = summarizeByCategory({
             categories: Array.isArray(cats) ? cats : [],
-            series: [{ name: lang === 'en' ? 'Capacity' : 'Capacité', values: vals, format: (v) => String(v) }],
+            series: [{
+                name: lang === 'en' ? 'Capacity' : 'Capacité',
+                values: vals,
+                format: (v) => {
+                    const formatted = formatMw(v);
+                    return formatted === '—' ? formatted : `${formatted} ${unitSpoken}`;
+                },
+            }],
             lang,
         });
         return joinChartSummary({
@@ -513,7 +564,7 @@ const HydroelectricCapacity = () => {
             lang,
         });
     };
-    const chartRegionLabel = `${chartTitleFull}. ${getChartSummary()}`;
+    const chartRegionLabel = `${chartTitleSpoken}. ${getChartSummary()}`;
 
     return (
         <PageShell id="main-content"
@@ -559,6 +610,12 @@ const HydroelectricCapacity = () => {
 .major-hydro-facilities-chart-overlay { position: relative; z-index: 2; width: 100%; pointer-events: auto; }
 .major-hydro-facilities-chart-scroll { width: 100%; overflow: visible; position: relative; pointer-events: auto; }
 .major-hydro-facilities-chart { width: 100%; min-width: 0; position: relative; z-index: 1; overflow: visible; }
+.major-hydro-facilities-callout-stop {
+    position: absolute;
+    z-index: 6;
+    pointer-events: none;
+    box-sizing: border-box;
+}
 .major-hydro-facilities-chart > div { width: 100%; height: 100%; overflow: visible; }
 .major-hydro-facilities-chart .js-plotly-plot,
 .major-hydro-facilities-chart .plot-container,
@@ -610,10 +667,10 @@ const HydroelectricCapacity = () => {
 
             <div className="major-hydro-facilities-inner">
                 <h1 id="major-hydro-facilities-title" className="major-hydro-facilities-title page-chrome-title">{getText('major_hydro_facilities_title', lang)}</h1>
-                <h2 className="major-hydro-facilities-subtitle">{getText('major_hydro_facilities_subtitle', lang)}</h2>
+                <h2 className="major-hydro-facilities-subtitle" aria-label={subtitleSpoken}>{getText('major_hydro_facilities_subtitle', lang)}</h2>
 
                 <div className="major-hydro-facilities-chart-frame page-chrome-chart-frame">
-                    <h2 id="major-hydro-facilities-chart-title" className="major-hydro-facilities-chart-title page-chrome-chart-title wb-inv">
+                    <h2 id="major-hydro-facilities-chart-title" className="major-hydro-facilities-chart-title page-chrome-chart-title wb-inv" aria-label={chartTitleSpoken}>
                         {getText('major_hydro_facilities_chart_title', lang)}{chartTitleSuffix}
                     </h2>
 
@@ -643,6 +700,17 @@ const HydroelectricCapacity = () => {
                                     aria-label={chartRegionLabel}
                                     tabIndex={0}
                                 >
+                                    {calloutSpoken ? (
+                                        <div
+                                            ref={calloutStopRef}
+                                            className="major-hydro-facilities-callout-stop"
+                                            tabIndex={0}
+                                            role="group"
+                                            data-prose-tab="1"
+                                            aria-label={calloutSpoken}
+                                        />
+                                    ) : null}
+                                    <div aria-hidden="true" style={{ width: '100%', height: '100%' }}>
                                     <HydroelectricCapacityPlot
                                         plotKey={`major-hydro-facilities-${useWrapLabels ? 'wrap' : 'plain'}-${Math.round(zoomEffective * 100)}-${facPlotHeight}-${facLeftMargin}`}
                                         plotData={facPlotData}
@@ -650,6 +718,7 @@ const HydroelectricCapacity = () => {
                                         plotConfig={plotConfig}
                                         onPlotReady={onPlotReady}
                                     />
+                                    </div>
                                 </figure>
                             </div>
                         </div>
@@ -686,8 +755,8 @@ const HydroelectricCapacity = () => {
                                 columnWidths: [5600, 2000],
                                 fontSize: 22,
                             }}
-                            caption={tableCaption}
-                            tableAriaLabel={tableCaption}
+                                caption={chartTitleSpoken}
+                                tableAriaLabel={chartTitleSpoken}
                             renderCell={(raw, { colIndex }) => (
                                 colIndex === 0 ? String(raw ?? '') : formatMw(raw)
                             )}

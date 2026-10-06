@@ -26,6 +26,7 @@ import { extractSvgTextContent } from '../utils/extractSvgTextContent';
  *   as?: 'div' | 'figure',
  *   children?: React.ReactNode,
  *   idPrefix?: string,
+ *   label?: string,
  * }} props
  */
 const AccessibleInfographic = forwardRef(function AccessibleInfographic(
@@ -33,6 +34,7 @@ const AccessibleInfographic = forwardRef(function AccessibleInfographic(
     mode = 'image',
     title,
     overview,
+    label,
     svgMarkup,
     src,
     decorative = false,
@@ -99,6 +101,28 @@ const AccessibleInfographic = forwardRef(function AccessibleInfographic(
   }
 
   if (mode === 'text') {
+    // A single label is one continuous name. Title plus extracted lines would
+    // repeat a leading word and pause at every SVG text node.
+    if ((label || '').trim()) {
+      return (
+        <Tag
+          ref={rootRef}
+          className={`accessible-infographic accessible-infographic--text ${className}`.trim()}
+          role="region"
+          tabIndex={0}
+          aria-label={label.trim()}
+          style={wrapperStyle}
+        >
+          <div
+            className={`accessible-infographic-svg ${imgClassName}`.trim()}
+            style={imgStyle}
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: preparedSvg }}
+          />
+          {children}
+        </Tag>
+      );
+    }
     // Include body text in the accessible name so focus announces the full
     // infographic wording (aria-describedby alone is often truncated/skipped).
     const labelIds = extractedText ? `${titleId} ${textId}` : titleId;

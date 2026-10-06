@@ -10,6 +10,7 @@ import Plot from '../components/LazyPlot';
 import { getWorldProvedCrudeReservesData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
+import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import WorldProvedCrudeReservesInfographic from '../components/WorldProvedCrudeReservesInfographic';
 import {
@@ -210,7 +211,39 @@ const WorldProvedCrudeReserves = () => {
     }, [result, lang]);
 
     const tableCaption = getText('world_crude_reserves_table_caption', lang);
-    const infographicAria = substitute(getText('world_crude_reserves_chart_aria', lang), textVars);
+    const formatShareSpoken = (value) => {
+        const formatted = formatLocalePct(value, lang, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+            suffix: false,
+        });
+        return `${formatted} ${lang === 'en' ? 'percent' : 'pour cent'}`;
+    };
+    const pieSummary = slices.length ? joinChartSummary({
+        intro: lang === 'en'
+            ? `Pie chart of world proved crude oil reserves by country or region for ${year}`
+            : `Graphique circulaire des réserves mondiales prouvées de pétrole brut par pays ou région pour ${year}`,
+        unitNote: lang === 'en'
+            ? `Total reserves ${formatNumber(yearData?.totalBb, 0)} billion barrels`
+            : `Réserves totales ${formatNumber(yearData?.totalBb, 0)} milliards de barils`,
+        body: summarizeByCategory({
+            categories: slices.map((slice) => getText(COUNTRY_LABEL_KEYS[slice.key], lang)),
+            series: [
+                {
+                    name: lang === 'en' ? 'Reserves' : 'Réserves',
+                    values: slices.map((slice) => slice.valueBb),
+                    format: (value) => `${formatNumber(value, 0)} ${lang === 'en' ? 'billion barrels' : 'milliards de barils'}`,
+                },
+                {
+                    name: lang === 'en' ? 'Share' : 'Part',
+                    values: slices.map((slice) => slice.sharePct),
+                    format: formatShareSpoken,
+                },
+            ],
+            lang,
+        }),
+    }) : '';
+    const chartRegionLabel = pieSummary ? `${exportChartTitle}. ${pieSummary}` : exportChartTitle;
 
     const headlineValue = substitute(getText('world_crude_reserves_headline_value', lang), textVars);
     const headlineBarrelsWord = getText('world_crude_reserves_headline_barrels_word', lang);
@@ -356,11 +389,11 @@ const WorldProvedCrudeReserves = () => {
                         labelFontSize={labelFontSize}
                         getText={getText}
                         onFootnoteClick={scrollToElement}
-                        ariaLabel={infographicAria}
                         showClearSelection={effectiveSlices?.length > 0}
                         onClearSelection={() => setSelectedSlices(null)}
                         pieChart={(
-                            <div ref={chartRef} className="world-crude-oil-proved-reserves-chart-host" role="img" aria-label={infographicAria}>
+                            <div ref={chartRef} className="world-crude-oil-proved-reserves-chart-host" role="region" aria-label={chartRegionLabel} tabIndex={0}>
+                                <div aria-hidden="true">
                                 {pieTrace && (
                                     <Plot
                                         key={`world-crude-oil-proved-reserves-pie-${year}-${effectiveSlices ? effectiveSlices.join('-') : 'none'}`}
@@ -372,6 +405,7 @@ const WorldProvedCrudeReserves = () => {
                                         onClick={handlePieClick}
                                     />
                                 )}
+                                </div>
                             </div>
                         )}
                     />

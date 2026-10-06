@@ -1,5 +1,4 @@
 import React from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
 import SafeHtml from './SafeHtml';
 import sectorEnergyTrendsBg from '../assets/sector_energy_trends_bg.svg';
 
@@ -73,6 +72,20 @@ const formatPct = (value, lang) => {
     return lang === 'fr' ? `${sign}${abs} %` : `${sign}${abs}%`;
 };
 
+const plainText = (value) => String(value ?? '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const speakPct = (value, lang) => {
+    const abs = Math.abs(value);
+    const unit = lang === 'fr' ? 'pour cent' : 'percent';
+    if (value > 0) return `plus ${abs} ${unit}`;
+    if (value < 0) return `${lang === 'fr' ? 'moins' : 'minus'} ${abs} ${unit}`;
+    return `${abs} ${unit}`;
+};
+
 const SectorColumn = ({ sectorKey, lang, getText }) => {
     const layout = COLUMN_LAYOUT[sectorKey];
     const bounds = COLUMN_BOUNDS[sectorKey];
@@ -85,6 +98,11 @@ const SectorColumn = ({ sectorKey, lang, getText }) => {
         paddingLeft: `${insets.padL}%`,
         paddingRight: `${insets.padR}%`,
     };
+    const columnSpoken = [
+        plainText(titleHtml),
+        `${plainText(useLabelHtml)}, ${speakPct(data.energyUse, lang)}`,
+        `${plainText(intensityLabelHtml)}, ${speakPct(data.energyIntensity, lang)}`,
+    ].join('. ') + '.';
 
     return (
         <div
@@ -94,6 +112,13 @@ const SectorColumn = ({ sectorKey, lang, getText }) => {
                 width: `${bounds.width}%`,
             }}
         >
+            <div
+                className="sector-energy-trends-column-stop"
+                tabIndex={0}
+                data-prose-tab="1"
+                role="group"
+                aria-label={columnSpoken}
+            />
             <SafeHtml as="p"
                 className="sector-energy-trends-sector-title"
                 style={{ top: `${layout.titleTop}%` }} html={titleHtml}
@@ -114,20 +139,11 @@ const SectorColumn = ({ sectorKey, lang, getText }) => {
     );
 };
 
-const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, title, titleId }) => {
+const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, title, titleId }) => {
     const isFr = lang === 'fr';
 
     return (
-    <AccessibleInfographic
-        ref={figureRef}
-        as="figure"
-        mode="image"
-        className="sector-energy-trends-infographic-figure"
-        title={title || ariaLabel}
-        overview={ariaLabel}
-        src={sectorEnergyTrendsBg}
-        imgClassName="sector-energy-trends-bg-image"
-    >
+    <figure ref={figureRef} className="sector-energy-trends-infographic-figure">
         <style>{`
 .sector-energy-trends-infographic-figure {
     position: relative;
@@ -159,6 +175,19 @@ const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, ti
     height: 100%;
     box-sizing: border-box;
     pointer-events: none;
+}
+.sector-energy-trends-column-stop {
+    position: absolute;
+    z-index: 4;
+    left: 0;
+    right: 0;
+    top: 14%;
+    bottom: 0;
+    pointer-events: auto;
+}
+.sector-energy-trends-column-stop:focus,
+.sector-energy-trends-column-stop:focus-visible {
+    outline-offset: 0 !important;
 }
 .sector-energy-trends-sector-title {
     position: absolute;
@@ -295,8 +324,9 @@ const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, ti
         `}</style>
 
         <div className={`sector-energy-trends-infographic-wrapper${isFr ? ' sector-energy-trends-infographic-wrapper--fr' : ''}`}>
+            <img src={sectorEnergyTrendsBg} alt="" className="sector-energy-trends-bg-image" draggable={false} aria-hidden="true" />
             {title && (
-                <h2 id={titleId} className="sector-energy-trends-infographic-title-overlay">
+                <h2 id={titleId} className="sector-energy-trends-infographic-title-overlay sector-energy-trends-chart-title">
                     {title}
                 </h2>
             )}
@@ -304,7 +334,7 @@ const SectorEnergyTrendsInfographic = ({ figureRef, lang, getText, ariaLabel, ti
                 <SectorColumn key={key} sectorKey={key} lang={lang} getText={getText} />
             ))}
         </div>
-    </AccessibleInfographic>
+    </figure>
     );
 };
 

@@ -140,16 +140,12 @@ const ResearchDevelopmentDemonstration = () => {
                 <p className="research-development-demonstration-intro">{getText('research_development_demonstration_intro', lang)}</p>
 
                 {/* Row 1 — Parliament + federal spending (factbook: top-aligned) */}
-                <div
-                    className="research-development-demonstration-row"
-                    role="region"
-                    aria-label={getText('research_development_demonstration_row_federal_aria', lang)}
-                >
+                <div className="research-development-demonstration-row">
                     <div className="research-development-demonstration-row-icon" aria-hidden="true">
                         <img src={energyInformationLandscapeBg1} alt="" width={110} height={110} />
                     </div>
                     <div className="research-development-demonstration-row-body">
-                        <p>
+                        <p tabIndex={0} data-prose-tab="1">
                             {getText('research_development_demonstration_federal_p1_pre', lang)}
                             <strong>{getText('research_development_demonstration_federal_p1_bold', lang)}</strong>
                             {getText('research_development_demonstration_federal_p1_post', lang)}
@@ -158,16 +154,12 @@ const ResearchDevelopmentDemonstration = () => {
                 </div>
 
                 {/* Row 2 — Canada map + international commitments (factbook: vertically centered) */}
-                <div
-                    className="research-development-demonstration-row research-development-demonstration-row--center"
-                    role="region"
-                    aria-label={getText('research_development_demonstration_row_international_aria', lang)}
-                >
+                <div className="research-development-demonstration-row research-development-demonstration-row--center">
                     <div className="research-development-demonstration-row-icon" aria-hidden="true">
                         <img src={energyInformationLandscapeBg2} alt="" width={110} height={110} />
                     </div>
                     <div className="research-development-demonstration-row-body">
-                        <p>
+                        <p tabIndex={0} data-prose-tab="1">
                             {getText('research_development_demonstration_federal_p2_pre', lang)}
                             <strong>{getText('research_development_demonstration_federal_p2_bold_2b', lang)}</strong>
                             {getText('research_development_demonstration_federal_p2_mid', lang)}
@@ -178,16 +170,12 @@ const ResearchDevelopmentDemonstration = () => {
                 </div>
 
                 {/* Row 3 — Factory + P&T then industry (factbook: top-aligned) */}
-                <div
-                    className="research-development-demonstration-row"
-                    role="region"
-                    aria-label={getText('research_development_demonstration_row_industry_aria', lang)}
-                >
+                <div className="research-development-demonstration-row">
                     <div className="research-development-demonstration-row-icon" aria-hidden="true">
                         <img src={energyInformationLandscapeBg3} alt="" width={110} height={110} />
                     </div>
                     <div className="research-development-demonstration-row-body">
-                        <p>
+                        <p tabIndex={0} data-prose-tab="1">
                             {getText('research_development_demonstration_pt_pre', lang)}
                             <strong>{getText('research_development_demonstration_pt_bold1', lang)}</strong>
                             {getText('research_development_demonstration_pt_mid1', lang)}
@@ -198,7 +186,7 @@ const ResearchDevelopmentDemonstration = () => {
                             <strong>{getText('research_development_demonstration_pt_bold4', lang)}</strong>
                             {getText('research_development_demonstration_pt_post', lang)}
                         </p>
-                        <p>
+                        <p tabIndex={0} data-prose-tab="1">
                             {getText('research_development_demonstration_industry_pre', lang)}
                             <strong>{getText('research_development_demonstration_industry_bold1', lang)}</strong>
                             {getText('research_development_demonstration_industry_mid', lang)}
