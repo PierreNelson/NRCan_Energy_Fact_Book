@@ -2,6 +2,36 @@
 # Transform order follows topological sort on depends_on (physical table names).
 
 indicators:
+  demographic_representation:
+    section_id: 3
+    depends_on: [statcan_energy_sector_demographic_representation]
+    vector_prefixes: [drep_]
+
+  household_energy_expenditures:
+    section_id: 3
+    depends_on: [statcan_household_energy_expenditures]
+    vector_prefixes: [hexp_]
+
+  household_energy_prices:
+    section_id: 3
+    depends_on: [iea_household_energy_prices_by_country]
+    vector_prefixes: [hhep_]
+
+  energy_sector_demographics:
+    section_id: 3
+    depends_on: [statcan_energy_sector_demographics]
+    vector_prefixes: [edem_, ewag_]
+
+  energy_reliant_communities:
+    section_id: 3
+    depends_on: [nrcan_energy_reliant_communities]
+    vector_prefixes: [erel_]
+
+  energy_poverty_geography:
+    section_id: 3
+    depends_on: [stc_energy_poverty_rates]
+    vector_prefixes: [epov_]
+
   economic_contributions:
     section_id: 1
     depends_on: [stc_nrsa_3610061001, stc_capex_3410003601]
@@ -21,6 +51,31 @@ indicators:
     section_id: 1
     depends_on: [iea_web_rankings]
     vector_prefixes: [energy_prod_]
+
+  canada_energy_supply:
+    section_id: 1
+    depends_on: [iea_total_energy_supply_can_world]
+    vector_prefixes: [tes_]
+
+  us_state_energy_exports:
+    section_id: 1
+    depends_on: [nrcan_us_state_energy_exports]
+    vector_prefixes: [usx_]
+
+  global_energy_trade:
+    section_id: 1
+    depends_on: [nrcan_global_energy_trade_by_product]
+    vector_prefixes: [gtrade_]
+
+  energy_sector_employment:
+    section_id: 1
+    depends_on: [stc_energy_sector_employment]
+    vector_prefixes: [emp_]
+
+  energy_and_ghg_emissions:
+    section_id: 1
+    depends_on: [nrcan_energy_ghg]
+    vector_prefixes: [eghg_]
 
   canadian_energy_assets:
     section_id: 1
@@ -176,6 +231,46 @@ indicators:
     section_id: 5
     depends_on: [can_largesthydrofac]
     vector_prefixes: [hydro_fac_]
+
+  canadian_renewable_energy_production:
+    section_id: 5
+    depends_on: [iea_renewables_canada_production]
+    vector_prefixes: [crep_]
+
+  biomass:
+    section_id: 5
+    depends_on: [iea_biomass_world_production]
+    vector_prefixes: [bmas_]
+
+  electric_vehicle_charging:
+    section_id: 5
+    depends_on: [nrcan_ev_charging_narrative]
+    vector_prefixes: [evch_]
+
+  global_hydrogen_production_demand:
+    section_id: 5
+    depends_on: [iea_hydrogen_global_prod_demand]
+    vector_prefixes: [gh2_]
+
+  hydroelectricity:
+    section_id: 5
+    depends_on: [iea_hydroelectricity_world_production]
+    vector_prefixes: [hyel_]
+
+  hydrogen_narrative:
+    section_id: 5
+    depends_on: [iea_hydrogen_narrative]
+    vector_prefixes: [hnar_]
+
+  electricity_world_production:
+    section_id: 5
+    depends_on: [iea_electricity_world_production]
+    vector_prefixes: [ewld_]
+
+  world_biofuels_production:
+    section_id: 5
+    depends_on: [iea_biofuels_world_production]
+    vector_prefixes: [wbfl_]
 
   solid_biofuels:
     section_id: 5

@@ -16,6 +16,7 @@ import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 import { formatLocalePct } from '../utils/formatLocale';
+import { getEnergySectorEmploymentData } from '../utils/dataLoader';
 
 const employment_PROVINCE_INFO = {
     'nl': { nameEn: 'Newfoundland and Labrador', nameFr: 'Terre-Neuve-et-Labrador', abbrevEn: 'N.L.', abbrevFr: 'T.-N.-L.', geoJsonName: 'Newfoundland and Labrador' },
@@ -51,34 +52,6 @@ const employment_PROVINCE_CENTROIDS = {
     'nu': { lat: 67.0, lon: -95.0 }
 };
 
-const employment_INDIRECT_RATIO = 428300 / 316200;
-
-const employment_EMPLOYMENT_DATA = {
-    bc: { direct: 29873, indirect: Math.round(29873 * employment_INDIRECT_RATIO) },
-    ab: { direct: 159826, indirect: Math.round(159826 * employment_INDIRECT_RATIO) },
-    sk: { direct: 17168, indirect: Math.round(17168 * employment_INDIRECT_RATIO) },
-    mb: { direct: 6679, indirect: Math.round(6679 * employment_INDIRECT_RATIO) },
-    on: { direct: 53834, indirect: Math.round(53834 * employment_INDIRECT_RATIO) },
-    qc: { direct: 33109, indirect: Math.round(33109 * employment_INDIRECT_RATIO) },
-    nb: { direct: 5491, indirect: Math.round(5491 * employment_INDIRECT_RATIO) },
-    ns: { direct: 3128, indirect: Math.round(3128 * employment_INDIRECT_RATIO) },
-    pe: { direct: 348, indirect: Math.round(348 * employment_INDIRECT_RATIO) },
-    nl: { direct: 6155, indirect: Math.round(6155 * employment_INDIRECT_RATIO) },
-    yt: { direct: 149, indirect: Math.round(149 * employment_INDIRECT_RATIO) },
-    nt: { direct: 254, indirect: Math.round(254 * employment_INDIRECT_RATIO) },
-    nu: { direct: 229, indirect: Math.round(229 * employment_INDIRECT_RATIO) },
-    direct_total: 316200,
-    indirect_total: 428300,
-    total: 744500,
-    indigenous_employed: 18200,
-    share_total_pct: 3.6,
-    energy_direct_pct: 1.5,
-    petroleum_pct: 0.9,
-    electricity_pct: 0.5,
-    other_pct: 0.1,
-    energy_indirect_pct: 2.1
-};
-
 const employment_COLORS = {
     'energy_sector': '#245e7f',
     'non_energy': '#9A9389',
@@ -86,13 +59,41 @@ const employment_COLORS = {
 };
 
 const formatNationalAccountsNumber = (num, lang) => {
-    if (num === undefined || num === null) return '—';
+    if (num === undefined || num === null || Number.isNaN(Number(num))) return '—';
     return Math.round(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
+};
+
+const roundHalfUp = (value, digits) => {
+    const factor = 10 ** digits;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
+};
+
+const displayDirectJobs = (value) => roundHalfUp(Number(value) / 100, 0) * 100;
+
+const largestRemainder = (parts, target, digits = 1) => {
+    const factor = 10 ** digits;
+    const scaledTarget = Math.round((target * factor) + 1e-10);
+    const floors = parts.map((value) => Math.floor((value * factor) + 1e-9));
+    let leftover = scaledTarget - floors.reduce((sum, value) => sum + value, 0);
+    const order = parts
+        .map((value, index) => ({ index, frac: (value * factor) - floors[index] }))
+        .sort((a, b) => b.frac - a.frac || a.index - b.index);
+    const out = floors.slice();
+    const step = leftover >= 0 ? 1 : -1;
+    let guard = 0;
+    while (leftover !== 0 && order.length && guard < 30) {
+        out[order[guard % order.length].index] += step;
+        leftover -= step;
+        guard += 1;
+    }
+    return out.map((value) => value / factor);
 };
 
 const Employment = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [year, setYear] = useState(2024);
+    const [year, setYear] = useState(null);
+    const [employmentRows, setEmploymentRows] = useState([]);
+    const [indigenous, setIndigenous] = useState(null);
     const windowWidth = useWindowWidth();
     const [selectedProvinces, setSelectedProvinces] = useState(null);
     const mapChartRef = useRef(null);
@@ -103,34 +104,74 @@ const Employment = () => {
 
     const scrollToRef = makeScrollToIdHandler('fn-asterisk-rf-employment');
 
-    const years = useMemo(() => Array.from({ length: 2024 - 2009 + 1 }, (_, i) => 2024 - i), []);
+    useEffect(() => {
+        let cancelled = false;
+        getEnergySectorEmploymentData()
+            .then((payload) => {
+                if (cancelled) return;
+                const rows = Array.isArray(payload?.years) ? payload.years : [];
+                setEmploymentRows(rows);
+                setIndigenous(payload?.indigenous ?? null);
+                if (rows.length) setYear(rows[rows.length - 1].year);
+            })
+            .catch((err) => {
+                console.error('Failed to load energy employment data:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
-    // Yearly employment data by province for all years (currently same values - will be updated with real data later)
-    // Each year contains direct employment values for each province
-    const yearlyProvinceData = useMemo(() => years.map(yr => ({
-        year: yr,
-        bc: 29873,
-        ab: 159826,
-        sk: 17168,
-        mb: 6679,
-        on: 53834,
-        qc: 33109,
-        nb: 5491,
-        ns: 3128,
-        pe: 348,
-        nl: 6155,
-        yt: 149,
-        nt: 254,
-        nu: 229,
-        national_total: 316200
-    })), [years]);
+    const years = useMemo(
+        () => employmentRows.map((row) => row.year).sort((a, b) => b - a),
+        [employmentRows],
+    );
+    const selected = employmentRows.find((row) => row.year === year) || null;
+    const shares = useMemo(() => {
+        if (!selected) return null;
+        const directShown = roundHalfUp(selected.directShare, 1);
+        const [petroleum, electricity, other] = largestRemainder(
+            [selected.petroleumShare, selected.electricityShare, selected.otherShare],
+            directShown,
+            1,
+        );
+        return {
+            direct: directShown,
+            indirect: roundHalfUp(selected.indirectShare, 1),
+            total: roundHalfUp(selected.totalShare, 1),
+            petroleum,
+            electricity,
+            other,
+            directJobs: displayDirectJobs(selected.directJobs),
+            indirectJobs: roundHalfUp(selected.indirectJobs, 0),
+            totalJobs: roundHalfUp(selected.totalJobs, 0),
+        };
+    }, [selected]);
 
-    const pageTitle = getText('employment_title', lang).replace(/\b20\d{2}\b/, String(year));
+    const yearlyProvinceData = useMemo(() => (
+        [...employmentRows]
+            .sort((a, b) => b.year - a.year)
+            .map((row) => ({
+                year: row.year,
+                ...Object.fromEntries(employment_PROVINCE_CODES.map((code) => [code, row[code]])),
+                national_total: displayDirectJobs(row.directJobs),
+                directShare: roundHalfUp(row.directShare, 1),
+                indirectShare: roundHalfUp(row.indirectShare, 1),
+                totalShare: roundHalfUp(row.totalShare, 1),
+            }))
+    ), [employmentRows]);
+
+    const pageTitle = year
+        ? getText('employment_title', lang).replace(/\b20\d{2}\b/, String(year))
+        : getText('employment_title', lang).replace(/\s*\(\s*20\d{2}\s*\)/, '');
     const exportTableTitle = stripHtml(pageTitle);
     const mapExportTitle = stripHtml(getText('employment_map_title', lang));
+    const yearSpan = yearlyProvinceData.length
+        ? `${yearlyProvinceData[yearlyProvinceData.length - 1].year}-${yearlyProvinceData[0].year}`
+        : '';
     const tableCaption = lang === 'en'
-        ? 'Energy sector direct employment by province/territory, 2009-2024'
-        : "Emplois directs du secteur de l'énergie par province/territoire, 2009-2024";
+        ? `Energy sector direct employment by province/territory, ${yearSpan}`
+        : `Emplois directs du secteur de l'énergie par province/territoire, ${yearSpan}`;
     const csvFilename = lang === 'en' ? 'employment_data.csv' : 'donnees_emploi.csv';
     const docxFilename = lang === 'en' ? 'employment_data.docx' : 'donnees_emploi.docx';
 
@@ -182,9 +223,9 @@ const Employment = () => {
         };
         yearlyProvinceData.forEach((yearData) => {
             const y = String(yearData.year);
-            shareDirectRow[y] = employment_EMPLOYMENT_DATA.energy_direct_pct;
-            shareIndirectRow[y] = employment_EMPLOYMENT_DATA.energy_indirect_pct;
-            shareTotalRow[y] = employment_EMPLOYMENT_DATA.share_total_pct;
+            shareDirectRow[y] = yearData.directShare;
+            shareIndirectRow[y] = yearData.indirectShare;
+            shareTotalRow[y] = yearData.totalShare;
         });
 
         return [...provinceRows, totalRow, shareDirectRow, shareIndirectRow, shareTotalRow];
@@ -201,7 +242,7 @@ const Employment = () => {
 
     
 
-    const formatPercent = (num) => formatLocalePct(num, lang, { maximumFractionDigits: 20 });
+    const formatPercent = (num) => formatLocalePct(num, lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
     const downloadMapWithTitle = useChartPngDownloader(
         mapChartRef,
@@ -227,29 +268,29 @@ const Employment = () => {
             height: 600,
             legendItems: [
                 {
-                    label: `${getText('employment_energy_direct_label', lang)} ${formatPercent(employment_EMPLOYMENT_DATA.energy_direct_pct)}`,
+                    label: `${getText('employment_energy_direct_label', lang)} ${formatPercent(shares?.direct)}`,
                     color: employment_COLORS.energy_sector,
                 },
                 {
-                    label: `${getText('employment_petroleum', lang)} ${formatPercent(employment_EMPLOYMENT_DATA.petroleum_pct)}`,
+                    label: `${getText('employment_petroleum', lang)} ${formatPercent(shares?.petroleum)}`,
                     color: '#58585a',
                 },
                 {
-                    label: `${getText('employment_electricity', lang)} ${formatPercent(employment_EMPLOYMENT_DATA.electricity_pct)}`,
+                    label: `${getText('employment_electricity', lang)} ${formatPercent(shares?.electricity)}`,
                     color: '#58585a',
                 },
                 {
-                    label: `${getText('employment_other', lang)} ${formatPercent(employment_EMPLOYMENT_DATA.other_pct)}`,
+                    label: `${getText('employment_other', lang)} ${formatPercent(shares?.other)}`,
                     color: '#58585a',
                 },
                 {
-                    label: `${getText('employment_energy_indirect_label', lang)} ${formatPercent(employment_EMPLOYMENT_DATA.energy_indirect_pct)}`,
+                    label: `${getText('employment_energy_indirect_label', lang)} ${formatPercent(shares?.indirect)}`,
                     color: employment_COLORS.energy_sector,
                 },
             ],
         };
     },
-        [employment_COLORS, employment_EMPLOYMENT_DATA, formatPercent, getText, lang, year],
+        [employment_COLORS, shares, formatPercent, getText, lang, year],
     );
 
     const mapPlotConfig = buildPngOnlyPlotConfig({
@@ -269,7 +310,7 @@ const Employment = () => {
         const places = employment_PROVINCE_CODES.map((code) => {
             const info = employment_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
-            const value = formatNationalAccountsNumber(employment_EMPLOYMENT_DATA[code]?.direct, lang);
+            const value = formatNationalAccountsNumber(selected?.[code], lang);
             return `${name}, ${value} ${jobsWord}.`;
         }).join(' ');
         const intro = lang === 'en'
@@ -279,30 +320,33 @@ const Employment = () => {
     };
 
     const getPieSRSummary = () => {
+        if (!shares) return '';
         if (lang === 'en') {
-            return `Pie chart showing energy sector's share of total employment in ${year}. Energy sector represents ${employment_EMPLOYMENT_DATA.share_total_pct}% of total employment, with Energy Direct at ${employment_EMPLOYMENT_DATA.energy_direct_pct}% and Energy Indirect at ${employment_EMPLOYMENT_DATA.energy_indirect_pct}%.`;
-        } else {
-            return `Graphique circulaire montrant la part du secteur de l'énergie dans l'emploi total en ${year}. Le secteur de l'énergie représente ${employment_EMPLOYMENT_DATA.share_total_pct} % de l'emploi total, avec l'énergie directe à ${employment_EMPLOYMENT_DATA.energy_direct_pct} % et l'énergie indirecte à ${employment_EMPLOYMENT_DATA.energy_indirect_pct} %.`;
+            return `Pie chart showing energy sector's share of total employment in ${year}. Energy sector represents ${formatPercent(shares.total)} of total employment, with Energy Direct at ${formatPercent(shares.direct)} and Energy Indirect at ${formatPercent(shares.indirect)}.`;
         }
+        return `Graphique circulaire montrant la part du secteur de l'énergie dans l'emploi total en ${year}. Le secteur de l'énergie représente ${formatPercent(shares.total)} de l'emploi total, avec l'énergie directe à ${formatPercent(shares.direct)} et l'énergie indirecte à ${formatPercent(shares.indirect)}.`;
     };
 
     const getLegendText = () => {
+        if (!shares) return '';
         if (lang === 'en') {
-            return `Total employment breakdown. Energy Direct: ${employment_EMPLOYMENT_DATA.energy_direct_pct}%, including Petroleum at ${employment_EMPLOYMENT_DATA.petroleum_pct}%, Electricity at ${employment_EMPLOYMENT_DATA.electricity_pct}%, and Other at ${employment_EMPLOYMENT_DATA.other_pct}%. Energy Indirect: ${employment_EMPLOYMENT_DATA.energy_indirect_pct}%.`;
+            return `Total employment breakdown. Energy Direct: ${formatPercent(shares.direct)}, including Petroleum at ${formatPercent(shares.petroleum)}, Electricity at ${formatPercent(shares.electricity)}, and Other at ${formatPercent(shares.other)}. Energy Indirect: ${formatPercent(shares.indirect)}.`;
         }
-        return `Répartition de l'emploi total. Énergie directe : ${employment_EMPLOYMENT_DATA.energy_direct_pct} %, incluant le Pétrole à ${employment_EMPLOYMENT_DATA.petroleum_pct} %, l'Électricité à ${employment_EMPLOYMENT_DATA.electricity_pct} % et Autres à ${employment_EMPLOYMENT_DATA.other_pct} %. Énergie indirecte : ${employment_EMPLOYMENT_DATA.energy_indirect_pct} %.`;
+        return `Répartition de l'emploi total. Énergie directe : ${formatPercent(shares.direct)}, incluant le Pétrole à ${formatPercent(shares.petroleum)}, l'Électricité à ${formatPercent(shares.electricity)} et Autres à ${formatPercent(shares.other)}. Énergie indirecte : ${formatPercent(shares.indirect)}.`;
     };
 
     const getStatsAriaLabel = () => {
-        const direct = `${getText('employment_direct', lang)}: ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.direct_total, lang)} ${getText('employment_jobs', lang)}`;
-        const indirect = `${getText('employment_indirect', lang)}: ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.indirect_total, lang)} ${getText('employment_jobs', lang)}`;
-        const total = `${getText('employment_total_label', lang)}: ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.total, lang)} ${getText('employment_jobs', lang)}`;
+        const direct = `${getText('employment_direct', lang)}: ${formatNationalAccountsNumber(shares?.directJobs, lang)} ${getText('employment_jobs', lang)}`;
+        const indirect = `${getText('employment_indirect', lang)}: ${formatNationalAccountsNumber(shares?.indirectJobs, lang)} ${getText('employment_jobs', lang)}`;
+        const total = `${getText('employment_total_label', lang)}: ${formatNationalAccountsNumber(shares?.totalJobs, lang)} ${getText('employment_jobs', lang)}`;
         return `${direct}. ${indirect}. ${total}.`;
     };
 
-    const indigenousBulletText = lang === 'en'
-        ? `About ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.indigenous_employed, lang)} Indigenous people were directly employed in the energy sector in 2023.`
-        : `Le secteur de l'énergie employait directement environ ${formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.indigenous_employed, lang)} Autochtones en 2023.`;
+    const indigenousBulletText = indigenous
+        ? getText('employment_indigenous_bullet', lang)
+            .replace('{{value}}', formatNationalAccountsNumber(indigenous.jobs, lang))
+            .replace('{{year}}', String(indigenous.year))
+        : '';
 
     const pieTitleText = lang === 'en'
         ? `Share of total employment, ${year}`
@@ -342,7 +386,7 @@ const Employment = () => {
         };
 
         employment_PROVINCE_CODES.forEach(code => {
-            const value = employment_EMPLOYMENT_DATA[code]?.direct || 0;
+            const value = selected?.[code] || 0;
             const info = employment_PROVINCE_INFO[code];
             const name = lang === 'en' ? info.nameEn : info.nameFr;
             const abbrev = lang === 'en' ? info.abbrevEn : info.abbrevFr;
@@ -358,13 +402,13 @@ const Employment = () => {
         });
 
         return { values, hoverTexts, labelLats, labelLons, labelTexts, geoJsonNames };
-    }, [lang, windowWidth]);
+    }, [lang, windowWidth, selected]);
 
     const pieChartData = useMemo(() => {
-        const energyPct = employment_EMPLOYMENT_DATA.share_total_pct;
+        const energyPct = shares?.total ?? 0;
         const nonEnergyPct = 100 - energyPct;
 
-        const energyLabel = `<b>${lang === 'fr' ? energyPct.toString().replace('.', ',') : energyPct}${lang === 'fr' ? ' %' : '%'}</b>`;
+        const energyLabel = `<b>${formatPercent(energyPct)}</b>`;
 
         return [{
             type: 'pie',
@@ -407,7 +451,7 @@ const Employment = () => {
             sort: false,
             pull: [0.02, 0],
         }];
-    }, [lang, windowWidth]);
+    }, [lang, windowWidth, shares, formatPercent]);
 
     const { mapScale, mapCenter } = useMemo(() => {
         // Keep Canada fully visible inside the chart frame (no edge clipping).
@@ -808,13 +852,13 @@ const Employment = () => {
                                 aria-label={getStatsAriaLabel()}
                             >
                                 <div className="employment-stats-line" aria-hidden="true">
-                                    {getText('employment_direct', lang)}: {formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.direct_total, lang)} {getText('employment_jobs', lang)}
+                                    {getText('employment_direct', lang)}: {formatNationalAccountsNumber(shares?.directJobs, lang)} {getText('employment_jobs', lang)}
                                 </div>
                                 <div className="employment-stats-line" aria-hidden="true">
-                                    {getText('employment_indirect', lang)}: {formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.indirect_total, lang)} {getText('employment_jobs', lang)}
+                                    {getText('employment_indirect', lang)}: {formatNationalAccountsNumber(shares?.indirectJobs, lang)} {getText('employment_jobs', lang)}
                                 </div>
                                 <div className="employment-stats-line employment-stats-total" aria-hidden="true">
-                                    {getText('employment_total_label', lang)}: {formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.total, lang)} {getText('employment_jobs', lang)}
+                                    {getText('employment_total_label', lang)}: {formatNationalAccountsNumber(shares?.totalJobs, lang)} {getText('employment_jobs', lang)}
                                 </div>
                             </div>
 
@@ -986,7 +1030,7 @@ const Employment = () => {
                             >
                                 <ul style={{ listStyle: 'disc', paddingLeft: '20px', margin: 0 }} aria-hidden="true">
                                     <li>
-                                        {getText('employment_indigenous_bullet', lang).replace('18,200', formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.indigenous_employed, lang)).replace('18 200', formatNationalAccountsNumber(employment_EMPLOYMENT_DATA.indigenous_employed, lang))}
+                                        {indigenousBulletText}
                                     </li>
                                 </ul>
                             </div>
@@ -1035,20 +1079,20 @@ const Employment = () => {
                                     </div>
                                     
                                     <div className="employment-legend-main">
-                                        {getText('employment_energy_direct_label', lang)} {formatPercent(employment_EMPLOYMENT_DATA.energy_direct_pct)}
+                                        {getText('employment_energy_direct_label', lang)} {formatPercent(shares?.direct)}
                                     </div>
                                     <div className="employment-legend-sub">
-                                        {getText('employment_petroleum', lang)} {formatPercent(employment_EMPLOYMENT_DATA.petroleum_pct)}
+                                        {getText('employment_petroleum', lang)} {formatPercent(shares?.petroleum)}
                                     </div>
                                     <div className="employment-legend-sub">
-                                        {getText('employment_electricity', lang)} {formatPercent(employment_EMPLOYMENT_DATA.electricity_pct)}
+                                        {getText('employment_electricity', lang)} {formatPercent(shares?.electricity)}
                                     </div>
                                     <div className="employment-legend-sub">
-                                        {getText('employment_other', lang)} {formatPercent(employment_EMPLOYMENT_DATA.other_pct)}
+                                        {getText('employment_other', lang)} {formatPercent(shares?.other)}
                                     </div>
                                     
                                     <div className="employment-legend-indirect">
-                                        {getText('employment_energy_indirect_label', lang)} {formatPercent(employment_EMPLOYMENT_DATA.energy_indirect_pct)}
+                                        {getText('employment_energy_indirect_label', lang)} {formatPercent(shares?.indirect)}
                                     </div>
                                 </div>
                             </aside>
@@ -1074,7 +1118,9 @@ const Employment = () => {
                             renderCell={(raw, { colIndex, row }) => {
                                 if (colIndex === 0) return String(raw ?? '');
                                 if (row?.rowKind === 'share') {
-                                    return typeof raw === 'number' ? `${raw}%` : String(raw ?? '');
+                                    if (typeof raw !== 'number') return String(raw ?? '');
+                                    const text = raw.toFixed(1);
+                                    return lang === 'fr' ? `${text.replace('.', ',')} %` : `${text}%`;
                                 }
                                 return formatNationalAccountsNumber(raw, lang);
                             }}

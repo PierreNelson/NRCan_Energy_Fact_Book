@@ -21,6 +21,17 @@ import { parseCSV } from './parseCsv.js';
 
 let dataCache = null;
 let metadataCache = null;
+let loadedDataCsv = null;
+let watchingExportedData = false;
+
+async function fetchPublicText(path) {
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const response = await fetch(`${baseUrl}${path}`, { cache: 'no-store' });
+    if (!response.ok) {
+        throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
+    }
+    return response.text();
+}
 
 /**
  * Parse CSV text into array of objects (re-export for tests).
@@ -36,13 +47,8 @@ async function loadAllData() {
         return dataCache;
     }
     
-    const baseUrl = import.meta.env.BASE_URL || '/';
-    const response = await fetch(`${baseUrl}data/data.csv`);
-    if (!response.ok) {
-        throw new Error(`Failed to load data.csv: ${response.status} ${response.statusText}`);
-    }
-    
-    const csvText = await response.text();
+    const csvText = await fetchPublicText('data/data.csv');
+    loadedDataCsv = csvText;
     dataCache = parseCSV(csvText);
     return dataCache;
 }
@@ -55,13 +61,7 @@ async function loadMetadata() {
         return metadataCache;
     }
 
-    const baseUrl = import.meta.env.BASE_URL || '/';
-    const response = await fetch(`${baseUrl}data/metadata.csv`);
-    if (!response.ok) {
-        throw new Error(`Failed to load metadata.csv: ${response.status} ${response.statusText}`);
-    }
-
-    const csvText = await response.text();
+    const csvText = await fetchPublicText('data/metadata.csv');
     const rows = parseCSV(csvText);
     metadataCache = rows.reduce((acc, row) => {
         if (row.vector) {
@@ -70,6 +70,28 @@ async function loadMetadata() {
         return acc;
     }, {});
     return metadataCache;
+}
+
+/**
+ * Reload the open site after a pipeline export replaces data.csv.
+ * A normal visit keeps one copy in memory. This only runs again when that file changes.
+ */
+export function watchExportedData() {
+    if (typeof window === 'undefined' || watchingExportedData) return;
+    watchingExportedData = true;
+    const check = async () => {
+        if (loadedDataCsv == null || document.visibilityState === 'hidden') return;
+        try {
+            const csvText = await fetchPublicText('data/data.csv');
+            if (csvText !== loadedDataCsv) window.location.reload();
+        } catch {
+            // Keep the current page if the check cannot reach the file.
+        }
+    };
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check();
+    });
+    window.setInterval(check, 30000);
 }
 
 /**
@@ -416,6 +438,598 @@ export async function getWorldEnergyProductionData() {
     });
     
     return Object.values(yearMap).sort((a, b) => a.year - b.year);
+}
+
+const CANADA_ENERGY_SUPPLY_SLICE_KEYS = [
+    'oil',
+    'natural_gas',
+    'coal',
+    'hydro',
+    'other_renewables',
+    'biofuels_waste',
+    'nuclear',
+];
+
+/**
+ * Canada total energy supply by source, plus world comparison shares.
+ * Returns [{ year, total, fossilPct, renewablesPct, slices, world }], newest last.
+ */
+export async function getCanadaEnergySupplyData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('tes_'));
+    const yearMap = {};
+
+    const entryFor = (year) => {
+        if (!yearMap[year]) {
+            yearMap[year] = {
+                year,
+                total: null,
+                fossilPct: null,
+                renewablesPct: null,
+                slices: {},
+                world: {},
+            };
+        }
+        return yearMap[year];
+    };
+
+    rows.forEach((row) => {
+        const year = Number(row.ref_date);
+        if (!Number.isFinite(year)) return;
+        const entry = entryFor(year);
+        const value = Number(row.value);
+        const vector = row.vector;
+
+        if (vector === 'tes_can_total_pj') entry.total = value;
+        else if (vector === 'tes_can_fossil_share') entry.fossilPct = value;
+        else if (vector === 'tes_can_renewables_share') entry.renewablesPct = value;
+        else if (vector === 'tes_world_fossil_share') entry.world.fossil = value;
+        else if (vector === 'tes_world_oil_share') entry.world.oil = value;
+        else if (vector === 'tes_world_coal_share') entry.world.coal = value;
+        else if (vector === 'tes_world_natural_gas_share') entry.world.naturalGas = value;
+        else if (vector === 'tes_world_renewables_share') entry.world.renewables = value;
+        else if (vector === 'tes_world_nuclear_share') entry.world.nuclear = value;
+        else if (vector.startsWith('tes_can_') && vector.endsWith('_pj')) {
+            const key = vector.slice('tes_can_'.length, -'_pj'.length);
+            if (CANADA_ENERGY_SUPPLY_SLICE_KEYS.includes(key)) {
+                entry.slices[key] = { ...(entry.slices[key] || {}), pj: value };
+            }
+        } else if (vector.startsWith('tes_can_') && vector.endsWith('_share')) {
+            const key = vector.slice('tes_can_'.length, -'_share'.length);
+            if (CANADA_ENERGY_SUPPLY_SLICE_KEYS.includes(key)) {
+                entry.slices[key] = { ...(entry.slices[key] || {}), pct: value };
+            }
+        }
+    });
+
+    const worldKeys = ['fossil', 'oil', 'coal', 'naturalGas', 'renewables', 'nuclear'];
+    const isComplete = (entry) => {
+        if (entry.total == null || entry.fossilPct == null || entry.renewablesPct == null) return false;
+        if (worldKeys.some((key) => entry.world[key] == null || Number.isNaN(Number(entry.world[key])))) return false;
+        return CANADA_ENERGY_SUPPLY_SLICE_KEYS.every((key) => {
+            const slice = entry.slices[key];
+            return slice
+                && slice.pj != null
+                && slice.pct != null
+                && !Number.isNaN(Number(slice.pj))
+                && !Number.isNaN(Number(slice.pct));
+        });
+    };
+
+    return Object.values(yearMap)
+        .filter(isComplete)
+        .sort((a, b) => a.year - b.year);
+}
+
+/**
+ * Canadian energy exports to U.S. states.
+ * Returns [{ year, states: [{ code, exportMil, pctGdp }] }], newest last.
+ * A year is included only when export value and GDP share are both present.
+ */
+export async function getUsStateEnergyExportsData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('usx_'));
+    const yearMap = {};
+
+    rows.forEach((row) => {
+        const match = /^usx_([A-Z]{2})_(exports_m|share_pct)$/.exec(row.vector);
+        if (!match) return;
+        const year = Number(row.ref_date);
+        if (!Number.isFinite(year)) return;
+        const code = match[1];
+        if (!yearMap[year]) yearMap[year] = { year, states: {} };
+        const state = yearMap[year].states[code] || { code };
+        if (match[2] === 'exports_m') state.exportMil = Number(row.value);
+        else state.pctGdp = Number(row.value);
+        yearMap[year].states[code] = state;
+    });
+
+    return Object.values(yearMap)
+        .map((entry) => ({
+            year: entry.year,
+            states: Object.values(entry.states).filter(
+                (state) => state.exportMil != null && state.pctGdp != null,
+            ),
+        }))
+        .filter((entry) => entry.states.length)
+        .sort((a, b) => a.year - b.year);
+}
+
+const GLOBAL_ENERGY_TRADE_PRODUCTS = [
+    'coal',
+    'crude',
+    'rpp',
+    'gas',
+    'ngl',
+    'uranium',
+    'electricity',
+    'biofuels',
+    'other',
+];
+
+/**
+ * Canada's global energy trade by product.
+ * Returns [{ year, totalExp, totalImp, exp_*, imp_* }], oldest first.
+ * Import product values are positive magnitudes. A year is included only when
+ * every product and both annual totals are present.
+ */
+export async function getCanadaGlobalEnergyTradeData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('gtrade_'));
+    const yearMap = {};
+
+    rows.forEach((row) => {
+        const year = Number(row.ref_date);
+        if (!Number.isFinite(year)) return;
+        if (!yearMap[year]) yearMap[year] = { year };
+        const value = Number(row.value);
+        if (row.vector === 'gtrade_exp_total') yearMap[year].totalExp = value;
+        else if (row.vector === 'gtrade_imp_total') yearMap[year].totalImp = value;
+        else {
+            const match = /^gtrade_(exp|imp)_([a-z_]+)$/.exec(row.vector);
+            if (!match || match[2] === 'total') return;
+            const field = match[1] === 'exp' ? `exp_${match[2]}` : `imp_${match[2]}`;
+            yearMap[year][field] = match[1] === 'imp' ? Math.abs(value) : value;
+        }
+    });
+
+    const isComplete = (entry) => {
+        if (entry.totalExp == null || entry.totalImp == null) return false;
+        return GLOBAL_ENERGY_TRADE_PRODUCTS.every((key) => (
+            Number.isFinite(entry[`exp_${key}`]) && Number.isFinite(entry[`imp_${key}`])
+        ));
+    };
+
+    return Object.values(yearMap)
+        .filter(isComplete)
+        .sort((a, b) => a.year - b.year);
+}
+
+const ENERGY_EMPLOYMENT_PROVINCES = [
+    'bc', 'ab', 'sk', 'mb', 'on', 'qc', 'nb', 'ns', 'pe', 'nl', 'yt', 'nt', 'nu',
+];
+
+/**
+ * Employment in Canada's energy sector.
+ * Returns { years: oldest first, indigenous: { year, jobs } | null }.
+ * A year is included only when national jobs, shares, and every jurisdiction are present.
+ */
+export async function getEnergySectorEmploymentData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('emp_'));
+    const fields = {
+        emp_direct_jobs: 'directJobs',
+        emp_indirect_jobs: 'indirectJobs',
+        emp_total_jobs: 'totalJobs',
+        emp_total_employment: 'totalEmployment',
+        emp_petroleum_jobs: 'petroleumJobs',
+        emp_electricity_jobs: 'electricityJobs',
+        emp_other_jobs: 'otherJobs',
+        emp_petroleum_share: 'petroleumShare',
+        emp_electricity_share: 'electricityShare',
+        emp_other_share: 'otherShare',
+        emp_direct_share: 'directShare',
+        emp_indirect_share: 'indirectShare',
+        emp_total_share: 'totalShare',
+    };
+    const yearMap = {};
+    let indigenous = null;
+
+    rows.forEach((row) => {
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (row.vector === 'emp_indigenous_jobs') {
+            if (!indigenous || year > indigenous.year) indigenous = { year, jobs: value };
+            return;
+        }
+        if (!yearMap[year]) yearMap[year] = { year };
+        if (fields[row.vector]) {
+            yearMap[year][fields[row.vector]] = value;
+            return;
+        }
+        const match = /^emp_([a-z]+)_jobs$/.exec(row.vector);
+        if (match && ENERGY_EMPLOYMENT_PROVINCES.includes(match[1])) {
+            yearMap[year][match[1]] = value;
+        }
+    });
+
+    const required = Object.values(fields);
+    const years = Object.values(yearMap)
+        .filter((entry) => (
+            required.every((key) => Number.isFinite(entry[key]))
+            && ENERGY_EMPLOYMENT_PROVINCES.every((code) => Number.isFinite(entry[code]))
+        ))
+        .sort((a, b) => a.year - b.year);
+    return { years, indigenous };
+}
+
+/**
+ * Energy and GHG emissions (pages 18 and 19).
+ * global and canada are the latest year of each share.
+ * chartYears are the indexed series (2000=100), oldest first.
+ */
+export async function getEnergyAndGhgEmissionsData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('eghg_'));
+    const fields = {
+        eghg_global_energy_share: 'globalShare',
+        eghg_canada_energy_share: 'canadaShare',
+        eghg_index_gdp: 'perGdp',
+        eghg_index_capita: 'perCapita',
+        eghg_index_energy: 'perEnergy',
+        eghg_canada_total_kt: 'canadaTotalKt',
+        eghg_gdp_million: 'gdpMillion',
+    };
+    const yearMap = {};
+    rows.forEach((row) => {
+        const field = fields[row.vector];
+        if (!field) return;
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (!yearMap[year]) yearMap[year] = { year };
+        yearMap[year][field] = value;
+    });
+    const entries = Object.values(yearMap);
+    const latest = (field) => entries
+        .filter((entry) => Number.isFinite(entry[field]))
+        .sort((a, b) => b.year - a.year)[0] || null;
+    const global = latest('globalShare');
+    const canada = latest('canadaShare');
+    const chartYears = entries
+        .filter((entry) => (
+            Number.isFinite(entry.perGdp)
+            && Number.isFinite(entry.perCapita)
+            && Number.isFinite(entry.perEnergy)
+            && Number.isFinite(entry.canadaTotalKt)
+            && Number.isFinite(entry.gdpMillion)
+        ))
+        .sort((a, b) => a.year - b.year);
+    return {
+        global: global ? { year: global.year, share: global.globalShare } : null,
+        canada: canada ? { year: canada.year, share: canada.canadaShare } : null,
+        chartYears,
+    };
+}
+
+const ENERGY_POVERTY_REGIONS = {
+    epov_can: 'Can',
+    epov_nl: 'NL',
+    epov_pei: 'PEI',
+    epov_ns: 'NS',
+    epov_nb: 'NB',
+    epov_que: 'Que',
+    epov_ont: 'Ont',
+    epov_man: 'Man',
+    epov_sask: 'Sask',
+    epov_alta: 'Alta',
+    epov_bc: 'BC',
+    epov_yt: 'YT',
+    epov_nwt: 'NWT',
+    epov_nvt: 'Nvt',
+};
+
+/**
+ * Energy poverty rates by geography (page 43).
+ * rates are the census geography percents. year, homeEnergy, and incomeShare
+ * are the latest year of in-home household energy expenditure.
+ */
+export async function getEnergyPovertyRatesData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('epov_'));
+    const rates = {};
+    const spending = {};
+    rows.forEach((row) => {
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        const region = ENERGY_POVERTY_REGIONS[row.vector];
+        if (region) {
+            if (!rates[region] || year >= rates[region].year) {
+                rates[region] = { year, value };
+            }
+            return;
+        }
+        if (row.vector !== 'epov_home_energy' && row.vector !== 'epov_income_share') return;
+        if (!spending[year]) spending[year] = { year };
+        spending[year][row.vector] = value;
+    });
+    const latest = Object.values(spending)
+        .filter((entry) => Number.isFinite(entry.epov_home_energy) && Number.isFinite(entry.epov_income_share))
+        .sort((a, b) => b.year - a.year)[0] || null;
+    const rateValues = {};
+    Object.entries(rates).forEach(([region, entry]) => {
+        rateValues[region] = entry.value;
+    });
+    return {
+        year: latest ? latest.year : null,
+        homeEnergy: latest ? latest.epov_home_energy : null,
+        incomeShare: latest ? latest.epov_income_share : null,
+        rates: rateValues,
+    };
+}
+
+const ENERGY_RELIANT_PROVINCES = {
+    erel_nl: 'nl',
+    erel_nb: 'nb',
+    erel_qc: 'qc',
+    erel_on: 'on',
+    erel_mb: 'mb',
+    erel_sk: 'sk',
+    erel_ab: 'ab',
+    erel_bc: 'bc',
+    erel_ns: 'ns',
+    erel_pe: 'pe',
+    erel_yt: 'yt',
+    erel_nt: 'nt',
+    erel_nu: 'nu',
+};
+
+/**
+ * Energy reliant communities (page 46).
+ * provinces are community counts. totalCommunities and ruralShare are the latest vintage.
+ */
+export async function getEnergyReliantCommunitiesData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('erel_'));
+    const byYear = {};
+    rows.forEach((row) => {
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (!byYear[year]) byYear[year] = { year, provinces: [] };
+        if (row.vector === 'erel_total') byYear[year].totalCommunities = value;
+        else if (row.vector === 'erel_rural_share') byYear[year].ruralShare = value;
+        else if (ENERGY_RELIANT_PROVINCES[row.vector]) {
+            byYear[year].provinces.push({
+                key: ENERGY_RELIANT_PROVINCES[row.vector],
+                count: value,
+            });
+        }
+    });
+    const latest = Object.values(byYear)
+        .filter((entry) => Number.isFinite(entry.totalCommunities) && Number.isFinite(entry.ruralShare) && entry.provinces.length)
+        .sort((a, b) => b.year - a.year)[0] || null;
+    if (!latest) {
+        return { year: null, totalCommunities: null, ruralShare: null, provinces: [] };
+    }
+    latest.provinces.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+    return latest;
+}
+
+const ENERGY_SECTOR_DEMOGRAPHIC_VECTORS = [
+    'edem_women',
+    'edem_indigenous',
+    'edem_education_more',
+    'edem_education_credential',
+    'edem_age_55',
+    'edem_visible_minority',
+    'edem_immigrant_energy',
+    'ewag_income_energy',
+    'ewag_gender_gap',
+    'ewag_income_university',
+    'ewag_women_office',
+    'ewag_men_trades',
+    'ewag_wage_trades',
+    'ewag_wage_admin',
+];
+
+const ENERGY_SECTOR_BASELINE_YEAR = 2009;
+
+/**
+ * Energy sector demographics and wages (pages 40 and 41).
+ * year is the latest year with the energy-sector set. Baseline shares are 2009.
+ * Immigrant and wage comparisons for the total economy use their own latest years.
+ */
+export async function getEnergySectorDemographicsData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && (row.vector.startsWith('edem_') || row.vector.startsWith('ewag_')));
+    const byYear = {};
+    rows.forEach((row) => {
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][row.vector] = value;
+    });
+    const reportYear = Object.keys(byYear)
+        .map(Number)
+        .filter((year) => ENERGY_SECTOR_DEMOGRAPHIC_VECTORS.every((vector) => Number.isFinite(byYear[year][vector])))
+        .sort((a, b) => b - a)[0];
+    if (!reportYear) return null;
+    const current = byYear[reportYear];
+    const baseline = byYear[ENERGY_SECTOR_BASELINE_YEAR] || {};
+    const latestValue = (vector) => {
+        const year = Object.keys(byYear)
+            .map(Number)
+            .filter((entry) => Number.isFinite(byYear[entry][vector]))
+            .sort((a, b) => b - a)[0];
+        return year ? byYear[year][vector] : null;
+    };
+    return {
+        year: reportYear,
+        women: current.edem_women,
+        indigenous: current.edem_indigenous,
+        educationMore: current.edem_education_more,
+        educationCredential: current.edem_education_credential,
+        age55: current.edem_age_55,
+        age55Baseline: baseline.edem_age_55 ?? null,
+        visibleMinority: current.edem_visible_minority,
+        visibleMinorityBaseline: baseline.edem_visible_minority ?? null,
+        immigrantEnergy: current.edem_immigrant_energy,
+        immigrantEconomy: latestValue('edem_immigrant_economy'),
+        incomeEnergy: current.ewag_income_energy,
+        incomeEconomy: latestValue('ewag_income_economy'),
+        genderGap: current.ewag_gender_gap,
+        genderGapBaseline: baseline.ewag_gender_gap ?? null,
+        incomeUniversity: current.ewag_income_university,
+        womenOffice: current.ewag_women_office,
+        menTrades: current.ewag_men_trades,
+        wageTrades: current.ewag_wage_trades,
+        wageAdmin: current.ewag_wage_admin,
+    };
+}
+
+const HOUSEHOLD_PRICE_COUNTRIES = ['canada', 'france', 'germany', 'italy', 'uk', 'usa'];
+const HOUSEHOLD_PRICE_PRODUCTS = {
+    gasoline: 'gasoline',
+    electricity: 'electricity',
+    natural_gas: 'naturalGas',
+};
+
+/**
+ * Household energy prices per unit (page 45).
+ * countries follow the chart order for the latest year in the IEA sheet.
+ */
+export async function getHouseholdEnergyPricesData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('hhep_'));
+    const byYear = {};
+    rows.forEach((row) => {
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        const match = /^hhep_(canada|france|germany|italy|uk|usa)_(gasoline|electricity|natural_gas)$/.exec(row.vector);
+        if (!match) return;
+        if (!byYear[year]) byYear[year] = {};
+        const country = match[1];
+        const product = HOUSEHOLD_PRICE_PRODUCTS[match[2]];
+        if (!byYear[year][country]) byYear[year][country] = { key: country };
+        byYear[year][country][product] = value;
+    });
+    const year = Object.keys(byYear)
+        .map(Number)
+        .filter((entry) => HOUSEHOLD_PRICE_COUNTRIES.some((country) => byYear[entry][country]))
+        .sort((a, b) => b - a)[0];
+    if (!year) return null;
+    return {
+        year,
+        countries: HOUSEHOLD_PRICE_COUNTRIES.map((key) => ({
+            key,
+            gasoline: byYear[year][key]?.gasoline ?? null,
+            electricity: byYear[year][key]?.electricity ?? null,
+            naturalGas: byYear[year][key]?.naturalGas ?? null,
+        })),
+    };
+}
+
+const DEMOGRAPHIC_REPRESENTATION_GROUPS = [
+    'women',
+    'women_trades',
+    'women_office',
+    'immigrants',
+    'indigenous',
+    'visible_minorities',
+    'high_school_plus',
+    'university_plus',
+    'age_55_plus',
+];
+
+/**
+ * Demographic representation (page 42).
+ * Energy-sector shares use the latest NRSA year. All-industries shares use the latest census year.
+ */
+export async function getDemographicRepresentationData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('drep_'));
+    const energyByYear = {};
+    const allByYear = {};
+    rows.forEach((row) => {
+        const match = /^drep_(.+)_(energy|all)$/.exec(row.vector);
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!match || !Number.isFinite(year) || !Number.isFinite(value)) return;
+        const bucket = match[2] === 'energy' ? energyByYear : allByYear;
+        if (!bucket[year]) bucket[year] = {};
+        bucket[year][match[1]] = value;
+    });
+    const latestComplete = (bucket) => Object.keys(bucket)
+        .map(Number)
+        .filter((year) => DEMOGRAPHIC_REPRESENTATION_GROUPS.every((key) => Number.isFinite(bucket[year][key])))
+        .sort((a, b) => b - a)[0];
+    const year = latestComplete(energyByYear);
+    const censusYear = latestComplete(allByYear);
+    if (!year && !censusYear) return null;
+    const groups = {};
+    DEMOGRAPHIC_REPRESENTATION_GROUPS.forEach((key) => {
+        groups[key] = {
+            energy: year ? energyByYear[year][key] : null,
+            all: censusYear ? allByYear[censusYear][key] : null,
+        };
+    });
+    return { year: year || null, censusYear: censusYear || null, groups };
+}
+
+const HOUSEHOLD_EXPENDITURE_CPI = {
+    hexp_cpi_energy: 'energy',
+    hexp_cpi_total: 'total',
+    hexp_cpi_excluding: 'excluding',
+};
+
+/**
+ * Household expenditures on energy (page 44).
+ * cpi is the annual average of monthly CPI from 2002 through the latest month.
+ * narrative is the latest year with residential energy, vehicle fuel, and income.
+ */
+export async function getHouseholdEnergyExpendituresData() {
+    const allData = await loadAllData();
+    const rows = allData.filter((row) => row.vector && row.vector.startsWith('hexp_'));
+    const cpiByYear = {};
+    const narrativeByYear = {};
+    rows.forEach((row) => {
+        const year = Number(String(row.ref_date).slice(0, 4));
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        const cpiKey = HOUSEHOLD_EXPENDITURE_CPI[row.vector];
+        if (cpiKey) {
+            if (!cpiByYear[year]) cpiByYear[year] = { year };
+            cpiByYear[year][cpiKey] = value;
+            return;
+        }
+        if (!narrativeByYear[year]) narrativeByYear[year] = { year };
+        if (row.vector === 'hexp_amount_total') narrativeByYear[year].amountTotal = value;
+        if (row.vector === 'hexp_amount_residential') narrativeByYear[year].amountResidential = value;
+        if (row.vector === 'hexp_amount_vehicle') narrativeByYear[year].amountVehicle = value;
+        if (row.vector === 'hexp_income_share') narrativeByYear[year].incomeShare = value;
+    });
+    const cpi = Object.values(cpiByYear)
+        .filter((row) => (
+            Number.isFinite(row.energy)
+            && Number.isFinite(row.total)
+            && Number.isFinite(row.excluding)
+        ))
+        .sort((a, b) => a.year - b.year);
+    const narrative = Object.values(narrativeByYear)
+        .filter((row) => (
+            Number.isFinite(row.amountTotal)
+            && Number.isFinite(row.amountResidential)
+            && Number.isFinite(row.amountVehicle)
+            && Number.isFinite(row.incomeShare)
+        ))
+        .sort((a, b) => b.year - a.year)[0] || null;
+    if (!cpi.length && !narrative) return null;
+    return { cpi, narrative };
 }
 
 /**
@@ -2343,6 +2957,456 @@ export async function getSolidBiofuelsProductionData() {
         startYear: years[0] ?? null,
         endYear: referenceYear,
         referenceYear,
+    };
+}
+
+function narrativeTexts(allData, metadata, pattern) {
+    return allData
+        .filter((row) => pattern.test(String(row.vector || '')))
+        .map((row) => ({
+            order: Number(row.value),
+            text: String(metadata[row.vector]?.title || '').trim(),
+        }))
+        .filter((row) => row.text && !Number.isNaN(row.order))
+        .sort((a, b) => a.order - b.order)
+        .map((row) => row.text);
+}
+
+export async function getHydrogenNarrativeData() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+    const introductions = narrativeTexts(allData, metadata, /^hnar_intro_\d+$/);
+    const benefits = narrativeTexts(allData, metadata, /^hnar_benefit_\d+$/);
+    const facts = narrativeTexts(allData, metadata, /^hnar_fact(?:_\d+)?$/);
+    if (!introductions.length || !benefits.length || !facts.length) return null;
+    return { introductions, benefits, fact: facts[0] };
+}
+
+export async function getHydrogenCanadaSummaryData() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+    const en = narrativeTexts(allData, metadata, /^hnar_summary_\d+_en$/);
+    const fr = narrativeTexts(allData, metadata, /^hnar_summary_\d+_fr$/);
+    if (!en.length || !fr.length) return null;
+    return { en, fr };
+}
+
+function electricityRankingSeries(yearValues, metadata, year, prefix) {
+    const total = yearValues[`ewld_${prefix}_twh`];
+    const count = yearValues[`ewld_${prefix}_count`];
+    if (total == null || count == null) return null;
+    const rows = [];
+    for (let slot = 1; slot <= count; slot += 1) {
+        const share = yearValues[`ewld_${prefix}_r${slot}_share`];
+        const rank = yearValues[`ewld_${prefix}_r${slot}_rank`];
+        const code = String(metadata[`ewld_${prefix}_${year}_r${slot}_code`]?.title || '').trim();
+        const en = String(metadata[`ewld_${prefix}_${year}_r${slot}_name_en`]?.title || '').trim();
+        const fr = String(metadata[`ewld_${prefix}_${year}_r${slot}_name_fr`]?.title || '').trim();
+        if (share == null || rank == null || !code || !en || !fr) return null;
+        rows.push({
+            rank,
+            pct: share,
+            isCanada: yearValues[`ewld_${prefix}_r${slot}_canada`] === 1,
+            code,
+            names: { en, fr },
+        });
+    }
+    return { total, rows };
+}
+
+const TREND_KEYS = ['canada', 'brazil', 'united_states', 'european_union', 'china', 'rest_of_world'];
+
+export async function getWorldBiofuelsProductionData() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+    const byYear = {};
+    allData.forEach((row) => {
+        const vector = String(row.vector || '');
+        if (!vector.startsWith('wbfl_') || vector.startsWith('wbfl_raw_')) return;
+        const year = Number(row.ref_date);
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][vector] = Number(row.value);
+    });
+
+    const rankYear = Object.keys(byYear)
+        .map(Number)
+        .filter((year) => byYear[year].wbfl_rank_total_pj != null && byYear[year].wbfl_rank_count != null)
+        .sort((a, b) => a - b)
+        .pop();
+    let ranking = null;
+    if (rankYear != null) {
+        const current = byYear[rankYear];
+        const rows = [];
+        for (let slot = 1; slot <= current.wbfl_rank_count; slot += 1) {
+            const share = current[`wbfl_rank_r${slot}_share`];
+            const rank = current[`wbfl_rank_r${slot}_rank`];
+            const code = String(metadata[`wbfl_rank_r${slot}_code`]?.title || '').trim();
+            const en = String(metadata[`wbfl_rank_r${slot}_name_en`]?.title || '').trim();
+            const fr = String(metadata[`wbfl_rank_r${slot}_name_fr`]?.title || '').trim();
+            if (share == null || rank == null || !code || !en || !fr) {
+                ranking = null;
+                break;
+            }
+            rows.push({
+                rank,
+                pct: share,
+                isCanada: current[`wbfl_rank_r${slot}_canada`] === 1,
+                code,
+                names: { en, fr },
+            });
+        }
+        if (rows.length === current.wbfl_rank_count) {
+            ranking = { year: rankYear, totalPj: current.wbfl_rank_total_pj, rows };
+        }
+    }
+
+    const trendRows = Object.keys(byYear)
+        .map(Number)
+        .filter((year) => TREND_KEYS.every((key) => byYear[year][`wbfl_t_${key}`] != null))
+        .sort((a, b) => a - b)
+        .map((year) => {
+            const row = { year };
+            TREND_KEYS.forEach((key) => {
+                row[key] = byYear[year][`wbfl_t_${key}`];
+            });
+            return row;
+        });
+
+    if (!ranking || !trendRows.length) return null;
+    return {
+        ranking,
+        trend: {
+            startYear: trendRows[0].year,
+            endYear: trendRows[trendRows.length - 1].year,
+            rows: trendRows,
+        },
+    };
+}
+
+export async function getElectricityWorldProductionExportsData() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+    const byYear = {};
+    allData.forEach((row) => {
+        const vector = String(row.vector || '');
+        if (!vector.startsWith('ewld_') || vector.startsWith('ewld_raw_')) return;
+        const year = Number(row.ref_date);
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][vector] = Number(row.value);
+    });
+
+    const production = {};
+    const exportsByYear = {};
+    Object.keys(byYear).forEach((yearKey) => {
+        const year = Number(yearKey);
+        const productionSeries = electricityRankingSeries(byYear[year], metadata, year, 'p');
+        const exportSeries = electricityRankingSeries(byYear[year], metadata, year, 'x');
+        if (!productionSeries || !exportSeries) return;
+        production[year] = productionSeries;
+        exportsByYear[year] = exportSeries;
+    });
+
+    const years = Object.keys(production).map(Number).sort((a, b) => a - b);
+    if (!years.length) return null;
+    return {
+        years,
+        latestYear: years[years.length - 1],
+        production,
+        exports: exportsByYear,
+    };
+}
+
+export async function getHydroelectricityData() {
+    const allData = await loadAllData();
+    const metadata = await loadMetadata();
+    const byYear = {};
+
+    allData.forEach((row) => {
+        const vector = String(row.vector || '');
+        if (!vector.startsWith('hyel_') || vector.startsWith('hyel_raw_')) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][vector] = Number(row.value);
+    });
+
+    const years = Object.keys(byYear)
+        .map((year) => Number(year))
+        .filter((year) => {
+            const current = byYear[year];
+            const count = current.hyel_count;
+            if (current.hyel_world_twh == null || current.hyel_canada_elec_share == null || current.hyel_canada_rank == null || !count) {
+                return false;
+            }
+            return Array.from({ length: count }, (_, index) => index + 1).every((slot) => (
+                current[`hyel_r${slot}_share`] != null && current[`hyel_r${slot}_rank`] != null
+            ));
+        })
+        .sort((a, b) => a - b);
+    const year = years.length ? years[years.length - 1] : null;
+    if (year == null) return null;
+
+    const current = byYear[year];
+    const count = current.hyel_count;
+    const rows = Array.from({ length: count }, (_, index) => {
+        const slot = index + 1;
+        const name = (suffix) => String(metadata[`hyel_r${slot}_name_${suffix}`]?.title || '').trim();
+        return {
+            rank: current[`hyel_r${slot}_rank`],
+            pct: current[`hyel_r${slot}_share`],
+            isCanada: current[`hyel_r${slot}_canada`] === 1,
+            names: { en: name('en'), fr: name('fr') },
+        };
+    }).filter((row) => row.names.en && row.names.fr);
+
+    if (rows.length !== count) return null;
+
+    return {
+        year,
+        worldTwh: current.hyel_world_twh,
+        canadaElecShare: current.hyel_canada_elec_share,
+        canadaRank: current.hyel_canada_rank,
+        rows,
+    };
+}
+
+const GH2_PRODUCTION_SHARES = {
+    gh2_source_natural_gas: 'natural_gas_wo_ccus',
+    gh2_source_coal: 'coal',
+    gh2_source_fossil_ccus: 'fossil_fuels_w_ccus',
+    gh2_source_oil: 'oil',
+    gh2_source_electricity: 'electricity',
+    gh2_source_by_product: 'by_product',
+};
+
+const GH2_DEMAND_SHARES = {
+    gh2_refining: 'refining',
+    gh2_ammonia: 'ammonia',
+    gh2_methanol: 'methanol',
+    gh2_steelmaking: 'steelmaking',
+    gh2_transport: 'transportation_other',
+};
+
+export async function getGlobalHydrogenProductionDemandData() {
+    const allData = await loadAllData();
+    const byYear = {};
+
+    allData.forEach((row) => {
+        const vector = String(row.vector || '');
+        if (!vector.startsWith('gh2_') || vector.startsWith('gh2_raw_')) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][vector] = Number(row.value);
+    });
+
+    const required = [
+        'gh2_production_mt',
+        'gh2_deliberate_pct',
+        'gh2_by_product_pct',
+        'gh2_source_total_mt',
+        'gh2_demand_mt',
+        ...Object.keys(GH2_PRODUCTION_SHARES),
+        ...Object.keys(GH2_DEMAND_SHARES),
+    ];
+    const years = Object.keys(byYear)
+        .map((year) => Number(year))
+        .filter((year) => required.every((key) => byYear[year][key] != null))
+        .sort((a, b) => a - b);
+    const year = years.length ? years[years.length - 1] : null;
+    if (year == null) return null;
+
+    const current = byYear[year];
+    const production = {};
+    Object.entries(GH2_PRODUCTION_SHARES).forEach(([vector, key]) => {
+        production[key] = current[vector];
+    });
+    const demand = {};
+    Object.entries(GH2_DEMAND_SHARES).forEach(([vector, key]) => {
+        demand[key] = current[vector];
+    });
+
+    return {
+        year,
+        productionMt: current.gh2_production_mt,
+        deliberatePct: current.gh2_deliberate_pct,
+        byProductPct: current.gh2_by_product_pct,
+        sourceTotalMt: current.gh2_source_total_mt,
+        demandMt: current.gh2_demand_mt,
+        refiningPct: current.gh2_refining,
+        ammoniaPct: current.gh2_ammonia,
+        production,
+        demand,
+    };
+}
+
+const EVCH_FIELDS = ['charger', 'input', 'outlet', 'charging_time', 'range', 'uses'];
+
+export async function getElectricVehicleChargingData() {
+    const allData = await loadAllData();
+    const metadata = await loadMetadata();
+    const rowsByIndex = { en: {}, fr: {} };
+    const footnote = { en: '', fr: '' };
+
+    allData.forEach((row) => {
+        const vector = String(row.vector || '');
+        if (!vector.startsWith('evch_') || vector.startsWith('evch_raw_')) return;
+        const text = String(metadata[vector]?.title || '').trim();
+        if (!text) return;
+        if (vector === 'evch_footnote') {
+            footnote.en = text;
+            return;
+        }
+        if (vector === 'evch_footnote_fr') {
+            footnote.fr = text;
+            return;
+        }
+        const match = vector.match(/^evch_r(\d+)_(charger|input|outlet|charging_time|range|uses)(_fr)?$/);
+        if (!match) return;
+        const index = Number(match[1]);
+        const lang = match[3] ? 'fr' : 'en';
+        if (!rowsByIndex[lang][index]) rowsByIndex[lang][index] = { key: `level${index}` };
+        const field = match[2] === 'charging_time' ? 'chargingTime' : match[2];
+        rowsByIndex[lang][index][field] = text;
+    });
+
+    const rowsFor = (lang) => Object.keys(rowsByIndex[lang])
+        .map((index) => Number(index))
+        .sort((a, b) => a - b)
+        .map((index) => rowsByIndex[lang][index])
+        .filter((row) => EVCH_FIELDS.every((field) => {
+            const key = field === 'charging_time' ? 'chargingTime' : field;
+            return row[key];
+        }));
+
+    return {
+        rows: { en: rowsFor('en'), fr: rowsFor('fr') },
+        footnote,
+    };
+}
+
+const CREP_CATEGORY_VECTORS = {
+    crep_hydro: 'hydro',
+    crep_solid_biomass: 'solid_biomass',
+    crep_wind: 'wind',
+    crep_ethanol: 'ethanol',
+    crep_municipal_waste: 'municipal_waste',
+    crep_biodiesel: 'biodiesel',
+    crep_solar_pv: 'solar_pv',
+    crep_solar_thermal: 'solar_thermal',
+};
+const CREP_CATEGORY_ORDER = Object.values(CREP_CATEGORY_VECTORS);
+
+export async function getCanadianRenewableEnergyProductionData() {
+    const allData = await loadAllData();
+    const byYear = {};
+
+    allData.forEach((row) => {
+        const vector = row.vector;
+        if (!vector || !String(vector).startsWith('crep_') || String(vector).startsWith('crep_raw_')) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][vector] = Number(row.value);
+    });
+
+    const years = Object.keys(byYear)
+        .map((year) => Number(year))
+        .filter((year) => {
+            const row = byYear[year];
+            return row.crep_total_pj != null
+                && row.crep_total_mtoe != null
+                && CREP_CATEGORY_ORDER.every((key) => row[`crep_${key}`] != null);
+        })
+        .sort((a, b) => a - b);
+    const year = years.length ? years[years.length - 1] : null;
+    if (year == null) {
+        return { year: null, totalPj: null, totalMtoe: null, rows: [] };
+    }
+
+    const current = byYear[year];
+    const rows = CREP_CATEGORY_ORDER
+        .map((key) => ({ key, share: current[`crep_${key}`] }))
+        .sort((a, b) => b.share - a.share || CREP_CATEGORY_ORDER.indexOf(a.key) - CREP_CATEGORY_ORDER.indexOf(b.key));
+
+    return {
+        year,
+        totalPj: current.crep_total_pj,
+        totalMtoe: current.crep_total_mtoe,
+        rows,
+    };
+}
+
+const BIOMASS_SLICE_VECTORS = {
+    bmas_hydro: 'hydro',
+    bmas_solid_biofuels: 'solid_biofuels',
+    bmas_wind_solar: 'wind_solar',
+    bmas_other_biomass: 'other_biomass',
+};
+
+export async function getBiomassData() {
+    const allData = await loadAllData();
+    const metadata = await loadMetadata();
+    const byYear = {};
+    const oecdByYear = {};
+    const canadaShareByYear = {};
+    const bulletsByYear = { en: {}, fr: {} };
+
+    allData.forEach((row) => {
+        const vector = row.vector;
+        if (!vector || !String(vector).startsWith('bmas_') || String(vector).startsWith('bmas_raw_')) return;
+        const year = parseInt(String(row.ref_date).trim(), 10);
+        if (Number.isNaN(year)) return;
+
+        const sliceKey = BIOMASS_SLICE_VECTORS[vector];
+        if (sliceKey) {
+            if (!byYear[year]) byYear[year] = {};
+            byYear[year][sliceKey] = Number(row.value);
+            return;
+        }
+        if (vector === 'bmas_oecd_share') {
+            oecdByYear[year] = Number(row.value);
+            return;
+        }
+        if (vector === 'bmas_canada_share') {
+            canadaShareByYear[year] = Number(row.value);
+            return;
+        }
+        const bullet = String(vector).match(/^bmas_bullet_(\d+)_(en|fr)$/);
+        if (!bullet) return;
+        const text = String(metadata[vector]?.title || '').trim();
+        if (!text) return;
+        const lang = bullet[2];
+        if (!bulletsByYear[lang][year]) bulletsByYear[lang][year] = [];
+        bulletsByYear[lang][year].push({ order: Number(bullet[1]), text });
+    });
+
+    const chartYears = Object.keys(byYear)
+        .map((year) => Number(year))
+        .filter((year) => Object.keys(BIOMASS_SLICE_VECTORS).every((vector) => byYear[year][BIOMASS_SLICE_VECTORS[vector]] != null))
+        .sort((a, b) => a - b);
+    const year = chartYears.length ? chartYears[chartYears.length - 1] : null;
+    const oecdYears = Object.keys(oecdByYear).map((value) => Number(value)).sort((a, b) => a - b);
+    const oecdYear = oecdYears.length ? oecdYears[oecdYears.length - 1] : null;
+    const slices = year == null ? [] : Object.values(BIOMASS_SLICE_VECTORS).map((key) => ({
+        key,
+        pct: byYear[year][key],
+    }));
+
+    const bulletsFor = (lang) => {
+        const years = Object.keys(bulletsByYear[lang]).map((value) => Number(value)).sort((a, b) => a - b);
+        if (!years.length) return [];
+        return bulletsByYear[lang][years[years.length - 1]]
+            .sort((a, b) => a.order - b.order)
+            .map((item) => item.text);
+    };
+
+    return {
+        year,
+        oecdYear,
+        oecdShare: oecdYear == null ? null : oecdByYear[oecdYear],
+        canadaShare: year == null ? null : canadaShareByYear[year] ?? null,
+        slices,
+        bullets: {
+            en: bulletsFor('en'),
+            fr: bulletsFor('fr'),
+        },
     };
 }
 

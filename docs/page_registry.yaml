@@ -64,9 +64,11 @@ pages:
   css_prefix: canada-energy-supply
   section_anchor_id: canada-energy-supply
   title: Canada's energy supply
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - canada_energy_supply
+  data_getters:
+  - getCanadaEnergySupplyData
+  data_status: pipeline_present
 - legacy_page_num: 7
   legacy_component: Page7
   component_name: NominalGdp
@@ -101,9 +103,11 @@ pages:
   css_prefix: employment
   section_anchor_id: employment
   title: Employment in Canada's energy sector (2024)
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - energy_sector_employment
+  data_getters:
+  - getEnergySectorEmploymentData
+  data_status: pipeline_present
 - legacy_page_num: 10
   legacy_component: Page10
   component_name: EmploymentChart
@@ -156,9 +160,11 @@ pages:
   css_prefix: canadian-energy-exports-us-states
   section_anchor_id: canadian-energy-exports-us-states
   title: Canadian energy exports to the U.S. by state ()
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - us_state_energy_exports
+  data_getters:
+  - getUsStateEnergyExportsData
+  data_status: pipeline_present
 - legacy_page_num: 15
   legacy_component: Page15
   component_name: CanadaGlobalEnergyTrade
@@ -167,9 +173,11 @@ pages:
   css_prefix: canada-global-energy-trade
   section_anchor_id: canada-global-energy-trade
   title: Canada's global energy trade
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - global_energy_trade
+  data_getters:
+  - getCanadaGlobalEnergyTradeData
+  data_status: pipeline_present
 - legacy_page_num: 16
   legacy_component: Page16
   component_name: GovernmentRevenues
@@ -200,9 +208,11 @@ pages:
   css_prefix: energy-and-ghg-emissions
   section_anchor_id: energy-and-ghg-emissions
   title: Energy and GHG emissions
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - energy_and_ghg_emissions
+  data_getters:
+  - getEnergyAndGhgEmissionsData
+  data_status: pipeline_present
 - legacy_page_num: 19
   legacy_component: Page19
   component_name: GhgEmissionsIntensityIndex
@@ -211,9 +221,11 @@ pages:
   css_prefix: ghg-emissions-intensity-index
   section_anchor_id: ghg-emissions-intensity-index
   title: Indexed GHG emissions intensity
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - energy_and_ghg_emissions
+  data_getters:
+  - getEnergyAndGhgEmissionsData
+  data_status: pipeline_present
 - legacy_page_num: 20
   legacy_component: Page20
   component_name: GhgEmissionsBySector
@@ -453,9 +465,11 @@ pages:
   css_prefix: energy-sector-demographics
   section_anchor_id: energy-sector-demographics
   title: Energy sector demographics (2023)
-  indicator_keys: []
-  data_getters: []
-  data_status: no_data
+  indicator_keys:
+  - energy_sector_demographics
+  data_getters:
+  - getEnergySectorDemographicsData
+  data_status: pipeline_present
 - legacy_page_num: 41
   legacy_component: Page41
   component_name: EnergySectorWages
@@ -464,9 +478,11 @@ pages:
   css_prefix: energy-sector-wages
   section_anchor_id: energy-sector-wages
   title: Energy sector wages and the gender wage gap (2023)
-  indicator_keys: []
-  data_getters: []
-  data_status: no_data
+  indicator_keys:
+  - energy_sector_demographics
+  data_getters:
+  - getEnergySectorDemographicsData
+  data_status: pipeline_present
 - legacy_page_num: 42
   legacy_component: Page42
   component_name: DemographicRepresentation
@@ -475,9 +491,11 @@ pages:
   css_prefix: demographic-representation
   section_anchor_id: demographic-representation
   title: Demographic representation in the energy sector
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - demographic_representation
+  data_getters:
+  - getDemographicRepresentationData
+  data_status: pipeline_present
 - legacy_page_num: 43
   legacy_component: Page43
   component_name: EnergyAffordability
@@ -486,9 +504,11 @@ pages:
   css_prefix: energy-affordability
   section_anchor_id: energy-affordability
   title: Energy affordability
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - energy_poverty_geography
+  data_getters:
+  - getEnergyPovertyRatesData
+  data_status: pipeline_present
 - legacy_page_num: 44
   legacy_component: Page44
   component_name: HouseholdEnergyExpenditures
@@ -497,9 +517,11 @@ pages:
   css_prefix: household-energy-expenditures
   section_anchor_id: household-energy-expenditures
   title: Household expenditures on energy
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - household_energy_expenditures
+  data_getters:
+  - getHouseholdEnergyExpendituresData
+  data_status: pipeline_present
 - legacy_page_num: 45
   legacy_component: Page45
   component_name: HouseholdEnergyPricesComparison
@@ -508,9 +530,11 @@ pages:
   css_prefix: household-energy-prices-comparison
   section_anchor_id: household-energy-prices-comparison
   title: Household energy prices per unit, 2024
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - household_energy_prices
+  data_getters:
+  - getHouseholdEnergyPricesData
+  data_status: pipeline_present
 - legacy_page_num: 46
   legacy_component: Page46
   component_name: EnergyReliantCommunities
@@ -519,9 +543,11 @@ pages:
   css_prefix: energy-reliant-communities
   section_anchor_id: energy-reliant-communities
   title: Energy reliant communities
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - energy_reliant_communities
+  data_getters:
+  - getEnergyReliantCommunitiesData
+  data_status: pipeline_present
 - legacy_page_num: 47
   legacy_component: Page47
   component_name: EnergyEfficiencyOverview
@@ -732,9 +758,11 @@ pages:
   css_prefix: electricity-international-context
   section_anchor_id: electricity-international-context
   title: Electricity
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - electricity_world_production
+  data_getters:
+  - getElectricityWorldProductionExportsData
+  data_status: pipeline_present
 - legacy_page_num: 65
   legacy_component: Page65
   component_name: ElectricityTrade
@@ -845,9 +873,11 @@ pages:
   css_prefix: canadian-renewable-energy-production
   section_anchor_id: canadian-renewable-energy-production
   title: Canadian renewable energy production
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - canadian_renewable_energy_production
+  data_getters:
+  - getCanadianRenewableEnergyProductionData
+  data_status: pipeline_present
 - legacy_page_num: 74
   legacy_component: Page74
   component_name: RenewableElectricityCapacity
@@ -869,9 +899,11 @@ pages:
   css_prefix: hydroelectricity
   section_anchor_id: hydroelectricity
   title: Hydroelectricity
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - hydroelectricity
+  data_getters:
+  - getHydroelectricityData
+  data_status: pipeline_present
 - legacy_page_num: 76
   legacy_component: Page76
   component_name: HydroelectricCapacity
@@ -894,9 +926,11 @@ pages:
   css_prefix: biomass
   section_anchor_id: biomass
   title: Biomass
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - biomass
+  data_getters:
+  - getBiomassData
+  data_status: pipeline_present
 - legacy_page_num: 78
   legacy_component: Page78
   component_name: SolidBiofuelsProduction
@@ -1065,9 +1099,11 @@ pages:
   css_prefix: biofuels-transportation
   section_anchor_id: biofuels-transportation
   title: Biofuels and transportation
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - world_biofuels_production
+  data_getters:
+  - getWorldBiofuelsProductionData
+  data_status: pipeline_present
 - legacy_page_num: 92
   legacy_component: Page92
   component_name: WorldBiofuelsProduction
@@ -1076,9 +1112,11 @@ pages:
   css_prefix: world-biofuels-production
   section_anchor_id: world-biofuels-production
   title: World biofuels production
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - world_biofuels_production
+  data_getters:
+  - getWorldBiofuelsProductionData
+  data_status: pipeline_present
 - legacy_page_num: 93
   legacy_component: Page93
   component_name: CanadianBiofuelProduction
@@ -1144,9 +1182,11 @@ pages:
   css_prefix: electric-vehicle-charging
   section_anchor_id: electric-vehicle-charging
   title: Electric vehicle charging
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - electric_vehicle_charging
+  data_getters:
+  - getElectricVehicleChargingData
+  data_status: pipeline_present
 - legacy_page_num: 99
   legacy_component: Page99
   component_name: PublicEvChargingStations
@@ -1166,9 +1206,11 @@ pages:
   css_prefix: hydrogen
   section_anchor_id: hydrogen
   title: Hydrogen
-  indicator_keys: []
-  data_getters: []
-  data_status: no_data
+  indicator_keys:
+  - hydrogen_narrative
+  data_getters:
+  - getHydrogenNarrativeData
+  data_status: pipeline_present
 - legacy_page_num: 101
   legacy_component: Page101
   component_name: GlobalHydrogenProductionDemand
@@ -1177,9 +1219,11 @@ pages:
   css_prefix: global-hydrogen-production-demand
   section_anchor_id: global-hydrogen-production-demand
   title: Global hydrogen production and demand
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - global_hydrogen_production_demand
+  data_getters:
+  - getGlobalHydrogenProductionDemandData
+  data_status: pipeline_present
 - legacy_page_num: 102
   legacy_component: Page102
   component_name: HydrogenIndustry
@@ -1188,9 +1232,11 @@ pages:
   css_prefix: hydrogen-industry
   section_anchor_id: hydrogen-industry
   title: Hydrogen industry in Canada
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - hydrogen_narrative
+  data_getters:
+  - getHydrogenCanadaSummaryData
+  data_status: pipeline_present
 - legacy_page_num: 103
   legacy_component: Page103
   component_name: OilGasCoalOverview

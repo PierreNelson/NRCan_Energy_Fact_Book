@@ -12,16 +12,18 @@ import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import { getHouseholdEnergyPricesData } from '../utils/dataLoader';
 
 const COUNTRY_KEYS = ['canada', 'france', 'germany', 'italy', 'uk', 'usa'];
 
-const household_energy_prices_comparison_DATA = {
-    canada: { gasoline: 1.3, electricity: 130, naturalGas: 30 },
-    france: { gasoline: 2.3, electricity: 360, naturalGas: 170 },
-    germany: { gasoline: 2.1, electricity: 480, naturalGas: 160 },
-    italy: { gasoline: 2.5, electricity: 490, naturalGas: 200 },
-    uk: { gasoline: 1.8, electricity: 390, naturalGas: 100 },
-    usa: { gasoline: 0.9, electricity: 140, naturalGas: 40 },
+const fill = (template, values) => Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{{${key}}}`, value == null ? '' : String(value)),
+    template,
+);
+
+const roundHalfUp = (value, digits) => {
+    const factor = 10 ** digits;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
 };
 
 const COLORS = {
@@ -103,8 +105,32 @@ const HouseholdEnergyPricesComparison = () => {
         });
     };
 
-    const fileSlugBase = getText('household_energy_prices_comparison_download_title', lang).replace(/\s+/g, '_');
-    const chartTitle = getText('household_energy_prices_comparison_chart_title', lang);
+    const [prices, setPrices] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getHouseholdEnergyPricesData()
+            .then((payload) => {
+                if (!cancelled) setPrices(payload);
+            })
+            .catch((err) => {
+                console.error('Failed to load household energy prices:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const priceYear = prices?.year ? String(prices.year) : '';
+    const pricesByCountry = useMemo(() => {
+        const map = {};
+        (prices?.countries || []).forEach((row) => {
+            map[row.key] = row;
+        });
+        return map;
+    }, [prices]);
+    const fileSlugBase = fill(getText('household_energy_prices_comparison_download_title', lang), { year: priceYear }).replace(/\s+/g, '_');
+    const chartTitle = fill(getText('household_energy_prices_comparison_chart_title', lang), { year: priceYear });
     const exportChartTitle = stripHtml(chartTitle);
     const pageTitleLine1 = getText('household_energy_prices_comparison_title_line1', lang);
     const pageTitleLine2 = getText('household_energy_prices_comparison_title_line2', lang);
@@ -121,9 +147,18 @@ const HouseholdEnergyPricesComparison = () => {
     const yLeftLabel = getText('household_energy_prices_comparison_yaxis_left', lang);
     const yRightLabel = getText('household_energy_prices_comparison_yaxis_right', lang);
 
-    const gasolineValues = useMemo(() => COUNTRY_KEYS.map((key) => household_energy_prices_comparison_DATA[key].gasoline), []);
-    const electricityValues = useMemo(() => COUNTRY_KEYS.map((key) => household_energy_prices_comparison_DATA[key].electricity), []);
-    const naturalGasValues = useMemo(() => COUNTRY_KEYS.map((key) => household_energy_prices_comparison_DATA[key].naturalGas), []);
+    const gasolineValues = useMemo(
+        () => COUNTRY_KEYS.map((key) => pricesByCountry[key]?.gasoline ?? null),
+        [pricesByCountry],
+    );
+    const electricityValues = useMemo(
+        () => COUNTRY_KEYS.map((key) => pricesByCountry[key]?.electricity ?? null),
+        [pricesByCountry],
+    );
+    const naturalGasValues = useMemo(
+        () => COUNTRY_KEYS.map((key) => pricesByCountry[key]?.naturalGas ?? null),
+        [pricesByCountry],
+    );
 
     const tableColumns = useMemo(() => [
         { key: 'country', header: getText('household_energy_prices_comparison_table_country', lang), align: 'left' },
@@ -135,11 +170,11 @@ const HouseholdEnergyPricesComparison = () => {
     const tableRows = useMemo(
         () => COUNTRY_KEYS.map((key, i) => ({
             country: countryLabels[i],
-            gasoline: household_energy_prices_comparison_DATA[key].gasoline,
-            electricity: household_energy_prices_comparison_DATA[key].electricity,
-            naturalGas: household_energy_prices_comparison_DATA[key].naturalGas,
+            gasoline: Number.isFinite(gasolineValues[i]) ? roundHalfUp(gasolineValues[i], 1) : null,
+            electricity: Number.isFinite(electricityValues[i]) ? roundHalfUp(electricityValues[i], 0) : null,
+            naturalGas: Number.isFinite(naturalGasValues[i]) ? roundHalfUp(naturalGasValues[i], 0) : null,
         })),
-        [countryLabels],
+        [countryLabels, electricityValues, gasolineValues, naturalGasValues],
     );
 
     const pageZoomForLayout = Math.max(
@@ -266,7 +301,10 @@ const HouseholdEnergyPricesComparison = () => {
             },
             yaxis: {
                 title: { text: yLeftLabel, font: axisTitleFont, standoff: 8 },
-                range: [0, 2.6],
+                range: [0, (() => {
+                    const peak = Math.max(0, ...gasolineValues.filter((value) => Number.isFinite(value)));
+                    return peak > 2.6 ? Math.ceil(peak / 0.2) * 0.2 : 2.6;
+                })()],
                 dtick: 0.2,
                 showgrid: false,
                 showline: true,
@@ -279,7 +317,10 @@ const HouseholdEnergyPricesComparison = () => {
             },
             yaxis2: {
                 title: { text: yRightLabel, font: axisTitleFont, standoff: 8 },
-                range: [0, 600],
+                range: [0, (() => {
+                    const peak = Math.max(0, ...[...electricityValues, ...naturalGasValues].filter((value) => Number.isFinite(value)));
+                    return peak > 600 ? Math.ceil(peak / 100) * 100 : 600;
+                })()],
                 dtick: 100,
                 overlaying: 'y',
                 side: 'right',
@@ -303,7 +344,7 @@ const HouseholdEnergyPricesComparison = () => {
             autosize: true,
         };
         },
-        [countryLabels, xTickAngle, xTickFontSize, yTickFontSize, axisTitleFontSize, yLeftLabel, yRightLabel, chartHeight, plotBottomMargin, windowWidth],
+        [countryLabels, electricityValues, gasolineValues, naturalGasValues, xTickAngle, xTickFontSize, yTickFontSize, axisTitleFontSize, yLeftLabel, yRightLabel, chartHeight, plotBottomMargin, windowWidth],
     );
 
     const downloadChartWithTitle = useChartPngDownloader(
@@ -346,8 +387,8 @@ const HouseholdEnergyPricesComparison = () => {
         });
         return joinChartSummary({
             intro: lang === 'en'
-                ? 'Grouped bar chart comparing household energy prices per unit across countries for 2024'
-                : "Graphique à barres groupées comparant les prix unitaires de l'énergie domestique entre pays pour 2024",
+                ? `Grouped bar chart comparing household energy prices per unit across countries for ${priceYear}`
+                : `Graphique à barres groupées comparant les prix unitaires de l'énergie domestique entre pays pour ${priceYear}`,
             unitNote: lang === 'en'
                 ? `Gasoline in ${yLeftLabel}; electricity and natural gas in ${yRightLabel}`
                 : `Essence en ${yLeftLabel} ; électricité et gaz naturel en ${yRightLabel}`,

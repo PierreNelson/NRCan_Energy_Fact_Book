@@ -27,6 +27,17 @@ VALUES
 ('provincial_gdp', 'Provincial GDP Data', 1, 'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401', 1),
 ('world_energy_production', 'World Energy Production', 1, 'Key Indicators', N'https://www.iea.org/data-and-statistics/data-tools/world-energy-balances', 1),
 ('canadian_energy_assets', 'Canadian Energy Assets (CEA)', 1, 'Key Indicators', N'https://www.nrcan.gc.ca/energy/energy-sources-distribution/energy-facts/canadian-energy-assets/20064', 1),
+('canada_energy_supply', 'Canada total energy supply', 1, 'Key Indicators', N'https://www.iea.org/data-and-statistics', 1),
+('us_state_energy_exports', 'Canadian energy exports to U.S. states', 1, 'Key Indicators', N'https://www.statcan.gc.ca/en/trade', 1),
+('global_energy_trade', 'Canada global energy trade', 1, 'Key Indicators', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1),
+('energy_sector_employment', 'Employment in Canada energy sector', 1, 'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501', 1),
+('energy_and_ghg_emissions', 'Energy and GHG emissions', 1, 'Key Indicators', N'https://www.climatewatchdata.org/data-explorer', 1),
+('demographic_representation', 'Demographic representation in the energy sector', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501', 1),
+('household_energy_expenditures', 'Household expenditures on energy', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201', 1),
+('household_energy_prices', 'Household energy prices per unit', 3, 'Skills, diversity and community', N'https://www.iea.org/data-and-statistics', 1),
+('energy_sector_demographics', 'Energy sector demographics and wages', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501', 1),
+('energy_poverty_geography', 'Energy poverty rates by geography', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm', 1),
+('energy_reliant_communities', 'Energy reliant communities', 3, 'Skills, diversity and community', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1),
 ('capital_expenditures', 'Capital Expenditures', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601', 1),
 ('infrastructure', 'Infrastructure Stock', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801', 1),
 ('investment_by_asset', 'Investment by Asset Type', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801', 1),
@@ -46,7 +57,15 @@ VALUES
 ('cleantech_companies_geo', 'Cleantech companies by province and region', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1),
 ('cleantech_companies_industry', 'Cleantech companies by industry', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/science-innovation/research-development/clean-technology/clean-growth-hub/clean-technology-data-strategy/cleantech-companies', 1),
 ('rpp_supply_demand', 'RPP supply and disposition', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510008101', 1),
-('rpp_refinery_input', 'Refinery input', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301', 1);
+('rpp_refinery_input', 'Refinery input', 6, 'Oil, Natural Gas and Coal', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301', 1),
+('biomass', 'Biomass share of renewable energy production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('canadian_renewable_energy_production', 'Canadian renewable energy production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('electric_vehicle_charging', 'Electric vehicle charging levels', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1),
+('global_hydrogen_production_demand', 'Global hydrogen production and demand', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1),
+('hydroelectricity', 'Hydroelectricity share and world generation', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('hydrogen_narrative', 'Hydrogen narrative and Canada summary', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1),
+('electricity_world_production', 'World electricity production and exports', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('world_biofuels_production', 'World biofuels production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
 """
 
 

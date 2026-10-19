@@ -46,11 +46,10 @@ The `source_key` string must match the key in `config.yaml`, in `scripts/db/eeda
 |--------|------------------|-------------------|
 | [`section1_indicators/`](section1_indicators/) | `section1_indicators` | 6 |
 | [`section2_indicators/`](section2_indicators/) | `section2_indicators` | 9 |
+| [`section3_indicators/`](section3_indicators/) | `section3_indicators` | 6 |
 | [`section4_indicators/`](section4_indicators/) | `section4_indicators` | 6 |
 | [`section5_indicators/`](section5_indicators/) | `section5_indicators` | 4 |
 | [`section6_indicators/`](section6_indicators/) | `section6_indicators` | 7 |
-
-(Section 3 is not wired up in the pipeline yet.)
 
 Each section folder has a **page-by-page source map** README. Every page wired in `SectionOne.jsx` … `SectionSix.jsx` is listed — either with the full pipeline chain (getter → `source_key` → handler → files/URLs) or marked **Not in pipeline** with the React file to edit.
 
@@ -58,6 +57,7 @@ Each section folder has a **page-by-page source map** README. Every page wired i
 |---------|------------|
 | Key Indicators | [`section1_indicators/README.md`](section1_indicators/README.md) |
 | Investment | [`section2_indicators/README.md`](section2_indicators/README.md) |
+| Skills, diversity and community | [`section3_indicators/README.md`](section3_indicators/README.md) |
 | Energy Efficiency | [`section4_indicators/README.md`](section4_indicators/README.md) |
 | Clean Power | [`section5_indicators/README.md`](section5_indicators/README.md) |
 | Oil, Gas and Coal | [`section6_indicators/README.md`](section6_indicators/README.md) |

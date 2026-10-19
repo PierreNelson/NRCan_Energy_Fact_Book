@@ -1,6 +1,12 @@
 /**
  * Parse CSV text into array of objects (shared by dataLoader and tests).
  */
+function numericCell(val) {
+  if (!/^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?$/.test(val)) return val;
+  const num = Number(val);
+  return Number.isFinite(num) ? num : val;
+}
+
 export function parseCSV(csvText) {
   const lines = csvText.trim().split('\n');
   if (lines.length === 0) return [];
@@ -28,8 +34,7 @@ export function parseCSV(csvText) {
     const row = {};
     headers.forEach((header, idx) => {
       const val = values[idx] || '';
-      const num = parseFloat(val);
-      row[header] = Number.isNaN(num) ? val : num;
+      row[header] = numericCell(val);
     });
     data.push(row);
   }

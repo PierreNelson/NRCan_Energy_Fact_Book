@@ -277,8 +277,8 @@ WHERE schema_id = SCHEMA_ID('dbo')
     'ca_petroleum_reserves_summary','ca_western_canada_oil_wells_count_depth',
     'ca_statcan_petroleum_sector_employment_summary',
     'ca_ogj_petroleum_world_proved_reserves',
-    'cer_electricity_trade_summary','nrcan_windcapbyprov','can_largestwindprojects',
-    'can_largestsolprojects','can_largesthydrofac','nrcan_solid_biofuels','nrcan_renelecap','nrcan_elegen_can','nrcan_windpwr_can','nrcan_worldwind','nrcan_worldsolar','nrcan_electrical_energy_use','nrcan_hydroq_prices','nrcan_wselec_growth','wna_uraniumprod','ecc_ghg_electricity'
+    'cer_electricity_trade_summary','iea_total_energy_supply_can_world','nrcan_us_state_energy_exports','nrcan_global_energy_trade_by_product','nrcan_windcapbyprov','can_largestwindprojects',
+    'can_largestsolprojects','can_largesthydrofac','nrcan_solid_biofuels','iea_biomass_world_production','iea_renewables_canada_production','nrcan_ev_charging_narrative','iea_hydrogen_global_prod_demand','iea_hydroelectricity_world_production','iea_hydrogen_narrative','iea_electricity_world_production','iea_biofuels_world_production','nrcan_renelecap','nrcan_elegen_can','nrcan_windpwr_can','nrcan_worldwind','nrcan_worldsolar','nrcan_electrical_energy_use','nrcan_hydroq_prices','nrcan_wselec_growth','wna_uraniumprod','ecc_ghg_electricity'
   );
 IF LEN(@widen_sql) > 0 EXEC sp_executesql @widen_sql;
 GO
@@ -304,6 +304,318 @@ BEGIN
     CREATE INDEX IX_iea_web_rankings_ref_date ON [iea_web_rankings](ref_date);
     PRINT 'Table iea_web_rankings created.';
 END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_total_energy_supply_can_world')
+BEGIN
+    CREATE TABLE [iea_total_energy_supply_can_world] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_total_energy_supply_can_world_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_total_energy_supply_can_world_vector ON [iea_total_energy_supply_can_world](vector);
+    CREATE INDEX IX_iea_total_energy_supply_can_world_source ON [iea_total_energy_supply_can_world](source_key);
+    CREATE INDEX IX_iea_total_energy_supply_can_world_ref_date ON [iea_total_energy_supply_can_world](ref_date);
+    PRINT 'Table iea_total_energy_supply_can_world created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'canada_energy_supply')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'canada_energy_supply', N'Canada total energy supply', 1, N'Key Indicators', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_us_state_energy_exports')
+BEGIN
+    CREATE TABLE [nrcan_us_state_energy_exports] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,8) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_us_state_energy_exports_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_us_state_energy_exports_vector ON [nrcan_us_state_energy_exports](vector);
+    CREATE INDEX IX_nrcan_us_state_energy_exports_source ON [nrcan_us_state_energy_exports](source_key);
+    CREATE INDEX IX_nrcan_us_state_energy_exports_ref_date ON [nrcan_us_state_energy_exports](ref_date);
+    PRINT 'Table nrcan_us_state_energy_exports created.';
+END
+GO
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_us_state_energy_exports')
+    ALTER TABLE [nrcan_us_state_energy_exports] ALTER COLUMN value DECIMAL(18,8) NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'us_state_energy_exports')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'us_state_energy_exports', N'Canadian energy exports to U.S. states', 1, N'Key Indicators', N'https://www.statcan.gc.ca/en/trade', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_global_energy_trade_by_product')
+BEGIN
+    CREATE TABLE [nrcan_global_energy_trade_by_product] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_global_energy_trade_by_product_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_global_energy_trade_by_product_vector ON [nrcan_global_energy_trade_by_product](vector);
+    CREATE INDEX IX_nrcan_global_energy_trade_by_product_source ON [nrcan_global_energy_trade_by_product](source_key);
+    CREATE INDEX IX_nrcan_global_energy_trade_by_product_ref_date ON [nrcan_global_energy_trade_by_product](ref_date);
+    PRINT 'Table nrcan_global_energy_trade_by_product created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'global_energy_trade')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'global_energy_trade', N'Canada global energy trade', 1, N'Key Indicators', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_energy_sector_employment')
+BEGIN
+    CREATE TABLE [stc_energy_sector_employment] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_energy_sector_employment_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_stc_energy_sector_employment_vector ON [stc_energy_sector_employment](vector);
+    CREATE INDEX IX_stc_energy_sector_employment_source ON [stc_energy_sector_employment](source_key);
+    CREATE INDEX IX_stc_energy_sector_employment_ref_date ON [stc_energy_sector_employment](ref_date);
+    PRINT 'Table stc_energy_sector_employment created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'energy_sector_employment')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'energy_sector_employment', N'Employment in Canada energy sector', 1, N'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_energy_ghg')
+BEGIN
+    CREATE TABLE [nrcan_energy_ghg] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_energy_ghg_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_energy_ghg_vector ON [nrcan_energy_ghg](vector);
+    CREATE INDEX IX_nrcan_energy_ghg_source ON [nrcan_energy_ghg](source_key);
+    CREATE INDEX IX_nrcan_energy_ghg_ref_date ON [nrcan_energy_ghg](ref_date);
+    PRINT 'Table nrcan_energy_ghg created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'energy_and_ghg_emissions')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'energy_and_ghg_emissions', N'Energy and GHG emissions', 1, N'Key Indicators', N'https://www.climatewatchdata.org/data-explorer', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'stc_energy_poverty_rates')
+BEGIN
+    CREATE TABLE [stc_energy_poverty_rates] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_stc_energy_poverty_rates_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_stc_energy_poverty_rates_vector ON [stc_energy_poverty_rates](vector);
+    CREATE INDEX IX_stc_energy_poverty_rates_source ON [stc_energy_poverty_rates](source_key);
+    CREATE INDEX IX_stc_energy_poverty_rates_ref_date ON [stc_energy_poverty_rates](ref_date);
+    PRINT 'Table stc_energy_poverty_rates created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'energy_poverty_geography')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'energy_poverty_geography', N'Energy poverty rates by geography', 3, N'Skills, diversity and community', N'https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'statcan_energy_sector_demographic_representation')
+BEGIN
+    CREATE TABLE [statcan_energy_sector_demographic_representation] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_statcan_energy_sector_demographic_representation_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_statcan_demographic_representation_vector ON [statcan_energy_sector_demographic_representation](vector);
+    CREATE INDEX IX_statcan_demographic_representation_source ON [statcan_energy_sector_demographic_representation](source_key);
+    CREATE INDEX IX_statcan_demographic_representation_ref_date ON [statcan_energy_sector_demographic_representation](ref_date);
+    PRINT 'Table statcan_energy_sector_demographic_representation created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'demographic_representation')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'demographic_representation', N'Demographic representation in the energy sector', 3, N'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'statcan_household_energy_expenditures')
+BEGIN
+    CREATE TABLE [statcan_household_energy_expenditures] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_statcan_household_energy_expenditures_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_statcan_household_energy_expenditures_vector ON [statcan_household_energy_expenditures](vector);
+    CREATE INDEX IX_statcan_household_energy_expenditures_source ON [statcan_household_energy_expenditures](source_key);
+    CREATE INDEX IX_statcan_household_energy_expenditures_ref_date ON [statcan_household_energy_expenditures](ref_date);
+    PRINT 'Table statcan_household_energy_expenditures created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'household_energy_expenditures')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'household_energy_expenditures', N'Household expenditures on energy', 3, N'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_household_energy_prices_by_country')
+BEGIN
+    CREATE TABLE [iea_household_energy_prices_by_country] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_household_energy_prices_by_country_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_household_energy_prices_vector ON [iea_household_energy_prices_by_country](vector);
+    CREATE INDEX IX_iea_household_energy_prices_source ON [iea_household_energy_prices_by_country](source_key);
+    CREATE INDEX IX_iea_household_energy_prices_ref_date ON [iea_household_energy_prices_by_country](ref_date);
+    PRINT 'Table iea_household_energy_prices_by_country created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'household_energy_prices')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'household_energy_prices', N'Household energy prices per unit', 3, N'Skills, diversity and community', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'statcan_energy_sector_demographics')
+BEGIN
+    CREATE TABLE [statcan_energy_sector_demographics] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_statcan_energy_sector_demographics_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_statcan_energy_sector_demographics_vector ON [statcan_energy_sector_demographics](vector);
+    CREATE INDEX IX_statcan_energy_sector_demographics_source ON [statcan_energy_sector_demographics](source_key);
+    CREATE INDEX IX_statcan_energy_sector_demographics_ref_date ON [statcan_energy_sector_demographics](ref_date);
+    PRINT 'Table statcan_energy_sector_demographics created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'energy_sector_demographics')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'energy_sector_demographics', N'Energy sector demographics and wages', 3, N'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_energy_reliant_communities')
+BEGIN
+    CREATE TABLE [nrcan_energy_reliant_communities] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_energy_reliant_communities_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_energy_reliant_communities_vector ON [nrcan_energy_reliant_communities](vector);
+    CREATE INDEX IX_nrcan_energy_reliant_communities_source ON [nrcan_energy_reliant_communities](source_key);
+    CREATE INDEX IX_nrcan_energy_reliant_communities_ref_date ON [nrcan_energy_reliant_communities](ref_date);
+    PRINT 'Table nrcan_energy_reliant_communities created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'energy_reliant_communities')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'energy_reliant_communities', N'Energy reliant communities', 3, N'Skills, diversity and community', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1);
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_cea_assets')
@@ -1065,6 +1377,230 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_biomass_world_production')
+BEGIN
+    CREATE TABLE [iea_biomass_world_production] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_biomass_world_production_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_biomass_world_production_vector ON [iea_biomass_world_production](vector);
+    CREATE INDEX IX_iea_biomass_world_production_source ON [iea_biomass_world_production](source_key);
+    CREATE INDEX IX_iea_biomass_world_production_ref_date ON [iea_biomass_world_production](ref_date);
+    PRINT 'Table iea_biomass_world_production created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'biomass')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'biomass', N'Biomass share of renewable energy production', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_renewables_canada_production')
+BEGIN
+    CREATE TABLE [iea_renewables_canada_production] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_renewables_canada_production_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_renewables_canada_production_vector ON [iea_renewables_canada_production](vector);
+    CREATE INDEX IX_iea_renewables_canada_production_source ON [iea_renewables_canada_production](source_key);
+    CREATE INDEX IX_iea_renewables_canada_production_ref_date ON [iea_renewables_canada_production](ref_date);
+    PRINT 'Table iea_renewables_canada_production created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'canadian_renewable_energy_production')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'canadian_renewable_energy_production', N'Canadian renewable energy production', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_ev_charging_narrative')
+BEGIN
+    CREATE TABLE [nrcan_ev_charging_narrative] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_nrcan_ev_charging_narrative_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_nrcan_ev_charging_narrative_vector ON [nrcan_ev_charging_narrative](vector);
+    CREATE INDEX IX_nrcan_ev_charging_narrative_source ON [nrcan_ev_charging_narrative](source_key);
+    CREATE INDEX IX_nrcan_ev_charging_narrative_ref_date ON [nrcan_ev_charging_narrative](ref_date);
+    PRINT 'Table nrcan_ev_charging_narrative created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'electric_vehicle_charging')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'electric_vehicle_charging', N'Electric vehicle charging levels', 5, N'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_hydrogen_global_prod_demand')
+BEGIN
+    CREATE TABLE [iea_hydrogen_global_prod_demand] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_hydrogen_global_prod_demand_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_hydrogen_global_prod_demand_vector ON [iea_hydrogen_global_prod_demand](vector);
+    CREATE INDEX IX_iea_hydrogen_global_prod_demand_source ON [iea_hydrogen_global_prod_demand](source_key);
+    CREATE INDEX IX_iea_hydrogen_global_prod_demand_ref_date ON [iea_hydrogen_global_prod_demand](ref_date);
+    PRINT 'Table iea_hydrogen_global_prod_demand created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'global_hydrogen_production_demand')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'global_hydrogen_production_demand', N'Global hydrogen production and demand', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_hydroelectricity_world_production')
+BEGIN
+    CREATE TABLE [iea_hydroelectricity_world_production] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_hydroelectricity_world_production_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_hydroelectricity_world_production_vector ON [iea_hydroelectricity_world_production](vector);
+    CREATE INDEX IX_iea_hydroelectricity_world_production_source ON [iea_hydroelectricity_world_production](source_key);
+    CREATE INDEX IX_iea_hydroelectricity_world_production_ref_date ON [iea_hydroelectricity_world_production](ref_date);
+    PRINT 'Table iea_hydroelectricity_world_production created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'hydroelectricity')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'hydroelectricity', N'Hydroelectricity share and world generation', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_hydrogen_narrative')
+BEGIN
+    CREATE TABLE [iea_hydrogen_narrative] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_hydrogen_narrative_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_hydrogen_narrative_vector ON [iea_hydrogen_narrative](vector);
+    CREATE INDEX IX_iea_hydrogen_narrative_source ON [iea_hydrogen_narrative](source_key);
+    CREATE INDEX IX_iea_hydrogen_narrative_ref_date ON [iea_hydrogen_narrative](ref_date);
+    PRINT 'Table iea_hydrogen_narrative created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'hydrogen_narrative')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'hydrogen_narrative', N'Hydrogen narrative and Canada summary', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_electricity_world_production')
+BEGIN
+    CREATE TABLE [iea_electricity_world_production] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_electricity_world_production_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_electricity_world_production_vector ON [iea_electricity_world_production](vector);
+    CREATE INDEX IX_iea_electricity_world_production_source ON [iea_electricity_world_production](source_key);
+    CREATE INDEX IX_iea_electricity_world_production_ref_date ON [iea_electricity_world_production](ref_date);
+    PRINT 'Table iea_electricity_world_production created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'electricity_world_production')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'electricity_world_production', N'World electricity production and exports', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_biofuels_world_production')
+BEGIN
+    CREATE TABLE [iea_biofuels_world_production] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_biofuels_world_production_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_biofuels_world_production_vector ON [iea_biofuels_world_production](vector);
+    CREATE INDEX IX_iea_biofuels_world_production_source ON [iea_biofuels_world_production](source_key);
+    CREATE INDEX IX_iea_biofuels_world_production_ref_date ON [iea_biofuels_world_production](ref_date);
+    PRINT 'Table iea_biofuels_world_production created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'world_biofuels_production')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'world_biofuels_production', N'World biofuels production', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_renelecap')
 BEGIN
     CREATE TABLE [nrcan_renelecap] (
@@ -1594,6 +2130,17 @@ VALUES
 ('provincial_gdp', 'Provincial GDP Data', 1, 'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401', 1),
 ('world_energy_production', 'World Energy Production', 1, 'Key Indicators', N'https://www.iea.org/data-and-statistics/data-tools/world-energy-balances', 1),
 ('canadian_energy_assets', 'Canadian Energy Assets (CEA)', 1, 'Key Indicators', N'https://www.nrcan.gc.ca/energy/energy-sources-distribution/energy-facts/canadian-energy-assets/20064', 1),
+('canada_energy_supply', 'Canada total energy supply', 1, 'Key Indicators', N'https://www.iea.org/data-and-statistics', 1),
+('us_state_energy_exports', 'Canadian energy exports to U.S. states', 1, 'Key Indicators', N'https://www.statcan.gc.ca/en/trade', 1),
+('global_energy_trade', 'Canada global energy trade', 1, 'Key Indicators', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1),
+('energy_sector_employment', 'Employment in Canada energy sector', 1, 'Key Indicators', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501', 1),
+('energy_and_ghg_emissions', 'Energy and GHG emissions', 1, 'Key Indicators', N'https://www.climatewatchdata.org/data-explorer', 1),
+('demographic_representation', 'Demographic representation in the energy sector', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501', 1),
+('household_energy_expenditures', 'Household expenditures on energy', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201', 1),
+('household_energy_prices', 'Household energy prices per unit', 3, 'Skills, diversity and community', N'https://www.iea.org/data-and-statistics', 1),
+('energy_sector_demographics', 'Energy sector demographics and wages', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501', 1),
+('energy_poverty_geography', 'Energy poverty rates by geography', 3, 'Skills, diversity and community', N'https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm', 1),
+('energy_reliant_communities', 'Energy reliant communities', 3, 'Skills, diversity and community', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1),
 ('capital_expenditures', 'Capital Expenditures', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601', 1),
 ('infrastructure', 'Infrastructure Stock', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610060801', 1),
 ('investment_by_asset', 'Investment by Asset Type', 2, 'Investment', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801', 1),
@@ -1627,6 +2174,14 @@ VALUES
 ('largest_wind_projects', 'Largest wind projects (200 MW+)', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
 ('largest_solar_projects', 'Largest solar projects (50 MW+)', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
 ('major_hydro_facilities', 'Major hydro facilities in Canada (1,000 MW+)', 5, 'Clean Power and Low Carbon Fuels', N'', 1),
+('canadian_renewable_energy_production', 'Canadian renewable energy production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('biomass', 'Biomass share of renewable energy production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('electric_vehicle_charging', 'Electric vehicle charging levels', 5, 'Clean Power and Low Carbon Fuels', N'https://natural-resources.canada.ca/energy-sources/energy-facts', 1),
+('global_hydrogen_production_demand', 'Global hydrogen production and demand', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1),
+('hydroelectricity', 'Hydroelectricity share and world generation', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('hydrogen_narrative', 'Hydrogen narrative and Canada summary', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1),
+('electricity_world_production', 'World electricity production and exports', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('world_biofuels_production', 'World biofuels production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
 ('solid_biofuels', 'Canadian production of solid biofuels', 5, 'Clean Power and Low Carbon Fuels', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003101', 1),
 ('kal_gas_prices', 'Gasoline retail price components (Kalibrate)', 6, 'Oil, Natural Gas and Coal', N'https://kalibrate.com/', 1),
 ('osm_refin_cap', 'Canadian refinery capacity (Oil Sands Magazine)', 6, 'Oil, Natural Gas and Coal', N'https://www.oilsandsmagazine.com/projects/canadian-refineries', 1),

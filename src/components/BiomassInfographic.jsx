@@ -34,13 +34,28 @@ const FootnoteMark = ({ number, lang, scrollToElement, style }) => (
     </a>
 );
 
+const patchShares = (markup, oecdShare, canadaShare, lang) => {
+    if (oecdShare == null || canadaShare == null) return markup;
+    const oecd = String(Math.round(Number(oecdShare)));
+    const canada = String(Math.round(Number(canadaShare)));
+    if (lang === 'en') {
+        return markup.replace('>46%.<', `>${oecd}%.<`).replace('>26%.<', `>${canada}%.<`);
+    }
+    return markup.replace('>46 %<', `>${oecd} %<`).replace('>26 %.<', `>${canada} %.<`);
+};
+
 const BiomassInfographic = ({
     lang,
     scrollToElement,
+    oecdShare = null,
+    canadaShare = null,
 }) => {
     const isEn = lang === 'en';
     const fnPos = isEn ? EN_FN : FR_FN;
-    const svgMarkup = isEn ? biomassBg : biomassBgFr;
+    const svgMarkup = useMemo(
+        () => patchShares(isEn ? biomassBg : biomassBgFr, oecdShare, canadaShare, lang),
+        [isEn, oecdShare, canadaShare, lang],
+    );
     const spokenLabel = useMemo(
         () => extractSvgTextContent(svgMarkup, { separator: ' ' }),
         [svgMarkup],

@@ -13,6 +13,11 @@ Handles data for:
 from typing import Dict
 
 from ..base import SectionProcessor
+from .canada_energy_supply import (
+    process_canada_energy_supply,
+    transform_canada_energy_supply,
+    update_canada_energy_supply,
+)
 from .cea import process_cea_data, transform_cea_data, update_cea_data
 from .economic_contributions import (
     process_economic_contributions,
@@ -22,6 +27,26 @@ from .economic_contributions import (
 from .ghg_emissions import process_ghg_emissions, transform_ghg_emissions, update_ghg_emissions
 from .nominal_gdp import process_nominal_gdp, transform_nominal_gdp, update_nominal_gdp
 from .provincial_gdp import process_provincial_gdp, transform_provincial_gdp, update_provincial_gdp
+from .us_state_energy_exports import (
+    process_us_state_energy_exports,
+    transform_us_state_energy_exports,
+    update_us_state_energy_exports,
+)
+from .global_energy_trade import (
+    process_global_energy_trade,
+    transform_global_energy_trade,
+    update_global_energy_trade,
+)
+from .energy_sector_employment import (
+    process_energy_sector_employment,
+    transform_energy_sector_employment,
+    update_energy_sector_employment,
+)
+from .energy_and_ghg_emissions import (
+    process_energy_and_ghg_emissions,
+    transform_energy_and_ghg_emissions,
+    update_energy_and_ghg_emissions,
+)
 from .world_energy_production import (
     process_world_energy_production,
     transform_world_energy_production,
@@ -52,6 +77,11 @@ class Section1Indicators(SectionProcessor):
             'nominal_gdp': self._update_nominal_gdp,
             'provincial_gdp': self._update_provincial_gdp,
             'world_energy_production': self._update_world_energy_production,
+            'canada_energy_supply': self._update_canada_energy_supply,
+            'us_state_energy_exports': self._update_us_state_energy_exports,
+            'global_energy_trade': self._update_global_energy_trade,
+            'energy_sector_employment': self._update_energy_sector_employment,
+            'energy_and_ghg_emissions': self._update_energy_and_ghg_emissions,
             'canadian_energy_assets': self._update_cea_data,
             'ghg_emissions': self._update_ghg_emissions,
         }
@@ -63,6 +93,11 @@ class Section1Indicators(SectionProcessor):
             'nominal_gdp': self._transform_nominal_gdp,
             'provincial_gdp': self._transform_provincial_gdp,
             'world_energy_production': self._transform_world_energy_production,
+            'canada_energy_supply': self._transform_canada_energy_supply,
+            'us_state_energy_exports': self._transform_us_state_energy_exports,
+            'global_energy_trade': self._transform_global_energy_trade,
+            'energy_sector_employment': self._transform_energy_sector_employment,
+            'energy_and_ghg_emissions': self._transform_energy_and_ghg_emissions,
             'canadian_energy_assets': self._transform_cea_data,
             'ghg_emissions': self._transform_ghg_emissions,
         }
@@ -74,6 +109,11 @@ class Section1Indicators(SectionProcessor):
             'nominal_gdp': self._process_nominal_gdp,
             'provincial_gdp': self._process_provincial_gdp,
             'world_energy_production': self._process_world_energy_production,
+            'canada_energy_supply': self._process_canada_energy_supply,
+            'us_state_energy_exports': self._process_us_state_energy_exports,
+            'global_energy_trade': self._process_global_energy_trade,
+            'energy_sector_employment': self._process_energy_sector_employment,
+            'energy_and_ghg_emissions': self._process_energy_and_ghg_emissions,
             'canadian_energy_assets': self._process_cea_data,
             'ghg_emissions': self._process_ghg_emissions,
         }
@@ -113,6 +153,51 @@ class Section1Indicators(SectionProcessor):
 
     def _process_world_energy_production(self) -> int:
         return process_world_energy_production(self)
+
+    def _update_canada_energy_supply(self) -> int:
+        return update_canada_energy_supply(self)
+
+    def _transform_canada_energy_supply(self) -> int:
+        return transform_canada_energy_supply(self)
+
+    def _process_canada_energy_supply(self) -> int:
+        return process_canada_energy_supply(self)
+
+    def _update_us_state_energy_exports(self) -> int:
+        return update_us_state_energy_exports(self)
+
+    def _transform_us_state_energy_exports(self) -> int:
+        return transform_us_state_energy_exports(self)
+
+    def _process_us_state_energy_exports(self) -> int:
+        return process_us_state_energy_exports(self)
+
+    def _update_global_energy_trade(self) -> int:
+        return update_global_energy_trade(self)
+
+    def _transform_global_energy_trade(self) -> int:
+        return transform_global_energy_trade(self)
+
+    def _process_global_energy_trade(self) -> int:
+        return process_global_energy_trade(self)
+
+    def _update_energy_sector_employment(self) -> int:
+        return update_energy_sector_employment(self)
+
+    def _transform_energy_sector_employment(self) -> int:
+        return transform_energy_sector_employment(self)
+
+    def _process_energy_sector_employment(self) -> int:
+        return process_energy_sector_employment(self)
+
+    def _update_energy_and_ghg_emissions(self) -> int:
+        return update_energy_and_ghg_emissions(self)
+
+    def _transform_energy_and_ghg_emissions(self) -> int:
+        return transform_energy_and_ghg_emissions(self)
+
+    def _process_energy_and_ghg_emissions(self) -> int:
+        return process_energy_and_ghg_emissions(self)
 
     def _update_cea_data(self) -> int:
         return update_cea_data(self)

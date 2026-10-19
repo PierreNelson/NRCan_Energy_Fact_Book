@@ -1,146 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import YearSelect from '../components/YearSelect';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
+import { getElectricityWorldProductionExportsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 
 const CANADA_CAPSULE = '#819476';
-
-const electricityInternationalContextCountryLabel = (key, lang) => getText(`electricity_international_context_country_${key}`, lang);
-
-const DATA_BY_YEAR = {
-    2020: {
-        production: {
-            total: 28500,
-            items: [
-                { key: 'china', pct: 31 },
-                { key: 'usa', pct: 16 },
-                { key: 'india', pct: 6 },
-                { key: 'russia', pct: 4 },
-                { key: 'japan', pct: 3 },
-            ],
-            canada: { rank: 7, pct: 2 },
-        },
-        exports: {
-            total: 780,
-            items: [
-                { key: 'france', pct: 9 },
-                { key: 'germany', pct: 7 },
-                { key: 'canada', pct: 6 },
-                { key: 'laos', pct: 5 },
-                { key: 'sweden', pct: 4 },
-            ],
-        },
-    },
-    2021: {
-        production: {
-            total: 29200,
-            items: [
-                { key: 'china', pct: 31 },
-                { key: 'usa', pct: 15 },
-                { key: 'india', pct: 7 },
-                { key: 'russia', pct: 4 },
-                { key: 'japan', pct: 3 },
-            ],
-            canada: { rank: 7, pct: 2 },
-        },
-        exports: {
-            total: 795,
-            items: [
-                { key: 'france', pct: 9 },
-                { key: 'germany', pct: 7 },
-                { key: 'canada', pct: 6 },
-                { key: 'laos', pct: 5 },
-                { key: 'sweden', pct: 4 },
-            ],
-        },
-    },
-    2022: {
-        production: {
-            total: 29900,
-            items: [
-                { key: 'china', pct: 32 },
-                { key: 'usa', pct: 15 },
-                { key: 'india', pct: 7 },
-                { key: 'russia', pct: 4 },
-                { key: 'japan', pct: 3 },
-            ],
-            canada: { rank: 7, pct: 2 },
-        },
-        exports: {
-            total: 805,
-            items: [
-                { key: 'france', pct: 9 },
-                { key: 'germany', pct: 7 },
-                { key: 'canada', pct: 6 },
-                { key: 'laos', pct: 5 },
-                { key: 'sweden', pct: 4 },
-            ],
-        },
-    },
-    2023: {
-        production: {
-            total: 30122,
-            items: [
-                { key: 'china', pct: 32 },
-                { key: 'usa', pct: 15 },
-                { key: 'india', pct: 7 },
-                { key: 'russia', pct: 4 },
-                { key: 'japan', pct: 3 },
-            ],
-            canada: { rank: 7, pct: 2 },
-        },
-        exports: {
-            total: 820,
-            items: [
-                { key: 'france', pct: 9 },
-                { key: 'germany', pct: 7 },
-                { key: 'canada', pct: 6 },
-                { key: 'laos', pct: 5 },
-                { key: 'sweden', pct: 4 },
-            ],
-        },
-    },
-    2024: {
-        production: {
-            total: 30350,
-            items: [
-                { key: 'china', pct: 32 },
-                { key: 'usa', pct: 15 },
-                { key: 'india', pct: 7 },
-                { key: 'russia', pct: 4 },
-                { key: 'japan', pct: 3 },
-            ],
-            canada: { rank: 7, pct: 2 },
-        },
-        exports: {
-            total: 828,
-            items: [
-                { key: 'france', pct: 9 },
-                { key: 'germany', pct: 7 },
-                { key: 'canada', pct: 6 },
-                { key: 'laos', pct: 5 },
-                { key: 'sweden', pct: 4 },
-            ],
-        },
-    },
-};
-
-const YEARS_DESC = [2024, 2023, 2022, 2021, 2020];
-const YEARS_ASC = [2020, 2021, 2022, 2023, 2024];
-const PRODUCTION_COLUMN_KEYS = ['china', 'usa', 'india', 'russia', 'japan', 'canada'];
-const EXPORT_COLUMN_KEYS = ['france', 'germany', 'canada', 'laos', 'sweden'];
-
-const pctForCountry = (items, key) => {
-    const it = items.find((i) => i.key === key);
-    return it != null ? Math.round(it.pct) : '';
-};
-
-const pctForProductionCanada = (bundle) => Math.round(bundle.canada.pct);
 
 const drawRoundedRect = (ctx, x, y, w, h, r) => {
     const radius = Math.min(r, w / 2, h / 2);
@@ -243,16 +112,43 @@ const exportCapsuleInfographicPng = ({ title, rows, filename }) => {
     });
 };
 
+const displayRow = (row, lang) => ({
+    ...row,
+    name: row.names[lang] || row.names.en,
+    pctRounded: Math.round(row.pct),
+});
+
+const shareForCode = (series, code) => {
+    const match = series?.rows.find((row) => row.code === code);
+    return match != null ? Math.round(match.pct) : '';
+};
+
 const ElectricityInternationalContext = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [year, setYear] = useState(YEARS_DESC[0]);
+    const [bundle, setBundle] = useState(null);
+    const [year, setYear] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getElectricityWorldProductionExportsData().then((data) => {
+            if (cancelled) return;
+            setBundle(data);
+            setYear((current) => (
+                current != null && data?.years.includes(current) ? current : data?.latestYear ?? null
+            ));
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-    const yearBundle = DATA_BY_YEAR[year] || DATA_BY_YEAR[YEARS_DESC[0]];
-    const production = yearBundle.production;
-    const exportsBlock = yearBundle.exports;
-    const yearSpanLabel = `${YEARS_ASC[0]}\u2013${YEARS_ASC[YEARS_ASC.length - 1]}`;
-    const yearSpanFile = `${YEARS_ASC[0]}-${YEARS_ASC[YEARS_ASC.length - 1]}`;
+    const yearsAsc = bundle?.years ?? [];
+    const yearsDesc = [...yearsAsc].reverse();
+    const production = year != null ? bundle?.production?.[year] : null;
+    const exportsBlock = year != null ? bundle?.exports?.[year] : null;
+    const yearSpanLabel = yearsAsc.length ? `${yearsAsc[0]}\u2013${yearsAsc[yearsAsc.length - 1]}` : '';
+    const yearSpanFile = yearsAsc.length ? `${yearsAsc[0]}-${yearsAsc[yearsAsc.length - 1]}` : '';
 
     const downloadFilename = (slugKey, yearSuffix = yearSpanFile) => {
         const slug = getText(slugKey, lang);
@@ -264,91 +160,87 @@ const ElectricityInternationalContext = () => {
     const formatTwh = (n) =>
         Math.round(n).toLocaleString(locale, { maximumFractionDigits: 0 });
 
-    const productionRows = useMemo(
-        () =>
-            production.items.map((row, index) => ({
-                ...row,
-                rank: index + 1,
-                name: electricityInternationalContextCountryLabel(row.key, lang),
-                pctRounded: Math.round(row.pct),
-            })),
-        [production.items, lang],
+    const productionTop = useMemo(
+        () => (production?.rows ?? []).filter((row) => row.rank <= 5).slice(0, 5).map((row) => displayRow(row, lang)),
+        [production, lang],
     );
-
+    const productionCanada = useMemo(() => {
+        const extra = (production?.rows ?? []).find((row) => row.isCanada && row.rank > 5);
+        return extra ? displayRow(extra, lang) : null;
+    }, [production, lang]);
     const exportRows = useMemo(
-        () =>
-            exportsBlock.items.map((row, index) => ({
-                ...row,
-                rank: index + 1,
-                name: electricityInternationalContextCountryLabel(row.key, lang),
-                pctRounded: Math.round(row.pct),
-            })),
-        [exportsBlock.items, lang],
+        () => (exportsBlock?.rows ?? []).map((row) => displayRow(row, lang)),
+        [exportsBlock, lang],
     );
 
-    const productionGraphicTitle = `${stripHtml(getText('electricity_international_context_production_label', lang))} \u2013 ${formatTwh(production.total)} ${getText('electricity_international_context_unit', lang)} (${year})`;
-    const exportsGraphicTitle = `${stripHtml(getText('electricity_international_context_exports_label', lang))} \u2013 ${formatTwh(exportsBlock.total)} ${getText('electricity_international_context_unit', lang)} (${year})`;
+    const productionGraphicTitle = production
+        ? `${stripHtml(getText('electricity_international_context_production_label', lang))} \u2013 ${formatTwh(production.total)} ${getText('electricity_international_context_unit', lang)} (${year})`
+        : '';
+    const exportsGraphicTitle = exportsBlock
+        ? `${stripHtml(getText('electricity_international_context_exports_label', lang))} \u2013 ${formatTwh(exportsBlock.total)} ${getText('electricity_international_context_unit', lang)} (${year})`
+        : '';
 
     const productionTableTitle = `${stripHtml(getText('electricity_international_context_production_label', lang))} (${yearSpanLabel})`;
     const exportsTableTitle = `${stripHtml(getText('electricity_international_context_exports_label', lang))} (${yearSpanLabel})`;
     const productionCaption = getText('electricity_international_context_table_caption_production', lang);
     const exportsCaption = getText('electricity_international_context_table_caption_exports', lang);
 
-    const productionAria =
-        lang === 'en'
-            ? `World electricity production ranking for ${year}: ${productionRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}. Rank ${production.canada.rank}, ${electricityInternationalContextCountryLabel('canada', lang)}, ${Math.round(production.canada.pct)} percent.`
-            : `Classement de la production mondiale d'électricité pour ${year}: ${productionRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}. Rang ${production.canada.rank}, ${electricityInternationalContextCountryLabel('canada', lang)}, ${Math.round(production.canada.pct)} pour cent.`;
+    const productionAria = production
+        ? (lang === 'en'
+            ? `World electricity production ranking for ${year}: ${productionTop.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}${productionCanada ? `. Rank ${productionCanada.rank}, ${productionCanada.name}, ${productionCanada.pctRounded} percent` : ''}.`
+            : `Classement de la production mondiale d'électricité pour ${year}: ${productionTop.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}${productionCanada ? `. Rang ${productionCanada.rank}, ${productionCanada.name}, ${productionCanada.pctRounded} pour cent` : ''}.`)
+        : '';
 
-    const exportsAria =
-        lang === 'en'
+    const exportsAria = exportsBlock
+        ? (lang === 'en'
             ? `World electricity exports ranking for ${year}: ${exportRows.map((r) => `Rank ${r.rank}, ${r.name}, ${r.pctRounded} percent`).join('. ')}.`
-            : `Classement des exportations mondiales d'électricité pour ${year}: ${exportRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}.`;
+            : `Classement des exportations mondiales d'électricité pour ${year}: ${exportRows.map((r) => `Rang ${r.rank}, ${r.name}, ${r.pctRounded} pour cent`).join('. ')}.`)
+        : '';
+
+    const productionColumns = productionCanada ? [...productionTop, productionCanada] : productionTop;
 
     const productionTableColumns = useMemo(() => [
         { key: 'year', header: getText('electricity_international_context_table_col_year', lang), align: 'left' },
         { key: 'total', header: getText('electricity_international_context_table_col_total', lang), align: 'num' },
-        ...PRODUCTION_COLUMN_KEYS.map((k) => ({
-            key: k,
-            header: `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`,
+        ...productionColumns.map((row) => ({
+            key: row.code,
+            header: `${row.name} (%)`,
             align: 'num',
         })),
-    ], [lang]);
+    ], [lang, productionColumns]);
 
     const exportTableColumns = useMemo(() => [
         { key: 'year', header: getText('electricity_international_context_table_col_year', lang), align: 'left' },
         { key: 'total', header: getText('electricity_international_context_table_col_total', lang), align: 'num' },
-        ...EXPORT_COLUMN_KEYS.map((k) => ({
-            key: k,
-            header: `${stripHtml(electricityInternationalContextCountryLabel(k, lang))} (%)`,
+        ...exportRows.map((row) => ({
+            key: row.code,
+            header: `${row.name} (%)`,
             align: 'num',
         })),
-    ], [lang]);
+    ], [lang, exportRows]);
 
     const productionTableRows = useMemo(
-        () =>
-            YEARS_ASC.map((y) => {
-                const b = DATA_BY_YEAR[y].production;
-                const row = { year: y, total: b.total };
-                PRODUCTION_COLUMN_KEYS.slice(0, -1).forEach((k) => {
-                    row[k] = pctForCountry(b.items, k);
-                });
-                row.canada = pctForProductionCanada(b);
-                return row;
-            }),
-        [],
+        () => yearsAsc.map((y) => {
+            const series = bundle?.production?.[y];
+            const row = { year: y, total: series?.total };
+            productionColumns.forEach((column) => {
+                row[column.code] = shareForCode(series, column.code);
+            });
+            return row;
+        }),
+        [yearsAsc, bundle, productionColumns],
     );
 
     const exportTableRows = useMemo(
-        () =>
-            YEARS_ASC.map((y) => {
-                const b = DATA_BY_YEAR[y].exports;
-                const row = { year: y, total: b.total };
-                EXPORT_COLUMN_KEYS.forEach((k) => {
-                    row[k] = pctForCountry(b.items, k);
-                });
-                return row;
-            }),
-        [],
+        () => yearsAsc.map((y) => {
+            const series = bundle?.exports?.[y];
+            const row = { year: y, total: series?.total };
+            exportRows.forEach((column) => {
+                row[column.code] = shareForCode(series, column.code);
+            });
+            return row;
+        }),
+        [yearsAsc, bundle, exportRows],
     );
 
     const downloadBtnStyle = {
@@ -364,15 +256,11 @@ const ElectricityInternationalContext = () => {
 
     const downloadProductionPng = () => {
         const rows = [
-            ...productionRows.map((row) => ({ ...row, isCanada: false, pct: row.pctRounded })),
-            { isEllipsis: true },
-            {
-                rank: production.canada.rank,
-                name: electricityInternationalContextCountryLabel('canada', lang),
-                pct: production.canada.pct,
-                pctRounded: Math.round(production.canada.pct),
-                isCanada: true,
-            },
+            ...productionTop.map((row) => ({ ...row, isCanada: row.isCanada, pct: row.pctRounded })),
+            ...(productionCanada ? [
+                { isEllipsis: true },
+                { ...productionCanada, isCanada: true, pct: productionCanada.pctRounded },
+            ] : []),
         ];
         exportCapsuleInfographicPng({
             title: productionGraphicTitle,
@@ -384,17 +272,16 @@ const ElectricityInternationalContext = () => {
     const downloadExportsPng = () => {
         exportCapsuleInfographicPng({
             title: exportsGraphicTitle,
-            rows: exportRows.map((row) => ({ ...row, isCanada: row.key === 'canada', pct: row.pctRounded })),
+            rows: exportRows.map((row) => ({ ...row, pct: row.pctRounded })),
             filename: downloadFilename('electricity_international_context_exports_png_slug', year),
         });
     };
 
     const renderCapsuleRow = (row, maxPct) => {
-        const isCanada = row.key === 'canada' || row.isCanada;
         const rawRatio = maxPct > 0 ? row.pct / maxPct : 1;
         const barWidthPct = 62 + 18 * rawRatio;
         return (
-            <div key={`${row.rank}-${row.name}`} className={`electricity-international-context-capsule-row ${isCanada ? 'electricity-international-context-capsule-row-canada' : ''}`}>
+            <div key={`${row.rank}-${row.code}`} className={`electricity-international-context-capsule-row ${row.isCanada ? 'electricity-international-context-capsule-row-canada' : ''}`}>
                 <div className="electricity-international-context-capsule-bar-wrap">
                     <div className="electricity-international-context-capsule-bar" style={{ width: `${barWidthPct}%` }}>
                         <span className="electricity-international-context-capsule-bar-text">{row.rank} {row.name}</span>
@@ -409,21 +296,16 @@ const ElectricityInternationalContext = () => {
     };
 
     const renderProductionCapsules = () => {
-        const maxPct = productionRows[0]?.pct || 1;
+        const maxPct = productionTop[0]?.pct || 1;
         return (
             <>
-                {productionRows.map((row) => renderCapsuleRow(row, maxPct))}
-                <div className="electricity-international-context-capsule-row electricity-international-context-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
-                {renderCapsuleRow(
-                    {
-                        rank: production.canada.rank,
-                        name: electricityInternationalContextCountryLabel('canada', lang),
-                        pct: production.canada.pct,
-                        pctRounded: Math.round(production.canada.pct),
-                        isCanada: true,
-                    },
-                    maxPct,
-                )}
+                {productionTop.map((row) => renderCapsuleRow(row, maxPct))}
+                {productionCanada ? (
+                    <>
+                        <div className="electricity-international-context-capsule-row electricity-international-context-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
+                        {renderCapsuleRow(productionCanada, maxPct)}
+                    </>
+                ) : null}
             </>
         );
     };
@@ -483,8 +365,8 @@ const ElectricityInternationalContext = () => {
                     lang={lang}
                     id="electricity-international-context-year"
                     label={getText('year_slider_label', lang)}
-                    years={YEARS_DESC}
-                    value={year}
+                    years={yearsDesc}
+                    value={year ?? yearsDesc[0]}
                     onChange={setYear}
                 />
                 <div role="status" className="wb-inv" aria-live="polite">
@@ -511,7 +393,7 @@ const ElectricityInternationalContext = () => {
                                 filename: downloadFilename('electricity_international_context_production_docx_slug'),
                                 title: productionTableTitle,
                                 titleAlign: 'center',
-                                columnWidths: [1200, 1800, ...PRODUCTION_COLUMN_KEYS.map(() => 1200)],
+                                columnWidths: [1200, 1800, ...productionColumns.map(() => 1200)],
                                 fontSize: 22,
                             }}
                             caption={productionCaption}
@@ -541,7 +423,7 @@ const ElectricityInternationalContext = () => {
                                 filename: downloadFilename('electricity_international_context_exports_docx_slug'),
                                 title: exportsTableTitle,
                                 titleAlign: 'center',
-                                columnWidths: [1200, 1800, ...EXPORT_COLUMN_KEYS.map(() => 1280)],
+                                columnWidths: [1200, 1800, ...exportRows.map(() => 1280)],
                                 fontSize: 22,
                             }}
                             caption={exportsCaption}

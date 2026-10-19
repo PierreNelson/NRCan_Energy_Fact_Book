@@ -11,6 +11,7 @@ import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
+import { getCanadaGlobalEnergyTradeData } from '../utils/dataLoader';
 
 const canada_global_energy_trade_CAT_ORDER = [
     'coal',
@@ -39,192 +40,16 @@ const canada_global_energy_trade_COLORS = {
     other: '#7f8c8d',
 };
 
-const canada_global_energy_trade_DATA = [
-    {
-        year: 2017,
-        totalExp: 169,
-        totalImp: 71,
-        exp_coal: 8.45,
-        imp_coal: 7.1,
-        exp_crude: 81.12,
-        imp_crude: 14.2,
-        exp_rpp: 25.35,
-        imp_rpp: 21.3,
-        exp_gas: 16.9,
-        imp_gas: 8.52,
-        exp_ngl: 11.83,
-        imp_ngl: 3.55,
-        exp_uranium: 4.225,
-        imp_uranium: 0.568,
-        exp_electricity: 9.295,
-        imp_electricity: 7.1,
-        exp_biofuels: 3.38,
-        imp_biofuels: 2.84,
-        exp_other: 8.45,
-        imp_other: 5.822,
-    },
-    {
-        year: 2018,
-        totalExp: 171,
-        totalImp: 71,
-        exp_coal: 8.55,
-        imp_coal: 7.1,
-        exp_crude: 82.08,
-        imp_crude: 14.2,
-        exp_rpp: 25.65,
-        imp_rpp: 21.3,
-        exp_gas: 17.1,
-        imp_gas: 8.52,
-        exp_ngl: 11.97,
-        imp_ngl: 3.55,
-        exp_uranium: 4.275,
-        imp_uranium: 0.568,
-        exp_electricity: 9.405,
-        imp_electricity: 7.1,
-        exp_biofuels: 3.42,
-        imp_biofuels: 2.84,
-        exp_other: 8.55,
-        imp_other: 5.822,
-    },
-    {
-        year: 2019,
-        totalExp: 186,
-        totalImp: 69,
-        exp_coal: 9.3,
-        imp_coal: 6.9,
-        exp_crude: 89.28,
-        imp_crude: 13.8,
-        exp_rpp: 27.9,
-        imp_rpp: 20.7,
-        exp_gas: 18.6,
-        imp_gas: 8.28,
-        exp_ngl: 13.02,
-        imp_ngl: 3.45,
-        exp_uranium: 4.65,
-        imp_uranium: 0.552,
-        exp_electricity: 10.23,
-        imp_electricity: 6.9,
-        exp_biofuels: 3.72,
-        imp_biofuels: 2.76,
-        exp_other: 9.3,
-        imp_other: 5.658,
-    },
-    {
-        year: 2020,
-        totalExp: 182,
-        totalImp: 64,
-        exp_coal: 9.1,
-        imp_coal: 6.4,
-        exp_crude: 87.36,
-        imp_crude: 12.8,
-        exp_rpp: 27.3,
-        imp_rpp: 19.2,
-        exp_gas: 18.2,
-        imp_gas: 7.68,
-        exp_ngl: 12.74,
-        imp_ngl: 3.2,
-        exp_uranium: 4.55,
-        imp_uranium: 0.512,
-        exp_electricity: 10.01,
-        imp_electricity: 6.4,
-        exp_biofuels: 3.64,
-        imp_biofuels: 2.56,
-        exp_other: 9.1,
-        imp_other: 5.248,
-    },
-    {
-        year: 2021,
-        totalExp: 191,
-        totalImp: 66,
-        exp_coal: 9.55,
-        imp_coal: 6.6,
-        exp_crude: 91.68,
-        imp_crude: 13.2,
-        exp_rpp: 28.65,
-        imp_rpp: 19.8,
-        exp_gas: 19.1,
-        imp_gas: 7.92,
-        exp_ngl: 13.37,
-        imp_ngl: 3.3,
-        exp_uranium: 4.775,
-        imp_uranium: 0.528,
-        exp_electricity: 10.505,
-        imp_electricity: 6.6,
-        exp_biofuels: 3.82,
-        imp_biofuels: 2.64,
-        exp_other: 9.55,
-        imp_other: 5.412,
-    },
-    {
-        year: 2022,
-        totalExp: 189,
-        totalImp: 57,
-        exp_coal: 9.45,
-        imp_coal: 5.7,
-        exp_crude: 90.72,
-        imp_crude: 11.4,
-        exp_rpp: 28.35,
-        imp_rpp: 17.1,
-        exp_gas: 18.9,
-        imp_gas: 6.84,
-        exp_ngl: 13.23,
-        imp_ngl: 2.85,
-        exp_uranium: 4.725,
-        imp_uranium: 0.456,
-        exp_electricity: 10.395,
-        imp_electricity: 5.7,
-        exp_biofuels: 3.78,
-        imp_biofuels: 2.28,
-        exp_other: 9.45,
-        imp_other: 4.674,
-    },
-    {
-        year: 2023,
-        totalExp: 195,
-        totalImp: 58,
-        exp_coal: 9.75,
-        imp_coal: 5.8,
-        exp_crude: 93.6,
-        imp_crude: 11.6,
-        exp_rpp: 29.25,
-        imp_rpp: 17.4,
-        exp_gas: 19.5,
-        imp_gas: 6.96,
-        exp_ngl: 13.65,
-        imp_ngl: 2.9,
-        exp_uranium: 4.875,
-        imp_uranium: 0.464,
-        exp_electricity: 10.725,
-        imp_electricity: 5.8,
-        exp_biofuels: 3.9,
-        imp_biofuels: 2.32,
-        exp_other: 9.75,
-        imp_other: 4.756,
-    },
-    {
-        year: 2024,
-        totalExp: 208,
-        totalImp: 56,
-        exp_coal: 10.4,
-        imp_coal: 5.6,
-        exp_crude: 99.84,
-        imp_crude: 11.2,
-        exp_rpp: 31.2,
-        imp_rpp: 16.8,
-        exp_gas: 20.8,
-        imp_gas: 6.72,
-        exp_ngl: 14.56,
-        imp_ngl: 2.8,
-        exp_uranium: 5.2,
-        imp_uranium: 0.448,
-        exp_electricity: 11.44,
-        imp_electricity: 5.6,
-        exp_biofuels: 4.16,
-        imp_biofuels: 2.24,
-        exp_other: 10.4,
-        imp_other: 4.592,
-    },
-];
+const roundHalfUp = (value, digits) => {
+    const factor = 10 ** digits;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
+};
+
+const tradeQualifier = (shown, underlying) => {
+    if (shown > underlying) return 'nearly';
+    if (shown < underlying) return 'over';
+    return '';
+};
 
 const CanadaGlobalEnergyTrade = () => {
     const { lang } = useOutletContext();
@@ -254,8 +79,23 @@ const CanadaGlobalEnergyTrade = () => {
      * screen width vs innerWidth when the layout viewport is unusually narrow (not media queries).
      */
     const [effectiveZoom, setEffectiveZoom] = useState(1);
+    const [tradeRows, setTradeRows] = useState([]);
 
-    const years = useMemo(() => canada_global_energy_trade_DATA.map((r) => r.year), []);
+    useEffect(() => {
+        let cancelled = false;
+        getCanadaGlobalEnergyTradeData()
+            .then((rows) => {
+                if (!cancelled) setTradeRows(Array.isArray(rows) ? rows : []);
+            })
+            .catch((err) => {
+                console.error('Failed to load global energy trade data:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const years = useMemo(() => tradeRows.map((r) => r.year), [tradeRows]);
 
     useLayoutEffect(() => {
         const el = chartSlotRef.current;
@@ -326,17 +166,65 @@ const CanadaGlobalEnergyTrade = () => {
         };
     }, []);
 
-    const canadaGlobalEnergyTradeYearRange = useMemo(() => ({ min: 2017, max: 2024 }), []);
+    const canadaGlobalEnergyTradeYearRange = useMemo(() => {
+        if (!tradeRows.length) return { min: '', max: '' };
+        const yearValues = tradeRows.map((row) => row.year);
+        return { min: Math.min(...yearValues), max: Math.max(...yearValues) };
+    }, [tradeRows]);
+
+    const tradeNarrative = useMemo(() => {
+        if (!tradeRows.length) return null;
+        const expBillion = tradeRows.reduce((sum, row) => sum + Number(row.totalExp), 0);
+        const impBillion = tradeRows.reduce((sum, row) => sum + Number(row.totalImp), 0);
+        const expTrillion = expBillion / 1000;
+        const expShown = roundHalfUp(expTrillion, 1);
+        const impShown = roundHalfUp(impBillion, 0);
+        const yearValues = tradeRows.map((row) => row.year);
+        const formatAmount = (value, digits) => (
+            lang === 'fr'
+                ? Number(value).toLocaleString('fr-CA', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+                : Number(value).toLocaleString('en-CA', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+        );
+        const expAmount = lang === 'fr'
+            ? `${formatAmount(expShown * 1000, 0)} milliards de dollars`
+            : `$${formatAmount(expShown, 1)} trillion`;
+        const impAmount = lang === 'fr'
+            ? `${formatAmount(impShown, 0)} milliards de dollars`
+            : `$${formatAmount(impShown, 0)} billion`;
+        const expAmountSpoken = lang === 'fr'
+            ? expAmount
+            : `${formatAmount(expShown, 1)} trillions of dollars`;
+        const impAmountSpoken = lang === 'fr'
+            ? impAmount
+            : `${formatAmount(impShown, 0)} billions of dollars`;
+        return {
+            startYear: Math.min(...yearValues),
+            endYear: Math.max(...yearValues),
+            expWord: tradeQualifier(expShown, expTrillion),
+            impWord: tradeQualifier(impShown, impBillion),
+            expAmount,
+            impAmount,
+            expAmountSpoken,
+            impAmountSpoken,
+        };
+    }, [lang, tradeRows]);
 
     const canadaGlobalEnergyTradeExportStem = useMemo(
         () => `${canada_global_energy_trade_EXPORT_FILE_BASE}-${canadaGlobalEnergyTradeYearRange.min}-${canadaGlobalEnergyTradeYearRange.max}`,
         [canadaGlobalEnergyTradeYearRange.min, canadaGlobalEnergyTradeYearRange.max]
     );
 
-    const formatBillions = useCallback(
-        (n) => (lang === 'fr' ? Number(n).toLocaleString('fr-CA') : Number(n).toLocaleString('en-CA')),
-        [lang]
-    );
+    const formatBillions = useCallback((n, digits) => {
+        const value = Number(n);
+        if (digits === 0) {
+            const rounded = roundHalfUp(value, 0);
+            const options = { maximumFractionDigits: 0 };
+            return lang === 'fr'
+                ? rounded.toLocaleString('fr-CA', options)
+                : rounded.toLocaleString('en-CA', options);
+        }
+        return lang === 'fr' ? value.toLocaleString('fr-CA') : value.toLocaleString('en-CA');
+    }, [lang]);
 
     const exportChartTitle = stripHtml(getText('canada_global_energy_trade_chart_title', lang));
     const chartSubtitle = getText('canada_global_energy_trade_chart_subtitle', lang);
@@ -348,15 +236,15 @@ const CanadaGlobalEnergyTrade = () => {
     /** Category rows per year, then a total row for that year (on-page table + CSV/DOCX). */
     const tableRowsWithTotals = useMemo(() => {
         const rows = [];
-        for (const r of canada_global_energy_trade_DATA) {
+        for (const r of tradeRows) {
             for (const key of canada_global_energy_trade_CAT_ORDER) {
                 rows.push({
                     rowKind: 'category',
                     year: r.year,
                     categoryKey: key,
                     categoryLabel: getText(`canada_global_energy_trade_cat_${key}`, lang),
-                    exports: r[`exp_${key}`],
-                    imports: r[`imp_${key}`],
+                    exports: roundHalfUp(Number(r[`exp_${key}`]), 3),
+                    imports: roundHalfUp(Number(r[`imp_${key}`]), 3),
                 });
             }
             rows.push({
@@ -364,12 +252,12 @@ const CanadaGlobalEnergyTrade = () => {
                 year: r.year,
                 categoryKey: 'total',
                 categoryLabel: getText('canada_global_energy_trade_table_row_total', lang),
-                exports: r.totalExp,
-                imports: r.totalImp,
+                exports: roundHalfUp(Number(r.totalExp), 0),
+                imports: roundHalfUp(Number(r.totalImp), 0),
             });
         }
         return rows;
-    }, [lang]);
+    }, [lang, tradeRows]);
 
     const tableColumns = useMemo(() => [
         { key: 'year', header: getText('canada_global_energy_trade_table_year', lang), align: 'left' },
@@ -426,7 +314,7 @@ const CanadaGlobalEnergyTrade = () => {
             traces.push({
                 type: 'bar',
                 x: years,
-                y: canada_global_energy_trade_DATA.map((r) => r[`exp_${key}`]),
+                y: tradeRows.map((r) => r[`exp_${key}`]),
                 name: getText(`canada_global_energy_trade_cat_${key}`, lang),
                 legendgroup: key,
                 marker: { color, opacity: barOpacityForTrace(curveNumber), line: { width: 0 } },
@@ -443,7 +331,7 @@ const CanadaGlobalEnergyTrade = () => {
             traces.push({
                 type: 'bar',
                 x: years,
-                y: canada_global_energy_trade_DATA.map((r) => -r[`imp_${key}`]),
+                y: tradeRows.map((r) => -r[`imp_${key}`]),
                 name: getText(`canada_global_energy_trade_cat_${key}`, lang),
                 legendgroup: key,
                 showlegend: false,
@@ -453,7 +341,7 @@ const CanadaGlobalEnergyTrade = () => {
                     lang === 'fr'
                         ? `<b>%{x}</b><br>${getText(`canada_global_energy_trade_cat_${key}`, lang)}<br>%{customdata:.2f} Md$<extra></extra>`
                         : `<b>%{x}</b><br>${getText(`canada_global_energy_trade_cat_${key}`, lang)}<br>$%{customdata:.2f}B<extra></extra>`,
-                customdata: canada_global_energy_trade_DATA.map((r) => r[`imp_${key}`]),
+                customdata: tradeRows.map((r) => r[`imp_${key}`]),
             });
             curveNumber += 1;
         }
@@ -485,14 +373,16 @@ const CanadaGlobalEnergyTrade = () => {
         const barTotalsMatchAxisTicks = effectiveZoom >= 4;
         const barTotalFontSize =
             effectiveZoom >= 5 ? Math.max(8, axisTickFontSize - 1) : axisTickFontSize;
-        const annotations = canada_global_energy_trade_DATA.map((r) => {
-            const expText = lang === 'fr' ? `${r.totalExp} $` : `$${r.totalExp}`;
-            const impText = lang === 'fr' ? `${r.totalImp} $` : `$${r.totalImp}`;
-            const bold2019 = r.year === 2019;
-            const bold2024 = r.year === 2024;
+        const annotations = tradeRows.map((r) => {
+            const expWhole = roundHalfUp(r.totalExp, 0);
+            const impWhole = roundHalfUp(r.totalImp, 0);
+            const expText = lang === 'fr' ? `${formatBillions(expWhole, 0)} $` : `$${formatBillions(expWhole, 0)}`;
+            const impText = lang === 'fr' ? `${formatBillions(impWhole, 0)} $` : `$${formatBillions(impWhole, 0)}`;
+            const latestYear = tradeRows[tradeRows.length - 1]?.year;
+            const emphasizeExport = r.year === 2019 || r.year === latestYear;
             const expSize = barTotalsMatchAxisTicks
                 ? barTotalFontSize
-                : bold2019 || bold2024
+                : emphasizeExport
                   ? 13
                   : 12;
             const impSize = barTotalsMatchAxisTicks ? barTotalFontSize : r.year === 2017 ? 13 : 12;
@@ -593,6 +483,8 @@ const CanadaGlobalEnergyTrade = () => {
                 xanchor: 'center',
                 font: { size: legendFontSize, family: 'Arial, sans-serif', color: '#000000' },
                 traceorder: 'normal',
+                itemclick: false,
+                itemdoubleclick: false,
             },
             margin: { l: 58, r: 8, t: 24, b: bottomMargin },
             height: plotHeight,
@@ -604,7 +496,7 @@ const CanadaGlobalEnergyTrade = () => {
         };
 
         return { data: traces, layout };
-    }, [lang, years, selectedSegments, windowWidth, effectiveZoom, plotSlotWidth]);
+    }, [lang, years, tradeRows, selectedSegments, windowWidth, effectiveZoom, plotSlotWidth, formatBillions]);
 
     useEffect(() => {
         if (!chartRef?.current) return;
@@ -700,6 +592,7 @@ const CanadaGlobalEnergyTrade = () => {
     );
 
     const getChartSummary = () => {
+        if (!years.length) return '';
         const totalExportsLabel = lang === 'en' ? 'Total exports' : 'Total des exportations';
         const totalImportsLabel = lang === 'en' ? 'Total imports' : 'Total des importations';
         const body = summarizeByCategory({
@@ -707,13 +600,13 @@ const CanadaGlobalEnergyTrade = () => {
             series: [
                 {
                     name: totalExportsLabel,
-                    values: canada_global_energy_trade_DATA.map((r) => r.totalExp),
-                    format: (v) => `${formatBillions(v)} ${unitText}`,
+                    values: tradeRows.map((r) => r.totalExp),
+                    format: (v) => `${formatBillions(v, 0)} ${unitText}`,
                 },
                 {
                     name: totalImportsLabel,
-                    values: canada_global_energy_trade_DATA.map((r) => r.totalImp),
-                    format: (v) => `${formatBillions(v)} ${unitText}`,
+                    values: tradeRows.map((r) => r.totalImp),
+                    format: (v) => `${formatBillions(v, 0)} ${unitText}`,
                 },
             ],
             lang,
@@ -810,6 +703,11 @@ const CanadaGlobalEnergyTrade = () => {
     flex: 1 1 auto;
     min-width: 0;
     position: relative;
+}
+.canada-global-energy-trade-chart-main .legend,
+.canada-global-energy-trade-chart-main .legendtoggle {
+    pointer-events: none;
+    cursor: default;
 }
 .canada-global-energy-trade-callouts {
     font-family: 'Noto Sans', sans-serif;
@@ -1145,18 +1043,38 @@ const CanadaGlobalEnergyTrade = () => {
                             caption={exportChartTitle}
                             tableAriaLabel={exportChartTitle}
                             renderCell={(raw, { row, colIndex }) => {
-                                const text = colIndex <= 1 ? String(raw ?? '') : formatBillions(raw);
+                                const text = colIndex <= 1
+                                    ? String(raw ?? '')
+                                    : formatBillions(raw, row.rowKind === 'total' ? 0 : undefined);
                                 return row.rowKind === 'total' ? <strong>{text}</strong> : text;
                             }}
                         />
                     </div>
                 </div>
                 <p className="canada-global-energy-trade-summary canada-global-energy-trade-summary--below-frame">
-                    {getText('canada_global_energy_trade_summary_before', lang)}
-                    <strong>{getText('canada_global_energy_trade_summary_bold_exp', lang)}</strong>
-                    {getText('canada_global_energy_trade_summary_mid', lang)}
-                    <strong>{getText('canada_global_energy_trade_summary_bold_imp', lang)}</strong>
-                    {getText('canada_global_energy_trade_summary_after', lang)}
+                    {tradeNarrative ? (
+                        <>
+                            {getText('canada_global_energy_trade_summary_before', lang)
+                                .replace('{{start}}', String(tradeNarrative.startYear))
+                                .replace('{{end}}', String(tradeNarrative.endYear))}
+                            {tradeNarrative.expWord
+                                ? `${getText(`canada_global_energy_trade_summary_${tradeNarrative.expWord}`, lang)} `
+                                : ''}
+                            <strong>
+                                <span className="wb-inv">{tradeNarrative.expAmountSpoken}</span>
+                                <span aria-hidden="true">{tradeNarrative.expAmount}</span>
+                            </strong>
+                            {getText('canada_global_energy_trade_summary_mid', lang)}
+                            {tradeNarrative.impWord
+                                ? `${getText(`canada_global_energy_trade_summary_${tradeNarrative.impWord}`, lang)} `
+                                : ''}
+                            <strong>
+                                <span className="wb-inv">{tradeNarrative.impAmountSpoken}</span>
+                                <span aria-hidden="true">{tradeNarrative.impAmount}</span>
+                            </strong>
+                            {getText('canada_global_energy_trade_summary_after', lang)}
+                        </>
+                    ) : null}
                 </p>
             </div>
         </PageShell>

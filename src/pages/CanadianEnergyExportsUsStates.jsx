@@ -3,7 +3,6 @@ import ChartDataTable from '../components/ChartDataTable';
 import ClearSelectionButton from '../components/ClearSelectionButton';
 import FootnoteMarker from '../components/FootnoteMarker';
 import PageFootnotes from '../components/PageFootnotes';
-import YearSelect from '../components/YearSelect';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import useWindowWidth from '../hooks/useWindowWidth';
 import usePlotlySelection from '../hooks/usePlotlySelection';
@@ -17,6 +16,7 @@ import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
+import { getUsStateEnergyExportsData } from '../utils/dataLoader';
 
 /** Full names for hover (EN / FR) — matches common factbook usage */
 const US_STATE_NAME_EN = {
@@ -247,78 +247,89 @@ const canadian_energy_exports_us_states_INTERNAL_LABEL_POS = {
 
 const canadian_energy_exports_us_states_EXTERNAL_ORDER = ['ME', 'VT', 'NH', 'MA', 'RI', 'CT', 'NJ', 'DE', 'MD', 'DC'];
 
-const canadian_energy_exports_us_states_ROWS_2024 = [
-    ['AK', 'Alaska', 'Alaska', 614, 1.5, 64.2, -149.5],
-    ['AL', 'Ala.', 'Ala.', 309, 1.2, 32.779, -86.83],
-    ['AR', 'Ark.', 'Ark.', 84, 0.5, 34.97, -92.37],
-    ['AZ', 'Ariz.', 'Ariz.', 157, 0.4, 34.27, -111.66],
-    ['CA', 'Calif.', 'Calif.', 4563, 1.8, 36.12, -119.68],
-    ['CO', 'Colo.', 'Colo.', 4892, 2.0, 39.06, -105.31],
-    ['CT', 'Conn.', 'Conn.', 958, 1.9, 41.6, -72.7],
-    ['DC', 'D.C.', 'D.C.', 263, 2.2, 38.91, -77.01],
-    ['DE', 'Del.', 'Del.', 1091, 5.2, 38.99, -75.51],
-    ['FL', 'Fla.', 'Fla.', 268, 0.6, 28.63, -82.45],
-    ['GA', 'Ga.', 'Ga.', 105, 0.4, 32.17, -83.42],
-    ['HI', 'Hawaii', 'Hawaii', 31, 0.3, 20.79, -156.33],
-    ['IA', 'Iowa', 'Iowa', 168, 0.5, 41.88, -93.1],
-    ['ID', 'Idaho', 'Idaho', 131, 1.0, 44.35, -114.61],
-    ['IL', 'Ill.', 'Ill.', 69670, 7.2, 40.63, -89.4],
-    ['IN', 'Ind.', 'Ind.', 471, 0.9, 39.85, -86.26],
-    ['KS', 'Kans.', 'Kans.', 100, 0.4, 38.53, -96.73],
-    ['KY', 'Ky.', 'Ky.', 143, 0.5, 37.84, -85.2],
-    ['LA', 'La.', 'La.', 1643, 2.5, 31.17, -91.87],
-    ['MA', 'Mass.', 'Mass.', 4936, 3.5, 42.16, -71.53],
-    ['MD', 'Md.', 'Md.', 153, 0.7, 39.05, -76.73],
-    ['ME', 'Me.', 'Me.', 4069, 6.2, 45.37, -69.2],
-    ['MI', 'Mich.', 'Mich.', 7577, 4.8, 43.33, -84.54],
-    ['MN', 'Minn.', 'Minn.', 13893, 3.8, 45.73, -93.9],
-    ['MO', 'Mo.', 'Mo.', 359, 0.9, 38.46, -92.37],
-    ['MS', 'Miss.', 'Miss.', 605, 1.8, 32.74, -89.67],
-    ['MT', 'Mont.', 'Mont.', 7343, 7.0, 47.05, -110.45],
-    ['NC', 'N.C.', 'N.C.', 241, 0.9, 35.63, -79.81],
-    ['ND', 'N.D.', 'N.D.', 644, 3.2, 47.53, -99.78],
-    ['NE', 'Nebr.', 'Nebr.', 21, 0.3, 41.54, -99.81],
-    ['NH', 'N.H.', 'N.H.', 703, 2.8, 43.94, -71.58],
-    ['NJ', 'N.J.', 'N.J.', 3611, 3.2, 40.19, -74.67],
-    ['NM', 'N.Mex.', 'N.Mex.', 580, 1.9, 34.84, -106.25],
-    ['NV', 'Nev.', 'Nev.', 231, 0.6, 38.31, -117.03],
-    ['NY', 'N.Y.', 'N.Y.', 2824, 2.5, 42.95, -75.53],
-    ['OH', 'Ohio', 'Ohio', 5759, 2.2, 40.39, -82.79],
-    ['OK', 'Okla.', 'Okla.', 10584, 5.4, 35.56, -96.93],
-    ['OR', 'Ore.', 'Ore.', 658, 1.0, 44.57, -122.53],
-    ['PA', 'Penn.', 'Penn.', 2853, 2.8, 41.2, -77.2],
-    ['RI', 'R.I.', 'R.I.', 1339, 5.5, 41.68, -71.56],
-    ['SC', 'S.C.', 'S.C.', 162, 0.6, 33.92, -80.34],
-    ['SD', 'S.D.', 'S.D.', 21, 0.4, 44.44, -100.23],
-    ['TN', 'Tenn.', 'Tenn.', 143, 0.5, 35.86, -86.35],
-    ['TX', 'Tex.', 'Tex.', 12639, 1.5, 31.05, -97.56],
-    ['UT', 'Utah', 'Utah', 213, 0.5, 40.15, -111.86],
-    ['VA', 'Va.', 'Va.', 150, 0.7, 37.77, -78.17],
-    ['VT', 'Vt.', 'Vt.', 1236, 6.8, 44.56, -72.58],
-    ['WA', 'Wash.', 'Wash.', 13531, 4.0, 47.62, -120.74],
-    ['WI', 'Wis.', 'Wis.', 822, 1.8, 44.26, -89.62],
-    ['WV', 'W.Va.', 'W.Va.', 130, 1.0, 38.97, -80.33],
-    ['WY', 'Wyo.', 'Wyo.', 273, 2.1, 42.75, -107.3],
-].map(([code, abbrevEn, abbrevFr, exportMil, pctGdp, lat, lon]) => ({
+const canadian_energy_exports_us_states_LAYOUT = [
+    ['AK', 'Alaska', 'Alaska', 64.2, -149.5],
+    ['AL', 'Ala.', 'Ala.', 32.779, -86.83],
+    ['AR', 'Ark.', 'Ark.', 34.97, -92.37],
+    ['AZ', 'Ariz.', 'Ariz.', 34.27, -111.66],
+    ['CA', 'Calif.', 'Calif.', 36.12, -119.68],
+    ['CO', 'Colo.', 'Colo.', 39.06, -105.31],
+    ['CT', 'Conn.', 'Conn.', 41.6, -72.7],
+    ['DC', 'D.C.', 'D.C.', 38.91, -77.01],
+    ['DE', 'Del.', 'Del.', 38.99, -75.51],
+    ['FL', 'Fla.', 'Fla.', 28.63, -82.45],
+    ['GA', 'Ga.', 'Ga.', 32.17, -83.42],
+    ['HI', 'Hawaii', 'Hawaii', 20.79, -156.33],
+    ['IA', 'Iowa', 'Iowa', 41.88, -93.1],
+    ['ID', 'Idaho', 'Idaho', 44.35, -114.61],
+    ['IL', 'Ill.', 'Ill.', 40.63, -89.4],
+    ['IN', 'Ind.', 'Ind.', 39.85, -86.26],
+    ['KS', 'Kans.', 'Kans.', 38.53, -96.73],
+    ['KY', 'Ky.', 'Ky.', 37.84, -85.2],
+    ['LA', 'La.', 'La.', 31.17, -91.87],
+    ['MA', 'Mass.', 'Mass.', 42.16, -71.53],
+    ['MD', 'Md.', 'Md.', 39.05, -76.73],
+    ['ME', 'Me.', 'Me.', 45.37, -69.2],
+    ['MI', 'Mich.', 'Mich.', 43.33, -84.54],
+    ['MN', 'Minn.', 'Minn.', 45.73, -93.9],
+    ['MO', 'Mo.', 'Mo.', 38.46, -92.37],
+    ['MS', 'Miss.', 'Miss.', 32.74, -89.67],
+    ['MT', 'Mont.', 'Mont.', 47.05, -110.45],
+    ['NC', 'N.C.', 'N.C.', 35.63, -79.81],
+    ['ND', 'N.D.', 'N.D.', 47.53, -99.78],
+    ['NE', 'Nebr.', 'Nebr.', 41.54, -99.81],
+    ['NH', 'N.H.', 'N.H.', 43.94, -71.58],
+    ['NJ', 'N.J.', 'N.J.', 40.19, -74.67],
+    ['NM', 'N.Mex.', 'N.Mex.', 34.84, -106.25],
+    ['NV', 'Nev.', 'Nev.', 38.31, -117.03],
+    ['NY', 'N.Y.', 'N.Y.', 42.95, -75.53],
+    ['OH', 'Ohio', 'Ohio', 40.39, -82.79],
+    ['OK', 'Okla.', 'Okla.', 35.56, -96.93],
+    ['OR', 'Ore.', 'Ore.', 44.57, -122.53],
+    ['PA', 'Penn.', 'Penn.', 41.2, -77.2],
+    ['RI', 'R.I.', 'R.I.', 41.68, -71.56],
+    ['SC', 'S.C.', 'S.C.', 33.92, -80.34],
+    ['SD', 'S.D.', 'S.D.', 44.44, -100.23],
+    ['TN', 'Tenn.', 'Tenn.', 35.86, -86.35],
+    ['TX', 'Tex.', 'Tex.', 31.05, -97.56],
+    ['UT', 'Utah', 'Utah', 40.15, -111.86],
+    ['VA', 'Va.', 'Va.', 37.77, -78.17],
+    ['VT', 'Vt.', 'Vt.', 44.56, -72.58],
+    ['WA', 'Wash.', 'Wash.', 47.62, -120.74],
+    ['WI', 'Wis.', 'Wis.', 44.26, -89.62],
+    ['WV', 'W.Va.', 'W.Va.', 38.97, -80.33],
+    ['WY', 'Wyo.', 'Wyo.', 42.75, -107.3],
+].map(([code, abbrevEn, abbrevFr, lat, lon]) => ({
     code,
     abbrevEn,
     abbrevFr,
-    exportMil,
-    pctGdp,
     lat,
     lon,
 }));
 
-/** Add new years when data are available; map year → row list (same shape as canadian_energy_exports_us_states_ROWS_2024). */
-const canadian_energy_exports_us_states_DATA_BY_YEAR = {
-    2024: canadian_energy_exports_us_states_ROWS_2024,
+const MAP_BG = '#f5f5f5';
+
+const rowsForYear = (year, byYear) => {
+    const metrics = byYear[year] || [];
+    const byCode = new Map(metrics.map((row) => [row.code, row]));
+    return canadian_energy_exports_us_states_LAYOUT.flatMap((layout) => {
+        const metric = byCode.get(layout.code);
+        if (!metric) return [];
+        return [{ ...layout, exportMil: metric.exportMil, pctGdp: metric.pctGdp }];
+    });
 };
 
-const canadian_energy_exports_us_states_YEAR_LIST = Object.keys(canadian_energy_exports_us_states_DATA_BY_YEAR)
-    .map(Number)
-    .sort((a, b) => b - a);
+const formatGdpShare = (value, lang) => {
+    const text = (Math.round(Number(value) * 10) / 10).toFixed(1);
+    return lang === 'fr' ? text.replace('.', ',') : text;
+};
 
-const MAP_BG = '#f5f5f5';
+const formatScaleTick = (value, lang) => {
+    const rounded = Math.round(Number(value) * 10) / 10;
+    const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+    const shown = lang === 'fr' ? text.replace('.', ',') : text;
+    return lang === 'fr' ? `${shown} %` : `${shown}%`;
+};
 
 const toFileSlug = (text) => {
     const s = stripHtml(text)
@@ -340,7 +351,8 @@ const CanadianEnergyExportsUsStates = () => {
     const [sessionDevicePixelRatio] = useState(() =>
         typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
     );
-    const [selectedYear, setSelectedYear] = useState(canadian_energy_exports_us_states_YEAR_LIST[0] ?? 2024);
+    const [rowsByYear, setRowsByYear] = useState({});
+    const [selectedYear, setSelectedYear] = useState(null);
     const {
         selected: selectedPoints,
         clear: clearSelection,
@@ -357,12 +369,47 @@ const CanadianEnergyExportsUsStates = () => {
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        getUsStateEnergyExportsData()
+            .then((data) => {
+                if (cancelled) return;
+                const next = {};
+                (Array.isArray(data) ? data : []).forEach((entry) => {
+                    next[entry.year] = entry.states;
+                });
+                const years = Object.keys(next)
+                    .map(Number)
+                    .filter((year) => {
+                        const codes = new Set((next[year] || []).map((row) => row.code));
+                        return canadian_energy_exports_us_states_LAYOUT.every((layout) => codes.has(layout.code));
+                    })
+                    .sort((a, b) => b - a);
+                setRowsByYear(next);
+                setSelectedYear(years[0] ?? null);
+            })
+            .catch((err) => {
+                console.error('Failed to load U.S. state energy exports:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const yearList = useMemo(() => Object.keys(rowsByYear)
+        .map(Number)
+        .filter((year) => {
+            const codes = new Set((rowsByYear[year] || []).map((row) => row.code));
+            return canadian_energy_exports_us_states_LAYOUT.every((layout) => codes.has(layout.code));
+        })
+        .sort((a, b) => b - a), [rowsByYear]);
+
     const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-canadian-energy-exports-us-states');
 
     const canadianEnergyExportsUsStatesYearRange = useMemo(() => {
-        if (!canadian_energy_exports_us_states_YEAR_LIST.length) return { min: 2024, max: 2024 };
-        return { min: Math.min(...canadian_energy_exports_us_states_YEAR_LIST), max: Math.max(...canadian_energy_exports_us_states_YEAR_LIST) };
-    }, []);
+        if (!yearList.length) return { min: '', max: '' };
+        return { min: Math.min(...yearList), max: Math.max(...yearList) };
+    }, [yearList]);
 
     const chartTitle = getText('canadian_energy_exports_us_states_title', lang).replace(/\{\{year\}\}/g, String(selectedYear));
     const chartSubtitle = getText('canadian_energy_exports_us_states_subtitle', lang);
@@ -392,7 +439,7 @@ const CanadianEnergyExportsUsStates = () => {
     const formatExports = (n) =>
         (lang === 'fr' ? Number(n).toLocaleString('fr-CA').replace(/\u00a0/g, ' ') : Number(n).toLocaleString('en-CA'));
 
-    const formatPctTable = (p) => (lang === 'fr' ? String(p).replace('.', ',') : String(p));
+    const formatPctTable = (p) => formatGdpShare(p, lang);
 
     const tableColumns = useMemo(() => [
         { key: 'year', header: getText('canadian_energy_exports_us_states_table_year', lang), align: 'left' },
@@ -404,8 +451,8 @@ const CanadianEnergyExportsUsStates = () => {
     const tableRowsForExport = useMemo(() => {
         const nameMap = lang === 'fr' ? US_STATE_NAME_FR : US_STATE_NAME_EN;
         const out = [];
-        for (const y of [...canadian_energy_exports_us_states_YEAR_LIST].sort((a, b) => b - a)) {
-            const yrData = canadian_energy_exports_us_states_DATA_BY_YEAR[y];
+        for (const y of yearList) {
+            const yrData = rowsForYear(y, rowsByYear);
             if (!yrData) continue;
             for (const r of yrData) {
                 out.push({
@@ -417,7 +464,7 @@ const CanadianEnergyExportsUsStates = () => {
             }
         }
         return out;
-    }, [lang]);
+    }, [lang, rowsByYear, yearList]);
 
     const downloadChartWithTitle = useChartPngDownloader(
         chartRef,
@@ -442,7 +489,8 @@ const CanadianEnergyExportsUsStates = () => {
     );
 
     const plotBundle = useMemo(() => {
-        const rows = canadian_energy_exports_us_states_DATA_BY_YEAR[selectedYear] || canadian_energy_exports_us_states_ROWS_2024;
+        const rows = rowsForYear(selectedYear, rowsByYear);
+        if (!rows.length) return null;
         const fmt = (n) =>
             lang === 'fr' ? n.toLocaleString('fr-CA').replace(/\u00a0/g, ' ') : n.toLocaleString('en-CA');
         const nameMap = lang === 'fr' ? US_STATE_NAME_FR : US_STATE_NAME_EN;
@@ -478,8 +526,9 @@ const CanadianEnergyExportsUsStates = () => {
         const hoverText = rows.map((r) => {
             const full = nameMap[r.code] || r.code;
             const v = fmt(r.exportMil);
-            const pctStr = lang === 'fr' ? `${String(r.pctGdp).replace('.', ',')} %` : `${r.pctGdp}%`;
-            return `<b>${full}</b><br>${v} ${lang === 'en' ? '$ millions (C$)' : 'millions de $ (CAN)'}<br>${pctStr} ${pctTail}`;
+            const pctStr = lang === 'fr' ? `${formatGdpShare(r.pctGdp, lang)} %` : `${formatGdpShare(r.pctGdp, lang)}%`;
+            const valueLabel = lang === 'en' ? `$${v} million ($C)` : `${v} millions de $ (CAN)`;
+            return `<b>${full}</b><br>${valueLabel}<br>${pctStr} ${pctTail}`;
         });
 
         const leaderLat = [];
@@ -520,11 +569,9 @@ const CanadianEnergyExportsUsStates = () => {
             [0.8, '#1f6b8f'],
             [1, '#0c3d5c'],
         ];
-        const tickvals = [0, 2.5, 5, 7.5];
-        const ticktext =
-            lang === 'fr'
-                ? ['0 %', '2,5 %', '5 %', '7,5 %']
-                : ['0%', '2.5%', '5%', '7.5%'];
+        const zmax = Math.max(...z, 0);
+        const tickvals = zmax > 0 ? [0, zmax / 2, zmax] : [0];
+        const ticktext = tickvals.map((value) => formatScaleTick(value, lang));
 
         const useHorizontalColorbar = canadianEnergyExportsUsStatesUseHorizontalColorbar(
             windowWidth,
@@ -590,12 +637,18 @@ const CanadianEnergyExportsUsStates = () => {
             locations,
             z,
             zmin: 0,
-            zmax: 7.5,
+            zmax,
             colorscale,
             marker: {
                 line: { color: '#f0f7fc', width: 1 },
-                opacity: opacities,
             },
+            ...(selectedPoints
+                ? {
+                    selectedpoints: selectedPoints,
+                    selected: { marker: { opacity: 1 } },
+                    unselected: { marker: { opacity: 0.3 } },
+                }
+                : {}),
             colorbar,
             showscale: true,
             hoverinfo: 'text',
@@ -683,9 +736,10 @@ const CanadianEnergyExportsUsStates = () => {
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             autosize: true,
+            uirevision: 'canadian-energy-exports-us-states',
         };
         return { data: [choropleth, leaderLines, scatterInternal, scatterExternal], layout };
-    }, [lang, windowWidth, devicePixelRatio, sessionDevicePixelRatio, selectedPoints, selectedYear]);
+    }, [lang, windowWidth, devicePixelRatio, sessionDevicePixelRatio, selectedPoints, selectedYear, rowsByYear]);
 
     useEffect(() => {
         if (!chartRef?.current) return;
@@ -729,7 +783,7 @@ const CanadianEnergyExportsUsStates = () => {
     };
 
     const getChartSummary = () => {
-        const rows = canadian_energy_exports_us_states_DATA_BY_YEAR[selectedYear] || [];
+        const rows = rowsForYear(selectedYear, rowsByYear);
         const nameMap = lang === 'fr' ? US_STATE_NAME_FR : US_STATE_NAME_EN;
         const exportsLabel = lang === 'en' ? 'Exports' : 'Exportations';
         const pctLabel = getText('canadian_energy_exports_us_states_table_pct_gdp', lang);
@@ -820,22 +874,6 @@ const CanadianEnergyExportsUsStates = () => {
 }
             `}</style>
             <div className="canadian-energy-exports-us-states-container">
-                <YearSelect
-                    lang={lang}
-                    id="canadian-energy-exports-us-states-year-button"
-                    label={getText('year_slider_label', lang)}
-                    years={[...canadian_energy_exports_us_states_YEAR_LIST].sort((a, b) => b - a)}
-                    value={selectedYear}
-                    onChange={(y) => {
-                        setSelectedYear(y);
-                        clearSelection();
-                    }}
-                />
-                <div role="status" className="wb-inv" aria-live="polite">
-                    {selectedYear
-                        ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${selectedYear}`
-                        : ''}
-                </div>
                 <div className="canadian-energy-exports-us-states-chart-frame page-chrome-chart-frame">
                     <div className="canadian-energy-exports-us-states-heading">
                         <h2
@@ -875,17 +913,20 @@ const CanadianEnergyExportsUsStates = () => {
                         role="region"
                         aria-label={mapRegionLabel}
                         tabIndex="0"
+                        style={{ minHeight: plotBundle ? plotBundle.layout.height : 640 }}
                     >
                         <figure ref={chartRef} style={{ margin: 0, position: 'relative', width: '100%' }}>
-                            <Plot
-                                key={canadianEnergyExportsUsStatesColorbarHorizontal ? 'canadian-energy-exports-us-states-map-cb-h' : 'canadian-energy-exports-us-states-map-cb-v'}
-                                data={plotBundle.data}
-                                layout={plotBundle.layout}
-                                config={plotConfig}
-                                style={{ width: '100%' }}
-                                useResizeHandler
-                                onClick={handleChartClick}
-                            />
+                            {plotBundle && (
+                                <Plot
+                                    key={canadianEnergyExportsUsStatesColorbarHorizontal ? 'canadian-energy-exports-us-states-map-cb-h' : 'canadian-energy-exports-us-states-map-cb-v'}
+                                    data={plotBundle.data}
+                                    layout={plotBundle.layout}
+                                    config={plotConfig}
+                                    style={{ width: '100%', height: plotBundle.layout.height }}
+                                    useResizeHandler
+                                    onClick={handleChartClick}
+                                />
+                            )}
                         </figure>
                     </div>
                     <div className="canadian-energy-exports-us-states-table-wrapper">

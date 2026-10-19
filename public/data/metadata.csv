@@ -15,6 +15,20 @@ asset_transmission_distribution,Investment by asset - Transmission and distribut
 asset_transmission_distribution_billions,Investment by asset - Transmission and distribution (billions),Billions of dollars,billions,Investment by Asset,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801
 asset_wind_solar,Investment by asset - Wind and solar,Millions of dollars,millions,Investment by Asset,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801
 asset_wind_solar_billions,Investment by asset - Wind and solar (billions),Billions of dollars,billions,Investment by Asset,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410035801
+bmas_bullet_1_en,Biomass is a renewable energy resource derived from living organisms and/or their by-products.,Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_bullet_1_fr,La biomasse est une ressource énergétique renouvelable provenant d'organismes vivants et/ou de leurs sous-produits.,Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_bullet_2_en,In 2023 there were <strong>41 operational</strong> co-generation units at pulp and paper mills and <strong>35 Independent Power Providers (IPP)</strong> using biomass.,Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_bullet_2_fr,"En 2023, il y avait <strong>41 unités de cogénération</strong> opérationnelles dans des usines de pâtes et papiers et <strong>35 fournisseurs indépendants d'énergie (FIE)</strong> utilisant de la biomasse.",Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_bullet_3_en,"Electrical capacity of pulp and paper co-generation was <strong>1,551 MW</strong>, while heat capacity was <strong>10,154 MW</strong>. IPP capacity for electricity and heat was <strong>831 MW</strong> and <strong>701 MW</strong>, respectively.",Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_bullet_3_fr,"La capacité électrique de la cogénération dans les usines de pâtes et papiers était de <strong>1 551 MW</strong>, tandis que la capacité calorifique était de <strong>10 154 MW</strong>. La capacité des FIE pour l'électricité et la chaleur était de <strong>831 MW</strong> et de <strong>701 MW</strong>, respectivement.",Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_bullet_4_en,"In 2023, there were about <strong>640 operational</strong> bioheat systems with installed capacity of <strong>480 MWth</strong>. <strong>83%</strong> of the biomass heating systems are less than <strong>1 MW</strong> in size.",Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_bullet_4_fr,"En 2023, il y avait environ <strong>640 systèmes de biothermie opérationnels</strong>, d'une capacité installée de <strong>480 MWth</strong>. <strong>83 %</strong> des systèmes de chauffage à la biomasse ont une taille inférieure à <strong>1 MW</strong>.",Text,units,Biomass share of renewable energy production,Natural Resources Canada,https://www.iea.org/data-and-statistics
+bmas_canada_share,Canada biomass share of renewable energy production,Percent,units,Biomass share of renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+bmas_hydro,"Canada renewable production share, hydro",Percent,units,Biomass share of renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+bmas_oecd_share,OECD biomass share of renewable energy production,Percent,units,Biomass share of renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+bmas_other_biomass,"Canada renewable production share, other biomass",Percent,units,Biomass share of renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+bmas_solid_biofuels,"Canada renewable production share, solid biofuels",Percent,units,Biomass share of renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+bmas_wind_solar,"Canada renewable production share, wind and solar",Percent,units,Biomass share of renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
 capex_electricity,Capital expenditures - Electric power,Millions of dollars,millions,Capital Expenditures,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601
 capex_electricity_billions,Capital expenditures - Electric power,Billions of dollars,billions,Capital Expenditures,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601
 capex_electricity_pct,Capital expenditures - Electric power (% of total),Percent,percent,Capital Expenditures,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3410003601
@@ -109,37 +123,71 @@ com_sc,Commercial and institutional space cooling (PJ),PJ,petajoules,Commercial 
 com_sh,Commercial and institutional space heating (PJ),PJ,petajoules,Commercial and institutional energy use by end use,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1
 com_teu_cieu,Commercial and institutional total energy use (PJ),PJ,petajoules,Commercial and institutional energy use by end use,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1
 com_wh,Commercial and institutional water heating (PJ),PJ,petajoules,Commercial and institutional energy use by end use,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=com&juris=00&rn=1&year=2023&page=1
-cp_conventional_mmbd,Conventional crude production Canadian production,million barrels per day,units,Canadian crude production by type and province,,
-cp_conventional_thousand_m3,Conventional crude production Canadian production,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_oil_sands_mmbd,Oil sands production Canadian production,million barrels per day,units,Canadian crude production by type and province,,
-cp_oil_sands_thousand_m3,Oil sands production Canadian production,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_prov_ab_pct,Alberta share of Canadian crude oil production Canadian production,percent,units,Canadian crude production by type and province,,
+cp_conventional_mmbd,Conventional crude production,million barrels per day,units,Canadian crude production by type and province,,
+cp_conventional_thousand_m3,Conventional crude production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_oil_sands_mmbd,Oil sands production,million barrels per day,units,Canadian crude production by type and province,,
+cp_oil_sands_thousand_m3,Oil sands production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_ab_pct,Alberta share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
 cp_prov_ab_thousand_m3,Alberta crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_prov_bc_pct,British Columbia share of Canadian crude oil production Canadian production,percent,units,Canadian crude production by type and province,,
+cp_prov_bc_pct,British Columbia share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
 cp_prov_bc_thousand_m3,British Columbia crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
 cp_prov_canada_thousand_m3,Canadian crude oil production by province total,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_prov_mb_pct,Manitoba share of Canadian crude oil production Canadian production,percent,units,Canadian crude production by type and province,,
+cp_prov_mb_pct,Manitoba share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
 cp_prov_mb_thousand_m3,Manitoba crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_prov_nl_pct,Newfoundland and Labrador share of Canadian crude oil production Canadian production,percent,units,Canadian crude production by type and province,,
+cp_prov_nl_pct,Newfoundland and Labrador share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
 cp_prov_nl_thousand_m3,Newfoundland and Labrador crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_prov_other_pct,Other provinces share of Canadian crude oil production Canadian production,percent,units,Canadian crude production by type and province,,
+cp_prov_ns_pct,Nova Scotia share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
+cp_prov_ns_thousand_m3,Nova Scotia crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_nt_pct,Northwest Territories share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
+cp_prov_nt_thousand_m3,Northwest Territories crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_on_pct,Ontario share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
+cp_prov_on_thousand_m3,Ontario crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_prov_other_pct,Other provinces share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
 cp_prov_other_thousand_m3,Other provinces crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_prov_sk_pct,Saskatchewan share of Canadian crude oil production Canadian production,percent,units,Canadian crude production by type and province,,
+cp_prov_sk_pct,Saskatchewan share of Canadian crude oil production,percent,units,Canadian crude production by type and province,,
 cp_prov_sk_thousand_m3,Saskatchewan crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
-cp_share_pct,Oil sands share of Canadian oil production Canadian production,percent,units,Canadian crude production by type and province,,
-cp_total_mmbd,Total crude oil production Canadian production,million barrels per day,units,Canadian crude production by type and province,,
-cp_total_thousand_m3,Total crude oil production Canadian production,thousand cubic metres,units,Canadian crude production by type and province,,
+cp_share_pct,Oil sands share of Canadian oil production,percent,units,Canadian crude production by type and province,,
+cp_total_mmbd,Total crude oil production,million barrels per day,units,Canadian crude production by type and province,,
+cp_total_thousand_m3,Total crude oil production,thousand cubic metres,units,Canadian crude production by type and province,,
 cr_res_conventional_bb,Conventional remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
 cr_res_insitu_bb,In situ remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
 cr_res_mining_bb,Mining remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
 cr_res_oil_sands_bb,Oil sands remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
 cr_res_reporting_year,Petroleum reserves reporting year,year,units,Canadian proved reserves of crude oil,,
 cr_res_total_bb,Total remaining established crude oil reserves,billion barrels,units,Canadian proved reserves of crude oil,,
+crep_biodiesel,"Canada renewable production share, biodiesel",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_ethanol,"Canada renewable production share, ethanol",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_hydro,"Canada renewable production share, hydro",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_municipal_waste,"Canada renewable production share, municipal_waste",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_solar_pv,"Canada renewable production share, solar_pv",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_solar_thermal,"Canada renewable production share, solar_thermal",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_solid_biomass,"Canada renewable production share, solid_biomass",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_total_mtoe,Canada total renewable energy,MTOE,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_total_pj,Canada total renewable energy,PJ,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+crep_wind,"Canada renewable production share, wind",Percent,units,Canadian renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
 crude_differential,WTI minus WCS (USD) differential,US dollars per barrel,units,WTI and WCS crude prices,,
 crude_usd_cad,USD to CAD exchange rate,CAD per USD,units,WTI and WCS crude prices,,
 crude_wcs_cad,Western Canadian Select (WCS) price,Canadian dollars per barrel,units,WTI and WCS crude prices,,
 crude_wcs_usd,Western Canadian Select (WCS) USD equivalent,US dollars per barrel,units,WTI and WCS crude prices,,
 crude_wti,West Texas Intermediate (WTI) spot price,US dollars per barrel,units,WTI and WCS crude prices,,
+drep_age_55_plus_all,age_55_plus all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_age_55_plus_energy,age_55_plus energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_high_school_plus_all,high_school_plus all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_high_school_plus_energy,high_school_plus energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_immigrants_all,immigrants all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_immigrants_energy,immigrants energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_indigenous_all,indigenous all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_indigenous_energy,indigenous energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_university_plus_all,university_plus all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_university_plus_energy,university_plus energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_visible_minorities_all,visible_minorities all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_visible_minorities_energy,visible_minorities energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_women_all,women all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_women_energy,women energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_women_office_all,women_office all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_women_office_energy,women_office energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_women_trades_all,women_trades all industries share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+drep_women_trades_energy,women_trades energy sector share,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
 econ_employment_income,Economic contributions - Employment income,Millions of dollars,millions,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_employment_income_billions,Economic contributions - Employment income (billions),Billions of dollars,billions,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_gdp,Economic contributions - GDP,Millions of dollars,millions,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
@@ -148,6 +196,29 @@ econ_investment_value,"Annual investment - Fuel, energy and pipelines",Millions 
 econ_investment_value_billions,Annual investment (billions),Billions of dollars,billions,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_jobs,Economic contributions - Jobs (direct + indirect),Number,units,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
 econ_jobs_thousands,Economic contributions - Jobs (thousands),Thousands,thousands,Economic Contributions,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610061001
+edem_age_55,Energy employees aged 55 and older,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+edem_education_credential,Energy employees with a college diploma or university degree,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+edem_education_more,Energy employees with more than high school,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+edem_immigrant_economy,Immigrant share of economy-wide employment income recipients,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501
+edem_immigrant_energy,Immigrant share of energy sector employees,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+edem_indigenous,Indigenous share of energy sector employees,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+edem_visible_minority,Visible minority share of the energy workforce,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+edem_women,Women share of energy sector jobs,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+eghg_canada_energy_kt,Canada energy GHG emissions,kt CO2e,kilotonnes,Unknown,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_canada_energy_share,Canada energy share of GHG emissions,percent,percent,Unknown,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_canada_total_kt,Canada total GHG emissions,kt CO2e,kilotonnes,Unknown,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_end_use_pj,Canada end-use energy,PJ,petajoules,Unknown,Natural Resources Canada,Annex 4 Table A4-1_NRCan_2026-04-01.xlsx
+eghg_gdp_million,Canada GDP at basic prices,million dollars,millions,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610043401
+eghg_global_energy_mt,Global energy GHG emissions,Mt CO2e,megatonnes,Unknown,Climate Watch,https://www.climatewatchdata.org/api/v1/data/historical_emissions
+eghg_global_energy_share,Global energy share of GHG emissions,percent,percent,Unknown,Climate Watch,https://www.climatewatchdata.org/api/v1/data/historical_emissions
+eghg_global_total_mt,Global total GHG emissions,Mt CO2e,megatonnes,Unknown,Climate Watch,https://www.climatewatchdata.org/api/v1/data/historical_emissions
+eghg_index_capita,Indexed GHG emissions per capita,index,2000=100,Unknown,Natural Resources Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_index_energy,Indexed GHG emissions per petajoule,index,2000=100,Unknown,Natural Resources Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_index_gdp,Indexed GHG emissions per dollar of GDP,index,2000=100,Unknown,Natural Resources Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_per_capita,GHG emissions per person,kt per person,ratio,Unknown,Natural Resources Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_per_gdp,GHG emissions per million dollars of GDP,kt per million dollars,ratio,Unknown,Natural Resources Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_per_pj,GHG emissions per petajoule,kt per PJ,ratio,Unknown,Natural Resources Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
+eghg_population,Canada population,persons,persons,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000501
 elec_eu_A,Electrical energy use - Agriculture,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_A_pct,Electrical energy use share - Agriculture,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ALTA,Electrical energy use - Alberta,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
@@ -216,6 +287,33 @@ elegen_can_nuclear_pct,Canadian electricity generation share — nuclear,Percent
 elegen_can_other_renewables_pct,Canadian electricity generation share — other renewables,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
 elegen_can_petroleum_pct,Canadian electricity generation share — petroleum/others,Percent,percent,Canadian and provincial electricity generation by source,Natural Resources Canada,
 elegen_can_total_twh,Total Canadian electricity generation,TWh,terawatt hours,Canadian and provincial electricity generation by source,Natural Resources Canada,
+emp_ab_jobs,ab direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_bc_jobs,bc direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_direct_jobs,Direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_direct_share,Energy direct share of total employment,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_electricity_jobs,Electricity direct jobs,jobs,jobs,Unknown,Natural Resources Canada,https://docs.google.com/document/d/11ad-aqY6WjcQwHRWuSrZgQKxMD_U6jKaXlR5q-p0CXI/
+emp_electricity_share,Electricity share of total employment,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_indigenous_jobs,Indigenous people directly employed in energy,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_indirect_jobs,Indirect energy jobs,jobs,jobs,Unknown,Natural Resources Canada,https://docs.google.com/document/d/11ad-aqY6WjcQwHRWuSrZgQKxMD_U6jKaXlR5q-p0CXI/
+emp_indirect_share,Energy indirect share of total employment,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_mb_jobs,mb direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_nb_jobs,nb direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_nl_jobs,nl direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_ns_jobs,ns direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_nt_jobs,nt direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_nu_jobs,nu direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_on_jobs,on direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_other_jobs,Other direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_other_share,Other share of total employment,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_pe_jobs,pe direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_petroleum_jobs,Petroleum direct jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_petroleum_share,Petroleum share of total employment,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_qc_jobs,qc direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_sk_jobs,sk direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+emp_total_employment,"Total employment, all industries",jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701
+emp_total_jobs,Total energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_total_share,Energy share of total employment,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810028501
+emp_yt_jobs,yt direct energy jobs,jobs,jobs,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
 energy_prod_australia_pct,Australia Share of World Energy Production,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
 energy_prod_canada_growth_since_2005,Canada Energy Production Growth Since 2005,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
 energy_prod_canada_pct,Canada Share of World Energy Production,%,percent,World Energy Production,International Energy Agency,https://www.iea.org/data-and-statistics/data-tools/world-energy-balances
@@ -251,9 +349,250 @@ enviro_oil_gas_total_billions,Oil and gas - Total (billions),Billions of dollars
 enviro_oil_gas_wastewater,Oil and gas extraction - Wastewater management,Millions of dollars,millions,Environmental Protection,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001
 enviro_petroleum_pollution,Petroleum and coal product manufacturing - Pollution abatement and control,Millions of dollars,millions,Environmental Protection,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001
 enviro_petroleum_total,Petroleum and coal product manufacturing - Total environmental protection expenditures,Millions of dollars,millions,Environmental Protection,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3810013001
+epov_alta,alta energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_bc,bc energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_can,can energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_home_energy,Average in-home energy expenditure,dollars,dollars,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201
+epov_income_share,In-home energy share of disposable income,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201
+epov_man,man energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_nb,nb energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_nl,nl energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_ns,ns energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_nvt,nvt energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_nwt,nwt energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_ont,ont energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_pei,pei energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_que,que energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_sask,sask energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+epov_yt,yt energy poverty rate,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm
+erel_ab,erel_ab,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_bc,erel_bc,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_mb,erel_mb,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_nb,erel_nb,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_nl,erel_nl,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_on,erel_on,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_qc,erel_qc,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_rural_share,erel_rural_share,percent,percent,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_sk,erel_sk,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+erel_total,erel_total,communities,communities,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
 ev_new_regs,New EV registrations (battery electric + plug-in hybrid electric),Number,units,Plug-in electric vehicle registrations,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501
 ev_share_pct,Proportion of total new vehicle registrations,Percent,percent,Plug-in electric vehicle registrations,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501
 ev_total_regs,Total new vehicle registrations,Number,units,Plug-in electric vehicle registrations,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501
+evch_footnote,"Estimates assume an 80% charging level limit. Time to full charge and range per hour of charging will vary depending on the vehicle, battery, and charger, as well as fluctuating temperatures, battery state, and tire pressure.",Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_footnote_fr,"Les estimations supposent une limite de niveau de charge de 80 %. Le temps de recharge complète et l'autonomie par heure de recharge varient selon le véhicule, la batterie et la borne de recharge, ainsi que les fluctuations de température, l'état de la batterie et la pression des pneus.",Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_charger,AC Level 1,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_charger_fr,Niveau 1,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_charging_time,8–50+ hours,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_charging_time_fr,De 8 à 50+ heures,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_input,120 V,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_input_fr,120 V,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_outlet,"Standard electrical outlet (for example, phone charger)",Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_outlet_fr,Prise électrique standard (comme un chargeur de téléphone),Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_range,3-8 km,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_range_fr,De 3 km à 8 km,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_uses,Home charging and back-up situations,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r1_uses_fr,Recharge à domicile et situations de secours,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_charger,AC Level 2,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_charger_fr,Niveau 2,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_charging_time,4–10 hours,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_charging_time_fr,De 4 à 10 heures,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_input,208/240 V,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_input_fr,208/240 V,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_outlet,"Special electrical outlet (for example, stove or dryer plug)",Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_outlet_fr,Prise électrique spéciale (comme une prise pour cuisinière ou sécheuse),Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_range,16-50 km,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_range_fr,De 16 km à 50 km,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_uses,"Home charging, charging at businesses and public spaces",Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r2_uses_fr,Recharge à domicile et dans les entreprises et les espaces publics,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_charger,DC Level 3 (fast charger),Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_charger_fr,Niveau 3 (borne de recharge rapide),Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_charging_time,25–30 minutes,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_charging_time_fr,De 25 à 30 minutes,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_input,480 V,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_input_fr,480 V,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_outlet,DC outlet (not found in homes),Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_outlet_fr,Prise de courant continu (non disponible pour les maisons),Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_range,Up to maximum driving range of vehicle,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_range_fr,Jusqu'à l'autonomie maximale du véhicule,Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_uses,"Charging at dedicated stations, public spaces, and highway corridors",Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+evch_r3_uses_fr,"Recharge à des bornes de recharge réservées, des espaces publics et des corridors routiers",Text,units,Electric vehicle charging levels,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+ewag_gender_gap,Women hourly wage as a share of men in the energy sector,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewag_income_economy,Average annual compensation in the total economy,dollars,dollars,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewag_income_energy,Average annual energy sector compensation,dollars,dollars,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewag_income_university,Average compensation for university-degree energy jobs,dollars,dollars,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewag_men_trades,Men share of energy trades occupations,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewag_wage_admin,Women hourly wage as a share of men in administrative occupations,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewag_wage_trades,Women hourly wage as a share of men in the trades,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewag_women_office,Women share of energy office occupations,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610068901
+ewld_p_2020_r1_code,CHINA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r1_name_en,China,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r1_name_fr,Chine,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r2_code,USA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r2_name_en,United States,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r2_name_fr,États-Unis,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r3_code,INDIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r3_name_en,India,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r3_name_fr,Inde,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r4_code,RUSSIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r4_name_en,Russia,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r4_name_fr,Russie,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r5_code,JAPAN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r5_name_en,Japan,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r5_name_fr,Japon,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r6_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r6_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2020_r6_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r1_code,CHINA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r1_name_en,China,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r1_name_fr,Chine,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r2_code,USA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r2_name_en,United States,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r2_name_fr,États-Unis,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r3_code,INDIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r3_name_en,India,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r3_name_fr,Inde,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r4_code,RUSSIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r4_name_en,Russia,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r4_name_fr,Russie,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r5_code,JAPAN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r5_name_en,Japan,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r5_name_fr,Japon,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r6_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r6_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2021_r6_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r1_code,CHINA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r1_name_en,China,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r1_name_fr,Chine,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r2_code,USA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r2_name_en,United States,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r2_name_fr,États-Unis,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r3_code,INDIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r3_name_en,India,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r3_name_fr,Inde,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r4_code,RUSSIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r4_name_en,Russia,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r4_name_fr,Russie,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r5_code,JAPAN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r5_name_en,Japan,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r5_name_fr,Japon,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r6_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r6_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2022_r6_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r1_code,CHINA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r1_name_en,China,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r1_name_fr,Chine,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r2_code,USA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r2_name_en,United States,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r2_name_fr,États-Unis,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r3_code,INDIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r3_name_en,India,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r3_name_fr,Inde,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r4_code,RUSSIA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r4_name_en,Russia,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r4_name_fr,Russie,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r5_code,JAPAN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r5_name_en,Japan,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r5_name_fr,Japon,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r6_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r6_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_2023_r6_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_count,Displayed electricity production rows,count,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r1_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r1_rank,production rank 1,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r1_share,production rank 1 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r2_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r2_rank,production rank 2,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r2_share,production rank 2 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r3_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r3_rank,production rank 3,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r3_share,production rank 3 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r4_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r4_rank,production rank 4,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r4_share,production rank 4 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r5_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r5_rank,production rank 5,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r5_share,production rank 5 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r6_canada,Canada row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r6_rank,production rank 6,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_r6_share,production rank 6 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_p_twh,World electricity production,TWh,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r1_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r1_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r1_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r2_code,GERMANY,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r2_name_en,Germany,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r2_name_fr,Allemagne,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r3_code,FRANCE,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r3_name_en,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r3_name_fr,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r4_code,SWEDEN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r4_name_en,Sweden,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r4_name_fr,Suède,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r5_code,LAO,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r5_name_en,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2020_r5_name_fr,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r1_code,GERMANY,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r1_name_en,Germany,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r1_name_fr,Allemagne,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r2_code,FRANCE,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r2_name_en,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r2_name_fr,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r3_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r3_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r3_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r4_code,LAO,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r4_name_en,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r4_name_fr,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r5_code,SWEDEN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r5_name_en,Sweden,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2021_r5_name_fr,Suède,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r1_code,GERMANY,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r1_name_en,Germany,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r1_name_fr,Allemagne,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r2_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r2_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r2_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r3_code,LAO,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r3_name_en,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r3_name_fr,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r4_code,SWEDEN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r4_name_en,Sweden,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r4_name_fr,Suède,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r5_code,FRANCE,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r5_name_en,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2022_r5_name_fr,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r1_code,FRANCE,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r1_name_en,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r1_name_fr,France,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r2_code,GERMANY,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r2_name_en,Germany,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r2_name_fr,Allemagne,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r3_code,CANADA,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r3_name_en,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r3_name_fr,Canada,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r4_code,LAO,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r4_name_en,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r4_name_fr,Laos,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r5_code,SWEDEN,code,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r5_name_en,Sweden,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_2023_r5_name_fr,Suède,name,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_count,Displayed electricity exports rows,count,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r1_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r1_rank,exports rank 1,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r1_share,exports rank 1 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r2_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r2_rank,exports rank 2,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r2_share,exports rank 2 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r3_canada,Canada row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r3_rank,exports rank 3,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r3_share,exports rank 3 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r4_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r4_rank,exports rank 4,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r4_share,exports rank 4 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r5_canada,Other country row,flag,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r5_rank,exports rank 5,rank,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_r5_share,exports rank 5 share,Percent,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
+ewld_x_twh,World electricity exports,TWh,units,World electricity production and exports,International Energy Agency,https://www.iea.org/data-and-statistics
 foreign_all_non_financial,Foreign control - Total non-financial industries,Percent,percent,Foreign Control,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310002401
 foreign_oil_gas,Foreign control - Oil and gas extraction,Percent,percent,Foreign Control,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310002401
 foreign_utilities,Foreign control - Utilities,Percent,percent,Foreign Control,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3310002401
@@ -291,6 +630,22 @@ gdp_prov_pe,Energy sector direct nominal GDP - Prince Edward Island,Millions of 
 gdp_prov_qc,Energy sector direct nominal GDP - Quebec,Millions of dollars,millions,Provincial GDP,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
 gdp_prov_sk,Energy sector direct nominal GDP - Saskatchewan,Millions of dollars,millions,Provincial GDP,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
 gdp_prov_yt,Energy sector direct nominal GDP - Yukon,Millions of dollars,millions,Provincial GDP,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610062401
+gh2_ammonia,Demand share ammonia,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_by_product_pct,By-product production,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_deliberate_pct,Deliberate production,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_demand_mt,Global hydrogen demand,Mt,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_methanol,Demand share methanol,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_production_mt,Global hydrogen production,Mt,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_refining,Demand share refining,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_source_by_product,Production share by_product,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_source_coal,Production share coal,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_source_electricity,Production share electricity,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_source_fossil_ccus,Production share fossil_ccus,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_source_natural_gas,Production share natural_gas,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_source_oil,Production share oil,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_source_total_mt,Production by source total,Mt,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_steelmaking,Demand share steelmaking,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+gh2_transport,Demand share transport,Percent,units,Global hydrogen production and demand,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
 ghg_agriculture,GHG Emissions - Agriculture,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_buildings,GHG Emissions - Buildings,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_electricity,GHG Emissions - Electricity,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
@@ -311,6 +666,70 @@ ghg_stat_oil_gas_spotlight_total_pct,Oil and gas spotlight total emissions perce
 ghg_stat_oil_sands_emissions_ratio,Oil sands emissions ratio (end year / base year),ratio,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_transportation,GHG Emissions - Transportation,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_waste_others,GHG Emissions - Waste and Others,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
+gtrade_cum_exp_billion,Cumulative exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_cum_imp_billion,Cumulative imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_biofuels,biofuels exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_coal,coal exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_crude,crude exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_electricity,electricity exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_gas,gas exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_ngl,ngl exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_other,other exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_rpp,rpp exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_total,Total exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_exp_uranium,uranium exports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_biofuels,biofuels imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_coal,coal imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_crude,crude imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_electricity,electricity imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_gas,gas imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_ngl,ngl imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_other,other imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_rpp,rpp imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_total,Total imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+gtrade_imp_uranium,uranium imports,billions of real 2025 CAD,billions of dollars,Unknown,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+hexp_amount_residential,Average residential energy expenditure,dollars,dollars,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201
+hexp_amount_total,Average household energy expenditure,dollars,dollars,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201
+hexp_amount_vehicle,Average vehicle and tools fuel expenditure,dollars,dollars,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201
+hexp_cpi_energy,Energy CPI annual average,index,2002=100,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401
+hexp_cpi_excluding,CPI excluding energy annual average,index,2002=100,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401
+hexp_cpi_total,Total CPI annual average,index,2002=100,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401
+hexp_income_share,Energy share of household spending,percent,percent,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110022201
+hhep_canada_electricity,hhep_canada_electricity,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_canada_gasoline,hhep_canada_gasoline,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_canada_natural_gas,hhep_canada_natural_gas,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_france_electricity,hhep_france_electricity,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_france_gasoline,hhep_france_gasoline,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_france_natural_gas,hhep_france_natural_gas,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_germany_electricity,hhep_germany_electricity,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_germany_gasoline,hhep_germany_gasoline,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_germany_natural_gas,hhep_germany_natural_gas,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_italy_electricity,hhep_italy_electricity,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_italy_gasoline,hhep_italy_gasoline,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_italy_natural_gas,hhep_italy_natural_gas,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_uk_electricity,hhep_uk_electricity,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_uk_gasoline,hhep_uk_gasoline,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_uk_natural_gas,hhep_uk_natural_gas,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_usa_electricity,hhep_usa_electricity,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_usa_gasoline,hhep_usa_gasoline,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hhep_usa_natural_gas,hhep_usa_natural_gas,price,price,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+hnar_benefit_1,Versatile energy carrier,benefit,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_benefit_2,Carbon free at point of use,benefit,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_benefit_3,Can be produced from variety of feedstocks,benefit,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_benefit_4,Can be transported long distances,benefit,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_benefit_5,Highest energy per mass of any fuel,benefit,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_fact,The energy in 1 kg of hydrogen is the same as approximately 2.8 kg of gasoline.,fact,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_intro_1,Hydrogen is a versatile energy carrier that can be produced from a variety of feedstocks.,introduction,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_intro_2,"Hydrogen can be converted to electricity through a fuel-cell in electric vehicles and power generation equipment, combusted to produce heat, or used as a feedstock in a range of chemical and industrial processes.",introduction,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_intro_3,"Hydrogen produced via low-carbon production pathways such as electrolysis or natural gas using carbon abatement can be ideal for decarbonizing hard-to-abate sectors such as heavy industry, truck freight or bus transit.",introduction,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_1_en,"Canada is one of the top 10 hydrogen producers in the world today, with an estimated 4 Mt of hydrogen produced per year (low-carbon and carbon-intensive).",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_1_fr,"Le Canada est aujourd’hui l’un des 10 premiers producteurs d’hydrogène dans le monde, avec une production estimée à 4 Mt d’hydrogène produit chaque année (à faible teneur en carbone et à forte teneur en carbone).",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_2_en,"Most hydrogen in Canada is produced from natural gas and used by the chemical industry and the oil and gas sector. Some of this hydrogen is now being produced using carbon abatement technologies, with several facilities already producing low-carbon hydrogen and others coming online soon.",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_2_fr,"Au Canada, la majeure partie de l’hydrogène est produite à partir de gaz naturel et utilisée par l’industrie chimique ainsi que par le secteur pétrolier et gazier. Une partie de cet hydrogène est désormais produite à l'aide des technologies de réduction de carbone, avec plusieurs installations qui produisent déjà de l'hydrogène à faible teneur en carbone et d'autres qui entreront bientôt en service.",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_3_en,"Air Liquide's 20 MW electrolyser is Canada’s largest electrolysis facility, producing low-carbon hydrogen using electricity to split water. Canada’s total deployed low-carbon hydrogen production capacity is currently over 12,000 tonnes per year.",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_3_fr,"Air Liquide a un électrolyseur de 20 MW qui est la plus grande installation d'électrolyse du Canada, produisant de l’hydrogène bas carbone en utilisant l’électricité pour la séparation de l’eau. La capacité totale de production d’hydrogène à faible teneur en carbone déployée au Canada dépasse actuellement 12 000 tonnes par an.",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_4_en,"There are more than 100 established hydrogen and fuel cell companies spanning the full value chain, employing almost 4,300 people in direct jobs within Canada, and generating revenues in excess of $525 million and investing $125 million in research, development and demonstration.",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
+hnar_summary_4_fr,"Il existe plus de 100 entreprises de l’hydrogène et des piles à combustible établies sur toute la chaîne de valeur, employant 4 300 personnes en emploi direct au Canada, générant plus de 525 millions de dollars de revenus et investissant 125 millions de dollars en recherche, développement et démonstration.",summary,text,Hydrogen narrative and Canada summary,International Energy Agency,https://www.iea.org/search?q=global%20hydrogen
 hydro_fac_01_mw,Robert-Bourassa,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
 hydro_fac_01_prov,Robert-Bourassa province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
 hydro_fac_02_mw,Churchill Falls,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
@@ -351,6 +770,35 @@ hydro_fac_19_mw,Robert H Saunders,MW,megawatts,"Major hydro facilities in Canada
 hydro_fac_19_prov,Robert H Saunders province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
 hydro_fac_20_mw,Outardes 3,MW,megawatts,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
 hydro_fac_20_prov,Outardes 3 province code,Code,code,"Major hydro facilities in Canada (1,000 MW+)",Natural Resources Canada,
+hyel_canada_elec_share,Hydro share of Canada electricity generation,Percent,units,Hydroelectricity share and world generation,Natural Resources Canada,https://natural-resources.canada.ca/energy-sources/energy-facts
+hyel_canada_rank,Canada world hydroelectricity rank,rank,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_count,Displayed hydroelectricity ranking rows,count,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r1_canada,Other country row,flag,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r1_name_en,China,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r1_name_fr,Chine,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r1_rank,Rank 1,rank,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r1_share,Rank 1 share,Percent,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r2_canada,Other country row,flag,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r2_name_en,Brazil,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r2_name_fr,Brésil,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r2_rank,Rank 2,rank,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r2_share,Rank 2 share,Percent,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r3_canada,Canada row,flag,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r3_name_en,Canada,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r3_name_fr,Canada,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r3_rank,Rank 3,rank,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r3_share,Rank 3 share,Percent,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r4_canada,Other country row,flag,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r4_name_en,United States,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r4_name_fr,États-Unis,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r4_rank,Rank 4,rank,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r4_share,Rank 4 share,Percent,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r5_canada,Other country row,flag,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r5_name_en,Russia,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r5_name_fr,Russie,name,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r5_rank,Rank 5,rank,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_r5_share,Rank 5 share,Percent,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
+hyel_world_twh,World hydroelectricity generation,TWh,units,Hydroelectricity share and world generation,International Energy Agency,https://www.iea.org/data-and-statistics
 ind_ccog,Industrial coke and coke oven gas (PJ),PJ,petajoules,Industrial sector energy use by fuel type,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0
 ind_cl,Industrial coal (PJ),PJ,petajoules,Industrial sector energy use by fuel type,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0
 ind_dfox,"Industrial diesel fuel oil, light fuel oil and kerosene (PJ)",PJ,petajoules,Industrial sector energy use by fuel type,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=CP&sector=agg&juris=ca&rn=1&page=0
@@ -631,6 +1079,48 @@ solar_proj_14_mw,Windsor,MW,megawatts,Largest solar projects (50 MW+),Natural Re
 solar_proj_14_prov,Windsor province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
 solar_proj_15_mw,Wheatcrest,MW,megawatts,Largest solar projects (50 MW+),Natural Resources Canada,
 solar_proj_15_prov,Wheatcrest province code,Code,code,Largest solar projects (50 MW+),Natural Resources Canada,
+tes_can_biofuels_waste_pj,tes_can_biofuels_waste_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_biofuels_waste_share,tes_can_biofuels_waste_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_coal_pj,tes_can_coal_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_coal_share,tes_can_coal_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_crude_ngl_pj,tes_can_crude_ngl_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_fossil_share,tes_can_fossil_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_geothermal_pj,tes_can_geothermal_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_heat_pj,tes_can_heat_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_hydro_pj,tes_can_hydro_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_hydro_share,tes_can_hydro_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_memo_geo_solar_heat_elec_pj,tes_can_memo_geo_solar_heat_elec_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_memo_peat_coal_shale_pj,tes_can_memo_peat_coal_shale_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_memo_primary_secondary_oil_pj,tes_can_memo_primary_secondary_oil_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_natural_gas_pj,tes_can_natural_gas_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_natural_gas_share,tes_can_natural_gas_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_nuclear_pj,tes_can_nuclear_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_nuclear_share,tes_can_nuclear_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_oil_pj,tes_can_oil_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_oil_products_pj,tes_can_oil_products_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_oil_shale_pj,tes_can_oil_shale_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_oil_share,tes_can_oil_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_other_renewables_pj,tes_can_other_renewables_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_other_renewables_share,tes_can_other_renewables_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_peat_pj,tes_can_peat_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_renewables_memo_pj,tes_can_renewables_memo_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_renewables_share,tes_can_renewables_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_can_total_pj,tes_can_total_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_coal_pj,tes_world_coal_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_coal_share,tes_world_coal_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_crude_ngl_pj,tes_world_crude_ngl_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_fossil_share,tes_world_fossil_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_natural_gas_pj,tes_world_natural_gas_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_natural_gas_share,tes_world_natural_gas_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_nuclear_pj,tes_world_nuclear_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_nuclear_share,tes_world_nuclear_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_oil_pj,tes_world_oil_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_oil_products_pj,tes_world_oil_products_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_oil_shale_pj,tes_world_oil_shale_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_oil_share,tes_world_oil_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_renewables_memo_pj,tes_world_renewables_memo_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_renewables_share,tes_world_renewables_share,%,percent,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
+tes_world_total_pj,tes_world_total_pj,PJ,petajoules,Unknown,International Energy Agency,https://www.iea.org/data-and-statistics
 urani_exp_canada_rank,Canada rank in world uranium exports,Rank,rank,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
 urani_exp_canada_share_pct,Canada share of world uranium exports,Percent,percent,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
 urani_exp_top1_country_id,World uranium exports top 1 country,Country ID,country,Unknown,World Nuclear Association,https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production.aspx
@@ -670,6 +1160,203 @@ urani_res_top4_share_pct,World known recoverable uranium resources top 4 share,P
 urani_res_top5_country_id,World known recoverable uranium resources top 5 country,Country ID,country,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
 urani_res_top5_share_pct,World known recoverable uranium resources top 5 share,Percent,percent,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
 urani_res_total_mt,World known recoverable uranium resources total,Mt,megatonnes,Unknown,OECD NEA / IAEA,https://www.oecd-nea.org/jcms/pl_14926/uranium-2024-resources-production-and-demand
+usx_AK_exports_m,AK energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AK_gdp_m,AK nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AK_share_pct,AK share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AL_exports_m,AL energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AL_gdp_m,AL nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AL_share_pct,AL share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AR_exports_m,AR energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AR_gdp_m,AR nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AR_share_pct,AR share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AZ_exports_m,AZ energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AZ_gdp_m,AZ nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_AZ_share_pct,AZ share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CA_exports_m,CA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CA_gdp_m,CA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CA_share_pct,CA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CO_exports_m,CO energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CO_gdp_m,CO nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CO_share_pct,CO share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CT_exports_m,CT energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CT_gdp_m,CT nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_CT_share_pct,CT share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_DC_exports_m,DC energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_DC_gdp_m,DC nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_DC_share_pct,DC share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_DE_exports_m,DE energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_DE_gdp_m,DE nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_DE_share_pct,DE share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_FL_exports_m,FL energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_FL_gdp_m,FL nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_FL_share_pct,FL share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_GA_exports_m,GA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_GA_gdp_m,GA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_GA_share_pct,GA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_HI_exports_m,HI energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_HI_gdp_m,HI nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_HI_share_pct,HI share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IA_exports_m,IA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IA_gdp_m,IA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IA_share_pct,IA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ID_exports_m,ID energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ID_gdp_m,ID nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ID_share_pct,ID share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IL_exports_m,IL energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IL_gdp_m,IL nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IL_share_pct,IL share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IN_exports_m,IN energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IN_gdp_m,IN nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_IN_share_pct,IN share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_KS_exports_m,KS energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_KS_gdp_m,KS nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_KS_share_pct,KS share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_KY_exports_m,KY energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_KY_gdp_m,KY nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_KY_share_pct,KY share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_LA_exports_m,LA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_LA_gdp_m,LA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_LA_share_pct,LA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MA_exports_m,MA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MA_gdp_m,MA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MA_share_pct,MA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MD_exports_m,MD energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MD_gdp_m,MD nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MD_share_pct,MD share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ME_exports_m,ME energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ME_gdp_m,ME nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ME_share_pct,ME share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MI_exports_m,MI energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MI_gdp_m,MI nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MI_share_pct,MI share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MN_exports_m,MN energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MN_gdp_m,MN nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MN_share_pct,MN share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MO_exports_m,MO energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MO_gdp_m,MO nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MO_share_pct,MO share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MS_exports_m,MS energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MS_gdp_m,MS nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MS_share_pct,MS share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MT_exports_m,MT energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MT_gdp_m,MT nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_MT_share_pct,MT share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NC_exports_m,NC energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NC_gdp_m,NC nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NC_share_pct,NC share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ND_exports_m,ND energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ND_gdp_m,ND nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_ND_share_pct,ND share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NE_exports_m,NE energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NE_gdp_m,NE nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NE_share_pct,NE share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NH_exports_m,NH energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NH_gdp_m,NH nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NH_share_pct,NH share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NJ_exports_m,NJ energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NJ_gdp_m,NJ nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NJ_share_pct,NJ share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NM_exports_m,NM energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NM_gdp_m,NM nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NM_share_pct,NM share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NV_exports_m,NV energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NV_gdp_m,NV nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NV_share_pct,NV share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NY_exports_m,NY energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NY_gdp_m,NY nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_NY_share_pct,NY share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OH_exports_m,OH energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OH_gdp_m,OH nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OH_share_pct,OH share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OK_exports_m,OK energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OK_gdp_m,OK nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OK_share_pct,OK share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OR_exports_m,OR energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OR_gdp_m,OR nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_OR_share_pct,OR share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_PA_exports_m,PA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_PA_gdp_m,PA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_PA_share_pct,PA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_RI_exports_m,RI energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_RI_gdp_m,RI nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_RI_share_pct,RI share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_SC_exports_m,SC energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_SC_gdp_m,SC nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_SC_share_pct,SC share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_SD_exports_m,SD energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_SD_gdp_m,SD nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_SD_share_pct,SD share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_TN_exports_m,TN energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_TN_gdp_m,TN nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_TN_share_pct,TN share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_TX_exports_m,TX energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_TX_gdp_m,TX nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_TX_share_pct,TX share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_UT_exports_m,UT energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_UT_gdp_m,UT nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_UT_share_pct,UT share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_VA_exports_m,VA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_VA_gdp_m,VA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_VA_share_pct,VA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_VT_exports_m,VT energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_VT_gdp_m,VT nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_VT_share_pct,VT share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WA_exports_m,WA energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WA_gdp_m,WA nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WA_share_pct,WA share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WI_exports_m,WI energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WI_gdp_m,WI nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WI_share_pct,WI share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WV_exports_m,WV energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WV_gdp_m,WV nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WV_share_pct,WV share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WY_exports_m,WY energy exports,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WY_gdp_m,WY nominal state GDP,CAD millions,millions of Canadian dollars,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+usx_WY_share_pct,WY share of nominal state GDP,%,percent,Unknown,Statistics Canada,https://www.statcan.gc.ca/en/trade
+wbfl_rank_count,Displayed biofuels ranking rows,count,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r1_canada,Other country row,flag,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r1_code,USA,code,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r1_name_en,United States,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r1_name_fr,États-Unis,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r1_rank,Rank 1,rank,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r1_share,Rank 1 share,Percent,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r2_canada,Other country row,flag,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r2_code,BRAZIL,code,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r2_name_en,Brazil,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r2_name_fr,Brésil,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r2_rank,Rank 2,rank,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r2_share,Rank 2 share,Percent,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r3_canada,Other country row,flag,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r3_code,INDONESIA,code,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r3_name_en,Indonesia,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r3_name_fr,Indonésie,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r3_rank,Rank 3,rank,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r3_share,Rank 3 share,Percent,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r4_canada,Other country row,flag,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r4_code,GERMANY,code,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r4_name_en,Germany,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r4_name_fr,Allemagne,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r4_rank,Rank 4,rank,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r4_share,Rank 4 share,Percent,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r5_canada,Other country row,flag,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r5_code,INDIA,code,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r5_name_en,India,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r5_name_fr,Inde,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r5_rank,Rank 5,rank,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r5_share,Rank 5 share,Percent,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r6_canada,Canada row,flag,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r6_code,CANADA,code,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r6_name_en,Canada,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r6_name_fr,Canada,name,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r6_rank,Rank 6,rank,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_r6_share,Rank 6 share,Percent,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_rank_total_pj,World liquid biofuels production,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_t_brazil,Brazil,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_t_canada,Canada,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_t_china,China,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_t_european_union,European Union,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_t_rest_of_world,Rest of the world,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wbfl_t_united_states,United States,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
 wc_oil_avg_depth_m,Western Canada oil wells average depth,metres,units,Western Canada oil wells completed,,
 wc_oil_total_metres,Western Canada oil wells total metres drilled,metres,units,Western Canada oil wells completed,,
 wc_oil_wells_completed,Western Canada oil wells completed,wells,units,Western Canada oil wells completed,,

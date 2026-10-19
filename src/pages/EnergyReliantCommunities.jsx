@@ -10,21 +10,11 @@ import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { getEnergyReliantCommunitiesData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 
 const BAR_COLOR = '#9f346d';
-
-const energy_reliant_communities_BAR_PROVINCES = [
-    { key: 'ab', count: 79 },
-    { key: 'sk', count: 44 },
-    { key: 'nl', count: 23 },
-    { key: 'bc', count: 13 },
-    { key: 'qc', count: 10 },
-    { key: 'on', count: 6 },
-    { key: 'nb', count: 4 },
-    { key: 'mb', count: 3 }
-];
 
 const RELIANCE_COLORS = {
     high: '#154360',
@@ -103,6 +93,30 @@ const DEMO_COMMUNITIES = [
     { id: 47, nameEn: 'Miramichi', nameFr: 'Miramichi', province: 'nb', lat: 47.00, lon: -65.50, location: 'rural', reliance: 'moderate' },
     { id: 48, nameEn: 'Flin Flon', nameFr: 'Flin Flon', province: 'mb', lat: 54.77, lon: -101.88, location: 'remote', reliance: 'significant' }
 ];
+
+const roundHalfUp = (value, decimals) => {
+    const factor = 10 ** decimals;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
+};
+
+const formatCount = (value, lang) => {
+    if (!Number.isFinite(Number(value))) return '—';
+    return Math.abs(roundHalfUp(Number(value), 0)).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', { maximumFractionDigits: 0 });
+};
+
+const formatShare = (value, lang) => {
+    if (!Number.isFinite(Number(value))) return '—';
+    const text = Math.abs(roundHalfUp(Number(value), 0)).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', { maximumFractionDigits: 0 });
+    return lang === 'fr' ? `${text} %` : `${text}%`;
+};
+
+const fillText = (key, lang, vars) => {
+    let text = getText(key, lang);
+    Object.entries(vars).forEach(([name, value]) => {
+        text = text.split(`{{${name}}}`).join(String(value));
+    });
+    return text;
+};
 
 const toggleFilterValue = (value, setter) => {
     setter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
@@ -390,6 +404,26 @@ const EnergyReliantCommunities = () => {
     const windowWidth = useWindowWidth();
     const [selectedBarPoints, setSelectedBarPoints] = useState(null);
     const [selectedMapIds, setSelectedMapIds] = useState(null);
+    const [barProvinces, setBarProvinces] = useState([]);
+    const [totalCommunities, setTotalCommunities] = useState(null);
+    const [ruralShare, setRuralShare] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getEnergyReliantCommunitiesData()
+            .then((payload) => {
+                if (cancelled) return;
+                setBarProvinces(Array.isArray(payload?.provinces) ? payload.provinces : []);
+                setTotalCommunities(payload?.totalCommunities ?? null);
+                setRuralShare(payload?.ruralShare ?? null);
+            })
+            .catch((err) => {
+                console.error('Failed to load energy reliant communities:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const [provinceFilter, setProvinceFilter] = useState([]);
     const [communityFilter, setCommunityFilter] = useState([]);
@@ -453,8 +487,12 @@ const EnergyReliantCommunities = () => {
 
     
 
-    const barLabels = useMemo(() => energy_reliant_communities_BAR_PROVINCES.map(p => getProvinceName(p.key)), [getProvinceName]);
-    const barValues = useMemo(() => energy_reliant_communities_BAR_PROVINCES.map(p => p.count), []);
+    const barLabels = useMemo(() => barProvinces.map(p => getProvinceName(p.key)), [barProvinces, getProvinceName]);
+    const barValues = useMemo(() => barProvinces.map(p => p.count), [barProvinces]);
+    const countText = formatCount(totalCommunities, lang);
+    const shareText = formatShare(ruralShare, lang);
+    const boldCount = fillText('energy_reliant_communities_para2_bold1', lang, { count: countText });
+    const boldShare = fillText('energy_reliant_communities_para2_bold2', lang, { share: shareText });
 
     const barTableColumns = useMemo(() => [
         { key: 'province', header: getText('energy_reliant_communities_table_province', lang), align: 'left' },
@@ -462,11 +500,11 @@ const EnergyReliantCommunities = () => {
     ], [lang]);
 
     const barTableRows = useMemo(() => (
-        energy_reliant_communities_BAR_PROVINCES.map((p) => ({
+        barProvinces.map((p) => ({
             province: getProvinceName(p.key),
-            count: p.count,
+            count: roundHalfUp(p.count, 0),
         }))
-    ), [getProvinceName]);
+    ), [barProvinces, getProvinceName]);
 
     const mapTableColumns = useMemo(() => [
         { key: 'community', header: getText('energy_reliant_communities_table_community', lang), align: 'left' },
@@ -488,13 +526,13 @@ const EnergyReliantCommunities = () => {
     }, [filteredCommunities, getCommunityName, getProvinceName, getLocationLabel, getRelianceLabel, lang]);
 
     const barTrace = useMemo(() => {
-        const hovertext = energy_reliant_communities_BAR_PROVINCES.map((p, i) => {
+        const hovertext = barProvinces.map((p, i) => {
             const name = getProvinceName(p.key);
-            return `<b>${name}</b><br>${exportBarTitle}: ${barValues[i]}`;
+            return `<b>${name}</b><br>${exportBarTitle}: ${formatCount(barValues[i], lang)}`;
         });
         const markerColor = selectedBarPoints === null
             ? BAR_COLOR
-            : energy_reliant_communities_BAR_PROVINCES.map((_, i) => selectedBarPoints.includes(i) ? BAR_COLOR : hexToRgba(BAR_COLOR, 0.3));
+            : barProvinces.map((_, i) => selectedBarPoints.includes(i) ? BAR_COLOR : hexToRgba(BAR_COLOR, 0.3));
         return {
             type: 'bar',
             orientation: 'h',
@@ -504,11 +542,11 @@ const EnergyReliantCommunities = () => {
             hovertext,
             hoverinfo: 'text',
             hoverlabel: { bgcolor: '#ffffff', font: { color: '#000000', size: 14, family: 'Arial, sans-serif' } },
-            text: barValues.map(String),
+            text: barValues.map((value) => formatCount(value, lang)),
             textposition: 'outside',
             textfont: { size: windowWidth <= 480 ? 16 : 20, color: '#666666', family: 'Arial, sans-serif' }
         };
-    }, [exportBarTitle, barLabels, barValues, windowWidth, selectedBarPoints, getProvinceName]);
+    }, [exportBarTitle, barLabels, barValues, barProvinces, windowWidth, selectedBarPoints, getProvinceName, lang]);
 
     const barPlotLayout = useMemo(() => ({
         barmode: 'overlay',
@@ -517,7 +555,7 @@ const EnergyReliantCommunities = () => {
         clickmode: 'event',
         dragmode: false,
         xaxis: {
-            range: [0, 100],
+            range: [0, Math.max(100, Math.ceil((Math.max(0, ...barValues.filter((value) => Number.isFinite(value))) + 10) / 20) * 20)],
             tick0: 0,
             dtick: 20,
             showgrid: true,
@@ -539,7 +577,7 @@ const EnergyReliantCommunities = () => {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         autosize: true
-    }), [windowWidth]);
+    }), [windowWidth, barValues]);
 
     const mapScale = 2.5;
     const mapHeight = windowWidth <= 384 ? 280 : windowWidth <= 480 ? 340 : windowWidth <= 640 ? 400 : windowWidth <= 768 ? 480 : windowWidth <= 1100 ? 560 : 620;
@@ -684,8 +722,8 @@ const EnergyReliantCommunities = () => {
 
     const getBarChartSummary = () => {
         const unit = lang === 'fr' ? 'communautés' : 'communities';
-        const parts = energy_reliant_communities_BAR_PROVINCES.map(
-            (p, i) => `${getProvinceName(p.key)}: ${barValues[i]} ${unit}`,
+        const parts = barProvinces.map(
+            (p, i) => `${getProvinceName(p.key)}: ${formatCount(barValues[i], lang)} ${unit}`,
         ).join(', ');
         return `${exportBarTitle}. ${parts}.`;
     };
@@ -790,8 +828,8 @@ const EnergyReliantCommunities = () => {
                 <p className="energy-reliant-communities-intro" role="region" aria-label={stripHtml(getText('energy_reliant_communities_para1', lang))}>
                     {getText('energy_reliant_communities_para1', lang)}
                 </p>
-                <p className="energy-reliant-communities-intro" role="region" aria-label={stripHtml(getText('energy_reliant_communities_para2_part1', lang) + getText('energy_reliant_communities_para2_bold1', lang) + getText('energy_reliant_communities_para2_part2', lang) + getText('energy_reliant_communities_para2_bold2', lang))}>
-                    {getText('energy_reliant_communities_para2_part1', lang)}<strong>{getText('energy_reliant_communities_para2_bold1', lang)}</strong>{getText('energy_reliant_communities_para2_part2', lang)}<strong>{getText('energy_reliant_communities_para2_bold2', lang)}</strong>
+                <p className="energy-reliant-communities-intro" role="region" aria-label={stripHtml(getText('energy_reliant_communities_para2_part1', lang) + boldCount + getText('energy_reliant_communities_para2_part2', lang) + boldShare)}>
+                    {getText('energy_reliant_communities_para2_part1', lang)}<strong>{boldCount}</strong>{getText('energy_reliant_communities_para2_part2', lang)}<strong>{boldShare}</strong>
                 </p>
 
                 <div className="energy-reliant-communities-chart-frame page-chrome-chart-frame">

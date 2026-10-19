@@ -9,6 +9,7 @@ import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { getDemographicRepresentationData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 
@@ -23,18 +24,6 @@ const CATEGORY_KEYS = [
     'university_plus',
     'age_55_plus',
 ];
-
-const demographic_representation_DATA = {
-    women: { energy: 24, all: 48 },
-    women_trades: { energy: 7, all: 9 },
-    women_office: { energy: 65, all: 68 },
-    immigrants: { energy: 17, all: 25 },
-    indigenous: { energy: 6, all: 4 },
-    visible_minorities: { energy: 21, all: 26 },
-    high_school_plus: { energy: 75, all: 66 },
-    university_plus: { energy: 33, all: 32 },
-    age_55_plus: { energy: 21, all: 24 },
-};
 
 const COLORS = {
     energy: '#1B99BB',
@@ -120,6 +109,21 @@ const DemographicRepresentation = () => {
         onPlotClick: handleChartClick,
     } = usePlotlySelection({ mode: 'points', traceCount: 2, windowWidth });
     const chartRef = useRef(null);
+    const [representation, setRepresentation] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getDemographicRepresentationData()
+            .then((payload) => {
+                if (!cancelled) setRepresentation(payload);
+            })
+            .catch((err) => {
+                console.error('Failed to load demographic representation:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const chartTitle = getText('demographic_representation_chart_title', lang);
     const exportChartTitle = stripHtml(chartTitle);
@@ -135,8 +139,15 @@ const DemographicRepresentation = () => {
         [lang],
     );
 
-    const energyValues = useMemo(() => CATEGORY_KEYS.map((key) => demographic_representation_DATA[key].energy), []);
-    const allValues = useMemo(() => CATEGORY_KEYS.map((key) => demographic_representation_DATA[key].all), []);
+    const shares = representation?.groups || {};
+    const energyValues = useMemo(
+        () => CATEGORY_KEYS.map((key) => shares[key]?.energy ?? null),
+        [shares],
+    );
+    const allValues = useMemo(
+        () => CATEGORY_KEYS.map((key) => shares[key]?.all ?? null),
+        [shares],
+    );
 
     const tableColumns = useMemo(() => [
         { key: 'group', header: getText('demographic_representation_table_group', lang), align: 'left' },
@@ -147,10 +158,10 @@ const DemographicRepresentation = () => {
     const tableRows = useMemo(
         () => CATEGORY_KEYS.map((key, i) => ({
             group: categoryLabelsFull[i],
-            energy: demographic_representation_DATA[key].energy,
-            all: demographic_representation_DATA[key].all,
+            energy: shares[key]?.energy ?? null,
+            all: shares[key]?.all ?? null,
         })),
-        [categoryLabelsFull],
+        [categoryLabelsFull, shares],
     );
 
     const pageZoomForLayout = Math.max(
@@ -322,7 +333,12 @@ const DemographicRepresentation = () => {
             (key, i) =>
                 `${categoryLabelsFull[i]}: ${getText('demographic_representation_legend_energy', lang)} ${formatDemographicsPct(energyValues[i], lang)}, ${getText('demographic_representation_legend_all', lang)} ${formatDemographicsPct(allValues[i], lang)}`,
         ).join('; ');
-        return `${exportChartTitle}. ${parts}.`;
+        const yearNote = representation?.year && representation?.censusYear
+            ? `${getText('demographic_representation_year_note', lang)
+                .replace('{{year}}', String(representation.year))
+                .replace('{{censusYear}}', String(representation.censusYear))} `
+            : '';
+        return `${exportChartTitle}. ${yearNote}${parts}.`;
     };
 
     const plotConfig = buildPngOnlyPlotConfig({

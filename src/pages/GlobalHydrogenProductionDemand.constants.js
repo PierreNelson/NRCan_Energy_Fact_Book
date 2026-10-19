@@ -1,22 +1,20 @@
-/** Hardcoded global hydrogen production & demand (2024) — Factbook p.101. */
-
-export const REFERENCE_YEAR = 2024;
+/** Slice colours. Shares and totals come from the pipeline. */
 
 export const PRODUCTION_KEYS = [
-    'by_product',
     'natural_gas_wo_ccus',
     'coal',
     'fossil_fuels_w_ccus',
     'oil',
     'electricity',
+    'by_product',
 ];
 
 export const DEMAND_KEYS = [
-    'transportation_other',
     'refining',
     'ammonia',
     'methanol',
     'steelmaking',
+    'transportation_other',
 ];
 
 export const PRODUCTION_COLORS = {
@@ -34,28 +32,6 @@ export const DEMAND_COLORS = {
     ammonia: '#68A848',
     methanol: '#6098B0',
     steelmaking: '#585858',
-};
-
-/** Percent shares by year; labels are keyed by category so they follow slices if years are added later. */
-export const DATA_BY_YEAR = {
-    2024: {
-        totalMt: 100,
-        production: {
-            by_product: 15,
-            natural_gas_wo_ccus: 63,
-            coal: 21,
-            fossil_fuels_w_ccus: 0.7,
-            oil: 0.7,
-            electricity: 0.1,
-        },
-        demand: {
-            transportation_other: 1,
-            refining: 44,
-            ammonia: 33,
-            methanol: 17,
-            steelmaking: 6,
-        },
-    },
 };
 
 export const DOC_COLUMN_WIDTHS = [4200, 1800, 1800];

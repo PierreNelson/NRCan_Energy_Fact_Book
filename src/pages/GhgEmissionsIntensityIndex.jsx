@@ -11,6 +11,7 @@ import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
 import { prepareInlineSvgMarkup } from '../utils/prefixSvgIds';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { getEnergyAndGhgEmissionsData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import HtmlLegend from '../components/HtmlLegend';
@@ -20,34 +21,6 @@ import bgStackedEn from '../assets/ghg_emissions_intensity_index_bg_stacked.svg?
 import bgStackedFr from '../assets/ghg_emissions_intensity_index_bg_stacked_fr.svg?raw';
 import hexToRgba from '../utils/hexToRgba';
 
-/* Hardcoded indexed series (2000=100) pending pipeline sources. */
-const GHG_EMISSIONS_INTENSITY_INDEX_DATA = [
-    { year: 2000, perGdp: 100, perCapita: 100, perEnergy: 100 },
-    { year: 2001, perGdp: 98, perCapita: 99.5, perEnergy: 100.5 },
-    { year: 2002, perGdp: 96, perCapita: 99, perEnergy: 101 },
-    { year: 2003, perGdp: 94.5, perCapita: 98.5, perEnergy: 101.2 },
-    { year: 2004, perGdp: 93, perCapita: 98.2, perEnergy: 101.1 },
-    { year: 2005, perGdp: 91, perCapita: 98, perEnergy: 101 },
-    { year: 2006, perGdp: 88.5, perCapita: 96, perEnergy: 100 },
-    { year: 2007, perGdp: 87, perCapita: 94, perEnergy: 99.5 },
-    { year: 2008, perGdp: 85, perCapita: 91, perEnergy: 99 },
-    { year: 2009, perGdp: 84, perCapita: 88, perEnergy: 98.5 },
-    { year: 2010, perGdp: 82, perCapita: 87, perEnergy: 98 },
-    { year: 2011, perGdp: 80, perCapita: 86.5, perEnergy: 97.5 },
-    { year: 2012, perGdp: 78.5, perCapita: 86, perEnergy: 97 },
-    { year: 2013, perGdp: 77, perCapita: 85.5, perEnergy: 96.5 },
-    { year: 2014, perGdp: 76, perCapita: 85.2, perEnergy: 96.2 },
-    { year: 2015, perGdp: 75, perCapita: 85, perEnergy: 96 },
-    { year: 2016, perGdp: 72.5, perCapita: 83, perEnergy: 95 },
-    { year: 2017, perGdp: 71, perCapita: 81, perEnergy: 94.5 },
-    { year: 2018, perGdp: 69.5, perCapita: 79, perEnergy: 94 },
-    { year: 2019, perGdp: 68, perCapita: 77, perEnergy: 93 },
-    { year: 2020, perGdp: 65, perCapita: 74, perEnergy: 92 },
-    { year: 2021, perGdp: 62.5, perCapita: 72.5, perEnergy: 91 },
-    { year: 2022, perGdp: 61, perCapita: 72, perEnergy: 90.2 },
-    { year: 2023, perGdp: 59.5, perCapita: 71.5, perEnergy: 89.5 },
-];
-
 const COLORS = {
     perGdp: '#647C8E',
     perCapita: '#31BDCB',
@@ -55,6 +28,65 @@ const COLORS = {
 };
 
 const SERIES_KEYS = ['perGdp', 'perCapita', 'perEnergy'];
+
+const fill = (template, values) => Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{{${key}}}`, String(value)),
+    template,
+);
+
+const roundHalfUp = (value, digits) => {
+    const factor = 10 ** digits;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
+};
+
+const formatPercent = (value, lang, digits) => {
+    const rounded = roundHalfUp(Number(value), digits);
+    const text = Math.abs(rounded).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
+    return lang === 'fr' ? `${text} %` : `${text}%`;
+};
+
+const formatSignedPercent = (value, lang) => {
+    const rounded = roundHalfUp(Number(value), 1);
+    const text = Math.abs(rounded).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+    });
+    const signed = `${rounded < 0 ? '-' : ''}${text}`;
+    return lang === 'fr' ? `${signed} %` : `${signed}%`;
+};
+
+const patchIntensitySvg = (markup, lang, stats) => {
+    if (!stats) return markup;
+    const year = stats.latest.year;
+    const emissions = formatPercent(Math.abs(stats.emissionsChange), lang, 0);
+    const gdp = formatPercent(Math.abs(stats.gdpChange), lang, 0);
+    const perGdp = formatPercent(Math.abs(stats.perGdpChange), lang, 0);
+    const perCapita = formatPercent(Math.abs(stats.perCapitaChange), lang, 1);
+    let next = markup
+        .replace('2000 and 2023', `2000 and ${year}`)
+        .replace('2000 et 2023', `2000 et ${year}`)
+        .replace('>7%</text>', `>${emissions}</text>`)
+        .replace('>7 %</text>', `>${emissions}</text>`)
+        .replace('>56%</text>', `>${gdp}</text>`)
+        .replace('>56 %</text>', `>${gdp}</text>`)
+        .replace('>39%</text>', `>${perGdp}</text>`)
+        .replace('>39 %</text>', `>${perGdp}</text>`)
+        .replace('>26.1%</text>', `>${perCapita}</text>`)
+        .replace('>26,1 %</text>', `>${perCapita}</text>`);
+    if (stats.emissionsChange >= 0) {
+        next = next.replace('decreased by', 'increased by').replace('ont diminué de', 'ont augmenté de');
+    }
+    if (stats.gdpChange < 0) {
+        next = next.replace('while GDP increased', 'while GDP decreased').replace('a augmenté de', 'a diminué de');
+    }
+    if (stats.perGdpChange >= 0) {
+        next = next.replace('GHG emissions decreased', 'GHG emissions increased').replace('ont diminué de', 'ont augmenté de');
+    }
+    return next;
+};
 
 const INFOGRAPHIC_BLOCK_KEYS = ['emissions', 'gdp', 'intensity'];
 
@@ -128,6 +160,7 @@ const GhgEmissionsIntensityIndex = () => {
     const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
     const [selectedTraceIds, setSelectedTraceIds] = useState(null);
+    const [chartYears, setChartYears] = useState([]);
     const zoomBaselineRef = useRef(null);
     const chartRef = useRef(null);
     const infographicImgRef = useRef(null);
@@ -143,16 +176,60 @@ const GhgEmissionsIntensityIndex = () => {
         return value.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
     };
 
-    const years = useMemo(() => GHG_EMISSIONS_INTENSITY_INDEX_DATA.map((r) => r.year), []);
+    useEffect(() => {
+        let cancelled = false;
+        getEnergyAndGhgEmissionsData()
+            .then((data) => {
+                if (!cancelled) setChartYears(data.chartYears || []);
+            })
+            .catch((err) => {
+                console.warn('Unable to load indexed GHG emissions.', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const years = useMemo(() => chartYears.map((row) => row.year), [chartYears]);
     const seriesValues = useMemo(
-        () => Object.fromEntries(SERIES_KEYS.map((key) => [key, GHG_EMISSIONS_INTENSITY_INDEX_DATA.map((r) => r[key])])),
-        [],
+        () => Object.fromEntries(SERIES_KEYS.map((key) => [key, chartYears.map((row) => row[key])])),
+        [chartYears],
     );
+    const indexed = useMemo(() => {
+        if (!chartYears.length) return null;
+        const base = chartYears.find((row) => row.year === 2000);
+        const latest = chartYears[chartYears.length - 1];
+        const prior = chartYears.find((row) => row.year === 2019);
+        if (!base || !latest || base.canadaTotalKt === 0 || base.gdpMillion === 0) return null;
+        const emissionsChange = (latest.canadaTotalKt / base.canadaTotalKt - 1) * 100;
+        const gdpChange = (latest.gdpMillion / base.gdpMillion - 1) * 100;
+        const stats = {
+            base,
+            latest,
+            emissionsChange,
+            gdpChange,
+            perGdpChange: latest.perGdp - 100,
+            perCapitaChange: latest.perCapita - 100,
+            mtVs2019: null,
+            pctVs2019: null,
+        };
+        if (prior && prior.canadaTotalKt) {
+            stats.mtVs2019 = (prior.canadaTotalKt - latest.canadaTotalKt) / 1000;
+            stats.pctVs2019 = (latest.canadaTotalKt / prior.canadaTotalKt - 1) * 100;
+        }
+        return stats;
+    }, [chartYears]);
 
     const pageTitle = getText('ghg_emissions_intensity_index_title', lang);
-    const chartTitle = getText('ghg_emissions_intensity_index_chart_title', lang);
+    const yearSpan = {
+        start: indexed?.base.year ?? 2000,
+        end: indexed?.latest.year ?? '',
+    };
+    const chartTitle = fill(getText('ghg_emissions_intensity_index_chart_title', lang), yearSpan);
     const exportChartTitle = stripHtml(chartTitle);
-    const chartDownloadSlug = getText('ghg_emissions_intensity_index_download_title', lang).replace(/\s+/g, '_');
+    const chartDownloadSlug = getText('ghg_emissions_intensity_index_download_title', lang)
+        .replace('2023', String(yearSpan.end))
+        .replace(/\s+/g, '_');
     const infographicDownloadSlug = getText('ghg_emissions_intensity_index_infographic_download_title', lang).replace(/\s+/g, '_');
     const yAxisTitle = getText('ghg_emissions_intensity_index_yaxis', lang);
 
@@ -173,21 +250,57 @@ const GhgEmissionsIntensityIndex = () => {
         ? (useStackedLayout ? bgStackedEn : bgColumnEn)
         : (useStackedLayout ? bgStackedFr : bgColumnFr);
     const preparedInfographicSvg = useMemo(
-        () => prepareInlineSvgMarkup(bgMarkup, `ghg-intensity-${useStackedLayout ? 'stacked' : 'column'}-${lang}`),
-        [bgMarkup, lang, useStackedLayout],
+        () => prepareInlineSvgMarkup(
+            patchIntensitySvg(bgMarkup, lang, indexed),
+            `ghg-intensity-${useStackedLayout ? 'stacked' : 'column'}-${lang}`,
+        ),
+        [bgMarkup, lang, useStackedLayout, indexed],
     );
     const infographicBlocks = useMemo(() => {
         const layout = useStackedLayout ? 'stacked' : 'column';
         const boxes = INFOGRAPHIC_BLOCK_BOXES[layout][lang === 'fr' ? 'fr' : 'en'];
+        const directionWord = (change) => getText(
+            change < 0
+                ? 'ghg_emissions_intensity_index_direction_down'
+                : 'ghg_emissions_intensity_index_direction_up',
+            lang,
+        );
+        if (!indexed) {
+            return INFOGRAPHIC_BLOCK_KEYS.map((key) => ({ key, label: '', box: boxes[key] }));
+        }
+        const labels = {
+            emissions: fill(getText('ghg_emissions_intensity_index_block_emissions', lang), {
+                year: indexed.latest.year,
+                direction: directionWord(indexed.emissionsChange),
+                value: formatPercent(Math.abs(indexed.emissionsChange), lang, 0),
+            }),
+            gdp: fill(getText('ghg_emissions_intensity_index_block_gdp', lang), {
+                direction: directionWord(indexed.gdpChange),
+                value: formatPercent(Math.abs(indexed.gdpChange), lang, 0),
+            }),
+            intensity: fill(getText('ghg_emissions_intensity_index_block_intensity', lang), {
+                direction: directionWord(indexed.perGdpChange),
+                perGdp: formatPercent(Math.abs(indexed.perGdpChange), lang, 0),
+                perCapita: formatPercent(Math.abs(indexed.perCapitaChange), lang, 1),
+            }),
+        };
         return INFOGRAPHIC_BLOCK_KEYS.map((key) => ({
             key,
-            label: getText(`ghg_emissions_intensity_index_block_${key}`, lang),
+            label: labels[key],
             box: boxes[key],
         }));
-    }, [lang, useStackedLayout]);
+    }, [lang, useStackedLayout, indexed]);
 
     const xTickvals = years.filter((y) => y % 2 === 1);
-    const yTickvals = [55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105];
+    const yTickvals = useMemo(() => {
+        const values = chartYears.flatMap((row) => SERIES_KEYS.map((key) => row[key]));
+        if (!values.length) return [55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105];
+        const start = Math.floor((Math.min(...values, 100) - 1) / 5) * 5;
+        const end = Math.ceil((Math.max(...values, 100) + 1) / 5) * 5;
+        const ticks = [];
+        for (let tick = start; tick <= end; tick += 5) ticks.push(tick);
+        return ticks;
+    }, [chartYears]);
     const plotHeight = windowWidth <= 480 ? 340 : windowWidth <= 768 ? 380 : 420;
     const plotTopMargin = windowWidth <= 480 ? 24 : 20;
     const plotBottomMargin = windowWidth <= 480 ? 62 : windowWidth <= 768 ? 56 : 50;
@@ -431,12 +544,20 @@ const GhgEmissionsIntensityIndex = () => {
                     {pageTitle}
                 </h1>
 
+                {indexed && (
                 <div className="ghg-emissions-intensity-index-intro">
                     <p>{getText('ghg_emissions_intensity_index_intro_1', lang)}</p>
-                    <p>{getText('ghg_emissions_intensity_index_intro_2', lang)}</p>
+                    {indexed.mtVs2019 != null && (
+                        <p>{fill(getText('ghg_emissions_intensity_index_intro_2', lang), {
+                            year: indexed.latest.year,
+                            mt: Math.abs(roundHalfUp(indexed.mtVs2019, 0)).toLocaleString(locale),
+                            pct: formatSignedPercent(indexed.pctVs2019, lang),
+                        })}</p>
+                    )}
                 </div>
+                )}
 
-                <div className={`ghg-emissions-intensity-index-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
+                {indexed && <div className={`ghg-emissions-intensity-index-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <section className="ghg-emissions-intensity-index-info-column">
                         <figure ref={infographicImgRef} className="ghg-emissions-intensity-index-figure">
                             <div className="ghg-emissions-intensity-index-graphic">
@@ -520,7 +641,7 @@ const GhgEmissionsIntensityIndex = () => {
                                             },
                                             yaxis: {
                                                 title: { text: yAxisTitle, font: axisTitleFont, standoff: 12 },
-                                                range: [55, 105],
+                                                range: [yTickvals[0], yTickvals[yTickvals.length - 1]],
                                                 tickmode: 'array',
                                                 tickvals: yTickvals,
                                                 ticktext: yTickvals.map(String),
@@ -556,7 +677,7 @@ const GhgEmissionsIntensityIndex = () => {
                                 <ChartDataTable
                                     lang={lang}
                                     columns={tableColumns}
-                                    rows={GHG_EMISSIONS_INTENSITY_INDEX_DATA}
+                                    rows={chartYears}
                                     csvFilename={`${chartDownloadSlug}.csv`}
                                     docx={{
                                         filename: `${chartDownloadSlug}.docx`,
@@ -565,8 +686,8 @@ const GhgEmissionsIntensityIndex = () => {
                                         columnWidths: [900, 2800, 2800, 2800],
                                         fontSize: 20,
                                     }}
-                                    caption={getText('ghg_emissions_intensity_index_table_caption', lang)}
-                                    tableAriaLabel={getText('ghg_emissions_intensity_index_table_caption', lang)}
+                                    caption={fill(getText('ghg_emissions_intensity_index_table_caption', lang), yearSpan)}
+                                    tableAriaLabel={fill(getText('ghg_emissions_intensity_index_table_caption', lang), yearSpan)}
                                     renderCell={(raw, { colIndex }) => (
                                         colIndex === 0 ? String(raw ?? '') : formatIndex(raw)
                                     )}
@@ -574,7 +695,7 @@ const GhgEmissionsIntensityIndex = () => {
                             </div>
                         </div>
                     </section>
-                </div>
+                </div>}
             </div>
         </PageShell>
     );

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
@@ -9,10 +9,43 @@ import { prepareInlineSvgMarkup } from '../utils/prefixSvgIds';
 import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
 import energyAndGhgEmissionsBgEn from '../assets/energy_and_ghg_emissions_bg.svg?raw';
 import energyAndGhgEmissionsBgFr from '../assets/energy_and_ghg_emissions_bg_fr.svg?raw';
+import { getEnergyAndGhgEmissionsData } from '../utils/dataLoader';
+
+const fill = (template, values) => Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{{${key}}}`, String(value)),
+    template,
+);
+
+const roundHalfUp = (value, digits) => {
+    const factor = 10 ** digits;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
+};
+
+const formatShare = (value, lang) => {
+    const rounded = Math.abs(roundHalfUp(Number(value), 0)).toLocaleString(
+        lang === 'fr' ? 'fr-CA' : 'en-CA',
+        { maximumFractionDigits: 0 },
+    );
+    return lang === 'fr' ? `${rounded} %` : `${rounded}%`;
+};
+
+const patchEnergyGhgSvg = (markup, lang, highlights) => {
+    if (!highlights?.global || !highlights?.canada) return markup;
+    const globalShare = formatShare(highlights.global.share, lang);
+    const canadaShare = formatShare(highlights.canada.share, lang);
+    if (lang === 'fr') {
+        return markup
+            .replace('En 2023,', `En ${highlights.global.year},`)
+            .replace('78 %', globalShare)
+            .replace('environ 81 %', `environ ${canadaShare}`);
+    }
+    return markup
+        .replace('In 2023,', `In ${highlights.global.year},`)
+        .replace('78%', globalShare)
+        .replace('about 81%', `about ${canadaShare}`);
+};
 
 const INFO_COLUMN_WIDTHS = [5200, 3600];
-
-const HIGHLIGHT_KEYS = ['global_share', 'canada_share'];
 
 const TEXT_BLOCK_KEYS = ['global', 'includes', 'canada', 'challenges'];
 
@@ -37,28 +70,78 @@ const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 const EnergyAndGhgEmissions = () => {
     const { lang, layoutPadding } = useOutletContext();
     const infographicRef = useRef(null);
+    const [highlights, setHighlights] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getEnergyAndGhgEmissionsData()
+            .then((data) => {
+                if (!cancelled) setHighlights(data);
+            })
+            .catch((err) => {
+                console.warn('Unable to load energy and GHG emissions.', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const pageTitle = getText('energy_and_ghg_emissions_title', lang);
     const svgMarkup = lang === 'en' ? energyAndGhgEmissionsBgEn : energyAndGhgEmissionsBgFr;
     const preparedSvg = useMemo(
-        () => prepareInlineSvgMarkup(svgMarkup, `energy-and-ghg-${lang}`),
-        [lang, svgMarkup],
+        () => prepareInlineSvgMarkup(
+            patchEnergyGhgSvg(svgMarkup, lang, highlights),
+            `energy-and-ghg-${lang}`,
+        ),
+        [lang, svgMarkup, highlights],
     );
+    const shareText = useMemo(() => {
+        if (!highlights?.global || !highlights?.canada) return null;
+        const globalShare = formatShare(highlights.global.share, lang);
+        const canadaShare = formatShare(highlights.canada.share, lang);
+        return {
+            globalShare,
+            canadaShare,
+            globalLabel: fill(getText('energy_and_ghg_emissions_block_global', lang), {
+                year: highlights.global.year,
+                share: globalShare,
+            }),
+            canadaLabel: fill(getText('energy_and_ghg_emissions_block_canada', lang), {
+                share: canadaShare,
+            }),
+        };
+    }, [highlights, lang]);
     const textBlocks = useMemo(() => {
         const boxes = lang === 'fr' ? TEXT_BLOCK_BOXES.fr : TEXT_BLOCK_BOXES.en;
         return TEXT_BLOCK_KEYS.map((key) => ({
             key,
-            label: getText(`energy_and_ghg_emissions_block_${key}`, lang),
+            label: key === 'global'
+                ? shareText?.globalLabel
+                : key === 'canada'
+                    ? shareText?.canadaLabel
+                    : getText(`energy_and_ghg_emissions_block_${key}`, lang),
             box: boxes[key],
         }));
-    }, [lang]);
+    }, [lang, shareText]);
     const fileTitle = getText('energy_and_ghg_emissions_download_title', lang);
 
-    const tableRows = HIGHLIGHT_KEYS.map((key) => ({
-        key,
-        indicator: getText(`energy_and_ghg_emissions_csv_${key}`, lang),
-        value: getText(`energy_and_ghg_emissions_csv_value_${key}`, lang),
-    }));
+    const tableRows = shareText ? [
+        {
+            key: 'global_share',
+            indicator: fill(getText('energy_and_ghg_emissions_csv_global_share', lang), {
+                year: highlights.global.year,
+            }),
+            value: shareText.globalShare,
+        },
+        {
+            key: 'canada_share',
+            indicator: fill(getText('energy_and_ghg_emissions_csv_canada_share', lang), {
+                year: highlights.canada.year,
+                share: shareText.canadaShare,
+            }),
+            value: shareText.canadaShare,
+        },
+    ] : [];
 
     const downloadInfographicPng = async () => {
         try {
@@ -237,7 +320,7 @@ const EnergyAndGhgEmissions = () => {
                     {pageTitle}
                 </h1>
 
-                <figure ref={infographicRef} className="energy-and-ghg-emissions-figure">
+                {shareText && <figure ref={infographicRef} className="energy-and-ghg-emissions-figure">
                     <div className="energy-and-ghg-emissions-graphic">
                         <div
                             className="energy-and-ghg-emissions-bg-image"
@@ -261,7 +344,7 @@ const EnergyAndGhgEmissions = () => {
                             />
                         ))}
                     </div>
-                </figure>
+                </figure>}
 
                 <div className="energy-and-ghg-emissions-actions">
                     <button type="button" onClick={downloadInfographicPng}>

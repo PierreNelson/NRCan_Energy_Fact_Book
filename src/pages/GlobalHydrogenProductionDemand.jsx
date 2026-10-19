@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import ClearSelectionButton from '../components/ClearSelectionButton';
+import FootnoteMarker from '../components/FootnoteMarker';
+import PageFootnotes from '../components/PageFootnotes';
 import useWindowWidth from '../hooks/useWindowWidth';
 import usePlotlySelection from '../hooks/usePlotlySelection';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
@@ -9,16 +11,15 @@ import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
+import { getGlobalHydrogenProductionDemandData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import {
-    REFERENCE_YEAR,
     PRODUCTION_KEYS,
     DEMAND_KEYS,
     PRODUCTION_COLORS,
     DEMAND_COLORS,
-    DATA_BY_YEAR,
     DOC_COLUMN_WIDTHS,
 } from './GlobalHydrogenProductionDemand.constants';
 import hexToRgba from '../utils/hexToRgba';
@@ -40,7 +41,9 @@ const substitute = (text, vars) =>
 const digitCount = (value) => {
     const n = Number(value);
     if (Number.isNaN(n)) return 0;
-    return Number.isInteger(n) || Math.abs(n - Math.round(n)) < 1e-9 ? 0 : 1;
+    const text = String(n);
+    if (!text.includes('.')) return 0;
+    return text.split('.')[1].replace(/0+$/, '').length;
 };
 
 const computePageZoomScale = (baseline) => {
@@ -79,7 +82,7 @@ const computePageZoomScale = (baseline) => {
 
 const GlobalHydrogenProductionDemand = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [selectedYear] = useState(REFERENCE_YEAR);
+    const [hydrogen, setHydrogen] = useState(null);
     const windowWidth = useWindowWidth();
     const {
         selected: selectedProductionSlices,
@@ -98,11 +101,10 @@ const GlobalHydrogenProductionDemand = () => {
     const demandChartRef = useRef(null);
 
     const useStackedLayout = pageCssZoom >= STACKED_LAYOUT_DETECTED_ZOOM;
-    // Inside labels + HTML legend: narrow viewports or when charts stack at 110%+ zoom.
     const zoomLegendMode = windowWidth <= 768 || useStackedLayout;
-    const textVars = { year: selectedYear };
-    const yearData = DATA_BY_YEAR[selectedYear] ?? DATA_BY_YEAR[REFERENCE_YEAR];
-    const totalMt = yearData?.totalMt ?? 0;
+    const selectedYear = hydrogen?.year ?? '';
+    const productionTotalMt = hydrogen?.sourceTotalMt ?? null;
+    const demandTotalMt = hydrogen?.demandMt ?? null;
 
     const formatMt = useCallback((value, digits) => {
         if (value == null || Number.isNaN(Number(value))) return '–';
@@ -122,6 +124,30 @@ const GlobalHydrogenProductionDemand = () => {
         });
     }, [lang]);
 
+    const textVars = {
+        year: selectedYear,
+        productionMt: hydrogen ? formatMt(hydrogen.productionMt, 0) : '',
+        deliberate: hydrogen ? formatPct(hydrogen.deliberatePct) : '',
+        byProduct: hydrogen ? formatPct(hydrogen.byProductPct) : '',
+        demandMt: hydrogen ? formatMt(hydrogen.demandMt, 0) : '',
+        refining: hydrogen ? formatPct(hydrogen.refiningPct) : '',
+        ammonia: hydrogen ? formatPct(hydrogen.ammoniaPct) : '',
+    };
+
+    useEffect(() => {
+        let cancelled = false;
+        getGlobalHydrogenProductionDemandData()
+            .then((data) => {
+                if (!cancelled) setHydrogen(data);
+            })
+            .catch(() => {
+                if (!cancelled) setHydrogen(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     useEffect(() => {
         const syncLayout = () => {
             const { pageCssZoom: nextPageCssZoom, baseline } = computePageZoomScale(zoomBaselineRef.current);
@@ -140,22 +166,22 @@ const GlobalHydrogenProductionDemand = () => {
     }, []);
 
     const productionSlices = useMemo(() => {
-        if (!yearData) return [];
+        if (!hydrogen) return [];
         return PRODUCTION_KEYS.map((key) => {
-            const pct = yearData.production?.[key] ?? 0;
-            const mt = (totalMt * pct) / 100;
+            const pct = hydrogen.production?.[key] ?? 0;
+            const mt = Number(((productionTotalMt * pct) / 100).toFixed(3));
             return { key, pct, mt };
         });
-    }, [yearData, totalMt]);
+    }, [hydrogen, productionTotalMt]);
 
     const demandSlices = useMemo(() => {
-        if (!yearData) return [];
+        if (!hydrogen) return [];
         return DEMAND_KEYS.map((key) => {
-            const pct = yearData.demand?.[key] ?? 0;
-            const mt = (totalMt * pct) / 100;
+            const pct = hydrogen.demand?.[key] ?? 0;
+            const mt = Number(((demandTotalMt * pct) / 100).toFixed(3));
             return { key, pct, mt };
         });
-    }, [yearData, totalMt]);
+    }, [hydrogen, demandTotalMt]);
 
     const productionChartTitle = substitute(
         getText('global_hydrogen_production_demand_production_chart_title', lang),
@@ -292,21 +318,7 @@ const GlobalHydrogenProductionDemand = () => {
         [buildPieTrace, demandSlices, selectedDemandSlices],
     );
 
-    const centerAnnotation = useMemo(() => ({
-        text: `<b>${formatMt(totalMt, 0)}</b><br>Mt`,
-        showarrow: false,
-        x: 0.5,
-        y: pieCenterY,
-        xref: 'paper',
-        yref: 'paper',
-        font: {
-            size: windowWidth <= 480 ? 15 : 20,
-            color: '#424243',
-            family: 'Arial Black, Arial, sans-serif',
-        },
-    }), [totalMt, windowWidth, formatMt, pieCenterY]);
-
-    const plotLayout = useMemo(() => ({
+    const buildLayout = useCallback((total) => ({
         showlegend: false,
         margin: {
             t: pieTopMargin,
@@ -321,9 +333,39 @@ const GlobalHydrogenProductionDemand = () => {
         autosize: true,
         clickmode: 'event',
         dragmode: false,
-        annotations: [centerAnnotation],
-        uirevision: `global-hydrogen-${selectedYear}`,
-    }), [pieTopMargin, pieBottomMargin, pieSideMargin, plotHeight, centerAnnotation, selectedYear]);
+        annotations: [{
+            text: `<b>${formatMt(total, 0)}</b><br>Mt`,
+            showarrow: false,
+            x: 0.5,
+            y: pieCenterY,
+            xref: 'paper',
+            yref: 'paper',
+            font: {
+                size: windowWidth <= 480 ? 15 : 20,
+                color: '#424243',
+                family: 'Arial Black, Arial, sans-serif',
+            },
+        }],
+        uirevision: `global-hydrogen-${selectedYear}-${total}`,
+    }), [
+        pieTopMargin,
+        pieBottomMargin,
+        pieSideMargin,
+        plotHeight,
+        formatMt,
+        pieCenterY,
+        windowWidth,
+        selectedYear,
+    ]);
+
+    const productionLayout = useMemo(
+        () => buildLayout(productionTotalMt),
+        [buildLayout, productionTotalMt],
+    );
+    const demandLayout = useMemo(
+        () => buildLayout(demandTotalMt),
+        [buildLayout, demandTotalMt],
+    );
 
     const downloadProductionPng = useChartPngDownloader(
         productionChartRef,
@@ -422,6 +464,7 @@ const GlobalHydrogenProductionDemand = () => {
         downloadTitle,
         colorsMap,
         chartRegionLabel,
+        chartLayout,
     }) => {
         const tableCaption = substitute(getText(tableCaptionKey, lang), textVars);
         return (
@@ -438,6 +481,12 @@ const GlobalHydrogenProductionDemand = () => {
                     className="global-hydrogen-production-demand-chart-title page-chrome-chart-title"
                 >
                     {chartTitle}
+                    <FootnoteMarker
+                        lang={lang}
+                        href="#fn-asterisk-global-hydrogen"
+                        id={kind === 'production' ? 'fn-asterisk-rf-global-hydrogen' : undefined}
+                        marker="*"
+                    />
                 </h2>
 
                 {selectedSlices != null ? (
@@ -459,7 +508,7 @@ const GlobalHydrogenProductionDemand = () => {
                         <Plot
                             key={`global-hydrogen-${kind}-${selectedYear}-${selectedSlices ? selectedSlices.join('-') : 'all'}-${zoomLegendMode ? 'compact' : 'wide'}-${lang}`}
                             data={[pieTrace]}
-                            layout={plotLayout}
+                            layout={chartLayout}
                             config={chartConfig}
                             style={{ width: '100%', height: `${plotHeight}px` }}
                             useResizeHandler
@@ -696,22 +745,22 @@ const GlobalHydrogenProductionDemand = () => {
 
                 <ul className="global-hydrogen-production-demand-bullets">
                     <li>
-                        {getText('global_hydrogen_production_demand_bullet1_pre', lang)}
-                        <strong>{getText('global_hydrogen_production_demand_bullet1_bold1', lang)}</strong>
-                        {getText('global_hydrogen_production_demand_bullet1_mid1', lang)}
-                        <strong>{getText('global_hydrogen_production_demand_bullet1_bold2', lang)}</strong>
-                        {getText('global_hydrogen_production_demand_bullet1_mid2', lang)}
-                        <strong>{getText('global_hydrogen_production_demand_bullet1_bold3', lang)}</strong>
-                        {getText('global_hydrogen_production_demand_bullet1_post', lang)}
+                        {substitute(getText('global_hydrogen_production_demand_bullet1_pre', lang), textVars)}
+                        <strong>{substitute(getText('global_hydrogen_production_demand_bullet1_bold1', lang), textVars)}</strong>
+                        {substitute(getText('global_hydrogen_production_demand_bullet1_mid1', lang), textVars)}
+                        <strong>{substitute(getText('global_hydrogen_production_demand_bullet1_bold2', lang), textVars)}</strong>
+                        {substitute(getText('global_hydrogen_production_demand_bullet1_mid2', lang), textVars)}
+                        <strong>{substitute(getText('global_hydrogen_production_demand_bullet1_bold3', lang), textVars)}</strong>
+                        {substitute(getText('global_hydrogen_production_demand_bullet1_post', lang), textVars)}
                     </li>
                     <li>
-                        {getText('global_hydrogen_production_demand_bullet2_pre', lang)}
-                        <strong>{getText('global_hydrogen_production_demand_bullet2_bold1', lang)}</strong>
-                        {getText('global_hydrogen_production_demand_bullet2_mid1', lang)}
-                        <strong>{getText('global_hydrogen_production_demand_bullet2_bold2', lang)}</strong>
-                        {getText('global_hydrogen_production_demand_bullet2_mid2', lang)}
-                        <strong>{getText('global_hydrogen_production_demand_bullet2_bold3', lang)}</strong>
-                        {getText('global_hydrogen_production_demand_bullet2_post', lang)}
+                        {substitute(getText('global_hydrogen_production_demand_bullet2_pre', lang), textVars)}
+                        <strong>{substitute(getText('global_hydrogen_production_demand_bullet2_bold1', lang), textVars)}</strong>
+                        {substitute(getText('global_hydrogen_production_demand_bullet2_mid1', lang), textVars)}
+                        <strong>{substitute(getText('global_hydrogen_production_demand_bullet2_bold2', lang), textVars)}</strong>
+                        {substitute(getText('global_hydrogen_production_demand_bullet2_mid2', lang), textVars)}
+                        <strong>{substitute(getText('global_hydrogen_production_demand_bullet2_bold3', lang), textVars)}</strong>
+                        {substitute(getText('global_hydrogen_production_demand_bullet2_post', lang), textVars)}
                     </li>
                 </ul>
 
@@ -731,6 +780,7 @@ const GlobalHydrogenProductionDemand = () => {
                         downloadTitle: productionDownloadTitle,
                         colorsMap: PRODUCTION_COLORS,
                         chartRegionLabel: productionRegionLabel,
+                        chartLayout: productionLayout,
                     })}
                     {renderChartColumn({
                         kind: 'demand',
@@ -747,8 +797,19 @@ const GlobalHydrogenProductionDemand = () => {
                         downloadTitle: demandDownloadTitle,
                         colorsMap: DEMAND_COLORS,
                         chartRegionLabel: demandRegionLabel,
+                        chartLayout: demandLayout,
                     })}
                 </div>
+
+                <PageFootnotes
+                    lang={lang}
+                    items={[{
+                        id: 'fn-asterisk-global-hydrogen',
+                        marker: '*',
+                        text: getText('global_hydrogen_production_demand_footnote', lang),
+                        returnHref: '#fn-asterisk-rf-global-hydrogen',
+                    }]}
+                />
             </div>
         </PageShell>
     );

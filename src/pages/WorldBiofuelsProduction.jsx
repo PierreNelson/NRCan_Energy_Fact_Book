@@ -9,6 +9,7 @@ import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
+import { getWorldBiofuelsProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
@@ -21,11 +22,6 @@ import {
     LEGEND_KEYS,
     COLORS,
     DOC_COLUMN_WIDTHS,
-    Y_TICKVALS,
-    Y_RANGE,
-    START_YEAR,
-    END_YEAR,
-    CHART_DATA,
     rowTotal,
 } from './WorldBiofuelsProduction.constants';
 import hexToRgba from '../utils/hexToRgba';
@@ -201,6 +197,18 @@ const WorldBiofuelsProduction = () => {
     const hoverDataRef = useRef(null);
     const infographicImgRef = useRef(null);
 
+    const [trend, setTrend] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getWorldBiofuelsProductionData().then((data) => {
+            if (!cancelled) setTrend(data?.trend ?? null);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
     const formatPj = (value) => {
@@ -216,13 +224,19 @@ const WorldBiofuelsProduction = () => {
         return formatted === '—' ? formatted : `${formatted}${hoverUnit}`;
     };
 
-    const tableRows = CHART_DATA;
+    const tableRows = trend?.rows ?? [];
     const years = tableRows.map((row) => row.year);
+    const startYear = trend?.startYear;
+    const endYear = trend?.endYear;
     const yearTicks = years.filter((y) => y % 2 === 1);
+    const yMax = years.length
+        ? Math.max(500, Math.ceil(Math.max(...tableRows.map((row) => rowTotal(row))) / 500) * 500)
+        : 500;
+    const yTickvals = Array.from({ length: yMax / 500 + 1 }, (_, index) => index * 500);
 
     const dataTableRows = useMemo(
-        () => CHART_DATA.map((row) => ({ ...row, total: rowTotal(row) })),
-        [],
+        () => tableRows.map((row) => ({ ...row, total: rowTotal(row) })),
+        [tableRows],
     );
 
     const traceLabels = TRACE_KEYS.map((key) => getText(`world_biofuels_production_legend_${key}`, lang));
@@ -231,9 +245,13 @@ const WorldBiofuelsProduction = () => {
     const pageTitle = getText('world_biofuels_production_title', lang);
     const yAxisTitle = getText('world_biofuels_production_yaxis', lang);
     const downloadTitle = getText('world_biofuels_production_download_title', lang);
-    const fileTitle = `${downloadTitle}_${START_YEAR}-${END_YEAR}`;
+    const fileTitle = startYear && endYear ? `${downloadTitle}_${startYear}-${endYear}` : downloadTitle;
     const infographicFileTitle = getText('world_biofuels_production_infographic_download_title', lang);
-    const tableCaption = getText('world_biofuels_production_table_caption', lang);
+    const tableCaption = (startYear && endYear)
+        ? getText('world_biofuels_production_table_caption', lang)
+            .replace('{{start}}', String(startYear))
+            .replace('{{end}}', String(endYear))
+        : getText('world_biofuels_production_table_caption', lang);
     const supplyDemandTitle = getText('world_biofuels_production_supply_demand_title', lang);
     const bgMarkup = lang === 'en' ? worldBiofuelsBgEn : worldBiofuelsBgFr;
 
@@ -395,7 +413,7 @@ const WorldBiofuelsProduction = () => {
             traceLabels,
             traceValueArrays,
             cumTops,
-            yRangeMax: Y_RANGE[1],
+            yRangeMax: yMax,
             formatHover,
         };
     });
@@ -441,8 +459,8 @@ const WorldBiofuelsProduction = () => {
         });
         return joinChartSummary({
             intro: lang === 'en'
-                ? `Stacked area chart of world biofuels production from ${START_YEAR} to ${END_YEAR}`
-                : `Graphique en aires empilées de la production mondiale de biocarburants de ${START_YEAR} à ${END_YEAR}`,
+                ? `Stacked area chart of world biofuels production from ${startYear} to ${endYear}`
+                : `Graphique en aires empilées de la production mondiale de biocarburants de ${startYear} à ${endYear}`,
             unitNote: lang === 'en' ? 'Values in petajoules' : 'Valeurs en pétajoules',
             body,
         });
@@ -559,9 +577,9 @@ const WorldBiofuelsProduction = () => {
                                 },
                                 yaxis: {
                                     title: { text: yAxisTitle, font: axisTitleFont, standoff: 12 },
-                                    tickvals: Y_TICKVALS,
-                                    ticktext: Y_TICKVALS.map((v) => formatPj(v)),
-                                    range: Y_RANGE,
+                                    tickvals: yTickvals,
+                                    ticktext: yTickvals.map((v) => formatPj(v)),
+                                    range: [0, yMax],
                                     tickfont: tickFont,
                                     showgrid: false,
                                     showline: true,

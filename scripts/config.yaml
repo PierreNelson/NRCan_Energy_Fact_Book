@@ -54,6 +54,36 @@ sections:
         enabled: true
         description: "World energy production rankings"
         source_type: "external"
+
+      canada_energy_supply:
+        enabled: true
+        description: "Canada and world total energy supply by source (IEA)"
+        source_type: "file"
+        file_path: "oecd_iea_data.xlsx"
+
+      us_state_energy_exports:
+        enabled: true
+        description: "Canadian energy exports to U.S. states"
+        source_type: "file"
+        file_path: "2025 Energy Exports by US State.xlsx"
+
+      global_energy_trade:
+        enabled: true
+        description: "Canada's global energy trade by product"
+        source_type: "file"
+        file_path: "Canada_s Global Energy Trade.xlsx"
+
+      energy_sector_employment:
+        enabled: true
+        description: "Employment in Canada's energy sector"
+        source_type: "external"
+        statcan_table: "38-10-0285-01"
+
+      energy_and_ghg_emissions:
+        enabled: true
+        description: "Energy and GHG emissions, global and Canada"
+        source_type: "external"
+        statcan_table: "36-10-0434-01"
       
       canadian_energy_assets:
         enabled: true
@@ -120,7 +150,50 @@ sections:
         source_type: "api"
         source_url: "https://maps-cartes.services.geo.ca/server_serveur/rest/services/NRCan/major_projects_inventory_en/MapServer"
 
-  # Section 3: Skills, Diversity and Community (placeholder)
+  # Section 3: Skills, diversity and community
+  section3_indicators:
+    enabled: true
+    name: "Skills, diversity and community"
+    sources:
+      demographic_representation:
+        enabled: true
+        description: "Representation of demographic groups in the energy sector and all industries"
+        source_type: "file"
+        file_path: "t4_NRSA_final.xlsx"
+        statcan_table: "98-10-0585-01"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501"
+      household_energy_expenditures:
+        enabled: true
+        description: "Household energy expenditures and consumer price index"
+        source_type: "external"
+        statcan_table: "18-10-0004-01"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000401"
+      household_energy_prices:
+        enabled: true
+        description: "Household energy prices per unit for Canada and peer countries"
+        source_type: "file"
+        file_path: "oecd_iea_data.xlsx"
+        source_url: "https://www.iea.org/data-and-statistics"
+      energy_sector_demographics:
+        enabled: true
+        description: "Energy sector demographics and wages from NRSA workbooks, census immigrant status, and SNA compensation"
+        source_type: "file"
+        file_path: "t4_NRSA_final.xlsx"
+        statcan_table: "98-10-0585-01"
+        source_url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810058501"
+      energy_poverty_geography:
+        enabled: true
+        description: "Energy poverty rates by geography"
+        source_type: "external"
+        statcan_table: "11-10-0222-01"
+        source_url: "https://www150.statcan.gc.ca/n1/pub/46-28-0001/2024001/article/00001-eng.htm"
+      energy_reliant_communities:
+        enabled: true
+        description: "Energy reliant communities by province and rural or urban"
+        source_type: "file"
+        file_path: "EnergyRelianceResults_Updated.xlsx"
+
+  # Section 3 placeholder kept so older config keys still resolve
   section3_skills:
     enabled: false
     name: "Skills, Diversity and Community"
@@ -273,6 +346,58 @@ sections:
         source_url: ""
         file_path: "Largest hydrofac, wind and solar projects.xlsx"
         sheet_name: "hydrofac"
+      canadian_renewable_energy_production:
+        enabled: true
+        description: "Canadian renewable energy production by source"
+        source_type: "external"
+        source_url: "https://www.iea.org/data-and-statistics"
+        file_path: "oecd_iea_data.xlsx"
+        sheet_name: "renewables_canada_production"
+      biomass:
+        enabled: true
+        description: "Biomass share of OECD and Canadian renewable energy production"
+        source_type: "external"
+        source_url: "https://www.iea.org/data-and-statistics"
+        file_path: "oecd_iea_data.xlsx"
+        narrative_file: "biomass_narrative.xlsx"
+      electric_vehicle_charging:
+        enabled: true
+        description: "Electric vehicle charging levels"
+        source_type: "external"
+        source_url: "https://natural-resources.canada.ca/energy-sources/energy-facts"
+        file_path: "ev_charging_narrative.xlsx"
+        sheet_name: "ev_charging_narrative"
+      global_hydrogen_production_demand:
+        enabled: true
+        description: "Global hydrogen production and demand"
+        source_type: "external"
+        source_url: "https://www.iea.org/search?q=global%20hydrogen"
+        file_path: "iea_h2_narrative_summary_global_prod_and_demand.xlsx"
+      hydroelectricity:
+        enabled: true
+        description: "Hydroelectricity share of Canada generation and world generation ranking"
+        source_type: "external"
+        source_url: "https://www.iea.org/data-and-statistics"
+        file_path: "oecd_iea_data.xlsx"
+        canada_file: "secondary Master gencap file.xlsx"
+      hydrogen_narrative:
+        enabled: true
+        description: "Hydrogen introduction and Canada hydrogen industry summary"
+        source_type: "external"
+        source_url: "https://www.iea.org/search?q=global%20hydrogen"
+        file_path: "iea_h2_narrative_summary_global_prod_and_demand.xlsx"
+      electricity_world_production:
+        enabled: true
+        description: "World electricity production and export rankings"
+        source_type: "external"
+        source_url: "https://www.iea.org/data-and-statistics"
+        file_path: "oecd_iea_data.xlsx"
+      world_biofuels_production:
+        enabled: true
+        description: "World liquid biofuels production ranking and regional trend"
+        source_type: "external"
+        source_url: "https://www.iea.org/data-and-statistics"
+        file_path: "oecd_iea_data.xlsx"
       solid_biofuels:
         enabled: true
         description: "Canadian production of solid biofuels ( RenAQ + StatCan 25-10-0031-01)"

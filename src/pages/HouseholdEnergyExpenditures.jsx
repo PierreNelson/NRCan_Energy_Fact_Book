@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import ClearSelectionButton from '../components/ClearSelectionButton';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
@@ -12,19 +12,12 @@ import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { waitForImage } from '../utils/downloadInfographicPng';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { getHouseholdEnergyExpendituresData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import householdEnergyExpendituresBg from '../assets/household_energy_expenditures_bg.png';
 import hexToRgba from '../utils/hexToRgba';
 import HtmlLegend from '../components/HtmlLegend';
-
-const CPI_YEARS = Array.from({ length: 23 }, (_, i) => 2003 + i);
-
-const CPI_DATA = {
-    energy: [100, 105, 115, 125, 132, 168, 120, 125, 140, 152, 148, 162, 138, 132, 128, 135, 142, 138, 118, 145, 245, 200, 190],
-    total: [100, 102, 104, 106, 109, 111, 114, 116, 119, 122, 125, 128, 131, 134, 137, 140, 143, 146, 149, 153, 161, 164, 166],
-    excluding: [99, 101, 103, 105, 107, 109, 112, 114, 116, 119, 122, 125, 128, 130, 133, 136, 139, 141, 144, 148, 155, 159, 161],
-};
 
 const COLORS = {
     energy: '#6d6e71',
@@ -124,8 +117,38 @@ const exportEnergyIntensityInfographicPng = async (rowEl, { title, scale = 2 }) 
     return canvas;
 };
 
+const fillText = (key, lang, vars) => {
+    let text = getText(key, lang);
+    Object.entries(vars).forEach(([name, value]) => {
+        text = text.split(`{{${name}}}`).join(value == null ? '' : String(value));
+    });
+    return text;
+};
+
+const roundHalfUp = (value, digits) => {
+    const factor = 10 ** digits;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
+};
+
+const formatMoney = (num, lang) => {
+    if (!Number.isFinite(Number(num))) return '—';
+    const rounded = Math.abs(roundHalfUp(Number(num), 0));
+    const text = rounded.toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', { maximumFractionDigits: 0 });
+    return lang === 'fr' ? `${text}\u00a0$` : `$${text}`;
+};
+
+const formatShare = (num, lang) => {
+    if (!Number.isFinite(Number(num))) return '—';
+    const text = roundHalfUp(Number(num), 1).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+    });
+    return lang === 'fr' ? `${text}\u00a0%` : `${text}%`;
+};
+
 const HouseholdEnergyExpenditures = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [expenditures, setExpenditures] = useState(null);
     const windowWidth = useWindowWidth();
     const {
         selected: selectedPoints,
@@ -137,7 +160,32 @@ const HouseholdEnergyExpenditures = () => {
     const topRowRef = useRef(null);
     const chartRef = useRef(null);
 
+    useEffect(() => {
+        let cancelled = false;
+        getHouseholdEnergyExpendituresData()
+            .then((payload) => {
+                if (!cancelled) setExpenditures(payload);
+            })
+            .catch((err) => {
+                console.error('Failed to load household energy expenditures:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
+    const cpiRows = expenditures?.cpi || [];
+    const narrative = expenditures?.narrative || null;
+    const cpiYears = cpiRows.map((row) => row.year);
+    const energyValues = cpiRows.map((row) => row.energy);
+    const totalValues = cpiRows.map((row) => row.total);
+    const excludingValues = cpiRows.map((row) => row.excluding);
+    const amountTotal = formatMoney(narrative?.amountTotal, lang);
+    const amountResidential = formatMoney(narrative?.amountResidential, lang);
+    const amountVehicle = formatMoney(narrative?.amountVehicle, lang);
+    const shareText = formatShare(narrative?.incomeShare, lang);
+    const narrativeYear = narrative?.year ?? '—';
 
     const pageTitle = getText('household_energy_expenditures_title', lang);
     const chartTitle = getText('household_energy_expenditures_chart_title', lang);
@@ -158,30 +206,30 @@ const HouseholdEnergyExpenditures = () => {
     ], [lang, legendEnergy, legendTotal, legendExcluding]);
 
     const tableRows = useMemo(
-        () =>
-            CPI_YEARS.map((year, index) => ({
-                year,
-                energy: CPI_DATA.energy[index],
-                total: CPI_DATA.total[index],
-                excluding: CPI_DATA.excluding[index],
-            })),
-        [],
+        () => cpiRows.map((row) => ({
+            year: row.year,
+            energy: row.energy,
+            total: row.total,
+            excluding: row.excluding,
+        })),
+        [cpiRows],
     );
 
     const formatIndex = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
-        return Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
+        return roundHalfUp(Number(value), 0).toLocaleString(locale, { maximumFractionDigits: 0 });
     };
 
     const getChartSummary = () => {
-        const firstYear = CPI_YEARS[0];
-        const lastYear = CPI_YEARS[CPI_YEARS.length - 1];
+        const firstYear = cpiYears[0];
+        const lastYear = cpiYears[cpiYears.length - 1];
+        if (!firstYear || !lastYear) return '';
         const body = summarizeByCategory({
-            categories: CPI_YEARS,
+            categories: cpiYears,
             series: [
-                { name: legendEnergy, values: CPI_DATA.energy, format: formatIndex },
-                { name: legendTotal, values: CPI_DATA.total, format: formatIndex },
-                { name: legendExcluding, values: CPI_DATA.excluding, format: formatIndex },
+                { name: legendEnergy, values: energyValues, format: formatIndex },
+                { name: legendTotal, values: totalValues, format: formatIndex },
+                { name: legendExcluding, values: excludingValues, format: formatIndex },
             ],
             lang,
             newestFirst: true,
@@ -202,7 +250,20 @@ const HouseholdEnergyExpenditures = () => {
     const plotBottomMargin = windowWidth <= 480 ? 62 : windowWidth <= 768 ? 56 : 50;
     const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
     const axisTitleFont = { size: windowWidth <= 768 ? 16 : 18, family: 'Arial, sans-serif', color: '#58585a' };
-    const yTickvals = [90, 110, 130, 150, 170, 190, 210, 230, 250];
+    const plottedValues = [...energyValues, ...totalValues, ...excludingValues].filter((value) => Number.isFinite(value));
+    let yMin = 90;
+    let yMax = 250;
+    if (plottedValues.length) {
+        const dataMin = Math.min(...plottedValues);
+        const dataMax = Math.max(...plottedValues);
+        if (dataMin < yMin) yMin = Math.floor(dataMin / 20) * 20;
+        if (dataMax > yMax) yMax = Math.ceil(dataMax / 20) * 20;
+    }
+    const yTickvals = [];
+    for (let tick = yMin; tick <= yMax; tick += 20) yTickvals.push(tick);
+    const xTickYears = cpiYears.filter((year, index) => (
+        year % 2 === 1 || index === 0 || index === cpiYears.length - 1
+    ));
 
     const traceHasSelection = (traceIndex) => selectedPoints?.[traceIndex]?.length > 0;
 
@@ -244,14 +305,14 @@ const HouseholdEnergyExpenditures = () => {
         });
     };
 
-    const energyHover = CPI_YEARS.map(
-        (y, i) => `<b>${legendEnergy}</b><br>${y}: ${formatIndex(CPI_DATA.energy[i])}<extra></extra>`,
+    const energyHover = cpiYears.map(
+        (y, i) => `<b>${legendEnergy}</b><br>${y}: ${formatIndex(energyValues[i])}<extra></extra>`,
     );
-    const totalHover = CPI_YEARS.map(
-        (y, i) => `<b>${legendTotal}</b><br>${y}: ${formatIndex(CPI_DATA.total[i])}<extra></extra>`,
+    const totalHover = cpiYears.map(
+        (y, i) => `<b>${legendTotal}</b><br>${y}: ${formatIndex(totalValues[i])}<extra></extra>`,
     );
-    const excludingHover = CPI_YEARS.map(
-        (y, i) => `<b>${legendExcluding}</b><br>${y}: ${formatIndex(CPI_DATA.excluding[i])}<extra></extra>`,
+    const excludingHover = cpiYears.map(
+        (y, i) => `<b>${legendExcluding}</b><br>${y}: ${formatIndex(excludingValues[i])}<extra></extra>`,
     );
 
     const selectionKey = selectedPoints
@@ -405,22 +466,22 @@ const HouseholdEnergyExpenditures = () => {
                     <ul className="household-energy-expenditures-top-bullets" role="list">
                         <li role="listitem">
                             {getText('household_energy_expenditures_top_bullet1_part1', lang)}
-                            <strong>{getText('household_energy_expenditures_top_bullet1_bold', lang)}</strong>
-                            {getText('household_energy_expenditures_top_bullet1_part2', lang)}
+                            <strong>{fillText('household_energy_expenditures_top_bullet1_bold', lang, { amount: amountTotal })}</strong>
+                            {fillText('household_energy_expenditures_top_bullet1_part2', lang, { year: narrativeYear })}
                         </li>
                         <li role="listitem">
                             {getText('household_energy_expenditures_top_bullet2_part1', lang)}
-                            <strong>{getText('household_energy_expenditures_top_bullet2_bold', lang)}</strong>
+                            <strong>{fillText('household_energy_expenditures_top_bullet2_bold', lang, { amount: amountResidential })}</strong>
                             {getText('household_energy_expenditures_top_bullet2_part2', lang)}
                         </li>
                         <li role="listitem">
                             {getText('household_energy_expenditures_top_bullet3_part1', lang)}
-                            <strong>{getText('household_energy_expenditures_top_bullet3_bold', lang)}</strong>
+                            <strong>{fillText('household_energy_expenditures_top_bullet3_bold', lang, { amount: amountVehicle })}</strong>
                             {getText('household_energy_expenditures_top_bullet3_part2', lang)}
                         </li>
                         <li role="listitem">
                             {getText('household_energy_expenditures_top_bullet4_part1', lang)}
-                            <strong>{getText('household_energy_expenditures_top_bullet4_bold', lang)}</strong>
+                            <strong>{fillText('household_energy_expenditures_top_bullet4_bold', lang, { share: shareText })}</strong>
                             {getText('household_energy_expenditures_top_bullet4_part2', lang)}
                             {getText('household_energy_expenditures_top_bullet4_suffix', lang)}
                         </li>
@@ -450,8 +511,8 @@ const HouseholdEnergyExpenditures = () => {
                                     key={`household-energy-expenditures-${selectionKey}-${plotHeight}`}
                                     data={[
                                         {
-                                            x: CPI_YEARS,
-                                            y: CPI_DATA.energy,
+                                            x: cpiYears,
+                                            y: energyValues,
                                             type: 'scatter',
                                             mode: 'lines+markers',
                                             name: legendEnergy,
@@ -459,13 +520,13 @@ const HouseholdEnergyExpenditures = () => {
                                             marker: {
                                                 color: COLORS.energy,
                                                 size: 7,
-                                                opacity: CPI_YEARS.map((_, i) => markerOpacityFor(0, i)),
+                                                opacity: cpiYears.map((_, i) => markerOpacityFor(0, i)),
                                             },
                                             hovertemplate: energyHover,
                                         },
                                         {
-                                            x: CPI_YEARS,
-                                            y: CPI_DATA.total,
+                                            x: cpiYears,
+                                            y: totalValues,
                                             type: 'scatter',
                                             mode: 'lines+markers',
                                             name: legendTotal,
@@ -473,13 +534,13 @@ const HouseholdEnergyExpenditures = () => {
                                             marker: {
                                                 color: COLORS.total,
                                                 size: 7,
-                                                opacity: CPI_YEARS.map((_, i) => markerOpacityFor(1, i)),
+                                                opacity: cpiYears.map((_, i) => markerOpacityFor(1, i)),
                                             },
                                             hovertemplate: totalHover,
                                         },
                                         {
-                                            x: CPI_YEARS,
-                                            y: CPI_DATA.excluding,
+                                            x: cpiYears,
+                                            y: excludingValues,
                                             type: 'scatter',
                                             mode: 'lines+markers',
                                             name: legendExcluding,
@@ -487,7 +548,7 @@ const HouseholdEnergyExpenditures = () => {
                                             marker: {
                                                 color: COLORS.excluding,
                                                 size: 7,
-                                                opacity: CPI_YEARS.map((_, i) => markerOpacityFor(2, i)),
+                                                opacity: cpiYears.map((_, i) => markerOpacityFor(2, i)),
                                             },
                                             hovertemplate: excludingHover,
                                         },
@@ -509,8 +570,8 @@ const HouseholdEnergyExpenditures = () => {
                                         xaxis: {
                                             type: 'linear',
                                             tickmode: 'array',
-                                            tickvals: CPI_YEARS.filter((y) => y % 2 === 1),
-                                            ticktext: CPI_YEARS.filter((y) => y % 2 === 1).map(String),
+                                            tickvals: xTickYears,
+                                            ticktext: xTickYears.map(String),
                                             showgrid: false,
                                             zeroline: false,
                                             showline: true,
@@ -521,7 +582,7 @@ const HouseholdEnergyExpenditures = () => {
                                         },
                                         yaxis: {
                                             title: { text: yAxisTitle, font: axisTitleFont, standoff: 12 },
-                                            range: [90, 250],
+                                            range: [yMin, yMax],
                                             tickmode: 'array',
                                             tickvals: yTickvals,
                                             ticktext: yTickvals.map((v) => formatIndex(v)),

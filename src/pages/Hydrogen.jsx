@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
+import { getHydrogenNarrativeData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { downloadInfographicImagePng, resolveAccessibleInfographicGraphic } from '../utils/downloadInfographicPng';
 import AccessibleInfographic from '../components/AccessibleInfographic';
@@ -13,10 +14,30 @@ const INTRO_KEYS = ['intro_1', 'intro_2', 'intro_3'];
 const Hydrogen = () => {
     const { lang, layoutPadding } = useOutletContext();
     const infographicImgRef = useRef(null);
+    const [narrative, setNarrative] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getHydrogenNarrativeData().then((data) => {
+            if (!cancelled) setNarrative(data);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const pageTitle = getText('hydrogen_title', lang);
     const bgImage = lang === 'en' ? hydrogenBgEn : hydrogenBgFr;
     const fileSlugBase = getText('hydrogen_download_title', lang).replace(/\s+/g, '_');
+    const introductions = lang === 'en' && narrative?.introductions?.length
+        ? narrative.introductions
+        : INTRO_KEYS.map((key) => getText(`hydrogen_${key}`, lang));
+    const englishOverview = narrative
+        ? [pageTitle, ...narrative.benefits, narrative.fact].filter(Boolean).join('. ')
+        : '';
+    const overview = lang === 'en' && englishOverview
+        ? englishOverview
+        : `${pageTitle}. ${getText('hydrogen_infographic_aria', lang)}`;
 
     const downloadInfographicPng = async () => {
         await downloadInfographicImagePng(resolveAccessibleInfographicGraphic(infographicImgRef.current), {
@@ -103,19 +124,29 @@ const Hydrogen = () => {
                 </h1>
 
                 <div className="hydrogen-intro">
-                    {INTRO_KEYS.map((key) => (
-                        <p key={key}>{getText(`hydrogen_${key}`, lang)}</p>
+                    {introductions.map((text) => (
+                        <p key={text}>{text}</p>
                     ))}
                 </div>
 
                 <div className="hydrogen-infographic-section">
+                    {lang === 'en' && narrative ? (
+                        <div className="wb-inv">
+                            <ul>
+                                {narrative.benefits.map((text) => (
+                                    <li key={text}>{text}</li>
+                                ))}
+                            </ul>
+                            <p>{narrative.fact}</p>
+                        </div>
+                    ) : null}
                     <AccessibleInfographic
                         ref={infographicImgRef}
                         as="figure"
                         mode="image"
                         className="hydrogen-infographic-figure"
                         title={pageTitle}
-                        overview={`${pageTitle}. ${getText('hydrogen_infographic_aria', lang)}`}
+                        overview={overview}
                         src={bgImage}
                         imgClassName="hydrogen-bg-image"
                     />

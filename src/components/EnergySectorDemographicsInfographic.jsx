@@ -19,17 +19,17 @@ function spokenBubble(html) {
  * into the graphic) stays visual-only so a screen reader does not treat the
  * whole infographic as one image.
  */
-const EnergySectorDemographicsInfographic = ({ figureRef, lang }) => {
-    const src = lang === 'fr' ? energySectorDemographicsBgFr : energySectorDemographicsBgEn;
+const EnergySectorDemographicsInfographic = ({ figureRef, lang, imageSrc, labels }) => {
+    const src = imageSrc || (lang === 'fr' ? energySectorDemographicsBgFr : energySectorDemographicsBgEn);
     const boxes = lang === 'fr' ? BUBBLE_BOXES.fr : BUBBLE_BOXES.en;
 
     const bubbles = useMemo(
         () => BUBBLE_KEYS.map((key) => ({
             key,
-            label: spokenBubble(getText(`energy_sector_demographics_bubble_${key}`, lang)),
+            label: labels?.[key] || spokenBubble(getText(`energy_sector_demographics_bubble_${key}`, lang)),
             box: boxes[key],
         })),
-        [boxes, lang],
+        [boxes, labels, lang],
     );
 
     return (

@@ -25,7 +25,30 @@ from .renewable_electricity_capacity import (
     transform_renewable_electricity_capacity,
     update_renewable_electricity_capacity,
 )
+from .biomass import transform_biomass, update_biomass
+from .electric_vehicle_charging import (
+    transform_electric_vehicle_charging,
+    update_electric_vehicle_charging,
+)
+from .global_hydrogen_production_demand import (
+    transform_global_hydrogen_production_demand,
+    update_global_hydrogen_production_demand,
+)
+from .hydroelectricity import transform_hydroelectricity, update_hydroelectricity
+from .electricity_world_production import (
+    transform_electricity_world_production,
+    update_electricity_world_production,
+)
+from .hydrogen_narrative import transform_hydrogen_narrative, update_hydrogen_narrative
+from .canadian_renewable_energy_production import (
+    transform_canadian_renewable_energy_production,
+    update_canadian_renewable_energy_production,
+)
 from .solid_biofuels import transform_solid_biofuels, update_solid_biofuels
+from .world_biofuels_production import (
+    transform_world_biofuels_production,
+    update_world_biofuels_production,
+)
 from .largest_solar_projects import (
     transform_largest_solar_projects,
     update_largest_solar_projects,
@@ -104,7 +127,15 @@ class Section5CleanPower(SectionProcessor):
             'largest_wind_projects': lambda: update_largest_wind_projects(self),
             'largest_solar_projects': lambda: update_largest_solar_projects(self),
             'major_hydro_facilities': lambda: update_major_hydro_facilities(self),
+            'canadian_renewable_energy_production': lambda: update_canadian_renewable_energy_production(self),
+            'biomass': lambda: update_biomass(self),
+            'electric_vehicle_charging': lambda: update_electric_vehicle_charging(self),
+            'global_hydrogen_production_demand': lambda: update_global_hydrogen_production_demand(self),
+            'hydroelectricity': lambda: update_hydroelectricity(self),
+            'hydrogen_narrative': lambda: update_hydrogen_narrative(self),
+            'electricity_world_production': lambda: update_electricity_world_production(self),
             'solid_biofuels': lambda: update_solid_biofuels(self),
+            'world_biofuels_production': lambda: update_world_biofuels_production(self),
             'electrical_energy_use': lambda: update_electrical_energy_use(self),
             'electricity_prices': lambda: update_electricity_prices(self),
             'wind_solar_electricity_growth': lambda: update_wind_solar_electricity_growth(self),
@@ -128,7 +159,15 @@ class Section5CleanPower(SectionProcessor):
             'largest_wind_projects': lambda: transform_largest_wind_projects(self),
             'largest_solar_projects': lambda: transform_largest_solar_projects(self),
             'major_hydro_facilities': lambda: transform_major_hydro_facilities(self),
+            'canadian_renewable_energy_production': lambda: transform_canadian_renewable_energy_production(self),
+            'biomass': lambda: transform_biomass(self),
+            'electric_vehicle_charging': lambda: transform_electric_vehicle_charging(self),
+            'global_hydrogen_production_demand': lambda: transform_global_hydrogen_production_demand(self),
+            'hydroelectricity': lambda: transform_hydroelectricity(self),
+            'hydrogen_narrative': lambda: transform_hydrogen_narrative(self),
+            'electricity_world_production': lambda: transform_electricity_world_production(self),
             'solid_biofuels': lambda: transform_solid_biofuels(self),
+            'world_biofuels_production': lambda: transform_world_biofuels_production(self),
             'electrical_energy_use': lambda: transform_electrical_energy_use(self),
             'electricity_prices': lambda: transform_electricity_prices(self),
             'wind_solar_electricity_growth': lambda: transform_wind_solar_electricity_growth(self),

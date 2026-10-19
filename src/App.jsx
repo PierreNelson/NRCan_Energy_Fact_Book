@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import Layout from './components/Layout';
+import { watchExportedData } from './utils/dataLoader';
 
 const SectionOne = React.lazy(() => import('./components/SectionOne'));
 const SectionTwo = React.lazy(() => import('./components/SectionTwo'));
@@ -107,6 +108,7 @@ function AppRoutes() {
 function App() {
   useEffect(() => {
     document.title = "Energy Fact Book | Livre de faits sur l'énergie";
+    watchExportedData();
   }, []);
 
   return (

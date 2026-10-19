@@ -12,6 +12,16 @@ describe('parseCSV', () => {
     expect(rows[1].value).toBe(100);
   });
 
+  it('keeps text that only starts with a number', () => {
+    const csv = `title,value
+8–50+ hours,1
+120 V,2`;
+    const rows = parseCSV(csv);
+    expect(rows[0].title).toBe('8–50+ hours');
+    expect(rows[1].title).toBe('120 V');
+    expect(rows[0].value).toBe(1);
+  });
+
   it('handles quoted fields with commas', () => {
     const csv = `label,amount
 "Oil, gas",12`;

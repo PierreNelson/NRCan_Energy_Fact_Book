@@ -3,6 +3,42 @@
 # System tables: eedas_registry.py (TABLE_* constants).
 
 source_tables:
+  demographic_representation:
+    org_code: stc
+    report_code: demo
+    detail: representation
+    source_table: statcan_energy_sector_demographic_representation
+
+  household_energy_expenditures:
+    org_code: stc
+    report_code: cpi
+    detail: household
+    source_table: statcan_household_energy_expenditures
+
+  household_energy_prices:
+    org_code: iea
+    report_code: price
+    detail: household
+    source_table: iea_household_energy_prices_by_country
+
+  energy_sector_demographics:
+    org_code: stc
+    report_code: demo
+    detail: nrsa
+    source_table: statcan_energy_sector_demographics
+
+  energy_reliant_communities:
+    org_code: nrcan
+    report_code: rely
+    detail: communities
+    source_table: nrcan_energy_reliant_communities
+
+  energy_poverty_geography:
+    org_code: stc
+    report_code: pov
+    detail: geography
+    source_table: stc_energy_poverty_rates
+
   economic_contributions:
     org_code: stc
     report_code: nrsa
@@ -26,6 +62,36 @@ source_tables:
     report_code: web
     detail: rankings
     source_table: iea_web_rankings
+
+  canada_energy_supply:
+    org_code: iea
+    report_code: tes
+    detail: can_world
+    source_table: iea_total_energy_supply_can_world
+
+  us_state_energy_exports:
+    org_code: nrcan
+    report_code: usx
+    detail: state
+    source_table: nrcan_us_state_energy_exports
+
+  global_energy_trade:
+    org_code: nrcan
+    report_code: gtrade
+    detail: product
+    source_table: nrcan_global_energy_trade_by_product
+
+  energy_sector_employment:
+    org_code: stc
+    report_code: emp
+    detail: sector
+    source_table: stc_energy_sector_employment
+
+  energy_and_ghg_emissions:
+    org_code: nrcan
+    report_code: eghg
+    detail: indicators
+    source_table: nrcan_energy_ghg
 
   canadian_energy_assets:
     org_code: nrcan
@@ -218,6 +284,54 @@ source_tables:
     report_code: petroleum
     detail: world_proved_reserves
     source_table: ca_ogj_petroleum_world_proved_reserves
+
+  canadian_renewable_energy_production:
+    org_code: iea
+    report_code: renewables
+    detail: canada_production
+    source_table: iea_renewables_canada_production
+
+  biomass:
+    org_code: iea
+    report_code: renewables
+    detail: biomass
+    source_table: iea_biomass_world_production
+
+  electric_vehicle_charging:
+    org_code: nrcan
+    report_code: transport
+    detail: ev_charging
+    source_table: nrcan_ev_charging_narrative
+
+  global_hydrogen_production_demand:
+    org_code: iea
+    report_code: hydrogen
+    detail: global_prod_demand
+    source_table: iea_hydrogen_global_prod_demand
+
+  hydroelectricity:
+    org_code: iea
+    report_code: hydroelectricity
+    detail: world_production
+    source_table: iea_hydroelectricity_world_production
+
+  hydrogen_narrative:
+    org_code: iea
+    report_code: hydrogen
+    detail: narrative
+    source_table: iea_hydrogen_narrative
+
+  electricity_world_production:
+    org_code: iea
+    report_code: electricity
+    detail: world_production
+    source_table: iea_electricity_world_production
+
+  world_biofuels_production:
+    org_code: iea
+    report_code: biofuels
+    detail: world_production
+    source_table: iea_biofuels_world_production
 
   solid_biofuels:
     org_code: nrcan

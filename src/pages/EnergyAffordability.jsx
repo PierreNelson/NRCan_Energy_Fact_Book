@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import ClearSelectionButton from '../components/ClearSelectionButton';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
@@ -10,37 +10,56 @@ import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { getEnergyPovertyRatesData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
 
 const energy_affordability_REGIONS = ['Can', 'NL', 'PEI', 'NS', 'NB', 'Que', 'Ont', 'Man', 'Sask', 'Alta', 'BC', 'YT', 'NWT', 'Nvt'];
 
-const energy_affordability_DATA = {
-    Can: 5.6,
-    NL: 13.7,
-    PEI: 11.4,
-    NS: 12.5,
-    NB: 10.7,
-    Que: 4.2,
-    Ont: 4.8,
-    Man: 5.6,
-    Sask: 6.9,
-    Alta: 7.3,
-    BC: 4.9,
-    YT: 11.1,
-    NWT: 9.5,
-    Nvt: 3.7
-};
-
 const BAR_COLOR = '#9f346d';
 
+const roundHalfUp = (value, decimals) => {
+    const factor = 10 ** decimals;
+    return Math.sign(value) * Math.round((Math.abs(value) * factor) + 1e-10) / factor;
+};
+
 const formatHouseholdEnergyNumber = (num, lang) => {
-    if (num === undefined || num === null) return '—';
-    return Number(num).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    if (num === undefined || num === null || !Number.isFinite(Number(num))) return '—';
+    const rounded = roundHalfUp(Number(num), 1);
+    return rounded.toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+};
+
+const formatRate = (num, lang) => {
+    const text = formatHouseholdEnergyNumber(num, lang);
+    if (text === '—') return text;
+    return lang === 'fr' ? `${text} %` : `${text}%`;
+};
+
+const formatMoney = (num, lang) => {
+    if (!Number.isFinite(Number(num))) return '—';
+    const rounded = Math.abs(roundHalfUp(Number(num), 0));
+    const text = rounded.toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', { maximumFractionDigits: 0 });
+    return lang === 'fr' ? `${text} $` : `$${text}`;
+};
+
+const formatWholePercent = (num, lang) => {
+    if (!Number.isFinite(Number(num))) return '—';
+    const rounded = Math.abs(roundHalfUp(Number(num), 0));
+    const text = rounded.toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA', { maximumFractionDigits: 0 });
+    return lang === 'fr' ? `${text} %` : `${text}%`;
+};
+
+const fillText = (key, lang, vars) => {
+    let text = getText(key, lang);
+    Object.entries(vars).forEach(([name, value]) => {
+        text = text.split(`{{${name}}}`).join(String(value));
+    });
+    return text;
 };
 
 const EnergyAffordability = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [poverty, setPoverty] = useState(null);
     const windowWidth = useWindowWidth();
     const {
         selected: selectedPoints,
@@ -50,14 +69,34 @@ const EnergyAffordability = () => {
     } = usePlotlySelection({ mode: 'points', traceCount: 1, windowWidth });
     const chartRef = useRef(null);
 
+    useEffect(() => {
+        let cancelled = false;
+        getEnergyPovertyRatesData()
+            .then((payload) => {
+                if (!cancelled) setPoverty(payload);
+            })
+            .catch((err) => {
+                console.error('Failed to load energy poverty rates:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const chartTitle = getText('energy_affordability_chart_title', lang);
     const exportChartTitle = stripHtml(chartTitle);
     const chartDownloadSlug = lang === 'en' ? 'energy_poverty_rates' : 'taux_pauvrete_energetique';
     const pageTitle = getText('energy_affordability_title', lang);
     const exportPageTitle = stripHtml(pageTitle);
 
+    const rates = poverty?.rates || {};
     const regionLabels = useMemo(() => energy_affordability_REGIONS.map(r => getText('energy_affordability_region_' + r, lang)), [lang]);
-    const barValues = useMemo(() => energy_affordability_REGIONS.map(r => energy_affordability_DATA[r]), []);
+    const barValues = useMemo(() => energy_affordability_REGIONS.map(r => rates[r]), [poverty, rates]);
+    const amountText = formatMoney(poverty?.homeEnergy, lang);
+    const shareText = formatWholePercent(poverty?.incomeShare, lang);
+    const canadaRateText = formatRate(rates.Can, lang);
+    const para1Start = fillText('energy_affordability_para1_part1', lang, { year: poverty?.year ?? '—' });
+    const para1End = fillText('energy_affordability_para1_part3', lang, { share: shareText });
 
     const tableColumns = useMemo(() => [
         { key: 'geo', header: getText('energy_affordability_table_geo', lang), align: 'left' },
@@ -66,14 +105,14 @@ const EnergyAffordability = () => {
 
     const tableRows = useMemo(() => energy_affordability_REGIONS.map((r) => ({
         geo: getText('energy_affordability_region_' + r + '_full', lang),
-        pct: energy_affordability_DATA[r],
-    })), [lang]);
+        pct: rates[r],
+    })), [lang, rates]);
 
     const barTrace = useMemo(() => {
         const hovertext = energy_affordability_REGIONS.map((r, i) => {
             const full = getText('energy_affordability_region_' + r + '_full', lang);
             const pct = barValues[i];
-            return `<b>${full}</b><br>${chartTitle}: ${formatHouseholdEnergyNumber(pct, lang)}%`;
+            return `<b>${full}</b><br>${chartTitle}: ${formatRate(pct, lang)}`;
         });
         const markerColor = selectedPoints === null
             ? BAR_COLOR
@@ -90,7 +129,7 @@ const EnergyAffordability = () => {
                 bgcolor: '#ffffff',
                 font: { color: '#000000', size: 14, family: 'Arial, sans-serif' }
             },
-            text: barValues.map(v => (lang === 'en' ? v + '%' : v.toLocaleString('fr-CA', { minimumFractionDigits: 1 }) + ' %')),
+            text: barValues.map(v => formatRate(v, lang)),
             textposition: 'outside',
             textfont: { size: windowWidth <= 480 ? 11 : 14, family: 'Arial, sans-serif' },
             insidetextfont: { size: 12, family: 'Arial, sans-serif' }
@@ -105,7 +144,7 @@ const EnergyAffordability = () => {
         dragmode: false,
         xaxis: {
             title: { text: getText('energy_affordability_table_pct', lang), font: { size: windowWidth <= 480 ? 14 : 18, family: 'Arial, sans-serif' }, standoff: 15 },
-            range: [0, 15],
+            range: [0, Math.max(15, Math.ceil(Math.max(0, ...barValues.filter((value) => Number.isFinite(value))) + 1))],
             tick0: 0,
             dtick: 1,
             showgrid: true,
@@ -123,7 +162,7 @@ const EnergyAffordability = () => {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         autosize: true
-    }), [lang, windowWidth]);
+    }), [lang, windowWidth, barValues]);
 
     const downloadChartWithTitle = useChartPngDownloader(
         chartRef,
@@ -142,7 +181,7 @@ const EnergyAffordability = () => {
     });
 
     const getChartSummary = () => {
-        const parts = energy_affordability_REGIONS.map((r, i) => `${getText('energy_affordability_region_' + r + '_full', lang)}: ${formatHouseholdEnergyNumber(barValues[i], lang)}%`).join(', ');
+        const parts = energy_affordability_REGIONS.map((r, i) => `${getText('energy_affordability_region_' + r + '_full', lang)}: ${formatRate(barValues[i], lang)}`).join(', ');
         return `${exportChartTitle}. ${parts}.`;
     };
 
@@ -195,14 +234,14 @@ const EnergyAffordability = () => {
                 <header role="region" aria-label={exportPageTitle}>
                     <h1 id="energy-affordability-title" className="energy-affordability-title page-chrome-title">{pageTitle}</h1>
                 </header>
-                <p className="energy-affordability-intro" role="region" aria-label={stripHtml(getText('energy_affordability_para1_part1', lang) + getText('energy_affordability_para1_part2', lang) + getText('energy_affordability_para1_part3', lang))}>
-                    {getText('energy_affordability_para1_part1', lang)}<strong>{getText('energy_affordability_para1_part2', lang)}</strong>{getText('energy_affordability_para1_part3', lang)}
+                <p className="energy-affordability-intro" role="region" aria-label={stripHtml(para1Start + amountText + para1End)}>
+                    {para1Start}<strong>{amountText}</strong>{para1End}
                 </p>
                 <p className="energy-affordability-intro" role="region" aria-label={stripHtml(getText('energy_affordability_para2_part1', lang) + getText('energy_affordability_para2_part2', lang) + getText('energy_affordability_para2_part3', lang))}>
                     {getText('energy_affordability_para2_part1', lang)}<strong>{getText('energy_affordability_para2_part2', lang)}</strong>{getText('energy_affordability_para2_part3', lang)}
                 </p>
-                <p className="energy-affordability-intro" role="region" aria-label={stripHtml(getText('energy_affordability_para3_part1', lang) + getText('energy_affordability_para3_part2', lang) + getText('energy_affordability_para3_part3', lang))}>
-                    {getText('energy_affordability_para3_part1', lang)}<strong>{getText('energy_affordability_para3_part2', lang)}</strong>{getText('energy_affordability_para3_part3', lang)}
+                <p className="energy-affordability-intro" role="region" aria-label={stripHtml(getText('energy_affordability_para3_part1', lang) + canadaRateText + getText('energy_affordability_para3_part3', lang))}>
+                    {getText('energy_affordability_para3_part1', lang)}<strong>{canadaRateText}</strong>{getText('energy_affordability_para3_part3', lang)}
                 </p>
                 <div className="energy-affordability-chart-frame page-chrome-chart-frame">
                     <h2 className="energy-affordability-chart-title page-chrome-chart-title">{chartTitle}</h2>

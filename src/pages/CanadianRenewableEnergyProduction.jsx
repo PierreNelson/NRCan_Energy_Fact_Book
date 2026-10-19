@@ -11,6 +11,7 @@ import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { getCanadianRenewableEnergyProductionData } from '../utils/dataLoader';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import { makeScrollToIdHandler } from '../utils/scrollToId';
@@ -65,23 +66,6 @@ const CanadianRenewableEnergyProductionPlot = memo(function CanadianRenewableEne
         />
     );
 });
-
-const REFERENCE_YEAR = 2023;
-const PRODUCTION_TOTAL_PJ = 1987;
-const PRODUCTION_TOTAL_MTOE = 47.5;
-
-const SHARE_ROWS = [
-    { key: 'hydro', value: 65.3 },
-    { key: 'solid_biomass', value: 21.4 },
-    { key: 'wind', value: 7.3 },
-    { key: 'ethanol', value: 1.8 },
-    { key: 'municipal_waste', value: 1.9 },
-    { key: 'biodiesel', value: 0.8 },
-    { key: 'solar_pv', value: 1.3 },
-    { key: 'solar_thermal', value: 0.1 },
-];
-const SHARE_VALUES = SHARE_ROWS.map((row) => row.value);
-const TRACK_VALUES = SHARE_ROWS.map(() => 100);
 
 const OVERLAY = { x: 0.52, y: 0.98, sizex: 0.48, sizey: 0.95 };
 const BARS_Y_DOMAIN = [0.02, 0.98];
@@ -191,6 +175,7 @@ const CanadianRenewableEnergyProduction = () => {
         onPlotClick,
     } = usePlotlySelection({ mode: 'slices', windowWidth });
     const [hoverTip, setHoverTip] = useState(null);
+    const [production, setProduction] = useState(null);
 
     const chartRef = useRef(null);
     const chartBgRef = useRef(null);
@@ -215,10 +200,28 @@ const CanadianRenewableEnergyProduction = () => {
         maximumFractionDigits: 1,
     });
 
+    useEffect(() => {
+        let cancelled = false;
+        getCanadianRenewableEnergyProductionData()
+            .then((data) => {
+                if (!cancelled) setProduction(data);
+            })
+            .catch(() => {
+                if (!cancelled) setProduction(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const shareRows = production?.rows ?? [];
+    const shareValues = shareRows.map((row) => row.share);
+    const trackValues = shareRows.map(() => 100);
+
     const textVars = {
-        year: REFERENCE_YEAR,
-        pj: formatWhole(PRODUCTION_TOTAL_PJ),
-        mtoe: formatMtoe(PRODUCTION_TOTAL_MTOE),
+        year: production?.year ?? '',
+        pj: production ? formatWhole(production.totalPj) : '',
+        mtoe: production ? formatMtoe(production.totalMtoe) : '',
     };
 
     const pageTitle = substitute(getText('canadian_renewable_energy_production_title', lang), textVars);
@@ -226,14 +229,19 @@ const CanadianRenewableEnergyProduction = () => {
     const chartTitleSuffix = substitute(getText('canadian_renewable_energy_production_chart_title_suffix', lang), textVars);
     const chartTitlePlain = `${chartTitlePrefix}*${chartTitleSuffix}`;
     const exportChartTitle = stripHtml(chartTitlePlain);
-    const chartDownloadSlug = getText('canadian_renewable_energy_production_download_title', lang).replace(/\s+/g, '_');
-    const tableCaption = getText('canadian_renewable_energy_production_table_caption', lang);
+    const chartDownloadSlug = substitute(
+        getText('canadian_renewable_energy_production_download_title', lang),
+        textVars,
+    ).replace(/\s+/g, '_');
+    const tableCaption = substitute(
+        getText('canadian_renewable_energy_production_table_caption', lang),
+        textVars,
+    );
 
     const shareLabels = useMemo(
-        () => SHARE_ROWS.map((row) => getText(`canadian_renewable_energy_production_cat_${row.key}`, lang)),
-        [lang],
+        () => shareRows.map((row) => getText(`canadian_renewable_energy_production_cat_${row.key}`, lang)),
+        [shareRows, lang],
     );
-    const shareValues = SHARE_VALUES;
 
     const tableColumns = useMemo(() => [
         { key: 'category', header: getText('canadian_renewable_energy_production_table_col_category', lang), align: 'left' },
@@ -241,11 +249,11 @@ const CanadianRenewableEnergyProduction = () => {
     ], [lang]);
 
     const tableRows = useMemo(
-        () => SHARE_ROWS.map((row, index) => ({
+        () => shareRows.map((row, index) => ({
             category: shareLabels[index],
-            share: row.value,
+            share: row.share,
         })),
-        [shareLabels],
+        [shareRows, shareLabels],
     );
 
     const tickFontSize = tickFontSizeForWidth(windowWidth);
@@ -442,12 +450,14 @@ const CanadianRenewableEnergyProduction = () => {
         [shareValues],
     );
 
-    const plotData = useMemo(() => [
+    const plotData = useMemo(() => {
+        if (!shareLabels.length) return [];
+        return [
         {
             type: 'bar',
             orientation: 'h',
             y: shareLabels,
-            x: TRACK_VALUES,
+            x: trackValues,
             marker: {
                 color: TRACK_BAR,
                 opacity: 1,
@@ -465,7 +475,7 @@ const CanadianRenewableEnergyProduction = () => {
             x: shareValues,
             marker: {
                 color: VALUE_BAR,
-                opacity: SHARE_ROWS.map((_, index) => barOpacityFor(index)),
+                opacity: shareRows.map((_, index) => barOpacityFor(index)),
                 line: { width: 0 },
             },
             text: shareValues.map((value) => formatPct(value, 1)),
@@ -478,7 +488,8 @@ const CanadianRenewableEnergyProduction = () => {
             hoverinfo: 'none',
             hovertemplate: '<extra></extra>',
         },
-    ], [shareLabels, shareValues, barOpacityFor, formatPct, barLabelFont, outsideLabelFont, textPositions]);
+    ];
+    }, [shareLabels, shareValues, shareRows, trackValues, barOpacityFor, formatPct, barLabelFont, outsideLabelFont, textPositions]);
 
     const plotLayout = useMemo(() => ({
         showlegend: false,

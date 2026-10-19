@@ -8,6 +8,7 @@ section of the Energy Factbook.
 from .base import SectionProcessor
 from .section1_indicators import Section1Indicators
 from .section2_indicators import Section2Investment
+from .section3_indicators import Section3Indicators
 from .section4_indicators import Section4Indicators
 from .section5_indicators import Section5CleanPower
 from .section6_indicators import Section6OilGas
@@ -16,6 +17,7 @@ __all__ = [
     'SectionProcessor',
     'Section1Indicators',
     'Section2Investment',
+    'Section3Indicators',
     'Section4Indicators',
     'Section5CleanPower',
     'Section6OilGas',

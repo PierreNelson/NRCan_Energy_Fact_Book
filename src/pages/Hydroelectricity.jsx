@@ -1,27 +1,17 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
+import { getHydroelectricityData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { waitForImage, resolveAccessibleInfographicGraphic } from '../utils/downloadInfographicPng';
 import { stripHtml } from '../utils/stripHtml';
 import AccessibleInfographic from '../components/AccessibleInfographic';
 import hydroelectricityBg from '../assets/hydroelectricity_bg.svg';
 
-const YEAR = 2023;
-const WORLD_TOTAL_TWH = 4252;
-const CANADA_ELECTRICITY_SHARE = 55;
 const CANADA_CAPSULE = '#819476';
-
-const TOP5 = [
-    { rank: 1, key: 'china', pct: 29 },
-    { rank: 2, key: 'brazil', pct: 10 },
-    { rank: 3, key: 'canada', pct: 8, isCanada: true },
-    { rank: 4, key: 'united_states', pct: 6 },
-    { rank: 5, key: 'russia', pct: 5 },
-];
 
 const countryLabel = (key, lang) => {
     const text = getText(`hydroelectricity_country_${key}`, lang);
@@ -241,9 +231,39 @@ const exportCapsuleInfographicPng = ({ title, rows, filename }) => {
     });
 };
 
+const rankPhrase = (rank, lang) => {
+    const key = `hydroelectricity_rank_${rank}`;
+    const text = getText(key, lang);
+    if (text && text !== key) return text;
+    if (lang === 'fr') return `le ${rank}e plus important`;
+    const suffix = rank % 10 === 1 && rank % 100 !== 11
+        ? 'st'
+        : rank % 10 === 2 && rank % 100 !== 12
+            ? 'nd'
+            : rank % 10 === 3 && rank % 100 !== 13
+                ? 'rd'
+                : 'th';
+    return `${rank}${suffix}-largest`;
+};
+
 const Hydroelectricity = () => {
     const { lang, layoutPadding } = useOutletContext();
     const leftInfographicRef = useRef(null);
+    const [hydro, setHydro] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getHydroelectricityData()
+            .then((data) => {
+                if (!cancelled) setHydro(data);
+            })
+            .catch(() => {
+                if (!cancelled) setHydro(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
 
@@ -256,22 +276,27 @@ const Hydroelectricity = () => {
     const formatTwh = (value) =>
         Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
 
+    const selectedYear = hydro?.year ?? '';
+    const rankLabel = hydro?.canadaRank ? rankPhrase(hydro.canadaRank, lang) : '';
+
     const rankingRows = useMemo(
         () =>
-            TOP5.map((row) => ({
+            (hydro?.rows || []).map((row) => ({
                 ...row,
-                name: countryLabel(row.key, lang),
+                name: row.names?.[lang] || countryLabel(row.key, lang),
                 shareLabel: formatSharePct(row.pct),
             })),
-        [lang, formatSharePct],
+        [hydro, lang, formatSharePct],
     );
 
     const graphicTitle = substitute(getText('hydroelectricity_chart_title', lang), {
-        twh: formatTwh(WORLD_TOTAL_TWH),
-        year: YEAR,
+        twh: hydro?.worldTwh == null ? '—' : formatTwh(hydro.worldTwh),
+        year: selectedYear,
     });
 
-    const downloadSlug = getText('hydroelectricity_download_title', lang).replace(/\s+/g, '_');
+    const downloadSlug = substitute(getText('hydroelectricity_download_title', lang), {
+        year: selectedYear,
+    }).replace(/\s+/g, '_');
     const leftDownloadSlug = getText('hydroelectricity_left_download_title', lang).replace(/\s+/g, '_');
 
     const tableCaption = getText('hydroelectricity_table_caption', lang);
@@ -297,8 +322,8 @@ const Hydroelectricity = () => {
     const downloadLeftInfographicPng = () => {
         exportLeftInfographicPng(resolveAccessibleInfographicGraphic(leftInfographicRef.current), {
             title: getText('hydroelectricity_title', lang),
-            bodyTemplate: getText('hydroelectricity_body', lang),
-            shareLabel: formatSharePct(CANADA_ELECTRICITY_SHARE),
+            bodyTemplate,
+            shareLabel: formatSharePct(hydro?.canadaElecShare),
             filename: `${leftDownloadSlug}.png`,
         });
     };
@@ -344,12 +369,17 @@ const Hydroelectricity = () => {
                 : `Rang ${row.rank}, ${row.name}, ${share} ${shareWord}`;
         });
         return lang === 'en'
-            ? `World generation of hydroelectricity ranking for ${YEAR}: ${parts.join('. ')}.`
-            : `Classement de la production mondiale d'hydroélectricité pour ${YEAR} : ${parts.join('. ')}.`;
-    }, [rankingRows, lang, locale]);
+            ? `World generation of hydroelectricity ranking for ${selectedYear}: ${parts.join('. ')}.`
+            : `Classement de la production mondiale d'hydroélectricité pour ${selectedYear} : ${parts.join('. ')}.`;
+    }, [rankingRows, lang, locale, selectedYear]);
 
-    const bodyHtml = substitute(getText('hydroelectricity_body', lang), {
-        share: `<strong class="hydroelectricity-share-emphasis">${formatSharePct(CANADA_ELECTRICITY_SHARE)}</strong>`,
+    const bodyTemplate = substitute(getText('hydroelectricity_body', lang), {
+        year: selectedYear,
+        rank: rankLabel,
+    });
+
+    const bodyHtml = substitute(bodyTemplate, {
+        share: `<strong class="hydroelectricity-share-emphasis">${formatSharePct(hydro?.canadaElecShare)}</strong>`,
     });
 
     return (

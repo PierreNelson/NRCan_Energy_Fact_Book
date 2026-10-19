@@ -1,10 +1,10 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import PageShell from '../components/PageShell';
-import SafeHtml from '../components/SafeHtml';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
+import { getHydrogenCanadaSummaryData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { waitForImage } from '../utils/downloadInfographicPng';
 import { stripHtml } from '../utils/stripHtml';
@@ -13,26 +13,6 @@ import hydrogenIndustryBg from '../assets/hydrogen_industry_bg.svg';
 
 const NATIVE_WIDTH = 2037.8134;
 const NATIVE_HEIGHT = 828.94666;
-
-const hydrogen_industry_DATA = {
-    productionMt: 4,
-    electrolyserMw: 20,
-    lowCarbonCapacityTonnes: 12000,
-    companies: 100,
-    employment: 4300,
-    revenueMillions: 525,
-    rddMillions: 125,
-};
-
-const TABLE_ROW_KEYS = [
-    'production_mt',
-    'electrolyser_mw',
-    'low_carbon_capacity',
-    'companies',
-    'employment',
-    'revenue',
-    'rdd',
-];
 
 const exportNuclearInfographicPng = async (exportRoot, { scale = 2 }) => {
     if (!exportRoot) return null;
@@ -130,10 +110,21 @@ const exportNuclearInfographicPng = async (exportRoot, { scale = 2 }) => {
 const HydrogenIndustry = () => {
     const { lang, layoutPadding } = useOutletContext();
     const exportRef = useRef(null);
+    const [summary, setSummary] = useState(null);
 
-    const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
+    useEffect(() => {
+        let cancelled = false;
+        getHydrogenCanadaSummaryData().then((data) => {
+            if (!cancelled) setSummary(data);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
-    const formatInt = useCallback((value) => Number(value).toLocaleString(locale, { maximumFractionDigits: 0 }), [locale]);
+    const bullets = summary?.[lang]?.length
+        ? summary[lang]
+        : [1, 2, 3, 4].map((index) => stripHtml(getText(`hydrogen_industry_bullet${index}`, lang)));
 
     const tableCaption = getText('hydrogen_industry_table_caption', lang);
     const exportTableTitle = stripHtml(tableCaption);
@@ -141,50 +132,13 @@ const HydrogenIndustry = () => {
     const docxFilename = getText('hydrogen_industry_docx_slug', lang);
 
     const tableColumns = useMemo(() => [
-        { key: 'description', header: getText('hydrogen_industry_table_col_description', lang), align: 'left' },
-        { key: 'value', header: getText('hydrogen_industry_table_col_value', lang), align: 'num' },
+        { key: 'summary', header: getText('hydrogen_industry_table_col_description', lang), align: 'left' },
     ], [lang]);
 
-    const tableRows = useMemo(() => {
-        const overPrefix = getText('hydrogen_industry_table_over_prefix', lang);
-        const revenuePrefix = getText('hydrogen_industry_table_revenue_prefix', lang);
-        return TABLE_ROW_KEYS.map((key) => {
-            let value;
-            switch (key) {
-                case 'production_mt':
-                    value = String(hydrogen_industry_DATA.productionMt);
-                    break;
-                case 'electrolyser_mw':
-                    value = String(hydrogen_industry_DATA.electrolyserMw);
-                    break;
-                case 'low_carbon_capacity':
-                    value = `${overPrefix}${formatInt(hydrogen_industry_DATA.lowCarbonCapacityTonnes)}`;
-                    break;
-                case 'companies':
-                    value = `${overPrefix}${hydrogen_industry_DATA.companies}`;
-                    break;
-                case 'employment':
-                    value = formatInt(hydrogen_industry_DATA.employment);
-                    break;
-                case 'revenue':
-                    value = lang === 'fr'
-                        ? `${overPrefix}${formatInt(hydrogen_industry_DATA.revenueMillions)}`
-                        : `${revenuePrefix}${formatInt(hydrogen_industry_DATA.revenueMillions)}+`;
-                    break;
-                case 'rdd':
-                    value = lang === 'fr'
-                        ? formatInt(hydrogen_industry_DATA.rddMillions)
-                        : `${revenuePrefix}${formatInt(hydrogen_industry_DATA.rddMillions)}`;
-                    break;
-                default:
-                    value = '';
-            }
-            return {
-                description: getText(`hydrogen_industry_table_row_${key}`, lang),
-                value,
-            };
-        });
-    }, [lang, formatInt]);
+    const tableRows = useMemo(
+        () => bullets.map((text) => ({ summary: text })),
+        [bullets],
+    );
 
     const downloadInfographicPng = async () => {
         const canvas = await exportNuclearInfographicPng(exportRef.current, { scale: 2 });
@@ -246,10 +200,9 @@ const HydrogenIndustry = () => {
 
                 <div ref={exportRef} className="hydrogen-industry-export-region">
                     <ul className="hydrogen-industry-bullets">
-                        <SafeHtml as="li" html={getText('hydrogen_industry_bullet1', lang)}  />
-                        <li>{getText('hydrogen_industry_bullet2', lang)}</li>
-                        <SafeHtml as="li" html={getText('hydrogen_industry_bullet3', lang)}  />
-                        <SafeHtml as="li" html={getText('hydrogen_industry_bullet4', lang)}  />
+                        {bullets.map((text) => (
+                            <li key={text}>{text}</li>
+                        ))}
                     </ul>
 
                     <AccessibleInfographic
@@ -281,7 +234,7 @@ const HydrogenIndustry = () => {
                             filename: docxFilename,
                             title: exportTableTitle,
                             titleAlign: 'center',
-                            columnWidths: [5200, 2200],
+                            columnWidths: [7400],
                             fontSize: 22,
                         }}
                         caption={tableCaption}

@@ -26,15 +26,18 @@ python main.py export
 | **3** | No | — | — | — | Static content — `src/pages/CanadianEnergyProduction.jsx` |
 | **4** | No | — | — | — | Hardcoded chart data — `src/pages/PrimaryEnergyProduction.jsx` |
 | **5** | No | — | — | — | Hardcoded regional data — `src/pages/PrimaryEnergyByRegion.jsx` |
+| **6** | Yes | `getCanadaEnergySupplyData()` | `canada_energy_supply` | `process_canada_energy_supply()` · `canada_energy_supply.py` | SharePoint `oecd_iea_data.xlsx` sheet `total_energy_supply` |
 | **7** | Yes | `getNominalGDPData()` | `nominal_gdp` | `process_nominal_gdp()` · `nominal_gdp.py` | `_statcan.py` → `get_gdp_emp_forecast_url()`; parse in `nominal_gdp.py` |
 | **8** | Yes | `getProvincialGdpData()` | `provincial_gdp` | `process_provincial_gdp()` · `provincial_gdp.py` | `_statcan.py` + `constants.py` → `PROVINCE_VECTORS` |
-| **9** | No | — | — | — | Hardcoded employment data — `src/pages/Employment.jsx` |
+| **9** | Yes | `getEnergySectorEmploymentData()` | `energy_sector_employment` | `process_energy_sector_employment()` · `energy_sector_employment.py` | StatCan tables 36-10-0624-01, 38-10-0285-01, and 14-10-0287-01, plus the GDP and employment forecast |
 | **10** | No | — | — | — | Hardcoded employment data — `src/pages/EmploymentChart.jsx` |
 | **11** | No | — | — | — | Hardcoded GDP data — `src/pages/GdpChart.jsx` |
-| **14** | No | — | — | — | Static / hardcoded table — `src/pages/CanadianEnergyExportsUsStates.jsx` |
-| **15** | No | — | — | — | Static infographic — `src/pages/CanadaGlobalEnergyTrade.jsx` |
+| **14** | Yes | `getUsStateEnergyExportsData()` | `us_state_energy_exports` | `process_us_state_energy_exports()` · `us_state_energy_exports.py` | SharePoint `2025 Energy Exports by US State.xlsx` sheet `Energy trade by state (RY)` |
+| **15** | Yes | `getCanadaGlobalEnergyTradeData()` | `global_energy_trade` | `process_global_energy_trade()` · `global_energy_trade.py` | SharePoint `Canada_s Global Energy Trade.xlsx` sheet `Final Result` |
 | **16** | No | — | — | — | Hardcoded government revenues — `src/pages/GovernmentRevenues.jsx` |
 | **17** | No | — | — | — | Hardcoded corporate taxes — `src/pages/CorporateIncomeTaxes.jsx` |
+| **18** | Yes | `getEnergyAndGhgEmissionsData()` | `energy_and_ghg_emissions` | `process_energy_and_ghg_emissions()` · `energy_and_ghg_emissions.py` | Climate Watch, ECCC `GHG_IPCC_Can_Prov_Terr.csv`, StatCan `v65201756` and `v466668`, SharePoint `Annex 4 Table A4-1_NRCan_2026-04-01.xlsx` |
+| **19** | Yes | `getEnergyAndGhgEmissionsData()` | `energy_and_ghg_emissions` | `process_energy_and_ghg_emissions()` · `energy_and_ghg_emissions.py` | Same source as page 18; indexed series `eghg_index_*` |
 | **20** | Yes | `getGHGEmissionsData()`, `getGhgNarrativeStats()` | `ghg_emissions`* | `process_ghg_emissions()` · `ghg_emissions.py` | `config.yaml` → `ghg_emissions.source_url`; parsing in `ghg_emissions.py` |
 | **21** | No | — | — | — | Static reference content — `src/pages/EnergyInformationLandscape.jsx` |
 
@@ -71,6 +74,25 @@ python main.py export
 | Province map | `constants.py` → `PROVINCE_VECTORS`, `PROVINCE_NAMES` |
 | Vectors | `gdp_prov_*` |
 
+### `energy_sector_employment` — Page 9
+
+| Item | Location |
+|------|----------|
+| Handler | `process_energy_sector_employment()` in `energy_sector_employment.py` |
+| Sources | StatCan 36-10-0624-01, 38-10-0285-01, 14-10-0287-01 (`v2363382`), Indigenous employment vector, and the GDP and employment forecast |
+| Vectors | `emp_*` |
+
+### `energy_and_ghg_emissions` — Pages 18 and 19
+
+| Item | Location |
+|------|----------|
+| Handler | `process_energy_and_ghg_emissions()` in `energy_and_ghg_emissions.py` |
+| Global GHG | Climate Watch, World, All GHG, Total excluding LULUCF and Energy |
+| Canada GHG | ECCC `GHG_IPCC_Can_Prov_Terr.csv`, Canada, category blank, Total = y |
+| GDP and population | StatCan `v65201756` (monthly average) and `v466668` |
+| End-use energy | SharePoint `Annex 4 Table A4-1_NRCan_2026-04-01.xlsx`, row `Reference Approach (PJ)` |
+| Vectors | `eghg_*` |
+
 ### `world_energy_production` — Page 2
 
 | Item | Location |
@@ -79,6 +101,33 @@ python main.py export
 | Excel file | `constants.py` → `WORLD_ENERGY_XLSX` (`World Energy Balances Highlights 2025.xlsx`; `EXTERNAL_XLSX_DATA_DIR` or repo root) |
 | Country / region maps | `constants.py` → `WORLD_ENERGY_COUNTRY_MAPPING`, `WORLD_ENERGY_AGGREGATES` |
 | Vectors | `energy_prod_*` |
+
+### `canada_energy_supply` — Page 6
+
+| Item | Location |
+|------|----------|
+| Handler | `process_canada_energy_supply()` in `canada_energy_supply.py` |
+| Excel file | `constants.py` → `CANADA_ENERGY_SUPPLY_XLSX` (`oecd_iea_data.xlsx` in SharePoint Manual Data) |
+| Sheet | `total_energy_supply` |
+| Vectors | `tes_*` |
+
+### `us_state_energy_exports` — Page 14
+
+| Item | Location |
+|------|----------|
+| Handler | `process_us_state_energy_exports()` in `us_state_energy_exports.py` |
+| Excel file | `constants.py` → `US_STATE_ENERGY_EXPORTS_XLSX` (`2025 Energy Exports by US State.xlsx` in SharePoint Manual Data) |
+| Sheet | `Energy trade by state (YYYY)` |
+| Vectors | `usx_*` |
+
+### `global_energy_trade` — Page 15
+
+| Item | Location |
+|------|----------|
+| Handler | `process_global_energy_trade()` in `global_energy_trade.py` |
+| Excel file | `constants.py` → `GLOBAL_ENERGY_TRADE_XLSX` (`Canada_s Global Energy Trade.xlsx` in SharePoint Manual Data) |
+| Sheet | `Final Result` |
+| Vectors | `gtrade_*` |
 
 ### `canadian_energy_assets` — Page 33 (Section 2)
 

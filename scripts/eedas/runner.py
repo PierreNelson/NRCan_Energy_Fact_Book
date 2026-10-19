@@ -11,6 +11,7 @@ from db.connection import DatabaseConnection
 from sections import (
     Section1Indicators,
     Section2Investment,
+    Section3Indicators,
     Section4Indicators,
     Section5CleanPower,
     Section6OilGas,
@@ -19,6 +20,7 @@ from sections import (
 SECTION_PROCESSORS = {
     'section1_indicators': Section1Indicators,
     'section2_indicators': Section2Investment,
+    'section3_indicators': Section3Indicators,
     'section4_indicators': Section4Indicators,
     'section5_indicators': Section5CleanPower,
     'section6_indicators': Section6OilGas,

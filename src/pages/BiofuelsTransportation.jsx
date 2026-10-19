@@ -1,10 +1,11 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import PageFootnotes from '../components/PageFootnotes';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { saveAs } from 'file-saver';
+import { getWorldBiofuelsProductionData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 
@@ -12,28 +13,7 @@ import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 const CANADA_CAPSULE = '#819476';
 const TOP_RANKS = [1, 2, 3, 4, 5];
-const DATA_YEAR = 2023;
-const WORLD_TOTAL_PJ = 4791;
 const DOC_COLUMN_WIDTHS = [900, 1200, 1100, 1100, 1200, 1000, 1000, 1100, 1100];
-
-const TOP5_DATA = [
-    { rank: 1, key: 'usa', sharePct: 41 },
-    { rank: 2, key: 'brazil', sharePct: 22 },
-    { rank: 3, key: 'indonesia', sharePct: 9 },
-    { rank: 4, key: 'china', sharePct: 4 },
-    { rank: 5, key: 'germany', sharePct: 3 },
-];
-
-const CANADA_DATA = { rank: 12, key: 'canada', sharePct: 1 };
-
-const nuclearGenerationCountryLabel = (key, lang) => {
-    const text = getText(`biofuels_transportation_country_${key}`, lang);
-    if (text && text !== `biofuels_transportation_country_${key}`) return text;
-    return String(key || '')
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-};
 
 const substitute = (text, vars) =>
     Object.keys(vars || {}).reduce(
@@ -157,9 +137,26 @@ const exportCapsuleInfographicPng = ({ title, rows, filename }) => {
 const BiofuelsTransportation = () => {
     const { lang, layoutPadding } = useOutletContext();
     const infographicRef = useRef(null);
+    const [ranking, setRanking] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getWorldBiofuelsProductionData().then((data) => {
+            if (!cancelled) setRanking(data?.ranking ?? null);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
-    const fileSlugVars = useMemo(() => ({ year: DATA_YEAR }), []);
+    const dataYear = ranking?.year ?? '';
+    const fileSlugVars = useMemo(() => ({ year: dataYear }), [dataYear]);
+    const rankingTop = (ranking?.rows ?? []).filter((row) => row.rank <= 5).slice(0, 5);
+    const canadaSource = (ranking?.rows ?? []).find((row) => row.isCanada && row.rank > 5)
+        ?? (ranking?.rows ?? []).find((row) => row.isCanada);
+
+    const countryName = (row) => row?.names?.[lang] || row?.names?.en || '';
 
     const scrollToFootnote = makeScrollToIdHandler('fn-asterisk-biofuels-transportation');
 
@@ -167,32 +164,32 @@ const BiofuelsTransportation = () => {
 
     const rankingRows = useMemo(
         () =>
-            TOP5_DATA.map((row) => ({
+            rankingTop.map((row) => ({
                 ...row,
-                name: nuclearGenerationCountryLabel(row.key, lang),
-                shareLabel: formatSharePct(row.sharePct, locale),
-                pct: Number(row.sharePct),
+                name: countryName(row),
+                shareLabel: formatSharePct(row.pct, locale),
             })),
-        [lang, locale],
+        [rankingTop, lang, locale],
     );
 
     const canadaRow = useMemo(
-        () => ({
-            ...CANADA_DATA,
-            name: nuclearGenerationCountryLabel(CANADA_DATA.key, lang),
-            shareLabel: formatSharePct(CANADA_DATA.sharePct, locale),
-            pct: Number(CANADA_DATA.sharePct),
+        () => (canadaSource ? {
+            ...canadaSource,
+            name: countryName(canadaSource),
+            shareLabel: formatSharePct(canadaSource.pct, locale),
             isCanada: true,
-        }),
-        [lang, locale],
+        } : null),
+        [canadaSource, lang, locale],
     );
 
-    const graphicTitle = substitute(getText('biofuels_transportation_chart_title', lang), {
-        totalPj: formatPj(WORLD_TOTAL_PJ, locale),
-        year: DATA_YEAR,
-    });
+    const graphicTitle = ranking
+        ? substitute(getText('biofuels_transportation_chart_title', lang), {
+            totalPj: formatPj(ranking.totalPj, locale),
+            year: dataYear,
+        })
+        : '';
 
-    const tableCaption = substitute(getText('biofuels_transportation_table_caption', lang), { year: DATA_YEAR });
+    const tableCaption = substitute(getText('biofuels_transportation_table_caption', lang), { year: dataYear });
     const exportTableTitle = stripHtml(tableCaption);
     const csvFilename = substitute(getText('biofuels_transportation_csv_slug', lang), fileSlugVars);
     const docxFilename = substitute(getText('biofuels_transportation_docx_slug', lang), fileSlugVars);
@@ -213,24 +210,25 @@ const BiofuelsTransportation = () => {
     );
 
     const tableRows = useMemo(() => {
+        if (!ranking || !canadaRow) return [];
         const formatTopCountryCell = (entry) => {
             if (!entry) return '—';
-            return `${nuclearGenerationCountryLabel(entry.key, lang)} (${formatSharePct(entry.sharePct, locale)}%)`;
+            return `${countryName(entry)} (${formatSharePct(entry.pct, locale)}%)`;
         };
         const topCells = Object.fromEntries(
             TOP_RANKS.map((rank) => [
                 `rank${rank}`,
-                formatTopCountryCell(TOP5_DATA.find((item) => item.rank === rank)),
+                formatTopCountryCell(rankingTop.find((item) => item.rank === rank)),
             ]),
         );
         return [{
-            year: DATA_YEAR,
-            totalPj: formatPj(WORLD_TOTAL_PJ, locale),
+            year: dataYear,
+            totalPj: formatPj(ranking.totalPj, locale),
             ...topCells,
-            canadaPct: formatSharePct(CANADA_DATA.sharePct, locale),
-            canadaRank: CANADA_DATA.rank,
+            canadaPct: formatSharePct(canadaRow.pct, locale),
+            canadaRank: canadaRow.rank,
         }];
-    }, [lang, locale]);
+    }, [ranking, rankingTop, canadaRow, lang, locale, dataYear]);
 
     const downloadBtnStyle = {
         padding: '8px 16px',
@@ -245,9 +243,8 @@ const BiofuelsTransportation = () => {
 
     const downloadInfographicPng = () => {
         const rows = [
-            ...rankingRows.map((row) => ({ ...row, isCanada: false })),
-            { isEllipsis: true },
-            canadaRow,
+            ...rankingRows,
+            ...(canadaRow && canadaRow.rank > 5 ? [{ isEllipsis: true }, canadaRow] : []),
         ];
         exportCapsuleInfographicPng({
             title: stripHtml(graphicTitle),
@@ -283,14 +280,15 @@ const BiofuelsTransportation = () => {
                 ? `Rank ${row.rank}, ${row.name}, ${row.shareLabel} percent`
                 : `Rang ${row.rank}, ${row.name}, ${row.shareLabel} pour cent`,
         );
-        const canadaPart =
-            lang === 'en'
+        const canadaPart = canadaRow
+            ? (lang === 'en'
                 ? `Rank ${canadaRow.rank}, ${canadaRow.name}, ${canadaRow.shareLabel} percent`
-                : `Rang ${canadaRow.rank}, ${canadaRow.name}, ${canadaRow.shareLabel} pour cent`;
+                : `Rang ${canadaRow.rank}, ${canadaRow.name}, ${canadaRow.shareLabel} pour cent`)
+            : '';
         return lang === 'en'
-            ? `World biofuel production ranking for ${DATA_YEAR}: ${parts.join('. ')}. ${canadaPart}.`
-            : `Classement mondial de la production de biocarburants pour ${DATA_YEAR} : ${parts.join('. ')}. ${canadaPart}.`;
-    }, [rankingRows, canadaRow, lang]);
+            ? `World biofuel production ranking for ${dataYear}: ${parts.join('. ')}${canadaPart ? `. ${canadaPart}` : ''}.`
+            : `Classement mondial de la production de biocarburants pour ${dataYear} : ${parts.join('. ')}${canadaPart ? `. ${canadaPart}` : ''}.`;
+    }, [rankingRows, canadaRow, lang, dataYear]);
 
     return (
         <PageShell tabIndex="-1"
@@ -491,8 +489,12 @@ const BiofuelsTransportation = () => {
                             <h3 className="biofuels-transportation-graphic-title">{graphicTitle}</h3>
                             <div className="biofuels-transportation-capsule-graphic" role="region" tabIndex={0} aria-label={rankingAria}>
                                 {rankingRows.map((row) => renderCapsuleRow(row, rankingRows[0]?.pct || 1))}
-                                <div className="biofuels-transportation-capsule-row biofuels-transportation-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
-                                {renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}
+                                {canadaRow && canadaRow.rank > 5 ? (
+                                    <>
+                                        <div className="biofuels-transportation-capsule-row biofuels-transportation-capsule-ellipsis" aria-hidden="true"><span>...</span></div>
+                                        {renderCapsuleRow(canadaRow, rankingRows[0]?.pct || 1)}
+                                    </>
+                                ) : null}
                             </div>
 
                             <div className="biofuels-transportation-download-buttons">

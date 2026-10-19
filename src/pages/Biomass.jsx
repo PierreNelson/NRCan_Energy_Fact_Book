@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import PageFootnotes from '../components/PageFootnotes';
 import ClearSelectionButton from '../components/ClearSelectionButton';
@@ -12,6 +12,7 @@ import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getText } from '../utils/translations';
+import { getBiomassData } from '../utils/dataLoader';
 import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSummary';
 import { stripHtml } from '../utils/stripHtml';
 import hexToRgba from '../utils/hexToRgba';
@@ -19,18 +20,9 @@ import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 import BiomassInfographic from '../components/BiomassInfographic';
 
-const YEAR = 2023;
 const FN_PREFIX = 'biomass';
 const biomassFnRefId = (n) => `fn${n}-rf-${FN_PREFIX}`;
 const biomassFnDefId = (n) => `fn${n}-${FN_PREFIX}`;
-const PIE_BY_YEAR = {
-    2023: [
-        { key: 'hydro', pct: 66 },
-        { key: 'solid_biofuels', pct: 22 },
-        { key: 'wind_solar', pct: 8 },
-        { key: 'other_biomass', pct: 4 },
-    ],
-};
 const PIE_KEYS = ['hydro', 'solid_biofuels', 'wind_solar', 'other_biomass'];
 const PIE_COLORS = {
     hydro: '#6B6B6B',
@@ -54,8 +46,9 @@ const substitute = (text, vars) =>
 
 const Biomass = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [selectedYear] = useState(YEAR);
+    const [biomassData, setBiomassData] = useState(null);
     const [selectedSlices, setSelectedSlices] = useState(null);
+    const selectedYear = biomassData?.year ?? null;
     const windowWidth = useWindowWidth();
     const { viewportScale, zoomLevel } = useViewportZoom();
     const chartRef = useRef(null);
@@ -72,7 +65,7 @@ const Biomass = () => {
         return lang === 'en' ? `${formatted}%` : `${formatted} %`;
     }, [lang, locale]);
 
-    const vars = { year: selectedYear };
+    const vars = { year: selectedYear ?? '' };
     const chartTitle = getText('biomass_chart_title', lang);
     const exportChartTitle = stripHtml(chartTitle);
     const formatShareSpoken = (value) => {
@@ -84,10 +77,24 @@ const Biomass = () => {
 
     const scrollToElement = (id) => makeScrollToIdHandler(id);
 
+    useEffect(() => {
+        let cancelled = false;
+        getBiomassData()
+            .then((data) => {
+                if (!cancelled) setBiomassData(data);
+            })
+            .catch(() => {
+                if (!cancelled) setBiomassData(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const slices = useMemo(() => {
-        const yearSlices = PIE_BY_YEAR[selectedYear] || [];
+        const yearSlices = biomassData?.slices || [];
         return PIE_KEYS.map((key) => yearSlices.find((slice) => slice.key === key)).filter(Boolean);
-    }, [selectedYear]);
+    }, [biomassData]);
 
     const pieValues = slices.map((slice) => {
         const n = typeof slice.pct === 'number' ? slice.pct : 0;
@@ -100,8 +107,8 @@ const Biomass = () => {
     const labels = slices.map((slice) => getText(PIE_LABEL_KEYS[slice.key], lang));
     const chartSummary = slices.length ? joinChartSummary({
         intro: lang === 'en'
-            ? `Pie chart of renewable electricity generation shares for ${selectedYear}`
-            : `Graphique circulaire des parts de production d'électricité renouvelable pour ${selectedYear}`,
+            ? `Pie chart of renewable energy production shares for ${selectedYear}`
+            : `Graphique circulaire des parts de production d'énergie renouvelable pour ${selectedYear}`,
         body: summarizeByCategory({
             categories: labels,
             series: [{
@@ -127,8 +134,9 @@ const Biomass = () => {
             labels,
             direction: 'clockwise',
             sort: false,
-            texttemplate: zoomLegendMode ? '%{percent:.0%}' : '%{label}<br>%{percent:.0%}',
-            textinfo: zoomLegendMode ? 'percent' : 'label+percent',
+            customdata: slices.map((slice) => formatSharePct(slice.pct)),
+            texttemplate: zoomLegendMode ? '%{customdata}' : '%{label}<br>%{customdata}',
+            textinfo: 'text',
             textposition: zoomLegendMode ? 'inside' : 'outside',
             textfont: { size: textSize, family: 'Arial, sans-serif', color: zoomLegendMode ? '#ffffff' : pieColors },
             outsidetextfont: { size: outsideTextSize, color: pieColors },
@@ -196,7 +204,11 @@ const Biomass = () => {
         [slices, selectedYear, lang],
     );
 
-    const bulletKeys = ['biomass_bullet1', 'biomass_bullet2', 'biomass_bullet3', 'biomass_bullet4'];
+    const fallbackBullets = ['biomass_bullet1', 'biomass_bullet2', 'biomass_bullet3', 'biomass_bullet4']
+        .map((key) => getText(key, lang));
+    const bulletItems = biomassData?.bullets?.[lang]?.length
+        ? biomassData.bullets[lang]
+        : fallbackBullets;
 
     return (
         <PageShell tabIndex="-1"
@@ -332,8 +344,8 @@ const Biomass = () => {
                 <div className={`biomass-split${stackedLayout ? ' is-stacked' : ''}`}>
                     <div className="biomass-left">
                         <ul className="biomass-bullets">
-                            {bulletKeys.map((key) => (
-                                <SafeHtml as="li" key={key} html={getText(key, lang)}  />
+                            {bulletItems.map((html, index) => (
+                                <SafeHtml as="li" key={`${lang}-${index}`} html={html} />
                             ))}
                         </ul>
                     </div>
@@ -342,6 +354,8 @@ const Biomass = () => {
                         <BiomassInfographic
                             lang={lang}
                             scrollToElement={scrollToElement}
+                            oecdShare={biomassData?.oecdShare}
+                            canadaShare={biomassData?.canadaShare}
                         />
 
                         <div className="biomass-chart-frame page-chrome-chart-frame">

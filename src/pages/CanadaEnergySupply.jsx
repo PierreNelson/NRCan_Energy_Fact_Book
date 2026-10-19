@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import PageFootnotes from '../components/PageFootnotes';
+import YearSelect from '../components/YearSelect';
 import ClearSelectionButton from '../components/ClearSelectionButton';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import useWindowWidth from '../hooks/useWindowWidth';
@@ -20,16 +21,16 @@ import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSumma
 import canadaEnergySupplyGlobalBgEn from '../assets/canada_energy_supply_global_bg.svg?raw';
 import canadaEnergySupplyGlobalBgFr from '../assets/canada_energy_supply_global_bg_fr.svg?raw';
 import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
+import { getCanadaEnergySupplyData } from '../utils/dataLoader';
 
-const REFERENCE_YEAR = 2023;
 const SOURCE_KEYS = [
-    'natural_gas',
     'oil',
-    'nuclear',
-    'biofuels_waste',
-    'other_renewables',
-    'hydro',
+    'natural_gas',
     'coal',
+    'hydro',
+    'other_renewables',
+    'biofuels_waste',
+    'nuclear',
 ];
 const FOOTNOTE_NUM_BY_KEY = { other_renewables: 3 };
 const COLORS = {
@@ -42,21 +43,58 @@ const COLORS = {
     coal: '#68B888',
 };
 
-const DATA_BY_YEAR = {
-    2023: {
-        total: 12210,
-        fossilPct: 76,
-        renewablesPct: 16.5,
-        slices: {
-            natural_gas: { pct: 40 },
-            oil: { pct: 33 },
-            nuclear: { pct: 8 },
-            biofuels_waste: { pct: 5 },
-            other_renewables: { pct: 1 },
-            hydro: { pct: 10 },
-            coal: { pct: 3 },
-        },
-    },
+const GLOBAL_SHARE_FIELDS = [
+    ['fossil', '81', 'text'],
+    ['oil', '30', 'tspan'],
+    ['coal', '28', 'tspan'],
+    ['naturalGas', '23', 'tspan'],
+    ['renewables', '14', 'text'],
+    ['nuclear', '5', 'text'],
+];
+
+const largestRemainder = (values, target) => {
+    const bases = values.map((value) => Math.floor(value));
+    let remaining = Math.round(target) - bases.reduce((sum, value) => sum + value, 0);
+    const byFraction = values
+        .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+        .sort((left, right) => right.fraction - left.fraction || left.index - right.index);
+    const rounded = bases.slice();
+    let guard = 0;
+    while (remaining !== 0 && byFraction.length && guard < 20) {
+        const slot = remaining > 0
+            ? byFraction[guard % byFraction.length]
+            : byFraction[byFraction.length - 1 - (guard % byFraction.length)];
+        if (remaining > 0) {
+            rounded[slot.index] += 1;
+            remaining -= 1;
+        } else if (rounded[slot.index] > 0) {
+            rounded[slot.index] -= 1;
+            remaining += 1;
+        }
+        guard += 1;
+    }
+    return rounded;
+};
+
+const roundGlobalShares = (world) => {
+    const headline = [world?.fossil, world?.renewables, world?.nuclear].map(Number);
+    const parts = [world?.oil, world?.coal, world?.naturalGas].map(Number);
+    if ([...headline, ...parts].some((value) => !Number.isFinite(value))) return null;
+    const [fossil, renewables, nuclear] = largestRemainder(headline, 100);
+    const [oil, coal, naturalGas] = largestRemainder(parts, fossil);
+    return { fossil, oil, coal, naturalGas, renewables, nuclear };
+};
+
+const formatGlobalShare = (value, lang) => (lang === 'fr' ? `${value} %` : `${value}%`);
+
+const applyGlobalShares = (markup, world, lang) => {
+    if (!markup || !world) return markup;
+    const rounded = roundGlobalShares(world);
+    if (!rounded) return markup;
+    return GLOBAL_SHARE_FIELDS.reduce((svg, [key, original, tag]) => {
+        const shown = lang === 'fr' ? `${original} %` : `${original}%`;
+        return svg.replace(`>${shown}</${tag}>`, `>${formatGlobalShare(rounded[key], lang)}</${tag}>`);
+    }, markup);
 };
 
 const STACKED_LAYOUT_BROWSER_ZOOM = 1.1;
@@ -136,8 +174,8 @@ const computeChartDecorations = ({ plotEl, chartEl, slices, textSize, zoomLegend
         const footnoteNum = FOOTNOTE_NUM_BY_KEY[slice.key];
         if (footnoteNum == null) return;
 
-        const buttonLeft = textBox.right - containerRect.left + 2;
-        const buttonTop = textBox.top - containerRect.top + 1;
+        const buttonLeft = Math.round(textBox.right - containerRect.left + 2);
+        const buttonTop = Math.round(textBox.top - containerRect.top + 1);
         footnoteButtons.push({
             key: slice.key,
             footnoteNum,
@@ -168,22 +206,47 @@ const decorationsEqual = (a, b) => (
 
 const CanadaEnergySupply = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [selectedYear] = useState(REFERENCE_YEAR);
+    const [supplyByYear, setSupplyByYear] = useState([]);
+    const [selectedYear, setSelectedYear] = useState(null);
     const [selectedSlices, setSelectedSlices] = useState(null);
     const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
     const [zoomLevel, setZoomLevel] = useState(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
     const [chartDecorations, setChartDecorations] = useState({ footnoteButtons: [], fnAnnotations: [] });
-    const [isChartHovering, setIsChartHovering] = useState(false);
     const zoomBaselineRef = useRef(null);
 
     const chartRef = useRef(null);
     const infographicImgRef = useRef(null);
     const lastPieClickRef = useRef({ time: 0, index: null });
 
+    useEffect(() => {
+        let cancelled = false;
+        getCanadaEnergySupplyData()
+            .then((data) => {
+                if (cancelled) return;
+                const rows = Array.isArray(data) ? data : [];
+                setSupplyByYear(rows);
+                if (rows.length) setSelectedYear(rows[rows.length - 1].year);
+            })
+            .catch((err) => {
+                console.error('Failed to load Canada energy supply data:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const yearList = useMemo(
+        () => supplyByYear.map((row) => row.year).sort((a, b) => b - a),
+        [supplyByYear],
+    );
+    const tableYearLabel = yearList.length <= 1
+        ? String(yearList[0] ?? '')
+        : `${Math.min(...yearList)}–${Math.max(...yearList)}`;
+
     const useStackedLayout = pageCssZoom >= STACKED_LAYOUT_DETECTED_ZOOM;
-    const textVars = { year: selectedYear };
-    const yearData = DATA_BY_YEAR[selectedYear] ?? DATA_BY_YEAR[REFERENCE_YEAR];
+    const textVars = { year: selectedYear ?? '' };
+    const yearData = supplyByYear.find((row) => row.year === selectedYear) || null;
 
     const formatPj = useCallback((value) => formatLocaleNumber(value, lang, { maximumFractionDigits: 0 }), [lang]);
 
@@ -216,13 +279,16 @@ const CanadaEnergySupply = () => {
     const slices = useMemo(() => {
         if (!yearData) return [];
         return SOURCE_KEYS.map((key) => {
-            const pct = yearData.slices[key]?.pct ?? 0;
-            const pj = Math.round((yearData.total * pct) / 100);
-            return { key, pct, pj };
+            const slice = yearData.slices[key] || {};
+            return {
+                key,
+                pct: slice.pct ?? 0,
+                pj: slice.pj ?? 0,
+            };
         });
     }, [yearData]);
 
-    const year = selectedYear;
+    const year = selectedYear ?? '';
     const totalPj = yearData?.total ?? 0;
     const chartTitle = substitute(getText('canada_energy_supply_chart_title', lang), textVars);
     const chartTitleBefore = substitute(getText('canada_energy_supply_chart_title_before', lang), textVars);
@@ -231,8 +297,16 @@ const CanadaEnergySupply = () => {
     const fileTitle = substitute(getText('canada_energy_supply_download_title', lang), textVars);
     const chartDownloadSlug = fileTitle.replace(/\s+/g, '_');
     const infographicFileSlug = getText('canada_energy_supply_infographic_download_title', lang).replace(/\s+/g, '_');
-    const tableCaption = substitute(getText('canada_energy_supply_table_caption', lang), textVars);
-    const bgMarkup = lang === 'en' ? canadaEnergySupplyGlobalBgEn : canadaEnergySupplyGlobalBgFr;
+    const tableCaption = substitute(getText('canada_energy_supply_table_caption', lang), { year: tableYearLabel });
+    const tableDownloadSlug = substitute(getText('canada_energy_supply_download_title', lang), { year: tableYearLabel });
+    const bgMarkup = useMemo(
+        () => applyGlobalShares(
+            lang === 'en' ? canadaEnergySupplyGlobalBgEn : canadaEnergySupplyGlobalBgFr,
+            yearData?.world,
+            lang,
+        ),
+        [lang, yearData],
+    );
 
     const tableColumns = useMemo(() => [
         { key: 'year', header: getText('canada_energy_supply_table_col_year', lang), align: 'left' },
@@ -241,21 +315,39 @@ const CanadaEnergySupply = () => {
         { key: 'pct', header: getText('canada_energy_supply_table_col_share', lang), align: 'num' },
     ], [lang]);
 
-    const tableRows = useMemo(() => slices.map((slice) => ({
-        year,
-        source: getText(`canada_energy_supply_label_${slice.key}`, lang),
-        pj: slice.pj,
-        pct: slice.pct,
-    })), [slices, year, lang]);
+    const tableRows = useMemo(() => {
+        const rows = [];
+        [...supplyByYear].sort((a, b) => b.year - a.year).forEach((entry) => {
+            SOURCE_KEYS.forEach((key) => {
+                const slice = entry.slices[key] || {};
+                rows.push({
+                    year: entry.year,
+                    source: getText(`canada_energy_supply_label_${key}`, lang),
+                    pj: slice.pj,
+                    pct: slice.pct,
+                });
+            });
+        });
+        return rows;
+    }, [supplyByYear, lang]);
 
     const zoomLegendMode = windowWidth <= 1000 || zoomLevel >= 1.75;
     const effectiveSlices = windowWidth > 768 ? selectedSlices : null;
-    const pieValues = slices.map((slice) => (slice.pj > 0 ? slice.pj : 0.001));
-    const baseColors = slices.map((slice) => COLORS[slice.key]);
-    const pieColors = effectiveSlices?.length
-        ? baseColors.map((color, index) => (effectiveSlices.includes(index) ? color : hexToRgba(color, 0.3)))
-        : baseColors;
-    const labels = slices.map((slice) => getText(`canada_energy_supply_label_${slice.key}`, lang));
+    const pieValues = useMemo(
+        () => slices.map((slice) => (slice.pct > 0 ? slice.pct : 0.001)),
+        [slices],
+    );
+    const pieColors = useMemo(() => {
+        const baseColors = slices.map((slice) => COLORS[slice.key]);
+        if (!effectiveSlices?.length) return baseColors;
+        return baseColors.map((color, index) => (
+            effectiveSlices.includes(index) ? color : hexToRgba(color, 0.3)
+        ));
+    }, [slices, effectiveSlices]);
+    const labels = useMemo(
+        () => slices.map((slice) => getText(`canada_energy_supply_label_${slice.key}`, lang)),
+        [slices, lang],
+    );
 
     const getChartSummary = () => {
         if (!slices.length) return '';
@@ -293,42 +385,57 @@ const CanadaEnergySupply = () => {
     const piePlotHeight = windowWidth <= 480 ? 360 : windowWidth <= 768 ? 400 : 480;
     const pieSideMargin = windowWidth <= 480 ? 8 : zoomLegendMode ? 24 : 160;
 
-    const outsideLabelTemplate = slices.map(() => '%{label}<br>%{percent:.0%}');
-    const zoomLabelTemplate = slices.map((slice) => (slice.pct >= 8 ? '%{percent:.0%}' : ''));
-
-    const pieTrace = slices.length ? {
-        type: 'pie',
-        values: pieValues,
+    const pieTrace = useMemo(() => {
+        if (!slices.length) return null;
+        const outsideLabelTemplate = '%{label}<br>%{text}';
+        const zoomLabelTemplate = slices.map((slice) => (slice.pct >= 8 ? '%{text}' : ''));
+        return {
+            type: 'pie',
+            values: pieValues,
+            labels,
+            hole: 0.55,
+            direction: 'clockwise',
+            rotation: -20,
+            sort: false,
+            text: slices.map((slice) => formatPct(slice.pct)),
+            texttemplate: zoomLegendMode ? zoomLabelTemplate : outsideLabelTemplate,
+            textinfo: zoomLegendMode ? 'percent' : 'label+percent',
+            textposition: zoomLegendMode ? 'inside' : 'outside',
+            textfont: {
+                size: textSize,
+                family: 'Arial, sans-serif',
+                color: zoomLegendMode ? '#ffffff' : pieColors,
+            },
+            insidetextfont: zoomLegendMode
+                ? { size: textSize, family: 'Arial, sans-serif', color: '#ffffff' }
+                : undefined,
+            outsidetextfont: { size: outsideTextSize, color: pieColors },
+            marker: { colors: pieColors, line: { color: '#ffffff', width: 1 } },
+            pull: effectiveSlices?.length
+                ? pieValues.map((_, index) => (effectiveSlices.includes(index) ? 0.08 : 0.02))
+                : pieValues.map(() => 0.02),
+            hovertext: slices.map((slice) => {
+                const label = getText(`canada_energy_supply_label_${slice.key}`, lang);
+                return `<b>${label}</b><br>${formatPj(slice.pj)} PJ<br>${formatPct(slice.pct)}`;
+            }),
+            hoverinfo: 'text',
+            hoverlabel: HOVER_LABEL,
+            automargin: false,
+            customdata: slices.map((slice) => slice.key),
+        };
+    }, [
+        slices,
+        pieValues,
         labels,
-        hole: 0.55,
-        direction: 'clockwise',
-        rotation: -20,
-        sort: false,
-        texttemplate: zoomLegendMode ? zoomLabelTemplate : outsideLabelTemplate,
-        textinfo: zoomLegendMode ? 'percent' : 'label+percent',
-        textposition: zoomLegendMode ? 'inside' : 'outside',
-        textfont: {
-            size: textSize,
-            family: 'Arial, sans-serif',
-            color: zoomLegendMode ? '#ffffff' : pieColors,
-        },
-        insidetextfont: zoomLegendMode
-            ? { size: textSize, family: 'Arial, sans-serif', color: '#ffffff' }
-            : undefined,
-        outsidetextfont: { size: outsideTextSize, color: pieColors },
-        marker: { colors: pieColors, line: { color: '#ffffff', width: 1 } },
-        pull: effectiveSlices?.length
-            ? pieValues.map((_, index) => (effectiveSlices.includes(index) ? 0.08 : 0.02))
-            : pieValues.map(() => 0.02),
-        hovertext: slices.map((slice) => {
-            const label = getText(`canada_energy_supply_label_${slice.key}`, lang);
-            return `<b>${label}</b><br>${formatPj(slice.pj)} PJ<br>${formatPct(slice.pct)}`;
-        }),
-        hoverinfo: 'text',
-        hoverlabel: HOVER_LABEL,
-        automargin: true,
-        customdata: slices.map((slice) => slice.key),
-    } : null;
+        pieColors,
+        zoomLegendMode,
+        textSize,
+        outsideTextSize,
+        effectiveSlices,
+        formatPct,
+        formatPj,
+        lang,
+    ]);
 
     const centerAnnotation = useMemo(() => (totalPj != null ? {
         text: `${getText('canada_energy_supply_center_total', lang)}<br><b>${formatPj(totalPj)}</b><br>PJ`,
@@ -340,7 +447,7 @@ const CanadaEnergySupply = () => {
         font: { size: windowWidth <= 480 ? 14 : 18, color: '#424243', family: 'Arial Black, Arial, sans-serif' },
     } : null), [totalPj, lang, windowWidth, formatPj]);
 
-    const pieLayout = {
+    const pieLayout = useMemo(() => ({
         showlegend: false,
         margin: {
             t: zoomLegendMode ? 60 : 70,
@@ -356,7 +463,7 @@ const CanadaEnergySupply = () => {
         dragmode: false,
         annotations: centerAnnotation ? [centerAnnotation] : [],
         uirevision: `canada-energy-supply-${year}`,
-    };
+    }), [zoomLegendMode, pieSideMargin, piePlotHeight, centerAnnotation, year]);
 
     const updateChartDecorations = useCallback(() => {
         const chartEl = chartRef.current;
@@ -414,6 +521,50 @@ const CanadaEnergySupply = () => {
         graphDiv.on('plotly_click', graphDiv._canadaEnergySupplyClick);
     }, [handlePieClick]);
 
+    const hoverTipRef = useRef(null);
+
+    const placeHoverTip = useCallback((graphDiv) => {
+        const tip = hoverTipRef.current;
+        const figure = chartRef.current;
+        const label = graphDiv?.querySelector?.('.hovertext');
+        if (!tip || !figure || !label) {
+            if (tip) tip.hidden = true;
+            return;
+        }
+        const figRect = figure.getBoundingClientRect();
+        const box = label.getBoundingClientRect();
+        if (box.width < 2 || box.height < 2) {
+            tip.hidden = true;
+            return;
+        }
+        const lines = [];
+        label.querySelectorAll('tspan').forEach((node) => {
+            const line = node.textContent.trim();
+            if (!line || line === lines[lines.length - 1]) return;
+            lines.push(line);
+        });
+        tip.replaceChildren();
+        lines.forEach((line, index) => {
+            if (index) tip.appendChild(document.createElement('br'));
+            if (index === 0) {
+                const strong = document.createElement('strong');
+                strong.textContent = line;
+                tip.appendChild(strong);
+            } else {
+                tip.appendChild(document.createTextNode(line));
+            }
+        });
+        tip.hidden = false;
+        tip.style.left = `${box.left - figRect.left}px`;
+        tip.style.top = `${box.top - figRect.top}px`;
+        tip.style.width = `${box.width}px`;
+        tip.style.height = `${box.height}px`;
+    }, []);
+
+    const hideHoverTip = useCallback(() => {
+        if (hoverTipRef.current) hoverTipRef.current.hidden = true;
+    }, []);
+
     const onPieInitialized = useCallback((_figure, graphDiv) => {
         bindPlotClickHandler(graphDiv);
         if (!graphDiv?.on) return;
@@ -425,15 +576,13 @@ const CanadaEnergySupply = () => {
 
         if (graphDiv._canadaEnergySupplyHover) {
             graphDiv.removeListener('plotly_hover', graphDiv._canadaEnergySupplyHover);
-        }
-        if (graphDiv._canadaEnergySupplyUnhover) {
             graphDiv.removeListener('plotly_unhover', graphDiv._canadaEnergySupplyUnhover);
         }
-        graphDiv._canadaEnergySupplyHover = () => setIsChartHovering(true);
-        graphDiv._canadaEnergySupplyUnhover = () => setIsChartHovering(false);
+        graphDiv._canadaEnergySupplyHover = () => placeHoverTip(graphDiv);
+        graphDiv._canadaEnergySupplyUnhover = () => hideHoverTip();
         graphDiv.on('plotly_hover', graphDiv._canadaEnergySupplyHover);
         graphDiv.on('plotly_unhover', graphDiv._canadaEnergySupplyUnhover);
-    }, [bindPlotClickHandler, updateChartDecorations]);
+    }, [bindPlotClickHandler, hideHoverTip, placeHoverTip, updateChartDecorations]);
 
     
 
@@ -484,11 +633,14 @@ const CanadaEnergySupply = () => {
         }
     };
 
-    const plotConfig = buildPngOnlyPlotConfig({
+    const downloadChartWithTitleRef = useRef(null);
+    downloadChartWithTitleRef.current = downloadChartWithTitle;
+
+    const plotConfig = useMemo(() => buildPngOnlyPlotConfig({
         lang,
         name: getText('canada_energy_supply_download_chart', lang),
-        click: (gd) => { downloadChartWithTitle(gd); },
-    });
+        click: (gd) => { downloadChartWithTitleRef.current?.(gd); },
+    }), [lang]);
 
     const downloadInfographicPng = async () => {
         await downloadInfographicImagePng(
@@ -504,7 +656,7 @@ const CanadaEnergySupply = () => {
         <a
             key={button.key}
             id={`fn${button.footnoteNum}-rf-canada-energy-supply`}
-            className={`canada-energy-supply-fn-button fn-lnk${isChartHovering ? ' is-under-hover' : ''}`}
+            className="canada-energy-supply-fn-button fn-lnk"
             href={`#fn${button.footnoteNum}-canada-energy-supply`}
             onClick={scrollToElement(`fn${button.footnoteNum}-canada-energy-supply`)}
             style={{
@@ -622,13 +774,32 @@ const CanadaEnergySupply = () => {
 .canada-energy-supply-chart .svg-container { overflow: visible !important; }
 .canada-energy-supply-fn-button {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     transform: translate(0, 0);
     pointer-events: auto;
 }
-.canada-energy-supply-fn-button.is-under-hover {
-    z-index: 0;
+.canada-energy-supply-chart .hoverlayer {
+    visibility: hidden !important;
+}
+.canada-energy-supply-chart > .canada-energy-supply-hover-tip {
+    position: absolute;
+    z-index: 5;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    box-sizing: border-box;
     pointer-events: none;
+    background: #ffffff;
+    border: 1px solid #000000;
+    color: #000000;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.25;
+    padding: 6px 8px;
+    white-space: nowrap;
+}
+.canada-energy-supply-hover-tip[hidden] {
+    display: none !important;
 }
 .canada-energy-supply-custom-legend {
     position: relative;
@@ -753,6 +924,23 @@ const CanadaEnergySupply = () => {
                     {getText('canada_energy_supply_formula', lang)}
                 </p>
 
+                <YearSelect
+                    lang={lang}
+                    id="canada-energy-supply-year-select"
+                    label={getText('year_slider_label', lang)}
+                    years={yearList}
+                    value={selectedYear}
+                    onChange={(nextYear) => {
+                        setSelectedYear(nextYear);
+                        setSelectedSlices(null);
+                    }}
+                />
+                <div role="status" className="wb-inv" aria-live="polite">
+                    {selectedYear
+                        ? `${lang === 'en' ? 'Showing data for' : 'Données affichées pour'} ${selectedYear}`
+                        : ''}
+                </div>
+
                 <div className={`canada-energy-supply-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <div className="canada-energy-supply-chart-column">
                         <div className="canada-energy-supply-chart-frame page-chrome-chart-frame">
@@ -799,6 +987,7 @@ const CanadaEnergySupply = () => {
                                         )}
                                     </div>
                                     {!zoomLegendMode && chartDecorations.footnoteButtons.map(renderFootnoteButton)}
+                                    <div ref={hoverTipRef} className="canada-energy-supply-hover-tip" hidden aria-hidden="true" />
                                 </figure>
                             </div>
 
@@ -813,10 +1002,10 @@ const CanadaEnergySupply = () => {
                                     lang={lang}
                                     columns={tableColumns}
                                     rows={tableRows}
-                                    csvFilename={`${chartDownloadSlug}.csv`}
+                                    csvFilename={`${tableDownloadSlug}.csv`}
                                     docx={{
-                                        filename: `${chartDownloadSlug}.docx`,
-                                        title: exportChartTitle,
+                                        filename: `${tableDownloadSlug}.docx`,
+                                        title: tableCaption,
                                         titleAlign: 'center',
                                         columnWidths: [1400, 4200, 1600, 1600],
                                         fontSize: 18,
@@ -837,12 +1026,12 @@ const CanadaEnergySupply = () => {
                         <ul className="canada-energy-supply-bullets" role="list">
                             <li role="listitem">
                                 {substitute(getText('canada_energy_supply_bullet1_before', lang), textVars)}
-                                <strong>{formatPct(yearData.fossilPct)}</strong>
+                                <strong>{formatPct(yearData?.fossilPct)}</strong>
                                 {substitute(getText('canada_energy_supply_bullet1_after', lang), textVars)}
                             </li>
                             <li role="listitem">
                                 {substitute(getText('canada_energy_supply_bullet2_before', lang), textVars)}
-                                <strong>{formatPct(yearData.renewablesPct, 1)}</strong>
+                                <strong>{formatPct(yearData?.renewablesPct, 1)}</strong>
                                 {substitute(getText('canada_energy_supply_bullet2_after', lang), textVars)}
                             </li>
                         </ul>
