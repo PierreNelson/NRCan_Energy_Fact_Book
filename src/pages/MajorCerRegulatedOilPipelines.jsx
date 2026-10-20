@@ -6,16 +6,17 @@ import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
-import pipelinesBgEn from '../assets/major_cer_regulated_oil_pipelines_bg.svg?raw';
-import pipelinesBgFr from '../assets/major_cer_regulated_oil_pipelines_bg_fr.svg?raw';
+import pipelinesBgEn from '../assets/major_cer_regulated_oil_pipelines_bg.png';
+import pipelinesBgFr from '../assets/major_cer_regulated_oil_pipelines_bg_fr.png';
 
 const MajorCerRegulatedOilPipelines = () => {
     const { lang, layoutPadding } = useOutletContext();
     const infographicRef = useRef(null);
 
     const pageTitle = getText('major_cer_regulated_oil_pipelines_title', lang);
-    const svgMarkup = lang === 'en' ? pipelinesBgEn : pipelinesBgFr;
+    const imageSrc = lang === 'en' ? pipelinesBgEn : pipelinesBgFr;
     const fileSlugBase = getText('major_cer_regulated_oil_pipelines_download_title', lang).replace(/\s+/g, '_');
+    const footnote = getText('major_cer_regulated_oil_pipelines_footnote', lang);
 
     const downloadInfographicPng = async () => {
         await downloadInfographicImagePng(
@@ -97,11 +98,12 @@ const MajorCerRegulatedOilPipelines = () => {
                 <div className="major-cer-regulated-oil-pipelines-infographic-section">
                     <AccessibleInfographic
                         ref={infographicRef}
-                        mode="text"
+                        mode="image"
                         as="figure"
                         className="major-cer-regulated-oil-pipelines-infographic-figure"
                         title={pageTitle}
-                        svgMarkup={svgMarkup}
+                        overview={getText('major_cer_regulated_oil_pipelines_infographic_aria', lang)}
+                        src={imageSrc}
                         imgClassName="major-cer-regulated-oil-pipelines-bg-image"
                         imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
                         idPrefix={`cer-oil-pipelines-${lang}`}
@@ -120,7 +122,7 @@ const MajorCerRegulatedOilPipelines = () => {
                     items={[{
                         id: 'fn-asterisk-major-cer-regulated-oil-pipelines',
                         marker: '*',
-                        text: getText('major_cer_regulated_oil_pipelines_footnote', lang),
+                        text: footnote,
                         hideReturn: true,
                     }]}
                 />

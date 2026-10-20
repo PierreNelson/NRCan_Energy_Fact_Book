@@ -862,9 +862,11 @@ pages:
   css_prefix: renewable-energy-international
   section_anchor_id: renewable-energy-international
   title: Renewable energy
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - world_renewable_energy
+  data_getters:
+  - getWorldRenewableEnergyData
+  data_status: pipeline_present
 - legacy_page_num: 73
   legacy_component: Page73
   component_name: CanadianRenewableEnergyProduction
@@ -1366,9 +1368,11 @@ pages:
   css_prefix: oil-sands-mining
   section_anchor_id: oil-sands-mining
   title: Mining method
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - oil_sands_mining
+  data_getters:
+  - getOilSandsMiningData
+  data_status: pipeline_present
 - legacy_page_num: 115
   legacy_component: Page115
   component_name: OilSandsInSituMethod
@@ -1377,9 +1381,11 @@ pages:
   css_prefix: oil-sands-in-situ
   section_anchor_id: oil-sands-in-situ
   title: In situ method
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - oil_sands_in_situ
+  data_getters:
+  - getOilSandsInSituData
+  data_status: pipeline_present
 - legacy_page_num: 117
   legacy_component: Page117
   component_name: CrudeOilPrices
@@ -1415,6 +1421,19 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 121
+  legacy_component: Page121
+  component_name: OilSandsGreenhouseGases
+  file_name: OilSandsGreenhouseGases.jsx
+  translation_prefix: oil_sands_greenhouse_gases
+  css_prefix: oil-sands-greenhouse-gases
+  section_anchor_id: oil-sands-greenhouse-gases
+  title: Greenhouse gases
+  indicator_keys:
+  - oil_sands_greenhouse_gases
+  data_getters:
+  - getOilSandsGreenhouseGasesData
+  data_status: pipeline_present
 - legacy_page_num: 122
   legacy_component: Page122
   component_name: NaturalGasInternational
@@ -1445,9 +1464,11 @@ pages:
   css_prefix: western-canada-gas-well-completions
   section_anchor_id: western-canada-gas-well-completions
   title: Count and average depth of natural gas wells completed in Western Canada
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - western_canada_gas_wells
+  data_getters:
+  - getWesternCanadaGasWellCompletionsData
+  data_status: pipeline_present
 - legacy_page_num: 130
   legacy_component: Page130
   component_name: CerRegulatedGasPipelines
@@ -1493,7 +1514,7 @@ pages:
   - ghg_emissions
   data_getters:
   - getOilGasGhgSpotlightData
-  data_status: pipeline_partial
+  data_status: pipeline_present
 - legacy_page_num: 135
   legacy_component: Page135
   component_name: RefinedPetroleumProducts

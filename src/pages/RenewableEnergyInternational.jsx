@@ -10,6 +10,7 @@ import Plot from '../components/LazyPlot';
 import { saveAs } from 'file-saver';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
+import { getWorldRenewableEnergyData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
@@ -72,39 +73,19 @@ const RenewableEnergyInternationalPlot = memo(function RenewableEnergyInternatio
     );
 });
 
-const REFERENCE_YEAR = 2023;
-const PRODUCTION_TOTAL_PJ = 89633;
-const PRODUCTION_TOTAL_MTOE = 2141;
-
-const PRODUCTION_RANKING = [
-    { key: 'china', rank: 1, pct: 19 },
-    { key: 'india', rank: 2, pct: 11 },
-    { key: 'united_states', rank: 3, pct: 9 },
-    { key: 'brazil', rank: 4, pct: 7 },
-    { key: 'indonesia', rank: 5, pct: 3 },
-    { key: 'canada', rank: 6, pct: 2, isCanada: true },
-];
-
-const SHARE_ROWS = [
-    { key: 'world', value: 14.1, color: GREY_BAR },
-    { key: 'oecd', value: 12.6, color: GREY_BAR },
-    { key: 'canada', value: 16.5, color: CANADA_BAR },
-];
-const SHARE_VALUES = SHARE_ROWS.map((row) => row.value);
-const SHARE_COLORS = SHARE_ROWS.map((row) => row.color);
+const SHARE_ORDER = ['world', 'oecd', 'canada'];
+const SHARE_COLORS = {
+    world: GREY_BAR,
+    oecd: GREY_BAR,
+    canada: CANADA_BAR,
+};
 
 /**
- * Illustration is a Plotly layout.image in fixed paper coordinates.
- * Plot height scales with width so the plot aspect ratio stays constant across
- * browser zoom — that keeps stretch undistorted AND locked to the bars.
- * Tune EN / FR independently (0–1 paper units):
- *   x / sizex — horizontal placement within the plot area
- *   y / sizey — vertical placement (y=1 is top)
- * BARS_Y_DOMAIN — vertical slice used by the bars (shared; leave headroom for the dam)
+ * Original illustration size, nudged right so the hill clears the bar label.
  */
 const OVERLAY_BY_LANG = {
-    en: { x: 0.43, y: 1.05, sizex: 0.58, sizey: 0.92 },
-    fr: { x: 0.43, y: 1.12, sizex: 0.58, sizey: 0.92 },
+    en: { x: 0.446, y: 1.05, sizex: 0.58, sizey: 0.92 },
+    fr: { x: 0.446, y: 1.12, sizex: 0.58, sizey: 0.92 },
 };
 const BARS_Y_DOMAIN = [0, 0.62];
 /** Height at reference plot-area width; shrinks with width so aspect stays constant.
@@ -225,6 +206,18 @@ const RenewableEnergyInternational = () => {
     const hoverClearRef = useRef(null);
     const [chartWidth, setChartWidth] = useState(800);
 
+    const [pipeline, setPipeline] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getWorldRenewableEnergyData().then((data) => {
+            if (!cancelled) setPipeline(data);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const locale = lang === 'en' ? 'en-CA' : 'fr-CA';
     const bgImage = lang === 'en' ? renewableEnergyInternationalBgEn : renewableEnergyInternationalBgFr;
 
@@ -235,35 +228,46 @@ const RenewableEnergyInternational = () => {
 
     const formatWhole = (value) => Number(value).toLocaleString(locale, { maximumFractionDigits: 0 });
 
+    const ranking = pipeline?.ranking;
+    const share = pipeline?.share;
     const textVars = {
-        year: REFERENCE_YEAR,
-        pj: formatWhole(PRODUCTION_TOTAL_PJ),
-        mtoe: formatWhole(PRODUCTION_TOTAL_MTOE),
+        year: ranking?.year ?? '',
+        pj: ranking ? formatWhole(ranking.totalPj) : '',
+        mtoe: ranking ? formatWhole(ranking.totalMtoe) : '',
     };
+    const shareTextVars = { year: share?.year ?? '' };
 
     const pageTitle = getText('renewable_energy_international_title', lang);
     const subtitle = getText('renewable_energy_international_subtitle', lang);
     const productionTitle = substitute(getText('renewable_energy_international_production_title', lang), textVars);
-    const chartTitle = substitute(getText('renewable_energy_international_chart_title', lang), textVars);
+    const chartTitle = substitute(getText('renewable_energy_international_chart_title', lang), shareTextVars);
     const exportChartTitle = stripHtml(chartTitle);
-    const chartDownloadSlug = getText('renewable_energy_international_download_title', lang).replace(/\s+/g, '_');
-    const rankingDownloadSlug = getText('renewable_energy_international_ranking_download_title', lang).replace(/\s+/g, '_');
-    const tableCaption = getText('renewable_energy_international_table_caption', lang);
+    const chartDownloadSlug = substitute(getText('renewable_energy_international_download_title', lang), shareTextVars).replace(/\s+/g, '_');
+    const rankingDownloadSlug = substitute(getText('renewable_energy_international_ranking_download_title', lang), textVars).replace(/\s+/g, '_');
+    const tableCaption = substitute(getText('renewable_energy_international_table_caption', lang), shareTextVars);
 
     const rankingRows = useMemo(
-        () => PRODUCTION_RANKING.map((row) => ({
+        () => (ranking?.rows ?? []).map((row) => ({
             ...row,
-            name: getText(`renewable_energy_international_country_${row.key}`, lang),
+            key: row.code,
+            name: row.names?.[lang] || row.names?.en || '',
         })),
-        [lang],
+        [ranking, lang],
     );
 
+    const shareByKey = useMemo(() => {
+        const values = {};
+        (share?.rows ?? []).forEach((row) => {
+            values[row.key] = row.value;
+        });
+        return values;
+    }, [share]);
     const shareLabels = useMemo(
-        () => SHARE_ROWS.map((row) => getText(`renewable_energy_international_share_${row.key}`, lang)),
+        () => SHARE_ORDER.map((key) => getText(`renewable_energy_international_share_${key}`, lang)),
         [lang],
     );
-    const shareValues = SHARE_VALUES;
-    const shareColors = SHARE_COLORS;
+    const shareValues = SHARE_ORDER.map((key) => (shareByKey[key] == null ? null : shareByKey[key]));
+    const shareColors = SHARE_ORDER.map((key) => SHARE_COLORS[key]);
 
     const tableColumns = useMemo(() => [
         { key: 'category', header: getText('renewable_energy_international_table_col_category', lang), align: 'left' },
@@ -271,11 +275,13 @@ const RenewableEnergyInternational = () => {
     ], [lang]);
 
     const dataTableRows = useMemo(
-        () => SHARE_ROWS.map((row, index) => ({
-            category: shareLabels[index],
-            share: row.value,
-        })),
-        [shareLabels],
+        () => SHARE_ORDER.flatMap((key, index) => (
+            shareByKey[key] == null ? [] : [{
+                category: shareLabels[index],
+                share: shareByKey[key],
+            }]
+        )),
+        [shareByKey, shareLabels],
     );
 
     // Match page 76 label sizes at low zoom; compact labels + margin cap protect the plot at high zoom.
@@ -533,10 +539,10 @@ const RenewableEnergyInternational = () => {
         x: shareValues,
         marker: {
             color: shareColors,
-            opacity: SHARE_ROWS.map((_, index) => barOpacityFor(index)),
+            opacity: SHARE_ORDER.map((_, index) => barOpacityFor(index)),
             line: { width: 0 },
         },
-        text: shareValues.map((value) => formatPct(value, 1)),
+        text: shareValues.map((value) => (value == null ? '' : formatPct(value, 1))),
         textposition: 'inside',
         insidetextanchor: 'end',
         textfont: barLabelFont,
@@ -594,11 +600,18 @@ const RenewableEnergyInternational = () => {
     const plotKey = `renewable-energy-international-${lang}-${tickFontSize}-${leftMargin}-${plotHeight}`;
 
     const getChartSummary = () => {
+        const spokenLabels = [];
+        const spokenValues = [];
+        shareLabels.forEach((label, index) => {
+            if (shareValues[index] == null) return;
+            spokenLabels.push(label);
+            spokenValues.push(shareValues[index]);
+        });
         const body = summarizeByCategory({
-            categories: shareLabels,
+            categories: spokenLabels,
             series: [{
                 name: lang === 'en' ? 'Share' : 'Part',
-                values: shareValues,
+                values: spokenValues,
                 format: (v) => {
                     const formatted = formatLocalePct(v, lang, {
                         minimumFractionDigits: 1,
@@ -766,8 +779,9 @@ const RenewableEnergyInternational = () => {
     font-size: 18px;
     font-weight: bold;
     color: var(--gc-text);
-    text-align: right;
-    margin: 0 8px 12px 0;
+    text-align: center;
+    margin: 0 0 12px 0;
+    width: 100%;
     padding: 0;
     line-height: 1.25;
     text-transform: none;

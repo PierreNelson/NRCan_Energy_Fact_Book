@@ -274,11 +274,11 @@ WHERE schema_id = SCHEMA_ID('dbo')
     'stc_epes_3810013001','stc_nrsa_3610061001','stc_nrsa_3810028501','stc_gdpnom_3610010301',
     'stc_rppsd_25100081','stc_refinput_25100063','nrcan_crude_prices','stc_oil_sands',
     'stc_ev_sales','stc_canadian_production','kal_gas_prices','osm_refin_cap',
-    'ca_petroleum_reserves_summary','ca_western_canada_oil_wells_count_depth',
+    'ca_petroleum_reserves_summary','ca_western_canada_oil_wells_count_depth','ca_western_canada_gas_wells_count_depth','ca_oil_sands_greenhouse_gases','aer_oil_sands_in_situ_method','aer_oil_sands_mining_method',
     'ca_statcan_petroleum_sector_employment_summary',
     'ca_ogj_petroleum_world_proved_reserves',
     'cer_electricity_trade_summary','iea_total_energy_supply_can_world','nrcan_us_state_energy_exports','nrcan_global_energy_trade_by_product','nrcan_windcapbyprov','can_largestwindprojects',
-    'can_largestsolprojects','can_largesthydrofac','nrcan_solid_biofuels','iea_biomass_world_production','iea_renewables_canada_production','nrcan_ev_charging_narrative','iea_hydrogen_global_prod_demand','iea_hydroelectricity_world_production','iea_hydrogen_narrative','iea_electricity_world_production','iea_biofuels_world_production','nrcan_renelecap','nrcan_elegen_can','nrcan_windpwr_can','nrcan_worldwind','nrcan_worldsolar','nrcan_electrical_energy_use','nrcan_hydroq_prices','nrcan_wselec_growth','wna_uraniumprod','ecc_ghg_electricity'
+    'can_largestsolprojects','can_largesthydrofac','nrcan_solid_biofuels','iea_biomass_world_production','iea_renewables_canada_production','nrcan_ev_charging_narrative','iea_hydrogen_global_prod_demand','iea_hydroelectricity_world_production','iea_hydrogen_narrative','iea_electricity_world_production','iea_biofuels_world_production','iea_renewables_world_production','nrcan_renelecap','nrcan_elegen_can','nrcan_windpwr_can','nrcan_worldwind','nrcan_worldsolar','nrcan_electrical_energy_use','nrcan_hydroq_prices','nrcan_wselec_growth','wna_uraniumprod','ecc_ghg_electricity'
   );
 IF LEN(@widen_sql) > 0 EXEC sp_executesql @widen_sql;
 GO
@@ -1601,6 +1601,34 @@ IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'worl
     VALUES (N'world_biofuels_production', N'World biofuels production', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'iea_renewables_world_production')
+BEGIN
+    CREATE TABLE [iea_renewables_world_production] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(24,12) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_iea_renewables_world_production_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_iea_renewables_world_production_vector ON [iea_renewables_world_production](vector);
+    CREATE INDEX IX_iea_renewables_world_production_source ON [iea_renewables_world_production](source_key);
+    CREATE INDEX IX_iea_renewables_world_production_ref_date ON [iea_renewables_world_production](ref_date);
+    PRINT 'Table iea_renewables_world_production created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.nrcan_fb_data_sources WHERE source_key = N'world_renewable_energy')
+    INSERT INTO dbo.nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES (N'world_renewable_energy', N'World renewable energy production', 5, N'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
+GO
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'nrcan_renelecap')
 BEGIN
     CREATE TABLE [nrcan_renelecap] (
@@ -1970,6 +1998,98 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ca_western_canada_gas_wells_count_depth')
+BEGIN
+    CREATE TABLE [ca_western_canada_gas_wells_count_depth] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_ca_western_canada_gas_wells_count_depth_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_ca_western_canada_gas_wells_count_depth_vector ON [ca_western_canada_gas_wells_count_depth](vector);
+    CREATE INDEX IX_ca_western_canada_gas_wells_count_depth_source ON [ca_western_canada_gas_wells_count_depth](source_key);
+    CREATE INDEX IX_ca_western_canada_gas_wells_count_depth_ref_date ON [ca_western_canada_gas_wells_count_depth](ref_date);
+    PRINT 'Table ca_western_canada_gas_wells_count_depth created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ca_oil_sands_greenhouse_gases')
+BEGIN
+    CREATE TABLE [ca_oil_sands_greenhouse_gases] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(100) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_ca_oil_sands_greenhouse_gases_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_ca_oil_sands_greenhouse_gases_vector ON [ca_oil_sands_greenhouse_gases](vector);
+    CREATE INDEX IX_ca_oil_sands_greenhouse_gases_source ON [ca_oil_sands_greenhouse_gases](source_key);
+    CREATE INDEX IX_ca_oil_sands_greenhouse_gases_ref_date ON [ca_oil_sands_greenhouse_gases](ref_date);
+    PRINT 'Table ca_oil_sands_greenhouse_gases created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'aer_oil_sands_in_situ_method')
+BEGIN
+    CREATE TABLE [aer_oil_sands_in_situ_method] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_aer_oil_sands_in_situ_method_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_aer_oil_sands_in_situ_method_vector ON [aer_oil_sands_in_situ_method](vector);
+    CREATE INDEX IX_aer_oil_sands_in_situ_method_source ON [aer_oil_sands_in_situ_method](source_key);
+    CREATE INDEX IX_aer_oil_sands_in_situ_method_ref_date ON [aer_oil_sands_in_situ_method](ref_date);
+    PRINT 'Table aer_oil_sands_in_situ_method created.';
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'aer_oil_sands_mining_method')
+BEGIN
+    CREATE TABLE [aer_oil_sands_mining_method] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_aer_oil_sands_mining_method_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_aer_oil_sands_mining_method_vector ON [aer_oil_sands_mining_method](vector);
+    CREATE INDEX IX_aer_oil_sands_mining_method_source ON [aer_oil_sands_mining_method](source_key);
+    CREATE INDEX IX_aer_oil_sands_mining_method_ref_date ON [aer_oil_sands_mining_method](ref_date);
+    PRINT 'Table aer_oil_sands_mining_method created.';
+END
+GO
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ca_statcan_petroleum_sector_employment_summary')
 BEGIN
     CREATE TABLE [ca_statcan_petroleum_sector_employment_summary] (
@@ -2182,15 +2302,48 @@ VALUES
 ('hydrogen_narrative', 'Hydrogen narrative and Canada summary', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1),
 ('electricity_world_production', 'World electricity production and exports', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
 ('world_biofuels_production', 'World biofuels production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('world_renewable_energy', 'World renewable energy production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
 ('solid_biofuels', 'Canadian production of solid biofuels', 5, 'Clean Power and Low Carbon Fuels', N'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510003101', 1),
 ('kal_gas_prices', 'Gasoline retail price components (Kalibrate)', 6, 'Oil, Natural Gas and Coal', N'https://kalibrate.com/', 1),
 ('osm_refin_cap', 'Canadian refinery capacity (Oil Sands Magazine)', 6, 'Oil, Natural Gas and Coal', N'https://www.oilsandsmagazine.com/projects/canadian-refineries', 1),
 ('petroleum_reserves', 'Canadian proved reserves of crude oil', 6, 'Oil, Natural Gas and Coal', N'', 1),
 ('western_canada_oil_wells', 'Western Canada oil wells completed', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59', 1),
+('western_canada_gas_wells', 'Western Canada natural gas wells completed', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59', 1),
+('oil_sands_greenhouse_gases', 'Oil sands greenhouse gas emissions intensity', 6, 'Oil, Natural Gas and Coal', N'https://www.climatewatchdata.org/api/v1/data/historical_emissions', 1),
+('oil_sands_in_situ', 'In situ oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st53', 1),
+('oil_sands_mining', 'Mining oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39', 1),
 ('petroleum_sector_employment', 'Petroleum sector employment by region', 6, 'Oil, Natural Gas and Coal', N'', 1),
 ('world_proved_crude_reserves', 'World proved reserves of crude oil', 6, 'Oil, Natural Gas and Coal', N'', 1);
 
 PRINT 'Default data sources inserted.';
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'western_canada_gas_wells')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('western_canada_gas_wells', 'Western Canada natural gas wells completed', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'oil_sands_greenhouse_gases')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('oil_sands_greenhouse_gases', 'Oil sands greenhouse gas emissions intensity', 6, 'Oil, Natural Gas and Coal', N'https://www.climatewatchdata.org/api/v1/data/historical_emissions', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'oil_sands_in_situ')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('oil_sands_in_situ', 'In situ oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st53', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'oil_sands_mining')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('oil_sands_mining', 'Mining oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39', 1);
+END
 GO
 
 -- ============================================================================

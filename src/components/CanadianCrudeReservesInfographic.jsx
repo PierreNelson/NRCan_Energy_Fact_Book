@@ -1,47 +1,16 @@
-import React from 'react';
-import AccessibleInfographic from './AccessibleInfographic';
-import canadianCrudeReservesBg from '../assets/canadian_crude_reserves_bg.png';
-import { LABEL_SLOTS, NATIVE_SIZE, OVERLAY_COLORS, VALUE_SLOTS } from './CanadianCrudeReservesInfographic.constants';
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import FootnoteMarker from './FootnoteMarker';
+import svgEn from '../assets/canadian_crude_reserves_bg.svg?raw';
+import svgFr from '../assets/canadian_crude_reserves_bg_fr.svg?raw';
 
-const overlayTransform = (align) =>
-    align === 'left' ? 'translate(0, -50%)' : align === 'right' ? 'translate(-100%, -50%)' : 'translate(-50%, -50%)';
-
-const OverlayLabel = ({ left, top, align = 'left', children, className = '', style = {} }) => {
-    if (!children) return null;
-
-    return (
-        <span
-            className={`canadian-crude-reserves-overlay-label ${className}`.trim()}
-            style={{
-                left: `${left}%`,
-                top: `${top}%`,
-                transform: overlayTransform(align),
-                textAlign: align,
-                ...style,
-            }}
-        >
-            {children}
-        </span>
-    );
-};
-
-const OverlayValue = ({ left, top, color, value, align = 'center', size = 'lg' }) => {
-    if (value == null || value === '–') return null;
-
-    return (
-        <span
-            className={`canadian-crude-reserves-overlay-value canadian-crude-reserves-overlay-value--${size}`}
-            style={{
-                left: `${left}%`,
-                top: `${top}%`,
-                color,
-                transform: overlayTransform(align),
-                textAlign: align,
-            }}
-            aria-hidden="true"
-        >
-            {value}
-        </span>
+const replaceSvgText = (markup, id, value) => {
+    const safe = String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    return markup.replace(
+        new RegExp(`(<text\\b[^>]*\\bid="${id}"[^>]*>)[\\s\\S]*?(</text>)`),
+        `$1${safe}$2`,
     );
 };
 
@@ -49,186 +18,94 @@ const CanadianCrudeReservesInfographic = ({
     lang,
     overlayValues,
     formatReserve,
-    getText,
     onFootnoteClick,
     ariaLabel,
     figureRef,
 }) => {
-    const overlayLang = lang === 'fr' ? 'fr' : 'en';
-    const labelSlots = LABEL_SLOTS[overlayLang];
-    const valueSlots = VALUE_SLOTS;
+    const hostRef = useRef(null);
+    const [footnotePos, setFootnotePos] = useState(null);
+    let svgMarkup = lang === 'fr' ? svgFr : svgEn;
+    svgMarkup = svgMarkup.replace('id="footnote-marker"', 'id="footnote-marker" opacity="0"');
+    svgMarkup = replaceSvgText(svgMarkup, 'value-total', formatReserve(overlayValues?.totalBb, 0));
+    svgMarkup = replaceSvgText(svgMarkup, 'value-conventional', formatReserve(overlayValues?.conventionalBb, 0));
+    svgMarkup = replaceSvgText(svgMarkup, 'value-oil-sands', formatReserve(overlayValues?.oilSandsBb, 0));
+    svgMarkup = replaceSvgText(svgMarkup, 'value-mining', formatReserve(overlayValues?.miningBb, 0));
+    svgMarkup = replaceSvgText(svgMarkup, 'value-insitu', formatReserve(overlayValues?.insituBb, 0));
+
+    useLayoutEffect(() => {
+        const host = hostRef.current;
+        const marker = host?.querySelector('#footnote-marker');
+        if (!host || !marker) return undefined;
+        const placeFootnote = () => {
+            const ctm = marker.getScreenCTM();
+            const box = marker.getBBox();
+            if (!ctm || !box.width) return;
+            const point = marker.ownerSVGElement.createSVGPoint();
+            point.x = box.x + box.width / 2;
+            point.y = box.y + box.height / 2;
+            const screen = point.matrixTransform(ctm);
+            const hostBox = host.getBoundingClientRect();
+            const height = box.height * Math.hypot(ctm.a, ctm.b);
+            setFootnotePos({
+                left: screen.x - hostBox.left,
+                top: screen.y - hostBox.top,
+                fontSize: Math.max(13, height),
+            });
+        };
+        placeFootnote();
+        const frame = requestAnimationFrame(placeFootnote);
+        const observer = new ResizeObserver(placeFootnote);
+        observer.observe(host);
+        return () => {
+            cancelAnimationFrame(frame);
+            observer.disconnect();
+        };
+    }, [lang, svgMarkup]);
 
     return (
-        <AccessibleInfographic
-            ref={figureRef}
-            as="figure"
-            mode="image"
+        <figure
+            ref={(node) => {
+                hostRef.current = node;
+                if (typeof figureRef === 'function') figureRef(node);
+                else if (figureRef) figureRef.current = node;
+            }}
             className="canadian-crude-reserves-infographic-figure"
-            title={ariaLabel}
-            overview={ariaLabel}
-            src={canadianCrudeReservesBg}
-            imgClassName="canadian-crude-reserves-bg-image"
+            aria-label={ariaLabel}
         >
             <style>{`
 .canadian-crude-reserves-infographic-figure {
     position: relative;
     width: 100%;
-    max-width: 520px;
-    margin: 0 auto 20px auto;
+    margin: 0;
 }
-.canadian-crude-reserves-infographic-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: ${NATIVE_SIZE.width} / ${NATIVE_SIZE.height};
-    container-type: inline-size;
-}
-.canadian-crude-reserves-bg-image {
-    position: absolute;
-    inset: 0;
+.canadian-crude-reserves-infographic-figure svg {
     display: block;
     width: 100%;
-    height: 100%;
-    object-fit: fill;
-    user-select: none;
-    pointer-events: none;
+    height: auto;
 }
-.canadian-crude-reserves-overlay-label {
+.canadian-crude-reserves-footnote-hit {
     position: absolute;
-    z-index: 2;
-    line-height: 1.15;
-    white-space: nowrap;
-    pointer-events: none;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-weight: 700;
-    font-size: 6.2cqw;
-    color: ${OVERLAY_COLORS.label};
-}
-.canadian-crude-reserves-overlay-label--conventional {
-    pointer-events: auto;
-}
-.canadian-crude-reserves-overlay-label--conventional .fn-lnk {
-    font-weight: 700;
-    text-decoration: none;
-    color: inherit;
-}
-.canadian-crude-reserves-overlay-label--fr {
-    font-size: 6.2cqw;
-    white-space: normal;
-}
-.canadian-crude-reserves-overlay-value {
-    position: absolute;
-    z-index: 2;
+    z-index: 3;
+    transform: translate(-50%, -50%);
     line-height: 1;
-    white-space: nowrap;
-    pointer-events: none;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-weight: 700;
-}
-.canadian-crude-reserves-overlay-value--lg {
-    font-size: 6cqw;
-}
-.canadian-crude-reserves-overlay-value--sm {
-    font-size: 6cqw;
 }
             `}</style>
-
-            <div className="canadian-crude-reserves-infographic-wrapper">
-                <OverlayLabel
-                    left={labelSlots.canada_total.left}
-                    top={labelSlots.canada_total.top}
-                    align={labelSlots.canada_total.align}
-                    className={overlayLang === 'fr' ? 'canadian-crude-reserves-overlay-label--fr' : ''}
+            <div dangerouslySetInnerHTML={{ __html: svgMarkup }} />
+            {footnotePos && (
+                <span
+                    className="canadian-crude-reserves-footnote-hit"
+                    style={{ left: footnotePos.left, top: footnotePos.top, fontSize: footnotePos.fontSize }}
                 >
-                    {getText('petroleum_reserves_label_canada_total', lang)}
-                </OverlayLabel>
-
-                <OverlayValue
-                    left={valueSlots.total_bb.left}
-                    top={valueSlots.total_bb.top}
-                    color={OVERLAY_COLORS.total_bb}
-                    value={formatReserve(overlayValues?.totalBb, 0)}
-                    align={valueSlots.total_bb.align}
-                    size={valueSlots.total_bb.size}
-                />
-
-                <OverlayLabel
-                    left={labelSlots.conventional.left}
-                    top={labelSlots.conventional.top}
-                    align={labelSlots.conventional.align}
-                    className={`canadian-crude-reserves-overlay-label--conventional${overlayLang === 'fr' ? ' canadian-crude-reserves-overlay-label--fr' : ''}`}
-                >
-                    {getText('petroleum_reserves_label_conventional', lang)}
-                    <span id="fn-dagger-rf-canadian-crude-reserves-infographic" style={{ verticalAlign: 'super', fontSize: '0.75em', lineHeight: '0' }}>
-                        <a className="fn-lnk" href="#fn-dagger-canadian-crude-reserves" onClick={onFootnoteClick('fn-dagger-canadian-crude-reserves')}>
-                            <span className="wb-inv">{lang === 'en' ? 'Footnote ' : 'Note de bas de page '}</span>
-                            <span aria-hidden="true">**</span>
-                        </a>
-                    </span>
-                </OverlayLabel>
-
-                <OverlayValue
-                    left={valueSlots.conventional_bb.left}
-                    top={valueSlots.conventional_bb.top}
-                    color={OVERLAY_COLORS.conventional_bb}
-                    value={formatReserve(overlayValues?.conventionalBb, 0)}
-                    align={valueSlots.conventional_bb.align}
-                    size={valueSlots.conventional_bb.size}
-                />
-
-                <OverlayLabel
-                    left={labelSlots.oil_sands.left}
-                    top={labelSlots.oil_sands.top}
-                    align={labelSlots.oil_sands.align}
-                    className={overlayLang === 'fr' ? 'canadian-crude-reserves-overlay-label--fr' : ''}
-                >
-                    {getText('petroleum_reserves_label_oil_sands', lang)}
-                </OverlayLabel>
-
-                <OverlayValue
-                    left={valueSlots.oil_sands_bb.left}
-                    top={valueSlots.oil_sands_bb.top}
-                    color={OVERLAY_COLORS.oil_sands_bb}
-                    value={formatReserve(overlayValues?.oilSandsBb, 0)}
-                    align={valueSlots.oil_sands_bb.align}
-                    size={valueSlots.oil_sands_bb.size}
-                />
-
-                <OverlayLabel
-                    left={labelSlots.mining.left}
-                    top={labelSlots.mining.top}
-                    align={labelSlots.mining.align}
-                    className={overlayLang === 'fr' ? 'canadian-crude-reserves-overlay-label--fr' : ''}
-                >
-                    {getText('petroleum_reserves_label_mining', lang)}
-                </OverlayLabel>
-
-                <OverlayValue
-                    left={valueSlots.mining_bb.left}
-                    top={valueSlots.mining_bb.top}
-                    color={OVERLAY_COLORS.mining_bb}
-                    value={formatReserve(overlayValues?.miningBb, 0)}
-                    align={valueSlots.mining_bb.align}
-                    size={valueSlots.mining_bb.size}
-                />
-
-                <OverlayLabel
-                    left={labelSlots.insitu.left}
-                    top={labelSlots.insitu.top}
-                    align={labelSlots.insitu.align}
-                >
-                    {getText('petroleum_reserves_label_insitu', lang)}
-                </OverlayLabel>
-
-                <OverlayValue
-                    left={valueSlots.insitu_bb.left}
-                    top={valueSlots.insitu_bb.top}
-                    color={OVERLAY_COLORS.insitu_bb}
-                    value={formatReserve(overlayValues?.insituBb, 0)}
-                    align={valueSlots.insitu_bb.align}
-                    size={valueSlots.insitu_bb.size}
-                />
-            </div>
-        </AccessibleInfographic>
+                    <FootnoteMarker
+                        lang={lang}
+                        href="#fn-dagger-canadian-crude-reserves"
+                        id="fn-dagger-rf-canadian-crude-reserves-infographic"
+                        marker="**"
+                        onClick={onFootnoteClick('fn-dagger-canadian-crude-reserves')}
+                    />
+                </span>
+            )}
+        </figure>
     );
 };
 

@@ -41,6 +41,10 @@ from .rpp import (
     update_rpp_refinery_input,
     update_rpp_supply_demand,
 )
+from .greenhouse_gases import transform_oil_sands_greenhouse_gases, update_oil_sands_greenhouse_gases
+from .oil_sands_in_situ import transform_oil_sands_in_situ, update_oil_sands_in_situ
+from .oil_sands_mining import transform_oil_sands_mining, update_oil_sands_mining
+from .western_canada_gas_wells import transform_western_canada_gas_wells, update_western_canada_gas_wells
 from .western_canada_oil_wells import transform_western_canada_oil_wells, update_western_canada_oil_wells
 
 
@@ -72,6 +76,10 @@ class Section6OilGas(SectionProcessor):
             'petroleum_sector_employment': lambda: update_petroleum_sector_employment(self),
             'world_proved_crude_reserves': lambda: update_world_proved_crude_reserves(self),
             'western_canada_oil_wells': lambda: update_western_canada_oil_wells(self),
+            'western_canada_gas_wells': lambda: update_western_canada_gas_wells(self),
+            'oil_sands_greenhouse_gases': lambda: update_oil_sands_greenhouse_gases(self),
+            'oil_sands_in_situ': lambda: update_oil_sands_in_situ(self),
+            'oil_sands_mining': lambda: update_oil_sands_mining(self),
         }
 
     def get_transform_handlers(self) -> Dict[str, callable]:
@@ -87,6 +95,10 @@ class Section6OilGas(SectionProcessor):
             'petroleum_sector_employment': lambda: transform_petroleum_sector_employment(self),
             'world_proved_crude_reserves': lambda: transform_world_proved_crude_reserves(self),
             'western_canada_oil_wells': lambda: transform_western_canada_oil_wells(self),
+            'western_canada_gas_wells': lambda: transform_western_canada_gas_wells(self),
+            'oil_sands_greenhouse_gases': lambda: transform_oil_sands_greenhouse_gases(self),
+            'oil_sands_in_situ': lambda: transform_oil_sands_in_situ(self),
+            'oil_sands_mining': lambda: transform_oil_sands_mining(self),
         }
 
     def get_source_handlers(self) -> Dict[str, callable]:

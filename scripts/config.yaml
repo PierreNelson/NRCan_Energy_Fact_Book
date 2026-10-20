@@ -398,6 +398,12 @@ sections:
         source_type: "external"
         source_url: "https://www.iea.org/data-and-statistics"
         file_path: "oecd_iea_data.xlsx"
+      world_renewable_energy:
+        enabled: true
+        description: "World renewable energy production ranking and renewable share of energy supply"
+        source_type: "external"
+        source_url: "https://www.iea.org/data-and-statistics"
+        file_path: "oecd_iea_data.xlsx"
       solid_biofuels:
         enabled: true
         description: "Canadian production of solid biofuels ( RenAQ + StatCan 25-10-0031-01)"
@@ -481,8 +487,26 @@ sections:
         description: "Count and average depth of oil wells completed in Western Canada"
         source_type: "external"
         source_url: "https://www.aer.ca/data-and-performance-reports/statistical-reports/st59"
-        mb_file_path: "energy_rankings_and_petroleum_emp.xlsx"
-        mb_sheet: "mb_oil_wells_count_depth"
+      western_canada_gas_wells:
+        enabled: true
+        description: "Count and average depth of natural gas wells completed in Western Canada"
+        source_type: "external"
+        source_url: "https://www.aer.ca/data-and-performance-reports/statistical-reports/st59"
+      oil_sands_greenhouse_gases:
+        enabled: true
+        description: "Oil sands GHG emissions intensity and shares of Canada and global emissions"
+        source_type: "external"
+        source_url: "https://www.climatewatchdata.org/api/v1/data/historical_emissions"
+      oil_sands_in_situ:
+        enabled: true
+        description: "In situ oil sands projects and share of current production"
+        source_type: "external"
+        source_url: "https://www.aer.ca/data-and-performance-reports/statistical-reports/st53"
+      oil_sands_mining:
+        enabled: true
+        description: "Mining oil sands projects and share of current production"
+        source_type: "external"
+        source_url: "https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39"
       petroleum_sector_employment:
         enabled: true
         description: "Petroleum sector direct and indirect employment by region"

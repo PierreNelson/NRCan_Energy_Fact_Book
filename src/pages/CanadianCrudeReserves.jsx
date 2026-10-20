@@ -10,8 +10,8 @@ import PageShell from '../components/PageShell';
 import PageStatus from '../components/PageStatus';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
-import { saveAs } from 'file-saver';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
+import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
 import { getCanadianCrudeReservesData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
@@ -20,8 +20,6 @@ import { joinChartSummary, summarizeByCategory } from '../utils/chartSpokenSumma
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 
 import CanadianCrudeReservesInfographic from '../components/CanadianCrudeReservesInfographic';
-import canadianCrudeReservesBg from '../assets/canadian_crude_reserves_bg.png';
-import { OVERLAY_COLORS, LABEL_SLOTS, VALUE_SLOTS } from '../components/CanadianCrudeReservesInfographic.constants';
 
 const BAR_COLOR = '#4a8eb8';
 const LINE_COLOR = '#7D962C';
@@ -136,63 +134,17 @@ const CanadianCrudeReserves = () => {
     });
 
     const downloadInfographicPng = async () => {
-        const img = new Image();
-        img.src = canadianCrudeReservesBg;
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-        });
-
-        const scale = 3;
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const overlayLang = lang === 'fr' ? 'fr' : 'en';
-        const labelSlots = LABEL_SLOTS[overlayLang];
-        const valueSlots = VALUE_SLOTS;
-
-        const drawLabel = (text, slot, fontSizeRatio = 0.032) => {
-            if (!text) return;
-            ctx.fillStyle = OVERLAY_COLORS.label;
-            ctx.font = `bold ${Math.round(canvas.width * fontSizeRatio)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
-            ctx.textBaseline = 'middle';
-            const align = slot.align ?? 'left';
-            ctx.textAlign = align;
-            const x = (slot.left / 100) * canvas.width;
-            const y = (slot.top / 100) * canvas.height;
-            ctx.fillText(text, x, y);
-        };
-
-        const drawValue = (text, slot, color, fontSizeRatio = 0.085) => {
-            if (!text || text === '–') return;
-            ctx.fillStyle = color;
-            const ratio = slot.size === 'sm' ? 0.032 : fontSizeRatio;
-            ctx.font = `bold ${Math.round(canvas.width * ratio)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
-            ctx.textBaseline = 'middle';
-            const align = slot.align ?? 'center';
-            ctx.textAlign = align;
-            const x = (slot.left / 100) * canvas.width;
-            const y = (slot.top / 100) * canvas.height;
-            ctx.fillText(text, x, y);
-        };
-
-        drawLabel(getText('petroleum_reserves_label_canada_total', lang), labelSlots.canada_total, overlayLang === 'fr' ? 0.028 : 0.032);
-        drawValue(formatReserve(reserves?.totalBb, 0), valueSlots.total_bb, OVERLAY_COLORS.total_bb);
-        drawLabel(`${getText('petroleum_reserves_label_conventional', lang)}**`, labelSlots.conventional, overlayLang === 'fr' ? 0.028 : 0.032);
-        drawValue(formatReserve(reserves?.conventionalBb, 0), valueSlots.conventional_bb, OVERLAY_COLORS.conventional_bb);
-        drawLabel(getText('petroleum_reserves_label_oil_sands', lang), labelSlots.oil_sands, overlayLang === 'fr' ? 0.028 : 0.032);
-        drawValue(formatReserve(reserves?.oilSandsBb, 0), valueSlots.oil_sands_bb, OVERLAY_COLORS.oil_sands_bb);
-        drawLabel(getText('petroleum_reserves_label_mining', lang), labelSlots.mining, overlayLang === 'fr' ? 0.028 : 0.032);
-        drawValue(formatReserve(reserves?.miningBb, 0), valueSlots.mining_bb, OVERLAY_COLORS.mining_bb);
-        drawLabel(getText('petroleum_reserves_label_insitu', lang), labelSlots.insitu, overlayLang === 'fr' ? 0.028 : 0.032);
-        drawValue(formatReserve(reserves?.insituBb, 0), valueSlots.insitu_bb, OVERLAY_COLORS.insitu_bb);
-
-        canvas.toBlob((blob) => {
-            if (blob) saveAs(blob, `${infographicPngSlug}.png`);
-        });
+        const root = infographicFigureRef.current;
+        const marker = root?.querySelector('#footnote-marker');
+        if (marker) {
+            marker.textContent = '**';
+            marker.setAttribute('opacity', '1');
+        }
+        try {
+            await downloadInfographicImagePng(root, { filename: `${infographicPngSlug}.png`, scale: 2 });
+        } finally {
+            if (marker) marker.setAttribute('opacity', '0');
+        }
     };
 
     const countHoverTemplates = years.map(
@@ -264,7 +216,15 @@ const CanadianCrudeReserves = () => {
     color: var(--gc-text);
     margin: 0 0 16px 0;
 }
-.canadian-crude-reserves-infographic-actions { margin: 0 0 28px 0; }
+.canadian-crude-reserves-split {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: 28px;
+    align-items: start;
+}
+.canadian-crude-reserves-split-left,
+.canadian-crude-reserves-split-right { min-width: 0; }
+.canadian-crude-reserves-infographic-actions { margin: 12px 0 0 0; }
 .canadian-crude-reserves-infographic-actions button {
     padding: 8px 16px;
     border: 1px solid #404040;
@@ -311,7 +271,8 @@ const CanadianCrudeReserves = () => {
     font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; margin: 0 0 1rem 0;
 }
 .canadian-crude-reserves-footnotes dd { display: flex; align-items: flex-start; gap: 0.75rem; margin-left: 0; margin-bottom: 1rem; }
-@media (max-width: 768px) {
+@media (max-width: 880px) {
+    .canadian-crude-reserves-split { grid-template-columns: 1fr; }
     .canadian-crude-reserves-section-title { font-size: 26px; }
     .canadian-crude-reserves-units { font-size: 18px; }
 }
@@ -332,20 +293,25 @@ const CanadianCrudeReserves = () => {
                 </h2>
                 <p className="canadian-crude-reserves-units">{substitute(getText('petroleum_reserves_infographic_units', lang), textVars)}</p>
 
+                <div className="canadian-crude-reserves-split">
+                <div className="canadian-crude-reserves-split-left">
                 <CanadianCrudeReservesInfographic
                     figureRef={infographicFigureRef}
                     lang={lang}
                     overlayValues={reserves}
                     formatReserve={formatReserve}
-                    getText={getText}
                     onFootnoteClick={scrollToElement}
-                    ariaLabel={getText('petroleum_reserves_bg_alt', lang)}
+                    ariaLabel={substitute(getText('petroleum_reserves_bg_alt', lang), {
+                        total: formatReserve(reserves?.totalBb, 0),
+                    })}
                 />
 
                 <div className="canadian-crude-reserves-infographic-actions">
                     <button type="button" onClick={downloadInfographicPng}>{getText('petroleum_reserves_download_png', lang)}</button>
                 </div>
+                </div>
 
+                <div className="canadian-crude-reserves-split-right">
                 <div className="canadian-crude-reserves-chart-frame page-chrome-chart-frame">
                     <h2 id="canadian-crude-reserves-chart-title" className="canadian-crude-reserves-chart-title page-chrome-chart-title">{chartTitle}</h2>
 
@@ -487,6 +453,8 @@ const CanadianCrudeReserves = () => {
                             )}
                         />
                     </div>
+                </div>
+                </div>
                 </div>
 
                 <PageFootnotes

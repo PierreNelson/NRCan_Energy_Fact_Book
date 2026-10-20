@@ -273,6 +273,30 @@ source_tables:
     detail: wells_count_depth
     source_table: ca_western_canada_oil_wells_count_depth
 
+  western_canada_gas_wells:
+    org_code: cer
+    report_code: gas
+    detail: wells_count_depth
+    source_table: ca_western_canada_gas_wells_count_depth
+
+  oil_sands_greenhouse_gases:
+    org_code: ecc
+    report_code: ghg
+    detail: oil_sands_intensity
+    source_table: ca_oil_sands_greenhouse_gases
+
+  oil_sands_in_situ:
+    org_code: aer
+    report_code: oil_sands
+    detail: in_situ_method
+    source_table: aer_oil_sands_in_situ_method
+
+  oil_sands_mining:
+    org_code: aer
+    report_code: oil_sands
+    detail: mining_method
+    source_table: aer_oil_sands_mining_method
+
   petroleum_sector_employment:
     org_code: stc
     report_code: petroleum
@@ -332,6 +356,12 @@ source_tables:
     report_code: biofuels
     detail: world_production
     source_table: iea_biofuels_world_production
+
+  world_renewable_energy:
+    org_code: iea
+    report_code: renewables
+    detail: world_production
+    source_table: iea_renewables_world_production
 
   solid_biofuels:
     org_code: nrcan

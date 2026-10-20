@@ -1,0 +1,25 @@
+Log file: scripts/logs/efb_20261020_001302.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-20 00:13:02
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: oil_sands_greenhouse_gases
+    Intensity 2000–2024: 104.45 to 74.64 kg/bbl, decrease 28.5%
+    Canada share 2024: 13.40%
+    Global share 2023: 0.178%
+    Stored 201 indicator rows for oil_sands_greenhouse_gases
+  Completed: 201 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  oil_sands_greenhouse_gases: success (201 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-20 00:13:02

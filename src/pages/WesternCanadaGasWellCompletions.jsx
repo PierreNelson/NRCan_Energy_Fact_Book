@@ -1,15 +1,15 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import ClearSelectionButton from '../components/ClearSelectionButton';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import useWindowWidth from '../hooks/useWindowWidth';
 import usePlotlySelection from '../hooks/usePlotlySelection';
-import PageFootnotes from '../components/PageFootnotes';
 import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import Plot from '../components/LazyPlot';
 import useChartPngDownloader from '../hooks/useChartPngDownloader';
 import { buildPngOnlyPlotConfig } from '../utils/plotlyInteractiveDefaults';
+import { getWesternCanadaGasWellCompletionsData } from '../utils/dataLoader';
 import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
@@ -17,59 +17,29 @@ import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSumma
 const BAR_COLOR = '#4a8eb8';
 const LINE_COLOR = '#e07020';
 
-/** Shown on exported PNG/DOCX titles (matches petroleum employment year suffix style). */
-const western_canada_gas_well_completions_YEAR_RANGE_SUFFIX = ' (2000-2024)';
-
-const lerpAnchors = (anchors, year) => {
-    if (year <= anchors[0][0]) return anchors[0][1];
-    if (year >= anchors[anchors.length - 1][0]) return anchors[anchors.length - 1][1];
-    for (let i = 0; i < anchors.length - 1; i++) {
-        const [y0, v0] = anchors[i];
-        const [y1, v1] = anchors[i + 1];
-        if (year >= y0 && year <= y1) {
-            return v0 + ((year - y0) / (y1 - y0)) * (v1 - v0);
-        }
-    }
-    return anchors[anchors.length - 1][1];
-};
-
-const COUNT_ANCHORS = [
-    [2000, 9200],
-    [2005, 16800],
-    [2006, 14800],
-    [2008, 7200],
-    [2010, 4200],
-    [2012, 1350],
-    [2014, 2050],
-    [2016, 1750],
-    [2018, 1550],
-    [2020, 1180],
-    [2022, 1920],
-    [2024, 2050]
-];
-
-const DEPTH_ANCHORS = [
-    [2000, 1000],
-    [2005, 1050],
-    [2010, 1700],
-    [2012, 1950],
-    [2015, 2650],
-    [2018, 3450],
-    [2021, 4100],
-    [2024, 4650]
-];
-
-const western_canada_gas_well_completions_DATA = [];
-for (let y = 2000; y <= 2024; y++) {
-    western_canada_gas_well_completions_DATA.push({
-        year: y,
-        count: Math.round(lerpAnchors(COUNT_ANCHORS, y)),
-        depth: Math.round(lerpAnchors(DEPTH_ANCHORS, y))
-    });
-}
+const substitute = (text, vars) =>
+    (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
 
 const WesternCanadaGasWellCompletions = () => {
     const { lang, layoutPadding } = useOutletContext();
+    const [chartData, setChartData] = useState([]);
+    const [startYear, setStartYear] = useState(2000);
+    const [endYear, setEndYear] = useState(2000);
+
+    useEffect(() => {
+        let cancelled = false;
+        getWesternCanadaGasWellCompletionsData()
+            .then((result) => {
+                if (cancelled || !result) return;
+                setChartData(result.rows);
+                setStartYear(result.startYear);
+                setEndYear(result.endYear);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
     const windowWidth = useWindowWidth();
     const {
         selected: selectedPoints,
@@ -84,9 +54,11 @@ const WesternCanadaGasWellCompletions = () => {
             ? '\u2014'
             : Math.round(n).toLocaleString(lang === 'en' ? 'en-CA' : 'fr-CA');
 
-    const years = useMemo(() => western_canada_gas_well_completions_DATA.map((d) => d.year), []);
-    const counts = useMemo(() => western_canada_gas_well_completions_DATA.map((d) => d.count), []);
-    const depths = useMemo(() => western_canada_gas_well_completions_DATA.map((d) => d.depth), []);
+    const years = useMemo(() => chartData.map((d) => d.year), [chartData]);
+    const counts = useMemo(() => chartData.map((d) => d.count), [chartData]);
+    const depths = useMemo(() => chartData.map((d) => d.depth), [chartData]);
+    const textVars = { startYear, endYear };
+    const yearRangeSuffix = startYear === endYear ? ` (${startYear})` : ` (${startYear}-${endYear})`;
 
     const legendBars = getText('western_canada_gas_well_completions_legend_bars', lang);
     const legendLine = getText('western_canada_gas_well_completions_legend_line', lang);
@@ -94,11 +66,11 @@ const WesternCanadaGasWellCompletions = () => {
     const yDepth = getText('western_canada_gas_well_completions_yaxis_depth', lang);
 
     const chartTitle = getText('western_canada_gas_well_completions_title', lang);
-    const exportChartTitle = `${stripHtml(chartTitle)}${western_canada_gas_well_completions_YEAR_RANGE_SUFFIX}`;
+    const exportChartTitle = `${stripHtml(chartTitle)}${yearRangeSuffix}`;
     const chartDownloadSlug =
         lang === 'en'
-            ? 'western_canada_natural_gas_wells_2000-2024'
-            : 'puits_gaz_naturel_ouest_canada_2000-2024';
+            ? `western_canada_natural_gas_wells_${startYear}-${endYear}`
+            : `puits_gaz_naturel_ouest_canada_${startYear}-${endYear}`;
 
     const tableColumns = useMemo(() => [
         { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
@@ -117,14 +89,16 @@ const WesternCanadaGasWellCompletions = () => {
             newestFirst: true,
         });
         return joinChartSummary({
-            intro: lang === 'en'
-                ? 'Combination chart from 2000 to 2024 showing the count of natural gas wells completed in Western Canada as bars and average well depth as a line'
-                : "Diagramme combiné de 2000 à 2024 montrant le nombre de puits de gaz naturel réalisés dans l'Ouest canadien sous forme de bandes et la profondeur moyenne des puits sous forme de courbe",
+            intro: substitute(getText('western_canada_gas_well_completions_chart_aria', lang), textVars),
             unitNote: lang === 'en' ? 'Well counts as integers; depth in metres' : 'Nombre de puits en entiers; profondeur en mètres',
             body,
             lang,
         });
     };
+
+    const finiteDepths = depths.filter((value) => Number.isFinite(value));
+    const maxDepth = finiteDepths.length ? Math.max(...finiteDepths) : 3000;
+    const yDepthMax = Math.ceil(maxDepth / 500) * 500 || 3000;
 
     const plotBottomMargin = windowWidth <= 480 ? 100 : windowWidth <= 768 ? 88 : 72;
     const plotTopMargin = windowWidth <= 480 ? 56 : 48;
@@ -258,6 +232,13 @@ const WesternCanadaGasWellCompletions = () => {
                     font-size: 18px;
                     color: var(--gc-text);
                 }
+                .western-canada-gas-well-completions-narrative {
+                    font-family: 'Noto Sans', sans-serif;
+                    font-size: 20px;
+                    line-height: 1.6;
+                    color: var(--gc-text);
+                    margin: 4px 0 0 0;
+                }
                 .western-canada-gas-well-completions-table-wrapper {
                     display: block;
                     width: 100%;
@@ -362,7 +343,7 @@ const WesternCanadaGasWellCompletions = () => {
                                             },
                                             yaxis2: {
                                                 title: { text: yDepth, font: axisTitleFont, standoff: 8 },
-                                                range: [0, 5000],
+                                                range: [0, yDepthMax * 1.1],
                                                 tick0: 0,
                                                 dtick: 500,
                                                 tickfont: tickFont,
@@ -399,11 +380,15 @@ const WesternCanadaGasWellCompletions = () => {
                         </div>
                     </div>
 
+                    <p className="western-canada-gas-well-completions-narrative">
+                        {getText('western_canada_gas_well_completions_footnote', lang)}
+                    </p>
+
                     <div className="western-canada-gas-well-completions-table-wrapper">
                         <ChartDataTable
                             lang={lang}
                             columns={tableColumns}
-                            rows={western_canada_gas_well_completions_DATA}
+                            rows={chartData}
                             csvFilename={`${chartDownloadSlug}.csv`}
                             docx={{
                                 filename: `${chartDownloadSlug}.docx`,
@@ -412,25 +397,14 @@ const WesternCanadaGasWellCompletions = () => {
                                 columnWidths: [2000, 3200, 3200],
                                 fontSize: 22,
                             }}
-                            caption={getText('western_canada_gas_well_completions_table_caption', lang)}
-                            tableAriaLabel={getText('western_canada_gas_well_completions_table_caption', lang)}
+                            caption={substitute(getText('western_canada_gas_well_completions_table_caption', lang), textVars)}
+                            tableAriaLabel={substitute(getText('western_canada_gas_well_completions_table_caption', lang), textVars)}
                             renderCell={(raw, { colIndex }) => (
                                 colIndex === 0 ? String(raw ?? '') : formatInt(raw)
                             )}
                         />
                     </div>
                 </div>
-
-                <PageFootnotes
-                    lang={lang}
-                    titleId="fn-western-canada-gas-well-completions"
-                    items={[{
-                        id: 'fn-asterisk-western-canada-gas-well-completions',
-                        marker: '*',
-                        text: getText('western_canada_gas_well_completions_footnote', lang),
-                        hideReturn: true,
-                    }]}
-                />
             </div>
         </PageShell>
     );

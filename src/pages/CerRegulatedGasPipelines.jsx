@@ -6,8 +6,8 @@ import PageShell from '../components/PageShell';
 import { useOutletContext } from 'react-router-dom';
 import { getText } from '../utils/translations';
 import { downloadInfographicImagePng } from '../utils/downloadInfographicPng';
-import pipelinesBgEn from '../assets/cer_regulated_gas_pipelines_bg.svg?raw';
-import pipelinesBgFr from '../assets/cer_regulated_gas_pipelines_bg_fr.svg?raw';
+import pipelinesBgEn from '../assets/cer_regulated_gas_pipelines_bg.png';
+import pipelinesBgFr from '../assets/cer_regulated_gas_pipelines_bg_fr.png';
 
 const CerRegulatedGasPipelines = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -15,7 +15,7 @@ const CerRegulatedGasPipelines = () => {
 
     const pageTitle = getText('cer_regulated_gas_pipelines_title', lang);
     const pageSubtitle = getText('cer_regulated_gas_pipelines_subtitle', lang);
-    const svgMarkup = lang === 'en' ? pipelinesBgEn : pipelinesBgFr;
+    const imageSrc = lang === 'en' ? pipelinesBgEn : pipelinesBgFr;
     const fileSlugBase = getText('cer_regulated_gas_pipelines_download_title', lang).replace(/\s+/g, '_');
 
     const downloadInfographicPng = async () => {
@@ -110,12 +110,12 @@ const CerRegulatedGasPipelines = () => {
                 <div className="cer-regulated-gas-pipelines-infographic-section">
                     <AccessibleInfographic
                         ref={infographicRef}
-                        mode="text"
+                        mode="image"
                         as="figure"
                         className="cer-regulated-gas-pipelines-infographic-figure"
                         title={pageTitle}
                         overview={pageSubtitle}
-                        svgMarkup={svgMarkup}
+                        src={imageSrc}
                         imgClassName="cer-regulated-gas-pipelines-bg-image"
                         imgStyle={{ width: '100%', height: 'auto', display: 'block' }}
                         idPrefix={`cer-gas-pipelines-${lang}`}
@@ -133,9 +133,8 @@ const CerRegulatedGasPipelines = () => {
                     titleId="fn-cer-regulated-gas-pipelines"
                     items={[{
                         id: 'fn-asterisk-cer-regulated-gas-pipelines',
-                        marker: '*',
                         text: getText('cer_regulated_gas_pipelines_footnote', lang),
-                        hideReturn: true,
+                        hideMarker: true,
                     }]}
                 />
             </div>

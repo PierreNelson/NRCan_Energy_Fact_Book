@@ -1,0 +1,35 @@
+Log file: scripts/logs/export_20261019_182109.log
+============================================================
+NRCan Energy Factbook - Export Website Files
+Started at: 2026-10-19 18:21:09
+============================================================
+  Filter: source=western_canada_gas_wells (prefixes: ['wc_gas_'])
+
+Preparing export data from database...
+
+Exporting data.csv (source: western_canada_gas_wells)...
+  Updated 72 vectors, total 9679 rows
+  Backed up data.csv -> data.csv.20261019_182110
+  Wrote 9679 rows to <user-home>\NRCan_Energy_Factbook\public\data\data.csv
+
+Exporting metadata.csv (source: western_canada_gas_wells)...
+  Updated 3 vectors, total 1520 rows
+  Backed up metadata.csv -> metadata.csv.20261019_182110
+  Wrote 1520 rows to <user-home>\NRCan_Energy_Factbook\public\data\metadata.csv
+
+Publishing CER gas pipeline map...
+  Map en: cer_gas_pipelines_map.png
+  Map fr: cer_gas_pipelines_map_fr.png
+
+============================================================
+Export Summary
+============================================================
+  data_csv: success (9679 rows)
+    -> <user-home>\NRCan_Energy_Factbook\public\data\data.csv
+  metadata_csv: success (1520 rows)
+    -> <user-home>\NRCan_Energy_Factbook\public\data\metadata.csv
+  major_projects_csv: skipped (filtered)
+  cer_gas_pipeline_map: success (0 rows)
+    -> <user-home>\NRCan_Energy_Factbook\public\data\cer_gas_pipelines_map.json
+
+Completed at: 2026-10-19 18:21:15

@@ -272,6 +272,11 @@ indicators:
     depends_on: [iea_biofuels_world_production]
     vector_prefixes: [wbfl_]
 
+  world_renewable_energy:
+    section_id: 5
+    depends_on: [iea_renewables_world_production]
+    vector_prefixes: [wren_]
+
   solid_biofuels:
     section_id: 5
     depends_on: [nrcan_solid_biofuels]
@@ -341,6 +346,26 @@ indicators:
     section_id: 6
     depends_on: [ca_western_canada_oil_wells_count_depth]
     vector_prefixes: [wc_oil_]
+
+  western_canada_gas_wells:
+    section_id: 6
+    depends_on: [ca_western_canada_gas_wells_count_depth]
+    vector_prefixes: [wc_gas_]
+
+  oil_sands_greenhouse_gases:
+    section_id: 6
+    depends_on: [ca_oil_sands_greenhouse_gases]
+    vector_prefixes: [osghg_]
+
+  oil_sands_in_situ:
+    section_id: 6
+    depends_on: [aer_oil_sands_in_situ_method]
+    vector_prefixes: [osi_]
+
+  oil_sands_mining:
+    section_id: 6
+    depends_on: [aer_oil_sands_mining_method]
+    vector_prefixes: [osmm_]
 
   petroleum_sector_employment:
     section_id: 6

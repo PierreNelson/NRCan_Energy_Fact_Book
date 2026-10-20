@@ -1,0 +1,12 @@
+Log file: scripts/logs/export_20261020_015749.log
+============================================================
+NRCan Energy Factbook - Export Website Files
+Started at: 2026-10-20 01:57:49
+============================================================
+  Filter: source=oil_sands_mining (prefixes: ['osmm_'])
+
+Preparing export data from database...
+
+Exporting data.csv (source: oil_sands_mining)...
+  Updated 11 vectors, total 10034 rows
+  Backed up data.csv -> data.csv.20261020_015749

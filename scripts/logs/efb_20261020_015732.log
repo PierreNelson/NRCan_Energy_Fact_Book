@@ -1,0 +1,31 @@
+Log file: scripts/logs/efb_20261020_015732.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-20 01:57:32
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: oil_sands_mining
+    CNRL Horizon Mine: 316.68 Mb/d
+    Syncrude Mining Project: 382.93 Mb/d
+    Imperial's Kearl: 297.80 Mb/d
+    Suncor Base Mine: 262.09 Mb/d
+    Fort Hills Mine: 183.13 Mb/d
+    CNRL's Muskeg Mine: 179.38 Mb/d
+    Jackpine Mine: 145.29 Mb/d
+    Total 2025: 1767.30 Mb/d across 7 projects
+    Mining share 2025: 47.72%
+    Stored 11 indicator rows for oil_sands_mining
+  Completed: 11 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  oil_sands_mining: success (11 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-20 01:57:34

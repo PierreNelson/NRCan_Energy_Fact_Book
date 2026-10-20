@@ -32,6 +32,7 @@ python main.py export
 | **67** | Yes | `getProvincialElectricityGenerationData()` | `electricity_generation_by_source` | same as Page 66 | same as Page 66 |
 | **68** | Yes | `getElectricalEnergyUseData()` | `electrical_energy_use` | `update_electrical_energy_use()` / `transform_electrical_energy_use()` · `electrical_energy_use.py` | OEE NEUD electrical energy use (sector + province) |
 | **71** | Yes | `getElectricityGhgSpotlightData()` | `ghg_electricity_spotlight` | `update_ghg_electricity_spotlight()` / `transform_ghg_electricity_spotlight()` · `ghg_electricity_spotlight.py` | ECCC environmental indicators CSV + gencap `coal_elegen` |
+| **72** | Yes | `getWorldRenewableEnergyData()` | `world_renewable_energy` | `update_world_renewable_energy()` / `transform_world_renewable_energy()` · `world_renewable_energy.py` | `oecd_iea_data.xlsx` sheets `renewables_world_production` and `total_energy_supply` |
 | **73** | Yes | `getCanadianRenewableEnergyProductionData()` | `canadian_renewable_energy_production` | `update_canadian_renewable_energy_production()` / `transform_canadian_renewable_energy_production()` · `canadian_renewable_energy_production.py` | SharePoint `oecd_iea_data.xlsx` sheet `renewables_canada_production` |
 | **74** | Yes | `getRenewableElectricityCapacityData()` | `renewable_electricity_capacity` | `update_renewable_electricity_capacity()` / `transform_renewable_electricity_capacity()` · `renewable_electricity_capacity.py` | SharePoint gencap `ren_elecap` sheet |
 | **75** | Yes | `getHydroelectricityData()` | `hydroelectricity` | `update_hydroelectricity()` / `transform_hydroelectricity()` · `hydroelectricity.py` | `oecd_iea_data.xlsx` `hydro_world_gen` + gencap `src_elegen_can` |
@@ -49,6 +50,19 @@ python main.py export
 ---
 
 ## Pipeline sources (detail)
+
+### `world_renewable_energy` — Page 72
+
+| Item | Location |
+|------|----------|
+| Handlers | `update_world_renewable_energy()` / `transform_world_renewable_energy()` in `world_renewable_energy.py` |
+| EEDAS table | `iea_renewables_world_production` |
+| Workbook | `oecd_iea_data.xlsx` |
+| Ranking | Sheet `renewables_world_production`, product Total of renewable energy sources, latest year, top five countries plus Canada |
+| Supply share | Sheet `total_energy_supply`, renewable total divided by total energy supply, for World, OECD Total, and Canada |
+| Names | Ranking names from `ref_iea_gac_geo_concordance` |
+| Vectors | `wren_rank_*`, `wren_s_*` |
+| Website getter | `getWorldRenewableEnergyData()` |
 
 ### `world_biofuels_production` — Pages 91 and 92
 

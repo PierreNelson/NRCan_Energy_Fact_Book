@@ -146,7 +146,7 @@ python main.py export
 | Handler | `process_ghg_emissions()` in `ghg_emissions.py` |
 | CSV URL | `config.yaml` → `ghg_emissions.source_url` (ECCC `GHG_Econ_Can_Prov_Terr.csv`) |
 | Page 20 chart | Sector columns in `ghg_emissions.py` |
-| Page 132 spotlight | `build_oil_gas_spotlight_rows()` in `ghg_emissions.py` |
+| Page 132 spotlight | `ghg_emissions.py`: oil sands = in situ + mining + upgrading; natural gas and conventional oil are their sub-sector totals; Other = natural gas distribution + oil, natural gas and CO2 transmission. Narrative intensity uses StatCan v107757053 and v107757061 (2000–2015 filled from table 25-10-0014-01). |
 | Narrative stats | `build_ghg_narrative_stats()` in `ghg_emissions.py` |
 | Vectors | `ghg_*` |
 

@@ -49,6 +49,10 @@ from .world_biofuels_production import (
     transform_world_biofuels_production,
     update_world_biofuels_production,
 )
+from .world_renewable_energy import (
+    transform_world_renewable_energy,
+    update_world_renewable_energy,
+)
 from .largest_solar_projects import (
     transform_largest_solar_projects,
     update_largest_solar_projects,
@@ -136,6 +140,7 @@ class Section5CleanPower(SectionProcessor):
             'electricity_world_production': lambda: update_electricity_world_production(self),
             'solid_biofuels': lambda: update_solid_biofuels(self),
             'world_biofuels_production': lambda: update_world_biofuels_production(self),
+            'world_renewable_energy': lambda: update_world_renewable_energy(self),
             'electrical_energy_use': lambda: update_electrical_energy_use(self),
             'electricity_prices': lambda: update_electricity_prices(self),
             'wind_solar_electricity_growth': lambda: update_wind_solar_electricity_growth(self),
@@ -168,6 +173,7 @@ class Section5CleanPower(SectionProcessor):
             'electricity_world_production': lambda: transform_electricity_world_production(self),
             'solid_biofuels': lambda: transform_solid_biofuels(self),
             'world_biofuels_production': lambda: transform_world_biofuels_production(self),
+            'world_renewable_energy': lambda: transform_world_renewable_energy(self),
             'electrical_energy_use': lambda: transform_electrical_energy_use(self),
             'electricity_prices': lambda: transform_electricity_prices(self),
             'wind_solar_electricity_growth': lambda: transform_wind_solar_electricity_growth(self),

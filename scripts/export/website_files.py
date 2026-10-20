@@ -128,6 +128,14 @@ class WebsiteExporter:
             results['major_projects_csv'] = self._export_major_projects_csv()
         else:
             results['major_projects_csv'] = {'status': 'skipped', 'rows': 0, 'reason': 'filtered'}
+
+        from export.cer_gas_pipeline_map import publish_cer_gas_pipeline_map
+        print('\nPublishing CER gas pipeline map...')
+        results['cer_gas_pipeline_map'] = publish_cer_gas_pipeline_map()
+
+        from export.cer_oil_pipeline_map import publish_cer_oil_pipeline_map
+        print('\nPublishing CER oil pipeline map...')
+        results['cer_oil_pipeline_map'] = publish_cer_oil_pipeline_map()
         
         return results
     

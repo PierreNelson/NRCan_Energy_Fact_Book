@@ -1,0 +1,12 @@
+Log file: scripts/logs/export_20261020_003448.log
+============================================================
+NRCan Energy Factbook - Export Website Files
+Started at: 2026-10-20 00:34:48
+============================================================
+  Filter: source=oil_sands_in_situ (prefixes: ['osi_'])
+
+Preparing export data from database...
+
+Exporting data.csv (source: oil_sands_in_situ)...
+  Updated 7 vectors, total 10023 rows
+  Backed up data.csv -> data.csv.20261020_003448

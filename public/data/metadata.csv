@@ -220,11 +220,11 @@ eghg_per_gdp,GHG emissions per million dollars of GDP,kt per million dollars,rat
 eghg_per_pj,GHG emissions per petajoule,kt per PJ,ratio,Unknown,Natural Resources Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FA-IPCC-Sector%2FGHG_IPCC_Can_Prov_Terr.csv
 eghg_population,Canada population,persons,persons,Unknown,Statistics Canada,https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000501
 elec_eu_A,Electrical energy use - Agriculture,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
-elec_eu_A_pct,Electrical energy use share - Agriculture,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ALTA,Electrical energy use - Alberta,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ALTA_pct,Electrical energy use share - Alberta,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ATL,Electrical energy use - Atlantic provinces,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_ATL_pct,Electrical energy use share - Atlantic provinces,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+elec_eu_A_pct,Electrical energy use share - Agriculture,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_BC_TERR,Electrical energy use - B.C. and Territories,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_BC_TERR_pct,Electrical energy use share - B.C. and Territories,Percent,percent,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 elec_eu_C,Electrical energy use - Commercial,PJ,petajoules,Electrical energy use by sector and province,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
@@ -655,14 +655,14 @@ ghg_oilgas_spotlight_conventional_oil,GHG oil and gas spotlight - Conventional o
 ghg_oilgas_spotlight_natural_gas,GHG oil and gas spotlight - Natural gas,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_oilgas_spotlight_oil_sands,GHG oil and gas spotlight - Oil sands,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_oilgas_spotlight_other,GHG oil and gas spotlight - Other,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
-ghg_stat_conv_gas_emissions_pct,Conventional oil and natural gas emissions percent change,percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
+ghg_stat_conv_gas_emissions_pct,Conventional oil and natural gas intensity percent change,percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_stat_crude_production_pct,Canadian crude oil production percent change (StatCan),percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_stat_electricity_emissions_pct,Electricity GHG emissions percent change (narrative period),percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_stat_heavy_industry_emissions_pct,Heavy industry GHG emissions percent change (narrative period),percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_stat_narrative_base_year,GHG narrative comparison base year,year,none,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_stat_narrative_end_year,GHG narrative comparison end year,year,none,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_stat_oil_gas_emissions_pct,Oil and gas GHG emissions percent change (narrative period),percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
-ghg_stat_oil_gas_spotlight_total_pct,Oil and gas spotlight total emissions percent change,percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
+ghg_stat_oil_gas_spotlight_total_pct,Oil and gas spotlight chart total percent change,percent,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_stat_oil_sands_emissions_ratio,Oil sands emissions ratio (end year / base year),ratio,units,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_transportation,GHG Emissions - Transportation,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
 ghg_waste_others,GHG Emissions - Waste and Others,Mt CO2 eq,megatonnes,GHG Emissions by Economic Sector,Environment and Climate Change Canada,https://data-donnees.ec.gc.ca/api/file?path=%2Fsubstances%2Fmonitor%2Fcanada-s-official-greenhouse-gas-inventory%2FB-Economic-Sector%2FGHG_Econ_Can_Prov_Terr.csv
@@ -890,6 +890,33 @@ os_total_mmbd,Total crude oil and equivalent production,million barrels per day,
 os_total_thousand_m3,Total crude oil and equivalent production,thousand cubic metres,units,Oil sands capex and production share,,
 os_upgrading_capacity_mmbd,Total oil sands upgrader capacity in Canada,million barrels per day,units,Oil sands capex and production share,,
 os_upgrading_pct,Raw bitumen sent for upgrading in Alberta,percent,units,Oil sands capex and production share,,
+osghg_canada_mt,Canada national inventory total,Mt CO2e,megatonnes,Oil sands greenhouse gas emissions intensity,,
+osghg_global_mt,World GHG emissions excluding LULUCF,Mt CO2e,megatonnes,Oil sands greenhouse gas emissions intensity,,
+osghg_intensity_decrease_pct,Oil sands emissions intensity decrease since 2000,percent,percent,Oil sands greenhouse gas emissions intensity,,
+osghg_intensity_kg_bbl,Oil sands emissions intensity,kg CO2e per barrel,units,Oil sands greenhouse gas emissions intensity,,
+osghg_oil_sands_kt,Oil sands GHG emissions,kt CO2e,kilotonnes,Oil sands greenhouse gas emissions intensity,,
+osghg_prod_thousand_bbl,Oil sands production,thousand barrels,units,Oil sands greenhouse gas emissions intensity,,
+osghg_prod_thousand_m3,Oil sands production,thousand cubic metres,units,Oil sands greenhouse gas emissions intensity,,
+osghg_share_canada_pct,Oil sands share of Canada GHG emissions,percent,percent,Oil sands greenhouse gas emissions intensity,,
+osghg_share_global_pct,Oil sands share of global GHG emissions,percent,percent,Oil sands greenhouse gas emissions intensity,,
+osi_current_production_pct,In situ share of current oil sands production,percent,percent,In situ oil sands method,,
+osi_project_count,In situ projects in the ST53 BITUMEN sheet,projects,units,In situ oil sands method,,
+osi_rank_1,Firebag and MacKay River (Suncor),thousand barrels per day,units,In situ oil sands method,,
+osi_rank_2,Christina Lake (Cenovus),thousand barrels per day,units,In situ oil sands method,,
+osi_rank_3,Foster Creek (Cenovus),thousand barrels per day,units,In situ oil sands method,,
+osi_rank_4,Cold Lake (Imperial Oil),thousand barrels per day,units,In situ oil sands method,,
+osi_reporting_year,In situ reporting year,year,units,In situ oil sands method,,
+osmm_current_production_pct,Mining share of current oil sands production,percent,percent,Mining oil sands method,,
+osmm_fort_hills,Fort Hills Mine,thousand barrels per day,units,Mining oil sands method,,
+osmm_horizon,CNRL Horizon Mine,thousand barrels per day,units,Mining oil sands method,,
+osmm_jackpine,Jackpine Mine,thousand barrels per day,units,Mining oil sands method,,
+osmm_kearl,Imperial's Kearl,thousand barrels per day,units,Mining oil sands method,,
+osmm_muskeg,CNRL's Muskeg Mine,thousand barrels per day,units,Mining oil sands method,,
+osmm_project_count,Displayed mining projects,projects,units,Mining oil sands method,,
+osmm_reporting_year,Mining reporting year,year,units,Mining oil sands method,,
+osmm_suncor,Suncor Base Mine,thousand barrels per day,units,Mining oil sands method,,
+osmm_syncrude,Syncrude Mining Project,thousand barrels per day,units,Mining oil sands method,,
+osmm_total_mbd,Total mining production,thousand barrels per day,units,Mining oil sands method,,
 pet_emp_alta_direct_pct,Alberta direct petroleum employment share,percent,units,Petroleum sector employment by region,,
 pet_emp_alta_indirect_pct,Alberta indirect petroleum employment share,percent,units,Petroleum sector employment by region,,
 pet_emp_bc_direct_pct,British Columbia direct petroleum employment share,percent,units,Petroleum sector employment by region,,
@@ -1030,12 +1057,12 @@ sbio_use_residential,Residential wood fuel use,PJ,petajoules,Canadian production
 sbio_use_total,Total wood fuel use,PJ,petajoules,Canadian production of solid biofuels,Natural Resources Canada,
 seu_BM,Secondary energy use - Biomass,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_Ele,Secondary energy use - Electricity,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_NG,Secondary energy use - Natural gas,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
-seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OOP,Secondary energy use - Other oil products,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_OT,Secondary energy use - Other,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_Oil,Secondary energy use - Oil,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 seu_TE,Secondary energy use (final demand) total,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
+seu_mogas,Secondary energy use - Motor gasoline,PJ,petajoules,Secondary energy use by fuel type (SEU final demand),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?type=HB&sector=aaa&juris=ca&rn=1&year=2022&page=2
 sol_world_canada_rank,Canada rank in world solar PV capacity,Rank,rank,Unknown,IEA-PVPS,
 sol_world_canada_share_pct,Canada share of world solar PV capacity,%,percent,Unknown,IEA-PVPS,
 sol_world_top1_country_id,World solar PV capacity country rank 1,ID,country_id,Unknown,IEA-PVPS,
@@ -1357,6 +1384,9 @@ wbfl_t_china,China,PJ,units,World biofuels production,International Energy Agenc
 wbfl_t_european_union,European Union,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
 wbfl_t_rest_of_world,Rest of the world,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
 wbfl_t_united_states,United States,PJ,units,World biofuels production,International Energy Agency,https://www.iea.org/data-and-statistics
+wc_gas_avg_depth_m,Western Canada natural gas wells average depth,metres,units,Western Canada natural gas wells completed,,
+wc_gas_total_metres,Western Canada natural gas wells total metres drilled,metres,units,Western Canada natural gas wells completed,,
+wc_gas_wells_completed,Western Canada natural gas wells completed,wells,units,Western Canada natural gas wells completed,,
 wc_oil_avg_depth_m,Western Canada oil wells average depth,metres,units,Western Canada oil wells completed,,
 wc_oil_total_metres,Western Canada oil wells total metres drilled,metres,units,Western Canada oil wells completed,,
 wc_oil_wells_completed,Western Canada oil wells completed,wells,units,Western Canada oil wells completed,,
@@ -1455,6 +1485,47 @@ wr_crude_res_saudi_pct,Saudi Arabia crude proved reserves share,percent,units,Wo
 wr_crude_res_total_bb,World crude proved reserves total,billion barrels,units,World proved reserves of crude oil,,
 wr_crude_res_venezuela_bb,Venezuela crude proved reserves,billion barrels,units,World proved reserves of crude oil,,
 wr_crude_res_venezuela_pct,Venezuela crude proved reserves share,percent,units,World proved reserves of crude oil,,
+wren_rank_count,Displayed renewable ranking rows,count,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r1_canada,Other country row,flag,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r1_code,CHINA,code,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r1_name_en,China,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r1_name_fr,Chine,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r1_rank,Rank 1,rank,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r1_share,Rank 1 share,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r2_canada,Other country row,flag,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r2_code,INDIA,code,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r2_name_en,India,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r2_name_fr,Inde,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r2_rank,Rank 2,rank,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r2_share,Rank 2 share,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r3_canada,Other country row,flag,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r3_code,USA,code,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r3_name_en,United States,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r3_name_fr,États-Unis,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r3_rank,Rank 3,rank,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r3_share,Rank 3 share,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r4_canada,Other country row,flag,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r4_code,BRAZIL,code,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r4_name_en,Brazil,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r4_name_fr,Brésil,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r4_rank,Rank 4,rank,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r4_share,Rank 4 share,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r5_canada,Other country row,flag,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r5_code,INDONESIA,code,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r5_name_en,Indonesia,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r5_name_fr,Indonésie,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r5_rank,Rank 5,rank,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r5_share,Rank 5 share,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r6_canada,Canada row,flag,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r6_code,CANADA,code,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r6_name_en,Canada,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r6_name_fr,Canada,name,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r6_rank,Rank 6,rank,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_r6_share,Rank 6 share,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_total_mtoe,World renewable energy production,MTOE,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_rank_total_pj,World renewable energy production,PJ,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_s_canada,Canada,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
+wren_s_world,World,Percent,units,World renewable energy production,International Energy Agency,https://www.iea.org/data-and-statistics
 ws_elec_end_year,Wind and solar series end year,Year,year,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
 ws_elec_hydro_pct,Hydroelectricity share of generation,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,
 ws_elec_non_ghg_pct,Non-GHG emitting electricity share,Percent,percent,Wind and solar net electricity generation growth in Canada,Natural Resources Canada,

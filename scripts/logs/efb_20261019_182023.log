@@ -1,0 +1,22 @@
+Log file: scripts/logs/efb_20261019_182023.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-19 18:20:23
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: western_canada_oil_wells
+    Stored 78 indicator rows for western_canada_oil_wells
+  Completed: 78 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  western_canada_oil_wells: success (78 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-19 18:20:26

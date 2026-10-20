@@ -1,0 +1,28 @@
+Log file: scripts/logs/efb_20261020_003334.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-20 00:33:34
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: oil_sands_in_situ
+    In situ share 2025: 52.28%
+    Rank 1: nan (nan) 1924.90 Mb/d
+    Rank 2: Firebag and MacKay River (Suncor) 277.91 Mb/d
+    Rank 3: Christina Lake (Cenovus) 229.57 Mb/d
+    Rank 4: Foster Creek (Cenovus) 206.10 Mb/d
+    ST53 2025: 61 projects
+    Stored 7 indicator rows for oil_sands_in_situ
+  Completed: 7 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  oil_sands_in_situ: success (7 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-20 00:33:36

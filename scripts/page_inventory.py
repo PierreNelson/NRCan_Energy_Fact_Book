@@ -25,6 +25,7 @@ SCRIPTS = ROOT / "scripts"
 COMPONENTS = SRC / "components"
 PAGES = SRC / "pages"
 TRANSLATIONS = SRC / "utils" / "translations.js"
+EN_TRANSLATIONS = SRC / "utils" / "translations" / "en.js"
 DATA_LOADER = SRC / "utils" / "dataLoader.js"
 DATA_CSV = ROOT / "public" / "data" / "data.csv"
 SOURCE_VECTORS = SCRIPTS / "export" / "source_vectors.py"
@@ -44,6 +45,8 @@ PAGE_OVERRIDES: dict[int, dict] = {
     },
     28: {"getters": ["getMajorProjectsData"]},
     29: {"getters": ["getCleanTechTrendsData"]},
+    118: {"notes": "CER oil pipeline map image downloaded on export"},
+    130: {"notes": "CER gas pipeline map image downloaded on export"},
 }
 
 HARDCODED_PATTERNS = [
@@ -94,6 +97,8 @@ GETTER_PREFIX_HINTS: dict[str, list[str]] = {
     "getElectricityPricesMapData": ["elec_price_"],
     "getHydroelectricCapacityData": ["hydro_fac_", "ren_cap_hydro"],
     "getOilGasGhgSpotlightData": ["ghg_oilgas_spotlight_"],
+    "getHydrogenNarrativeData": ["hnar_intro_", "hnar_benefit_", "hnar_fact"],
+    "getHydrogenCanadaSummaryData": ["hnar_summary_"],
 }
 
 # Pages where getters use dynamic/wildcard vectors that do not map to registry prefixes.
@@ -161,9 +166,12 @@ def _translation_prefix_and_title_suffix(key: str) -> tuple[str, str] | None:
 
 
 def parse_translations_en() -> tuple[dict[str, str], dict[int, str], dict[str, dict[str, str]]]:
-    """Parse translation-prefix titles and nav_sectionN_title from translations.js."""
+    """Parse translation-prefix titles and nav_sectionN_title from the English strings."""
     text = _read_text(TRANSLATIONS)
     en_match = re.search(r"'en'\s*:\s*\{", text)
+    if not en_match:
+        text = _read_text(EN_TRANSLATIONS)
+        en_match = re.search(r"export\s+default\s*\{", text)
     if not en_match:
         return {}, {}, {}
     fr_match = re.search(r"'fr'\s*:\s*\{", text[en_match.end() :])
@@ -265,10 +273,17 @@ def _parse_dataloader_const_maps(text: str) -> dict[str, set[str]]:
     for m in re.finditer(r"const (\w+) = \{([^}]+)\}", text, re.S):
         name = m.group(1)
         vectors: set[str] = set()
-        for sm in re.finditer(r"'([^']+)'", m.group(2)):
-            s = sm.group(1)
-            if _VECTOR_NAME_RE.match(s) and "_" in s:
-                vectors.add(s)
+        for sm in re.finditer(r"'([^']+)'\s*:\s*'([^']*)'", m.group(2)):
+            key, value = sm.group(1), sm.group(2)
+            key_ok = bool(_VECTOR_NAME_RE.match(key) and "_" in key)
+            value_ok = bool(_VECTOR_NAME_RE.match(value) and "_" in value)
+            if key_ok and value_ok and key != value and (key in value or value in key):
+                vectors.add(value if key in value else key)
+            else:
+                if key_ok:
+                    vectors.add(key)
+                if value_ok:
+                    vectors.add(value)
         if vectors:
             maps[name] = vectors
     return maps

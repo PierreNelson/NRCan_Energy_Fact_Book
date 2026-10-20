@@ -1,6 +1,8 @@
 """GHG emissions by economic sector (GHG emissions sector and spotlight) — ECCC GHG_Econ_Can_Prov_Terr.csv."""
 
 import io
+import re
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -22,9 +24,27 @@ GHG_DEFAULT_SOURCE_URLS = [
 
 GHG_CHART_MIN_YEAR = 2020
 GHG_SPOTLIGHT_MIN_YEAR = 2000
-GHG_SPOTLIGHT_MAX_YEAR = 2023
 GHG_NARRATIVE_BASE_YEAR = 2000
 GHG_NARRATIVE_END_YEAR = 2023
+# Barrels per cubic metre. Table 25-10-0014-01 publishes thousands of cubic metres.
+BBL_PER_M3 = 6.2898
+# Named Source 2 vectors begin in 2016. Earlier years use the predecessor table.
+GHG_PRODUCTION_VECTORS = (107757053, 107757061)
+GHG_PRODUCTION_HISTORICAL_TABLE = '25100014'
+GHG_PRODUCTION_HISTORICAL_LABELS = {
+    107757053: 'Crude bitumen',
+    107757061: 'Synthetic crude oil',
+}
+GHG_OIL_SANDS_SUB_SECTOR = 'Oil Sands and Thermal Heavy Oil Production'
+GHG_OIL_SANDS_COMPONENTS = (
+    'In-Situ Thermal Extraction',
+    'Mining and Extraction',
+    'Upgrading',
+)
+GHG_OTHER_SUBSECTORS = (
+    'Natural Gas Distribution',
+    'Oil, Natural Gas and CO2 Transmission',
+)
 
 GHG_VALUE_COLUMN = "Total (kt CO2e)"
 GHG_KT_TO_MT = 1000.0
@@ -43,12 +63,6 @@ GHG_WASTE_OTHERS_SOURCES = (
     "Coal Production",
     "Light Manufacturing, Construction and Forest Resources",
 )
-
-GHG_SPOTLIGHT_SUBSECTORS = {
-    "oil_sands": "Oil Sands and Thermal Heavy Oil Production",
-    "conventional_oil": "Conventional Oil Production",
-    "natural_gas": "Natural Gas Production and Processing",
-}
 
 GHG_VECTOR_METADATA = {
     "ghg_oil_gas": "GHG Emissions - Oil and Gas",
@@ -70,8 +84,8 @@ GHG_STAT_METADATA = {
     "ghg_stat_electricity_emissions_pct": ("Electricity GHG emissions percent change (narrative period)", "percent", "units"),
     "ghg_stat_oil_gas_emissions_pct": ("Oil and gas GHG emissions percent change (narrative period)", "percent", "units"),
     "ghg_stat_heavy_industry_emissions_pct": ("Heavy industry GHG emissions percent change (narrative period)", "percent", "units"),
-    "ghg_stat_oil_gas_spotlight_total_pct": ("Oil and gas spotlight total emissions percent change", "percent", "units"),
-    "ghg_stat_conv_gas_emissions_pct": ("Conventional oil and natural gas emissions percent change", "percent", "units"),
+    "ghg_stat_oil_gas_spotlight_total_pct": ("Oil and gas spotlight chart total percent change", "percent", "units"),
+    "ghg_stat_conv_gas_emissions_pct": ("Conventional oil and natural gas intensity percent change", "percent", "units"),
     "ghg_stat_oil_sands_emissions_ratio": ("Oil sands emissions ratio (end year / base year)", "ratio", "units"),
     "ghg_stat_crude_production_pct": ("Canadian crude oil production percent change (StatCan)", "percent", "units"),
 }
@@ -120,6 +134,63 @@ def _ghg_sector_total_rows(df: pd.DataFrame) -> pd.DataFrame:
     mask = df["Sector"].isna() & (df["Total"].isna() | (totals == "y"))
     rows = df.loc[mask].copy()
     return rows.sort_values("Index").groupby(["Year", "Source"], as_index=False).first()
+
+
+def _norm_label(value) -> str:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ''
+    return re.sub(r'\s+', ' ', str(value)).strip()
+
+
+def _subsector_kt(df: pd.DataFrame, year: int, sub_sector: str, sub_sub: Optional[str] = None) -> Optional[float]:
+    """Canada oil-and-gas kilotonnes for one sub-sector, or one sub-sub-sector."""
+    part = df[
+        (df['Region'] == 'Canada')
+        & (df['Source'] == 'Oil and Gas')
+        & (df['Year'] == year)
+        & (df['Sub-sector'].map(_norm_label) == sub_sector)
+    ]
+    if part.empty:
+        return None
+    if sub_sub is not None:
+        part = part[part['Sub-sub-sector'].map(_norm_label) == sub_sub]
+        if part.empty:
+            return None
+        value = part.iloc[0][GHG_VALUE_COLUMN]
+        return None if pd.isna(value) else float(value)
+    totals = part[part['Total'].map(_norm_label).str.lower() == 'y']
+    chosen = totals if len(totals) else part[part['Sub-sub-sector'].map(_norm_label) == '']
+    if chosen.empty:
+        return None
+    value = chosen.iloc[0][GHG_VALUE_COLUMN]
+    return None if pd.isna(value) else float(value)
+
+
+def _spotlight_components_kt(df: pd.DataFrame) -> Dict[int, Dict[str, float]]:
+    """Annual chart components in kt CO2e, from 2000 through the latest complete year."""
+    years = sorted(
+        int(year) for year in df['Year'].dropna().unique()
+        if int(year) >= GHG_SPOTLIGHT_MIN_YEAR
+    )
+    components: Dict[int, Dict[str, float]] = {}
+    for year in years:
+        oil_sands_parts = [
+            _subsector_kt(df, year, GHG_OIL_SANDS_SUB_SECTOR, name)
+            for name in GHG_OIL_SANDS_COMPONENTS
+        ]
+        natural_gas = _subsector_kt(df, year, 'Natural Gas Production and Processing')
+        conventional = _subsector_kt(df, year, 'Conventional Oil Production')
+        other_parts = [_subsector_kt(df, year, name) for name in GHG_OTHER_SUBSECTORS]
+        values = oil_sands_parts + [natural_gas, conventional] + other_parts
+        if any(value is None for value in values):
+            continue
+        components[year] = {
+            'oil_sands': sum(oil_sands_parts),
+            'natural_gas': natural_gas,
+            'conventional_oil': conventional,
+            'other': sum(other_parts),
+        }
+    return components
 
 
 def _ghg_subsector_total_mt(df: pd.DataFrame, sub_sector: str, year: int) -> Optional[float]:
@@ -186,40 +257,44 @@ def _build_ghg_chart_rows(
 
 def _build_ghg_spotlight_rows(
     df: pd.DataFrame,
-    min_year: int = GHG_SPOTLIGHT_MIN_YEAR,
-    max_year: int = GHG_SPOTLIGHT_MAX_YEAR,
+    components: Optional[Dict[int, Dict[str, float]]] = None,
 ) -> List[Tuple[str, int, float]]:
-    """Oil and gas GHG spotlight stacked chart: oil sands, conventional oil, natural gas, other."""
-    years = sorted(
-        y for y in df["Year"].dropna().astype(int).unique()
-        if min_year <= y <= max_year
-    )
+    """Stacked chart: oil sands, natural gas, conventional oil, and the two downstream categories."""
+    components = components if components is not None else _spotlight_components_kt(df)
     data_rows: List[Tuple[str, int, float]] = []
-
-    for year in years:
-        sands = _ghg_subsector_total_mt(df, GHG_SPOTLIGHT_SUBSECTORS["oil_sands"], year)
-        conv = _ghg_subsector_total_mt(df, GHG_SPOTLIGHT_SUBSECTORS["conventional_oil"], year)
-        gas = _ghg_subsector_total_mt(df, GHG_SPOTLIGHT_SUBSECTORS["natural_gas"], year)
-        total = _ghg_source_total_mt(df, "Oil and Gas", year)
-        if sands is None or conv is None or gas is None or total is None:
-            continue
-        other = max(0.0, total - sands - conv - gas)
-        data_rows.extend([
-            ("ghg_oilgas_spotlight_oil_sands", year, round(sands, 1)),
-            ("ghg_oilgas_spotlight_natural_gas", year, round(gas, 1)),
-            ("ghg_oilgas_spotlight_conventional_oil", year, round(conv, 1)),
-            ("ghg_oilgas_spotlight_other", year, round(other, 1)),
-        ])
-
+    vector_by_key = {
+        'oil_sands': 'ghg_oilgas_spotlight_oil_sands',
+        'natural_gas': 'ghg_oilgas_spotlight_natural_gas',
+        'conventional_oil': 'ghg_oilgas_spotlight_conventional_oil',
+        'other': 'ghg_oilgas_spotlight_other',
+    }
+    for year in sorted(components):
+        for key, vector in vector_by_key.items():
+            data_rows.append((vector, year, components[year][key] / GHG_KT_TO_MT))
     return data_rows
+
+
+def _rd_cog(components: Dict[str, float], production: Dict[int, float], year: int) -> Optional[float]:
+    """Intensity used for the conventional oil and natural gas narrative."""
+    bitumen = production.get(107757053, {}).get(year)
+    synthetic = production.get(107757061, {}).get(year)
+    if bitumen is None or synthetic is None:
+        return None
+    rd_cog_est = (bitumen + synthetic) / 1000.0
+    if rd_cog_est == 0:
+        return None
+    emissions_kt = components['conventional_oil'] + components['natural_gas']
+    return emissions_kt / rd_cog_est * 1000.0
 
 
 def _build_ghg_stat_rows(
     df: pd.DataFrame,
     base_year: int = GHG_NARRATIVE_BASE_YEAR,
     end_year: int = GHG_NARRATIVE_END_YEAR,
+    components: Optional[Dict[int, Dict[str, float]]] = None,
+    production: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> List[Tuple[str, int, float]]:
-    """Derived narrative statistics (not used for this indicator/132 charts)."""
+    """Derived narrative statistics. Sector bullets stay on the fixed comparison years."""
     canada = df[df["Region"] == "Canada"].copy()
     rows: List[Tuple[str, int, float]] = [
         ("ghg_stat_narrative_base_year", end_year, float(base_year)),
@@ -237,25 +312,43 @@ def _build_ghg_stat_rows(
         if v0 is not None and v1 is not None and v0 != 0:
             rows.append((vector, end_year, float(_ghg_pct_change(v0, v1))))
 
-    sands0 = _ghg_subsector_total_mt(canada, GHG_SPOTLIGHT_SUBSECTORS["oil_sands"], base_year)
-    sands1 = _ghg_subsector_total_mt(canada, GHG_SPOTLIGHT_SUBSECTORS["oil_sands"], end_year)
-    conv0 = _ghg_subsector_total_mt(canada, GHG_SPOTLIGHT_SUBSECTORS["conventional_oil"], base_year)
-    conv1 = _ghg_subsector_total_mt(canada, GHG_SPOTLIGHT_SUBSECTORS["conventional_oil"], end_year)
-    gas0 = _ghg_subsector_total_mt(canada, GHG_SPOTLIGHT_SUBSECTORS["natural_gas"], base_year)
-    gas1 = _ghg_subsector_total_mt(canada, GHG_SPOTLIGHT_SUBSECTORS["natural_gas"], end_year)
-    total0 = _ghg_source_total_mt(canada, "Oil and Gas", base_year)
-    total1 = _ghg_source_total_mt(canada, "Oil and Gas", end_year)
-
-    if total0 and total1:
-        rows.append(("ghg_stat_oil_gas_spotlight_total_pct", end_year, float(_ghg_pct_change(total0, total1))))
-    if sands0 and sands1 and sands0 > 0:
-        rows.append(("ghg_stat_oil_sands_emissions_ratio", end_year, round(sands1 / sands0, 2)))
-    if None not in (conv0, conv1, gas0, gas1) and (conv0 + gas0) != 0:
-        rows.append((
-            "ghg_stat_conv_gas_emissions_pct",
-            end_year,
-            float(_ghg_pct_change(conv0 + gas0, conv1 + gas1)),
-        ))
+    spotlight = components if components is not None else _spotlight_components_kt(canada)
+    spotlight_years = sorted(spotlight)
+    if base_year in spotlight and spotlight_years:
+        reporting_year = spotlight_years[-1]
+        start = spotlight[base_year]
+        latest = spotlight[reporting_year]
+        total_start = sum(start.values())
+        total_latest = sum(latest.values())
+        if total_start:
+            rows.append((
+                "ghg_stat_oil_gas_spotlight_total_pct",
+                reporting_year,
+                float(_ghg_pct_change(total_start, total_latest)),
+            ))
+        if start['oil_sands']:
+            rows.append((
+                "ghg_stat_oil_sands_emissions_ratio",
+                reporting_year,
+                round(latest['oil_sands'] / start['oil_sands'], 4),
+            ))
+        if production:
+            intensity_start = _rd_cog(start, production, base_year)
+            intensity_latest = _rd_cog(latest, production, reporting_year)
+            if intensity_start and intensity_latest:
+                rows.append((
+                    "ghg_stat_conv_gas_emissions_pct",
+                    reporting_year,
+                    float(_ghg_pct_change(intensity_start, intensity_latest)),
+                ))
+            if total_start and start['oil_sands'] and intensity_start and intensity_latest:
+                print(
+                    "  Spotlight narrative: "
+                    f"{base_year}–{reporting_year}, "
+                    f"total {_ghg_pct_change(total_start, total_latest)}%, "
+                    f"oil sands x{latest['oil_sands'] / start['oil_sands']:.3f}, "
+                    f"conventional/gas intensity {_ghg_pct_change(intensity_start, intensity_latest)}%"
+                )
 
     crude_pct = _fetch_ghg_crude_production_pct_change(base_year, end_year)
     if crude_pct is not None:
@@ -282,25 +375,36 @@ def _fetch_ghg_crude_production_pct_change(base_year: int, end_year: int) -> Opt
         return None
 
 
+def _ghg_cell(row, name: str) -> str:
+    value = row.get(name, '')
+    return '' if _norm_label(value) == '' else _norm_label(value)
+
+
 def _ghg_row_vector(row) -> str:
-    region = row.get('Region', '')
-    source = row.get('Source', '')
-    sub_sector = row.get('Sub-sector', '') or ''
-    sector = row.get('Sector', '') or ''
-    total = row.get('Total', '') or ''
-    return f"{region}|{source}|{sub_sector}|{sector}|{total}"
+    return '|'.join([
+        _ghg_cell(row, 'Region'),
+        _ghg_cell(row, 'Source'),
+        _ghg_cell(row, 'Sub-sector'),
+        _ghg_cell(row, 'Sector'),
+        _ghg_cell(row, 'Total'),
+        _ghg_cell(row, 'Sub-sub-sector'),
+    ])
 
 
 def _reconstruct_ghg_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     records = []
     for _, row in raw_df.iterrows():
-        parts = str(row['vector']).split('|')
+        vector = str(row['vector'])
+        if '|' not in vector:
+            continue
+        parts = vector.split('|')
         records.append({
             'Region': parts[0] if len(parts) > 0 else None,
             'Source': parts[1] if len(parts) > 1 else None,
             'Sub-sector': parts[2] if len(parts) > 2 and parts[2] else None,
             'Sector': parts[3] if len(parts) > 3 and parts[3] else None,
             'Total': parts[4] if len(parts) > 4 and parts[4] else None,
+            'Sub-sub-sector': parts[5] if len(parts) > 5 and parts[5] else None,
             'Year': int(row['ref_date']),
             GHG_VALUE_COLUMN: row['value'],
             'Index': 0,
@@ -308,10 +412,28 @@ def _reconstruct_ghg_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(records)
 
 
+def _production_from_raw(raw_df: pd.DataFrame) -> Dict[int, Dict[int, float]]:
+    production = {vector_id: {} for vector_id in GHG_PRODUCTION_VECTORS}
+    for _, row in raw_df.iterrows():
+        vector = str(row['vector'])
+        if not vector.startswith('v') or '|' in vector:
+            continue
+        try:
+            vector_id = int(vector[1:])
+            year = int(row['ref_date'])
+            value = float(row['value'])
+        except (TypeError, ValueError):
+            continue
+        if vector_id in production:
+            production[vector_id][year] = value
+    return production
+
+
 def _build_ghg_rows_from_df(
     df: pd.DataFrame,
     source_url: str,
     chart_min_year: int = GHG_CHART_MIN_YEAR,
+    production: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> Tuple[List[Tuple[str, int, float]], List[Tuple[str, str, str, str, str, str]]]:
     """Build indicator rows from an in-memory GHG economic-sector DataFrame."""
     df = df.copy()
@@ -331,8 +453,9 @@ def _build_ghg_rows_from_df(
     }
 
     chart_rows = _build_ghg_chart_rows(by_source_year, min_year=chart_min_year)
-    spotlight_rows = _build_ghg_spotlight_rows(canada)
-    stat_rows = _build_ghg_stat_rows(canada)
+    components = _spotlight_components_kt(canada)
+    spotlight_rows = _build_ghg_spotlight_rows(canada, components)
+    stat_rows = _build_ghg_stat_rows(canada, components=components, production=production)
     data_rows = chart_rows + spotlight_rows + stat_rows
 
     metadata_rows = [
@@ -347,7 +470,12 @@ def _build_ghg_rows_from_df(
     chart_years = sorted({year for (_, year, _) in chart_rows})
     if chart_years:
         print(f"  Chart series: {len(chart_rows)} rows ({min(chart_years)}–{max(chart_years)})")
-    print(f"  Spotlight series: {len(spotlight_rows)} rows ({GHG_SPOTLIGHT_MIN_YEAR}–{GHG_SPOTLIGHT_MAX_YEAR})")
+    spotlight_years = sorted(components)
+    if spotlight_years:
+        print(
+            f"  Spotlight series: {len(spotlight_rows)} rows "
+            f"({spotlight_years[0]}–{spotlight_years[-1]})"
+        )
     print(f"  Narrative stats: {len(stat_rows)} values")
 
     return data_rows, metadata_rows
@@ -362,7 +490,7 @@ def build_ghg_emissions_rows(
     """
     Build pipeline rows from ECCC GHG_Econ_Can_Prov_Terr.csv.
 
-    Returns chart series (2020+), Oil and gas GHG spotlight (2000–2023), and narrative stats.
+    Returns chart series (2020+), the oil and gas GHG spotlight, and narrative stats.
     """
     print("Processing GHG Emissions by Economic Sector data (ECCC CSV)...")
     content, source_url = _fetch_ghg_econ_csv(
@@ -372,7 +500,10 @@ def build_ghg_emissions_rows(
     )
 
     df = pd.read_csv(io.BytesIO(content))
-    data_rows, metadata_rows = _build_ghg_rows_from_df(df, source_url, chart_min_year=chart_min_year)
+    production = _fetch_spotlight_production()
+    data_rows, metadata_rows = _build_ghg_rows_from_df(
+        df, source_url, chart_min_year=chart_min_year, production=production,
+    )
 
     for source_name, vector in GHG_SOURCE_TO_VECTOR.items():
         found = sum(
@@ -383,6 +514,72 @@ def build_ghg_emissions_rows(
             print(f"  Found '{source_name}' -> {vector} ({found} rows)")
 
     return data_rows, metadata_rows
+
+
+def _wds_annual_barrels(vector_id: int, max_retries: int = 3, retry_delay_seconds: int = 2) -> Dict[int, float]:
+    url = (
+        'https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorByReferencePeriodRange'
+        f'?vectorIds={vector_id}&startRefPeriod=2000-01-01&endReferencePeriod=2030-12-31'
+    )
+    response = fetch_get(
+        url,
+        timeout=120,
+        headers=GHG_REQUEST_HEADERS,
+        max_retries=max_retries,
+        retry_delay_seconds=retry_delay_seconds,
+        label=f'StatCan v{vector_id}',
+    )
+    payload = response.json()
+    item = payload[0] if isinstance(payload, list) else payload
+    if item.get('status') != 'SUCCESS':
+        raise RuntimeError(f'StatCan v{vector_id} request failed')
+    by_year: Dict[int, List[float]] = defaultdict(list)
+    for point in (item.get('object') or {}).get('vectorDataPoint') or []:
+        if point.get('value') is None:
+            continue
+        by_year[int(str(point['refPer'])[:4])].append(float(point['value']))
+    return {year: sum(values) for year, values in by_year.items() if len(values) >= 12}
+
+
+def _historical_production_barrels() -> Dict[int, Dict[int, float]]:
+    """2000–2015 barrels from table 25-10-0014-01, the predecessor of the named vectors."""
+    from ..section6_indicators.oil_sands import _download_os_statcan_csv
+
+    frame = _download_os_statcan_csv(GHG_PRODUCTION_HISTORICAL_TABLE)
+    production = {vector_id: {} for vector_id in GHG_PRODUCTION_VECTORS}
+    for vector_id, label in GHG_PRODUCTION_HISTORICAL_LABELS.items():
+        part = frame[
+            (frame['GEO'] == 'Canada')
+            & (frame['UOM'] == 'Cubic metres')
+            & (frame['Supply and disposition'] == label)
+        ]
+        for year_text, group in part.groupby(part['REF_DATE'].astype(str).str[:4]):
+            year = int(year_text)
+            if year < GHG_SPOTLIGHT_MIN_YEAR or year > 2015 or group['REF_DATE'].nunique() < 12:
+                continue
+            thousands_m3 = float(pd.to_numeric(group['VALUE'], errors='coerce').sum())
+            production[vector_id][year] = thousands_m3 * 1000.0 * BBL_PER_M3
+    return production
+
+
+def _fetch_spotlight_production(max_retries: int = 3, retry_delay_seconds: int = 2) -> Dict[int, Dict[int, float]]:
+    """Annual barrels for v107757053 and v107757061, with 2000–2015 filled from table 25-10-0014-01."""
+    production = _historical_production_barrels()
+    for vector_id in GHG_PRODUCTION_VECTORS:
+        recent = _wds_annual_barrels(vector_id, max_retries, retry_delay_seconds)
+        production[vector_id].update(recent)
+        years = sorted(production[vector_id])
+        if years:
+            print(f'  Production v{vector_id}: {years[0]}–{years[-1]} ({len(years)} years)')
+    return production
+
+
+def _production_raw_rows(production: Dict[int, Dict[int, float]]) -> List[Tuple[str, str, float]]:
+    rows = []
+    for vector_id, by_year in production.items():
+        for year, value in sorted(by_year.items()):
+            rows.append((f'v{vector_id}', str(year), float(value)))
+    return rows
 
 
 def update_ghg_emissions(processor) -> int:
@@ -428,6 +625,23 @@ def update_ghg_emissions(processor) -> int:
 
     if not data_rows:
         raise RuntimeError("GHG emissions: no raw rows produced after fetch")
+    try:
+        production_rows = _production_raw_rows(_fetch_spotlight_production(max_retries, retry_delay))
+    except Exception as exc:
+        production_rows = []
+        print(f'  Warning: spotlight production series were not stored: {exc}')
+    for vector, ref_date, value in production_rows:
+        data_rows.append((vector, ref_date, value))
+        if vector not in seen:
+            seen.add(vector)
+            metadata_rows.append((
+                vector,
+                f'StatCan {vector} annual barrels',
+                'barrels',
+                'units',
+                'Statistics Canada',
+                'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2510006301',
+            ))
     return processor.replace_raw_data('ghg_emissions', data_rows, metadata_rows)
 
 
@@ -443,7 +657,8 @@ def transform_ghg_emissions(processor) -> int:
         source_url = str(raw_df['source_url'].dropna().iloc[0])
 
     df = _reconstruct_ghg_df(raw_df)
-    data_rows, metadata_rows = _build_ghg_rows_from_df(df, source_url)
+    production = _production_from_raw(raw_df)
+    data_rows, metadata_rows = _build_ghg_rows_from_df(df, source_url, production=production)
     if not data_rows:
         raise RuntimeError("GHG emissions: no indicator rows produced after transform")
     return processor.store_indicators('ghg_emissions', data_rows, metadata_rows)

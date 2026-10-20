@@ -1068,9 +1068,14 @@ export async function getGHGEmissionsData() {
 export async function getGhgNarrativeStats() {
     const allData = await loadAllData();
     const stats = {};
+    const statYear = {};
     allData.forEach((row) => {
         if (!row.vector?.startsWith('ghg_stat_')) return;
-        stats[row.vector] = Number(row.value);
+        const year = Number(row.ref_date);
+        if (statYear[row.vector] == null || year >= statYear[row.vector]) {
+            statYear[row.vector] = year;
+            stats[row.vector] = Number(row.value);
+        }
     });
     return {
         baseYear: stats.ghg_stat_narrative_base_year ?? 2000,
@@ -1113,6 +1118,145 @@ export async function getOilGasGhgSpotlightData() {
     return Object.values(yearMap)
         .filter((r) => r.oil_sands != null && r.natural_gas != null && r.conventional_oil != null && r.other != null)
         .sort((a, b) => a.year - b.year);
+}
+
+/**
+ * Oil sands greenhouse gases (page 121).
+ * Intensity is kg CO2e per barrel. Shares are percents for their own latest years.
+ */
+export async function getOilSandsGreenhouseGasesData() {
+    const allData = await loadAllData();
+    const intensity = [];
+    let canadaShare = null;
+    let canadaYear = null;
+    let globalShare = null;
+    let globalYear = null;
+    let decreasePct = null;
+    let decreaseYear = null;
+    allData.forEach((row) => {
+        if (!row.vector?.startsWith('osghg_')) return;
+        const year = Number(row.ref_date);
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (row.vector === 'osghg_intensity_kg_bbl') {
+            intensity.push({ year, kgPerBarrel: value });
+        } else if (row.vector === 'osghg_share_canada_pct' && (canadaYear == null || year >= canadaYear)) {
+            canadaYear = year;
+            canadaShare = value;
+        } else if (row.vector === 'osghg_share_global_pct' && (globalYear == null || year >= globalYear)) {
+            globalYear = year;
+            globalShare = value;
+        } else if (row.vector === 'osghg_intensity_decrease_pct' && (decreaseYear == null || year >= decreaseYear)) {
+            decreaseYear = year;
+            decreasePct = value;
+        }
+    });
+    intensity.sort((a, b) => a.year - b.year);
+    return {
+        intensity,
+        canadaShare,
+        canadaYear,
+        globalShare,
+        globalYear,
+        decreasePct,
+        decreaseYear,
+    };
+}
+
+/**
+ * In situ oil sands method (page 115).
+ * Rank values are unrounded thousand barrels per day. The production share is a percent.
+ */
+export async function getOilSandsInSituData() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+    const ranks = [];
+    let reportingYear = null;
+    let projectCount = null;
+    let productionPct = null;
+    let productionYear = null;
+    allData.forEach((row) => {
+        if (!row.vector?.startsWith('osi_')) return;
+        const year = Number(row.ref_date);
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (/^osi_rank_[1-4]$/.test(row.vector)) {
+            ranks.push({
+                rank: Number(row.vector.slice('osi_rank_'.length)),
+                year,
+                mbd: value,
+                label: metadata[row.vector]?.title || '',
+            });
+        } else if (row.vector === 'osi_reporting_year' && (reportingYear == null || year >= reportingYear)) {
+            reportingYear = year;
+        } else if (row.vector === 'osi_project_count' && (reportingYear == null || year >= reportingYear)) {
+            projectCount = value;
+        } else if (row.vector === 'osi_current_production_pct' && (productionYear == null || year >= productionYear)) {
+            productionYear = year;
+            productionPct = value;
+        }
+    });
+    const latestRankYear = ranks.reduce((max, row) => Math.max(max, row.year), 0);
+    return {
+        reportingYear,
+        projectCount,
+        productionPct,
+        productionYear,
+        projects: ranks
+            .filter((row) => row.year === latestRankYear && row.label)
+            .sort((a, b) => a.rank - b.rank),
+    };
+}
+
+/**
+ * Mining oil sands method (page 114).
+ * Project values are unrounded thousand barrels per day, in the spec's fixed order.
+ * The production share is a percent.
+ */
+export async function getOilSandsMiningData() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+    const projectOrder = ['horizon', 'syncrude', 'kearl', 'suncor', 'fort_hills', 'muskeg', 'jackpine'];
+    const projects = [];
+    let reportingYear = null;
+    let projectCount = null;
+    let totalMbd = null;
+    let productionPct = null;
+    let productionYear = null;
+    allData.forEach((row) => {
+        if (!row.vector?.startsWith('osmm_')) return;
+        const year = Number(row.ref_date);
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        const key = row.vector.slice('osmm_'.length);
+        if (projectOrder.includes(key)) {
+            projects.push({
+                key,
+                year,
+                mbd: value,
+                label: metadata[row.vector]?.title || '',
+            });
+        } else if (row.vector === 'osmm_reporting_year' && (reportingYear == null || year >= reportingYear)) {
+            reportingYear = year;
+        } else if (row.vector === 'osmm_project_count' && (reportingYear == null || year >= reportingYear)) {
+            projectCount = value;
+        } else if (row.vector === 'osmm_total_mbd' && (reportingYear == null || year >= reportingYear)) {
+            totalMbd = value;
+        } else if (row.vector === 'osmm_current_production_pct' && (productionYear == null || year >= productionYear)) {
+            productionYear = year;
+            productionPct = value;
+        }
+    });
+    const latestYear = projects.reduce((max, row) => Math.max(max, row.year), 0);
+    const latest = projects.filter((row) => row.year === latestYear && row.label);
+    return {
+        reportingYear,
+        projectCount,
+        totalMbd,
+        productionPct,
+        productionYear,
+        projects: projectOrder
+            .map((key) => latest.find((row) => row.key === key))
+            .filter(Boolean),
+    };
 }
 
 /**
@@ -2277,6 +2421,29 @@ export async function getCanadianCrudeReservesData() {
     };
 }
 
+export async function getWesternCanadaGasWellCompletionsData() {
+    const allData = await loadAllData();
+    const byYear = {};
+    allData.forEach((row) => {
+        if (!row.vector || !row.vector.startsWith('wc_gas_')) return;
+        const year = typeof row.ref_date === 'number' ? row.ref_date : Number(row.ref_date);
+        if (Number.isNaN(year)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        if (row.vector === 'wc_gas_wells_completed') byYear[year].count = Number(row.value);
+        if (row.vector === 'wc_gas_total_metres') byYear[year].totalMetres = Number(row.value);
+        if (row.vector === 'wc_gas_avg_depth_m') byYear[year].depth = Number(row.value);
+    });
+    const rows = Object.values(byYear)
+        .filter((row) => row.year >= 2000 && row.count != null && row.depth != null)
+        .sort((a, b) => a.year - b.year);
+    if (!rows.length) return null;
+    return {
+        rows,
+        startYear: rows[0].year,
+        endYear: rows[rows.length - 1].year,
+    };
+}
+
 export async function getCrudeOilPricesData() {
     const allData = await loadAllData();
     const crudeRows = allData.filter((row) => row.vector && row.vector.startsWith('crude_'));
@@ -3010,6 +3177,76 @@ function electricityRankingSeries(yearValues, metadata, year, prefix) {
         });
     }
     return { total, rows };
+}
+
+const SHARE_KEYS = ['world', 'oecd', 'canada'];
+
+export async function getWorldRenewableEnergyData() {
+    const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
+    const byYear = {};
+    allData.forEach((row) => {
+        const vector = String(row.vector || '');
+        if (!vector.startsWith('wren_') || vector.startsWith('wren_raw_')) return;
+        const year = Number(row.ref_date);
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][vector] = Number(row.value);
+    });
+
+    const rankYear = Object.keys(byYear)
+        .map(Number)
+        .filter((year) => byYear[year].wren_rank_total_pj != null && byYear[year].wren_rank_count != null)
+        .sort((a, b) => a - b)
+        .pop();
+    let ranking = null;
+    if (rankYear != null) {
+        const current = byYear[rankYear];
+        const rows = [];
+        for (let slot = 1; slot <= current.wren_rank_count; slot += 1) {
+            const share = current[`wren_rank_r${slot}_share`];
+            const rank = current[`wren_rank_r${slot}_rank`];
+            const code = String(metadata[`wren_rank_r${slot}_code`]?.title || '').trim();
+            const en = String(metadata[`wren_rank_r${slot}_name_en`]?.title || '').trim();
+            const fr = String(metadata[`wren_rank_r${slot}_name_fr`]?.title || '').trim();
+            if (share == null || rank == null || !code || !en || !fr) {
+                ranking = null;
+                break;
+            }
+            rows.push({
+                rank,
+                pct: share,
+                isCanada: current[`wren_rank_r${slot}_canada`] === 1,
+                code,
+                names: { en, fr },
+            });
+        }
+        if (rows.length === current.wren_rank_count) {
+            ranking = {
+                year: rankYear,
+                totalPj: current.wren_rank_total_pj,
+                totalMtoe: current.wren_rank_total_mtoe,
+                rows,
+            };
+        }
+    }
+
+    const shareYear = Object.keys(byYear)
+        .map(Number)
+        .filter((year) => byYear[year].wren_s_world != null && byYear[year].wren_s_canada != null)
+        .sort((a, b) => a - b)
+        .pop();
+    let share = null;
+    if (shareYear != null) {
+        const current = byYear[shareYear];
+        share = {
+            year: shareYear,
+            rows: SHARE_KEYS
+                .filter((key) => current[`wren_s_${key}`] != null)
+                .map((key) => ({ key, value: current[`wren_s_${key}`] })),
+        };
+    }
+
+    if (!ranking || !share) return null;
+    return { ranking, share };
 }
 
 const TREND_KEYS = ['canada', 'brazil', 'united_states', 'european_union', 'china', 'rest_of_world'];

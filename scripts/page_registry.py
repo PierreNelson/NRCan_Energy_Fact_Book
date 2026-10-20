@@ -29,7 +29,7 @@ LEGACY_PAGE_ORDER: list[int] = [
     59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
     78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97,
     98, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114,
-    115, 117, 118, 119, 122, 123, 126, 130, 131, 133, 132, 135, 134, 136, 138, 139, 142, 143,
+    115, 117, 118, 119, 121, 122, 123, 126, 130, 131, 133, 132, 135, 134, 136, 138, 139, 142, 143,
 ]
 
 SKIP_SECTION_TAGS = {"Suspense", "Fragment", "LoadingSpinner"}
@@ -92,6 +92,14 @@ def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _section_page_components(text: str) -> list[re.Match]:
+    """Page entries in a section file, either JSX tags or PAGES array objects."""
+    jsx = list(re.finditer(r"<(\w+)\s*/>", text))
+    if jsx:
+        return jsx
+    return list(re.finditer(r"Component:\s*(\w+)", text))
+
+
 def parse_section_component_order() -> list[tuple[int, str]]:
     """Return [(section_num, component_name), ...] in website scroll order."""
     ordered: list[tuple[int, str]] = []
@@ -99,7 +107,7 @@ def parse_section_component_order() -> list[tuple[int, str]]:
         if not section_path.exists():
             continue
         text = _read_text(section_path)
-        for match in re.finditer(r"<(\w+)\s*/>", text):
+        for match in _section_page_components(text):
             comp = match.group(1)
             if comp.startswith("Section") or comp in SKIP_SECTION_TAGS:
                 continue
@@ -132,13 +140,13 @@ def parse_section_page_anchors() -> dict[int, str]:
         if not section_path.exists():
             continue
         text = _read_text(section_path)
-        for match in re.finditer(r"<(\w+)\s*/>", text):
+        for match in _section_page_components(text):
             comp = match.group(1)
             if comp.startswith("Section") or comp in SKIP_SECTION_TAGS:
                 continue
             page_num = legacy_by_component[comp]
             before = text[: match.start()]
-            ids = re.findall(r'id="([^"]+)"', before)
+            ids = re.findall(r"""id[=:]\s*['"]([^'"]+)['"]""", before)
             if ids:
                 anchors[page_num] = ids[-1]
     return anchors

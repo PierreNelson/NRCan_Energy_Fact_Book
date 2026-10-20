@@ -26,15 +26,20 @@ python main.py export
 | **106** | No | — | — | — | Hardcoded — `src/pages/PetroleumEmployment.jsx` |
 | **107** | No | — | — | — | Hardcoded — `src/pages/PetroleumGdp.jsx` |
 | **108** | No | — | — | — | Hardcoded world crude data — `src/pages/CrudeOilInternational.jsx` |
-| **110** | Yes | `getCanadianCrudeReservesData()` | `petroleum_reserves`, `western_canada_oil_wells` | `update_petroleum_reserves()` / `update_western_canada_oil_wells()` · `petroleum_reserves.py`, `western_canada_oil_wells.py` | SharePoint `energy_rankings_and_petroleum_emp.xlsx` + provincial web sources |
+| **110** | Yes | `getCanadianCrudeReservesData()` | `petroleum_reserves`, `western_canada_oil_wells` | `update_petroleum_reserves()` / `update_western_canada_oil_wells()` · `petroleum_reserves.py`, `western_canada_oil_wells.py` | Oil-well chart: AER ST59 latest year, `AB_wells_completions_historical.csv`, Petrinex SK, Manitoba stats page, BC ER drill completions, `manual_well_overrides.csv`. Reserves stay on `energy_rankings_and_petroleum_emp.xlsx`. |
 | **111** | Yes | `getCanadianCrudeProductionData()` | `canadian_production` | `update_canadian_production()` / `transform_canadian_production()` · `canadian_production.py` | StatCan 25-10-0014-01 + 25-10-0063-01 |
 | **112** | No | — | — | — | Hardcoded — `src/pages/CanadianSupplyDemand.jsx` |
 | **113** | Yes | `getOilSandsProductionData()` | `oil_sands` | `build_oil_sands_rows()` · `oil_sands.py` | CAPP XLSX + StatCan in `oil_sands.py` / `constants.py` |
+| **114** | Yes | `getOilSandsMiningData()` | `oil_sands_mining` | `update_oil_sands_mining()` / `transform_oil_sands_mining()` · `oil_sands_mining.py` | Latest AER ST39 workbook, sheet `VAR0800-ST39Extracts_xls`, plus StatCan v107757054 and v107757056. |
+| **115** | Yes | `getOilSandsInSituData()` | `oil_sands_in_situ` | `update_oil_sands_in_situ()` / `transform_oil_sands_in_situ()` · `oil_sands_in_situ.py` | Latest AER ST53 BITUMEN sheet, plus StatCan v107757054 and v107757056. |
 | **117** | Yes | `getCrudeOilPricesData()` | `crude_prices` | `build_crude_price_rows()` · `crude_prices.py` | `constants.py` → EIA, Sproule, BoC URLs |
+| **118** | Image | — | — | `publish_cer_oil_pipeline_map()` · `export/cer_oil_pipeline_map.py` | CER Canada's Pipeline System 2021, crude oil page. Export replaces `src/assets/major_cer_regulated_oil_pipelines_bg.png` and the French file. |
 | **119** | No | — | — | — | Hardcoded — `src/pages/OilByRail.jsx` |
+| **121** | Yes | `getOilSandsGreenhouseGasesData()` | `oil_sands_greenhouse_gases` | `update_oil_sands_greenhouse_gases()` / `transform_oil_sands_greenhouse_gases()` · `greenhouse_gases.py` | StatCan v17946 and v17947 (2000–2015, thousand m³) plus v107757052 and v107757060 (2016+, cubic metres). Climate Watch World total excluding LULUCF. ECCC `GHG_Econ_Can_Prov_Terr.csv` for Canada and oil sands. |
 | **122** | No | — | — | — | Hardcoded world gas production — `src/pages/NaturalGasInternational.jsx` |
 | **123** | No | — | — | — | Hardcoded world gas reserves — `src/pages/WorldProvedGasReserves.jsx` |
-| **126** | No | — | — | — | Hardcoded — `src/pages/WesternCanadaGasWellCompletions.jsx` |
+| **126** | Yes | `getWesternCanadaGasWellCompletionsData()` | `western_canada_gas_wells` | `update_western_canada_gas_wells()` / `transform_western_canada_gas_wells()` · `western_canada_gas_wells.py` | Same provincial well sources as page 110. Natural gas product only. |
+| **130** | Image | — | — | `publish_cer_gas_pipeline_map()` · `export/cer_gas_pipeline_map.py` | CER Canada's Pipeline System 2021, natural gas page. Export replaces `src/assets/cer_regulated_gas_pipelines_bg.png` and the French file. |
 | **132** | Yes* | `getOilGasGhgSpotlightData()`, `getGhgNarrativeStats()` | `ghg_emissions`* | Section 1 `ghg_emissions.py`* | Section 1 README |
 | **135** | No | — | — | — | Static — `src/pages/RefinedPetroleumProducts.jsx` |
 | **136** | Yes | `getRppSupplyDemandData()` | `rpp_supply_demand`, `rpp_refinery_input` | `process_rpp_*()` · `rpp.py` | `constants.py` StatCan vector IDs |
@@ -108,11 +113,57 @@ python main.py export
 |------|----------|
 | Handler | `update_western_canada_oil_wells()` / `transform_western_canada_oil_wells()` in `western_canada_oil_wells.py` |
 | EEDAS table | `ca_western_canada_oil_wells_count_depth` |
-| Alberta | AER ST59 (`https://www.aer.ca/data-and-performance-reports/statistical-reports/st59`) |
-| Saskatchewan | Petrinex SK well infrastructure CSV |
-| Manitoba | SharePoint `energy_rankings_and_petroleum_emp.xlsx`, sheet `mb_oil_wells_count_depth` |
-| British Columbia | BC ER IRIS `drill_csv.zip` → `compl_wo.csv` |
+| Alberta | Latest year from AER ST59 (crude oil + crude bitumen). Earlier years from SharePoint `AB_wells_completions_historical.csv` |
+| Saskatchewan | Petrinex SK well infrastructure CSV, `WellStatusFluid = OIL` |
+| Manitoba | [Manitoba petroleum statistics](https://www.gov.mb.ca/iem/petroleum/stats/index.html), with `manual_well_overrides.csv` replacing only the records it contains |
+| British Columbia | BC ER data-centre completion zip → `compl_wo.csv`, one record per UWI |
 | Vectors | `wc_oil_wells_completed`, `wc_oil_total_metres`, `wc_oil_avg_depth_m` |
+
+### `western_canada_gas_wells` — Page 126 (combo chart)
+
+| Item | Location |
+|------|----------|
+| Handler | `update_western_canada_gas_wells()` / `transform_western_canada_gas_wells()` in `western_canada_gas_wells.py` |
+| EEDAS table | `ca_western_canada_gas_wells_count_depth` |
+| Sources | Page 126 spec: Alberta, Saskatchewan, and British Columbia only. Alberta gas is the AER ST59 natural gas total (coalbed methane excluded); earlier years come from SharePoint `AB_wells_completions_historical.csv`, and the ST59 year replaces that CSV year. Saskatchewan Petrinex `WellStatusFluid = GAS`, year from `FinishedDrillDate`, depth `FinalTotalDepth`. British Columbia `Flow_fluid_type = GAS`, one record per UWI. Manitoba is not a source for this chart. |
+| Website getter | `getWesternCanadaGasWellCompletionsData()` in `src/utils/dataLoader.js` |
+| Vectors | `wc_gas_wells_completed`, `wc_gas_total_metres`, `wc_gas_avg_depth_m` |
+
+### `oil_sands_mining` — Page 114
+
+| Item | Location |
+|------|----------|
+| Handler | `update_oil_sands_mining()` / `transform_oil_sands_mining()` in `oil_sands_mining.py` |
+| EEDAS table | `aer_oil_sands_mining_method` |
+| Projects | Latest AER ST39 workbook, sheet `VAR0800-ST39Extracts_xls`. For each named project, use the Crude Bitumen production row and the reporting-year column. Syncrude Mildred Lake and Syncrude Aurora are added in cubic metres, then converted. Thousand barrels per day = annual cubic metres × 6.2898 ÷ days in the reporting year ÷ 1,000. The seven projects stay in the spec order. |
+| Share | StatCan v107757056 ÷ (v107757054 + v107757056) × 100 for the reporting year when both vectors have 12 months. Displayed as a whole percent. Roughly 20% of oil sands resources, and the 75 m formation label, stay on the graphic. |
+| Website getter | `getOilSandsMiningData()` in `src/utils/dataLoader.js` |
+| Vectors | `osmm_reporting_year`, `osmm_project_count`, `osmm_total_mbd`, `osmm_current_production_pct`, `osmm_horizon`, `osmm_syncrude`, `osmm_kearl`, `osmm_suncor`, `osmm_fort_hills`, `osmm_muskeg`, `osmm_jackpine` |
+
+### `oil_sands_in_situ` — Page 115
+
+| Item | Location |
+|------|----------|
+| Handler | `update_oil_sands_in_situ()` / `transform_oil_sands_in_situ()` in `oil_sands_in_situ.py` |
+| EEDAS table | `aer_oil_sands_in_situ_method` |
+| Projects | Latest AER ST53 workbook, sheet `BITUMEN`. Monthly Average is cubic metres per day. Thousand barrels per day = Monthly Average × 6.289811 ÷ 1,000. Rows with the same scheme and operator are summed. Suncor's Firebag and MacKay River are then added together; other operators' schemes, including PetroChina's MacKay River and MEG's Christina Lake, stay separate. The top four are ranked by that production. |
+| Share | StatCan v107757054 ÷ (v107757054 + v107757056) × 100 for the reporting year when both vectors have 12 months. Displayed as a whole percent. Roughly 80% of oil sands resources stays on the graphic. |
+| Website getter | `getOilSandsInSituData()` in `src/utils/dataLoader.js` |
+| Vectors | `osi_reporting_year`, `osi_project_count`, `osi_current_production_pct`, `osi_rank_1` … `osi_rank_4` |
+
+### `oil_sands_greenhouse_gases` — Page 121
+
+| Item | Location |
+|------|----------|
+| Handler | `update_oil_sands_greenhouse_gases()` / `transform_oil_sands_greenhouse_gases()` in `greenhouse_gases.py` |
+| EEDAS table | `ca_oil_sands_greenhouse_gases` |
+| Production | 2000–2015: StatCan v17946 (synthetic crude) + v17947 (crude bitumen), already thousand m³, 12 months required. 2016 onward: v107757052 (non-upgraded crude bitumen) + v107757060 (synthetic crude), cubic metres summed and divided by 1,000. Incomplete years are dropped. Thousand barrels = thousand m³ × 6.28981077. |
+| Global GHG | Climate Watch historical emissions, source 274, gas 553, sector 3208, World, already Mt CO2e. |
+| Canada and oil sands | ECCC `GHG_Econ_Can_Prov_Terr.csv`. Canada is `National Inventory Total`. Oil sands is `Oil and Gas` / `Oil Sands and Thermal Heavy Oil Production` (kt). Canada Mt = kt / 1,000. |
+| Shares | Oil sands kt / 1,000 divided by the matching Mt total, times 100. Canada and global shares can use different latest years. |
+| Intensity | Oil sands kt / thousand barrels × 1,000, for years with both production and oil sands emissions. The decrease is (1 − latest / 2000) × 100, stored as a positive percent. |
+| Website getter | `getOilSandsGreenhouseGasesData()` in `src/utils/dataLoader.js` |
+| Vectors | `osghg_prod_thousand_m3`, `osghg_prod_thousand_bbl`, `osghg_global_mt`, `osghg_canada_mt`, `osghg_oil_sands_kt`, `osghg_share_global_pct`, `osghg_share_canada_pct`, `osghg_intensity_kg_bbl`, `osghg_intensity_decrease_pct` |
 
 ### `canadian_production` — Page 111
 
@@ -150,9 +201,10 @@ python main.py export
 
 | Item | Location |
 |------|----------|
-| Handler | `process_ghg_emissions()` in Section 1 `ghg_emissions.py` |
-| Spotlight rows | `build_oil_gas_spotlight_rows()` |
-| Vectors | `ghg_*` |
+| Handler | `update_ghg_emissions()` / `transform_ghg_emissions()` in Section 1 `ghg_emissions.py` |
+| Chart | ECCC `GHG_Econ_Can_Prov_Terr.csv`. Oil sands = in situ + mining and extraction + upgrading. Natural gas = Natural Gas Production and Processing. Conventional oil = Conventional Oil Production. Other = Natural Gas Distribution + Oil, Natural Gas and CO2 Transmission. Values stored in Mt (source kt / 1000). |
+| Narrative | Total percent change is the sum of those four categories. Oil sands uses the end-year / 2000 ratio. The conventional oil and natural gas percent is the change in emissions per unit of production, using StatCan v107757053 (non-upgraded bitumen, barrels) and v107757061 (synthetic crude, barrels). Those vectors start in 2016; 2000–2015 uses table 25-10-0014-01 converted from thousands of cubic metres to barrels. |
+| Vectors | `ghg_oilgas_spotlight_*`, `ghg_stat_oil_gas_spotlight_total_pct`, `ghg_stat_oil_sands_emissions_ratio`, `ghg_stat_conv_gas_emissions_pct` |
 
 ---
 
@@ -161,7 +213,7 @@ python main.py export
 | File | Purpose |
 |------|---------|
 | `constants.py` | StatCan vector IDs, external URLs, province maps |
-| `rpp.py`, `crude_prices.py`, `oil_sands.py`, `canadian_production.py`, `petroleum_reserves.py`, `western_canada_oil_wells.py`, `kalibrate.py`, `refinery_capacity.py` | One module per source |
+| `rpp.py`, `crude_prices.py`, `oil_sands.py`, `oil_sands_mining.py`, `oil_sands_in_situ.py`, `canadian_production.py`, `petroleum_reserves.py`, `western_canada_oil_wells.py`, `western_canada_gas_wells.py`, `greenhouse_gases.py`, `kalibrate.py`, `refinery_capacity.py` | One module per source |
 
 ---
 

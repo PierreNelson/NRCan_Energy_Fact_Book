@@ -1,0 +1,29 @@
+Log file: scripts/logs/efb_20261020_003420.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-20 00:34:20
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: oil_sands_in_situ
+    Projects: Firebag and MacKay River (Suncor); Christina Lake (Cenovus); Foster Creek (Cenovus); Cold Lake (Imperial Oil); Surmont (ConocoPhillips Canada Resources Corp.); Jackfish (Canadian Natural Resources Limited); Christina Lake (MEG Energy Corp.); Primrose and Wolf Lake (Canadian Natural Resources Limited); Long Lake (CNOOC Petroleum North America ULC); Kirby (Canadian Natural Resources Limited); Sunrise (Cenovus); Brintnell Polymer Flood (Canadian Natural Resources Limited); Leismer (Athabasca Oil Corporation); Tucker (Strathcona Resources Ltd.); Orion (Strathcona Resources Ltd.); Narrows Lake (Cenovus); Great Divide (Connacher Oil And Gas Limited); Lindbergh (Strathcona Resources Ltd.); Hangingstone Expansion (Greenfire Resources Operating Corporation); Pelican Lake Polymer Flood (Canadian Natural Resources Limited); MacKay River (PetroChina Canada Ltd.); Hangingstone (Athabasca Oil Corporation); BlackGold (Harvest Operations Corp.); Hangingstone Demonstration (Greenfire Resources Operating Corporation); Pike (Canadian Natural Resources Limited); Brintnell (Canadian Natural Resources Limited); Peace River (Canadian Natural Upgrading Limited); Seal Polymer (Baytex Energy Ltd.); Blackrod (Ipc Canada Ltd.); CSP Pilot (Imperial Oil)
+    In situ share 2025: 52.28%
+    Rank 1: Firebag and MacKay River (Suncor) 277.91 Mb/d
+    Rank 2: Christina Lake (Cenovus) 229.57 Mb/d
+    Rank 3: Foster Creek (Cenovus) 206.10 Mb/d
+    Rank 4: Cold Lake (Imperial Oil) 156.48 Mb/d
+    ST53 2025: 30 projects
+    Stored 7 indicator rows for oil_sands_in_situ
+  Completed: 7 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  oil_sands_in_situ: success (7 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-20 00:34:22

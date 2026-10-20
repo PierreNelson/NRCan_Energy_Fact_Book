@@ -18,6 +18,19 @@ import { getOilGasGhgSpotlightData, getGhgNarrativeStats } from '../utils/dataLo
 const TRACE_COUNT = 4;
 const COLORS = ['#5c4033', '#6097b6', '#DF793A', '#1e3a5f'];
 
+const substitute = (text, vars) =>
+    (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
+
+const oilSandsPhraseKey = (ratio) => {
+    if (ratio >= 4.5) return 'ghg_oilgas_spotlight_sands_more_than_quadrupled';
+    if (ratio >= 4) return 'ghg_oilgas_spotlight_sands_quadrupled';
+    if (ratio >= 3.5) return 'ghg_oilgas_spotlight_sands_nearly_quadrupled';
+    if (ratio >= 2.75) return 'ghg_oilgas_spotlight_sands_tripled';
+    if (ratio >= 2.25) return 'ghg_oilgas_spotlight_sands_more_than_doubled';
+    if (ratio >= 1.75) return 'ghg_oilgas_spotlight_sands_doubled';
+    return null;
+};
+
 const OilGasGhgSpotlight = () => {
     const { lang, layoutPadding } = useOutletContext();
     const windowWidth = useWindowWidth();
@@ -51,15 +64,20 @@ const OilGasGhgSpotlight = () => {
         return lang === 'fr' ? `${n} %` : `${n}%`;
     };
 
+    const years = useMemo(() => chartRows.map((r) => Number(r.year)), [chartRows]);
+    const startYear = years[0] ?? stats.baseYear;
+    const endYear = years[years.length - 1] ?? stats.endYear;
+    const yearVars = { startYear, endYear };
+
     const para1Highlight = stats.oilGasSpotlightTotalPct != null
         ? (() => {
             const n = formatPctDisplay(stats.oilGasSpotlightTotalPct);
             if (lang === 'fr') {
-                const verb = Number(stats.oilGasSpotlightTotalPct) < 0 ? `diminué de ${n}` : `augmenté de ${n}`;
-                return `${verb} entre ${stats.baseYear} et ${stats.endYear}`;
+                const verb = Number(stats.oilGasSpotlightTotalPct) < 0 ? `ont diminué de ${n}` : `ont augmenté de ${n}`;
+                return `${verb} entre ${startYear} et ${endYear}`;
             }
             const verb = Number(stats.oilGasSpotlightTotalPct) < 0 ? `gone down ${n}` : `gone up ${n}`;
-            return `have ${verb} between ${stats.baseYear} and ${stats.endYear}`;
+            return `have ${verb} between ${startYear} and ${endYear}`;
         })()
         : getText('ghg_oilgas_spotlight_para1b', lang);
 
@@ -67,8 +85,8 @@ const OilGasGhgSpotlight = () => {
         ? (() => {
             const r = Number(stats.oilSandsRatio);
             if (!Number.isFinite(r)) return getText('ghg_oilgas_spotlight_para2b', lang);
-            if (r >= 3) return lang === 'fr' ? 'ont plus que triplé' : 'more than tripled';
-            if (r >= 2) return lang === 'fr' ? 'ont plus que doublé' : 'more than doubled';
+            const phraseKey = oilSandsPhraseKey(r);
+            if (phraseKey) return getText(phraseKey, lang);
             const pct = Math.round((r - 1) * 100);
             return lang === 'fr' ? `ont augmenté de ${formatPctDisplay(pct)}` : `increased ${formatPctDisplay(pct)}`;
         })()
@@ -78,7 +96,7 @@ const OilGasGhgSpotlight = () => {
         ? (() => {
             const n = formatPctDisplay(stats.convGasPct);
             if (lang === 'fr') {
-                return Number(stats.convGasPct) < 0 ? `diminué de ${n}` : `augmenté de ${n}`;
+                return Number(stats.convGasPct) < 0 ? `ont diminué de ${n}` : `ont augmenté de ${n}`;
             }
             return Number(stats.convGasPct) < 0 ? `decreased by ${n}` : `increased by ${n}`;
         })()
@@ -87,7 +105,6 @@ const OilGasGhgSpotlight = () => {
     const para1Text = `${getText('ghg_oilgas_spotlight_para1a', lang)}${para1Highlight}${getText('ghg_oilgas_spotlight_para1c', lang)}`;
     const para2Text = `${getText('ghg_oilgas_spotlight_para2a', lang)}${para2HighlightSand}${getText('ghg_oilgas_spotlight_para2c', lang)}${para2HighlightConvGas}${getText('ghg_oilgas_spotlight_para2e', lang)}`;
 
-    const years = useMemo(() => chartRows.map((r) => r.year), [chartRows]);
     const oilSands = useMemo(() => chartRows.map((r) => r.oil_sands), [chartRows]);
     const naturalGas = useMemo(() => chartRows.map((r) => r.natural_gas), [chartRows]);
     const conventionalOil = useMemo(() => chartRows.map((r) => r.conventional_oil), [chartRows]);
@@ -99,14 +116,14 @@ const OilGasGhgSpotlight = () => {
     const legendOther = getText('ghg_oilgas_spotlight_legend_other', lang);
     const legendLabels = [legendOilSands, legendNaturalGas, legendConventional, legendOther];
 
-    const chartTitle = getText('ghg_oilgas_spotlight_chart_title', lang);
+    const chartTitle = substitute(getText('ghg_oilgas_spotlight_chart_title', lang), yearVars);
     const exportChartTitle = stripHtml(chartTitle);
     const quantityHdrSuffix = getText('ghg_oilgas_spotlight_table_hdr_quantity_suffix', lang);
 
     const fileSlugBase =
         lang === 'en'
-            ? 'oil_gas_sector_ghg_emissions_canada_2000-2023'
-            : 'emissions_ges_petrole_gaz_canada_2000-2023';
+            ? `oil_gas_sector_ghg_emissions_canada_${startYear}-${endYear}`
+            : `emissions_ges_petrole_gaz_canada_${startYear}-${endYear}`;
 
     const tableColumns = useMemo(() => [
         { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
@@ -145,9 +162,21 @@ const OilGasGhgSpotlight = () => {
     };
 
     const xTickvals = [];
-    for (let y = 2001; y <= 2023; y += 2) {
-        xTickvals.push(y);
+    if (years.length) {
+        for (let y = startYear; y <= endYear; y += 2) xTickvals.push(y);
+        if (xTickvals[xTickvals.length - 1] !== endYear) xTickvals.push(endYear);
     }
+    const stackedMax = years.reduce(
+        (max, _, index) => Math.max(
+            max,
+            Number(oilSands[index] || 0)
+                + Number(naturalGas[index] || 0)
+                + Number(conventionalOil[index] || 0)
+                + Number(other[index] || 0),
+        ),
+        0,
+    );
+    const yMax = Math.max(50, Math.ceil((stackedMax * 1.1) / 50) * 50);
 
     const getChartSummary = () => {
         const body = summarizeByCategory({
@@ -411,7 +440,7 @@ const OilGasGhgSpotlight = () => {
                                                     linewidth: 1,
                                                     linecolor: '#333',
                                                     tickfont: tickFont,
-                                                    range: [1999.5, 2023.5],
+                                                    range: [startYear - 0.5, endYear + 0.5],
                                                     automargin: true
                                                 },
                                                 yaxis: {
@@ -420,7 +449,7 @@ const OilGasGhgSpotlight = () => {
                                                         font: axisTitleFont,
                                                         standoff: 8
                                                     },
-                                                    range: [0, 250],
+                                                    range: [0, yMax],
                                                     dtick: 50,
                                                     showgrid: false,
                                                     zeroline: false,
@@ -472,8 +501,8 @@ const OilGasGhgSpotlight = () => {
                                 columnWidths: [900, 1100, 1100, 1100, 900, 900],
                                 fontSize: 20,
                             }}
-                            caption={getText('ghg_oilgas_spotlight_table_caption', lang)}
-                            tableAriaLabel={getText('ghg_oilgas_spotlight_table_caption', lang)}
+                            caption={substitute(getText('ghg_oilgas_spotlight_table_caption', lang), yearVars)}
+                            tableAriaLabel={substitute(getText('ghg_oilgas_spotlight_table_caption', lang), yearVars)}
                             renderCell={(raw, { colIndex }) => (
                                 colIndex === 0 ? String(raw ?? '') : formatMtLocale(raw)
                             )}

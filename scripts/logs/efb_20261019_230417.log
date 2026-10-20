@@ -1,0 +1,25 @@
+Log file: scripts/logs/efb_20261019_230417.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-19 23:04:17
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: ghg_emissions
+  Spotlight narrative: 2000–2024, total 19%, oil sands x3.946, conventional/gas intensity -87%
+  Chart series: 35 rows (2020–2024)
+  Spotlight series: 100 rows (2000–2024)
+  Narrative stats: 9 values
+  Completed: 144 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  ghg_emissions: success (144 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-19 23:04:34

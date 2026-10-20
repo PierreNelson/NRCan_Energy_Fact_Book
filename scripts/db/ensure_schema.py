@@ -65,7 +65,12 @@ VALUES
 ('hydroelectricity', 'Hydroelectricity share and world generation', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
 ('hydrogen_narrative', 'Hydrogen narrative and Canada summary', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/search?q=global%20hydrogen', 1),
 ('electricity_world_production', 'World electricity production and exports', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
-('world_biofuels_production', 'World biofuels production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1);
+('world_biofuels_production', 'World biofuels production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('world_renewable_energy', 'World renewable energy production', 5, 'Clean Power and Low Carbon Fuels', N'https://www.iea.org/data-and-statistics', 1),
+('western_canada_gas_wells', 'Western Canada natural gas wells completed', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59', 1),
+('oil_sands_greenhouse_gases', 'Oil sands greenhouse gas emissions intensity', 6, 'Oil, Natural Gas and Coal', N'https://www.climatewatchdata.org/api/v1/data/historical_emissions', 1),
+('oil_sands_in_situ', 'In situ oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st53', 1),
+('oil_sands_mining', 'Mining oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39', 1);
 """
 
 

@@ -144,10 +144,14 @@ AER_ST59_URL = 'https://www.aer.ca/data-and-performance-reports/statistical-repo
 SK_OIL_WELLS_URL = (
     'https://www.petrinex.gov.ab.ca/publicdata/API/Files/SK/Infra/Well%20Infrastructure/CSV'
 )
-# BC ER data centre landing page lists several downloads; completion/workover
-# data for oil wells is in the IRIS "Drilling Data for All Wells" CSV zip.
+MB_WELL_STATS_URL = 'https://www.gov.mb.ca/iem/petroleum/stats/index.html'
+# The spec page lists the completion/workover download. drill_csv.zip on that
+# page contains compl_wo.csv.
+BC_WELL_DATA_CENTRE_URL = 'https://www.bc-er.ca/data-reports/data-centre/?category=2772&format=zip'
 BC_OIL_WELLS_URL = 'https://iris.bcogc.ca/download/drill_csv.zip'
 BC_OIL_WELLS_COMPLETIONS_CSV = 'compl_wo.csv'
+AB_WELLS_HISTORICAL_CSV = 'AB_wells_completions_historical.csv'
+MANUAL_WELL_OVERRIDES_CSV = 'manual_well_overrides.csv'
 
 BROWSER_HEADERS = {
     'User-Agent': (
@@ -172,6 +176,12 @@ WESTERN_CANADA_OIL_WELLS_METADATA = [
     ('wc_oil_wells_completed', 'Western Canada oil wells completed', 'wells', 'units'),
     ('wc_oil_total_metres', 'Western Canada oil wells total metres drilled', 'metres', 'units'),
     ('wc_oil_avg_depth_m', 'Western Canada oil wells average depth', 'metres', 'units'),
+]
+
+WESTERN_CANADA_GAS_WELLS_METADATA = [
+    ('wc_gas_wells_completed', 'Western Canada natural gas wells completed', 'wells', 'units'),
+    ('wc_gas_total_metres', 'Western Canada natural gas wells total metres drilled', 'metres', 'units'),
+    ('wc_gas_avg_depth_m', 'Western Canada natural gas wells average depth', 'metres', 'units'),
 ]
 
 # petroleum sector employment by region

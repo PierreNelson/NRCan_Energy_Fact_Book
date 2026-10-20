@@ -1,0 +1,22 @@
+Log file: scripts/logs/export_20261019_230436.log
+============================================================
+NRCan Energy Factbook - Export Website Files
+Started at: 2026-10-19 23:04:36
+============================================================
+  Filter: source=ghg_emissions (prefixes: ['ghg_'])
+
+Preparing export data from database...
+
+Exporting data.csv (source: ghg_emissions)...
+  Updated 144 vectors, total 9817 rows
+  Backed up data.csv -> data.csv.20261019_230438
+  Wrote 9817 rows to <user-home>\NRCan_Energy_Factbook\public\data\data.csv
+
+Exporting metadata.csv (source: ghg_emissions)...
+  Updated 20 vectors, total 1520 rows
+  Backed up metadata.csv -> metadata.csv.20261019_230503
+  Wrote 1520 rows to <user-home>\NRCan_Energy_Factbook\public\data\metadata.csv
+
+Publishing CER gas pipeline map...
+  Map en: cer_gas_pipelines_map.png
+  Map fr: cer_gas_pipelines_map_fr.png
