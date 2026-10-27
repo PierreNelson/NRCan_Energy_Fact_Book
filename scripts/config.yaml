@@ -507,6 +507,35 @@ sections:
         description: "Mining oil sands projects and share of current production"
         source_type: "external"
         source_url: "https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39"
+      oil_sands_environmental_considerations:
+        enabled: true
+        description: "Oil sands mining and in situ water use"
+        source_type: "external"
+        source_url: "https://www.aer.ca/data-and-performance-reports/industry-performance/water-use-performance"
+      natural_gas_energy_use:
+        enabled: true
+        description: "Natural gas energy use by sector"
+        source_type: "file"
+        file_path: "Energy Efficiency.xlsx"
+        sheet: "NG energy use"
+      natural_gas_energy_use_province:
+        enabled: true
+        description: "Natural gas energy use by province"
+        source_type: "file"
+        file_path: "Energy Efficiency.xlsx"
+        sheet: "NG energy use"
+      natural_gas_liquids_energy_use:
+        enabled: true
+        description: "Natural gas liquids energy use by sector"
+        source_type: "file"
+        file_path: "Energy Efficiency.xlsx"
+        sheet: "NGL energy use"
+      natural_gas_liquids_energy_use_province:
+        enabled: true
+        description: "Natural gas liquids energy use by province"
+        source_type: "file"
+        file_path: "Energy Efficiency.xlsx"
+        sheet: "NGL energy use"
       petroleum_sector_employment:
         enabled: true
         description: "Petroleum sector direct and indirect employment by region"

@@ -1,0 +1,24 @@
+Log file: scripts/logs/efb_20261026_201850.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-26 20:18:50
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: natural_gas_liquids_energy_use_province
+    2022: province total 143.8 PJ
+    2023: province total 137.8 PJ
+    Stored 30 indicator rows for natural_gas_liquids_energy_use_province
+  Completed: 30 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  natural_gas_liquids_energy_use_province: success (30 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-26 20:18:51

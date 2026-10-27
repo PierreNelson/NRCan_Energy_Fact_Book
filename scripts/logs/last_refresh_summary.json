@@ -1,13 +1,13 @@
 {
   "command": "efb transform",
-  "completed_at": "2026-10-20 01:57:34",
+  "completed_at": "2026-10-26 22:17:10",
   "exit_code": 0,
   "failed_count": 0,
   "failed_sources": [],
   "results": {
-    "oil_sands_mining": {
+    "oil_sands_environmental_considerations": {
       "status": "success",
-      "rows": 11
+      "rows": 192
     }
   }
 }

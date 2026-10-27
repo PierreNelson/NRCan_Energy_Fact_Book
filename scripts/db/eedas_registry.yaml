@@ -297,6 +297,36 @@ source_tables:
     detail: mining_method
     source_table: aer_oil_sands_mining_method
 
+  oil_sands_environmental_considerations:
+    org_code: aer
+    report_code: oil_sands
+    detail: water_indicators
+    source_table: aer_oil_sands_water_indicators
+
+  natural_gas_energy_use:
+    org_code: nrcan
+    report_code: oee
+    detail: ngenergyuse_sector
+    source_table: oee_neud_ngenergyuse_sector
+
+  natural_gas_energy_use_province:
+    org_code: nrcan
+    report_code: oee
+    detail: ngenergyuse_province
+    source_table: oee_neud_ngenergyuse_province
+
+  natural_gas_liquids_energy_use:
+    org_code: nrcan
+    report_code: oee
+    detail: ngl_energyuse_sector
+    source_table: oee_neud_ngl_energyuse_sector
+
+  natural_gas_liquids_energy_use_province:
+    org_code: nrcan
+    report_code: oee
+    detail: ngl_energyuse_province
+    source_table: oee_neud_ngl_energyuse_province
+
   petroleum_sector_employment:
     org_code: stc
     report_code: petroleum

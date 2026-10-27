@@ -18,6 +18,7 @@ const OilSandsInSituMethod = lazyWithPreload(() => import('../pages/OilSandsInSi
 const CrudeOilPrices = lazyWithPreload(() => import('../pages/CrudeOilPrices'));
 const MajorCerRegulatedOilPipelines = lazyWithPreload(() => import('../pages/MajorCerRegulatedOilPipelines'));
 const OilByRail = lazyWithPreload(() => import('../pages/OilByRail'));
+const OilSandsEnvironmentalConsiderations = lazyWithPreload(() => import('../pages/OilSandsEnvironmentalConsiderations'));
 const OilSandsGreenhouseGases = lazyWithPreload(() => import('../pages/OilSandsGreenhouseGases'));
 const NaturalGasInternational = lazyWithPreload(() => import('../pages/NaturalGasInternational'));
 const WorldProvedGasReserves = lazyWithPreload(() => import('../pages/WorldProvedGasReserves'));
@@ -53,6 +54,7 @@ const PAGES = [
   { id: 'crude-oil-prices', Component: CrudeOilPrices },
   { id: 'major-cer-regulated-oil-pipelines', Component: MajorCerRegulatedOilPipelines },
   { id: 'oil-by-rail', Component: OilByRail },
+  { id: 'oil-sands-environmental-considerations', Component: OilSandsEnvironmentalConsiderations },
   { id: 'oil-sands-greenhouse-gases', Component: OilSandsGreenhouseGases },
   { id: 'natural-gas-international', Component: NaturalGasInternational,
     pageClassName: 'page-with-title-divider' },

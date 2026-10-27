@@ -13,8 +13,8 @@ import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import hexToRgba from '../utils/hexToRgba';
 import { formatLocaleNumber, formatLocalePct } from '../utils/formatLocale';
-
-const REFERENCE_YEAR = 2023;
+import { exportTableToCsv, exportTableToDocx } from '../utils/exportTableToDocx';
+import { getNaturalGasEnergyUseData } from '../utils/dataLoader';
 
 const PROVINCE_KEYS = ['alta', 'bc_ter', 'atl', 'que', 'ont', 'man', 'sask'];
 
@@ -36,31 +36,6 @@ const PROVINCE_COLORS = {
     ont: '#4b4c4d',
     man: '#1f8093',
     sask: '#9BA88D',
-};
-
-/** Hardcoded snapshot data keyed by year (ready for a future year selector). */
-const DATA_BY_YEAR = {
-    2023: {
-        sectorRows: [
-            { key: 'residential', energyUse: 612.2, bcfPerDay: 1.59, pct: 20.4 },
-            { key: 'commercial', energyUse: 577.9, bcfPerDay: 1.50, pct: 19.3 },
-            { key: 'industrial', energyUse: 1755.9, bcfPerDay: 4.56, pct: 58.5 },
-            { key: 'transportation', energyUse: 4.4, bcfPerDay: 0.01, pct: 0.1 },
-            { key: 'agriculture', energyUse: 50.4, bcfPerDay: 0.13, pct: 1.7 },
-        ],
-        sectorTotalEnergy: 3000.8,
-        sectorTotalBcf: 7.79,
-        provinceTotalEnergy: 3001,
-        provinces: [
-            { key: 'alta', pct: 43.5 },
-            { key: 'bc_ter', pct: 8.0 },
-            { key: 'atl', pct: 1.0 },
-            { key: 'que', pct: 8.3 },
-            { key: 'ont', pct: 28.6 },
-            { key: 'man', pct: 2.5 },
-            { key: 'sask', pct: 8.0 },
-        ],
-    },
 };
 
 const STACKED_LAYOUT_BROWSER_ZOOM = 1.1;
@@ -106,7 +81,8 @@ const computePageZoomScale = (baseline) => {
 
 const NaturalGasEnergyUse = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [selectedYear] = useState(REFERENCE_YEAR);
+    const [bundle, setBundle] = useState(null);
+    const [loadState, setLoadState] = useState('loading');
     const [selectedSlices, setSelectedSlices] = useState(null);
     const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
@@ -119,8 +95,33 @@ const NaturalGasEnergyUse = () => {
     const selectEnabled = windowWidth > 768;
     const effectiveSelectedSlices = selectEnabled ? selectedSlices : null;
 
-    const yearData = DATA_BY_YEAR[selectedYear] ?? DATA_BY_YEAR[REFERENCE_YEAR];
+    const yearData = bundle ?? {
+        year: '',
+        sectorRows: [],
+        sectorTotalEnergy: 0,
+        sectorTotalBcf: 0,
+        provinceTotalEnergy: 0,
+        provinces: [],
+    };
+    const selectedYear = yearData.year;
     const textVars = { year: selectedYear };
+
+    useEffect(() => {
+        let cancelled = false;
+        getNaturalGasEnergyUseData()
+            .then((data) => {
+                if (cancelled) return;
+                const ready = data?.sectorRows?.length === 5 && data?.provinces?.length === 7;
+                setBundle(ready ? data : null);
+                setLoadState(ready ? 'ready' : 'empty');
+            })
+            .catch(() => {
+                if (!cancelled) setLoadState('empty');
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const formatPj = useCallback((value, digits = 1) => formatLocaleNumber(value, lang, {
         minimumFractionDigits: digits,
@@ -158,15 +159,12 @@ const NaturalGasEnergyUse = () => {
 
 
 
-    const provinceSlices = useMemo(() => {
-        const total = yearData.provinceTotalEnergy;
-        return PROVINCE_KEYS.map((key) => {
+    const provinceSlices = useMemo(() => (
+        PROVINCE_KEYS.map((key) => {
             const entry = yearData.provinces.find((row) => row.key === key);
-            const pct = entry?.pct ?? 0;
-            const value = total > 0 ? Number(((total * pct) / 100).toFixed(1)) : 0;
-            return { key, pct, value };
-        });
-    }, [yearData]);
+            return { key, pct: entry?.pct ?? 0, value: entry?.value ?? 0 };
+        })
+    ), [yearData]);
 
     const chartTitle = substitute(getText('natural_gas_energy_use_chart_title', lang), textVars);
     const exportChartTitle = stripHtml(chartTitle);
@@ -238,6 +236,12 @@ const NaturalGasEnergyUse = () => {
     const summaryFileSlug = lang === 'en'
         ? `natural_gas_energy_use_by_sector_${selectedYear}`
         : `consommation_gaz_naturel_par_secteur_${selectedYear}`;
+
+    const sectorCellFontSize = pageCssZoom >= 4 ? '0.55rem'
+        : pageCssZoom >= 3 ? '0.65rem'
+        : pageCssZoom >= 2 ? '0.75rem'
+        : pageCssZoom >= 1.5 ? '0.85rem'
+        : '1rem';
 
     const centerFontSize = useMemo(() => {
         const base = useCompactLayout
@@ -414,6 +418,13 @@ const NaturalGasEnergyUse = () => {
         return formatPct(raw, row?.isTotal ? 0 : 1);
     };
 
+    const sectorExportRows = () => sectorTableRows.map((row) => [
+        renderSectorCell(row.sector, { colIndex: 0, row }),
+        renderSectorCell(row.energyUse, { colIndex: 1, row }),
+        renderSectorCell(row.bcfPerDay, { colIndex: 2, row }),
+        renderSectorCell(row.pct, { colIndex: 3, row }),
+    ]);
+
     const renderChartCell = (raw, { colIndex }) => {
         if (colIndex === 0) return String(raw ?? '');
         if (colIndex === 1) return formatPj(raw, 1);
@@ -470,6 +481,90 @@ const NaturalGasEnergyUse = () => {
     word-wrap: break-word;
     line-height: 1.2;
 }
+.natural-gas-energy-use-summary-table-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.natural-gas-energy-use-summary-table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+    table-layout: fixed;
+}
+.natural-gas-energy-use-summary-table th,
+.natural-gas-energy-use-summary-table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: center;
+}
+.natural-gas-energy-use-summary-table thead th {
+    background-color: #423330;
+    color: white;
+    font-weight: bold;
+    font-size: 1.05rem;
+}
+.natural-gas-energy-use-summary-table .natural-gas-energy-use-sector-cell {
+    text-align: left;
+    background-color: #423330;
+    color: white;
+    font-weight: bold;
+    font-size: ${sectorCellFontSize};
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    hyphens: auto;
+    vertical-align: middle;
+    line-height: 1.2;
+}
+.natural-gas-energy-use-summary-table tbody tr:nth-child(even):not(.natural-gas-energy-use-summary-total-row) {
+    background-color: #42333080;
+}
+.natural-gas-energy-use-summary-table tbody tr:hover:not(.natural-gas-energy-use-summary-total-row) {
+    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.2);
+    background-color: transparent;
+}
+.natural-gas-energy-use-summary-table tbody {
+    height: 100%;
+}
+.natural-gas-energy-use-summary-table tbody tr {
+    height: calc(100% / 7);
+}
+.natural-gas-energy-use-summary-table tbody td {
+    vertical-align: middle;
+}
+.natural-gas-energy-use-summary-total-row td,
+.natural-gas-energy-use-summary-total-row th:not(.natural-gas-energy-use-sector-cell) {
+    background-color: #423330;
+    color: white;
+    font-weight: bold;
+}
+.natural-gas-energy-use-summary-total-row .natural-gas-energy-use-sector-cell {
+    background-color: #423330;
+    color: white;
+}
+.natural-gas-energy-use-summary-download-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+.natural-gas-energy-use-summary-download-buttons button {
+    padding: 8px 16px;
+    background-color: #8c8c8c;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    color: #ffffff;
+}
+.natural-gas-energy-use-summary-download-buttons button:hover {
+    background-color: #404040 !important;
+}
 .natural-gas-energy-use-chart-column {
     width: 58%;
     min-width: 0;
@@ -488,8 +583,16 @@ const NaturalGasEnergyUse = () => {
 .layout-stacked .natural-gas-energy-use-table-column,
 .layout-stacked .natural-gas-energy-use-chart-column { width: 100% !important; min-width: 0 !important; }
 .layout-stacked .natural-gas-energy-use-table-column { margin-bottom: 28px; }
+.layout-stacked .natural-gas-energy-use-summary-table tbody tr { height: auto; }
 @media (max-width: 768px) {
     .natural-gas-energy-use-table-title { font-size: 26px; }
+    .natural-gas-energy-use-summary-table { font-size: 0.75rem; }
+    .natural-gas-energy-use-summary-table tbody tr { height: auto; }
+}
+@media (max-width: 992px) {
+    .natural-gas-energy-use-summary-table { font-size: 0.75rem; }
+    .natural-gas-energy-use-summary-table th,
+    .natural-gas-energy-use-summary-table td { padding: 6px 8px; }
 }
             `}</style>
 
@@ -498,28 +601,82 @@ const NaturalGasEnergyUse = () => {
                     {getText('natural_gas_energy_use_title', lang)}
                 </h1>
 
+                {loadState === 'empty' && (
+                    <p>{getText('natural_gas_energy_use_no_data', lang)}</p>
+                )}
+                {loadState === 'ready' && (
                 <div className={`natural-gas-energy-use-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <section className="natural-gas-energy-use-table-column" aria-labelledby="natural-gas-energy-use-table-title">
                         <div className="natural-gas-energy-use-table-panel">
                             <h2 id="natural-gas-energy-use-table-title" className="natural-gas-energy-use-table-title">
                                 {tableTitle}
                             </h2>
-                            <ChartDataTable
-                                lang={lang}
-                                columns={sectorTableColumns}
-                                rows={sectorTableRows}
-                                csvFilename={`${summaryFileSlug}.csv`}
-                                docx={{
-                                    filename: `${summaryFileSlug}.docx`,
-                                    title: exportSummaryTitle,
-                                    titleAlign: 'center',
-                                    columnWidths: [3200, 1800, 1800, 1600],
-                                    fontSize: 18,
-                                }}
-                                caption={summaryCaption}
-                                tableAriaLabel={summaryCaption}
-                                renderCell={renderSectorCell}
-                            />
+                            <div className="natural-gas-energy-use-summary-table-wrap">
+                                <table className="natural-gas-energy-use-summary-table">
+                                    <colgroup>
+                                        <col style={{ width: '34%' }} />
+                                        <col style={{ width: '22%' }} />
+                                        <col style={{ width: '22%' }} />
+                                        <col style={{ width: '22%' }} />
+                                    </colgroup>
+                                    <caption id="natural-gas-energy-use-summary-caption" className="wb-inv">
+                                        {summaryCaption}
+                                    </caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">{getText('natural_gas_energy_use_summary_col_sector', lang)}</th>
+                                            <th scope="col">{getText('natural_gas_energy_use_summary_col_energy', lang)}</th>
+                                            <th scope="col">{getText('natural_gas_energy_use_summary_col_bcf', lang)}</th>
+                                            <th scope="col">{getText('natural_gas_energy_use_summary_col_share', lang)}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {yearData.sectorRows.map((row) => (
+                                            <tr key={row.key}>
+                                                <th scope="row" className="natural-gas-energy-use-sector-cell">
+                                                    {getText(`natural_gas_energy_use_sector_${row.key}`, lang)}
+                                                </th>
+                                                <td>{formatPj(row.energyUse, 1)}</td>
+                                                <td>{formatBcf(row.bcfPerDay, 2)}</td>
+                                                <td>{formatPct(row.pct, 1)}</td>
+                                            </tr>
+                                        ))}
+                                        <tr className="natural-gas-energy-use-summary-total-row">
+                                            <th scope="row" className="natural-gas-energy-use-sector-cell">
+                                                {getText('natural_gas_energy_use_sector_total', lang)}
+                                            </th>
+                                            <td>{formatPj(yearData.sectorTotalEnergy, 1)}</td>
+                                            <td>{formatBcf(yearData.sectorTotalBcf, 2)}</td>
+                                            <td>{formatPct(100, 0)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="natural-gas-energy-use-summary-download-buttons">
+                                <button
+                                    type="button"
+                                    onClick={() => exportTableToCsv({
+                                        filename: summaryFileSlug,
+                                        headers: sectorTableColumns.map((col) => col.header),
+                                        rows: sectorExportRows(),
+                                    })}
+                                >
+                                    {getText('natural_gas_energy_use_download_csv', lang)}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => exportTableToDocx({
+                                        filename: summaryFileSlug,
+                                        title: exportSummaryTitle,
+                                        headers: sectorTableColumns.map((col) => col.header),
+                                        rows: sectorExportRows(),
+                                        columnWidths: [3200, 1800, 1800, 1600],
+                                        options: { titleAlign: 'center', fontSize: 18 },
+                                    })}
+                                >
+                                    {getText('natural_gas_energy_use_download_docx', lang)}
+                                </button>
+                            </div>
                         </div>
                     </section>
 
@@ -571,6 +728,7 @@ const NaturalGasEnergyUse = () => {
                         </div>
                     </section>
                 </div>
+                )}
             </div>
         </PageShell>
     );

@@ -868,6 +868,64 @@ kal_vancouver_marketing,Gasoline marketing (vancouver),cents per litre,units,Gas
 kal_vancouver_price,Gasoline price (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
 kal_vancouver_refining,Gasoline refining (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
 kal_vancouver_taxes,Gasoline taxes (vancouver),cents per litre,units,Gasoline retail price components (Kalibrate),Kalibrate,https://charting.kalibrate.com/Charting/Margins
+ngeu_agriculture_bcf,Agriculture natural gas energy use,Bcf/d,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_agriculture_pj,Agriculture natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_agriculture_share,Agriculture share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_alta_pj,Alberta natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_alta_share,Alberta share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_atl_pj,Atlantic provinces natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_atl_share,Atlantic provinces share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_bc_ter_pj,British Columbia and the territories natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_bc_ter_share,British Columbia and the territories share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_commercial_bcf,Commercial natural gas energy use,Bcf/d,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_commercial_pj,Commercial natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_commercial_share,Commercial share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_industry_bcf,Industrial natural gas energy use,Bcf/d,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_industry_pj,Industrial natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_industry_share,Industrial share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_man_pj,Manitoba natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_man_share,Manitoba share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_ont_pj,Ontario natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_ont_share,Ontario share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_province_total_pj,Total natural gas energy use by province,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_que_pj,Quebec natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_que_share,Quebec share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_residential_bcf,Residential natural gas energy use,Bcf/d,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_residential_pj,Residential natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_residential_share,Residential share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_sask_pj,Saskatchewan natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_sask_share,Saskatchewan share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_total_bcf,Total natural gas energy use,Bcf/d,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_total_pj,Total natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_transportation_bcf,Transportation natural gas energy use,Bcf/d,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_transportation_pj,Transportation natural gas energy use,PJ,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngeu_transportation_share,Transportation share of natural gas energy use,Percent,units,Natural gas energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_agriculture_pj,Agriculture natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_agriculture_share,Agriculture share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_alta_pj,Alberta natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_alta_share,Alberta share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_atl_pj,Atlantic provinces natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_atl_share,Atlantic provinces share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_bc_ter_pj,British Columbia and the territories natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_bc_ter_share,British Columbia and the territories share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_commercial_pj,Commercial natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_commercial_share,Commercial share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_industry_pj,Industrial natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_industry_share,Industrial share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_man_pj,Manitoba natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_man_share,Manitoba share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_ont_pj,Ontario natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_ont_share,Ontario share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_province_total_pj,Total natural gas liquids energy use by province,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_que_pj,Quebec natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_que_share,Quebec share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_residential_pj,Residential natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_residential_share,Residential share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_sask_pj,Saskatchewan natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_sask_share,Saskatchewan share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_total_pj,Total natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_transportation_pj,Transportation natural gas liquids energy use,PJ,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
+ngleu_transportation_share,Transportation share of natural gas liquids energy use,Percent,units,Natural gas liquids energy use by sector,Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 oee_neud_A,Energy use - Agriculture,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 oee_neud_C,Energy use - Commercial,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
 oee_neud_EL,Energy use - Energy losses,PJ,petajoules,Energy Use (OEE NEUD),Natural Resources Canada (OEE),https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html
@@ -890,6 +948,22 @@ os_total_mmbd,Total crude oil and equivalent production,million barrels per day,
 os_total_thousand_m3,Total crude oil and equivalent production,thousand cubic metres,units,Oil sands capex and production share,,
 os_upgrading_capacity_mmbd,Total oil sands upgrader capacity in Canada,million barrels per day,units,Oil sands capex and production share,,
 os_upgrading_pct,Raw bitumen sent for upgrading in Alberta,percent,units,Oil sands capex and production share,,
+osec_insitu_hydrocarbon_boe,In situ hydrocarbon production,barrels of oil equivalent,units,Oil sands environmental considerations,,
+osec_insitu_intensity,In situ non-saline water use intensity,barrels per barrel of oil equivalent,units,Oil sands environmental considerations,,
+osec_insitu_intensity_water_bbl,In situ non-saline water,barrels,units,Oil sands environmental considerations,,
+osec_insitu_intensity_water_m3,In situ non-saline water,cubic metres,units,Oil sands environmental considerations,,
+osec_insitu_makeup_m3,In situ make-up water,cubic metres,units,Oil sands environmental considerations,,
+osec_insitu_recycled_m3,In situ recycled water,cubic metres,units,Oil sands environmental considerations,,
+osec_insitu_recycled_pct,In situ recycled water share,proportion,proportion,Oil sands environmental considerations,,
+osec_insitu_total_water_m3,In situ total water use,cubic metres,units,Oil sands environmental considerations,,
+osec_mining_hydrocarbon_boe,Mining hydrocarbon production,barrels of oil equivalent,units,Oil sands environmental considerations,,
+osec_mining_intensity,Mining fresh water use intensity,barrels per barrel of oil equivalent,units,Oil sands environmental considerations,,
+osec_mining_intensity_water_bbl,Mining fresh water,barrels,units,Oil sands environmental considerations,,
+osec_mining_intensity_water_m3,Mining fresh water,cubic metres,units,Oil sands environmental considerations,,
+osec_mining_makeup_m3,Mining make-up water,cubic metres,units,Oil sands environmental considerations,,
+osec_mining_recycled_m3,Mining recycled water,cubic metres,units,Oil sands environmental considerations,,
+osec_mining_recycled_pct,Mining recycled water share,proportion,proportion,Oil sands environmental considerations,,
+osec_mining_total_water_m3,Mining total water use,cubic metres,units,Oil sands environmental considerations,,
 osghg_canada_mt,Canada national inventory total,Mt CO2e,megatonnes,Oil sands greenhouse gas emissions intensity,,
 osghg_global_mt,World GHG emissions excluding LULUCF,Mt CO2e,megatonnes,Oil sands greenhouse gas emissions intensity,,
 osghg_intensity_decrease_pct,Oil sands emissions intensity decrease since 2000,percent,percent,Oil sands greenhouse gas emissions intensity,,

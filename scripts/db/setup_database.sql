@@ -274,7 +274,7 @@ WHERE schema_id = SCHEMA_ID('dbo')
     'stc_epes_3810013001','stc_nrsa_3610061001','stc_nrsa_3810028501','stc_gdpnom_3610010301',
     'stc_rppsd_25100081','stc_refinput_25100063','nrcan_crude_prices','stc_oil_sands',
     'stc_ev_sales','stc_canadian_production','kal_gas_prices','osm_refin_cap',
-    'ca_petroleum_reserves_summary','ca_western_canada_oil_wells_count_depth','ca_western_canada_gas_wells_count_depth','ca_oil_sands_greenhouse_gases','aer_oil_sands_in_situ_method','aer_oil_sands_mining_method',
+    'ca_petroleum_reserves_summary','ca_western_canada_oil_wells_count_depth','ca_western_canada_gas_wells_count_depth','ca_oil_sands_greenhouse_gases','aer_oil_sands_in_situ_method','aer_oil_sands_mining_method','aer_oil_sands_water_indicators','oee_neud_ngenergyuse_sector','oee_neud_ngenergyuse_province','oee_neud_ngl_energyuse_sector','oee_neud_ngl_energyuse_province',
     'ca_statcan_petroleum_sector_employment_summary',
     'ca_ogj_petroleum_world_proved_reserves',
     'cer_electricity_trade_summary','iea_total_energy_supply_can_world','nrcan_us_state_energy_exports','nrcan_global_energy_trade_by_product','nrcan_windcapbyprov','can_largestwindprojects',
@@ -2090,6 +2090,29 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'aer_oil_sands_water_indicators')
+BEGIN
+    CREATE TABLE [aer_oil_sands_water_indicators] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_aer_oil_sands_water_indicators_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_aer_oil_sands_water_indicators_vector ON [aer_oil_sands_water_indicators](vector);
+    CREATE INDEX IX_aer_oil_sands_water_indicators_source ON [aer_oil_sands_water_indicators](source_key);
+    CREATE INDEX IX_aer_oil_sands_water_indicators_ref_date ON [aer_oil_sands_water_indicators](ref_date);
+    PRINT 'Table aer_oil_sands_water_indicators created.';
+END
+GO
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ca_statcan_petroleum_sector_employment_summary')
 BEGIN
     CREATE TABLE [ca_statcan_petroleum_sector_employment_summary] (
@@ -2312,6 +2335,11 @@ VALUES
 ('oil_sands_greenhouse_gases', 'Oil sands greenhouse gas emissions intensity', 6, 'Oil, Natural Gas and Coal', N'https://www.climatewatchdata.org/api/v1/data/historical_emissions', 1),
 ('oil_sands_in_situ', 'In situ oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st53', 1),
 ('oil_sands_mining', 'Mining oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39', 1),
+('oil_sands_environmental_considerations', 'Oil sands environmental considerations', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/industry-performance/water-use-performance', 1),
+('natural_gas_energy_use', 'Natural gas energy use by sector', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
+('natural_gas_energy_use_province', 'Natural gas energy use by province', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
+('natural_gas_liquids_energy_use', 'Natural gas liquids energy use by sector', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
+('natural_gas_liquids_energy_use_province', 'Natural gas liquids energy use by province', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
 ('petroleum_sector_employment', 'Petroleum sector employment by region', 6, 'Oil, Natural Gas and Coal', N'', 1),
 ('world_proved_crude_reserves', 'World proved reserves of crude oil', 6, 'Oil, Natural Gas and Coal', N'', 1);
 
@@ -2343,6 +2371,133 @@ IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'oil_sands
 BEGIN
     INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
     VALUES ('oil_sands_mining', 'Mining oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'oil_sands_environmental_considerations')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('oil_sands_environmental_considerations', 'Oil sands environmental considerations', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/industry-performance/water-use-performance', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'oee_neud_ngenergyuse_sector')
+BEGIN
+    CREATE TABLE [oee_neud_ngenergyuse_sector] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_oee_neud_ngenergyuse_sector_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_oee_neud_ngenergyuse_sector_vector ON [oee_neud_ngenergyuse_sector](vector);
+    CREATE INDEX IX_oee_neud_ngenergyuse_sector_source ON [oee_neud_ngenergyuse_sector](source_key);
+    CREATE INDEX IX_oee_neud_ngenergyuse_sector_ref_date ON [oee_neud_ngenergyuse_sector](ref_date);
+    PRINT 'Table oee_neud_ngenergyuse_sector created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'natural_gas_energy_use')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('natural_gas_energy_use', 'Natural gas energy use by sector', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'oee_neud_ngenergyuse_province')
+BEGIN
+    CREATE TABLE [oee_neud_ngenergyuse_province] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_oee_neud_ngenergyuse_province_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_oee_neud_ngenergyuse_province_vector ON [oee_neud_ngenergyuse_province](vector);
+    CREATE INDEX IX_oee_neud_ngenergyuse_province_source ON [oee_neud_ngenergyuse_province](source_key);
+    CREATE INDEX IX_oee_neud_ngenergyuse_province_ref_date ON [oee_neud_ngenergyuse_province](ref_date);
+    PRINT 'Table oee_neud_ngenergyuse_province created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'natural_gas_energy_use_province')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('natural_gas_energy_use_province', 'Natural gas energy use by province', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'oee_neud_ngl_energyuse_sector')
+BEGIN
+    CREATE TABLE [oee_neud_ngl_energyuse_sector] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_oee_neud_ngl_energyuse_sector_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_oee_neud_ngl_energyuse_sector_vector ON [oee_neud_ngl_energyuse_sector](vector);
+    CREATE INDEX IX_oee_neud_ngl_energyuse_sector_source ON [oee_neud_ngl_energyuse_sector](source_key);
+    CREATE INDEX IX_oee_neud_ngl_energyuse_sector_ref_date ON [oee_neud_ngl_energyuse_sector](ref_date);
+    PRINT 'Table oee_neud_ngl_energyuse_sector created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'natural_gas_liquids_energy_use')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('natural_gas_liquids_energy_use', 'Natural gas liquids energy use by sector', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1);
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'oee_neud_ngl_energyuse_province')
+BEGIN
+    CREATE TABLE [oee_neud_ngl_energyuse_province] (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        vector NVARCHAR(300) NOT NULL,
+        ref_date NVARCHAR(20) NOT NULL,
+        value DECIMAL(18,4) NULL,
+        title NVARCHAR(500) NULL,
+        uom NVARCHAR(100) NULL,
+        scalar_factor NVARCHAR(50) NULL,
+        source_org NVARCHAR(255) NULL,
+        source_url NVARCHAR(1000) NULL,
+        source_key NVARCHAR(100) NOT NULL,
+        fetched_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT [UQ_oee_neud_ngl_energyuse_province_vd] UNIQUE (vector, ref_date)
+    );
+    CREATE INDEX IX_oee_neud_ngl_energyuse_province_vector ON [oee_neud_ngl_energyuse_province](vector);
+    CREATE INDEX IX_oee_neud_ngl_energyuse_province_source ON [oee_neud_ngl_energyuse_province](source_key);
+    CREATE INDEX IX_oee_neud_ngl_energyuse_province_ref_date ON [oee_neud_ngl_energyuse_province](ref_date);
+    PRINT 'Table oee_neud_ngl_energyuse_province created.';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM nrcan_fb_data_sources WHERE source_key = 'natural_gas_liquids_energy_use_province')
+BEGIN
+    INSERT INTO nrcan_fb_data_sources (source_key, source_name, section_id, section_name, source_url, is_enabled)
+    VALUES ('natural_gas_liquids_energy_use_province', 'Natural gas liquids energy use by province', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1);
 END
 GO
 

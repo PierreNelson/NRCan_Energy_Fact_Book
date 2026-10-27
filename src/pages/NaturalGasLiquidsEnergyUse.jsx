@@ -17,8 +17,8 @@ import hexToRgba from '../utils/hexToRgba';
 
 import { makeScrollToIdHandler } from '../utils/scrollToId';
 import { formatLocalePct } from '../utils/formatLocale';
-
-const REFERENCE_YEAR = 2023;
+import { exportTableToCsv, exportTableToDocx } from '../utils/exportTableToDocx';
+import { getNaturalGasLiquidsEnergyUseData } from '../utils/dataLoader';
 
 const PROVINCE_KEYS = ['alta', 'bc_ter', 'atl', 'que', 'ont', 'man', 'sask'];
 
@@ -40,30 +40,6 @@ const PROVINCE_COLORS = {
     ont: '#4b4c4d',
     man: '#1f8093',
     sask: '#949494',
-};
-
-/** Hardcoded snapshot data keyed by year (ready for a future year selector). */
-const DATA_BY_YEAR = {
-    2023: {
-        sectorRows: [
-            { key: 'residential', energyUse: 14.2, pct: 10.3 },
-            { key: 'commercial', energyUse: 34.3, pct: 24.9 },
-            { key: 'industrial', energyUse: 67.9, pct: 49.3 },
-            { key: 'transportation', energyUse: 12.4, pct: 9.0 },
-            { key: 'agriculture', energyUse: 8.9, pct: 6.5 },
-        ],
-        sectorTotalEnergy: 137.8,
-        provinceTotalEnergy: 138,
-        provinces: [
-            { key: 'alta', pct: 43.5 },
-            { key: 'bc_ter', pct: 7.3 },
-            { key: 'atl', pct: 5.1 },
-            { key: 'que', pct: 10.5 },
-            { key: 'ont', pct: 28.2 },
-            { key: 'man', pct: 2.9 },
-            { key: 'sask', pct: 2.6 },
-        ],
-    },
 };
 
 const STACKED_LAYOUT_BROWSER_ZOOM = 1.1;
@@ -109,7 +85,8 @@ const computePageZoomScale = (baseline) => {
 
 const NaturalGasLiquidsEnergyUse = () => {
     const { lang, layoutPadding } = useOutletContext();
-    const [selectedYear] = useState(REFERENCE_YEAR);
+    const [bundle, setBundle] = useState(null);
+    const [loadState, setLoadState] = useState('loading');
     const [selectedSlices, setSelectedSlices] = useState(null);
     const windowWidth = useWindowWidth();
     const [pageCssZoom, setPageCssZoom] = useState(() => computePageZoomScale(null).pageCssZoom);
@@ -123,8 +100,32 @@ const NaturalGasLiquidsEnergyUse = () => {
     const selectEnabled = windowWidth > 768;
     const effectiveSelectedSlices = selectEnabled ? selectedSlices : null;
 
-    const yearData = DATA_BY_YEAR[selectedYear] ?? DATA_BY_YEAR[REFERENCE_YEAR];
+    const yearData = bundle ?? {
+        year: '',
+        sectorRows: [],
+        sectorTotalEnergy: 0,
+        provinceTotalEnergy: 0,
+        provinces: [],
+    };
+    const selectedYear = yearData.year;
     const textVars = { year: selectedYear };
+
+    useEffect(() => {
+        let cancelled = false;
+        getNaturalGasLiquidsEnergyUseData()
+            .then((data) => {
+                if (cancelled) return;
+                const ready = data?.sectorRows?.length === 5 && data?.provinces?.length === 7;
+                setBundle(ready ? data : null);
+                setLoadState(ready ? 'ready' : 'empty');
+            })
+            .catch(() => {
+                if (!cancelled) setLoadState('empty');
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const formatPj = (value, digits = 1) => {
         if (value == null || Number.isNaN(Number(value))) return '–';
@@ -156,15 +157,12 @@ const NaturalGasLiquidsEnergyUse = () => {
         };
     }, []);
 
-    const provinceSlices = useMemo(() => {
-        const total = yearData.provinceTotalEnergy;
-        return PROVINCE_KEYS.map((key) => {
+    const provinceSlices = useMemo(() => (
+        PROVINCE_KEYS.map((key) => {
             const entry = yearData.provinces.find((row) => row.key === key);
-            const pct = entry?.pct ?? 0;
-            const value = total > 0 ? Number(((total * pct) / 100).toFixed(1)) : 0;
-            return { key, pct, value };
-        });
-    }, [yearData]);
+            return { key, pct: entry?.pct ?? 0, value: entry?.value ?? 0 };
+        })
+    ), [yearData]);
 
     const chartTitle = substitute(getText('natural_gas_liquids_energy_use_chart_title', lang), textVars);
     const exportChartTitle = stripHtml(chartTitle);
@@ -234,13 +232,19 @@ const NaturalGasLiquidsEnergyUse = () => {
 
     const tableTitle = substitute(getText('natural_gas_liquids_energy_use_table_title', lang), {
         ...textVars,
-        total: formatPj(yearData.provinceTotalEnergy, 0),
+        total: formatPj(yearData.sectorTotalEnergy, 0),
     });
     const summaryCaption = substitute(getText('natural_gas_liquids_energy_use_summary_table_caption', lang), textVars);
     const chartTableCaption = substitute(getText('natural_gas_liquids_energy_use_table_caption', lang), textVars);
     const summaryFileSlug = lang === 'en'
         ? `natural_gas_liquids_energy_use_by_sector_${selectedYear}`
         : `utilisation_lgn_par_secteur_${selectedYear}`;
+
+    const sectorCellFontSize = pageCssZoom >= 4 ? '0.55rem'
+        : pageCssZoom >= 3 ? '0.65rem'
+        : pageCssZoom >= 2 ? '0.75rem'
+        : pageCssZoom >= 1.5 ? '0.85rem'
+        : '1rem';
     const exportSummaryTitle = stripHtml(tableTitle);
 
     const centerFontSize = useMemo(() => {
@@ -414,6 +418,12 @@ const NaturalGasLiquidsEnergyUse = () => {
         return formatPct(raw, row?.isTotal ? 0 : 1);
     };
 
+    const sectorExportRows = () => sectorTableRows.map((row) => [
+        renderSectorCell(row.sector, { colIndex: 0, row }),
+        renderSectorCell(row.energyUse, { colIndex: 1, row }),
+        renderSectorCell(row.pct, { colIndex: 2, row }),
+    ]);
+
     const renderChartCell = (raw, { colIndex }) => {
         if (colIndex === 0) return String(raw ?? '');
         if (colIndex === 1) return formatPj(raw, 1);
@@ -470,6 +480,90 @@ const NaturalGasLiquidsEnergyUse = () => {
     word-wrap: break-word;
     line-height: 1.2;
 }
+.natural-gas-liquids-energy-use-summary-table-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.natural-gas-liquids-energy-use-summary-table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+    table-layout: fixed;
+}
+.natural-gas-liquids-energy-use-summary-table th,
+.natural-gas-liquids-energy-use-summary-table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: center;
+}
+.natural-gas-liquids-energy-use-summary-table thead th {
+    background-color: #423330;
+    color: white;
+    font-weight: bold;
+    font-size: 1.05rem;
+}
+.natural-gas-liquids-energy-use-summary-table .natural-gas-liquids-energy-use-sector-cell {
+    text-align: left;
+    background-color: #423330;
+    color: white;
+    font-weight: bold;
+    font-size: ${sectorCellFontSize};
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+    hyphens: auto;
+    vertical-align: middle;
+    line-height: 1.2;
+}
+.natural-gas-liquids-energy-use-summary-table tbody tr:nth-child(even):not(.natural-gas-liquids-energy-use-summary-total-row) {
+    background-color: #42333080;
+}
+.natural-gas-liquids-energy-use-summary-table tbody tr:hover:not(.natural-gas-liquids-energy-use-summary-total-row) {
+    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.2);
+    background-color: transparent;
+}
+.natural-gas-liquids-energy-use-summary-table tbody {
+    height: 100%;
+}
+.natural-gas-liquids-energy-use-summary-table tbody tr {
+    height: calc(100% / 7);
+}
+.natural-gas-liquids-energy-use-summary-table tbody td {
+    vertical-align: middle;
+}
+.natural-gas-liquids-energy-use-summary-total-row td,
+.natural-gas-liquids-energy-use-summary-total-row th:not(.natural-gas-liquids-energy-use-sector-cell) {
+    background-color: #423330;
+    color: white;
+    font-weight: bold;
+}
+.natural-gas-liquids-energy-use-summary-total-row .natural-gas-liquids-energy-use-sector-cell {
+    background-color: #423330;
+    color: white;
+}
+.natural-gas-liquids-energy-use-summary-download-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+.natural-gas-liquids-energy-use-summary-download-buttons button {
+    padding: 8px 16px;
+    background-color: #8c8c8c;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    color: #ffffff;
+}
+.natural-gas-liquids-energy-use-summary-download-buttons button:hover {
+    background-color: #404040 !important;
+}
 .natural-gas-liquids-energy-use-chart-column {
     width: 58%;
     min-width: 0;
@@ -488,8 +582,16 @@ const NaturalGasLiquidsEnergyUse = () => {
 .layout-stacked .natural-gas-liquids-energy-use-table-column,
 .layout-stacked .natural-gas-liquids-energy-use-chart-column { width: 100% !important; min-width: 0 !important; }
 .layout-stacked .natural-gas-liquids-energy-use-table-column { margin-bottom: 28px; }
+.layout-stacked .natural-gas-liquids-energy-use-summary-table tbody tr { height: auto; }
 @media (max-width: 768px) {
     .natural-gas-liquids-energy-use-table-title { font-size: 26px; }
+    .natural-gas-liquids-energy-use-summary-table { font-size: 0.75rem; }
+    .natural-gas-liquids-energy-use-summary-table tbody tr { height: auto; }
+}
+@media (max-width: 992px) {
+    .natural-gas-liquids-energy-use-summary-table { font-size: 0.75rem; }
+    .natural-gas-liquids-energy-use-summary-table th,
+    .natural-gas-liquids-energy-use-summary-table td { padding: 6px 8px; }
 }
             `}</style>
 
@@ -498,35 +600,87 @@ const NaturalGasLiquidsEnergyUse = () => {
                     {getText('natural_gas_liquids_energy_use_title', lang)}
                 </h1>
 
+                {loadState === 'empty' && (
+                    <p>{getText('natural_gas_liquids_energy_use_no_data', lang)}</p>
+                )}
+                {loadState === 'ready' && (
                 <div className={`natural-gas-liquids-energy-use-content-row ${useStackedLayout ? 'layout-stacked' : ''}`}>
                     <section className="natural-gas-liquids-energy-use-table-column" aria-labelledby="natural-gas-liquids-energy-use-table-title">
                         <div className="natural-gas-liquids-energy-use-table-panel">
                             <h2 id="natural-gas-liquids-energy-use-table-title" className="natural-gas-liquids-energy-use-table-title">
                                 {tableTitle}
-                                <FootnoteMarker
-                            lang={lang}
-                            href="#fn-asterisk-natural-gas-liquids-energy-use"
-                            id="fn-asterisk-rf-natural-gas-liquids-energy-use"
-                            marker="*"
-                            onClick={scrollToFootnote}
-                        />
                             </h2>
-                            <ChartDataTable
-                                lang={lang}
-                                columns={sectorTableColumns}
-                                rows={sectorTableRows}
-                                csvFilename={`${summaryFileSlug}.csv`}
-                                docx={{
-                                    filename: `${summaryFileSlug}.docx`,
-                                    title: exportSummaryTitle,
-                                    titleAlign: 'center',
-                                    columnWidths: [4200, 2200, 2200],
-                                    fontSize: 18,
-                                }}
-                                caption={summaryCaption}
-                                tableAriaLabel={summaryCaption}
-                                renderCell={renderSectorCell}
-                            />
+                            <div className="natural-gas-liquids-energy-use-summary-table-wrap">
+                                <table className="natural-gas-liquids-energy-use-summary-table">
+                                    <colgroup>
+                                        <col style={{ width: '44%' }} />
+                                        <col style={{ width: '28%' }} />
+                                        <col style={{ width: '28%' }} />
+                                    </colgroup>
+                                    <caption id="natural-gas-liquids-energy-use-summary-caption" className="wb-inv">
+                                        {summaryCaption}
+                                    </caption>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">{getText('natural_gas_liquids_energy_use_summary_col_sector', lang)}</th>
+                                            <th scope="col">
+                                                {getText('natural_gas_liquids_energy_use_summary_col_energy', lang)}
+                                                <FootnoteMarker
+                                                    lang={lang}
+                                                    href="#fn-asterisk-natural-gas-liquids-energy-use"
+                                                    id="fn-asterisk-rf-natural-gas-liquids-energy-use"
+                                                    marker="*"
+                                                    onClick={scrollToFootnote}
+                                                />
+                                            </th>
+                                            <th scope="col">{getText('natural_gas_liquids_energy_use_summary_col_share', lang)}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {yearData.sectorRows.map((row) => (
+                                            <tr key={row.key}>
+                                                <th scope="row" className="natural-gas-liquids-energy-use-sector-cell">
+                                                    {getText(`natural_gas_liquids_energy_use_sector_${row.key}`, lang)}
+                                                </th>
+                                                <td>{formatPj(row.energyUse, 1)}</td>
+                                                <td>{formatPct(row.pct, 1)}</td>
+                                            </tr>
+                                        ))}
+                                        <tr className="natural-gas-liquids-energy-use-summary-total-row">
+                                            <th scope="row" className="natural-gas-liquids-energy-use-sector-cell">
+                                                {getText('natural_gas_liquids_energy_use_sector_total', lang)}
+                                            </th>
+                                            <td>{formatPj(yearData.sectorTotalEnergy, 1)}</td>
+                                            <td>{formatPct(100, 0)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="natural-gas-liquids-energy-use-summary-download-buttons">
+                                <button
+                                    type="button"
+                                    onClick={() => exportTableToCsv({
+                                        filename: summaryFileSlug,
+                                        headers: sectorTableColumns.map((col) => col.header),
+                                        rows: sectorExportRows(),
+                                    })}
+                                >
+                                    {getText('natural_gas_liquids_energy_use_download_csv', lang)}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => exportTableToDocx({
+                                        filename: summaryFileSlug,
+                                        title: exportSummaryTitle,
+                                        headers: sectorTableColumns.map((col) => col.header),
+                                        rows: sectorExportRows(),
+                                        columnWidths: [4200, 2200, 2200],
+                                        options: { titleAlign: 'center', fontSize: 18 },
+                                    })}
+                                >
+                                    {getText('natural_gas_liquids_energy_use_download_docx', lang)}
+                                </button>
+                            </div>
                         </div>
                     </section>
 
@@ -578,6 +732,7 @@ const NaturalGasLiquidsEnergyUse = () => {
                         </div>
                     </section>
                 </div>
+                )}
 
                 <PageFootnotes
                     lang={lang}

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChartDataTable from '../components/ChartDataTable';
 import ClearSelectionButton from '../components/ClearSelectionButton';
+import AccessibleInfographic from '../components/AccessibleInfographic';
 import { layoutBleedCssVars } from '../hooks/useLayoutBleedStyle';
 import useWindowWidth from '../hooks/useWindowWidth';
 import usePlotlySelection from '../hooks/usePlotlySelection';
@@ -13,11 +14,32 @@ import { getText } from '../utils/translations';
 import { stripHtml } from '../utils/stripHtml';
 import { summarizeByCategory, joinChartSummary } from '../utils/chartSpokenSummary';
 import { getOilSandsGreenhouseGasesData } from '../utils/dataLoader';
+import svgEn from '../assets/oil_sands_greenhouse_gases_bg.svg?raw';
+import svgFr from '../assets/oil_sands_greenhouse_gases_bg_fr.svg?raw';
+import chartBg from '../assets/oil_sands_greenhouse_gases_chart_bg.png';
 
-const LINE_COLOR = '#1e3a5f';
+const LINE_COLOR = '#3d6d99';
 
 const substitute = (text, vars) =>
     (text || '').replace(/\{\{(\w+)\}\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''));
+
+const replaceSvgText = (markup, id, value) => {
+    const safe = String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    return markup.replace(
+        new RegExp(`(<text\\b[^>]*\\bid="${id}"[^>]*>)[\\s\\S]*?(</text>)`),
+        `$1${safe}$2`,
+    );
+};
+
+const roundTo = (value, digits) => {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return null;
+    const factor = 10 ** digits;
+    return Math.round(number * factor) / factor;
+};
 
 const OilSandsGreenhouseGases = () => {
     const { lang, layoutPadding } = useOutletContext();
@@ -51,20 +73,15 @@ const OilSandsGreenhouseGases = () => {
     }, []);
 
     const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
-    const formatWholePercent = (value) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
-        const n = Math.round(Number(value));
-        return lang === 'fr' ? `${n} %` : `${n}%`;
-    };
-    const formatGlobalShare = (value) => {
-        if (value == null || Number.isNaN(Number(value))) return '—';
-        const n = (Math.round(Number(value) * 10) / 10).toLocaleString(locale, {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
+    const formatShare = (value, digits) => {
+        const rounded = roundTo(value, digits);
+        if (rounded == null) return '';
+        const shown = rounded.toLocaleString(locale, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits,
         });
-        return lang === 'fr' ? `${n} %` : `${n}%`;
+        return lang === 'fr' ? `${shown} %` : `${shown}%`;
     };
-    const formatCanadaShare = (value) => formatWholePercent(value);
     const formatIntensity = (value) => {
         if (value == null || Number.isNaN(Number(value))) return '—';
         return Number(value).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -75,21 +92,30 @@ const OilSandsGreenhouseGases = () => {
     const startYear = years[0];
     const endYear = years[years.length - 1];
     const yearVars = { startYear, endYear };
+    const canadaShareText = stats?.canadaShare != null ? formatShare(stats.canadaShare, 0) : '';
+    const globalShareText = stats?.globalShare != null ? formatShare(stats.globalShare, 2) : '';
+    const decreaseText = stats?.decreasePct != null ? formatShare(stats.decreasePct, 0) : '';
+    const yearRangeText = startYear && endYear
+        ? (lang === 'fr' ? `${startYear} à ${endYear},` : `${startYear} to ${endYear},`)
+        : '';
 
-    const shareText = stats?.canadaShare != null && stats?.globalShare != null
+    const shareSentence = stats?.canadaShare != null && stats?.globalShare != null
         ? substitute(getText('oil_sands_greenhouse_gases_share', lang), {
-            canadaShare: formatCanadaShare(stats.canadaShare),
+            canadaShare: canadaShareText,
             canadaYear: stats.canadaYear,
-            globalShare: formatGlobalShare(stats.globalShare),
+            globalShare: globalShareText,
             globalYear: stats.globalYear,
         })
         : '';
-    const decreaseText = stats?.decreasePct != null
+    const decreaseSentence = stats?.decreasePct != null
         ? substitute(getText('oil_sands_greenhouse_gases_decrease', lang), {
             year: stats.decreaseYear,
-            percent: formatWholePercent(stats.decreasePct),
+            percent: decreaseText,
         })
         : '';
+    const resultText = getText('oil_sands_greenhouse_gases_result', lang);
+    const resultEmphasis = getText('oil_sands_greenhouse_gases_result_emphasis', lang);
+    const emphasisAt = resultText.indexOf(resultEmphasis);
 
     const legendLabel = getText('oil_sands_greenhouse_gases_legend', lang);
     const chartTitle = substitute(getText('oil_sands_greenhouse_gases_chart_title', lang), yearVars);
@@ -98,22 +124,54 @@ const OilSandsGreenhouseGases = () => {
         ? `oil_sands_emissions_intensity_${startYear}-${endYear}`
         : `intensite_emissions_sables_bitumineux_${startYear}-${endYear}`;
 
+    const svgMarkup = useMemo(() => {
+        if (!stats) return '';
+        if (lang === 'fr') {
+            return [
+                ['titre-premiere-ligne', ''],
+                ['titre-deuxieme-ligne', ''],
+                ['part-emissions-canadiennes', canadaShareText],
+                ['annee-canadienne', stats.canadaYear],
+                ['part-emissions-mondiales', globalShareText],
+                ['annee-mondiale', stats.globalYear],
+                ['periode', yearRangeText],
+                ['baisse-intensite', decreaseText],
+            ].reduce((markup, [id, value]) => replaceSvgText(markup, id, value), svgFr);
+        }
+        return [
+            ['share-of-canadian-ghg', canadaShareText],
+            ['canadian-emissions-year', stats.canadaYear],
+            ['global-share', globalShareText],
+            ['global-emissions-year', stats.globalYear],
+            ['year-range', yearRangeText],
+            ['reduction-percentage', decreaseText],
+        ].reduce((markup, [id, value]) => replaceSvgText(markup, id, value), svgEn);
+    }, [lang, stats, canadaShareText, globalShareText, decreaseText, yearRangeText]);
+
+    const infographicLabel = [shareSentence, decreaseSentence].filter(Boolean).join(' ');
+
     const tableColumns = useMemo(() => [
         { key: 'year', header: getText('petroleum_employment_table_col_year', lang), align: 'left' },
         { key: 'kgPerBarrel', header: getText('oil_sands_greenhouse_gases_table_col_intensity', lang), align: 'num' },
     ], [lang]);
 
-    const plotBottomMargin = windowWidth <= 480 ? 88 : windowWidth <= 768 ? 76 : 64;
+    const narrow = windowWidth <= 768;
+    const plotBottomMargin = narrow ? 72 : 56;
     const chartHeight = windowWidth <= 480 ? 320 : windowWidth <= 768 ? 360 : 400;
-    const tickFont = { size: windowWidth <= 480 ? 13 : windowWidth <= 768 ? 14 : 15, family: 'Arial, sans-serif' };
-    const axisTitleFont = { size: windowWidth <= 768 ? 18 : 22, family: 'Arial, sans-serif', color: '#58585a' };
+    const tickFont = { size: narrow ? 13 : 15, family: 'Arial, sans-serif', color: '#333' };
+    const axisTitleFont = { size: narrow ? 16 : 20, family: 'Arial, sans-serif', color: '#58585a' };
     const xTickvals = [];
     if (years.length) {
-        for (let year = startYear; year <= endYear; year += 2) xTickvals.push(year);
+        const step = windowWidth <= 480 ? 4 : 2;
+        for (let year = startYear; year <= endYear; year += step) xTickvals.push(year);
         if (xTickvals[xTickvals.length - 1] !== endYear) xTickvals.push(endYear);
     }
-    const maxIntensity = intensities.reduce((max, value) => Math.max(max, Number(value) || 0), 0);
-    const yMax = Math.max(20, Math.ceil((maxIntensity * 1.1) / 20) * 20);
+    const dataMin = intensities.reduce((min, value) => Math.min(min, Number(value) || min), Infinity);
+    const dataMax = intensities.reduce((max, value) => Math.max(max, Number(value) || 0), 0);
+    const yMin = dataMin >= 70 && dataMax <= 110 ? 70 : Math.floor((dataMin - 2) / 5) * 5;
+    const yMax = dataMin >= 70 && dataMax <= 110 ? 110 : Math.ceil((dataMax + 2) / 5) * 5;
+    const yTickvals = [];
+    for (let value = yMin; value <= yMax; value += 5) yTickvals.push(value);
 
     const getChartSummary = () => joinChartSummary({
         intro: exportChartTitle,
@@ -142,6 +200,20 @@ const OilSandsGreenhouseGases = () => {
         click: (gd) => downloadChartWithTitle(gd),
     });
 
+    const chartImages = useMemo(() => ([{
+        source: chartBg,
+        xref: 'paper',
+        yref: 'paper',
+        x: 0.5,
+        y: 0.5,
+        sizex: 0.92,
+        sizey: 0.78,
+        xanchor: 'center',
+        yanchor: 'middle',
+        sizing: 'contain',
+        layer: 'below',
+    }]), []);
+
     return (
         <PageShell
             tabIndex="-1"
@@ -152,69 +224,66 @@ const OilSandsGreenhouseGases = () => {
             <style>{`
                 .oil-sands-greenhouse-gases-container { width: 100%; padding: 15px 0 40px 0; box-sizing: border-box; }
                 .page-121.page-content h1.oil-sands-greenhouse-gases-title { font-size: 41px !important; }
-                .oil-sands-greenhouse-gases-body {
+                .oil-sands-greenhouse-gases-stage { position: relative; width: 100%; margin: 8px 0 20px 0; container-type: inline-size; }
+                .oil-sands-greenhouse-gases-stage .accessible-infographic-svg svg { width: 100%; height: auto; display: block; }
+                .oil-sands-greenhouse-gases-result {
+                    position: absolute;
+                    left: 1.5%;
+                    bottom: 3%;
+                    width: 44%;
+                    margin: 0;
+                    z-index: 2;
                     font-family: 'Noto Sans', sans-serif;
-                    font-size: 20px;
-                    color: #332f30;
-                    line-height: 1.5;
-                    margin: 0 0 16px 0;
-                    max-width: 80ch;
+                    font-size: 1.55cqw;
+                    line-height: 1.35;
+                    color: #333;
                 }
-                .oil-sands-greenhouse-gases-cloud {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    width: fit-content;
-                    margin: 8px 0 20px 0;
-                }
-                .oil-sands-greenhouse-gases-cloud svg { width: 140px; height: 88px; }
-                .oil-sands-greenhouse-gases-cloud-value {
-                    margin-top: 4px;
-                    font-family: 'Noto Sans', sans-serif;
-                    font-size: 32px;
-                    font-weight: 700;
-                    color: #1e3a5f;
-                }
-                .oil-sands-greenhouse-gases-chart-title { color: var(--gc-text); margin: 0 0 12px 0; }
-                .oil-sands-greenhouse-gases-chart { width: 100%; position: relative; }
+                .oil-sands-greenhouse-gases-chart { width: 100%; margin: 0; }
                 @media (max-width: 768px) {
                     .page-121.page-content h1.oil-sands-greenhouse-gases-title { font-size: 37px !important; }
-                    .oil-sands-greenhouse-gases-body { font-size: 18px; }
+                    .oil-sands-greenhouse-gases-result {
+                        position: relative;
+                        left: auto;
+                        bottom: auto;
+                        width: 100%;
+                        margin-top: 12px;
+                        font-size: 16px;
+                    }
                 }
             `}</style>
             <div className="oil-sands-greenhouse-gases-container">
                 <h1 id="oil-sands-greenhouse-gases-title" className="oil-sands-greenhouse-gases-title page-chrome-title">
                     {getText('oil_sands_greenhouse_gases_title', lang)}
                 </h1>
-                {shareText && <p className="oil-sands-greenhouse-gases-body">{shareText}</p>}
-                {stats?.decreasePct != null && (
-                    <div className="oil-sands-greenhouse-gases-cloud">
-                        <svg viewBox="0 0 140 88" role="img" aria-label={getText('oil_sands_greenhouse_gases_cloud_label', lang)}>
-                            <path
-                                d="M34 62c-12 0-20-8-20-18 0-9 7-16 16-17 2-12 13-20 26-20 10 0 18 5 22 13 3-2 7-3 11-3 12 0 21 8 21 19 0 1 0 3-1 4 8 2 14 9 14 17 0 10-8 18-19 18H34z"
-                                fill="#d7e6f2"
-                                stroke="#1e3a5f"
-                                strokeWidth="2"
-                            />
-                            <text x="70" y="50" textAnchor="middle" fontFamily="Noto Sans, Arial, sans-serif" fontSize="16" fontWeight="700" fill="#1e3a5f">CO₂</text>
-                        </svg>
-                        <div className="oil-sands-greenhouse-gases-cloud-value" aria-hidden="true">
-                            ↓ {formatWholePercent(stats.decreasePct)}
-                        </div>
-                    </div>
-                )}
-                {decreaseText && <p className="oil-sands-greenhouse-gases-body">{decreaseText}</p>}
                 {loadError && (
-                    <p className="oil-sands-greenhouse-gases-body" role="alert">
-                        {getText('oil_sands_greenhouse_gases_no_data', lang)}
-                    </p>
+                    <p role="alert">{getText('oil_sands_greenhouse_gases_no_data', lang)}</p>
+                )}
+                {svgMarkup && (
+                    <div className="oil-sands-greenhouse-gases-stage">
+                        <AccessibleInfographic
+                            mode="text"
+                            svgMarkup={svgMarkup}
+                            label={infographicLabel}
+                        />
+                        {resultText && (
+                            <p className="oil-sands-greenhouse-gases-result">
+                                {emphasisAt >= 0 ? (
+                                    <>
+                                        {resultText.slice(0, emphasisAt)}
+                                        <strong>{resultEmphasis}</strong>
+                                        {resultText.slice(emphasisAt + resultEmphasis.length)}
+                                    </>
+                                ) : resultText}
+                            </p>
+                        )}
+                    </div>
                 )}
                 {years.length > 0 && (
                     <div className="oil-sands-greenhouse-gases-chart-frame page-chrome-chart-frame">
                         <h2 className="oil-sands-greenhouse-gases-chart-title page-chrome-chart-title">{chartTitle}</h2>
+                        {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
                         <div role="region" aria-label={getChartSummary()} tabIndex="0">
-                            {selectedPoints !== null && <ClearSelectionButton lang={lang} onClick={clear} />}
-                            <figure ref={chartRef} className="oil-sands-greenhouse-gases-chart" style={{ margin: 0 }}>
+                            <figure ref={chartRef} className="oil-sands-greenhouse-gases-chart">
                                 <div aria-hidden="true">
                                     <Plot
                                         data={[{
@@ -223,10 +292,10 @@ const OilSandsGreenhouseGases = () => {
                                             type: 'scatter',
                                             mode: 'lines+markers',
                                             name: legendLabel,
-                                            line: { color: LINE_COLOR, width: 2 },
+                                            line: { color: LINE_COLOR, width: 2.5 },
                                             marker: {
                                                 color: LINE_COLOR,
-                                                size: 7,
+                                                size: 8,
                                                 opacity: years.map((_, index) => opacityFor(0, index)),
                                             },
                                             hovertemplate: years.map((year, index) => (
@@ -234,21 +303,32 @@ const OilSandsGreenhouseGases = () => {
                                             )),
                                         }]}
                                         layout={{
+                                            hoverlabel: {
+                                                bgcolor: '#ffffff',
+                                                bordercolor: '#cccccc',
+                                                font: { color: '#000000', size: 14, family: 'Arial, sans-serif' },
+                                            },
                                             hovermode: 'closest',
                                             clickmode: 'event',
                                             dragmode: false,
                                             showlegend: false,
+                                            images: chartImages,
                                             xaxis: {
                                                 type: 'linear',
                                                 tickmode: 'array',
                                                 tickvals: xTickvals,
                                                 ticktext: xTickvals.map(String),
-                                                range: [startYear - 0.5, endYear + 0.5],
+                                                range: [startYear - 0.6, endYear + 0.6],
                                                 showgrid: false,
                                                 zeroline: false,
                                                 showline: true,
                                                 linewidth: 1,
                                                 linecolor: '#333',
+                                                ticks: 'inside',
+                                                ticklen: 5,
+                                                tickwidth: 1,
+                                                tickcolor: '#333',
+                                                mirror: false,
                                                 tickfont: tickFont,
                                                 automargin: true,
                                             },
@@ -258,16 +338,24 @@ const OilSandsGreenhouseGases = () => {
                                                     font: axisTitleFont,
                                                     standoff: 8,
                                                 },
-                                                range: [0, yMax],
+                                                range: [yMin - 0.4, yMax + 0.4],
+                                                tickmode: 'array',
+                                                tickvals: yTickvals,
+                                                ticktext: yTickvals.map(String),
                                                 showgrid: false,
                                                 zeroline: false,
                                                 showline: true,
                                                 linewidth: 1,
                                                 linecolor: '#333',
+                                                ticks: 'inside',
+                                                ticklen: 5,
+                                                tickwidth: 1,
+                                                tickcolor: '#333',
+                                                mirror: false,
                                                 tickfont: tickFont,
                                                 automargin: true,
                                             },
-                                            margin: { l: 70, r: 18, t: 24, b: plotBottomMargin },
+                                            margin: { l: lang === 'fr' ? 90 : 72, r: 24, t: 16, b: plotBottomMargin },
                                             autosize: true,
                                             paper_bgcolor: 'rgba(0,0,0,0)',
                                             plot_bgcolor: 'rgba(0,0,0,0)',
@@ -289,7 +377,7 @@ const OilSandsGreenhouseGases = () => {
                                 filename: `${fileSlugBase}.docx`,
                                 title: exportChartTitle,
                                 titleAlign: 'center',
-                                columnWidths: [2000, 5000],
+                                columnWidths: [1800, 5400],
                                 fontSize: 22,
                             }}
                             caption={substitute(getText('oil_sands_greenhouse_gases_table_caption', lang), yearVars)}

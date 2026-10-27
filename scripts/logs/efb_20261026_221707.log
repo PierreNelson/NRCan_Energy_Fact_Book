@@ -1,0 +1,23 @@
+Log file: scripts/logs/efb_20261026_221707.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-26 22:17:07
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: oil_sands_environmental_considerations
+    2024: mining intensity 2.3161, recycle 78.43%, in situ intensity 0.1471, recycle 90.35%
+    Stored 192 indicator rows for oil sands water use
+  Completed: 192 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  oil_sands_environmental_considerations: success (192 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-26 22:17:10

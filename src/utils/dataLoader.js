@@ -1212,6 +1212,94 @@ export async function getOilSandsInSituData() {
  * Project values are unrounded thousand barrels per day, in the spec's fixed order.
  * The production share is a percent.
  */
+export async function getNaturalGasEnergyUseData() {
+    const allData = await loadAllData();
+    const sectorOrder = ['residential', 'commercial', 'industry', 'transportation', 'agriculture'];
+    const provinceOrder = ['alta', 'bc_ter', 'atl', 'que', 'ont', 'man', 'sask'];
+    const byYear = {};
+    allData.forEach((row) => {
+        if (!row.vector?.startsWith('ngeu_')) return;
+        const year = Number(row.ref_date);
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][row.vector.slice('ngeu_'.length)] = value;
+    });
+    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+    const year = years.find((candidate) => {
+        const row = byYear[candidate];
+        return sectorOrder.every((key) => Number.isFinite(row[`${key}_pj`]))
+            && provinceOrder.every((key) => Number.isFinite(row[`${key}_pj`]));
+    });
+    const current = year == null ? {} : byYear[year];
+    const sectorRows = sectorOrder
+        .filter((key) => Number.isFinite(current[`${key}_pj`]))
+        .map((key) => ({
+            key: key === 'industry' ? 'industrial' : key,
+            energyUse: current[`${key}_pj`],
+            bcfPerDay: current[`${key}_bcf`],
+            pct: current[`${key}_share`],
+        }));
+    const provinces = provinceOrder
+        .filter((key) => Number.isFinite(current[`${key}_pj`]))
+        .map((key) => ({
+            key,
+            pct: current[`${key}_share`],
+            value: current[`${key}_pj`],
+        }));
+    return {
+        year,
+        sectorRows,
+        sectorTotalEnergy: current.total_pj ?? null,
+        sectorTotalBcf: current.total_bcf ?? null,
+        provinceTotalEnergy: current.province_total_pj ?? null,
+        provinces,
+    };
+}
+
+export async function getNaturalGasLiquidsEnergyUseData() {
+    const allData = await loadAllData();
+    const sectorOrder = ['residential', 'commercial', 'industry', 'transportation', 'agriculture'];
+    const provinceOrder = ['alta', 'bc_ter', 'atl', 'que', 'ont', 'man', 'sask'];
+    const byYear = {};
+    allData.forEach((row) => {
+        if (!row.vector?.startsWith('ngleu_')) return;
+        const year = Number(row.ref_date);
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (!byYear[year]) byYear[year] = {};
+        byYear[year][row.vector.slice('ngleu_'.length)] = value;
+    });
+    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+    const year = years.find((candidate) => {
+        const row = byYear[candidate];
+        return sectorOrder.every((key) => Number.isFinite(row[`${key}_pj`]))
+            && provinceOrder.every((key) => Number.isFinite(row[`${key}_pj`]));
+    });
+    const current = year == null ? {} : byYear[year];
+    const sectorRows = sectorOrder
+        .filter((key) => Number.isFinite(current[`${key}_pj`]))
+        .map((key) => ({
+            key: key === 'industry' ? 'industrial' : key,
+            energyUse: current[`${key}_pj`],
+            pct: current[`${key}_share`],
+        }));
+    const provinces = provinceOrder
+        .filter((key) => Number.isFinite(current[`${key}_pj`]))
+        .map((key) => ({
+            key,
+            pct: current[`${key}_share`],
+            value: current[`${key}_pj`],
+        }));
+    return {
+        year,
+        sectorRows,
+        sectorTotalEnergy: current.total_pj ?? null,
+        provinceTotalEnergy: current.province_total_pj ?? null,
+        provinces,
+    };
+}
+
 export async function getOilSandsMiningData() {
     const [allData, metadata] = await Promise.all([loadAllData(), loadMetadata()]);
     const projectOrder = ['horizon', 'syncrude', 'kearl', 'suncor', 'fort_hills', 'muskeg', 'jackpine'];
@@ -1256,6 +1344,38 @@ export async function getOilSandsMiningData() {
         projects: projectOrder
             .map((key) => latest.find((row) => row.key === key))
             .filter(Boolean),
+    };
+}
+
+export async function getOilSandsEnvironmentalConsiderationsData() {
+    const allData = await loadAllData();
+    const fields = {
+        osec_mining_intensity: 'miningIntensity',
+        osec_insitu_intensity: 'insituIntensity',
+        osec_mining_recycled_pct: 'miningRecycled',
+        osec_insitu_recycled_pct: 'insituRecycled',
+    };
+    const byYear = {};
+    allData.forEach((row) => {
+        const key = fields[row.vector];
+        if (!key) return;
+        const year = Number(row.ref_date);
+        const value = Number(row.value);
+        if (!Number.isFinite(year) || !Number.isFinite(value)) return;
+        if (!byYear[year]) byYear[year] = { year };
+        byYear[year][key] = value;
+    });
+    const years = Object.values(byYear)
+        .filter((row) => (
+            Number.isFinite(row.miningIntensity)
+            && Number.isFinite(row.insituIntensity)
+            && Number.isFinite(row.miningRecycled)
+            && Number.isFinite(row.insituRecycled)
+        ))
+        .sort((a, b) => a.year - b.year);
+    return {
+        years,
+        latest: years.length ? years[years.length - 1] : null,
     };
 }
 

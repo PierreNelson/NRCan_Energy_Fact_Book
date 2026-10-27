@@ -1,0 +1,24 @@
+Log file: scripts/logs/efb_20261026_195627.log
+============================================================
+EFB Transform — build Factbook indicators
+Started at: 2026-10-26 19:56:27
+============================================================
+
+Ensuring database schema (tables, indexes, procedures as needed)...
+  Schema step complete.
+
+
+EFB transform: natural_gas_energy_use
+    2022: sector total 3077.1 PJ, 7.99 Bcf/d
+    2023: sector total 3000.8 PJ, 7.79 Bcf/d
+    Stored 34 indicator rows for natural_gas_energy_use
+  Completed: 34 rows
+
+============================================================
+EFB Transform Summary
+============================================================
+  natural_gas_energy_use: success (34 rows)
+
+Run summary written to: scripts/logs/last_refresh_summary.json
+
+Completed at: 2026-10-26 19:56:28

@@ -1421,6 +1421,19 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 120
+  legacy_component: Page120
+  component_name: OilSandsEnvironmentalConsiderations
+  file_name: OilSandsEnvironmentalConsiderations.jsx
+  translation_prefix: oil_sands_environmental_considerations
+  css_prefix: oil-sands-environmental-considerations
+  section_anchor_id: oil-sands-environmental-considerations
+  title: Oil sands: environmental considerations
+  indicator_keys:
+  - oil_sands_environmental_considerations
+  data_getters:
+  - getOilSandsEnvironmentalConsiderationsData
+  data_status: pipeline_present
 - legacy_page_num: 121
   legacy_component: Page121
   component_name: OilSandsGreenhouseGases
@@ -1488,9 +1501,12 @@ pages:
   css_prefix: natural-gas-energy-use
   section_anchor_id: natural-gas-energy-use
   title: Natural gas energy use
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - natural_gas_energy_use
+  - natural_gas_energy_use_province
+  data_getters:
+  - getNaturalGasEnergyUseData
+  data_status: pipeline_present
 - legacy_page_num: 133
   legacy_component: Page133
   component_name: HglSupplyDemand
@@ -1534,9 +1550,12 @@ pages:
   css_prefix: natural-gas-liquids-energy-use
   section_anchor_id: natural-gas-liquids-energy-use
   title: Natural gas liquids energy use
-  indicator_keys: []
-  data_getters: []
-  data_status: static_hardcoded
+  indicator_keys:
+  - natural_gas_liquids_energy_use
+  - natural_gas_liquids_energy_use_province
+  data_getters:
+  - getNaturalGasLiquidsEnergyUseData
+  data_status: pipeline_present
 - legacy_page_num: 136
   legacy_component: Page136
   component_name: RppSupplyDemand

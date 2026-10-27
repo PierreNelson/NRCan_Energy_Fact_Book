@@ -82,6 +82,11 @@ SOURCE_VECTOR_PREFIXES = {
     'oil_sands_greenhouse_gases': ['osghg_'],
     'oil_sands_in_situ': ['osi_'],
     'oil_sands_mining': ['osmm_'],
+    'oil_sands_environmental_considerations': ['osec_'],
+    'natural_gas_energy_use': ['ngeu_'],
+    'natural_gas_energy_use_province': ['ngeu_'],
+    'natural_gas_liquids_energy_use': ['ngleu_'],
+    'natural_gas_liquids_energy_use_province': ['ngleu_'],
     'petroleum_sector_employment': ['pet_emp_'],
     'world_proved_crude_reserves': ['wr_crude_res_'],
 }
@@ -147,6 +152,11 @@ SOURCE_DISPLAY_NAMES = {
     'oil_sands_greenhouse_gases': 'Oil sands greenhouse gas emissions intensity',
     'oil_sands_in_situ': 'In situ oil sands method',
     'oil_sands_mining': 'Mining oil sands method',
+    'oil_sands_environmental_considerations': 'Oil sands environmental considerations',
+    'natural_gas_energy_use': 'Natural gas energy use by sector',
+    'natural_gas_energy_use_province': 'Natural gas energy use by province',
+    'natural_gas_liquids_energy_use': 'Natural gas liquids energy use by sector',
+    'natural_gas_liquids_energy_use_province': 'Natural gas liquids energy use by province',
     'petroleum_sector_employment': 'Petroleum sector employment by region',
     'world_proved_crude_reserves': 'World proved reserves of crude oil',
 }

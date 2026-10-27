@@ -43,6 +43,22 @@ from .rpp import (
 )
 from .greenhouse_gases import transform_oil_sands_greenhouse_gases, update_oil_sands_greenhouse_gases
 from .oil_sands_in_situ import transform_oil_sands_in_situ, update_oil_sands_in_situ
+from .natural_gas_energy_use import (
+    transform_natural_gas_energy_use,
+    transform_natural_gas_energy_use_province,
+    update_natural_gas_energy_use,
+    update_natural_gas_energy_use_province,
+)
+from .natural_gas_liquids_energy_use import (
+    transform_natural_gas_liquids_energy_use,
+    transform_natural_gas_liquids_energy_use_province,
+    update_natural_gas_liquids_energy_use,
+    update_natural_gas_liquids_energy_use_province,
+)
+from .oil_sands_environmental_considerations import (
+    transform_oil_sands_environmental_considerations,
+    update_oil_sands_environmental_considerations,
+)
 from .oil_sands_mining import transform_oil_sands_mining, update_oil_sands_mining
 from .western_canada_gas_wells import transform_western_canada_gas_wells, update_western_canada_gas_wells
 from .western_canada_oil_wells import transform_western_canada_oil_wells, update_western_canada_oil_wells
@@ -80,6 +96,11 @@ class Section6OilGas(SectionProcessor):
             'oil_sands_greenhouse_gases': lambda: update_oil_sands_greenhouse_gases(self),
             'oil_sands_in_situ': lambda: update_oil_sands_in_situ(self),
             'oil_sands_mining': lambda: update_oil_sands_mining(self),
+            'oil_sands_environmental_considerations': lambda: update_oil_sands_environmental_considerations(self),
+            'natural_gas_energy_use': lambda: update_natural_gas_energy_use(self),
+            'natural_gas_energy_use_province': lambda: update_natural_gas_energy_use_province(self),
+            'natural_gas_liquids_energy_use': lambda: update_natural_gas_liquids_energy_use(self),
+            'natural_gas_liquids_energy_use_province': lambda: update_natural_gas_liquids_energy_use_province(self),
         }
 
     def get_transform_handlers(self) -> Dict[str, callable]:
@@ -99,6 +120,11 @@ class Section6OilGas(SectionProcessor):
             'oil_sands_greenhouse_gases': lambda: transform_oil_sands_greenhouse_gases(self),
             'oil_sands_in_situ': lambda: transform_oil_sands_in_situ(self),
             'oil_sands_mining': lambda: transform_oil_sands_mining(self),
+            'oil_sands_environmental_considerations': lambda: transform_oil_sands_environmental_considerations(self),
+            'natural_gas_energy_use': lambda: transform_natural_gas_energy_use(self),
+            'natural_gas_energy_use_province': lambda: transform_natural_gas_energy_use_province(self),
+            'natural_gas_liquids_energy_use': lambda: transform_natural_gas_liquids_energy_use(self),
+            'natural_gas_liquids_energy_use_province': lambda: transform_natural_gas_liquids_energy_use_province(self),
         }
 
     def get_source_handlers(self) -> Dict[str, callable]:

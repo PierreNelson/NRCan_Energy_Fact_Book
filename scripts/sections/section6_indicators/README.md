@@ -35,12 +35,15 @@ python main.py export
 | **117** | Yes | `getCrudeOilPricesData()` | `crude_prices` | `build_crude_price_rows()` · `crude_prices.py` | `constants.py` → EIA, Sproule, BoC URLs |
 | **118** | Image | — | — | `publish_cer_oil_pipeline_map()` · `export/cer_oil_pipeline_map.py` | CER Canada's Pipeline System 2021, crude oil page. Export replaces `src/assets/major_cer_regulated_oil_pipelines_bg.png` and the French file. |
 | **119** | No | — | — | — | Hardcoded — `src/pages/OilByRail.jsx` |
+| **120** | Yes | `getOilSandsEnvironmentalConsiderationsData()` | `oil_sands_environmental_considerations` | `update_oil_sands_environmental_considerations()` / `transform_oil_sands_environmental_considerations()` · `oil_sands_environmental_considerations.py` | AER water use performance workbook. Mining fresh water is Lower Athabasca River plus groundwater plus surface runoff. In situ non-saline water is high quality nonsaline plus alternative nonsaline. Intensity is annual barrels divided by annual hydrocarbon production. Recycled share is recycled water divided by total water use. |
 | **121** | Yes | `getOilSandsGreenhouseGasesData()` | `oil_sands_greenhouse_gases` | `update_oil_sands_greenhouse_gases()` / `transform_oil_sands_greenhouse_gases()` · `greenhouse_gases.py` | StatCan v17946 and v17947 (2000–2015, thousand m³) plus v107757052 and v107757060 (2016+, cubic metres). Climate Watch World total excluding LULUCF. ECCC `GHG_Econ_Can_Prov_Terr.csv` for Canada and oil sands. |
 | **122** | No | — | — | — | Hardcoded world gas production — `src/pages/NaturalGasInternational.jsx` |
 | **123** | No | — | — | — | Hardcoded world gas reserves — `src/pages/WorldProvedGasReserves.jsx` |
 | **126** | Yes | `getWesternCanadaGasWellCompletionsData()` | `western_canada_gas_wells` | `update_western_canada_gas_wells()` / `transform_western_canada_gas_wells()` · `western_canada_gas_wells.py` | Same provincial well sources as page 110. Natural gas product only. |
 | **130** | Image | — | — | `publish_cer_gas_pipeline_map()` · `export/cer_gas_pipeline_map.py` | CER Canada's Pipeline System 2021, natural gas page. Export replaces `src/assets/cer_regulated_gas_pipelines_bg.png` and the French file. |
+| **131** | Yes | `getNaturalGasEnergyUseData()` | `natural_gas_energy_use`, `natural_gas_energy_use_province` | `natural_gas_energy_use.py` | Sector table from `oee_neud_ngenergyuse_sector`. Province donut from `oee_neud_ngenergyuse_province`. Both read `Energy Efficiency.xlsx` sheet `NG energy use` until `oee_neud_energy_efficiency_customfile.xlsx` is in Manual Data. Shares are the sheet values. Sector Bcf/d is PJ divided by days in the year divided by 1.055. The donut centre is the sum of province petajoules. |
 | **132** | Yes* | `getOilGasGhgSpotlightData()`, `getGhgNarrativeStats()` | `ghg_emissions`* | Section 1 `ghg_emissions.py`* | Section 1 README |
+| **134** | Yes | `getNaturalGasLiquidsEnergyUseData()` | `natural_gas_liquids_energy_use`, `natural_gas_liquids_energy_use_province` | `natural_gas_liquids_energy_use.py` | Sector table from `oee_neud_ngl_energyuse_sector`. Province donut from `oee_neud_ngl_energyuse_province`. Both read `Energy Efficiency.xlsx` sheet `NGL energy use` until `oee_neud_energy_efficiency_customfile.xlsx` is in Manual Data. Shares are the sheet values. The heading and donut centre round the petajoule total to a whole number. |
 | **135** | No | — | — | — | Static — `src/pages/RefinedPetroleumProducts.jsx` |
 | **136** | Yes | `getRppSupplyDemandData()` | `rpp_supply_demand`, `rpp_refinery_input` | `process_rpp_*()` · `rpp.py` | `constants.py` StatCan vector IDs |
 | **138** | Yes | `getRetailGasolinePricesGasolineData()` | `kal_gas_prices` | `build_kalibrate_gas_price_rows()` · `kalibrate.py` | Kalibrate web + `Section 6.xlsx` |
@@ -213,7 +216,7 @@ python main.py export
 | File | Purpose |
 |------|---------|
 | `constants.py` | StatCan vector IDs, external URLs, province maps |
-| `rpp.py`, `crude_prices.py`, `oil_sands.py`, `oil_sands_mining.py`, `oil_sands_in_situ.py`, `canadian_production.py`, `petroleum_reserves.py`, `western_canada_oil_wells.py`, `western_canada_gas_wells.py`, `greenhouse_gases.py`, `kalibrate.py`, `refinery_capacity.py` | One module per source |
+| `rpp.py`, `crude_prices.py`, `oil_sands.py`, `oil_sands_mining.py`, `oil_sands_in_situ.py`, `canadian_production.py`, `petroleum_reserves.py`, `western_canada_oil_wells.py`, `western_canada_gas_wells.py`, `greenhouse_gases.py`, `natural_gas_energy_use.py`, `natural_gas_liquids_energy_use.py`, `kalibrate.py`, `refinery_capacity.py` | One module per source |
 
 ---
 

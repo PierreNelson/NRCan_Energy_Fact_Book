@@ -1,0 +1,12 @@
+Log file: scripts/logs/export_20261026_193804.log
+============================================================
+NRCan Energy Factbook - Export Website Files
+Started at: 2026-10-26 19:38:04
+============================================================
+  Filter: source=natural_gas_energy_use (prefixes: ['ngeu_'])
+
+Preparing export data from database...
+
+Exporting data.csv (source: natural_gas_energy_use)...
+  Updated 62 vectors, total 10096 rows
+  Backed up data.csv -> data.csv.20261026_193805

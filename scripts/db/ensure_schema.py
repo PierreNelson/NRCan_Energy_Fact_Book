@@ -70,7 +70,12 @@ VALUES
 ('western_canada_gas_wells', 'Western Canada natural gas wells completed', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st59', 1),
 ('oil_sands_greenhouse_gases', 'Oil sands greenhouse gas emissions intensity', 6, 'Oil, Natural Gas and Coal', N'https://www.climatewatchdata.org/api/v1/data/historical_emissions', 1),
 ('oil_sands_in_situ', 'In situ oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/statistical-reports/st53', 1),
-('oil_sands_mining', 'Mining oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39', 1);
+('oil_sands_mining', 'Mining oil sands method', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/providing-information/data-and-reports/statistical-reports/st39', 1),
+('oil_sands_environmental_considerations', 'Oil sands environmental considerations', 6, 'Oil, Natural Gas and Coal', N'https://www.aer.ca/data-and-performance-reports/industry-performance/water-use-performance', 1),
+('natural_gas_energy_use', 'Natural gas energy use by sector', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
+('natural_gas_energy_use_province', 'Natural gas energy use by province', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
+('natural_gas_liquids_energy_use', 'Natural gas liquids energy use by sector', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1),
+('natural_gas_liquids_energy_use_province', 'Natural gas liquids energy use by province', 6, 'Oil, Natural Gas and Coal', N'https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e.html', 1);
 """
 
 

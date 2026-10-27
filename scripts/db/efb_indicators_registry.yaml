@@ -367,6 +367,31 @@ indicators:
     depends_on: [aer_oil_sands_mining_method]
     vector_prefixes: [osmm_]
 
+  oil_sands_environmental_considerations:
+    section_id: 6
+    depends_on: [aer_oil_sands_water_indicators]
+    vector_prefixes: [osec_]
+
+  natural_gas_energy_use:
+    section_id: 6
+    depends_on: [oee_neud_ngenergyuse_sector]
+    vector_prefixes: [ngeu_]
+
+  natural_gas_energy_use_province:
+    section_id: 6
+    depends_on: [oee_neud_ngenergyuse_province]
+    vector_prefixes: [ngeu_]
+
+  natural_gas_liquids_energy_use:
+    section_id: 6
+    depends_on: [oee_neud_ngl_energyuse_sector]
+    vector_prefixes: [ngleu_]
+
+  natural_gas_liquids_energy_use_province:
+    section_id: 6
+    depends_on: [oee_neud_ngl_energyuse_province]
+    vector_prefixes: [ngleu_]
+
   petroleum_sector_employment:
     section_id: 6
     depends_on: [ca_statcan_petroleum_sector_employment_summary]
