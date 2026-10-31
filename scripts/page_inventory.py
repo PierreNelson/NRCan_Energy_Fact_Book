@@ -949,6 +949,7 @@ def audit_all_pages(rows: list[PageRow]) -> list[PageAuditResult]:
 
 def write_csv(rows: list[PageRow], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    rows = sorted(rows, key=lambda row: row.page_num)
     fieldnames = [
         "legacy_page_num",
         "section_order",

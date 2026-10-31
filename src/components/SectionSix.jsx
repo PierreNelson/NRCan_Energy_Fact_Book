@@ -4,6 +4,7 @@ import { useOutletContext } from 'react-router-dom';
 import ActivePageSection from './ActivePageSection';
 
 const OilGasCoalOverview = lazyWithPreload(() => import('../pages/OilGasCoalOverview'));
+const PetroleumEconomy = lazyWithPreload(() => import('../pages/PetroleumEconomy'));
 const PetroleumEmploymentByRegion = lazyWithPreload(() => import('../pages/PetroleumEmploymentByRegion'));
 const PetroleumEmployment = lazyWithPreload(() => import('../pages/PetroleumEmployment'));
 const PetroleumGdp = lazyWithPreload(() => import('../pages/PetroleumGdp'));
@@ -15,6 +16,7 @@ const CanadianSupplyDemand = lazyWithPreload(() => import('../pages/CanadianSupp
 const OilSandsProduction = lazyWithPreload(() => import('../pages/OilSandsProduction'));
 const OilSandsMiningMethod = lazyWithPreload(() => import('../pages/OilSandsMiningMethod'));
 const OilSandsInSituMethod = lazyWithPreload(() => import('../pages/OilSandsInSituMethod'));
+const CanadianCrudeImports = lazyWithPreload(() => import('../pages/CanadianCrudeImports'));
 const CrudeOilPrices = lazyWithPreload(() => import('../pages/CrudeOilPrices'));
 const MajorCerRegulatedOilPipelines = lazyWithPreload(() => import('../pages/MajorCerRegulatedOilPipelines'));
 const OilByRail = lazyWithPreload(() => import('../pages/OilByRail'));
@@ -22,7 +24,12 @@ const OilSandsEnvironmentalConsiderations = lazyWithPreload(() => import('../pag
 const OilSandsGreenhouseGases = lazyWithPreload(() => import('../pages/OilSandsGreenhouseGases'));
 const NaturalGasInternational = lazyWithPreload(() => import('../pages/NaturalGasInternational'));
 const WorldProvedGasReserves = lazyWithPreload(() => import('../pages/WorldProvedGasReserves'));
+const CanadaUsGasResources = lazyWithPreload(() => import('../pages/CanadaUsGasResources'));
+const CanadaUsGasMarket = lazyWithPreload(() => import('../pages/CanadaUsGasMarket'));
 const WesternCanadaGasWellCompletions = lazyWithPreload(() => import('../pages/WesternCanadaGasWellCompletions'));
+const NaturalGasProductionTrade = lazyWithPreload(() => import('../pages/NaturalGasProductionTrade'));
+const CanadaUsGasTrade = lazyWithPreload(() => import('../pages/CanadaUsGasTrade'));
+const UpstreamPrices = lazyWithPreload(() => import('../pages/UpstreamPrices'));
 const CerRegulatedGasPipelines = lazyWithPreload(() => import('../pages/CerRegulatedGasPipelines'));
 const NaturalGasEnergyUse = lazyWithPreload(() => import('../pages/NaturalGasEnergyUse'));
 const HglSupplyDemand = lazyWithPreload(() => import('../pages/HglSupplyDemand'));
@@ -38,6 +45,7 @@ const CanadianCoalSupplyDemand = lazyWithPreload(() => import('../pages/Canadian
 const PAGES = [
   { id: 'oil-gas-coal-overview', Component: OilGasCoalOverview,
     pageClassName: 'page-with-title-divider' },
+  { id: 'petroleum-economy', Component: PetroleumEconomy },
   { id: 'petroleum-employment-by-region', Component: PetroleumEmploymentByRegion,
     pageClassName: 'page-with-title-divider' },
   { id: 'petroleum-employment', Component: PetroleumEmployment },
@@ -51,6 +59,7 @@ const PAGES = [
   { id: 'oil-sands', Component: OilSandsProduction },
   { id: 'oil-sands-mining', Component: OilSandsMiningMethod },
   { id: 'oil-sands-in-situ', Component: OilSandsInSituMethod },
+  { id: 'canadian-crude-imports', Component: CanadianCrudeImports },
   { id: 'crude-oil-prices', Component: CrudeOilPrices },
   { id: 'major-cer-regulated-oil-pipelines', Component: MajorCerRegulatedOilPipelines },
   { id: 'oil-by-rail', Component: OilByRail },
@@ -59,7 +68,12 @@ const PAGES = [
   { id: 'natural-gas-international', Component: NaturalGasInternational,
     pageClassName: 'page-with-title-divider' },
   { id: 'world-natural-gas-proved-reserves', Component: WorldProvedGasReserves },
+  { id: 'canada-us-gas-resources', Component: CanadaUsGasResources },
+  { id: 'canada-us-gas-market', Component: CanadaUsGasMarket },
   { id: 'western-canada-gas-well-completions', Component: WesternCanadaGasWellCompletions },
+  { id: 'natural-gas-production-trade', Component: NaturalGasProductionTrade },
+  { id: 'canada-us-gas-trade', Component: CanadaUsGasTrade },
+  { id: 'upstream-prices', Component: UpstreamPrices },
   { id: 'cer-regulated-gas-pipelines', Component: CerRegulatedGasPipelines },
   { id: 'natural-gas-energy-use', Component: NaturalGasEnergyUse },
   { id: 'hgl-supply-demand', Component: HglSupplyDemand,
@@ -77,7 +91,7 @@ const PAGES = [
 ];
 
 const TOPIC_ANCHORS = [
-  'petroleum-employment-by-region',
+  'petroleum-economy',
   'crude-oil-international',
   'natural-gas-international',
   'hgl-supply-demand',

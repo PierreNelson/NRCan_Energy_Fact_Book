@@ -147,7 +147,7 @@ const WesternCanadaGasWellCompletions = () => {
 
     const plotConfig = buildPngOnlyPlotConfig({
         lang,
-        click: (gd) => downloadChartWithTitle(gd), name: lang === 'en',
+        click: (gd) => downloadChartWithTitle(gd),
     });
 
     return (

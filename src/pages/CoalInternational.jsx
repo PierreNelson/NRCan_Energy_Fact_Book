@@ -440,7 +440,158 @@ const CoalInternational = () => {
             style={{backgroundColor: '#ffffff', ...layoutBleedCssVars(layoutPadding)}}
         >
             <style>{`
-                .page-108.coal-international-coal-international {
+                .page-108.coal-international-coal-international.page-content {
+                    max-width: none !important;
+                    overflow-x: visible !important;
+                }
+                .page-108 p.crude-oil-international-subtitle {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 39px;
+                    font-weight: bold;
+                    color: #423330;
+                    margin: 0 0 15px 0;
+                }
+                .crude-oil-international-container {
+                    width: 100%;
+                    padding: 15px 0 40px 0;
+                    display: flex;
+                    flex-direction: column;
+                    box-sizing: border-box;
+                }
+                .crude-oil-international-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 50px;
+                    font-weight: bold;
+                    color: #423330;
+                    margin-top: 0;
+                    margin-bottom: 25px;
+                    position: relative;
+                    padding-bottom: 0.5em;
+                }
+                .crude-oil-international-title::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: 0.2em;
+                    width: 72px;
+                    height: 6px;
+                    background-color: var(--gc-red);
+                }
+                .crude-oil-international-content-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 30px;
+                    margin-top: 20px;
+                    align-items: stretch;
+                }
+                .crude-oil-international-chart-section {
+                    flex: 1;
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    width: 100%;
+                }
+                .crude-oil-international-content-wrapper.layout-stacked .crude-oil-international-chart-section {
+                    width: 100% !important;
+                }
+                .crude-oil-international-content-wrapper.layout-stacked .crude-oil-international-chart-container {
+                    width: 100% !important;
+                    max-width: 1280px !important;
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                }
+                .crude-oil-international-graphic-title {
+                    font-family: 'Lato', sans-serif;
+                    font-size: 29px;
+                    font-weight: bold;
+                    color: #000000;
+                    margin: 0 0 10px 0;
+                    text-align: left;
+                    width: 100%;
+                }
+                .crude-oil-international-chart-container {
+                    position: relative;
+                    width: 100%;
+                    max-width: 1280px;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                .crude-oil-international-capsule-graphic {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    width: 100%;
+                    font-family: 'Noto Sans', sans-serif;
+                }
+                .crude-oil-international-capsule-row {
+                    display: flex;
+                    align-items: center;
+                    min-height: 52px;
+                    gap: 0;
+                    min-width: 0;
+                }
+                .crude-oil-international-capsule-bar-wrap {
+                    flex: 0 0 28%;
+                    min-width: 0;
+                    display: flex;
+                    align-items: center;
+                }
+                .crude-oil-international-capsule-bar {
+                    min-height: 44px;
+                    min-width: 82px;
+                    border-radius: 999px;
+                    background-color: #d1d1d1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    padding: 10px 12px;
+                    font-size: clamp(13px, 1.5vw, 15px);
+                    color: #333;
+                    box-sizing: border-box;
+                    width: 100%;
+                    max-width: 100%;
+                }
+                .crude-oil-international-capsule-bar .crude-oil-international-capsule-bar-text {
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    word-break: break-word;
+                    white-space: normal;
+                    line-height: 1.3;
+                }
+                .crude-oil-international-capsule-row-canada .crude-oil-international-capsule-bar {
+                    background-color: #423330;
+                    color: #fff;
+                }
+                .crude-oil-international-capsule-connector {
+                    flex: 1 1 0;
+                    min-width: 10px;
+                    height: 2px;
+                    background-color: #b0b0b0;
+                }
+                .crude-oil-international-capsule-row-canada .crude-oil-international-capsule-connector {
+                    background-color: #423330;
+                }
+                .crude-oil-international-capsule-pill {
+                    flex: 0 0 64px;
+                    height: 36px;
+                    min-width: 64px;
+                    border-radius: 999px;
+                    border: 1px solid #b0b0b0;
+                    background-color: #fff;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 15px;
+                    color: #333;
+                    box-sizing: border-box;
+                }
+                .crude-oil-international-capsule-row-canada .crude-oil-international-capsule-pill {
+                    border-width: 2px;
+                    border-color: #423330;
+                    font-weight: bold;
+                    font-size: 16px;
                 }
                 .coal-international-capsule-ellipsis {
                     display: flex;
@@ -450,6 +601,11 @@ const CoalInternational = () => {
                     font-size: 22px;
                     color: #333;
                     font-family: 'Noto Sans', sans-serif;
+                }
+                @media (max-width: 768px) {
+                    .crude-oil-international-title { font-size: 37px; }
+                    .page-108 p.crude-oil-international-subtitle { font-size: 35px; }
+                    .crude-oil-international-graphic-title { font-size: 26px; }
                 }
             `}</style>
 

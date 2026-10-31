@@ -1250,6 +1250,17 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: no_data
+- legacy_page_num: 104
+  legacy_component: Page104
+  component_name: PetroleumEconomy
+  file_name: PetroleumEconomy.jsx
+  translation_prefix: petroleum_economy
+  css_prefix: petroleum-economy
+  section_anchor_id: petroleum-economy
+  title: Petroleum and the economy
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 105
   legacy_component: Page105
   component_name: PetroleumEmploymentByRegion
@@ -1386,6 +1397,17 @@ pages:
   data_getters:
   - getOilSandsInSituData
   data_status: pipeline_present
+- legacy_page_num: 116
+  legacy_component: Page116
+  component_name: CanadianCrudeImports
+  file_name: CanadianCrudeImports.jsx
+  translation_prefix: canadian_crude_imports
+  css_prefix: canadian-crude-imports
+  section_anchor_id: canadian-crude-imports
+  title: Canadian crude oil imports
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 117
   legacy_component: Page117
   component_name: CrudeOilPrices
@@ -1428,7 +1450,7 @@ pages:
   translation_prefix: oil_sands_environmental_considerations
   css_prefix: oil-sands-environmental-considerations
   section_anchor_id: oil-sands-environmental-considerations
-  title: Oil sands: environmental considerations
+  title: 'Oil sands: environmental considerations'
   indicator_keys:
   - oil_sands_environmental_considerations
   data_getters:
@@ -1469,6 +1491,28 @@ pages:
   indicator_keys: []
   data_getters: []
   data_status: static_hardcoded
+- legacy_page_num: 124
+  legacy_component: Page124
+  component_name: CanadaUsGasResources
+  file_name: CanadaUsGasResources.jsx
+  translation_prefix: canada_us_gas_resources
+  css_prefix: canada-us-gas-resources
+  section_anchor_id: canada-us-gas-resources
+  title: Canada-U.S. resources
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 125
+  legacy_component: Page125
+  component_name: CanadaUsGasMarket
+  file_name: CanadaUsGasMarket.jsx
+  translation_prefix: canada_us_gas_market
+  css_prefix: canada-us-gas-market
+  section_anchor_id: canada-us-gas-market
+  title: Canada-U.S. market
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 126
   legacy_component: Page126
   component_name: WesternCanadaGasWellCompletions
@@ -1482,6 +1526,39 @@ pages:
   data_getters:
   - getWesternCanadaGasWellCompletionsData
   data_status: pipeline_present
+- legacy_page_num: 127
+  legacy_component: Page127
+  component_name: NaturalGasProductionTrade
+  file_name: NaturalGasProductionTrade.jsx
+  translation_prefix: natural_gas_production_trade
+  css_prefix: natural-gas-production-trade
+  section_anchor_id: natural-gas-production-trade
+  title: Natural gas production and trade
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 128
+  legacy_component: Page128
+  component_name: CanadaUsGasTrade
+  file_name: CanadaUsGasTrade.jsx
+  translation_prefix: canada_us_gas_trade
+  css_prefix: canada-us-gas-trade
+  section_anchor_id: canada-us-gas-trade
+  title: Natural gas trade with the United States
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
+- legacy_page_num: 129
+  legacy_component: Page129
+  component_name: UpstreamPrices
+  file_name: UpstreamPrices.jsx
+  translation_prefix: upstream_prices
+  css_prefix: upstream-prices
+  section_anchor_id: upstream-prices
+  title: Upstream prices
+  indicator_keys: []
+  data_getters: []
+  data_status: static_hardcoded
 - legacy_page_num: 130
   legacy_component: Page130
   component_name: CerRegulatedGasPipelines
